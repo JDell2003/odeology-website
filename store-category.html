@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop &middot; odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="store-page">
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">&#9782;</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="store-shell">
+        <div class="store-notice hidden" id="store-notice" role="status" aria-live="polite"></div>
+
+        <section class="store-promo-bar" aria-label="Store promo">
+            <div class="container store-promo-inner">
+                <div class="store-promo-left">Free shipping over $75</div>
+                <a class="store-promo-mid" href="store-category.html?category=deals">Buy 1, Get 1 50% Off</a>
+                <a class="store-promo-right" href="store-category.html?category=deals">Member exclusives</a>
+            </div>
+        </section>
+
+        <section class="store-masthead" aria-label="Store search">
+            <div class="container store-masthead-inner">
+                <button class="store-shop-trigger" id="store-shop-trigger" type="button" aria-label="Open shop menu">
+                    <span class="store-shop-icon" aria-hidden="true">▦</span>
+                    <span class="store-shop-text">Shop</span>
+                </button>
+                <a class="store-brand" href="store.html" aria-label="Store home">
+                    <span class="store-brand-mark">odeology_<span class="brand-dot"></span></span>
+                    <span class="store-brand-sub">Store</span>
+                </a>
+
+                <form class="store-global-search" id="store-global-search-form" role="search" aria-label="Search store">
+                    <input type="search" id="store-global-search" placeholder="What can we help you find today?" autocomplete="off">
+                    <button type="submit" class="store-global-search-btn" aria-label="Search">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="M20 20l-3.5-3.5"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="store-masthead-actions">
+                    <a class="store-mast-link" href="store-cart.html" aria-label="Cart">
+                        Cart <span class="store-cart-count">0</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <div class="store-drawer-overlay hidden" id="store-drawer-overlay" aria-hidden="true">
+            <aside class="store-drawer" role="dialog" aria-label="Shop menu">
+                <div class="store-drawer-top">
+                    <div class="store-drawer-title">Shop</div>
+                    <button class="store-drawer-close" id="store-drawer-close" type="button" aria-label="Close menu">×</button>
+                </div>
+                <nav class="store-drawer-links" aria-label="Shop categories">
+                    <a href="store-category.html?category=protein">Protein &amp; Fitness</a>
+                    <a href="store-category.html?category=creatine">Creatine</a>
+                    <a href="store-category.html?category=supplements">Vitamins &amp; Supplements</a>
+                    <a href="store-category.html?category=equipment">Equipment</a>
+                    <a href="store-category.html?category=deals">Deals</a>
+                    <a href="store-category.html?category=all&q=omega%203">Healthy fats</a>
+                </nav>
+            </aside>
+        </div>
+
+        <section class="store-linkbar" aria-label="Store navigation">
+            <div class="container store-linkbar-inner">
+                <a class="store-link" href="index.html#resources">Home</a>
+                <a class="store-link" href="store.html">Shop</a>
+                <a class="store-link" href="store-category.html?category=deals">Deals</a>
+                <a class="store-link" href="store-category.html?category=protein">Best Sellers</a>
+                <a class="store-link" href="store-category.html?category=supplements">New on the drop</a>
+                <a class="store-link" href="store-category.html?category=creatine">Creatine</a>
+                <a class="store-link" href="store-category.html?category=equipment">Equipment</a>
+            </div>
+        </section>
+
+        <section class="store-browse-head">
+            <div class="container store-browse-inner">
+                <div class="store-browse-left">
+                    <p class="store-eyebrow">Store</p>
+                    <h1 class="store-browse-title" id="store-category-title">Shop</h1>
+                    <p class="store-browse-subtitle" id="store-category-subtitle">Auto-priced and curated for lifters.</p>
+                </div>
+                <div class="store-browse-right">
+                    <a class="btn btn-ghost" href="store.html">&larr; Store</a>
+                    <a class="btn btn-primary" href="store-cart.html">Cart <span class="store-cart-count">0</span></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="store-cat-strip" aria-label="Store categories">
+            <div class="container store-cat-strip-inner">
+                <a class="store-cat" href="store-category.html?category=protein">Protein</a>
+                <a class="store-cat" href="store-category.html?category=creatine">Creatine</a>
+                <a class="store-cat" href="store-category.html?category=supplements">Supplements</a>
+                <a class="store-cat" href="store-category.html?category=equipment">Workout Equipment</a>
+                <a class="store-cat store-cat-deals" href="store-category.html?category=deals">Deals</a>
+            </div>
+        </section>
+
+        <section class="store-browse-tools">
+            <div class="container store-tools-inner">
+                <label class="store-search">
+                    <span class="sr-only">Search</span>
+                    <input type="search" id="store-search" placeholder="Search this category">
+                </label>
+                <button class="btn btn-ghost store-refresh" id="store-refresh" type="button">Reload</button>
+            </div>
+        </section>
+
+        <section class="store-results">
+            <div class="container">
+                <div class="store-grid" id="store-category-grid" aria-live="polite"></div>
+                <div class="store-load-row">
+                    <button class="btn btn-ghost" id="store-load-more" type="button">Load more</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="store-recent" id="store-recent" aria-label="Recently viewed">
+            <div class="container">
+                <div class="store-section-head store-section-head-gnc store-section-head-row">
+                    <div>
+                        <h2>Recently viewed</h2>
+                        <p class="ns-muted">Recommendations as you shop.</p>
+                    </div>
+                    <a class="btn btn-ghost store-shop-all" href="store.html">Shop home</a>
+                </div>
+                <div class="store-row">
+                    <button class="store-row-arrow left" type="button" aria-label="Scroll left" data-row-target="#store-recent-grid">‹</button>
+                    <div class="store-grid store-grid-gnc store-grid-row" id="store-recent-grid" aria-live="polite"></div>
+                    <button class="store-row-arrow right" type="button" aria-label="Scroll right" data-row-target="#store-recent-grid">›</button>
+                </div>
+            </div>
+        </section>
+
+        <footer class="store-footer" aria-label="Store footer">
+            <div class="container store-footer-inner">
+                <div class="store-footer-cols">
+                    <div class="store-footer-col">
+                        <h4>Get Help</h4>
+                        <a href="terms.html">Contact</a>
+                        <a href="terms.html">Shipping</a>
+                        <a href="terms.html">Returns</a>
+                        <a href="terms.html">Accessibility</a>
+                    </div>
+                    <div class="store-footer-col">
+                        <h4>Shop With Us</h4>
+                        <a href="store-category.html?category=protein">Protein</a>
+                        <a href="store-category.html?category=creatine">Creatine</a>
+                        <a href="store-category.html?category=supplements">Supplements</a>
+                        <a href="store-category.html?category=equipment">Equipment</a>
+                    </div>
+                    <div class="store-footer-col">
+                        <h4>About</h4>
+                        <a href="index.html#resources">Systems</a>
+                        <a href="training.html">Training</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                    <div class="store-footer-col store-footer-card">
+                        <h3>Stay connected</h3>
+                        <p>Get the latest drops and deal lanes.</p>
+                        <div class="store-footer-form">
+                            <input type="email" placeholder="Enter email" aria-label="Email">
+                            <button class="btn btn-primary" type="button">Sign up</button>
+                        </div>
+                        <div class="store-footer-form">
+                            <input type="tel" placeholder="Mobile number" aria-label="Mobile number">
+                            <button class="btn btn-ghost" type="button">Continue</button>
+                        </div>
+                        <div class="store-footer-social" aria-label="Social links">
+                            <a href="#" aria-label="Instagram">IG</a>
+                            <a href="#" aria-label="YouTube">YT</a>
+                            <a href="#" aria-label="X">X</a>
+                            <a href="#" aria-label="TikTok">TT</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="store-footer-bottom">
+                    <div class="store-footer-legal">© odeology_</div>
+                    <div class="store-footer-legal-links">
+                        <a href="terms.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+    <script src="js/store.js"></script>
+</body>
+</html>

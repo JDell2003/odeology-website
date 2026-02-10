@@ -1,0 +1,79 @@
+{
+  "foods": [
+    "Chicken breast",
+    "Lean ground turkey",
+    "Eggs",
+    "Salmon",
+    "Greek yogurt (0%)",
+    "Tofu",
+    "Shrimp",
+    "Pork loin",
+    "Cottage cheese (low-fat)",
+    "Whey isolate",
+    "Edamame",
+    "Jasmine rice",
+    "Rolled oats",
+    "Russet potato",
+    "Whole wheat pasta",
+    "Black beans",
+    "Quinoa",
+    "Plain bagel",
+    "Flour tortilla",
+    "High-fiber cereal",
+    "Mixed berries",
+    "Olive oil",
+    "Avocado",
+    "Almonds",
+    "Peanut butter",
+    "Cashews",
+    "Grass-fed butter",
+    "Walnuts",
+    "Chia seeds",
+    "Dark chocolate (85%)",
+    "Turkey bacon",
+    "Cheddar cheese"
+  ],
+  "scrape": {
+    "maxAttempts": 3,
+    "baseBackoffMs": 1200,
+    "sessionParam": "session"
+  },
+  "stores": [
+    {
+      "name": "Walmart",
+      "searchUrl": "https://www.walmart.com/search?q={query}",
+      "selectors": {
+        "card": "div[role='group'][data-item-id][data-test-id='gpt-main']",
+        "link": "a[href*='/ip/']",
+        "name": "h3[data-automation-id='product-title']",
+        "price": "[data-automation-id='product-price'] .flex .mr1, [data-automation-id='product-price'] .flex span",
+        "unit": "[data-automation-id='product-price'] .nearer-mid-gray",
+        "unitPrice": "[data-automation-id='product-price'] .nearer-mid-gray"
+      }
+    },
+    {
+      "name": "Target",
+      "searchUrl": "https://www.target.com/s?searchTerm={query}",
+      "selectors": {
+        "card": "li[data-test='product-card'], div[data-test='product-card']",
+        "link": "a[data-test='product-card-link'], a[href*='/p/']",
+        "name": "span[data-test='product-title'], h3[data-test='product-title']",
+        "price": "span[data-test='current-price'], div[data-test='current-price']",
+        "unit": "span[data-test='price-per-unit'], span[class*='unit']",
+        "unitPrice": "span[data-test='price-per-unit'], span[class*='unit'], span[class*='UnitPrice']"
+      }
+    },
+    {
+      "name": "Sams",
+      "searchUrl": "https://www.samsclub.com/s/{query}",
+      "selectors": {
+        "card": "div[data-testid='productTile'], div.ProductCard",
+        "link": "a[href*='/p/']",
+        "name": "a[href*='/p/'] div[class*='ProductCardTitle'], div[data-testid='productTile'] [data-testid='productTileName']",
+        "price": "span[class*='PriceGroup'], span[class*='product-price']",
+        "unit": "span[class*='UnitPrice'], span[class*='product-size']",
+        "unitPrice": "span[class*='UnitPrice'], span[class*='price-per-unit'], span[class*='product-size']"
+      }
+    }
+  ]
+}

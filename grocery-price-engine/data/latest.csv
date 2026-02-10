@@ -1,0 +1,44 @@
+group,groupName,sku,name,qty,unit,chosen_store,price,baseUnit,pricePerBaseUnit,subtotal
+chicken_breast,Chicken breasts,walmart:27935840,Boneless Skinless Chicken Breasts 4 7 6 1 lb Tray,1,item,walmart,11.72,,,11.72
+ground_turkey,Ground turkey,walmart:19593627,Butterball All Natural 85 15 Lean Fresh Ground Turkey 1 25 lbs Tray,1,item,walmart,4.96,,,4.96
+eggs,Eggs,walmart:145051970,Great Value Large White Eggs 12 Count,1,item,walmart,1.97,oz,0.435,1.97
+salmon,Salmon,walmart:21656993,Great Value Wild Caught Pink Salmon Skin on Fillets 2 lb Bag Frozen Fish,1,item,walmart,10.47,oz,0.46799999999999997,10.47
+tilapia,Tilapia,walmart:51259015,Great Value Frozen Tilapia Skinless Boneless Fillets 2 lb Bag,1,item,walmart,8.87,oz,87.277,8.87
+tuna,Tuna,walmart:33867594,Great Value Chunk Light Tuna in Water 5 oz 4 Pack,1,item,walmart,3.84,oz,84.19200000000001,3.84
+shrimp,Shrimp,walmart:44391062,Great Value Frozen Raw Small Peeled Deveined Tail off Shrimp 12 oz 60 80 Count per lb,1,item,walmart,5.94,oz,94.495,5.94
+pork_chops,Pork chops,walmart:43852206,Pork Center Cut Loin Chops Thin Boneless 1 0 2 2 lb Tray,1,item,walmart,8.24,,,8.24
+ground_beef,Ground beef,walmart:15136792,93 Lean 7 Fat Lean Ground Beef 1 lb Roll Fresh All Natural,1,item,walmart,7.37,,,7.37
+tofu,Tofu,walmart:351757794,Nature Soy Refrigerated Organic Pressed Firm 14 oz,1,item,,,,,
+cottage_cheese,Cottage cheese,walmart:10315024,Great Value 1 Milkfat Small Curd Lowfat Cottage Cheese 24 oz,1,item,walmart,2.87,oz,0.12,2.87
+greek_yogurt,Greek yogurt,walmart:26559565,Great Value Greek Plain Nonfat Yogurt 32 oz Tub,1,item,walmart,3.36,oz,36.105,3.36
+milk,Milk,walmart:10804537,Great Value Milk 1 Lowfat Half Gallon Plastic Jug,1,item,walmart,1.18,,,1.18
+cheddar_cheese,Cheddar cheese,walmart:34186946,Great Value Block Sharp Cheddar Cheese 8 oz,1,item,walmart,1.87,oz,87.234,1.87
+butter,Butter,walmart:46463029,Great Value Salted Whipped Butter 8 oz Tub,1,item,walmart,2.78,oz,78.348,2.78
+oat_milk,Oat milk,walmart:15332723146,3 pack Oatly Ambient Original Oatmilk Dairy Free Milk 32 fl oz Shelf Stable Carton,1,item,walmart,13.44,,,13.44
+apples,Apples,walmart:44390953,Fresh Gala Apple Each,1,item,walmart,0.68,oz,0.20800000000000002,0.68
+bananas,Bananas,walmart:44390948,Fresh Banana Each,1,item,walmart,0.19,oz,0.030625,0.19
+mixed_berries,Mixed berries,walmart:10543668,Great Value Frozen Whole Berry Medley 16 oz,1,item,walmart,3.52,oz,52.22,3.52
+spinach,Spinach,walmart:431513547,Great Value Chopped Spinach 12 oz Frozen,1,item,walmart,1.26,oz,26.105,1.26
+broccoli,Broccoli,walmart:735585383,Great Value Frozen Broccoli Florets 12 oz Steamable Bag,1,item,walmart,1.16,oz,1.6969999999999998,1.16
+bell_peppers,Bell peppers,walmart:44390945,Fresh Green Bell Pepper Each,1,item,walmart,0.58,,,0.58
+avocados,Avocados,walmart:44390949,Fresh Hass Avocados Each,1,item,walmart,0.62,,,0.62
+onions,Onions,walmart:51259208,Fresh Whole White Onions Each,1,item,walmart,0.91,oz,0.061875,0.91
+potatoes,Potatoes,walmart:10447837,Fresh Whole Russet Potatoes 5lb bag,1,item,walmart,3.97,oz,6.112125,3.97
+lettuce,Lettuce,walmart:10402886,Dole Fresh Favorites Shredded Lettuce 10 Oz,1,item,walmart,1.97,oz,0.161,1.97
+jasmine_rice,Jasmine rice,walmart:34799203,Golden Star Thai Hom Mali Jasmine Rice 10 lbs,1,item,walmart,14.57,oz,5.791,14.57
+oats,Oats,walmart:10312438,Quaker Oats Old Fashioned Oatmeal 18 oz Canister,1,item,walmart,2.98,oz,98.166,2.98
+whole_wheat_pasta,Whole wheat pasta,walmart:173699635,Great Value Whole Wheat Penne 16 oz,1,item,walmart,1.66,oz,66.104,1.66
+quinoa,Quinoa,walmart:51258806,Great Value Organic White Quinoa 32 oz,1,item,walmart,6.22,oz,22.194000000000003,6.22
+bread,Bread,walmart:10804551,Great Value 100 Whole Wheat Round Top Bread 20 oz,1,item,walmart,1.97,oz,9.799,1.97
+tortillas,Tortillas,walmart:10309357,Mission Super Soft Flour Tortillas Soft Taco Size 10 Count,1,item,walmart,2.78,oz,78.15899999999999,2.78
+olive_oil,Olive oil,walmart:10315103,Great Value Classic Olive Oil 17 fl oz,1,item,walmart,5.94,,,5.94
+peanut_butter,Peanut butter,walmart:47375932,Great Value Creamy Peanut Butter Spread 64 oz,1,item,walmart,6.47,oz,47.101000000000006,6.47
+black_beans,Black beans,walmart:10534038,Great Value Black Beans 15 oz Can,1,item,walmart,0.86,oz,8.657,0.86
+chickpeas,Chickpeas,walmart:10534041,Great Value Garbanzos Chick Peas 15 5 oz,1,item,walmart,0.86,oz,8.655,0.86
+tomatoes,Tomatoes,walmart:10415151,Great Value Diced Tomatoes in Tomato Juice 28 oz,1,item,walmart,1.48,oz,4.853,1.48
+chicken_broth,Chicken broth,walmart:10899013,Great Value Chicken Broth 32 oz Carton Shelf Stable Ambient Gluten Free,1,item,walmart,1.5,oz,5.047,1.5
+almonds,Almonds,walmart:386300370,Great Value Sliced Almonds 4 oz,1,item,walmart,3.48,oz,48.87,3.48
+mixed_nuts,Mixed nuts,walmart:970593525,Great Value Mixed Nuts with Peanuts 27 oz,1,item,walmart,9.58,oz,58.355,9.58
+popcorn,Popcorn,walmart:37911092,Orville Redenbacher s Movie Theater Butter Popcorn Microwave Popcorn Mini Bags 12 Count Pack of 6,1,item,walmart,4.78,oz,78.266,4.78
+dark_chocolate,Dark chocolate,walmart:927645419,Great Value Dark Chocolate Bar 3 52 oz,1,item,walmart,1.86,oz,86.52799999999999,1.86
+pork_loin,Pork loin,sams:15607106819,Member's Mark Whole Boneless Pork Loin,1,item,,,,,

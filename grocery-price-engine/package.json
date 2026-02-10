@@ -1,0 +1,15 @@
+{
+  "name": "grocery-price-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "run:once": "node src/index.js",
+    "run:cron": "node src/runner.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^24.12.0"
+  }
+}

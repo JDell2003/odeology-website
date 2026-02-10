@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script>
+    try {
+      const saved = localStorage.getItem('ode_theme');
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+    } catch {}
+  </script>
+</head>
+<body>
+  <div class="admin-shell">
+    <div class="admin-card">
+      <div class="admin-header">
+        <div class="admin-header-left">
+          <div class="admin-badge">odeology_</div>
+          <h1 class="admin-title">Admin</h1>
+          <p class="admin-sub" id="admin-status">Checking…</p>
+        </div>
+        <div class="admin-header-right">
+          <a class="admin-close" href="/" aria-label="Back to home">×</a>
+          <button class="btn btn-ghost admin-theme" id="admin-theme-toggle" type="button" aria-label="Toggle theme">Theme</button>
+          <a class="btn btn-ghost admin-home" href="/">Back to site</a>
+        </div>
+      </div>
+
+      <div class="admin-login hidden" id="admin-login">
+        <h2 class="admin-h2">Sign in</h2>
+        <p class="admin-note">Enter username + passcode.</p>
+        <form id="admin-login-form" class="admin-form">
+          <label class="admin-label">Username</label>
+          <input class="admin-input" type="text" id="admin-username" autocomplete="username" required />
+          <label class="admin-label">Passcode</label>
+          <input class="admin-input" type="text" id="admin-passcode" inputmode="numeric" autocomplete="one-time-code" required />
+          <button type="submit" class="btn btn-primary admin-submit">Sign in</button>
+        </form>
+        <p class="admin-error hidden" id="admin-error"></p>
+      </div>
+
+        <div class="admin-app hidden" id="admin-app">
+          <div class="admin-topbar">
+            <div class="admin-tabs">
+              <button class="admin-tab active" data-tab="accounts">Accounts</button>
+              <button class="admin-tab" data-tab="leads">Leads</button>
+              <button class="admin-tab" data-tab="guests">Guests</button>
+              <button class="admin-tab" data-tab="data">Data</button>
+              <button class="admin-tab" data-tab="orders">Orders</button>
+              <button class="admin-tab" data-tab="messages">Messages</button>
+            </div>
+            <button class="btn btn-ghost admin-logout" id="admin-logout">Log out</button>
+          </div>
+
+          <div class="admin-grid">
+            <div class="admin-panel" id="admin-list">
+              <div class="admin-panel-head">
+                <h2 class="admin-h2" id="admin-list-title">Accounts</h2>
+                <button class="btn btn-ghost admin-refresh" id="admin-refresh">Refresh</button>
+              </div>
+              <div class="admin-bulk hidden" id="admin-bulkbar" aria-live="polite">
+                <div class="admin-bulk-left">
+                  <span class="admin-bulk-count"><span id="admin-selected-count">0</span> selected</span>
+                </div>
+                <div class="admin-bulk-right">
+                  <button class="btn btn-ghost" id="admin-select-all" type="button">Select all</button>
+                  <button class="btn btn-ghost" id="admin-clear-selected" type="button">Clear</button>
+                  <button class="btn btn-primary" id="admin-delete-selected" type="button">Delete</button>
+                </div>
+              </div>
+              <div class="admin-items" id="admin-items"></div>
+            </div>
+
+            <div class="admin-panel" id="admin-detail">
+              <div class="admin-panel-head">
+                <h2 class="admin-h2" id="admin-detail-title">Details</h2>
+              </div>
+              <div class="admin-detail-body" id="admin-detail-body">
+                <p class="admin-muted">Select an item.</p>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js?v=4"></script>
+</body>
+</html>

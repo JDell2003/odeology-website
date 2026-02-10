@@ -1,0 +1,292 @@
+:root {
+    --ts-max: 1180px;
+}
+
+.training-status-page .ts-main {
+    padding: 28px 18px 60px;
+}
+
+.training-status-page .ts-header {
+    max-width: var(--ts-max);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.training-status-page .ts-header h1 {
+    margin: 0.25rem 0 0;
+    letter-spacing: -0.03em;
+}
+
+.training-status-page .ts-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.training-status-page .ts-grid {
+    max-width: var(--ts-max);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.training-status-page .ts-profile {
+    padding: 16px;
+}
+
+.training-status-page .ts-profile-top {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.training-status-page .ts-avatar {
+      width: 104px;
+      height: 104px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+      cursor: pointer;
+  }
+
+html[data-theme="light"] .training-status-page .ts-avatar {
+    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.training-status-page .ts-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.training-status-page .ts-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 34px;
+    letter-spacing: -0.02em;
+    opacity: 0.8;
+}
+
+.training-status-page .ts-avatar-edit {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.35);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 2;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+html[data-theme="light"] .training-status-page .ts-avatar-edit {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    color: #111;
+}
+
+.training-status-page .ts-avatar-edit:hover {
+      transform: translateY(-1px);
+      background: rgba(231, 163, 77, 0.35);
+  }
+
+.training-status-page .ts-avatar-edit:active {
+      transform: translateY(0);
+}
+
+.training-status-page .ts-avatar-edit:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(231, 163, 77, 0.35), 0 10px 24px rgba(0, 0, 0, 0.35);
+      border-color: rgba(231, 163, 77, 0.8);
+}
+
+.training-status-page .ts-icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+}
+
+.training-status-page .ts-name {
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    font-size: 20px;
+    line-height: 1.1;
+}
+
+.training-status-page .ts-sub {
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.78;
+}
+
+.training-status-page .ts-chip-row {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.training-status-page .ts-profile-note {
+    margin-top: 12px;
+    font-size: 12px;
+}
+
+.training-status-page .ts-bio {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="light"] .training-status-page .ts-bio {
+    border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+.training-status-page .ts-bio textarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.training-status-page .ts-bio-actions {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.training-status-page .ts-bio-hint {
+    font-size: 12px;
+    opacity: 0.78;
+}
+
+.training-status-page .ts-plan-cta {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(231, 163, 77, 0.28);
+    background: radial-gradient(1000px 220px at 0% 0%, rgba(231, 163, 77, 0.10), rgba(255, 255, 255, 0.02));
+}
+
+html[data-theme="light"] .training-status-page .ts-plan-cta {
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(231, 163, 77, 0.08);
+}
+
+.training-status-page .ts-plan-cta-title {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.training-status-page .ts-plan-cta-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.78;
+}
+
+.training-status-page .ts-stats {
+    padding: 14px;
+}
+
+.training-status-page .ts-alert {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(231, 163, 77, 0.35);
+    background: rgba(231, 163, 77, 0.12);
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+html[data-theme="light"] .training-status-page .ts-alert {
+    border-color: rgba(231, 163, 77, 0.45);
+    background: rgba(231, 163, 77, 0.1);
+}
+
+.training-status-page .ts-stat-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.training-status-page .ts-stat {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: radial-gradient(1000px 220px at 0% 0%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    padding: 12px;
+    min-height: 92px;
+}
+
+html[data-theme="light"] .training-status-page .ts-stat {
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.015);
+}
+
+.training-status-page .ts-stat-label {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.training-status-page .ts-stat-value {
+    margin-top: 8px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    font-size: 22px;
+    line-height: 1.05;
+}
+
+.training-status-page .ts-stat-value.ts-bad { color: #ff6b6b; }
+.training-status-page .ts-stat-value.ts-warn { color: #f6c762; }
+.training-status-page .ts-stat-value.ts-good { color: #00ffb0; }
+
+.training-status-page .ts-stat-sub {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+@media (max-width: 980px) {
+    .training-status-page .ts-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .training-status-page .ts-grid {
+        grid-template-columns: 1fr;
+    }
+    .training-status-page .ts-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .training-status-page .ts-stat-grid {
+        grid-template-columns: 1fr;
+    }
+}

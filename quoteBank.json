@@ -1,0 +1,98 @@
+[
+    {
+        "id":  "hypertrophy_effort",
+        "sourceName":  "Hypertrophy Principles",
+        "principleSummary":  "Most working sets should be challenging, generally around 1–3 reps in reserve, to drive growth without wrecking the next session.",
+        "tags":  [
+                     "effort",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "rir_targets"
+                        ]
+    },
+    {
+        "id":  "progressive_overload",
+        "sourceName":  "Progression Basics",
+        "principleSummary":  "Progressive overload is required: add reps, load, sets, or improve range and control over time.",
+        "tags":  [
+                     "progression",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "double_progression"
+                        ]
+    },
+    {
+        "id":  "volume_sweet_spot",
+        "sourceName":  "Volume Sweet Spot",
+        "principleSummary":  "Volume has a sweet spot for growth; most lifters do well around roughly 10–20 hard sets per muscle per week, adjusted for recovery and time.",
+        "tags":  [
+                     "volume",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "volume_targets"
+                        ]
+    },
+    {
+        "id":  "technique_first",
+        "sourceName":  "Technique Gate",
+        "principleSummary":  "High-risk compounds should stop at technical breakdown rather than sloppy failure to protect joints and keep progress steady.",
+        "tags":  [
+                     "safety",
+                     "compound"
+                 ],
+        "engineHooks":  [
+                            "termination_rules"
+                        ]
+    },
+    {
+        "id":  "cut_preserve",
+        "sourceName":  "Cut Strategy",
+        "principleSummary":  "During a cut, keep intensity high enough to preserve muscle while trimming overall volume modestly.",
+        "tags":  [
+                     "phase_cut",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "phase_volume"
+                        ]
+    },
+    {
+        "id":  "superset_time",
+        "sourceName":  "Time Efficiency",
+        "principleSummary":  "Supersets are reserved for low-risk accessory work to save time without compromising heavy lifts.",
+        "tags":  [
+                     "superset",
+                     "time"
+                 ],
+        "engineHooks":  [
+                            "supersets"
+                        ]
+    },
+    {
+        "id":  "bulk_progress",
+        "sourceName":  "Bulk Momentum",
+        "principleSummary":  "In a bulk, prioritize progressive overload with enough volume to grow while keeping fatigue manageable.",
+        "tags":  [
+                     "phase_bulk",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "phase_volume"
+                        ]
+    },
+    {
+        "id":  "maintain_balance",
+        "sourceName":  "Maintain Balance",
+        "principleSummary":  "Maintain phases emphasize consistency: keep strength practice steady with moderate, sustainable volume.",
+        "tags":  [
+                     "phase_maintain",
+                     "all"
+                 ],
+        "engineHooks":  [
+                            "phase_volume"
+                        ]
+    }
+]

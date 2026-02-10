@@ -1,0 +1,1896 @@
+{
+  "usda:ground turkey": {
+    "cachedAt": 1769654537383,
+    "data": {
+      "fdc_id": 2488871,
+      "description": "GROUND TURKEY",
+      "data_type": "Branded",
+      "calories": 205,
+      "protein_g": 17,
+      "carbs_g": 0,
+      "fat_g": 15.2,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:eggs": {
+    "cachedAt": 1769654537866,
+    "data": {
+      "fdc_id": 577532,
+      "description": "EGGS",
+      "data_type": "Branded",
+      "calories": 136,
+      "protein_g": 13.6,
+      "carbs_g": 0,
+      "fat_g": 9.09,
+      "serving_size": 44,
+      "serving_unit": "g",
+      "household_serving": "1 EGG"
+    }
+  },
+  "usda:butter": {
+    "cachedAt": 1769654538297,
+    "data": {
+      "fdc_id": 1932883,
+      "description": "BUTTER",
+      "data_type": "Branded",
+      "calories": 714,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 78.6,
+      "serving_size": 14,
+      "serving_unit": "g",
+      "household_serving": "1 Tbsp"
+    }
+  },
+  "usda:oat milk": {
+    "cachedAt": 1769654538926,
+    "data": {
+      "fdc_id": 2705412,
+      "description": "Oat milk",
+      "data_type": "Survey (FNDDS)",
+      "calories": 45,
+      "protein_g": 0.66,
+      "carbs_g": 5.37,
+      "fat_g": 2.33,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:bananas": {
+    "cachedAt": 1769654539336,
+    "data": {
+      "fdc_id": 173945,
+      "description": "Bananas, dehydrated, or banana powder",
+      "data_type": "SR Legacy",
+      "calories": 1450,
+      "protein_g": 3.89,
+      "carbs_g": 88.3,
+      "fat_g": 1.81,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:mixed berries": {
+    "cachedAt": 1769654539848,
+    "data": {
+      "fdc_id": 2291349,
+      "description": "MIXED BERRIES",
+      "data_type": "Branded",
+      "calories": null,
+      "protein_g": null,
+      "carbs_g": null,
+      "fat_g": null,
+      "serving_size": 40,
+      "serving_unit": "g",
+      "household_serving": "0.33 cup"
+    }
+  },
+  "usda:onions": {
+    "cachedAt": 1769654540403,
+    "data": {
+      "fdc_id": 2709795,
+      "description": "Onions, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 38,
+      "protein_g": 0.86,
+      "carbs_g": 8.46,
+      "fat_g": 0.08,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:ground beef": {
+    "cachedAt": 1769654540792,
+    "data": {
+      "fdc_id": 1942314,
+      "description": "GROUND BEEF",
+      "data_type": "Branded",
+      "calories": 312,
+      "protein_g": 17,
+      "carbs_g": 0,
+      "fat_g": 26.8,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:chicken breasts": {
+    "cachedAt": 1769658414455,
+    "data": {
+      "fdc_id": 2119481,
+      "description": "CHICKEN BREASTS",
+      "data_type": "Branded",
+      "calories": 96,
+      "protein_g": 17.5,
+      "carbs_g": 0,
+      "fat_g": 2.19,
+      "serving_size": 114,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:salmon": {
+    "cachedAt": 1769658419605,
+    "data": {
+      "fdc_id": 1028841,
+      "description": "SALMON",
+      "data_type": "Branded",
+      "calories": 232,
+      "protein_g": 19,
+      "carbs_g": 0,
+      "fat_g": 15.5,
+      "serving_size": 142,
+      "serving_unit": "g",
+      "household_serving": "5 ONZ"
+    }
+  },
+  "usda:tilapia": {
+    "cachedAt": 1769658434040,
+    "data": {
+      "fdc_id": 2504623,
+      "description": "TILAPIA",
+      "data_type": "Branded",
+      "calories": 80,
+      "protein_g": 15,
+      "carbs_g": 0,
+      "fat_g": 1.5,
+      "serving_size": 100,
+      "serving_unit": "MG",
+      "household_serving": "3.5 oz"
+    }
+  },
+  "usda:tuna": {
+    "cachedAt": 1769658437416,
+    "data": {
+      "fdc_id": 2068771,
+      "description": "TUNA",
+      "data_type": "Branded",
+      "calories": 94,
+      "protein_g": 5.66,
+      "carbs_g": 10.4,
+      "fat_g": 3.77,
+      "serving_size": 106,
+      "serving_unit": "g",
+      "household_serving": "3.75 ONZ"
+    }
+  },
+  "usda:shrimp": {
+    "cachedAt": 1769658445404,
+    "data": {
+      "fdc_id": 1899566,
+      "description": "SHRIMP",
+      "data_type": "Branded",
+      "calories": 47,
+      "protein_g": 11.8,
+      "carbs_g": 0,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:pork chops": {
+    "cachedAt": 1769658465722,
+    "data": {
+      "fdc_id": 2524489,
+      "description": "PORK CHOPS",
+      "data_type": "Branded",
+      "calories": 226,
+      "protein_g": 15.5,
+      "carbs_g": 2.38,
+      "fat_g": 17.9,
+      "serving_size": 84,
+      "serving_unit": "MG",
+      "household_serving": "3 oz"
+    }
+  },
+  "usda:tofu": {
+    "cachedAt": 1769658488827,
+    "data": {
+      "fdc_id": 2294522,
+      "description": "TOFU",
+      "data_type": "Branded",
+      "calories": null,
+      "protein_g": null,
+      "carbs_g": null,
+      "fat_g": null,
+      "serving_size": 113,
+      "serving_unit": "g",
+      "household_serving": "4 oz."
+    }
+  },
+  "usda:cottage cheese": {
+    "cachedAt": 1769658503259,
+    "data": {
+      "fdc_id": 2287080,
+      "description": "COTTAGE CHEESE",
+      "data_type": "Branded",
+      "calories": 106,
+      "protein_g": 11.5,
+      "carbs_g": 3.54,
+      "fat_g": 4.42,
+      "serving_size": 113,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:greek yogurt": {
+    "cachedAt": 1769658506323,
+    "data": {
+      "fdc_id": 2035482,
+      "description": "GREEK YOGURT",
+      "data_type": "Branded",
+      "calories": 467,
+      "protein_g": 3.33,
+      "carbs_g": 70,
+      "fat_g": 20,
+      "serving_size": 30,
+      "serving_unit": "g",
+      "household_serving": "2 Tbsp"
+    }
+  },
+  "usda:milk": {
+    "cachedAt": 1769658509176,
+    "data": {
+      "fdc_id": 1909132,
+      "description": "MILK",
+      "data_type": "Branded",
+      "calories": 55,
+      "protein_g": 3.39,
+      "carbs_g": 5.08,
+      "fat_g": 2.12,
+      "serving_size": 236,
+      "serving_unit": "ml",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:cheddar cheese": {
+    "cachedAt": 1769658513221,
+    "data": {
+      "fdc_id": 2057648,
+      "description": "CHEDDAR CHEESE",
+      "data_type": "Branded",
+      "calories": 393,
+      "protein_g": 21.4,
+      "carbs_g": 3.57,
+      "fat_g": 28.6,
+      "serving_size": 28,
+      "serving_unit": "g",
+      "household_serving": "1 ONZ"
+    }
+  },
+  "usda:apples": {
+    "cachedAt": 1769658516574,
+    "data": {
+      "fdc_id": 1545857,
+      "description": "APPLES",
+      "data_type": "Branded",
+      "calories": 52,
+      "protein_g": 0,
+      "carbs_g": 14.3,
+      "fat_g": 0,
+      "serving_size": 154,
+      "serving_unit": "g",
+      "household_serving": "5.5 ONZ"
+    }
+  },
+  "usda:spinach": {
+    "cachedAt": 1769658520065,
+    "data": {
+      "fdc_id": 2099349,
+      "description": "SPINACH",
+      "data_type": "Branded",
+      "calories": 21,
+      "protein_g": 1.67,
+      "carbs_g": 3.33,
+      "fat_g": 0,
+      "serving_size": 120,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:broccoli": {
+    "cachedAt": 1769658522815,
+    "data": {
+      "fdc_id": 2549992,
+      "description": "BROCCOLI",
+      "data_type": "Branded",
+      "calories": 24,
+      "protein_g": 2.35,
+      "carbs_g": 4.71,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "GRM",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:bell peppers": {
+    "cachedAt": 1769658525381,
+    "data": {
+      "fdc_id": 2258588,
+      "description": "Peppers, bell, green, raw",
+      "data_type": "Foundation",
+      "calories": null,
+      "protein_g": 0.715,
+      "carbs_g": 4.78,
+      "fat_g": 0.106,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:avocados": {
+    "cachedAt": 1769658529067,
+    "data": {
+      "fdc_id": 2709223,
+      "description": "Avocado, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 160,
+      "protein_g": 2,
+      "carbs_g": 8.53,
+      "fat_g": 14.66,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:potatoes": {
+    "cachedAt": 1769658532439,
+    "data": {
+      "fdc_id": 576920,
+      "description": "POTATOES",
+      "data_type": "Branded",
+      "calories": 74,
+      "protein_g": 2.7,
+      "carbs_g": 16.9,
+      "fat_g": 0,
+      "serving_size": 148,
+      "serving_unit": "g",
+      "household_serving": "5 TO 6 POTATOES"
+    }
+  },
+  "usda:lettuce": {
+    "cachedAt": 1769658535005,
+    "data": {
+      "fdc_id": 2709789,
+      "description": "Lettuce, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 20,
+      "protein_g": 0.92,
+      "carbs_g": 3.69,
+      "fat_g": 0.1,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:jasmine rice": {
+    "cachedAt": 1769658538810,
+    "data": {
+      "fdc_id": 2456168,
+      "description": "JASMINE RICE",
+      "data_type": "Branded",
+      "calories": 360,
+      "protein_g": 6,
+      "carbs_g": 84,
+      "fat_g": 0,
+      "serving_size": 50,
+      "serving_unit": "g",
+      "household_serving": "0.25 cup"
+    }
+  },
+  "usda:oats": {
+    "cachedAt": 1769658555643,
+    "data": {
+      "fdc_id": 2020713,
+      "description": "OATS",
+      "data_type": "Branded",
+      "calories": 375,
+      "protein_g": 12.5,
+      "carbs_g": 67.5,
+      "fat_g": 6.25,
+      "serving_size": 40,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:whole wheat pasta": {
+    "cachedAt": 1769658584871,
+    "data": {
+      "fdc_id": 1865558,
+      "description": "WHOLE WHEAT PASTA",
+      "data_type": "Branded",
+      "calories": 357,
+      "protein_g": 10.7,
+      "carbs_g": 76.8,
+      "fat_g": 2.68,
+      "serving_size": 56,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:quinoa": {
+    "cachedAt": 1769658607911,
+    "data": {
+      "fdc_id": 1858805,
+      "description": "QUINOA",
+      "data_type": "Branded",
+      "calories": 107,
+      "protein_g": 2.86,
+      "carbs_g": 20,
+      "fat_g": 1.79,
+      "serving_size": 140,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:bread": {
+    "cachedAt": 1769658620871,
+    "data": {
+      "fdc_id": 1850717,
+      "description": "BREAD",
+      "data_type": "Branded",
+      "calories": 240,
+      "protein_g": 8,
+      "carbs_g": 50,
+      "fat_g": 1,
+      "serving_size": 50,
+      "serving_unit": "g",
+      "household_serving": "0.1 BREAD"
+    }
+  },
+  "usda:tortillas": {
+    "cachedAt": 1769658626444,
+    "data": {
+      "fdc_id": 2092058,
+      "description": "TORTILLAS",
+      "data_type": "Branded",
+      "calories": 359,
+      "protein_g": 7.32,
+      "carbs_g": 51.2,
+      "fat_g": 14.6,
+      "serving_size": 41,
+      "serving_unit": "g",
+      "household_serving": "1 TORTILLA"
+    }
+  },
+  "usda:olive oil": {
+    "cachedAt": 1769658629825,
+    "data": {
+      "fdc_id": 2710186,
+      "description": "Olive oil",
+      "data_type": "Survey (FNDDS)",
+      "calories": 900,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 100,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:peanut butter": {
+    "cachedAt": 1769658640266,
+    "data": {
+      "fdc_id": 2707537,
+      "description": "Peanut butter",
+      "data_type": "Survey (FNDDS)",
+      "calories": 598,
+      "protein_g": 22.21,
+      "carbs_g": 22.31,
+      "fat_g": 51.36,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:black beans": {
+    "cachedAt": 1769658647970,
+    "data": {
+      "fdc_id": 2128757,
+      "description": "BLACK BEANS",
+      "data_type": "Branded",
+      "calories": 141,
+      "protein_g": 8.24,
+      "carbs_g": 23.5,
+      "fat_g": 0.59,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:chickpeas": {
+    "cachedAt": 1769658650918,
+    "data": {
+      "fdc_id": 2068232,
+      "description": "CHICKPEAS",
+      "data_type": "Branded",
+      "calories": 128,
+      "protein_g": 8,
+      "carbs_g": 20.8,
+      "fat_g": 1.6,
+      "serving_size": 125,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:tomatoes": {
+    "cachedAt": 1769658655424,
+    "data": {
+      "fdc_id": 2709719,
+      "description": "Tomatoes, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 20,
+      "protein_g": 0.82,
+      "carbs_g": 4.04,
+      "fat_g": 0.31,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:chicken broth": {
+    "cachedAt": 1769658669447,
+    "data": {
+      "fdc_id": 1909393,
+      "description": "CHICKEN BROTH",
+      "data_type": "Branded",
+      "calories": 6,
+      "protein_g": 0.42,
+      "carbs_g": 0.83,
+      "fat_g": 0.21,
+      "serving_size": 240,
+      "serving_unit": "ml",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:almonds": {
+    "cachedAt": 1769658686958,
+    "data": {
+      "fdc_id": 2074342,
+      "description": "ALMONDS",
+      "data_type": "Branded",
+      "calories": 633,
+      "protein_g": 23.3,
+      "carbs_g": 13.3,
+      "fat_g": 56.7,
+      "serving_size": 30,
+      "serving_unit": "g",
+      "household_serving": "3 Tbsp"
+    }
+  },
+  "usda:mixed nuts": {
+    "cachedAt": 1769658700984,
+    "data": {
+      "fdc_id": 2431385,
+      "description": "MIXED NUTS",
+      "data_type": "Branded",
+      "calories": 643,
+      "protein_g": 21.4,
+      "carbs_g": 17.9,
+      "fat_g": 53.6,
+      "serving_size": 28,
+      "serving_unit": "g",
+      "household_serving": "1 ONZ"
+    }
+  },
+  "usda:popcorn": {
+    "cachedAt": 1769658710712,
+    "data": {
+      "fdc_id": 2105052,
+      "description": "POPCORN",
+      "data_type": "Branded",
+      "calories": 373,
+      "protein_g": 11.8,
+      "carbs_g": 72.6,
+      "fat_g": 3.92,
+      "serving_size": 51,
+      "serving_unit": "g",
+      "household_serving": "0.25 cup"
+    }
+  },
+  "usda:dark chocolate": {
+    "cachedAt": 1769658713992,
+    "data": {
+      "fdc_id": 2460230,
+      "description": "DARK CHOCOLATE",
+      "data_type": "Branded",
+      "calories": 526,
+      "protein_g": 13.2,
+      "carbs_g": 39.5,
+      "fat_g": 42.1,
+      "serving_size": 38,
+      "serving_unit": "g",
+      "household_serving": "0.25 pieces"
+    }
+  },
+  "usda:v2:chicken breasts": {
+    "cachedAt": 1769735807837,
+    "data": {
+      "fdc_id": 2646170,
+      "gtin_upc": null,
+      "description": "Chicken, breast, boneless, skinless, raw",
+      "data_type": "Foundation",
+      "calories": null,
+      "protein_g": 22.5,
+      "carbs_g": 0,
+      "fat_g": 1.93,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:042222216708": {
+    "cachedAt": 1769735815256,
+    "data": {
+      "fdc_id": 2040540,
+      "gtin_upc": "042222216708",
+      "description": "GROUND TURKEY",
+      "data_type": "Branded",
+      "calories": null,
+      "protein_g": 12.5,
+      "carbs_g": 0,
+      "fat_g": 15.2,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 oz."
+    }
+  },
+  "usda:v2:ground turkey": {
+    "cachedAt": 1769735819308,
+    "data": {
+      "fdc_id": 2488871,
+      "gtin_upc": "089991122496",
+      "description": "GROUND TURKEY",
+      "data_type": "Branded",
+      "calories": 205,
+      "protein_g": 17,
+      "carbs_g": 0,
+      "fat_g": 15.2,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:v2:eggs": {
+    "cachedAt": 1769735822380,
+    "data": {
+      "fdc_id": 747997,
+      "gtin_upc": null,
+      "description": "Eggs, Grade A, Large, egg white",
+      "data_type": "Foundation",
+      "calories": 231,
+      "protein_g": 10.7,
+      "carbs_g": 2.36,
+      "fat_g": 0,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742127088": {
+    "cachedAt": 1769735831285,
+    "data": {
+      "fdc_id": 1664685,
+      "gtin_upc": "078742127088",
+      "description": "LARGE WHITE EGGS",
+      "data_type": "Branded",
+      "calories": 140,
+      "protein_g": 12,
+      "carbs_g": 0,
+      "fat_g": 10,
+      "serving_size": 50,
+      "serving_unit": "g",
+      "household_serving": "1 EGG"
+    }
+  },
+  "usda:v2:salmon": {
+    "cachedAt": 1769735838914,
+    "data": {
+      "fdc_id": 2706284,
+      "gtin_upc": null,
+      "description": "Fish, salmon, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 188,
+      "protein_g": 20.44,
+      "carbs_g": 0,
+      "fat_g": 11.16,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:tilapia": {
+    "cachedAt": 1769735842189,
+    "data": {
+      "fdc_id": 175176,
+      "gtin_upc": null,
+      "description": "Fish, tilapia, raw",
+      "data_type": "SR Legacy",
+      "calories": 96,
+      "protein_g": 20.1,
+      "carbs_g": 0,
+      "fat_g": 1.7,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742252988": {
+    "cachedAt": 1769735846033,
+    "data": {
+      "fdc_id": 2676623,
+      "gtin_upc": "078742252988",
+      "description": "CLEANED & SCALED WHOLE TILAPIA",
+      "data_type": "Branded",
+      "calories": 89,
+      "protein_g": 17.9,
+      "carbs_g": 0,
+      "fat_g": 1.79,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 oz"
+    }
+  },
+  "usda:v2:tuna": {
+    "cachedAt": 1769735850640,
+    "data": {
+      "fdc_id": 2706308,
+      "gtin_upc": null,
+      "description": "Fish, tuna, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 109,
+      "protein_g": 24.4,
+      "carbs_g": 0,
+      "fat_g": 0.49,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742040011": {
+    "cachedAt": 1769735852736,
+    "data": {
+      "fdc_id": 2676191,
+      "gtin_upc": "078742040011",
+      "description": "CHUNK LIGHT TUNA IN WATER, CHUNK LIGHT IN WATER",
+      "data_type": "Branded",
+      "calories": 88,
+      "protein_g": 23,
+      "carbs_g": 0,
+      "fat_g": 0,
+      "serving_size": 113,
+      "serving_unit": "g",
+      "household_serving": "1 can drained"
+    }
+  },
+  "usda:v2:shrimp": {
+    "cachedAt": 1769735857349,
+    "data": {
+      "fdc_id": 1899566,
+      "gtin_upc": "812624010613",
+      "description": "SHRIMP",
+      "data_type": "Branded",
+      "calories": 47,
+      "protein_g": 11.8,
+      "carbs_g": 0,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:upc:078742223179": {
+    "cachedAt": 1769735859654,
+    "data": {
+      "fdc_id": 2462503,
+      "gtin_upc": "078742223179",
+      "description": "PEELED, DEVEINED, TAIL-OFF LARGE RAW SHRIMP",
+      "data_type": "Branded",
+      "calories": 80,
+      "protein_g": 17.9,
+      "carbs_g": 0,
+      "fat_g": 0.89,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:v2:pork chops": {
+    "cachedAt": 1769735860520,
+    "data": {
+      "fdc_id": 2727575,
+      "gtin_upc": null,
+      "description": "Pork, chop, center cut, raw",
+      "data_type": "Foundation",
+      "calories": null,
+      "protein_g": 22.8,
+      "carbs_g": -0.562,
+      "fat_g": 5.48,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:ground beef": {
+    "cachedAt": 1769735863897,
+    "data": {
+      "fdc_id": 1942314,
+      "gtin_upc": "078742269535",
+      "description": "GROUND BEEF",
+      "data_type": "Branded",
+      "calories": 312,
+      "protein_g": 17,
+      "carbs_g": 0,
+      "fat_g": 26.8,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "4 ONZ"
+    }
+  },
+  "usda:upc:076371011167": {
+    "cachedAt": 1769735875932,
+    "data": {
+      "fdc_id": 1932577,
+      "gtin_upc": "076371011167",
+      "description": "PREMIUM TOFU",
+      "data_type": "Branded",
+      "calories": 82,
+      "protein_g": 8.24,
+      "carbs_g": 2.35,
+      "fat_g": 4.71,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "3 ONZ"
+    }
+  },
+  "usda:upc:025484000124": {
+    "cachedAt": 1769735880031,
+    "data": {
+      "fdc_id": 2675296,
+      "gtin_upc": "025484000124",
+      "description": "ORGANIC TOFU EXTRA FIRM",
+      "data_type": "Branded",
+      "calories": 106,
+      "protein_g": 10.6,
+      "carbs_g": 3.53,
+      "fat_g": 5.29,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742147970": {
+    "cachedAt": 1769735886074,
+    "data": {
+      "fdc_id": 2656701,
+      "gtin_upc": "078742147970",
+      "description": "4% SMALL CURD COTTAGE CHEESE",
+      "data_type": "Branded",
+      "calories": 106,
+      "protein_g": 11.5,
+      "carbs_g": 4.42,
+      "fat_g": 4.42,
+      "serving_size": 113,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:upc:078742116730": {
+    "cachedAt": 1769735890064,
+    "data": {
+      "fdc_id": 2656621,
+      "gtin_upc": "078742116730",
+      "description": "2% LOWFAT SMALL CURD COTTAGE CHEESE",
+      "data_type": "Branded",
+      "calories": 88,
+      "protein_g": 11.5,
+      "carbs_g": null,
+      "fat_g": 2.65,
+      "serving_size": 113,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:upc:078742016856": {
+    "cachedAt": 1769735892570,
+    "data": {
+      "fdc_id": 2676178,
+      "gtin_upc": "078742016856",
+      "description": "PLAIN GREEK NONFAT YOGURT, PLAIN",
+      "data_type": "Branded",
+      "calories": 59,
+      "protein_g": 10,
+      "carbs_g": 5.29,
+      "fat_g": 0,
+      "serving_size": 170,
+      "serving_unit": "g",
+      "household_serving": "3/4 cup"
+    }
+  },
+  "usda:upc:078742019055": {
+    "cachedAt": 1769735900869,
+    "data": {
+      "fdc_id": 2486867,
+      "gtin_upc": "078742019055",
+      "description": "VANILLA GREEK NONFAT YOGURT, VANILLA",
+      "data_type": "Branded",
+      "calories": 82,
+      "protein_g": 7.65,
+      "carbs_g": 12.4,
+      "fat_g": 0,
+      "serving_size": 170,
+      "serving_unit": "g",
+      "household_serving": "3/4 cup"
+    }
+  },
+  "usda:upc:078742351865": {
+    "cachedAt": 1769735909420,
+    "data": {
+      "fdc_id": 2676443,
+      "gtin_upc": "078742351865",
+      "description": "WHOLE MILK",
+      "data_type": "Branded",
+      "calories": 62,
+      "protein_g": 3.33,
+      "carbs_g": 5,
+      "fat_g": 3.33,
+      "serving_size": 240,
+      "serving_unit": "mlt",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742351872": {
+    "cachedAt": 1769735912488,
+    "data": {
+      "fdc_id": 2676442,
+      "gtin_upc": "078742351872",
+      "description": "2% MILK REDUCED FAT",
+      "data_type": "Branded",
+      "calories": 50,
+      "protein_g": 3.33,
+      "carbs_g": 5,
+      "fat_g": 1.88,
+      "serving_size": 240,
+      "serving_unit": "mlt",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742085296": {
+    "cachedAt": 1769735916429,
+    "data": {
+      "fdc_id": 2676588,
+      "gtin_upc": "078742085296",
+      "description": "MILD CHEDDAR DELI STYLE SLICED CHEESE, MILD CHEDDAR",
+      "data_type": "Branded",
+      "calories": 421,
+      "protein_g": 21,
+      "carbs_g": 5.26,
+      "fat_g": 31.6,
+      "serving_size": 19,
+      "serving_unit": "g",
+      "household_serving": "1 slice"
+    }
+  },
+  "usda:upc:078742158570": {
+    "cachedAt": 1769735919813,
+    "data": {
+      "fdc_id": 2676639,
+      "gtin_upc": "078742158570",
+      "description": "MEDIUM CHEDDAR DELI STYLE SLICED CHEESE, MEDIUM CHEDDAR",
+      "data_type": "Branded",
+      "calories": 421,
+      "protein_g": 21,
+      "carbs_g": 5.26,
+      "fat_g": 31.6,
+      "serving_size": 19,
+      "serving_unit": "g",
+      "household_serving": "1 slice"
+    }
+  },
+  "usda:upc:078742025933": {
+    "cachedAt": 1769735923700,
+    "data": {
+      "fdc_id": 2676193,
+      "gtin_upc": "078742025933",
+      "description": "SALTED SWEET CREAM BUTTER, SALTED SWEET CREAM",
+      "data_type": "Branded",
+      "calories": 714,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 78.6,
+      "serving_size": 14,
+      "serving_unit": "g",
+      "household_serving": "1 Tbsp"
+    }
+  },
+  "usda:upc:078742016030": {
+    "cachedAt": 1769735933018,
+    "data": {
+      "fdc_id": 2676179,
+      "gtin_upc": "078742016030",
+      "description": "SALTED SWEET CREAM BUTTER, SALTED SWEET CREAM",
+      "data_type": "Branded",
+      "calories": 714,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 78.6,
+      "serving_size": 14,
+      "serving_unit": "g",
+      "household_serving": "1 Tbsp"
+    }
+  },
+  "usda:upc:044100156182": {
+    "cachedAt": 1769735934761,
+    "data": {
+      "fdc_id": 2679447,
+      "gtin_upc": "044100156182",
+      "description": "ORIGINAL OATMILK, ORIGINAL",
+      "data_type": "Branded",
+      "calories": 38,
+      "protein_g": 0.83,
+      "carbs_g": 7.92,
+      "fat_g": 0.62,
+      "serving_size": 240,
+      "serving_unit": "mlt",
+      "household_serving": "1 Cup"
+    }
+  },
+  "usda:upc:044100156199": {
+    "cachedAt": 1769735938298,
+    "data": {
+      "fdc_id": 2679446,
+      "gtin_upc": "044100156199",
+      "description": "ORIGINAL EXTRA CREAMY OATMILK, ORIGINAL",
+      "data_type": "Branded",
+      "calories": 50,
+      "protein_g": 0.83,
+      "carbs_g": 9.17,
+      "fat_g": 1.46,
+      "serving_size": 240,
+      "serving_unit": "mlt",
+      "household_serving": "1 Cup"
+    }
+  },
+  "usda:v2:apples": {
+    "cachedAt": 1769735944135,
+    "data": {
+      "fdc_id": 2709215,
+      "gtin_upc": null,
+      "description": "Apple, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 61,
+      "protein_g": 0.17,
+      "carbs_g": 14.8,
+      "fat_g": 0.15,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:bananas": {
+    "cachedAt": 1769735957190,
+    "data": {
+      "fdc_id": 2709224,
+      "gtin_upc": null,
+      "description": "Banana, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 97,
+      "protein_g": 0.74,
+      "carbs_g": 22.71,
+      "fat_g": 0.28,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742054872": {
+    "cachedAt": 1769735968197,
+    "data": {
+      "fdc_id": 1912828,
+      "gtin_upc": "078742054872",
+      "description": "CHERRY BERRY BLEND WITH STRAWBERRIES, PITTED DARK SWEET CHERRIES, BLUEBERRIES AND PITTED RED TART CHERRIES, CHERRY BERRY BLEND",
+      "data_type": "Branded",
+      "calories": 50,
+      "protein_g": 0.71,
+      "carbs_g": 12.1,
+      "fat_g": 0,
+      "serving_size": 140,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742431048": {
+    "cachedAt": 1769735971268,
+    "data": {
+      "fdc_id": 2505405,
+      "gtin_upc": "078742431048",
+      "description": "BERRY MEDLEY BLACKBERRIES, BLUEBERRIES, STRAWBERRIES AND RASPBERRIES, BERRY MEDLEY",
+      "data_type": "Branded",
+      "calories": 50,
+      "protein_g": 0.71,
+      "carbs_g": 11.4,
+      "fat_g": 0,
+      "serving_size": 140,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742237404": {
+    "cachedAt": 1769735975413,
+    "data": {
+      "fdc_id": 2339039,
+      "gtin_upc": "078742237404",
+      "description": "CHOPPED SPINACH",
+      "data_type": "Branded",
+      "calories": 24,
+      "protein_g": 2.35,
+      "carbs_g": 3.53,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:034700065106": {
+    "cachedAt": 1769735977727,
+    "data": {
+      "fdc_id": 2671758,
+      "gtin_upc": "034700065106",
+      "description": "LEAF SPINACH",
+      "data_type": "Branded",
+      "calories": 17,
+      "protein_g": 1.65,
+      "carbs_g": 2.48,
+      "fat_g": 0,
+      "serving_size": 121,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:v2:broccoli": {
+    "cachedAt": 1769735982033,
+    "data": {
+      "fdc_id": 2709643,
+      "gtin_upc": null,
+      "description": "Broccoli, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 39,
+      "protein_g": 2.57,
+      "carbs_g": 6.27,
+      "fat_g": 0.34,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742249728": {
+    "cachedAt": 1769735990321,
+    "data": {
+      "fdc_id": 2550014,
+      "gtin_upc": "078742249728",
+      "description": "BROCCOLI FLORETS",
+      "data_type": "Branded",
+      "calories": 24,
+      "protein_g": 2.35,
+      "carbs_g": 4.71,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742350967": {
+    "cachedAt": 1769735992676,
+    "data": {
+      "fdc_id": 2550118,
+      "gtin_upc": "078742350967",
+      "description": "CHOPPED GREEN PEPPERS",
+      "data_type": "Branded",
+      "calories": 18,
+      "protein_g": 1.18,
+      "carbs_g": 4.71,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "3/4 cup"
+    }
+  },
+  "usda:v2:bell peppers": {
+    "cachedAt": 1769735996360,
+    "data": {
+      "fdc_id": 2258588,
+      "gtin_upc": null,
+      "description": "Peppers, bell, green, raw",
+      "data_type": "Foundation",
+      "calories": null,
+      "protein_g": 0.715,
+      "carbs_g": 4.78,
+      "fat_g": 0.106,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:avocados": {
+    "cachedAt": 1769735999534,
+    "data": {
+      "fdc_id": 2709223,
+      "gtin_upc": null,
+      "description": "Avocado, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 160,
+      "protein_g": 2,
+      "carbs_g": 8.53,
+      "fat_g": 14.66,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:onions": {
+    "cachedAt": 1769736018729,
+    "data": {
+      "fdc_id": 2709795,
+      "gtin_upc": null,
+      "description": "Onions, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 38,
+      "protein_g": 0.86,
+      "carbs_g": 8.46,
+      "fat_g": 0.08,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:potatoes": {
+    "cachedAt": 1769736025287,
+    "data": {
+      "fdc_id": 576920,
+      "gtin_upc": "629307123344",
+      "description": "POTATOES",
+      "data_type": "Branded",
+      "calories": 74,
+      "protein_g": 2.7,
+      "carbs_g": 16.9,
+      "fat_g": 0,
+      "serving_size": 148,
+      "serving_unit": "g",
+      "household_serving": "5 TO 6 POTATOES"
+    }
+  },
+  "usda:upc:681131328968": {
+    "cachedAt": 1769736031938,
+    "data": {
+      "fdc_id": 2327325,
+      "gtin_upc": "681131328968",
+      "description": "SHREDDED ICEBERG LETTUCE",
+      "data_type": "Branded",
+      "calories": 12,
+      "protein_g": 1.18,
+      "carbs_g": 3.53,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1/2 cups"
+    }
+  },
+  "usda:upc:681131532099": {
+    "cachedAt": 1769736034196,
+    "data": {
+      "fdc_id": 2326422,
+      "gtin_upc": "681131532099",
+      "description": "SHREDDED ICEBERG LETTUCE",
+      "data_type": "Branded",
+      "calories": 12,
+      "protein_g": 1.18,
+      "carbs_g": 2.35,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1.5 cups"
+    }
+  },
+  "usda:v2:jasmine rice": {
+    "cachedAt": 1769736037366,
+    "data": {
+      "fdc_id": 2456168,
+      "gtin_upc": "085968001559",
+      "description": "JASMINE RICE",
+      "data_type": "Branded",
+      "calories": 360,
+      "protein_g": 6,
+      "carbs_g": 84,
+      "fat_g": 0,
+      "serving_size": 50,
+      "serving_unit": "g",
+      "household_serving": "0.25 cup"
+    }
+  },
+  "usda:upc:078742371047": {
+    "cachedAt": 1769736047918,
+    "data": {
+      "fdc_id": 2285567,
+      "gtin_upc": "078742371047",
+      "description": "OLD FASHIONED 100% WHOLE GRAIN OATS, OLD FASHIONED",
+      "data_type": "Branded",
+      "calories": 375,
+      "protein_g": 12.5,
+      "carbs_g": 67.5,
+      "fat_g": 7.5,
+      "serving_size": 40,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:upc:078742371054": {
+    "cachedAt": 1769736051550,
+    "data": {
+      "fdc_id": 2505347,
+      "gtin_upc": "078742371054",
+      "description": "QUICK OATS",
+      "data_type": "Branded",
+      "calories": 350,
+      "protein_g": 12.5,
+      "carbs_g": 67.5,
+      "fat_g": 6.25,
+      "serving_size": 40,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup dry"
+    }
+  },
+  "usda:v2:whole wheat pasta": {
+    "cachedAt": 1769736055856,
+    "data": {
+      "fdc_id": 168916,
+      "gtin_upc": null,
+      "description": "Pasta, whole grain, 51% whole wheat, remaining unenriched semolina, cooked",
+      "data_type": "SR Legacy",
+      "calories": 665,
+      "protein_g": 5.82,
+      "carbs_g": 31.5,
+      "fat_g": 1.5,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742133065": {
+    "cachedAt": 1769736060671,
+    "data": {
+      "fdc_id": 2325931,
+      "gtin_upc": "078742133065",
+      "description": "WHITE ORGANIC QUINOA, WHITE",
+      "data_type": "Branded",
+      "calories": 378,
+      "protein_g": 13.3,
+      "carbs_g": 64.4,
+      "fat_g": 5.56,
+      "serving_size": 45,
+      "serving_unit": "g",
+      "household_serving": "0.25 cup dry"
+    }
+  },
+  "usda:v2:quinoa": {
+    "cachedAt": 1769736064148,
+    "data": {
+      "fdc_id": 1858805,
+      "gtin_upc": "897034002861",
+      "description": "QUINOA",
+      "data_type": "Branded",
+      "calories": 107,
+      "protein_g": 2.86,
+      "carbs_g": 20,
+      "fat_g": 1.79,
+      "serving_size": 140,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742012285": {
+    "cachedAt": 1769736070036,
+    "data": {
+      "fdc_id": 2656644,
+      "gtin_upc": "078742012285",
+      "description": "WHITE ENRICHED SANDWICH BREAD, WHITE",
+      "data_type": "Branded",
+      "calories": 269,
+      "protein_g": 7.69,
+      "carbs_g": 50,
+      "fat_g": 3.85,
+      "serving_size": 26,
+      "serving_unit": "g",
+      "household_serving": "1 slice"
+    }
+  },
+  "usda:upc:078742285443": {
+    "cachedAt": 1769736073619,
+    "data": {
+      "fdc_id": 2656980,
+      "gtin_upc": "078742285443",
+      "description": "WHITE ENRICHED ROUND TOP BREAD, WHITE",
+      "data_type": "Branded",
+      "calories": 269,
+      "protein_g": 7.69,
+      "carbs_g": 50,
+      "fat_g": 3.85,
+      "serving_size": 26,
+      "serving_unit": "g",
+      "household_serving": "1 slice"
+    }
+  },
+  "usda:upc:078742294766": {
+    "cachedAt": 1769736076998,
+    "data": {
+      "fdc_id": 2550058,
+      "gtin_upc": "078742294766",
+      "description": "WHITE CORN MEDIUM TORTILLAS, WHITE CORN",
+      "data_type": "Branded",
+      "calories": 217,
+      "protein_g": 4.35,
+      "carbs_g": 43.5,
+      "fat_g": 2.17,
+      "serving_size": 46,
+      "serving_unit": "g",
+      "household_serving": "2 TORTILLAS"
+    }
+  },
+  "usda:upc:048564060009": {
+    "cachedAt": 1769736080020,
+    "data": {
+      "fdc_id": 2080926,
+      "gtin_upc": "048564060009",
+      "description": "CORN TORTILLAS, CORN",
+      "data_type": "Branded",
+      "calories": 213,
+      "protein_g": 4.26,
+      "carbs_g": 42.6,
+      "fat_g": 3.19,
+      "serving_size": 47,
+      "serving_unit": "g",
+      "household_serving": "2 TORTILLAS"
+    }
+  },
+  "usda:upc:070404002825": {
+    "cachedAt": 1769736083605,
+    "data": {
+      "fdc_id": 491423,
+      "gtin_upc": "070404002825",
+      "description": "IMPORTED EXTRA VIRGIN OLIVE OIL",
+      "data_type": "Branded",
+      "calories": 800,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 93.3,
+      "serving_size": 15,
+      "serving_unit": "ml",
+      "household_serving": "1 Tbsp"
+    }
+  },
+  "usda:upc:070404001163": {
+    "cachedAt": 1769736096348,
+    "data": {
+      "fdc_id": 1588267,
+      "gtin_upc": "070404001163",
+      "description": "ROBUST OLIVE OIL",
+      "data_type": "Branded",
+      "calories": 800,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 93.3,
+      "serving_size": 15,
+      "serving_unit": "ml",
+      "household_serving": "1 Tbsp"
+    }
+  },
+  "usda:upc:078742370033": {
+    "cachedAt": 1769736099170,
+    "data": {
+      "fdc_id": 2305261,
+      "gtin_upc": "078742370033",
+      "description": "CREAMY PEANUT BUTTER, CREAMY",
+      "data_type": "Branded",
+      "calories": 562,
+      "protein_g": 21.9,
+      "carbs_g": 21.9,
+      "fat_g": 46.9,
+      "serving_size": 32,
+      "serving_unit": "g",
+      "household_serving": "2 Tbsp."
+    }
+  },
+  "usda:upc:078742370026": {
+    "cachedAt": 1769736103467,
+    "data": {
+      "fdc_id": 2524882,
+      "gtin_upc": "078742370026",
+      "description": "CRUNCHY PEANUT BUTTER, CRUNCHY",
+      "data_type": "Branded",
+      "calories": 562,
+      "protein_g": 21.9,
+      "carbs_g": 25,
+      "fat_g": 46.9,
+      "serving_size": 32,
+      "serving_unit": "g",
+      "household_serving": "2 Tbsp"
+    }
+  },
+  "usda:upc:078742061993": {
+    "cachedAt": 1769736106798,
+    "data": {
+      "fdc_id": 1902705,
+      "gtin_upc": "078742061993",
+      "description": "NO SALT ADDED BLACK BEANS",
+      "data_type": "Branded",
+      "calories": 85,
+      "protein_g": 5.38,
+      "carbs_g": 14.6,
+      "fat_g": 0.38,
+      "serving_size": 130,
+      "serving_unit": "g",
+      "household_serving": "0.5 cup"
+    }
+  },
+  "usda:upc:039400018827": {
+    "cachedAt": 1769736109614,
+    "data": {
+      "fdc_id": 2498313,
+      "gtin_upc": "039400018827",
+      "description": "BLACK BEANS, BLACK",
+      "data_type": "Branded",
+      "calories": 77,
+      "protein_g": 5.38,
+      "carbs_g": 15.4,
+      "fat_g": 0,
+      "serving_size": 130,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:upc:039400017011": {
+    "cachedAt": 1769736112281,
+    "data": {
+      "fdc_id": 2498269,
+      "gtin_upc": "039400017011",
+      "description": "LOW SODIUM GARBANZOS",
+      "data_type": "Branded",
+      "calories": 100,
+      "protein_g": 5.38,
+      "carbs_g": 16.2,
+      "fat_g": 1.54,
+      "serving_size": 130,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:upc:039400017004": {
+    "cachedAt": 1769736114883,
+    "data": {
+      "fdc_id": 2498268,
+      "gtin_upc": "039400017004",
+      "description": "GARBANZOS",
+      "data_type": "Branded",
+      "calories": 92,
+      "protein_g": 4.62,
+      "carbs_g": 15.4,
+      "fat_g": 1.54,
+      "serving_size": 130,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:v2:tomatoes": {
+    "cachedAt": 1769736121494,
+    "data": {
+      "fdc_id": 2709719,
+      "gtin_upc": null,
+      "description": "Tomatoes, raw",
+      "data_type": "Survey (FNDDS)",
+      "calories": 20,
+      "protein_g": 0.82,
+      "carbs_g": 4.04,
+      "fat_g": 0.31,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:upc:078742228143": {
+    "cachedAt": 1769736126351,
+    "data": {
+      "fdc_id": 2549950,
+      "gtin_upc": "078742228143",
+      "description": "DICED TOMATOES IN TOMATO JUICE, TOMATO JUICE",
+      "data_type": "Branded",
+      "calories": 21,
+      "protein_g": 0.83,
+      "carbs_g": 4.13,
+      "fat_g": 0,
+      "serving_size": 121,
+      "serving_unit": "g",
+      "household_serving": "1/2 cup"
+    }
+  },
+  "usda:upc:078742066844": {
+    "cachedAt": 1769736129691,
+    "data": {
+      "fdc_id": 2338814,
+      "gtin_upc": "078742066844",
+      "description": "CHICKEN BROTH, CHICKEN",
+      "data_type": "Branded",
+      "calories": 4,
+      "protein_g": 0.41,
+      "carbs_g": 0.41,
+      "fat_g": 0,
+      "serving_size": 245,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:upc:078742141329": {
+    "cachedAt": 1769736136899,
+    "data": {
+      "fdc_id": 2676634,
+      "gtin_upc": "078742141329",
+      "description": "CHICKEN REDUCED SODIUM BROTH, CHICKEN",
+      "data_type": "Branded",
+      "calories": 4,
+      "protein_g": 0.42,
+      "carbs_g": 0,
+      "fat_g": 0,
+      "serving_size": 240,
+      "serving_unit": "mlt",
+      "household_serving": "1 cup"
+    }
+  },
+  "usda:v2:almonds": {
+    "cachedAt": 1769736141204,
+    "data": {
+      "fdc_id": 2074342,
+      "gtin_upc": "087132500004",
+      "description": "ALMONDS",
+      "data_type": "Branded",
+      "calories": 633,
+      "protein_g": 23.3,
+      "carbs_g": 13.3,
+      "fat_g": 56.7,
+      "serving_size": 30,
+      "serving_unit": "g",
+      "household_serving": "3 Tbsp"
+    }
+  },
+  "usda:upc:041570110706": {
+    "cachedAt": 1769736151504,
+    "data": {
+      "fdc_id": 2672926,
+      "gtin_upc": "041570110706",
+      "description": "LIGHTLY SALTED ALMONDS, LIGHTLY SALTED",
+      "data_type": "Branded",
+      "calories": 607,
+      "protein_g": 21.4,
+      "carbs_g": 17.9,
+      "fat_g": 57.1,
+      "serving_size": 28,
+      "serving_unit": "g",
+      "household_serving": "1 oz"
+    }
+  },
+  "usda:upc:078742095226": {
+    "cachedAt": 1769736155182,
+    "data": {
+      "fdc_id": 2504831,
+      "gtin_upc": "078742095226",
+      "description": "MOUNTAIN TRAIL MIX, MOUNTAIN",
+      "data_type": "Branded",
+      "calories": 467,
+      "protein_g": 13.3,
+      "carbs_g": 50,
+      "fat_g": 26.7,
+      "serving_size": 30,
+      "serving_unit": "g",
+      "household_serving": "1/4 cup"
+    }
+  },
+  "usda:upc:078742022710": {
+    "cachedAt": 1769736158096,
+    "data": {
+      "fdc_id": 2042183,
+      "gtin_upc": "078742022710",
+      "description": "CAJUN A SWEET, SPICY BLEND OF PEANUTS, BUTTER TOFFEE PEANUTS, CAJUN SESAME STICKS, TOASTED CORN, HONEY SESAME STICKS & ALMONDS TRAIL MIX, CAJUN",
+      "data_type": "Branded",
+      "calories": 533,
+      "protein_g": 16.7,
+      "carbs_g": 46.7,
+      "fat_g": 33.3,
+      "serving_size": 30,
+      "serving_unit": "g",
+      "household_serving": "0.25 cup"
+    }
+  },
+  "usda:upc:028190002444": {
+    "cachedAt": 1769736161739,
+    "data": {
+      "fdc_id": 2017891,
+      "gtin_upc": "028190002444",
+      "description": "JOLLY TIME, WHITE POPCORN",
+      "data_type": "Branded",
+      "calories": 333,
+      "protein_g": 12.1,
+      "carbs_g": 78.8,
+      "fat_g": 3.03,
+      "serving_size": 33,
+      "serving_unit": "g",
+      "household_serving": "2 Tbsp"
+    }
+  },
+  "usda:upc:023896800271": {
+    "cachedAt": 1769736169311,
+    "data": {
+      "fdc_id": 2144273,
+      "gtin_upc": "023896800271",
+      "description": "HOMESTYLE BUTTER FLAVOR PREMIUM POPCORN, HOMESTYLE BUTTER",
+      "data_type": "Branded",
+      "calories": 520,
+      "protein_g": 8,
+      "carbs_g": 48,
+      "fat_g": 32,
+      "serving_size": 25,
+      "serving_unit": "g",
+      "household_serving": "2 Tbsp"
+    }
+  },
+  "usda:upc:078742000626": {
+    "cachedAt": 1769736172846,
+    "data": {
+      "fdc_id": 2542744,
+      "gtin_upc": "078742000626",
+      "description": "DARK CHOCOLATE 60% CACAO CHIPS, DARK CHOCOLATE",
+      "data_type": "Branded",
+      "calories": 533,
+      "protein_g": 6.67,
+      "carbs_g": 53.3,
+      "fat_g": 33.3,
+      "serving_size": 15,
+      "serving_unit": "g",
+      "household_serving": "1 Tbsp."
+    }
+  },
+  "usda:upc:078742375847": {
+    "cachedAt": 1769736175509,
+    "data": {
+      "fdc_id": 2505391,
+      "gtin_upc": "078742375847",
+      "description": "VANILLA DARK CHOCOLATE, VANILLA",
+      "data_type": "Branded",
+      "calories": 515,
+      "protein_g": 6.06,
+      "carbs_g": 51.5,
+      "fat_g": 30.3,
+      "serving_size": 33,
+      "serving_unit": "iu",
+      "household_serving": "1/3 pack"
+    }
+  },
+  "usda:upc:078742126647": {
+    "cachedAt": 1769938786995,
+    "data": {
+      "fdc_id": 2504966,
+      "gtin_upc": "078742126647",
+      "description": "SKINLESS TILAPIA FILLETS",
+      "data_type": "Branded",
+      "calories": 80,
+      "protein_g": 17,
+      "carbs_g": 0,
+      "fat_g": 1.34,
+      "serving_size": 112,
+      "serving_unit": "g",
+      "household_serving": "about 1 fillet"
+    }
+  },
+  "usda:upc:080000516848": {
+    "cachedAt": 1769938801012,
+    "data": {
+      "fdc_id": 2440713,
+      "gtin_upc": "080000516848",
+      "description": "CHUNK LIGHT TUNA IN WATER, CHUNK LIGHT IN WATER",
+      "data_type": "Branded",
+      "calories": 80,
+      "protein_g": 17.9,
+      "carbs_g": 0,
+      "fat_g": 0.89,
+      "serving_size": 56,
+      "serving_unit": "g",
+      "household_serving": "2 ONZ"
+    }
+  },
+  "usda:upc:085696608044": {
+    "cachedAt": 1769938841305,
+    "data": {
+      "fdc_id": 2026772,
+      "gtin_upc": "085696608044",
+      "description": "FOR ENTREES, SALADS AND DESSERTS",
+      "data_type": "Branded",
+      "calories": 59,
+      "protein_g": 7.06,
+      "carbs_g": 2.35,
+      "fat_g": 2.94,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "3 ONZ"
+    }
+  },
+  "usda:v2:tofu": {
+    "cachedAt": 1769938841810,
+    "data": {
+      "fdc_id": 167722,
+      "gtin_upc": null,
+      "description": "Tofu yogurt",
+      "data_type": "SR Legacy",
+      "calories": 94,
+      "protein_g": 3.5,
+      "carbs_g": 16,
+      "fat_g": 1.8,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  },
+  "usda:v2:bread": {
+    "cachedAt": 1769938894626,
+    "data": {
+      "fdc_id": 1850717,
+      "gtin_upc": "826846132022",
+      "description": "BREAD",
+      "data_type": "Branded",
+      "calories": 240,
+      "protein_g": 8,
+      "carbs_g": 50,
+      "fat_g": 1,
+      "serving_size": 50,
+      "serving_unit": "g",
+      "household_serving": "0.1 BREAD"
+    }
+  },
+  "usda:v2:tortillas": {
+    "cachedAt": 1769938895744,
+    "data": {
+      "fdc_id": 2707823,
+      "gtin_upc": null,
+      "description": "Tortilla, corn",
+      "data_type": "Survey (FNDDS)",
+      "calories": 218,
+      "protein_g": 5.7,
+      "carbs_g": 44.64,
+      "fat_g": 2.85,
+      "serving_size": null,
+      "serving_unit": "",
+      "household_serving": ""
+    }
+  }
+}

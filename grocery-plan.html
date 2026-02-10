@@ -1,0 +1,386 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Grocery Plan · odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="final-page">
+    <div class="grain"></div>
+
+    <section class="plan-page" id="plan-page">
+        <button class="plan-page-close" id="plan-cta-close" type="button" aria-label="Close">×</button>
+        <div class="plan-shell">
+            <div class="plan-top">
+                <div class="plan-top-left">
+                    <h1>Your Grocery + Meal Plan</h1>
+                    <p class="ns-muted">Built from your selections, budget, and macro targets.</p>
+                    <div class="plan-top-actions">
+                    </div>
+                </div>
+                <div class="plan-summary-bar" id="plan-macros">
+                    <div class="summary-item">
+                        <span class="label">Store</span>
+                        <span class="value" id="p-store">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Calories</span>
+                        <span class="value" id="p-cal">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Protein</span>
+                        <span class="value" id="p-pro">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Carbs</span>
+                        <span class="value" id="p-car">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Fats</span>
+                        <span class="value" id="p-fat">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Projected Budget</span>
+                        <span class="value" id="p-budget">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plan-grid">
+                <section class="plan-card weekly-list" id="grocery-list">
+                    <div class="card-head">
+                        <h3>Weekly grocery list</h3>
+                        <span class="pill" id="store-pill">Store</span>
+                        <button class="mobile-drawer-close" id="mobile-grocery-close" type="button" aria-label="Close grocery list">×</button>
+                    </div>
+                    <div class="grocery-cost-summary">
+                        <div class="cost-item">
+                            <span class="label">Avg Weekly</span>
+                            <span class="value" id="p-weekly-cost">—</span>
+                        </div>
+                        <div class="cost-item">
+                            <span class="label">Avg Monthly</span>
+                            <span class="value" id="p-monthly-cost">—</span>
+                        </div>
+                    </div>
+                    <div class="popup-row hidden" id="popup-row">
+                        <div class="ns-muted tight" id="popup-error"></div>
+                        <button class="popup-retry" id="popup-retry" type="button">Retry popup</button>
+                    </div>
+                    <div class="grocery-list" id="grocery-list-items"></div>
+                </section>
+
+                <div class="plan-stack">
+                    <section class="plan-card meal-split" id="meal-plan">
+                        <div class="card-head">
+                            <h3>Your daily meals (auto-generated)</h3>
+                            <div class="pill-group">
+                                <span class="pill">Per day</span>
+                                <span class="pill macro-accuracy-pill" id="macro-accuracy-pill">—</span>
+                            </div>
+                        </div>
+                        <div class="meal-grid" id="meal-grid"></div>
+                        <div class="macro-summary-row">
+                            <div class="macro-col">
+                                <span class="macro-label">Calories</span>
+                                <span class="macro-target" id="target-cal">—</span>
+                                <span class="macro-actual" id="actual-cal">—</span>
+                            </div>
+                            <div class="macro-col">
+                                <span class="macro-label">Protein</span>
+                                <span class="macro-target" id="target-pro">—</span>
+                                <span class="macro-actual" id="actual-pro">—</span>
+                            </div>
+                            <div class="macro-col">
+                                <span class="macro-label">Carbs</span>
+                                <span class="macro-target" id="target-carb">—</span>
+                                <span class="macro-actual" id="actual-carb">—</span>
+                            </div>
+                            <div class="macro-col">
+                                <span class="macro-label">Fat</span>
+                                <span class="macro-target" id="target-fat">—</span>
+                                <span class="macro-actual" id="actual-fat">—</span>
+                            </div>
+                        </div>
+                        <div class="macro-note">
+                            <p id="macro-note-text">
+                                <strong id="macro-note-headline">You're on track!</strong>
+                                <span id="macro-note-dynamic">We aim for tight targets: <strong>Protein ±5%</strong> (most important for muscle), <strong>Calories ±10–15%</strong>, and <strong>Carbs/Fat ±10%</strong>. These ranges ensure real results without obsessing over grams.</span>
+                                Want a more precise match? <a href="#" id="customize-link">Join us on Fridays</a> and we'll customize it for you with your preferred foods — it's free! Or <a href="#" id="account-link">create an account</a> to input your own foods and let the system calculate exactly what you need to buy.
+                            </p>
+                        </div>
+                        <div class="macro-warnings hidden" id="macro-warnings"></div>
+                    </section>
+
+                    <!-- Supplements (only shown when a macro is >=15% under target) -->
+                    <section class="plan-card essentials-section hidden" id="supplement-shop">
+                        <div class="card-head">
+                            <h3>Optional Supplements</h3>
+                            <div class="pill-group" id="supplement-shop-pills">
+                                <span class="pill">Optional</span>
+                            </div>
+                        </div>
+                        <div class="essentials-grid" id="supplement-shop-grid"></div>
+                    </section>
+
+                    <section class="plan-card budget-impact" id="budget-summary">
+                        <div class="card-head">
+                            <div class="card-head-group">
+                                <h3>Budget</h3>
+                                <div class="budget-button-group">
+                                    <button class="btn btn-ghost" id="custom-macro-btn" type="button" title="Manually revise your macro targets and re-generate the plan">Make custom macro plan</button>
+                                    <button class="btn btn-ghost" id="undo-btn" type="button" title="Undo changes and restore original plan">Undo</button>
+                                    <button class="btn btn-ghost" id="reconfigure-btn" type="button" title="Recalculate macro targets from your inputs and rebuild the plan">Reconfigure plan</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="budget-breakdown">
+                            <div class="budget-row">
+                                <span class="label">Projected Budget</span>
+                                <span class="value" id="budget-allocated">—</span>
+                            </div>
+                            <div class="budget-row">
+                                <span class="label">Estimated spend</span>
+                                <span class="value" id="budget-estimated">—</span>
+                            </div>
+                            <div class="budget-row">
+                                <span class="label">Estimated taxes</span>
+                                <span class="value" id="budget-taxes">—</span>
+                            </div>
+                            <div class="budget-row">
+                                <span class="label">Total spend</span>
+                                <span class="value" id="budget-total">—</span>
+                            </div>
+                            <div class="budget-row status" id="budget-status">
+                                <span class="status-badge">—</span>
+                            </div>
+                        </div>
+                        <div class="grocery-list hidden" id="budget-summary-body"></div>
+                    </section>
+
+                    <!-- Macro Tracking Essentials Section -->
+                    <section class="plan-card essentials-section" id="macro-essentials">
+                        <div class="card-head">
+                            <h3>Essentials for Tracking Your Macros</h3>
+                            <span class="pill">Recommended</span>
+                        </div>
+                        <p class="essentials-subtitle">Accurate tracking is key to hitting your goals. Check out these tools:</p>
+                        <div class="essentials-grid" id="macro-essentials-grid">
+                            <div class="essential-card">
+                                <div class="essential-image has-carousel">
+                                    <div class="image-carousel">
+                                        <div class="carousel-track">
+                                            <img src="https://m.media-amazon.com/images/I/41gdcA2HWHL._SL1100_.jpg" alt="Digital Food Scale">
+                                            <img src="https://m.media-amazon.com/images/I/717Zw1uzXKL._SL1200_.jpg" alt="Digital Food Scale - Side View">
+                                            <img src="https://m.media-amazon.com/images/I/71WVeaLed2L._SL1500_.jpg" alt="Digital Food Scale - In Use">
+                                        </div>
+                                        <button class="carousel-btn carousel-prev" aria-label="Previous image">‹</button>
+                                        <button class="carousel-btn carousel-next" aria-label="Next image">›</button>
+                                        <div class="carousel-dots">
+                                            <span class="dot active"></span>
+                                            <span class="dot"></span>
+                                            <span class="dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="essential-body">
+                                    <h4>Digital Food Scale</h4>
+                                    <p class="essential-desc">Precision weighing for accurate portion control</p>
+                                    <div class="essential-meta">
+                                        <span class="essential-price">$15.00</span>
+                                        <span class="essential-shipping">Free Shipping</span>
+                                    </div>
+                                    <a href="/shop/food-scale" class="btn btn-primary essential-cta">Purchase</a>
+                                </div>
+                            </div>
+                            <div class="essential-card">
+                                <div class="essential-image has-carousel">
+                                    <div class="image-carousel">
+                                        <div class="carousel-track">
+                                            <img src="https://m.media-amazon.com/images/I/71hvLPhU1gL._AC_SL1500_.jpg" alt="Meal Prep Containers">
+                                            <img src="https://m.media-amazon.com/images/I/61FtcfwMh3L._AC_SL1500_.jpg" alt="Meal Prep Containers - Dimensions">
+                                            <img src="https://m.media-amazon.com/images/I/71+nHjpDalL._AC_SL1500_.jpg" alt="Meal Prep Containers - In Use">
+                                        </div>
+                                        <button class="carousel-btn carousel-prev" aria-label="Previous image">‹</button>
+                                        <button class="carousel-btn carousel-next" aria-label="Next image">›</button>
+                                        <div class="carousel-dots">
+                                            <span class="dot active"></span>
+                                            <span class="dot"></span>
+                                            <span class="dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="essential-body">
+                                    <h4>Meal Prep Containers</h4>
+                                    <p class="essential-desc">35oz, stackable, microwave & dishwasher safe</p>
+                                    <div class="essential-meta">
+                                        <span class="essential-price">$16.50</span>
+                                        <span class="essential-shipping">Free Shipping</span>
+                                    </div>
+                                    <a href="/shop/meal-prep-containers" class="btn btn-primary essential-cta">Purchase</a>
+                                </div>
+                            </div>
+                            <div class="essential-card">
+                                <div class="essential-image has-carousel">
+                                    <div class="image-carousel">
+                                        <div class="carousel-track">
+                                            <img src="https://m.media-amazon.com/images/I/61zRCsefyjL._AC_SL1500_.jpg" alt="Measuring Cup">
+                                            <img src="https://m.media-amazon.com/images/I/61K9Ej4DbEL._AC_SL1500_.jpg" alt="Measuring Cup - Set">
+                                            <img src="https://m.media-amazon.com/images/I/61-n60h7LQL._AC_SL1500_.jpg" alt="Measuring Cup - Detail">
+                                        </div>
+                                        <button class="carousel-btn carousel-prev" aria-label="Previous image">‹</button>
+                                        <button class="carousel-btn carousel-next" aria-label="Next image">›</button>
+                                        <div class="carousel-dots">
+                                            <span class="dot active"></span>
+                                            <span class="dot"></span>
+                                            <span class="dot"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="essential-body">
+                                    <h4>1-Cup Measuring Cup</h4>
+                                    <p class="essential-desc">Clear markings for rice, liquids & more</p>
+                                    <div class="essential-meta">
+                                        <span class="essential-price">$11.25</span>
+                                        <span class="essential-shipping">Free Shipping</span>
+                                    </div>
+                                    <a href="/shop/measuring-cup" class="btn btn-primary essential-cta">Purchase</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="essentials-dots" id="macro-essentials-dots" aria-hidden="true">
+                            <span class="dot active" data-index="0"></span>
+                            <span class="dot" data-index="1"></span>
+                            <span class="dot" data-index="2"></span>
+                        </div>
+                    </section>
+
+                    <!-- Account CTA Section -->
+                    <section class="cta-attention" id="plan-cta">
+                        <div class="cta-attention-glow"></div>
+                        <div class="cta-attention-content">
+                            <div class="cta-attention-icon">
+                                <span class="icon-pulse">✨</span>
+                            </div>
+                            <div class="cta-attention-text">
+                                <strong>Your Custom Meal Plan</strong>
+                                <span class="cta-typewriter-wrap"><span class="cta-typewriter" id="cta-typewriter"></span></span>
+                            </div>
+                        </div>
+                        <div class="cta-attention-action">
+                            <span class="cta-attention-badge">100% Free</span>
+                            <div class="cta-attention-buttons">
+                                <a href="/" class="cta-secondary-btn" id="plan-cta-secondary">Go back Home</a>
+                                <button class="cta-attention-btn" id="plan-cta-primary" type="button">
+                                    <span>Make an Account</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="plan-card food-calendar collapsible hidden" id="food-calendar">
+                        <div class="card-head collapsible-header">
+                            <h3>Track food usage & restocking (optional)</h3>
+                            <span class="pill" id="calendar-range">Projection</span>
+                            <button class="collapse-toggle" type="button" aria-expanded="false">▼</button>
+                        </div>
+                        <div class="collapsible-content hidden">
+                            First restock is automatic the day after signup. After that, drag "Bought today" onto a day to log restocks. Use "Didn't eat" to skip items for a day.
+                        </p>
+                        <div class="calendar-wrap">
+                            <div class="calendar-nav">
+                                <button class="calendar-arrow" id="calendar-prev" type="button" aria-label="Previous month">‹</button>
+                                <div class="calendar-month" id="calendar-month-1"></div>
+                                <button class="calendar-arrow" id="calendar-next" type="button" aria-label="Next month">›</button>
+                            </div>
+                            <div class="calendar-detail" id="calendar-detail">
+                                <div class="calendar-detail-head">
+                                    <div class="calendar-detail-title">Day details</div>
+                                    <div class="calendar-detail-date" id="calendar-detail-date">Select a day</div>
+                                </div>
+                                <div class="calendar-detail-body" id="calendar-detail-body">
+                                    <div class="calendar-detail-empty">Click a day to see items and remaining servings.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="calendar-picker hidden" id="calendar-picker" role="dialog" aria-modal="true" aria-label="Log purchase">
+                            <div class="calendar-picker-card">
+                                <div class="calendar-picker-head">
+                                    <div>
+                                    <div class="calendar-picker-title" id="calendar-picker-title">Log purchase</div>
+                                        <div class="calendar-picker-date" id="calendar-picker-date">Select items bought today</div>
+                                    </div>
+                                    <button class="calendar-picker-close" id="calendar-picker-close" type="button" aria-label="Close">×</button>
+                                </div>
+                                <div class="calendar-picker-body" id="calendar-picker-body"></div>
+                                <div class="calendar-picker-actions">
+                                    <button class="btn btn-ghost" id="calendar-picker-cancel" type="button">Cancel</button>
+                                    <button class="btn btn-primary" id="calendar-picker-save" type="button">Save purchases</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="calendar-legend">
+                            <span class="calendar-legend-item">Buy items</span>
+                            <span class="calendar-legend-item">Running low</span>
+                            <span class="calendar-legend-item">Start date</span>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+            <div class="cheaper-modal hidden" id="cheaper-modal" role="dialog" aria-modal="true" aria-label="Make it cheaper">
+                <div class="cheaper-card">
+                    <div class="cheaper-head">
+                        <div>
+                            <div class="cheaper-title">Make it cheaper</div>
+                            <div class="ns-muted">Pick an option to lower your costs.</div>
+                        </div>
+                        <button class="cheaper-close" id="cheaper-close" type="button" aria-label="Close">×</button>
+                    </div>
+                    <div class="cheaper-options" id="cheaper-options">
+                        <button class="btn btn-primary" id="cheaper-portions" type="button">Reduce portions 10%</button>
+                        <p class="ns-muted tight">Smaller servings, lower cost. Macros stay proportional.</p>
+                        <button class="btn btn-primary" id="cheaper-swap" type="button">Find cheaper foods</button>
+                        <p class="ns-muted tight">Swap expensive items for budget-friendly alternatives.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile-only: slide-out grocery list drawer controls -->
+    <div class="mobile-drawer-backdrop hidden" id="mobile-drawer-backdrop" aria-hidden="true"></div>
+    <button class="mobile-grocery-toggle pill" id="mobile-grocery-toggle" type="button">
+        Click to see grocery list
+    </button>
+
+    <div class="walmart-overlay" id="walmart-overlay" aria-hidden="true">
+        <div class="walmart-overlay-card" role="dialog" aria-modal="true" aria-label="Walmart cart">
+            <div class="walmart-overlay-toolbar">
+                <div class="walmart-overlay-title">Walmart Cart</div>
+                <div class="walmart-overlay-actions">
+                    <button class="btn btn-primary" id="walmart-overlay-popup" type="button">Open cart popup</button>
+                    <a class="btn btn-ghost" href="https://www.walmart.com/cart" target="_blank" rel="noopener">Open in a new tab</a>
+                    <button class="btn btn-ghost" id="walmart-overlay-close" type="button">Close</button>
+                </div>
+            </div>
+            <div class="walmart-overlay-frame">
+                <div class="walmart-overlay-panel">
+                    <div class="walmart-overlay-status" id="walmart-overlay-status">
+                        We will open your Walmart cart in a popup so you can keep this plan open.
+                    </div>
+                    <p class="walmart-overlay-subtext">If you do not see the popup, allow popups for this site and retry.</p>
+                </div>
+            </div>
+            <p class="walmart-overlay-note">Walmart blocks embedded carts, so this uses a popup window instead.</p>
+        </div>
+    </div>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+</body>
+</html>

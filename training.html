@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Training</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="training-page">
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+
+    <!-- SVG Icon Sprite (shared with control panel) -->
+    <svg aria-hidden="true" class="icon-sprite">
+        <symbol id="icon-account" viewBox="0 0 24 24">
+            <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+            <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+            <path d="M15.5 12H7.5"></path>
+            <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+        </symbol>
+        <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+            <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+            <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+        </symbol>
+        <symbol id="icon-bars" viewBox="0 0 24 24">
+            <path d="M5 16.5h14"></path>
+            <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+        </symbol>
+        <symbol id="icon-trend" viewBox="0 0 24 24">
+            <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
+            <path d="M15 8h3v3"></path>
+        </symbol>
+        <symbol id="icon-chat" viewBox="0 0 24 24">
+            <path d="M6.5 7.5h10a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H11l-3.5 2v-2H6.5A1.5 1.5 0 0 1 5 13V9a1.5 1.5 0 0 1 1.5-1.5Z"></path>
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24">
+            <circle cx="10" cy="9" r="2.5"></circle>
+            <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+            <circle cx="16.5" cy="10.5" r="2"></circle>
+            <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+        </symbol>
+        <symbol id="icon-megaphone" viewBox="0 0 24 24">
+            <path d="M5.5 11h2.5L14.5 7v10l-6.5-4H5.5V11Z"></path>
+            <path d="m9 13.5 1.2 3.2"></path>
+        </symbol>
+        <symbol id="icon-dumbbell" viewBox="0 0 24 24">
+            <path d="M7 9v6M17 9v6"></path>
+            <path d="M9.5 10h5M9.5 14h5"></path>
+            <path d="M5.5 10v4M18.5 10v4"></path>
+        </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M7 9h10l-1 12H8L7 9Z"></path>
+            <path d="M9 9V7.5a3 3 0 0 1 6 0V9"></path>
+        </symbol>
+        <symbol id="icon-list-check" viewBox="0 0 24 24">
+            <path d="M9 7h11"></path>
+            <path d="M9 12h11"></path>
+            <path d="M9 17h11"></path>
+            <path d="m4 7 1.25 1.25L7 6.5"></path>
+            <path d="m4 12 1.25 1.25L7 11.5"></path>
+            <path d="m4 17 1.25 1.25L7 16.5"></path>
+        </symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24">
+            <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+        </symbol>
+        <symbol id="icon-folder" viewBox="0 0 24 24">
+            <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+        </symbol>
+    </svg>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">☾</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- CONTROL PANEL (LEFT) -->
+    <aside class="control-panel open" id="control-panel" aria-label="Control panel">
+        <div class="control-panel-header">
+            <button class="control-close" id="control-close" aria-label="Collapse panel">‹</button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">HELP</p>
+            <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">DASH</p>
+            <button class="control-link" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TRAINING PORTAL</p>
+            <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+            <a class="control-link active" href="training.html" aria-current="true"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" href="training-status.html"><span class="icon"><svg><use href="#icon-trend"></use></svg></span><span class="text">Progress</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">COMMUNITY</p>
+            <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TOOLS</p>
+            <a class="control-link" href="store.html"><span class="icon"><svg><use href="#icon-bag"></use></svg></span><span class="text">Store</span></a>
+            <a class="control-link" href="index.html#resources"><span class="icon"><svg><use href="#icon-bars"></use></svg></span><span class="text">Macro Calculator</span></a>
+            <a class="control-link" href="index.html?ns=start&reset=grocery#ns-entry"><span class="icon"><svg><use href="#icon-list-check"></use></svg></span><span class="text">Grocery List Generator</span></a>
+        </div>
+    </aside>
+
+    <!-- TRAINING APP -->
+    <section id="training" class="training-shell">
+        <div class="container">
+            <div id="training-root" class="reveal"></div>
+        </div>
+    </section>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+    <script src="js/avatar-cropper.js"></script>
+    <script src="js/training.js?v=2026-02-08-12"></script>
+</body>
+</html>

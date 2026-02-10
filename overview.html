@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview · odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/overview.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="overview-page" data-require-auth="1">
+    <div class="grain"></div>
+
+    <!-- SVG Icon Sprite -->
+    <svg aria-hidden="true" class="icon-sprite">
+        <symbol id="icon-account" viewBox="0 0 24 24">
+            <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+            <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+            <path d="M15.5 12H7.5"></path>
+            <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+        </symbol>
+        <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+            <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+            <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+        </symbol>
+        <symbol id="icon-bars" viewBox="0 0 24 24">
+            <path d="M5 16.5h14"></path>
+            <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+        </symbol>
+        <symbol id="icon-trend" viewBox="0 0 24 24">
+            <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
+            <path d="M15 8h3v3"></path>
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24">
+            <circle cx="10" cy="9" r="2.5"></circle>
+            <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+            <circle cx="16.5" cy="10.5" r="2"></circle>
+            <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+        </symbol>
+        <symbol id="icon-dumbbell" viewBox="0 0 24 24">
+            <path d="M7 9v6M17 9v6"></path>
+            <path d="M9.5 10h5M9.5 14h5"></path>
+            <path d="M5.5 10v4M18.5 10v4"></path>
+        </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M7 9h10l-1 12H8L7 9Z"></path>
+            <path d="M9 9V7.5a3 3 0 0 1 6 0V9"></path>
+        </symbol>
+        <symbol id="icon-list-check" viewBox="0 0 24 24">
+            <path d="M9 7h11"></path>
+            <path d="M9 12h11"></path>
+            <path d="M9 17h11"></path>
+            <path d="m4 7 1.25 1.25L7 6.5"></path>
+            <path d="m4 12 1.25 1.25L7 11.5"></path>
+            <path d="m4 17 1.25 1.25L7 16.5"></path>
+        </symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24">
+            <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+        </symbol>
+        <symbol id="icon-folder" viewBox="0 0 24 24">
+            <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+        </symbol>
+    </svg>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">&#x1F319;</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Control Panel -->
+    <aside class="control-panel" id="control-panel">
+        <div class="control-panel-header">
+            <button class="control-close" id="control-close" aria-label="Collapse panel">&lsaquo;</button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">HELP</p>
+            <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">DASH</p>
+            <div class="control-pill-row">
+                <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+                    <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+                    <span class="text">Dash</span>
+                </button>
+            </div>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TRAINING PORTAL</p>
+            <a class="control-link active" href="overview.html" aria-current="true"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+            <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" href="training-status.html"><span class="icon"><svg><use href="#icon-trend"></use></svg></span><span class="text">Progress</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">COMMUNITY</p>
+            <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TOOLS</p>
+            <a class="control-link" href="store.html"><span class="icon"><svg><use href="#icon-bag"></use></svg></span><span class="text">Store</span></a>
+            <a class="control-link" href="index.html#resources"><span class="icon"><svg><use href="#icon-bars"></use></svg></span><span class="text">Macro Calculator</span></a>
+            <a class="control-link" href="index.html?ns=start&reset=grocery#ns-entry"><span class="icon"><svg><use href="#icon-list-check"></use></svg></span><span class="text">Grocery List Generator</span></a>
+        </div>
+    </aside>
+
+    <main class="overview-main">
+        <header class="overview-header">
+            <div class="overview-header-left">
+                <p class="eyebrow">Training Portal</p>
+                <h1>Overview</h1>
+                <p class="ns-muted">Everything at a glance. Expand any card for details.</p>
+            </div>
+            <div class="overview-header-right" id="overview-actions">
+                <button class="btn btn-ghost" type="button" id="overview-tour-btn" aria-label="Start quick tour">Tour</button>
+                <a class="btn btn-ghost" href="index.html?ns=start#ns-entry">New macro plan</a>
+                <a class="btn btn-primary" href="grocery-plan.html">Full plan</a>
+            </div>
+        </header>
+        <div class="overview-mini-nav" id="overview-mini-nav" aria-label="Overview sections">
+            <button class="overview-mini-btn active" type="button" data-filter="all">All</button>
+            <button class="overview-mini-btn" type="button" data-filter="nutrition">Nutrition</button>
+            <button class="overview-mini-btn" type="button" data-filter="meals">Meals</button>
+            <button class="overview-mini-btn" type="button" data-filter="restock">Restock</button>
+            <button class="overview-mini-btn" type="button" data-filter="photos">Photos</button>
+            <button class="overview-mini-btn" type="button" data-filter="community">Community</button>
+        </div>
+
+        <section class="overview-section" id="overview">
+            <section class="overview-layout" id="plan-page">
+                <div class="overview-col">
+                    <div class="overview-subsection-head overview-subsection-nutrition" aria-label="Nutrition section" data-overview-section="nutrition">
+                        <div>
+                            <h3>Nutrition</h3>
+                            <p class="ns-muted">Groceries, meals, and restocks.</p>
+                        </div>
+                    </div>
+
+                    <section class="plan-card weekly-list collapsible" id="grocery-list" data-overview-section="nutrition">
+                        <div class="card-head collapsible-header" id="overview-grocery-head" aria-expanded="false">
+                            <h4>Grocery list</h4>
+                            <div class="pill-group">
+                                <span class="pill" id="store-pill">Store</span>
+                                <span class="pill" id="overview-grocery-count">&mdash; items</span>
+                            </div>
+                            <button class="collapse-toggle" type="button" aria-label="Expand grocery list">&#9660;</button>
+                        </div>
+                        <div class="overview-card-summary">
+                            <div class="grocery-month-summary">
+                                <div class="month-info">
+                                    <span class="month-label">This Month</span>
+                                    <span class="month-days" id="overview-month-days">&mdash;</span>
+                                </div>
+                                <div class="month-cost">
+                                    <span class="month-cost-label">Projected spend</span>
+                                    <span class="month-cost-value" id="overview-month-projected">&mdash;</span>
+                                </div>
+                            </div>
+
+                             <div class="overview-grocery-toolbar" id="overview-grocery-toolbar" aria-label="Grocery list view toggle">
+                                 <div class="overview-grocery-toggle" role="tablist" aria-label="Grocery list views">
+                                     <button type="button" class="overview-grocery-toggle-btn overview-grocery-pdf-btn" id="overview-grocery-pdf-phone">PDF</button>
+                                     <button type="button" class="overview-grocery-toggle-btn active" data-grocery-view="cards" role="tab" aria-selected="true">Cards</button>
+                                     <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="list" role="tab" aria-selected="false" title="For those who buy groceries when they run out">Daily Buy List</button>
+                                     <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="weekly" role="tab" aria-selected="false" title="For those who buy groceries once per week">Weekly Buy List</button>
+                                 </div>
+                                 <button type="button" class="btn btn-ghost overview-grocery-print hidden" id="overview-grocery-print">Print/PDF</button>
+                             </div>
+                            <div class="overview-grocery-toggle-hint ns-muted" id="overview-grocery-toggle-hint">
+                                Daily Buy List: For those who buy groceries when they run out.
+                            </div>
+
+                            <div class="overview-empty hidden" id="overview-empty">
+                                <h4>No grocery plan yet</h4>
+                                <p class="ns-muted">Build your grocery plan first. This page stays simple after that.</p>
+                                <a class="btn btn-primary" href="index.html?ns=start#ns-entry">Build my grocery plan</a>
+                            </div>
+                        </div>
+
+                        <div class="overview-grocery-views" id="overview-grocery-views">
+                            <div class="overview-grocery-view" id="overview-grocery-view-cards">
+                                <div class="overview-grocery-scroll" id="overview-grocery-scroll" aria-label="Grocery cards">
+                                    <div class="grocery-list" id="grocery-list-items"></div>
+                                </div>
+                            </div>
+
+                              <div class="overview-grocery-view hidden" id="overview-grocery-view-list" aria-label="Grocery list view">
+                                  <div class="overview-grocery-listview" id="overview-grocery-listview"></div>
+                              </div>
+ 
+                              <div class="overview-grocery-view hidden" id="overview-grocery-view-weekly" aria-label="Weekly grocery list view">
+                                  <div class="overview-grocery-listview overview-grocery-weekly" id="overview-grocery-weeklyview"></div>
+                              </div>
+                          </div>
+                      </section>
+
+                    <section class="plan-card meal-split collapsible" id="meal-plan" data-overview-section="meals">
+                        <div class="card-head collapsible-header" id="overview-meals-head" aria-expanded="false">
+                            <h4>Meals</h4>
+                            <div class="overview-inline-macros" id="overview-macros-line">Daily macros: &mdash;</div>
+                            <button class="collapse-toggle" type="button" aria-label="Expand meals">&#9660;</button>
+                        </div>
+                        <div class="overview-card-summary">
+                            <div class="overview-meals-toolbar" id="overview-meals-toolbar" aria-label="Meals view toggle">
+                                <div class="overview-meals-toggle" role="tablist" aria-label="Meals views">
+                                    <button type="button" class="overview-meals-toggle-btn" data-meals-view="cards" role="tab" aria-selected="false">Cards</button>
+                                    <button type="button" class="overview-meals-toggle-btn overview-meals-pdf-btn" id="overview-meals-pdf">PDF</button>
+                                </div>
+                            </div>
+                            <div class="overview-summary-list" id="overview-meals-summary"></div>
+                        </div>
+                        <div class="collapsible-content hidden" id="overview-meals-details">
+                            <div class="meal-grid" id="meal-grid"></div>
+                        </div>
+
+                        <!-- Optional: populated by main.js when present -->
+                        <div class="hidden">
+                            <span id="target-cal"></span><span id="target-pro"></span><span id="target-carb"></span><span id="target-fat"></span>
+                            <span id="actual-cal"></span><span id="actual-pro"></span><span id="actual-carb"></span><span id="actual-fat"></span>
+                            <span id="macro-accuracy-pill"></span>
+                            <div id="macro-warnings"></div>
+                        </div>
+                    </section>
+
+                    <section class="plan-card overview-tracker collapsible" id="overview-tracker" data-overview-section="restock">
+                        <div class="card-head collapsible-header" id="overview-tracker-head" aria-expanded="false">
+                            <h4><span id="overview-tracker-month">Restock Alert Next 7 days.</span></h4>
+                            <div class="pill-group">
+                                <span class="pill" id="overview-tracker-range">7 days</span>
+                                <span class="pill" id="overview-tracker-next">Next: &mdash;</span>
+                            </div>
+                            <button class="collapse-toggle" type="button" aria-label="Expand restock alerts">&#9660;</button>
+                        </div>
+                        <div class="overview-card-summary">
+                            <div class="overview-summary-list" id="overview-tracker-summary"></div>
+                        </div>
+                        <div class="collapsible-content hidden" id="overview-tracker-details">
+                            <div class="tracker-shell" aria-label="7 day tracker">
+                                <div class="tracker-days" id="overview-week-grid" aria-label="Days"></div>
+                                <div class="tracker-detail" id="overview-tracker-detail" aria-label="Day detail">
+                                    <div class="tracker-detail-head">
+                                        <div class="tracker-detail-title" id="overview-tracker-detail-title">Select a day</div>
+                                        <div class="tracker-detail-sub ns-muted" id="overview-tracker-detail-sub">Restock details show here.</div>
+                                    </div>
+                                    <div class="tracker-detail-body" id="overview-tracker-detail-body"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="overview-col">
+                    <section class="plan-card overview-training" data-overview-section="training">
+                        <div class="card-head">
+                            <h4>Training</h4>
+                        </div>
+                        <div class="overview-card-summary">
+                            <div class="overview-summary-list">
+                                <div class="overview-summary-item">
+                                    <div class="overview-summary-left">
+                                        <div class="overview-summary-title">Coming soon</div>
+                                        <div class="overview-summary-sub ns-muted">Training features are being rebuilt for mobile.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="plan-card overview-photos" id="overview-progress-photos" aria-label="Progress photos" data-overview-section="photos">
+                        <div class="card-head">
+                            <h4>Progress photos</h4>
+                            <div class="pill-group">
+                                <span class="pill">Front + side + back</span>
+                            </div>
+                            <div class="overview-photo-actions">
+                                <button class="btn btn-ghost" type="button" id="overview-photos-open">Add / compare</button>
+                                <button class="btn btn-ghost" type="button" id="overview-photos-viewall">View all</button>
+                            </div>
+                        </div>
+                        <div class="overview-card-summary">
+                            <div class="ns-muted tiny overview-photos-latest" id="overview-photos-latest">Latest: &mdash;</div>
+                            <div class="overview-photo-grid" id="overview-photo-grid">
+                                <div class="overview-photo-slot">
+                                    <div class="overview-photo-label">Front</div>
+                                    <div class="overview-photo-img"><img id="overview-photo-front" alt="Front progress photo"></div>
+                                    <div class="ns-muted tiny" id="overview-photo-front-meta">—</div>
+                                </div>
+                                <div class="overview-photo-slot">
+                                    <div class="overview-photo-label">Side</div>
+                                    <div class="overview-photo-img"><img id="overview-photo-side" alt="Side progress photo"></div>
+                                    <div class="ns-muted tiny" id="overview-photo-side-meta">—</div>
+                                </div>
+                                <div class="overview-photo-slot">
+                                    <div class="overview-photo-label">Back</div>
+                                    <div class="overview-photo-img"><img id="overview-photo-back" alt="Back progress photo"></div>
+                                    <div class="ns-muted tiny" id="overview-photo-back-meta">—</div>
+                                </div>
+                            </div>
+                            <div class="ns-muted tiny" style="margin-top:10px;">Tip: weekly photos (same lighting) show progress clearly.</div>
+                        </div>
+                    </section>
+
+                    <div class="overview-subsection-head overview-subsection-community" aria-label="Leaderboard section" data-overview-section="community">
+                        <div>
+                            <h3>Community</h3>
+                            <p class="ns-muted">Monthly leaderboard (bots fluctuate daily).</p>
+                        </div>
+                        <a class="btn btn-ghost" href="leaderboard.html">Open leaderboard</a>
+                    </div>
+
+                    <section class="plan-card overview-leaderboard" id="overview-leaderboard" data-overview-section="community">
+                        <div class="overview-card-summary">
+                            <div class="overview-lb-box" id="overview-lb-box">
+                                <div class="overview-lb-left">
+                                    <div class="overview-lb-title">Leaderboard</div>
+                                    <div class="overview-lb-sub ns-muted" id="overview-lb-sub">Earn points by logging workouts + check-ins.</div>
+                                </div>
+                                <div class="overview-lb-right">
+                                    <div class="overview-lb-rank" id="overview-lb-rank">&mdash;</div>
+                                    <div class="overview-lb-actions">
+                                        <a class="btn btn-ghost" href="leaderboard.html">View</a>
+                                        <a class="btn btn-primary" href="leaderboard.html#rules">Rules</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overview-lb-mini" id="overview-lb-list" aria-label="Top leaderboard entries"></div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+    <script src="js/overview.js"></script>
+</body>
+</html>

@@ -1,0 +1,983 @@
+{
+  "walmart:10450113": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T01:14:51.598Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T01:14:54.883Z",
+      "lastError": null
+    }
+  },
+  "walmart:10291185": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T01:11:30.463Z",
+      "nextAttemptAt": "2026-01-28T01:41:30.463Z",
+      "lastSuccessAt": null,
+      "lastError": "HTML_NO_PRICE"
+    }
+  },
+  "walmart:27935840": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:05:44.794Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:05:47.872Z",
+      "lastError": null
+    }
+  },
+  "walmart:19593627": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:05:47.872Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:05:51.002Z",
+      "lastError": null
+    }
+  },
+  "walmart:15249535": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:05:51.002Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:05:54.910Z",
+      "lastError": null
+    }
+  },
+  "walmart:145051970": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:05:54.910Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:05:58.929Z",
+      "lastError": null
+    }
+  },
+  "walmart:193637719": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:05:58.929Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:04.874Z",
+      "lastError": null
+    }
+  },
+  "walmart:142616435": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:04.874Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:08.372Z",
+      "lastError": null
+    }
+  },
+  "walmart:21656993": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:08.372Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:11.689Z",
+      "lastError": null
+    }
+  },
+  "walmart:123210797": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:11.689Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:15.041Z",
+      "lastError": null
+    }
+  },
+  "walmart:51259015": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:15.041Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:19.033Z",
+      "lastError": null
+    }
+  },
+  "walmart:33867594": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:19.033Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:23.470Z",
+      "lastError": null
+    }
+  },
+  "walmart:2275113025": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:06:23.470Z",
+      "nextAttemptAt": "2026-01-28T03:36:23.470Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED_OR_HTML"
+    }
+  },
+  "walmart:44391062": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:25.370Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:28.623Z",
+      "lastError": null
+    }
+  },
+  "walmart:2807085743": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:28.623Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:31.349Z",
+      "lastError": null
+    }
+  },
+  "walmart:43852206": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:31.349Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:37.107Z",
+      "lastError": null
+    }
+  },
+  "walmart:51259100": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:37.107Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:41.589Z",
+      "lastError": null
+    }
+  },
+  "walmart:15136792": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:41.589Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:46.610Z",
+      "lastError": null
+    }
+  },
+  "walmart:47183723": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:06:46.610Z",
+      "nextAttemptAt": "2026-01-28T03:36:46.610Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED_OR_HTML"
+    }
+  },
+  "walmart:15136796": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:48.787Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:06:55.152Z",
+      "lastError": null
+    }
+  },
+  "walmart:351757794": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:06:55.152Z",
+      "nextAttemptAt": "2026-01-28T03:36:55.152Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED_OR_HTML"
+    }
+  },
+  "walmart:415634512": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:06:57.016Z",
+      "nextAttemptAt": "2026-01-28T03:36:57.016Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED_OR_HTML"
+    }
+  },
+  "walmart:10315024": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:06:59.180Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:03.857Z",
+      "lastError": null
+    }
+  },
+  "walmart:15716747": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:03.857Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:07.027Z",
+      "lastError": null
+    }
+  },
+  "walmart:10315020": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:07.027Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:10.534Z",
+      "lastError": null
+    }
+  },
+  "walmart:26559565": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:10.534Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:17.558Z",
+      "lastError": null
+    }
+  },
+  "walmart:21291511": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:17.558Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:20.676Z",
+      "lastError": null
+    }
+  },
+  "walmart:10804537": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:20.676Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:23.846Z",
+      "lastError": null
+    }
+  },
+  "walmart:10450116": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:23.846Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:28.010Z",
+      "lastError": null
+    }
+  },
+  "walmart:10450115": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:28.010Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:31.237Z",
+      "lastError": null
+    }
+  },
+  "walmart:34186946": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:31.237Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:35.209Z",
+      "lastError": null
+    }
+  },
+  "walmart:10452477": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:35.210Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:38.591Z",
+      "lastError": null
+    }
+  },
+  "walmart:879148225": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:38.591Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:41.838Z",
+      "lastError": null
+    }
+  },
+  "walmart:46463029": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:41.838Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:45.773Z",
+      "lastError": null
+    }
+  },
+  "walmart:15332723146": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:45.773Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:49.245Z",
+      "lastError": null
+    }
+  },
+  "walmart:44390958": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:49.245Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:51.700Z",
+      "lastError": null
+    }
+  },
+  "walmart:151762086": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:51.700Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:54.323Z",
+      "lastError": null
+    }
+  },
+  "walmart:44390953": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:54.323Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:56.929Z",
+      "lastError": null
+    }
+  },
+  "walmart:44390948": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:56.929Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:07:59.482Z",
+      "lastError": null
+    }
+  },
+  "walmart:51259338": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:07:59.482Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:02.619Z",
+      "lastError": null
+    }
+  },
+  "walmart:10543668": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:02.619Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:06.031Z",
+      "lastError": null
+    }
+  },
+  "walmart:13893738": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:06.031Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:08.985Z",
+      "lastError": null
+    }
+  },
+  "walmart:13893733": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:08.985Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:11.457Z",
+      "lastError": null
+    }
+  },
+  "walmart:431513547": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:11.457Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:14.429Z",
+      "lastError": null
+    }
+  },
+  "walmart:735585383": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:14.429Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:17.199Z",
+      "lastError": null
+    }
+  },
+  "walmart:10790990": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:17.199Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:19.946Z",
+      "lastError": null
+    }
+  },
+  "walmart:16462121926": {
+    "walmart": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:08:19.946Z",
+      "nextAttemptAt": "2026-01-28T03:38:19.946Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED_OR_HTML"
+    }
+  },
+  "walmart:44390945": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:21.232Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:25.109Z",
+      "lastError": null
+    }
+  },
+  "walmart:44390949": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:25.109Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:28.819Z",
+      "lastError": null
+    }
+  },
+  "walmart:44390968": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:28.819Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:32.009Z",
+      "lastError": null
+    }
+  },
+  "walmart:51259388": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:32.009Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:36.500Z",
+      "lastError": null
+    }
+  },
+  "walmart:51259208": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:36.500Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:39.537Z",
+      "lastError": null
+    }
+  },
+  "walmart:10447842": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:39.537Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:42.513Z",
+      "lastError": null
+    }
+  },
+  "walmart:10447837": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:42.513Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:44.975Z",
+      "lastError": null
+    }
+  },
+  "walmart:10449951": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:44.975Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:47.791Z",
+      "lastError": null
+    }
+  },
+  "walmart:253758383": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:47.791Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:51.514Z",
+      "lastError": null
+    }
+  },
+  "walmart:10402886": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:51.514Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:55.668Z",
+      "lastError": null
+    }
+  },
+  "walmart:13893731": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:55.668Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:08:58.284Z",
+      "lastError": null
+    }
+  },
+  "walmart:34799203": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:08:58.284Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:01.365Z",
+      "lastError": null
+    }
+  },
+  "walmart:36874822": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:01.365Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:05.000Z",
+      "lastError": null
+    }
+  },
+  "walmart:46535122": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:05.000Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:07.917Z",
+      "lastError": null
+    }
+  },
+  "walmart:10314926": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:07.917Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:11.199Z",
+      "lastError": null
+    }
+  },
+  "walmart:10312438": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:11.199Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:15.038Z",
+      "lastError": null
+    }
+  },
+  "walmart:47757015": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:15.038Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:18.494Z",
+      "lastError": null
+    }
+  },
+  "walmart:173699635": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:18.494Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:22.577Z",
+      "lastError": null
+    }
+  },
+  "walmart:51258806": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:22.577Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:26.349Z",
+      "lastError": null
+    }
+  },
+  "walmart:1216133016": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:26.349Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:29.584Z",
+      "lastError": null
+    }
+  },
+  "walmart:20659508": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:29.584Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:33.057Z",
+      "lastError": null
+    }
+  },
+  "walmart:10452850": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:33.057Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:37.316Z",
+      "lastError": null
+    }
+  },
+  "walmart:10804551": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:37.316Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:40.966Z",
+      "lastError": null
+    }
+  },
+  "walmart:10309357": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:40.966Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:43.969Z",
+      "lastError": null
+    }
+  },
+  "walmart:14123550": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:43.969Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:47.789Z",
+      "lastError": null
+    }
+  },
+  "walmart:43310156": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:47.789Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:51.044Z",
+      "lastError": null
+    }
+  },
+  "walmart:17334859237": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:51.044Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:54.759Z",
+      "lastError": null
+    }
+  },
+  "walmart:10315103": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:54.759Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:09:57.869Z",
+      "lastError": null
+    }
+  },
+  "walmart:13281641": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:09:57.869Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:01.224Z",
+      "lastError": null
+    }
+  },
+  "walmart:47375932": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:01.224Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:03.917Z",
+      "lastError": null
+    }
+  },
+  "walmart:10308184": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:03.917Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:07.511Z",
+      "lastError": null
+    }
+  },
+  "walmart:10534038": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:07.511Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:10.921Z",
+      "lastError": null
+    }
+  },
+  "walmart:51236573": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:10.921Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:14.791Z",
+      "lastError": null
+    }
+  },
+  "walmart:10534041": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:14.791Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:17.621Z",
+      "lastError": null
+    }
+  },
+  "walmart:653200704": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:17.621Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:19.936Z",
+      "lastError": null
+    }
+  },
+  "walmart:10415151": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:19.936Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:22.954Z",
+      "lastError": null
+    }
+  },
+  "walmart:10415230": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:22.954Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:27.284Z",
+      "lastError": null
+    }
+  },
+  "walmart:10899013": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:27.284Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:30.472Z",
+      "lastError": null
+    }
+  },
+  "walmart:46330157": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:30.472Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:33.474Z",
+      "lastError": null
+    }
+  },
+  "walmart:386300370": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:33.474Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:35.982Z",
+      "lastError": null
+    }
+  },
+  "walmart:5295229969": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:35.982Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:39.251Z",
+      "lastError": null
+    }
+  },
+  "walmart:483617254": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:39.251Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:43.259Z",
+      "lastError": null
+    }
+  },
+  "walmart:970593525": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:43.259Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:46.204Z",
+      "lastError": null
+    }
+  },
+  "walmart:37911088": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:46.204Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:50.169Z",
+      "lastError": null
+    }
+  },
+  "walmart:37911092": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:50.169Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:53.804Z",
+      "lastError": null
+    }
+  },
+  "walmart:927645419": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:53.804Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:56.462Z",
+      "lastError": null
+    }
+  },
+  "walmart:10312257": {
+    "walmart": {
+      "failCount": 0,
+      "lastAttemptAt": "2026-01-28T03:10:56.462Z",
+      "nextAttemptAt": null,
+      "lastSuccessAt": "2026-01-28T03:10:59.253Z",
+      "lastError": null
+    }
+  },
+  "sams:980205982": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:10:59.253Z",
+      "nextAttemptAt": "2026-01-28T03:40:59.253Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:990367661": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:02.361Z",
+      "nextAttemptAt": "2026-01-28T03:41:02.361Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:787100": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:04.206Z",
+      "nextAttemptAt": "2026-01-28T03:41:04.206Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:980254048": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:06.903Z",
+      "nextAttemptAt": "2026-01-28T03:41:06.903Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:980181678": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:08.729Z",
+      "nextAttemptAt": "2026-01-28T03:41:08.729Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:327968": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:11.558Z",
+      "nextAttemptAt": "2026-01-28T03:41:11.558Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:990332036": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:13.242Z",
+      "nextAttemptAt": "2026-01-28T03:41:13.242Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:P03013338": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:16.396Z",
+      "nextAttemptAt": "2026-01-28T03:41:16.396Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:13743550703": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:19.299Z",
+      "nextAttemptAt": "2026-01-28T03:41:19.299Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:13607813672": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:21.326Z",
+      "nextAttemptAt": "2026-01-28T03:41:21.326Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:13627515589": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:24.338Z",
+      "nextAttemptAt": "2026-01-28T03:41:24.338Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:13599361478": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:25.975Z",
+      "nextAttemptAt": "2026-01-28T03:41:25.975Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:15607106819": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:27.822Z",
+      "nextAttemptAt": "2026-01-28T03:41:27.822Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:21100300000": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:30.632Z",
+      "nextAttemptAt": "2026-01-28T03:41:30.632Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  },
+  "sams:13606514622": {
+    "sams": {
+      "failCount": 1,
+      "lastAttemptAt": "2026-01-28T03:11:32.072Z",
+      "nextAttemptAt": "2026-01-28T03:41:32.072Z",
+      "lastSuccessAt": null,
+      "lastError": "BLOCKED"
+    }
+  }
+}

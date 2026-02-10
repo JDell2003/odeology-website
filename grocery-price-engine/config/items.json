@@ -1,0 +1,965 @@
+[
+    {
+        "group":  "chicken_breast",
+        "groupName":  "Chicken breasts",
+        "sku":  "walmart:27935840",
+        "name":  "Boneless Skinless Chicken Breasts 4 7 6 1 lb Tray",
+        "url":  "https://www.walmart.com/ip/Boneless-Skinless-Chicken-Breasts-4-7-6-1-lb-Tray/27935840",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "ground_turkey",
+        "groupName":  "Ground turkey",
+        "sku":  "walmart:19593627",
+        "name":  "Butterball All Natural 85 15 Lean Fresh Ground Turkey 1 25 lbs Tray",
+        "url":  "https://www.walmart.com/ip/Butterball-All-Natural-85-15-Lean-Fresh-Ground-Turkey-1-25-lbs-Tray/19593627",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "ground_turkey",
+        "groupName":  "Ground turkey",
+        "sku":  "walmart:15249535",
+        "name":  "Butterball All Natural Fresh Ground Turkey 85 15 3Ib Tray",
+        "url":  "https://www.walmart.com/ip/Butterball-All-Natural-Fresh-Ground-Turkey-85-15-3Ib-Tray/15249535",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "eggs",
+        "groupName":  "Eggs",
+        "sku":  "walmart:145051970",
+        "name":  "Great Value Large White Eggs 12 Count",
+        "url":  "https://www.walmart.com/ip/Great-Value-Large-White-Eggs-12-Count/145051970",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "eggs",
+        "groupName":  "Eggs",
+        "sku":  "walmart:193637719",
+        "name":  "Great Value Large White Eggs 60 Count",
+        "url":  "https://www.walmart.com/ip/Great-Value-Large-White-Eggs-60-Count/193637719",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "eggs",
+        "groupName":  "Eggs",
+        "sku":  "walmart:142616435",
+        "name":  "Great Value Large White Eggs 36 Count",
+        "url":  "https://www.walmart.com/ip/Great-Value-Large-White-Eggs-36-Count/142616435",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "salmon",
+        "groupName":  "Salmon",
+        "sku":  "walmart:21656993",
+        "name":  "Great Value Wild Caught Pink Salmon Skin on Fillets 2 lb Bag Frozen Fish",
+        "url":  "https://www.walmart.com/ip/Great-Value-Wild-Caught-Pink-Salmon-Skin-on-Fillets-2-lb-Bag-Frozen-Fish/21656993",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tilapia",
+        "groupName":  "Tilapia",
+        "sku":  "walmart:123210797",
+        "name":  "Great Value Frozen Tilapia Skinless Boneless Fillets 4 lb",
+        "url":  "https://www.walmart.com/ip/Great-Value-Frozen-Tilapia-Skinless-Boneless-Fillets-4-lb/123210797",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tilapia",
+        "groupName":  "Tilapia",
+        "sku":  "walmart:51259015",
+        "name":  "Great Value Frozen Tilapia Skinless Boneless Fillets 2 lb Bag",
+        "url":  "https://www.walmart.com/ip/Great-Value-Frozen-Tilapia-Skinless-Boneless-Fillets-2-lb-Bag/51259015",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tuna",
+        "groupName":  "Tuna",
+        "sku":  "walmart:33867594",
+        "name":  "Great Value Chunk Light Tuna in Water 5 oz 4 Pack",
+        "url":  "https://www.walmart.com/ip/Great-Value-Chunk-Light-Tuna-in-Water-5-oz-4-Pack/33867594",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "shrimp",
+        "groupName":  "Shrimp",
+        "sku":  "walmart:2275113025",
+        "name":  "Louisiana Select 1 41 60 P D IQF Natural Shrimp",
+        "url":  "https://www.walmart.com/ip/Louisiana-Select-1-41-60-P-D-IQF-Natural-Shrimp/2275113025",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "shrimp",
+        "groupName":  "Shrimp",
+        "sku":  "walmart:44391062",
+        "name":  "Great Value Frozen Raw Small Peeled Deveined Tail off Shrimp 12 oz 60 80 Count per lb",
+        "url":  "https://www.walmart.com/ip/Great-Value-Frozen-Raw-Small-Peeled-Deveined-Tail-off-Shrimp-12-oz-60-80-Count-per-lb/44391062",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "shrimp",
+        "groupName":  "Shrimp",
+        "sku":  "walmart:2807085743",
+        "name":  "Frozen Raw Jumbo All Natural Peeled Deveined Tail on Shrimp 1 lb Bag 21 30 Count per lb",
+        "url":  "https://www.walmart.com/ip/Frozen-Raw-Jumbo-All-Natural-Peeled-Deveined-Tail-on-Shrimp-1-lb-Bag-21-30-Count-per-lb/2807085743",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "pork_chops",
+        "groupName":  "Pork chops",
+        "sku":  "walmart:43852206",
+        "name":  "Pork Center Cut Loin Chops Thin Boneless 1 0 2 2 lb Tray",
+        "url":  "https://www.walmart.com/ip/Pork-Center-Cut-Loin-Chops-Thin-Boneless-1-0-2-2-lb-Tray/43852206",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "pork_chops",
+        "groupName":  "Pork chops",
+        "sku":  "walmart:51259100",
+        "name":  "Pork Center Cut Loin Chops Bone in Family Pack 3 0 3 5 lb Tray",
+        "url":  "https://www.walmart.com/ip/Pork-Center-Cut-Loin-Chops-Bone-in-Family-Pack-3-0-3-5-lb-Tray/51259100",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "ground_beef",
+        "groupName":  "Ground beef",
+        "sku":  "walmart:15136792",
+        "name":  "93 Lean 7 Fat Lean Ground Beef 1 lb Roll Fresh All Natural",
+        "url":  "https://www.walmart.com/ip/93-Lean-7-Fat-Lean-Ground-Beef-1-lb-Roll-Fresh-All-Natural/15136792",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "ground_beef",
+        "groupName":  "Ground beef",
+        "sku":  "walmart:47183723",
+        "name":  "93 Lean 7 Fat Lean Ground Beef 3 lb Roll Fresh All Natural",
+        "url":  "https://www.walmart.com/ip/93-Lean-7-Fat-Lean-Ground-Beef-3-lb-Roll-Fresh-All-Natural/47183723",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "ground_beef",
+        "groupName":  "Ground beef",
+        "sku":  "walmart:15136796",
+        "name":  "80 Lean 20 Fat Ground Beef Chuck 5 lb Roll Fresh All Natural",
+        "url":  "https://www.walmart.com/ip/80-Lean-20-Fat-Ground-Beef-Chuck-5-lb-Roll-Fresh-All-Natural/15136796",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tofu",
+        "groupName":  "Tofu",
+        "sku":  "walmart:351757794",
+        "name":  "Nature Soy Refrigerated Organic Pressed Firm 14 oz",
+        "url":  "https://www.walmart.com/ip/Nature-Soy-Refrigerated-Organic-Pressed-Firm-14-oz/351757794",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tofu",
+        "groupName":  "Tofu",
+        "sku":  "walmart:415634512",
+        "name":  "Franklin Farms Organic Extra Firm Tofu 14 oz Refrigerated",
+        "url":  "https://www.walmart.com/ip/Franklin-Farms-Organic-Extra-Firm-Tofu-14-oz-Refrigerated/415634512",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "cottage_cheese",
+        "groupName":  "Cottage cheese",
+        "sku":  "walmart:10315024",
+        "name":  "Great Value 1 Milkfat Small Curd Lowfat Cottage Cheese 24 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-1-Milkfat-Small-Curd-Lowfat-Cottage-Cheese-24-oz/10315024",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "cottage_cheese",
+        "groupName":  "Cottage cheese",
+        "sku":  "walmart:15716747",
+        "name":  "Daisy Pure and Natural Low Fat Cottage Cheese 2 Milkfat 24 oz 1 5 lb Tub Refrigerated 13g of Protein per serving",
+        "url":  "https://www.walmart.com/ip/Daisy-Pure-and-Natural-Low-Fat-Cottage-Cheese-2-Milkfat-24-oz-1-5-lb-Tub-Refrigerated-13g-of-Protein-per-serving/15716747",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "cottage_cheese",
+        "groupName":  "Cottage cheese",
+        "sku":  "walmart:10315020",
+        "name":  "Great Value 4 Milkfat Minimum Large Curd Cottage Cheese 24 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-4-Milkfat-Minimum-Large-Curd-Cottage-Cheese-24-oz/10315020",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "greek_yogurt",
+        "groupName":  "Greek yogurt",
+        "sku":  "walmart:26559565",
+        "name":  "Great Value Greek Plain Nonfat Yogurt 32 oz Tub",
+        "url":  "https://www.walmart.com/ip/Great-Value-Greek-Plain-Nonfat-Yogurt-32-oz-Tub/26559565",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "greek_yogurt",
+        "groupName":  "Greek yogurt",
+        "sku":  "walmart:21291511",
+        "name":  "Chobani Non Fat Greek Yogurt Plain 32 Oz Tub",
+        "url":  "https://www.walmart.com/ip/Chobani-Non-Fat-Greek-Yogurt-Plain-32-Oz-Tub/21291511",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "milk",
+        "groupName":  "Milk",
+        "sku":  "walmart:10804537",
+        "name":  "Great Value Milk 1 Lowfat Half Gallon Plastic Jug",
+        "url":  "https://www.walmart.com/ip/Great-Value-Milk-1-Lowfat-Half-Gallon-Plastic-Jug/10804537",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "milk",
+        "groupName":  "Milk",
+        "sku":  "walmart:10450116",
+        "name":  "Great Value 1 Low Fat Milk 1 Gallon Jug",
+        "url":  "https://www.walmart.com/ip/Great-Value-1-Low-Fat-Milk-1-Gallon-Jug/10450116",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "milk",
+        "groupName":  "Milk",
+        "sku":  "walmart:10450115",
+        "name":  "Great Value 2 Reduced Fat Milk Gallon Refrigerated",
+        "url":  "https://www.walmart.com/ip/Great-Value-2-Reduced-Fat-Milk-Gallon-Refrigerated/10450115",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "cheddar_cheese",
+        "groupName":  "Cheddar cheese",
+        "sku":  "walmart:34186946",
+        "name":  "Great Value Block Sharp Cheddar Cheese 8 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Block-Sharp-Cheddar-Cheese-8-oz/34186946",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "cheddar_cheese",
+        "groupName":  "Cheddar cheese",
+        "sku":  "walmart:10452477",
+        "name":  "Great Value Finely Shredded Sharp Cheddar Cheese 16 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Finely-Shredded-Sharp-Cheddar-Cheese-16-oz/10452477",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "butter",
+        "groupName":  "Butter",
+        "sku":  "walmart:879148225",
+        "name":  "Great Value Sweet Cream Salted Butter Twin Pack 16 oz Box 8 Sticks Slow Churned Refrigerated",
+        "url":  "https://www.walmart.com/ip/Great-Value-Sweet-Cream-Salted-Butter-Twin-Pack-16-oz-Box-8-Sticks-Slow-Churned-Refrigerated/879148225",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "butter",
+        "groupName":  "Butter",
+        "sku":  "walmart:46463029",
+        "name":  "Great Value Salted Whipped Butter 8 oz Tub",
+        "url":  "https://www.walmart.com/ip/Great-Value-Salted-Whipped-Butter-8-oz-Tub/46463029",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "oat_milk",
+        "groupName":  "Oat milk",
+        "sku":  "walmart:15332723146",
+        "name":  "3 pack Oatly Ambient Original Oatmilk Dairy Free Milk 32 fl oz Shelf Stable Carton",
+        "url":  "https://www.walmart.com/ip/3-pack-Oatly-Ambient-Original-Oatmilk-Dairy-Free-Milk-32-fl-oz-Shelf-Stable-Carton/15332723146",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "apples",
+        "groupName":  "Apples",
+        "sku":  "walmart:44390958",
+        "name":  "Fresh Gala Apples 3 lb Bag",
+        "url":  "https://www.walmart.com/ip/Fresh-Gala-Apples-3-lb-Bag/44390958",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "apples",
+        "groupName":  "Apples",
+        "sku":  "walmart:151762086",
+        "name":  "Fresh Honeycrisp Apples 3 lb Bag",
+        "url":  "https://www.walmart.com/ip/Fresh-Honeycrisp-Apples-3-lb-Bag/151762086",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "apples",
+        "groupName":  "Apples",
+        "sku":  "walmart:44390953",
+        "name":  "Fresh Gala Apple Each",
+        "url":  "https://www.walmart.com/ip/Fresh-Gala-Apple-Each/44390953",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bananas",
+        "groupName":  "Bananas",
+        "sku":  "walmart:44390948",
+        "name":  "Fresh Banana Each",
+        "url":  "https://www.walmart.com/ip/Fresh-Banana-Each/44390948",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bananas",
+        "groupName":  "Bananas",
+        "sku":  "walmart:51259338",
+        "name":  "Marketside Fresh Organic Bananas Bunch",
+        "url":  "https://www.walmart.com/ip/Marketside-Fresh-Organic-Bananas-Bunch/51259338",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "mixed_berries",
+        "groupName":  "Mixed berries",
+        "sku":  "walmart:10543668",
+        "name":  "Great Value Frozen Whole Berry Medley 16 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Frozen-Whole-Berry-Medley-16-oz/10543668",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "spinach",
+        "groupName":  "Spinach",
+        "sku":  "walmart:13893738",
+        "name":  "Marketside Fresh Spinach 10 oz Bag Fresh",
+        "url":  "https://www.walmart.com/ip/Marketside-Fresh-Spinach-10-oz-Bag-Fresh/13893738",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "spinach",
+        "groupName":  "Spinach",
+        "sku":  "walmart:13893733",
+        "name":  "Marketside Organic Baby Spinach Salad 5 oz Clam Shell Fresh",
+        "url":  "https://www.walmart.com/ip/Marketside-Organic-Baby-Spinach-Salad-5-oz-Clam-Shell-Fresh/13893733",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "spinach",
+        "groupName":  "Spinach",
+        "sku":  "walmart:431513547",
+        "name":  "Great Value Chopped Spinach 12 oz Frozen",
+        "url":  "https://www.walmart.com/ip/Great-Value-Chopped-Spinach-12-oz-Frozen/431513547",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "broccoli",
+        "groupName":  "Broccoli",
+        "sku":  "walmart:735585383",
+        "name":  "Great Value Frozen Broccoli Florets 12 oz Steamable Bag",
+        "url":  "https://www.walmart.com/ip/Great-Value-Frozen-Broccoli-Florets-12-oz-Steamable-Bag/735585383",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "broccoli",
+        "groupName":  "Broccoli",
+        "sku":  "walmart:10790990",
+        "name":  "Birds Eye Broccoli Florets Frozen Vegetables 52 oz Frozen",
+        "url":  "https://www.walmart.com/ip/Birds-Eye-Broccoli-Florets-Frozen-Vegetables-52-oz-Frozen/10790990",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bell_peppers",
+        "groupName":  "Bell peppers",
+        "sku":  "walmart:16462121926",
+        "name":  "Fresh Color Bell Peppers 3 Count",
+        "url":  "https://www.walmart.com/ip/Fresh-Color-Bell-Peppers-3-Count/16462121926",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bell_peppers",
+        "groupName":  "Bell peppers",
+        "sku":  "walmart:44390945",
+        "name":  "Fresh Green Bell Pepper Each",
+        "url":  "https://www.walmart.com/ip/Fresh-Green-Bell-Pepper-Each/44390945",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "avocados",
+        "groupName":  "Avocados",
+        "sku":  "walmart:44390949",
+        "name":  "Fresh Hass Avocados Each",
+        "url":  "https://www.walmart.com/ip/Fresh-Hass-Avocados-Each/44390949",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "avocados",
+        "groupName":  "Avocados",
+        "sku":  "walmart:44390968",
+        "name":  "Small Hass Avocados 5 6 Count Bag",
+        "url":  "https://www.walmart.com/ip/Small-Hass-Avocados-5-6-Count-Bag/44390968",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "avocados",
+        "groupName":  "Avocados",
+        "sku":  "walmart:51259388",
+        "name":  "Fresh Organic Bagged Avocados 3 4 Count",
+        "url":  "https://www.walmart.com/ip/Fresh-Organic-Bagged-Avocados-3-4-Count/51259388",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "onions",
+        "groupName":  "Onions",
+        "sku":  "walmart:51259208",
+        "name":  "Fresh Whole White Onions Each",
+        "url":  "https://www.walmart.com/ip/Fresh-Whole-White-Onions-Each/51259208",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "onions",
+        "groupName":  "Onions",
+        "sku":  "walmart:10447842",
+        "name":  "Fresh Yellow Onions 3 lb Bag",
+        "url":  "https://www.walmart.com/ip/Fresh-Yellow-Onions-3-lb-Bag/10447842",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "potatoes",
+        "groupName":  "Potatoes",
+        "sku":  "walmart:10447837",
+        "name":  "Fresh Whole Russet Potatoes 5lb bag",
+        "url":  "https://www.walmart.com/ip/Fresh-Whole-Russet-Potatoes-5lb-bag/10447837",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "potatoes",
+        "groupName":  "Potatoes",
+        "sku":  "walmart:10449951",
+        "name":  "Russet Potatoes 10 lb Bag Whole",
+        "url":  "https://www.walmart.com/ip/Russet-Potatoes-10-lb-Bag-Whole/10449951",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "lettuce",
+        "groupName":  "Lettuce",
+        "sku":  "walmart:253758383",
+        "name":  "Little Leaf Farms Baby Crispy Green Leaf Lettuce Salad 8 oz Clam Shell Fresh",
+        "url":  "https://www.walmart.com/ip/Little-Leaf-Farms-Baby-Crispy-Green-Leaf-Lettuce-Salad-8-oz-Clam-Shell-Fresh/253758383",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "lettuce",
+        "groupName":  "Lettuce",
+        "sku":  "walmart:10402886",
+        "name":  "Dole Fresh Favorites Shredded Lettuce 10 Oz",
+        "url":  "https://www.walmart.com/ip/Dole-Fresh-Favorites-Shredded-Lettuce-10-Oz/10402886",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "lettuce",
+        "groupName":  "Lettuce",
+        "sku":  "walmart:13893731",
+        "name":  "Marketside Fresh Shredded Iceberg Lettuce 8 oz Bag Fresh",
+        "url":  "https://www.walmart.com/ip/Marketside-Fresh-Shredded-Iceberg-Lettuce-8-oz-Bag-Fresh/13893731",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "jasmine_rice",
+        "groupName":  "Jasmine rice",
+        "sku":  "walmart:34799203",
+        "name":  "Golden Star Thai Hom Mali Jasmine Rice 10 lbs",
+        "url":  "https://www.walmart.com/ip/Golden-Star-Thai-Hom-Mali-Jasmine-Rice-10-lbs/34799203",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "jasmine_rice",
+        "groupName":  "Jasmine rice",
+        "sku":  "walmart:36874822",
+        "name":  "Great Value Jasmine Rice 20 lb",
+        "url":  "https://www.walmart.com/ip/Great-Value-Jasmine-Rice-20-lb/36874822",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "jasmine_rice",
+        "groupName":  "Jasmine rice",
+        "sku":  "walmart:46535122",
+        "name":  "Golden Star Thai Hom Mali Jasmine Rice 20 lbs",
+        "url":  "https://www.walmart.com/ip/Golden-Star-Thai-Hom-Mali-Jasmine-Rice-20-lbs/46535122",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "oats",
+        "groupName":  "Oats",
+        "sku":  "walmart:10314926",
+        "name":  "Great Value Instant Whole Grain Quick Rolled Oats Cup",
+        "url":  "https://www.walmart.com/ip/Great-Value-Instant-Whole-Grain-Quick-Rolled-Oats-Cup/10314926",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "oats",
+        "groupName":  "Oats",
+        "sku":  "walmart:10312438",
+        "name":  "Quaker Oats Old Fashioned Oatmeal 18 oz Canister",
+        "url":  "https://www.walmart.com/ip/Quaker-Oats-Old-Fashioned-Oatmeal-18-oz-Canister/10312438",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "whole_wheat_pasta",
+        "groupName":  "Whole wheat pasta",
+        "sku":  "walmart:47757015",
+        "name":  "Barilla Whole Grain Penne Pasta 100 Whole Wheat 16 oz Box",
+        "url":  "https://www.walmart.com/ip/Barilla-Whole-Grain-Penne-Pasta-100-Whole-Wheat-16-oz-Box/47757015",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "whole_wheat_pasta",
+        "groupName":  "Whole wheat pasta",
+        "sku":  "walmart:173699635",
+        "name":  "Great Value Whole Wheat Penne 16 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Whole-Wheat-Penne-16-oz/173699635",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "quinoa",
+        "groupName":  "Quinoa",
+        "sku":  "walmart:51258806",
+        "name":  "Great Value Organic White Quinoa 32 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Organic-White-Quinoa-32-oz/51258806",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "quinoa",
+        "groupName":  "Quinoa",
+        "sku":  "walmart:1216133016",
+        "name":  "Terrasoul Superfoods Organic White Quinoa 2 Lbs Pre washed Gluten free Plant Protein",
+        "url":  "https://www.walmart.com/ip/Terrasoul-Superfoods-Organic-White-Quinoa-2-Lbs-Pre-washed-Gluten-free-Plant-Protein/1216133016",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bread",
+        "groupName":  "Bread",
+        "sku":  "walmart:20659508",
+        "name":  "Nature s Own 100 Whole Grain Sliced Sandwich Bread 20 oz Loaf 1 Count Shelf Stable",
+        "url":  "https://www.walmart.com/ip/Nature-s-Own-100-Whole-Grain-Sliced-Sandwich-Bread-20-oz-Loaf-1-Count-Shelf-Stable/20659508",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bread",
+        "groupName":  "Bread",
+        "sku":  "walmart:10452850",
+        "name":  "Pepperidge Farm Whole Grain 100 Whole Wheat Bread 24 oz Loaf",
+        "url":  "https://www.walmart.com/ip/Pepperidge-Farm-Whole-Grain-100-Whole-Wheat-Bread-24-oz-Loaf/10452850",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "bread",
+        "groupName":  "Bread",
+        "sku":  "walmart:10804551",
+        "name":  "Great Value 100 Whole Wheat Round Top Bread 20 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-100-Whole-Wheat-Round-Top-Bread-20-oz/10804551",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tortillas",
+        "groupName":  "Tortillas",
+        "sku":  "walmart:10309357",
+        "name":  "Mission Super Soft Flour Tortillas Soft Taco Size 10 Count",
+        "url":  "https://www.walmart.com/ip/Mission-Super-Soft-Flour-Tortillas-Soft-Taco-Size-10-Count/10309357",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tortillas",
+        "groupName":  "Tortillas",
+        "sku":  "walmart:14123550",
+        "name":  "Mission Super Soft Flour Tortillas Fajita Size 20 Count",
+        "url":  "https://www.walmart.com/ip/Mission-Super-Soft-Flour-Tortillas-Fajita-Size-20-Count/14123550",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tortillas",
+        "groupName":  "Tortillas",
+        "sku":  "walmart:43310156",
+        "name":  "Old El Paso Restaurant Style Grande Flour Tortillas 6 Count",
+        "url":  "https://www.walmart.com/ip/Old-El-Paso-Restaurant-Style-Grande-Flour-Tortillas-6-Count/43310156",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "olive_oil",
+        "groupName":  "Olive oil",
+        "sku":  "walmart:17334859237",
+        "name":  "Smash Kitchen Organic Classic Extra Virgin Olive Oil 16 9 Oz",
+        "url":  "https://www.walmart.com/ip/Smash-Kitchen-Organic-Classic-Extra-Virgin-Olive-Oil-16-9-Oz/17334859237",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "olive_oil",
+        "groupName":  "Olive oil",
+        "sku":  "walmart:10315103",
+        "name":  "Great Value Classic Olive Oil 17 fl oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Classic-Olive-Oil-17-fl-oz/10315103",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "olive_oil",
+        "groupName":  "Olive oil",
+        "sku":  "walmart:13281641",
+        "name":  "Pompeian Light Taste Olive Oil 16 fl oz",
+        "url":  "https://www.walmart.com/ip/Pompeian-Light-Taste-Olive-Oil-16-fl-oz/13281641",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "peanut_butter",
+        "groupName":  "Peanut butter",
+        "sku":  "walmart:47375932",
+        "name":  "Great Value Creamy Peanut Butter Spread 64 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Creamy-Peanut-Butter-Spread-64-oz/47375932",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "peanut_butter",
+        "groupName":  "Peanut butter",
+        "sku":  "walmart:10308184",
+        "name":  "Jif Creamy Peanut Butter 4 Pound Can",
+        "url":  "https://www.walmart.com/ip/Jif-Creamy-Peanut-Butter-4-Pound-Can/10308184",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "black_beans",
+        "groupName":  "Black beans",
+        "sku":  "walmart:10534038",
+        "name":  "Great Value Black Beans 15 oz Can",
+        "url":  "https://www.walmart.com/ip/Great-Value-Black-Beans-15-oz-Can/10534038",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "black_beans",
+        "groupName":  "Black beans",
+        "sku":  "walmart:51236573",
+        "name":  "Great Value Organic Black Beans Canned 15 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Organic-Black-Beans-Canned-15-oz/51236573",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "chickpeas",
+        "groupName":  "Chickpeas",
+        "sku":  "walmart:10534041",
+        "name":  "Great Value Garbanzos Chick Peas 15 5 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Garbanzos-Chick-Peas-15-5-oz/10534041",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "chickpeas",
+        "groupName":  "Chickpeas",
+        "sku":  "walmart:653200704",
+        "name":  "Rani Kala Chana Desi Chickpeas Chana with skin 32oz 2lbs 907g All Natural Gluten Friendly NON GMO Vegan Kosher Indian Origin",
+        "url":  "https://www.walmart.com/ip/Rani-Kala-Chana-Desi-Chickpeas-Chana-with-skin-32oz-2lbs-907g-All-Natural-Gluten-Friendly-NON-GMO-Vegan-Kosher-Indian-Origin/653200704",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tomatoes",
+        "groupName":  "Tomatoes",
+        "sku":  "walmart:10415151",
+        "name":  "Great Value Diced Tomatoes in Tomato Juice 28 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Diced-Tomatoes-in-Tomato-Juice-28-oz/10415151",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "tomatoes",
+        "groupName":  "Tomatoes",
+        "sku":  "walmart:10415230",
+        "name":  "Great Value Crushed Tomatoes with Tomato Puree 28 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Crushed-Tomatoes-with-Tomato-Puree-28-oz/10415230",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "chicken_broth",
+        "groupName":  "Chicken broth",
+        "sku":  "walmart:10899013",
+        "name":  "Great Value Chicken Broth 32 oz Carton Shelf Stable Ambient Gluten Free",
+        "url":  "https://www.walmart.com/ip/Great-Value-Chicken-Broth-32-oz-Carton-Shelf-Stable-Ambient-Gluten-Free/10899013",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "chicken_broth",
+        "groupName":  "Chicken broth",
+        "sku":  "walmart:46330157",
+        "name":  "Great Value Family Size Chicken Broth 48 oz Carton Shelf Stable Ambient Gluten Free",
+        "url":  "https://www.walmart.com/ip/Great-Value-Family-Size-Chicken-Broth-48-oz-Carton-Shelf-Stable-Ambient-Gluten-Free/46330157",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "almonds",
+        "groupName":  "Almonds",
+        "sku":  "walmart:386300370",
+        "name":  "Great Value Sliced Almonds 4 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Sliced-Almonds-4-oz/386300370",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "almonds",
+        "groupName":  "Almonds",
+        "sku":  "walmart:5295229969",
+        "name":  "Great Value Whole Natural Almonds 14 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Whole-Natural-Almonds-14-oz/5295229969",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "mixed_nuts",
+        "groupName":  "Mixed nuts",
+        "sku":  "walmart:483617254",
+        "name":  "Great Value Lightly Salted Deluxe Mixed Nuts 15 25 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Lightly-Salted-Deluxe-Mixed-Nuts-15-25-oz/483617254",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "mixed_nuts",
+        "groupName":  "Mixed nuts",
+        "sku":  "walmart:970593525",
+        "name":  "Great Value Mixed Nuts with Peanuts 27 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Mixed-Nuts-with-Peanuts-27-oz/970593525",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "popcorn",
+        "groupName":  "Popcorn",
+        "sku":  "walmart:37911088",
+        "name":  "Orville Redenbacher s Movie Theater Butter Popcorn Microwave Popcorn 12 Count",
+        "url":  "https://www.walmart.com/ip/Orville-Redenbacher-s-Movie-Theater-Butter-Popcorn-Microwave-Popcorn-12-Count/37911088",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "popcorn",
+        "groupName":  "Popcorn",
+        "sku":  "walmart:37911092",
+        "name":  "Orville Redenbacher s Movie Theater Butter Popcorn Microwave Popcorn Mini Bags 12 Count Pack of 6",
+        "url":  "https://www.walmart.com/ip/Orville-Redenbacher-s-Movie-Theater-Butter-Popcorn-Microwave-Popcorn-Mini-Bags-12-Count-Pack-of-6/37911092",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "dark_chocolate",
+        "groupName":  "Dark chocolate",
+        "sku":  "walmart:927645419",
+        "name":  "Great Value Dark Chocolate Bar 3 52 oz",
+        "url":  "https://www.walmart.com/ip/Great-Value-Dark-Chocolate-Bar-3-52-oz/927645419",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "group":  "dark_chocolate",
+        "groupName":  "Dark chocolate",
+        "sku":  "walmart:10312257",
+        "name":  "Lindt Excellence 85 Cocoa Dark Chocolate Candy Bar 3 5 oz Bar",
+        "url":  "https://www.walmart.com/ip/Lindt-Excellence-85-Cocoa-Dark-Chocolate-Candy-Bar-3-5-oz-Bar/10312257",
+        "qty":  1,
+        "unit":  "item"
+    },
+    {
+        "name":  "Member\u0027s Mark Boneless \u0026 Skinless Chicken Breast (Bulk)",
+        "qty":  1,
+        "sku":  "sams:980205982",
+        "groupName":  "Chicken breasts",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-boneless-skinless-chicken-breast-case-sale/prod23150692",
+        "group":  "chicken_breast"
+    },
+    {
+        "name":  "Member\u0027s Mark Organic Boneless \u0026 Skinless Chicken Breasts",
+        "qty":  1,
+        "sku":  "sams:990367661",
+        "groupName":  "Chicken breasts",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-organic-boneless-skinless-chicken-breasts/P990347589",
+        "group":  "chicken_breast"
+    },
+    {
+        "name":  "Jennie-O Ground Turkey",
+        "qty":  1,
+        "sku":  "sams:787100",
+        "groupName":  "Ground turkey",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/jennie-o-fresh-ground-turkey-4lbs/prod20594773",
+        "group":  "ground_turkey"
+    },
+    {
+        "name":  "Member\u0027s Mark Marinated Boneless Alaskan Salmon",
+        "qty":  1,
+        "sku":  "sams:980254048",
+        "groupName":  "Salmon",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-wild-caught-boneless-marinated-alaskan-salmon-frozen-2-25-lbs/prod24470564",
+        "group":  "salmon"
+    },
+    {
+        "name":  "Member\u0027s Mark Skinless \u0026 Boneless Atlantic Salmon Fillet Portions",
+        "qty":  1,
+        "sku":  "sams:980181678",
+        "groupName":  "Salmon",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-skinless-boneless-atlantic-salmon-fillet-portions-frozen-2-5-lbs/prod22770720",
+        "group":  "salmon"
+    },
+    {
+        "name":  "StarKist Chunk Light Tuna in Water 12-Pack",
+        "qty":  1,
+        "sku":  "sams:327968",
+        "groupName":  "Tuna",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/starkist-chunk-light-tuna-water-12-pk-5-oz/prod17030290",
+        "group":  "tuna"
+    },
+    {
+        "name":  "Member\u0027s Mark Premium Solid White Albacore Tuna 8-Pack",
+        "qty":  1,
+        "sku":  "sams:990332036",
+        "groupName":  "Tuna",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-solid-white-albacore-tuna-5-oz-8-pk/P03005825",
+        "group":  "tuna"
+    },
+    {
+        "name":  "Member\u0027s Mark Farm Raised Extra Jumbo Raw Black Tiger Shrimp",
+        "qty":  1,
+        "sku":  "sams:P03013338",
+        "groupName":  "Shrimp",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/p/members-mark-extra-jumbo-raw-black-tiger-shrimp/P03013338",
+        "group":  "shrimp"
+    },
+    {
+        "name":  "Large Eggs 15 dozen",
+        "qty":  1,
+        "sku":  "sams:13743550703",
+        "groupName":  "Eggs",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Large-Eggs-15-dozen/13743550703?classType=REGULAR\u0026from=/search",
+        "group":  "eggs"
+    },
+    {
+        "name":  "Member\u0027s Mark Cage Free Grade A Large White Eggs 2 dozen",
+        "qty":  1,
+        "sku":  "sams:13607813672",
+        "groupName":  "Eggs",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Member-s-Mark-Cage-Free-Grade-A-Large-White-Eggs-2-dozen/13607813672?classType=REGULAR\u0026from=/search",
+        "group":  "eggs"
+    },
+    {
+        "name":  "Member\u0027s Mark Farm Raised Jumbo Cooked Shrimp Frozen 21-25 ct per pound 2 lbs",
+        "qty":  1,
+        "sku":  "sams:13627515589",
+        "groupName":  "Shrimp",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Member-s-Mark-Farm-Raised-Jumbo-Cooked-Shrimp-Frozen-21-25-ct-per-pound-2-lbs/13627515589?classType=REGULAR\u0026from=/search",
+        "group":  "shrimp"
+    },
+    {
+        "name":  "Member\u0027s Mark Farm Raised Jumbo Raw Shrimp Frozen 21-25 ct per pound 2 lbs",
+        "qty":  1,
+        "sku":  "sams:13599361478",
+        "groupName":  "Shrimp",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Member-s-Mark-Farm-Raised-Jumbo-Raw-Shrimp-Frozen-21-25-ct-per-pound-2-lbs/13599361478?classType=REGULAR\u0026from=/search",
+        "group":  "shrimp"
+    },
+    {
+        "name":  "Member\u0027s Mark Whole Boneless Pork Loin",
+        "qty":  1,
+        "sku":  "sams:15607106819",
+        "groupName":  "Pork loin",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/members-mark-whole-boneless-pork-loin/15607106819",
+        "group":  "pork_loin"
+    },
+    {
+        "name":  "Member\u0027s Mark Boneless Center Cut Pork Loin Chops (priced per pound)",
+        "qty":  1,
+        "sku":  "sams:21100300000",
+        "groupName":  "Pork chops",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Member-s-Mark-Boneless-Center-Cut-Pork-Loin-Chops-priced-per-pound/21100300000?classType=REGULAR\u0026from=/search",
+        "group":  "pork_chops"
+    },
+    {
+        "name":  "Member\u0027s Mark Bone-In Center Cut Pork Loin Chops (priced per pound)",
+        "qty":  1,
+        "sku":  "sams:13606514622",
+        "groupName":  "Pork chops",
+        "unit":  "item",
+        "url":  "https://www.samsclub.com/ip/Member-s-Mark-Bone-In-Center-Cut-Pork-Loin-Chops-priced-per-pound/13606514622?classType=REGULAR\u0026from=/search",
+        "group":  "pork_chops"
+    }
+]

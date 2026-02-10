@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Plan Inputs · odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="final-page">
+    <div class="grain"></div>
+
+    <section class="grocery-final" id="grocery-final">
+        <div class="grocery-final-inner compact">
+            <div class="final-topbar">
+                <div class="grocery-macros" id="grocery-macros-final">
+                    <div><span class="label">Calories</span><span id="g-final-cal">—</span></div>
+                    <div><span class="label">Protein</span><span id="g-final-pro">—</span></div>
+                    <div><span class="label">Carbs</span><span id="g-final-car">—</span></div>
+                    <div><span class="label">Fats</span><span id="g-final-fat">—</span></div>
+                </div>
+                <!-- Mode display (read-only, auto-detected) -->
+            </div>
+            <div class="final-left">
+                <h2>Finalize your grocery plan.</h2>
+                <p class="ns-muted">Just a few quick details to build your macro-aligned grocery list.</p>
+
+                <form class="final-form" id="g-final-form">
+                    <!-- SECTION A: REQUIRED INPUTS -->
+                    <div class="final-section-a">
+                        <label class="ns-field">
+                            <span>Monthly grocery budget</span>
+                            <div class="budget-options">
+                                <button type="button" class="budget-btn" data-budget="200">Under $200</button>
+                                <button type="button" class="budget-btn active" data-budget="300">$200 – $400</button>
+                                <button type="button" class="budget-btn" data-budget="400">$400+</button>
+                            </div>
+                            <input type="hidden" id="g-budget-total" value="300" required>
+                        </label>
+
+                        <div class="final-section-foods">
+                            <button type="button" class="accordion-header" id="food-sources-toggle">
+                                <span>
+                                    Groceries to use (optional)
+                                    <span class="food-sources-login-hint hidden" id="food-sources-login-hint">(Make an account to use custom groceries)</span>
+                                </span>
+                                <span class="accordion-icon">▼</span>
+                            </button>
+                            <div class="accordion-content hidden" id="food-sources-content">
+                                <div class="food-sources-head">
+                                    <p class="ns-muted small" style="margin: 0;">Default foods are included. Add your own foods and pick what to use.</p>
+                                    <button class="btn btn-ghost" type="button" id="custom-foods-open">Customize your groceries</button>
+                                </div>
+                                <div class="food-source-list" id="food-source-list" aria-label="Food sources"></div>
+                                <div class="ns-muted tiny hidden" id="food-source-note"></div>
+                            </div>
+                        </div>
+
+                        <label class="ns-field">
+                            <span>Preferred store</span>
+                            <select id="g-store" required>
+                                <option value="Walmart" selected>Walmart</option>
+                                <option value="Target" disabled>Target (coming soon)</option>
+                                <option value="Sams" disabled>Sam's Club (coming soon)</option>
+                            </select>
+                        </label>
+
+                        <label class="ns-field">
+                            <span>Meals per day</span>
+                            <div class="meal-options">
+                                <button type="button" class="meal-btn" data-meals="2">2</button>
+                                <button type="button" class="meal-btn active" data-meals="3">3</button>
+                                <button type="button" class="meal-btn" data-meals="4">4</button>
+                                <button type="button" class="meal-btn" data-meals="5">5</button>
+                            </div>
+                            <input type="hidden" id="g-meals" value="3" required>
+                        </label>
+
+                        <label class="ns-field">
+                            <span>Prep style</span>
+                            <div class="prep-options">
+                                <button type="button" class="prep-btn active" data-prep="daily">Day by day prep</button>
+                                <button type="button" class="prep-btn" data-prep="batch">Batch prep for the week</button>
+                                <button type="button" class="prep-btn" data-prep="service">Want someone to cook for you</button>
+                            </div>
+                            <p class="ns-muted small" style="margin: 0.3rem 0 0; font-size: 0.8rem;">We have meal prep services available.</p>
+                            <input type="hidden" id="g-prep" value="daily" required>
+                        </label>
+
+                        <label class="ns-field">
+                            <span>🍴 Dietary Preference</span>
+                            <div class="diet-options">
+                                <button type="button" class="diet-btn active" data-diet="no-restrictions">No restrictions (standard diet)</button>
+                                <button type="button" class="diet-btn coming-soon-btn" data-diet="vegetarian" disabled>Vegetarian (coming soon)</button>
+                                <button type="button" class="diet-btn coming-soon-btn" data-diet="vegan" disabled>Vegan (coming soon)</button>
+                                <button type="button" class="diet-btn coming-soon-btn" data-diet="pescatarian" disabled>Pescatarian (coming soon)</button>
+                                <button type="button" class="diet-btn coming-soon-btn" data-diet="no-red-meat" disabled>No red meat (coming soon)</button>
+                            </div>
+                            <input type="hidden" id="g-dietary-pref" value="no-restrictions" required>
+                        </label>
+
+                        <label class="ns-field">
+                            <span>⚠️ Allergies & Intolerances</span>
+                            <p class="ns-muted small" style="margin-bottom: 0.5rem; font-size: 0.9rem;">Select all that apply.</p>
+                            <div class="allergies-options">
+                                <div class="allergy-item coming-soon-item">Eggs (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Dairy (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Shellfish (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Fish (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Peanuts (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Tree nuts (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Soy (coming soon)</div>
+                                <div class="allergy-item coming-soon-item">Gluten (coming soon)</div>
+                                <label class="allergy-checkbox">
+                                    <input type="checkbox" value="none" class="allergy-input" checked>
+                                    <span>None</span>
+                                </label>
+                            </div>
+                            <input type="hidden" id="g-allergies" value="" required>
+                        </label>
+
+                        <label class="ns-field">
+                            <span>💰 Taste vs Cost Preference</span>
+                            <div class="taste-cost-options">
+                                <button type="button" class="taste-cost-btn" data-preference="cheapest">I want the cheapest foods possible</button>
+                                <button type="button" class="taste-cost-btn active" data-preference="balance">I want a balance of cost and taste</button>
+                                <button type="button" class="taste-cost-btn" data-preference="premium">I'm willing to pay more for taste</button>
+                            </div>
+                            <input type="hidden" id="g-taste-cost" value="balance" required>
+                        </label>
+                    </div>
+
+                    <!-- SECTION B: OPTIONAL INPUTS (COLLAPSED) -->
+                    <div class="final-section-b">
+                        <button type="button" class="accordion-header" id="advanced-toggle">
+                            <span>Advanced timing & accuracy (optional)</span>
+                            <span class="accordion-icon">▼</span>
+                        </button>
+                        <div class="accordion-content hidden" id="advanced-content">
+                            <p class="ns-muted small">We'll auto-generate your grocery plan without this. Add it if you want tighter timing and local pricing.</p>
+
+                            <!-- Price Adjustment Slider -->
+                            <div class="ns-field">
+                                <span>📍 Prices in my area are...</span>
+                                <div class="price-adjustment-slider">
+                                    <label>−20%</label>
+                                    <input type="range" id="g-price-adjustment" min="-20" max="20" value="0" step="5">
+                                    <label>+20%</label>
+                                    <span class="price-adjustment-value" id="price-adjustment-value">Accurate</span>
+                                </div>
+                                <p class="ns-muted small" style="margin-top: 0.25rem;">Adjust if Walmart prices in your area differ from national averages.</p>
+                            </div>
+
+                            <label class="ns-field">
+                                <span>Wake-up time</span>
+                                <select id="g-wake-time"></select>
+                            </label>
+
+                            <label class="ns-field">
+                                <span>Training time</span>
+                                <select id="g-workout-time"></select>
+                            </label>
+
+                            <label class="ns-field">
+                                <span>Zip code</span>
+                                <input type="text" id="g-zip" placeholder="90210">
+                            </label>
+                        </div>
+                    </div>
+
+                </form>
+
+                <div class="final-actions">
+                    <div>
+                        <button class="btn btn-primary" id="g-final-save">Build my grocery plan</button>
+                        <p class="ns-muted tiny">You can change any of this later.</p>
+                    </div>
+                    <button class="btn btn-ghost" id="g-final-back">Go Back Home</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+</body>
+</html>

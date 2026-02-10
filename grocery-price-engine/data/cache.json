@@ -1,0 +1,1671 @@
+{
+  "walmart:10450113": {
+    "ok": true,
+    "store": "walmart",
+    "itemId": "10450113",
+    "price": 9.98,
+    "unit": "each",
+    "sizeValue": 30,
+    "sizeUnit": "oz",
+    "unitPrice": 0.38299999999999995,
+    "unitPriceUnit": "oz",
+    "pricePerBaseUnit": 0.38299999999999995,
+    "baseUnit": "oz",
+    "source": "html",
+    "updatedAt": "2026-01-28T01:14:54.883Z",
+    "price_status": "fresh"
+  },
+  "walmart:27935840": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "27935840",
+      "url": "https://www.walmart.com/ip/27935840?athcpid=27935840&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 11.72,
+      "unit": "each",
+      "sizeValue": 6.1,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:05:47.871Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:19593627": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "19593627",
+      "url": "https://www.walmart.com/ip/19593627?athcpid=19593627&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 4.96,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:05:51.001Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:15249535": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "15249535",
+      "url": "https://www.walmart.com/ip/15249535?athcpid=15249535&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 13.34,
+      "unit": "each",
+      "sizeValue": 48,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:05:54.909Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:145051970": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "145051970",
+      "url": "https://www.walmart.com/ip/145051970?athcpid=145051970&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": 9.31,
+      "sizeUnit": "oz",
+      "unitPrice": 0.435,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.435,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:05:58.929Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:193637719": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "193637719",
+      "url": "https://www.walmart.com/ip/193637719?athcpid=193637719&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 9.56,
+      "unit": "each",
+      "sizeValue": 9.31,
+      "sizeUnit": "oz",
+      "unitPrice": 0.435,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.435,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:04.874Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:142616435": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "142616435",
+      "url": "https://www.walmart.com/ip/142616435?athcpid=142616435&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.82,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 0.435,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.435,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:08.371Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:21656993": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "21656993",
+      "url": "https://www.walmart.com/ip/21656993?athcpid=21656993&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 10.47,
+      "unit": "each",
+      "sizeValue": 2,
+      "sizeUnit": "lb",
+      "unitPrice": 0.46799999999999997,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.46799999999999997,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:11.689Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:123210797": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "123210797",
+      "url": "https://www.walmart.com/ip/123210797?athcpid=123210797&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 17.47,
+      "unit": "each",
+      "sizeValue": 4,
+      "sizeUnit": "lb",
+      "unitPrice": 68.273,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 68.273,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:15.041Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51259015": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51259015",
+      "url": "https://www.walmart.com/ip/51259015?athcpid=51259015&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 8.87,
+      "unit": "each",
+      "sizeValue": 2,
+      "sizeUnit": "lb",
+      "unitPrice": 87.277,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 87.277,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:19.032Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:33867594": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "33867594",
+      "url": "https://www.walmart.com/ip/33867594?athcpid=33867594&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.84,
+      "unit": "each",
+      "sizeValue": 5,
+      "sizeUnit": "oz",
+      "unitPrice": 84.19200000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 84.19200000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:23.470Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44391062": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44391062",
+      "url": "https://www.walmart.com/ip/44391062?athcpid=44391062&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.94,
+      "unit": "each",
+      "sizeValue": 12,
+      "sizeUnit": "oz",
+      "unitPrice": 94.495,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 94.495,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:28.622Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:2807085743": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "2807085743",
+      "url": "https://www.walmart.com/ip/2807085743?athcpid=2807085743&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 9.94,
+      "unit": "each",
+      "sizeValue": 1,
+      "sizeUnit": "lb",
+      "unitPrice": 94.62100000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 94.62100000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:31.348Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:43852206": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "43852206",
+      "url": "https://www.walmart.com/ip/43852206?athcpid=43852206&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 8.24,
+      "unit": "each",
+      "sizeValue": 2.2,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:37.107Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51259100": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51259100",
+      "url": "https://www.walmart.com/ip/51259100?athcpid=51259100&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 9.81,
+      "unit": "each",
+      "sizeValue": 3.5,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:41.588Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:15136792": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "15136792",
+      "url": "https://www.walmart.com/ip/15136792?athcpid=15136792&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 7.37,
+      "unit": "each",
+      "sizeValue": 1,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:46.610Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:15136796": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "15136796",
+      "url": "https://www.walmart.com/ip/15136796?athcpid=15136796&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 23.73,
+      "unit": "each",
+      "sizeValue": 5,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:06:55.152Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10315024": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10315024",
+      "url": "https://www.walmart.com/ip/10315024?athcpid=10315024&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.87,
+      "unit": "each",
+      "sizeValue": 24,
+      "sizeUnit": "oz",
+      "unitPrice": 0.12,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.12,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:03.857Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:15716747": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "15716747",
+      "url": "https://www.walmart.com/ip/15716747?athcpid=15716747&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 4.36,
+      "unit": "each",
+      "sizeValue": 24,
+      "sizeUnit": "oz",
+      "unitPrice": 36.181999999999995,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 36.181999999999995,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:07.026Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10315020": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10315020",
+      "url": "https://www.walmart.com/ip/10315020?athcpid=10315020&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.87,
+      "unit": "each",
+      "sizeValue": 24,
+      "sizeUnit": "oz",
+      "unitPrice": 87.12,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 87.12,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:10.533Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:26559565": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "26559565",
+      "url": "https://www.walmart.com/ip/26559565?athcpid=26559565&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.36,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": 36.105,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 36.105,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:17.558Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:21291511": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "21291511",
+      "url": "https://www.walmart.com/ip/21291511?athcpid=21291511&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.97,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": 97.18700000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 97.18700000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:20.675Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10804537": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10804537",
+      "url": "https://www.walmart.com/ip/10804537?athcpid=10804537&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.18,
+      "unit": "each",
+      "sizeValue": 64,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:23.845Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10450116": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10450116",
+      "url": "https://www.walmart.com/ip/10450116?athcpid=10450116&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": 64,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:28.009Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10450115": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10450115",
+      "url": "https://www.walmart.com/ip/10450115?athcpid=10450115&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": null,
+      "sizeUnit": null,
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:31.236Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:34186946": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "34186946",
+      "url": "https://www.walmart.com/ip/34186946?athcpid=34186946&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.87,
+      "unit": "each",
+      "sizeValue": 8,
+      "sizeUnit": "oz",
+      "unitPrice": 87.234,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 87.234,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:35.209Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10452477": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10452477",
+      "url": "https://www.walmart.com/ip/10452477?athcpid=10452477&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.48,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 48.218,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 48.218,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:38.590Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:879148225": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "879148225",
+      "url": "https://www.walmart.com/ip/879148225?athcpid=879148225&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.97,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 97.21799999999999,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 97.21799999999999,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:41.838Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:46463029": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "46463029",
+      "url": "https://www.walmart.com/ip/46463029?athcpid=46463029&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.78,
+      "unit": "each",
+      "sizeValue": 8,
+      "sizeUnit": "oz",
+      "unitPrice": 78.348,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 78.348,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:45.772Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:15332723146": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "15332723146",
+      "url": "https://www.walmart.com/ip/15332723146?athcpid=15332723146&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 13.44,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:49.245Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390958": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390958",
+      "url": "https://www.walmart.com/ip/44390958?athcpid=44390958&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.58,
+      "unit": "each",
+      "sizeValue": 3,
+      "sizeUnit": "lb",
+      "unitPrice": 96.86,
+      "unitPriceUnit": "lb",
+      "pricePerBaseUnit": 6.05375,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:51.699Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:151762086": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "151762086",
+      "url": "https://www.walmart.com/ip/151762086?athcpid=151762086&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.98,
+      "unit": "each",
+      "sizeValue": 3,
+      "sizeUnit": "lb",
+      "unitPrice": 0.20800000000000002,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.20800000000000002,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:54.323Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390953": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390953",
+      "url": "https://www.walmart.com/ip/44390953?athcpid=44390953&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.68,
+      "unit": "each",
+      "sizeValue": 3.2,
+      "sizeUnit": "oz",
+      "unitPrice": 0.20800000000000002,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.20800000000000002,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:56.928Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390948": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390948",
+      "url": "https://www.walmart.com/ip/44390948?athcpid=44390948&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.19,
+      "unit": "each",
+      "sizeValue": 3.2,
+      "sizeUnit": "oz",
+      "unitPrice": 0.49,
+      "unitPriceUnit": "lb",
+      "pricePerBaseUnit": 0.030625,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:07:59.482Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51259338": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51259338",
+      "url": "https://www.walmart.com/ip/51259338?athcpid=51259338&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.71,
+      "unit": "each",
+      "sizeValue": 3.2,
+      "sizeUnit": "oz",
+      "unitPrice": 0.74,
+      "unitPriceUnit": "lb",
+      "pricePerBaseUnit": 0.04625,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:02.618Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10543668": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10543668",
+      "url": "https://www.walmart.com/ip/10543668?athcpid=10543668&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.52,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 52.22,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 52.22,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:06.031Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:13893738": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "13893738",
+      "url": "https://www.walmart.com/ip/13893738?athcpid=13893738&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.84,
+      "unit": "each",
+      "sizeValue": 10,
+      "sizeUnit": "oz",
+      "unitPrice": 84.184,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 84.184,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:08.984Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:13893733": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "13893733",
+      "url": "https://www.walmart.com/ip/13893733?athcpid=13893733&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.66,
+      "unit": "each",
+      "sizeValue": 5,
+      "sizeUnit": "oz",
+      "unitPrice": 98.53200000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 98.53200000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:11.457Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:431513547": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "431513547",
+      "url": "https://www.walmart.com/ip/431513547?athcpid=431513547&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.26,
+      "unit": "each",
+      "sizeValue": 12,
+      "sizeUnit": "oz",
+      "unitPrice": 26.105,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 26.105,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:14.429Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:735585383": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "735585383",
+      "url": "https://www.walmart.com/ip/735585383?athcpid=735585383&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.16,
+      "unit": "each",
+      "sizeValue": 12,
+      "sizeUnit": "oz",
+      "unitPrice": 1.6969999999999998,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 1.6969999999999998,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:17.199Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10790990": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10790990",
+      "url": "https://www.walmart.com/ip/10790990?athcpid=10790990&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.92,
+      "unit": "each",
+      "sizeValue": 52,
+      "sizeUnit": "oz",
+      "unitPrice": 92.133,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 92.133,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:19.945Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390945": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390945",
+      "url": "https://www.walmart.com/ip/44390945?athcpid=44390945&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.58,
+      "unit": "each",
+      "sizeValue": null,
+      "sizeUnit": null,
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:25.108Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390949": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390949",
+      "url": "https://www.walmart.com/ip/44390949?athcpid=44390949&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.62,
+      "unit": "each",
+      "sizeValue": 48,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:28.819Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:44390968": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "44390968",
+      "url": "https://www.walmart.com/ip/44390968?athcpid=44390968&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.97,
+      "unit": "each",
+      "sizeValue": null,
+      "sizeUnit": null,
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:32.009Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51259388": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51259388",
+      "url": "https://www.walmart.com/ip/51259388?athcpid=51259388&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.93,
+      "unit": "each",
+      "sizeValue": 1,
+      "sizeUnit": "lb",
+      "unitPrice": 0.115,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.115,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:36.500Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51259208": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51259208",
+      "url": "https://www.walmart.com/ip/51259208?athcpid=51259208&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.91,
+      "unit": "each",
+      "sizeValue": 2.2,
+      "sizeUnit": "lb",
+      "unitPrice": 0.99,
+      "unitPriceUnit": "lb",
+      "pricePerBaseUnit": 0.061875,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:39.537Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10447842": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10447842",
+      "url": "https://www.walmart.com/ip/10447842?athcpid=10447842&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.94,
+      "unit": "each",
+      "sizeValue": 3,
+      "sizeUnit": "lb",
+      "unitPrice": 9.461,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 9.461,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:42.512Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10447837": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10447837",
+      "url": "https://www.walmart.com/ip/10447837?athcpid=10447837&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.97,
+      "unit": "each",
+      "sizeValue": 5,
+      "sizeUnit": "lb",
+      "unitPrice": 97.794,
+      "unitPriceUnit": "lb",
+      "pricePerBaseUnit": 6.112125,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:44.975Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10449951": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10449951",
+      "url": "https://www.walmart.com/ip/10449951?athcpid=10449951&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.74,
+      "unit": "each",
+      "sizeValue": 10,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:47.791Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:253758383": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "253758383",
+      "url": "https://www.walmart.com/ip/253758383?athcpid=253758383&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 4.97,
+      "unit": "each",
+      "sizeValue": 8,
+      "sizeUnit": "oz",
+      "unitPrice": 97.62100000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 97.62100000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:51.514Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10402886": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10402886",
+      "url": "https://www.walmart.com/ip/10402886?athcpid=10402886&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": 24,
+      "sizeUnit": "oz",
+      "unitPrice": 0.161,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.161,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:55.667Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:13893731": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "13893731",
+      "url": "https://www.walmart.com/ip/13893731?athcpid=13893731&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": 8,
+      "sizeUnit": "oz",
+      "unitPrice": 97.24600000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 97.24600000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:08:58.283Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:34799203": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "34799203",
+      "url": "https://www.walmart.com/ip/34799203?athcpid=34799203&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 14.57,
+      "unit": "each",
+      "sizeValue": 2,
+      "sizeUnit": "lb",
+      "unitPrice": 5.791,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 5.791,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:01.364Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:36874822": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "36874822",
+      "url": "https://www.walmart.com/ip/36874822?athcpid=36874822&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 22.42,
+      "unit": "each",
+      "sizeValue": 20,
+      "sizeUnit": "lb",
+      "unitPrice": 4.27,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 4.27,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:05.000Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:46535122": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "46535122",
+      "url": "https://www.walmart.com/ip/46535122?athcpid=46535122&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 23.38,
+      "unit": "each",
+      "sizeValue": 2,
+      "sizeUnit": "lb",
+      "unitPrice": 3.873,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 3.873,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:07.916Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10314926": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10314926",
+      "url": "https://www.walmart.com/ip/10314926?athcpid=10314926&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 4.18,
+      "unit": "each",
+      "sizeValue": 42,
+      "sizeUnit": "oz",
+      "unitPrice": 18.1,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 18.1,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:11.199Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10312438": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10312438",
+      "url": "https://www.walmart.com/ip/10312438?athcpid=10312438&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.98,
+      "unit": "each",
+      "sizeValue": 18,
+      "sizeUnit": "oz",
+      "unitPrice": 98.166,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 98.166,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:15.038Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:47757015": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "47757015",
+      "url": "https://www.walmart.com/ip/47757015?athcpid=47757015&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.84,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 84.115,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 84.115,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:18.494Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:173699635": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "173699635",
+      "url": "https://www.walmart.com/ip/173699635?athcpid=173699635&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.66,
+      "unit": "each",
+      "sizeValue": 16,
+      "sizeUnit": "oz",
+      "unitPrice": 66.104,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 66.104,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:22.577Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51258806": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51258806",
+      "url": "https://www.walmart.com/ip/51258806?athcpid=51258806&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.22,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": 22.194000000000003,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 22.194000000000003,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:26.349Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:1216133016": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "1216133016",
+      "url": "https://www.walmart.com/ip/1216133016?athcpid=1216133016&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 12.99,
+      "unit": "each",
+      "sizeValue": 2,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:29.584Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:20659508": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "20659508",
+      "url": "https://www.walmart.com/ip/20659508?athcpid=20659508&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.87,
+      "unit": "each",
+      "sizeValue": 20,
+      "sizeUnit": "oz",
+      "unitPrice": 87.194,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 87.194,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:33.057Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10452850": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10452850",
+      "url": "https://www.walmart.com/ip/10452850?athcpid=10452850&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.84,
+      "unit": "each",
+      "sizeValue": 24,
+      "sizeUnit": "oz",
+      "unitPrice": 84.16,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 84.16,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:37.316Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10804551": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10804551",
+      "url": "https://www.walmart.com/ip/10804551?athcpid=10804551&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.97,
+      "unit": "each",
+      "sizeValue": 20,
+      "sizeUnit": "oz",
+      "unitPrice": 9.799,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 9.799,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:40.966Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10309357": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10309357",
+      "url": "https://www.walmart.com/ip/10309357?athcpid=10309357&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.78,
+      "unit": "each",
+      "sizeValue": 20,
+      "sizeUnit": "oz",
+      "unitPrice": 78.15899999999999,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 78.15899999999999,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:43.968Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:14123550": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "14123550",
+      "url": "https://www.walmart.com/ip/14123550?athcpid=14123550&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.48,
+      "unit": "each",
+      "sizeValue": 6,
+      "sizeUnit": "oz",
+      "unitPrice": 48.151,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 48.151,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:47.789Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:43310156": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "43310156",
+      "url": "https://www.walmart.com/ip/43310156?athcpid=43310156&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.58,
+      "unit": "each",
+      "sizeValue": 21.5,
+      "sizeUnit": "oz",
+      "unitPrice": 58.167,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 58.167,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:51.044Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:17334859237": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "17334859237",
+      "url": "https://www.walmart.com/ip/17334859237?athcpid=17334859237&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 8.97,
+      "unit": "each",
+      "sizeValue": 1.93,
+      "sizeUnit": "lb",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:54.759Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10315103": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10315103",
+      "url": "https://www.walmart.com/ip/10315103?athcpid=10315103&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.94,
+      "unit": "each",
+      "sizeValue": null,
+      "sizeUnit": null,
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:09:57.869Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:13281641": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "13281641",
+      "url": "https://www.walmart.com/ip/13281641?athcpid=13281641&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.54,
+      "unit": "each",
+      "sizeValue": 50.7,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:01.223Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:47375932": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "47375932",
+      "url": "https://www.walmart.com/ip/47375932?athcpid=47375932&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.47,
+      "unit": "each",
+      "sizeValue": 64,
+      "sizeUnit": "oz",
+      "unitPrice": 47.101000000000006,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 47.101000000000006,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:03.916Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10308184": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10308184",
+      "url": "https://www.walmart.com/ip/10308184?athcpid=10308184&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 11.12,
+      "unit": "each",
+      "sizeValue": 40,
+      "sizeUnit": "oz",
+      "unitPrice": 12.174000000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 12.174000000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:07.511Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10534038": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10534038",
+      "url": "https://www.walmart.com/ip/10534038?athcpid=10534038&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.86,
+      "unit": "each",
+      "sizeValue": 15,
+      "sizeUnit": "oz",
+      "unitPrice": 8.657,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 8.657,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:10.920Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:51236573": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "51236573",
+      "url": "https://www.walmart.com/ip/51236573?athcpid=51236573&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.16,
+      "unit": "each",
+      "sizeValue": 15,
+      "sizeUnit": "oz",
+      "unitPrice": 1.6769999999999998,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 1.6769999999999998,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:14.790Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10534041": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10534041",
+      "url": "https://www.walmart.com/ip/10534041?athcpid=10534041&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 0.86,
+      "unit": "each",
+      "sizeValue": 15.5,
+      "sizeUnit": "oz",
+      "unitPrice": 8.655,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 8.655,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:17.621Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:653200704": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "653200704",
+      "url": "https://www.walmart.com/ip/653200704?athcpid=653200704&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 11.99,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": null,
+      "unitPriceUnit": null,
+      "pricePerBaseUnit": null,
+      "baseUnit": null,
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:19.935Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10415151": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10415151",
+      "url": "https://www.walmart.com/ip/10415151?athcpid=10415151&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.48,
+      "unit": "each",
+      "sizeValue": 28,
+      "sizeUnit": "oz",
+      "unitPrice": 4.853,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 4.853,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:22.954Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10415230": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10415230",
+      "url": "https://www.walmart.com/ip/10415230?athcpid=10415230&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.52,
+      "unit": "each",
+      "sizeValue": 28,
+      "sizeUnit": "oz",
+      "unitPrice": 5.254,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 5.254,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:27.283Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10899013": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10899013",
+      "url": "https://www.walmart.com/ip/10899013?athcpid=10899013&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.5,
+      "unit": "each",
+      "sizeValue": 32,
+      "sizeUnit": "oz",
+      "unitPrice": 5.047,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 5.047,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:30.472Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:46330157": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "46330157",
+      "url": "https://www.walmart.com/ip/46330157?athcpid=46330157&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 2.16,
+      "unit": "each",
+      "sizeValue": 48,
+      "sizeUnit": "oz",
+      "unitPrice": 9.841000000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 9.841000000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:33.474Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:386300370": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "386300370",
+      "url": "https://www.walmart.com/ip/386300370?athcpid=386300370&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 3.48,
+      "unit": "each",
+      "sizeValue": 4,
+      "sizeUnit": "oz",
+      "unitPrice": 48.87,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 48.87,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:35.982Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:5295229969": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "5295229969",
+      "url": "https://www.walmart.com/ip/5295229969?athcpid=5295229969&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.48,
+      "unit": "each",
+      "sizeValue": 14,
+      "sizeUnit": "oz",
+      "unitPrice": 48.463,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 48.463,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:39.251Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:483617254": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "483617254",
+      "url": "https://www.walmart.com/ip/483617254?athcpid=483617254&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 9.82,
+      "unit": "each",
+      "sizeValue": 15.25,
+      "sizeUnit": "oz",
+      "unitPrice": 82.64200000000001,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 82.64200000000001,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:43.258Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:970593525": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "970593525",
+      "url": "https://www.walmart.com/ip/970593525?athcpid=970593525&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 9.58,
+      "unit": "each",
+      "sizeValue": 27,
+      "sizeUnit": "oz",
+      "unitPrice": 58.355,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 58.355,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:46.203Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:37911088": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "37911088",
+      "url": "https://www.walmart.com/ip/37911088?athcpid=37911088&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 6.46,
+      "unit": "each",
+      "sizeValue": 3.29,
+      "sizeUnit": "oz",
+      "unitPrice": 46.163999999999994,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 46.163999999999994,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:50.168Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:37911092": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "37911092",
+      "url": "https://www.walmart.com/ip/37911092?athcpid=37911092&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 4.78,
+      "unit": "each",
+      "sizeValue": 1.5,
+      "sizeUnit": "oz",
+      "unitPrice": 78.266,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 78.266,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:53.803Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:927645419": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "927645419",
+      "url": "https://www.walmart.com/ip/927645419?athcpid=927645419&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 1.86,
+      "unit": "each",
+      "sizeValue": 3.52,
+      "sizeUnit": "oz",
+      "unitPrice": 86.52799999999999,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 86.52799999999999,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:56.462Z",
+      "price_status": "fresh"
+    }
+  },
+  "walmart:10312257": {
+    "walmart": {
+      "ok": true,
+      "store": "walmart",
+      "itemId": "10312257",
+      "url": "https://www.walmart.com/ip/10312257?athcpid=10312257&athpgid=AthenaItempage&athcgid=null&athznid=null&athieid=v0",
+      "price": 5.78,
+      "unit": "each",
+      "sizeValue": 3.5,
+      "sizeUnit": "oz",
+      "unitPrice": 0.94,
+      "unitPriceUnit": "oz",
+      "pricePerBaseUnit": 0.94,
+      "baseUnit": "oz",
+      "source": "html",
+      "updatedAt": "2026-01-28T03:10:59.253Z",
+      "price_status": "fresh"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "walmart": {
+    "enabled": true,
+    "baseUrl": "https://www.walmart.com"
+  },
+  "sams": {
+    "enabled": true,
+    "baseUrl": "https://www.samsclub.com"
+  }
+}

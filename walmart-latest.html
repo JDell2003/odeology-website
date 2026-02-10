@@ -1,0 +1,55 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Walmart Latest Data</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:24px;background:#f7f7f7;color:#1b1b1b}
+    h1{font-size:20px;margin-bottom:8px}
+    pre{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;overflow:auto;max-height:60vh}
+    .meta{color:#666;font-size:12px;margin-bottom:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:16px}
+    .card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center}
+    .card img{max-width:100%;height:120px;object-fit:contain;display:block;margin:0 auto 6px}
+    .card .name{font-size:12px;color:#333}
+    .group{margin-top:18px}
+    .group h3{font-size:14px;margin:0 0 8px}
+    .group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  </style>
+</head>
+<body>
+  <h1>Walmart Latest Data</h1>
+  <div class="meta">This page loads stored data from /api/prices/walmart/latest.</div>
+  <pre id="out">Loading...</pre>
+  <h2 style="margin-top:18px;font-size:16px;">Item Images (Top 2)</h2>
+  <div id="groups"></div>
+  <script>
+    fetch('/api/prices/walmart/latest')
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+        const groups = document.getElementById('groups');
+        const items = (data.items || []);
+        groups.innerHTML = items.map(row => {
+          const picks = Array.isArray(row.top_two_by_oz) ? row.top_two_by_oz : [];
+          if (picks.length === 0) return '';
+          return `
+            <div class="group">
+              <h3>${row.query || ''}</h3>
+              <div class="group-grid">
+                ${picks.map(item => `
+                  <div class="card">
+                    <img src="${item.image || ''}" alt="${item.name || ''}">
+                    <div class="name">${item.name || ''}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      })
+      .catch(() => { document.getElementById('out').textContent = 'Failed to load data'; });
+  </script>
+</body>
+</html>

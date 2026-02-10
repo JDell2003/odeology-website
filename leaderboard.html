@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Leaderboard · odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/leaderboard.css?v=2026-02-07">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="leaderboard-page" data-require-auth="1">
+    <div class="grain"></div>
+
+    <!-- SVG Icon Sprite -->
+    <svg aria-hidden="true" class="icon-sprite">
+        <symbol id="icon-account" viewBox="0 0 24 24">
+            <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+            <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+            <path d="M15.5 12H7.5"></path>
+            <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24">
+            <circle cx="10" cy="9" r="2.5"></circle>
+            <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+            <circle cx="16.5" cy="10.5" r="2"></circle>
+            <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+        </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M7 9h10l-1 12H8L7 9Z"></path>
+            <path d="M9 9V7.5a3 3 0 0 1 6 0V9"></path>
+        </symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24">
+            <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+        </symbol>
+        <symbol id="icon-dumbbell" viewBox="0 0 24 24">
+            <path d="M7 9v6M17 9v6"></path>
+            <path d="M9.5 10h5M9.5 14h5"></path>
+            <path d="M5.5 10v4M18.5 10v4"></path>
+        </symbol>
+        <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+            <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+            <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+        </symbol>
+        <symbol id="icon-trend" viewBox="0 0 24 24">
+            <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
+            <path d="M15 8h3v3"></path>
+        </symbol>
+        <symbol id="icon-bars" viewBox="0 0 24 24">
+            <path d="M5 16.5h14"></path>
+            <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+        </symbol>
+        <symbol id="icon-list-check" viewBox="0 0 24 24">
+            <path d="M9 7h11"></path>
+            <path d="M9 12h11"></path>
+            <path d="M9 17h11"></path>
+            <path d="m4 7 1.25 1.25L7 6.5"></path>
+            <path d="m4 12 1.25 1.25L7 11.5"></path>
+            <path d="m4 17 1.25 1.25L7 16.5"></path>
+        </symbol>
+        <symbol id="icon-folder" viewBox="0 0 24 24">
+            <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+        </symbol>
+    </svg>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <aside class="control-panel" id="control-panel">
+        <div class="control-panel-header">
+            <button class="control-close" id="control-close" aria-label="Collapse panel">&lsaquo;</button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">HELP</p>
+            <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">DASH</p>
+            <div class="control-pill-row">
+                <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+                    <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+                    <span class="text">Dash</span>
+                </button>
+            </div>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TRAINING PORTAL</p>
+            <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+            <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" href="training-status.html"><span class="icon"><svg><use href="#icon-trend"></use></svg></span><span class="text">Progress</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">COMMUNITY</p>
+            <a class="control-link active" href="leaderboard.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TOOLS</p>
+            <a class="control-link" href="store.html"><span class="icon"><svg><use href="#icon-bag"></use></svg></span><span class="text">Store</span></a>
+            <a class="control-link" href="index.html#resources"><span class="icon"><svg><use href="#icon-bars"></use></svg></span><span class="text">Macro Calculator</span></a>
+            <a class="control-link" href="index.html?ns=start&reset=grocery#ns-entry"><span class="icon"><svg><use href="#icon-list-check"></use></svg></span><span class="text">Grocery List Generator</span></a>
+        </div>
+    </aside>
+
+    <main class="lb-main">
+        <header class="lb-header">
+            <div>
+                <p class="eyebrow">Community</p>
+                <h1>Leaderboard</h1>
+                <p class="ns-muted">Resets monthly. Rankings update throughout the day.</p>
+            </div>
+            <div class="lb-actions">
+                <button class="btn btn-ghost" id="lb-rules-btn" type="button">Rules</button>
+                <button class="btn btn-ghost" id="lb-awards-btn" type="button">Awards</button>
+                <a class="btn btn-primary" href="overview.html">Back to overview</a>
+            </div>
+        </header>
+
+        <section class="plan-card lb-card">
+            <div class="lb-you hidden" id="lb-you">
+                <div class="lb-you-left">
+                    <div class="lb-you-title">You</div>
+                    <div class="lb-you-sub ns-muted" id="lb-you-sub">—</div>
+                </div>
+                <div class="lb-you-right" id="lb-you-right">—</div>
+            </div>
+            <div class="lb-list" id="lb-list" aria-label="Leaderboard list"></div>
+        </section>
+    </main>
+
+    <div class="lb-modal hidden" id="lb-modal" role="dialog" aria-modal="true" aria-label="Leaderboard info">
+        <div class="lb-backdrop" id="lb-backdrop"></div>
+        <div class="lb-modal-card">
+            <div class="lb-modal-head">
+                <div>
+                    <div class="lb-modal-title" id="lb-modal-title">Rules</div>
+                    <div class="ns-muted" id="lb-modal-sub" style="font-size:12px;">Points are based on actions you can take on this website.</div>
+                </div>
+                <button class="lb-close" id="lb-close" type="button" aria-label="Close">×</button>
+            </div>
+            <div class="lb-modal-body" id="lb-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js?v=2026-02-06"></script>
+    <script src="js/leaderboard.js?v=2026-02-06"></script>
+</body>
+</html>

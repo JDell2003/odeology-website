@@ -1,0 +1,741 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ - Systems. Strength. Proof.</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+    <!-- SVG Icon Sprite -->
+    <svg aria-hidden="true" class="icon-sprite">
+        <symbol id="icon-account" viewBox="0 0 24 24">
+            <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+            <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+            <path d="M15.5 12H7.5"></path>
+            <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+        </symbol>
+        <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+            <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+            <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+        </symbol>
+        <symbol id="icon-bars" viewBox="0 0 24 24">
+            <path d="M5 16.5h14"></path>
+            <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+        </symbol>
+        <symbol id="icon-trend" viewBox="0 0 24 24">
+            <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
+            <path d="M15 8h3v3"></path>
+        </symbol>
+        <symbol id="icon-chat" viewBox="0 0 24 24">
+            <path d="M6.5 7.5h10a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H11l-3.5 2v-2H6.5A1.5 1.5 0 0 1 5 13V9a1.5 1.5 0 0 1 1.5-1.5Z"></path>
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24">
+            <circle cx="10" cy="9" r="2.5"></circle>
+            <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+            <circle cx="16.5" cy="10.5" r="2"></circle>
+            <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+        </symbol>
+        <symbol id="icon-megaphone" viewBox="0 0 24 24">
+            <path d="M5.5 11h2.5L14.5 7v10l-6.5-4H5.5V11Z"></path>
+            <path d="m9 13.5 1.2 3.2"></path>
+        </symbol>
+        <symbol id="icon-dumbbell" viewBox="0 0 24 24">
+            <path d="M7 9v6M17 9v6"></path>
+            <path d="M9.5 10h5M9.5 14h5"></path>
+            <path d="M5.5 10v4M18.5 10v4"></path>
+        </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M7 9h10l-1 12H8L7 9Z"></path>
+            <path d="M9 9V7.5a3 3 0 0 1 6 0V9"></path>
+        </symbol>
+        <symbol id="icon-list-check" viewBox="0 0 24 24">
+            <path d="M9 7h11"></path>
+            <path d="M9 12h11"></path>
+            <path d="M9 17h11"></path>
+            <path d="m4 7 1.25 1.25L7 6.5"></path>
+            <path d="m4 12 1.25 1.25L7 11.5"></path>
+            <path d="m4 17 1.25 1.25L7 16.5"></path>
+        </symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24">
+            <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+        </symbol>
+        <symbol id="icon-folder" viewBox="0 0 24 24">
+            <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+        </symbol>
+    </svg>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">☾</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- CONTROL PANEL (LEFT) -->
+    <aside class="control-panel" id="control-panel" aria-label="Control panel">
+        <div class="control-panel-header">
+            <button class="control-close" id="control-close" aria-label="Collapse panel">&lsaquo;</button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">HELP</p>
+            <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">DASH</p>
+            <div class="control-pill-row">
+                <button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button>
+            </div>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TRAINING PORTAL</p>
+            <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+            <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" href="training-status.html"><span class="icon"><svg><use href="#icon-trend"></use></svg></span><span class="text">Progress</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">COMMUNITY</p>
+            <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TOOLS</p>
+            <a class="control-link" href="store.html"><span class="icon"><svg><use href="#icon-bag"></use></svg></span><span class="text">Store</span></a>
+            <a class="control-link" href="#resources"><span class="icon"><svg><use href="#icon-bars"></use></svg></span><span class="text">Macro Calculator</span></a>
+            <a class="control-link" href="index.html?ns=start&reset=grocery#ns-entry"><span class="icon"><svg><use href="#icon-list-check"></use></svg></span><span class="text">Grocery List Generator</span></a>
+        </div>
+    </aside>
+
+    <!-- MISSION / FIT -->
+    <section id="mission" class="resources mission">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Use this to find what you’re looking for.</h2>
+                <p class="section-subtitle">Answer a few questions so we can take you to the right tools, calculators, or plans.</p>
+            </div>
+            <div class="mission-layout mission-layout-single">
+                <aside class="mission-right">
+                    <div class="resource-card reveal offer-save-card">
+                            <div class="card-top">
+                                <h3>Build Your Blueprint</h3>
+                                <p class="offer-trust intake-subhead">2 questions. Takes about 30 seconds.</p>
+                            </div>
+
+                        <form class="intake-form intake-wizard" id="intake-form" data-step="1">
+                            <div class="intake-progress" aria-live="polite">
+                                <div class="intake-progress-top">
+                                    <span class="intake-progress-label" id="intake-progress-label">Step 1 of 2</span>
+                                    <span class="intake-progress-status" id="intake-progress-status">Intent</span>
+                                </div>
+                                <div class="intake-progress-bar" aria-hidden="true">
+                                    <div class="intake-progress-fill" id="intake-progress-fill" style="width: 50%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="intake-viewport" id="intake-viewport">
+                                <div class="intake-track" id="intake-track">
+                                    <section class="intake-screen" data-step="1" aria-label="Question 1">
+                                        <p class="intake-q">What are you trying to do right now?</p>
+                                        <fieldset class="intake-options" aria-label="Select all that apply">
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="primary_intents" value="track_calories_macros">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M6 2v6"></path><path d="M18 2v6"></path><path d="M3 10h18"></path><path d="M5 6h14"></path><path d="M7 14h3"></path><path d="M14 14h3"></path><path d="M7 18h3"></path><path d="M14 18h3"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Track My Calories &amp; Macros</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="primary_intents" value="lower_grocery_costs">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M6 7h15l-1.5 9H8L6 7Z"></path><path d="M6 7l-2-3H2"></path><path d="M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"></path><path d="M18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Lower My Grocery Costs</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="primary_intents" value="get_workout_plan">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M7 9v6"></path><path d="M17 9v6"></path><path d="M9.5 10h5"></path><path d="M9.5 14h5"></path><path d="M5.5 10v4"></path><path d="M18.5 10v4"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Make a Custom Workout Plan</span>
+                                            </label>
+                                        </fieldset>
+                                        <p class="ns-muted intake-helper">Choose all that apply.</p>
+                                        <div class="intake-actions-row">
+                                            <button type="button" class="btn btn-primary" data-intake-next disabled>Continue →</button>
+                                        </div>
+                                    </section>
+
+                                    <section class="intake-screen" data-step="2" aria-label="Question 2">
+                                        <p class="intake-q">How do you want to handle this?</p>
+                                        <fieldset class="intake-options" aria-label="Execution style">
+                                            <label class="intake-check">
+                                                <input type="radio" name="execution_style" value="diy">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">I want to do it myself (guides, calculators, PDFs)</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="radio" name="execution_style" value="structured">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M5 16.5h14"></path>
+                                                        <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">I want it structured for me (programs, tracking, automation)</span>
+                                            </label>
+                                        </fieldset>
+                                        <div class="intake-actions-row">
+                                            <button type="button" class="btn btn-primary" data-intake-next disabled>Continue →</button>
+                                        </div>
+                                    </section>
+
+                                    <section class="intake-screen" data-step="3" aria-label="Question 3">
+                                        <p class="intake-q">How much help do you want?</p>
+                                        <p class="ns-muted intake-helper">This just controls what we show you — nothing is locked.</p>
+                                        <fieldset class="intake-options" aria-label="Support preferences">
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="support_preferences" value="coaching_self_paced">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
+                                                        <path d="M4 20a8 8 0 0 1 16 0"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Self-Paced Coaching</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="support_preferences" value="coaching_1on1">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
+                                                        <path d="M4 20a8 8 0 0 1 16 0"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Custom One-on-One Coaching</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="support_preferences" value="supplements_delivered">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="8" y="2.5" width="8" height="7" rx="2"></rect>
+                                                        <path d="M7 9.5h10v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-10Z"></path>
+                                                        <path d="M9 13h6"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Supplements Delivered to My Door</span>
+                                            </label>
+
+                                            <label class="intake-check">
+                                                <input type="checkbox" name="support_preferences" value="meals_planned_or_cooked">
+                                                <span class="intake-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M6 3v8"></path>
+                                                        <path d="M10 3v8"></path>
+                                                        <path d="M6 7h4"></path>
+                                                        <path d="M14 3h2a2 2 0 0 1 2 2v6"></path>
+                                                        <path d="M12 13h10"></path>
+                                                        <path d="M12 17h10"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="intake-text">Meals Planned or Cooked for Me</span>
+                                            </label>
+                                        </fieldset>
+                                        <div class="intake-actions-row intake-actions-final">
+                                            <button type="submit" class="btn btn-primary" id="intake-next">Show My Blueprint</button>
+                                            <p class="offer-trust" id="intake-trust">This just controls what we show you — nothing is locked.</p>
+                                        </div>
+                                    </section>
+
+                                    <section class="intake-screen intake-screen-blank" data-step="4" aria-label="Next step">
+                                        <div class="intake-blank"></div>
+                                        <button type="button" class="btn btn-ghost intake-redo" data-intake-redo>Redo</button>
+                                    </section>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </aside>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- NUTRITION SIMPLIFIED: BASELINE PROTOCOL -->
+    <section id="resources" class="resources nutrition-funnel">
+        <div class="container">
+            <div class="section-header reveal">
+                <p class="eyebrow">Nutrition Simplified: Baseline Protocol</p>
+                <h2>Stop guessing your calories. Start training with numbers that work</h2>
+                <p class="section-subtitle">Answer a few questions to calculate your calories and macros. Includes the cheapest grocery list that fits your macros.</p>
+            </div>
+
+            <div class="ns-wrapper reveal">
+                <!-- Step 0 / Entry -->
+                <div class="ns-card ns-entry" id="ns-entry">
+                    <div>
+                        <p class="eyebrow">Baseline</p>
+                        <h3>Get your calories in 60 seconds.</h3>
+                        <p class="ns-muted">Unlock macros and a free low-cost grocery plan after calculation.</p>
+                        <ul class="ns-list">
+                            <li>Goal + training style drive your calories</li>
+                            <li>Training frequency and activity level change the math</li>
+                        </ul>
+                    </div>
+                    <div class="ns-actions column">
+                        <button class="btn btn-primary" id="ns-start">Generate My Calories & Macros</button>
+                    </div>
+                    <p class="ns-muted tight">Free to generate—Includes the cheapest grocery list that fits your macros.</p>
+                </div>
+
+                <!-- Flow container -->
+                <div class="ns-card ns-flow hidden" id="ns-flow" aria-live="polite">
+                    <div class="ns-progress">
+                        <div class="ns-progress-top">
+                            <span class="ns-progress-label" id="ns-progress-label">Step 1 of 3</span>
+                            <span class="ns-progress-status" id="ns-progress-status">Goals & Training</span>
+                        </div>
+                        <div class="ns-progress-bar">
+                            <div class="ns-progress-fill" id="ns-progress-fill" style="width: 33%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Loader -->
+                    <div class="ns-loader hidden" id="ns-loader">
+                        <div class="ns-loader-dot"></div>
+                        <p id="ns-loader-text">Calculating calories…</p>
+                    </div>
+
+                    <!-- Steps -->
+                    <div class="ns-step" data-step="1" id="ns-step-1">
+                        <div class="ns-group">
+                            <p class="eyebrow">Primary goal</p>
+                            <div class="ns-button-grid" data-group="goal">
+                                <button type="button" data-value="CUT" class="ns-pill">Cut fat</button>
+                                <button type="button" data-value="BULK" class="ns-pill">Build muscle</button>
+                                <button type="button" data-value="RECOMP" class="ns-pill">Lose fat + build muscle</button>
+                                <button type="button" data-value="STRENGTH" class="ns-pill">Prioritize strength</button>
+                            </div>
+                        </div>
+                        <div class="ns-group">
+                            <p class="eyebrow">Training style</p>
+                            <div class="ns-icon-grid" data-group="style">
+                                <button type="button" data-value="STRENGTH" class="ns-icon-pill"><span>🏋️‍♂️</span>Strength Training</button>
+                                <button type="button" data-value="MIXED" class="ns-icon-pill"><span>🔥</span>Mixed Training</button>
+                                <button type="button" data-value="CALISTHENICS" class="ns-icon-pill"><span>🤸</span>Bodyweight / Calisthenics</button>
+                            </div>
+                        </div>
+                        <div class="ns-group">
+                            <p class="eyebrow">Training frequency</p>
+                            <div class="ns-button-grid" data-group="frequency">
+                                <button type="button" data-value="1-2" class="ns-pill">1–2 days/week</button>
+                                <button type="button" data-value="3-4" class="ns-pill">3–4 days/week</button>
+                                <button type="button" data-value="5-6" class="ns-pill">5–6 days/week</button>
+                            </div>
+                        </div>
+                        <div class="ns-actions">
+                            <button class="btn btn-primary" id="ns-next-1">Continue</button>
+                        </div>
+                    </div>
+
+                    <div class="ns-step hidden" data-step="2" id="ns-step-2">
+                        <div class="ns-group">
+                            <p class="eyebrow">Sex</p>
+                            <div class="ns-button-grid" data-group="sex">
+                                <button type="button" data-value="MALE" class="ns-pill">Male</button>
+                                <button type="button" data-value="FEMALE" class="ns-pill">Female</button>
+                            </div>
+                        </div>
+                        <div class="ns-duo">
+                            <label class="ns-field">
+                                <span>Height (inches)</span>
+                                <input type="number" id="ns-height" min="48" max="84" placeholder="70" required>
+                            </label>
+                        </div>
+                        <div class="ns-duo">
+                            <label class="ns-field">
+                                <span>Current bodyweight (lbs)</span>
+                                <input type="number" id="ns-weight" min="80" max="400" placeholder="180" required>
+                            </label>
+                            <label class="ns-field">
+                                <span>Goal bodyweight (lbs)</span>
+                                <input type="number" id="ns-goal-weight" min="80" max="400" placeholder="170" required>
+                            </label>
+                        </div>
+                        <div class="ns-group">
+                            <p class="eyebrow">How intense are the sessions</p>
+                            <div class="ns-button-grid tight" data-group="intensity">
+                                <button type="button" data-value="AVERAGE" class="ns-pill">Average</button>
+                                <button type="button" data-value="INTENSE" class="ns-pill">Intense</button>
+                                <button type="button" data-value="VERY_INTENSE" class="ns-pill">Very intense</button>
+                            </div>
+                        </div>
+                        <div class="ns-actions split">
+                            <button class="btn btn-ghost" id="ns-back-2">Back</button>
+                            <button class="btn btn-primary" id="ns-next-2">Calculate My Calories</button>
+                        </div>
+                    </div>
+
+                    <div class="ns-step hidden" data-step="3" id="ns-step-3">
+                        <div class="ns-summary-grid split-two">
+                            <div class="ns-main-col">
+                                <div class="ns-results">
+                                    <div class="ns-result-card primary">
+                                        <p class="eyebrow">Daily calories</p>
+                                        <h3 id="ns-calories">—</h3>
+                                        <p class="ns-muted">Aligned to your goal and training style.</p>
+                                    </div>
+                                    <div class="ns-result-card">
+                                        <p class="eyebrow">Your Target</p>
+                                        <p class="ns-info strong">Good starting point. Run it for 7 days.</p>
+                                        <ul class="ns-list" style="margin: 8px 0; font-size: 0.9em;">
+                                            <li>Current: <strong><span id="ns-current-weight">—</span> lb</strong></li>
+                                            <li>Goal: <strong><span id="ns-goal-weight-display">—</span> lb</strong></li>
+                                            <li>Gap: <strong><span id="ns-weight-gap">—</span> lb</strong></li>
+                                            <li id="ns-time-to-goal-row"><span id="ns-time-to-goal-prefix">If you lose</span> <strong><span id="ns-target-rate">2</span> lb/week</strong>: ~<strong><span id="ns-weeks-to-goal">—</span> weeks</strong> to goal</li>
+                                        </ul>
+                                        <p class="ns-info small" style="margin-top: 8px;">Make an account to track your weight. If the scale doesn't move after 7 days, macros auto-adjust to better match your goal.</p>
+                                    </div>
+                                </div>
+
+
+                                <div class="ns-macros locked" id="ns-macros">
+                                    <div class="ns-macro-card">
+                                        <p class="eyebrow">Protein</p>
+                                        <h4 id="ns-protein">—</h4>
+                                        <p class="ns-muted" id="ns-protein-pct">—</p>
+                                    </div>
+                                    <div class="ns-macro-card">
+                                        <p class="eyebrow">Carbs</p>
+                                        <h4 id="ns-carbs">—</h4>
+                                        <p class="ns-muted" id="ns-carbs-pct">—</p>
+                                    </div>
+                                    <div class="ns-macro-card">
+                                        <p class="eyebrow">Fats</p>
+                                        <h4 id="ns-fats">—</h4>
+                                        <p class="ns-muted" id="ns-fats-pct">—</p>
+                                    </div>
+                                    <div class="ns-lock-overlay">
+                                        <p>Macros locked</p>
+                                        <p class="ns-macro-note">Macros = Protein, Carbs, Fats</p>
+                                    </div>
+                                </div>
+
+                                <div class="ns-actions column" id="ns-unlock-block">
+                                    <button class="btn btn-primary" id="ns-unlock-btn">👉 Unlock Full Macros & Download Plan</button>
+                                    <p class="ns-muted tight">Macros = protein, carbs, fats tailored to your calories.</p>
+                                    <div class="ns-email hidden" id="ns-email-form">
+                                        <div class="ns-email-row">
+                                            <label class="ns-field inline">
+                                                <input type="email" id="ns-email" placeholder="you@example.com">
+                                            </label>
+                                            <button class="btn btn-primary" id="ns-email-submit">Unlock now</button>
+                                        </div>
+                                        <label class="ns-email-optin">
+                                            <input type="checkbox" id="ns-email-optin" checked>
+                                            <span>Allow email follow-ups (optional)</span>
+                                        </label>
+                                        <p class="ns-muted tight">Still free. Enter email to unlock macros & download.</p>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="ns-actions hidden" id="ns-download-block">
+                                    <button class="btn btn-primary" id="ns-download">Download PDF</button>
+                                    <button class="btn btn-ghost" id="ns-print">Save / Print</button>
+                                </div>
+
+                                <div class="ns-handoff hidden" id="ns-handoff">
+                                    <button class="btn btn-primary" id="ns-start-grocery-primary">👉 Start Grocery List</button>
+                                    <button class="btn btn-ghost" id="ns-redo-calculation">Redo calculation</button>
+                                    <p class="ns-muted tight">Now that you know your calories & macros for <span id="ns-handoff-goal">your goal</span>, build your personalized grocery list.</p>
+                                </div>
+                            </div>
+
+                            <aside class="ns-side-col">
+                                <div class="ns-video-card ns-next-box">
+                                    <div class="ns-next-top">
+                                        <p class="ns-next-kicker">What happens next · ~60 seconds</p>
+                                    </div>
+
+                                    <div class="ns-next-mid">
+                                        <p class="ns-next-typed" id="ns-next-typed" aria-live="polite"></p>
+                                    </div>
+
+                                    <div class="ns-next-bot">
+                                        <p class="ns-next-sub">Next: we auto-build your grocery list from your macros.</p>
+                                        <button class="btn btn-primary" id="ns-grocery-start">Build My Grocery List</button>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header reveal">
+                <p class="eyebrow">Contact</p>
+                <h2>See something you’d like to add to the website—or a bug you noticed? Reach out.</h2>
+                <p class="section-subtitle">Give me your schedule, equipment, and sticking points. I'll show you the plan.</p>
+            </div>
+
+            <div class="contact-wrapper">
+                <form id="contact-form" class="contact-form">
+                    <div class="form-group">
+                        <input type="text" id="contact-name" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="contact-email" placeholder="Your Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="contact-subject" placeholder="Subject" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="contact-message" placeholder="Your Message" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+
+                <div class="contact-social">
+                    <h3>Connect</h3>
+                    <div class="social-links">
+                        <a href="https://www.youtube.com/@odeology_0" target="_blank" class="social-link"><span class="social-dot youtube"></span>YouTube</a>
+                        <a href="https://www.instagram.com/odeology_/reels/" target="_blank" class="social-link"><span class="social-dot instagram"></span>Instagram</a>
+                        <a href="https://www.linkedin.com/in/jodell0205" target="_blank" class="social-link"><span class="social-dot linkedin"></span>LinkedIn</a>
+                        <a href="https://www.tiktok.com/@odeology_0?is_from_webapp=1&sender_device=pc" target="_blank" class="social-link"><span class="social-dot tiktok"></span>TikTok</a>
+                    </div>
+                    <p class="form-note" style="margin-top:0.75rem;">DM me on any platform if you prefer not to email.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FULL-SCREEN GROCERY LOOP PAGE -->
+    <section class="grocery-page hidden" id="grocery-page">
+        <div class="grocery-page-inner">
+            <div class="grocery-top">
+                <button class="btn btn-ghost" id="grocery-back">← Back</button>
+
+                <div class="grocery-req" id="grocery-req">
+                    <div class="req-line">
+                        <span class="label">Select at least</span>
+                        <span class="value">3 proteins • 2 carbs • 1 fat</span>
+                    </div>
+                    <div class="req-line">
+                        <span class="label">Remaining</span>
+                        <span class="value" id="g-req-remaining">3 proteins • 2 carbs • 1 fat</span>
+                    </div>
+                </div>
+
+                <div class="grocery-macros" id="grocery-macros">
+                    <div><span class="label">Calories</span><span id="g-mac-cal">—</span></div>
+                    <div><span class="label">Protein</span><span id="g-mac-pro">—</span></div>
+                    <div><span class="label">Carbs</span><span id="g-mac-car">—</span></div>
+                    <div><span class="label">Fats</span><span id="g-mac-fat">—</span></div>
+                </div>
+            </div>
+
+            <div class="grocery-loop">
+                <div class="loop-block">
+                    <div class="loop-head">
+                        <p class="eyebrow">Protein</p>
+                        <p class="ns-muted">Tap to select; two drifting lanes.</p>
+                    </div>
+                    <div class="loop-row slow" data-group="protein" id="loop-protein-1"></div>
+                    <div class="loop-row slow" data-group="protein" id="loop-protein-2"></div>
+                </div>
+
+                <div class="loop-block">
+                    <div class="loop-head">
+                        <p class="eyebrow">Carbs</p>
+                        <p class="ns-muted">Long-burning carbs drifting left.</p>
+                    </div>
+                    <div class="loop-row medium reverse" data-group="carb" id="loop-carb-1"></div>
+                    <div class="loop-row medium reverse" data-group="carb" id="loop-carb-2"></div>
+                </div>
+
+                <div class="loop-block">
+                    <div class="loop-head">
+                        <p class="eyebrow">Fats</p>
+                        <p class="ns-muted">Single lane drifting right.</p>
+                    </div>
+                    <div class="loop-row slow" data-group="fat" id="loop-fat"></div>
+                </div>
+            </div>
+
+            <div class="grocery-bottom">
+                <button class="btn btn-primary g-next-wide" id="grocery-next" disabled>Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>odeology_</h4>
+                    <p>Systems-first training, luxury presentation, relentless execution.</p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="#resources">Home</a></li>
+                        <li><a href="#resources">Resources</a></li>
+                        <li><a href="training.html">Training</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="javascript:void(0)">Privacy Policy</a></li>
+                        <li><a href="javascript:void(0)">Terms of Service</a></li>
+                        <li><a href="/admin">Admin</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 odeology_. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Workout Builder Modal -->
+    <div class="modal" id="builder-modal" aria-hidden="true">
+        <div class="modal-content">
+            <button class="modal-close" id="builder-close">&times;</button>
+            <p class="eyebrow">Builder</p>
+            <h3>Build your own workout</h3>
+            <p class="modal-subtitle">Pick a focus, choose days, lock equipment. We generate a starter split with progressions.</p>
+
+            <form id="builder-form" class="builder-form">
+                <label>
+                    Goal
+                    <select id="builder-goal" required>
+                        <option value="strength">Strength</option>
+                        <option value="hypertrophy">Hypertrophy</option>
+                        <option value="recomp">Recomp</option>
+                    </select>
+                </label>
+
+                <label>
+                    Days per week
+                    <select id="builder-days" required>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </label>
+
+                <label>
+                    Equipment
+                    <select id="builder-equipment" required>
+                        <option value="full">Full gym</option>
+                        <option value="dumbbells">Dumbbells + bench</option>
+                        <option value="home">Bands + bodyweight</option>
+                    </select>
+                </label>
+
+                <button type="submit" class="btn btn-primary">Generate plan</button>
+            </form>
+
+            <div class="builder-output" id="builder-output">
+                <p class="placeholder">Pick options and hit generate. We'll show the split and download link.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- GROCERY GATE MODAL -->
+    <div class="ns-modal-overlay hidden" id="ns-grocery-gate-modal">
+        <div class="ns-modal">
+            <h3>Unlock your macros first</h3>
+            <p>to generate a grocery list that fits your calories</p>
+            <button class="btn btn-primary" id="ns-grocery-gate-unlock">Unlock macros for free</button>
+        </div>
+    </div>
+
+    <!-- GROCERY START MODAL (when clicking Start Grocery List without unlocking) -->
+    <div class="ns-modal-overlay hidden" id="ns-grocery-start-modal">
+        <div class="ns-modal ns-modal-grocery">
+            <button class="ns-modal-close" id="ns-grocery-start-close" aria-label="Close">&times;</button>
+            <div class="ns-modal-icon">🔒</div>
+            <h3>Unlock Your Macros First</h3>
+            <p class="ns-modal-subtitle">Your grocery list is built around your exact nutrition needs</p>
+            <div class="ns-modal-macros">
+                <div class="ns-modal-macro">
+                    <span class="ns-modal-macro-icon">🥩</span>
+                    <span class="ns-modal-macro-label">Protein</span>
+                </div>
+                <div class="ns-modal-macro">
+                    <span class="ns-modal-macro-icon">🍚</span>
+                    <span class="ns-modal-macro-label">Carbs</span>
+                </div>
+                <div class="ns-modal-macro">
+                    <span class="ns-modal-macro-icon">🥑</span>
+                    <span class="ns-modal-macro-label">Fats</span>
+                </div>
+            </div>
+            <p class="ns-modal-info">We need your macros to calculate exact portions, costs, and build your personalized grocery list.</p>
+            <button class="btn btn-primary" id="ns-grocery-start-unlock">Got it, let's unlock →</button>
+            <p class="ns-modal-free">100% free • No credit card</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/usda.js"></script>
+    <script src="js/main.js?v=2026-02-06"></script>
+</body>
+</html>

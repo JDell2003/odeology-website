@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Blueprint · odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .blueprint-modal-content { max-width: 720px; }
+        .blueprint-modal-actions { display: grid; gap: 0.75rem; margin-top: 1rem; }
+        .blueprint-modal-actions .btn { width: 100%; justify-content: center; }
+        .blueprint-modal-note { margin-top: 0.75rem; color: var(--muted); font-size: 0.95rem; }
+        .blueprint-modal-back { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    </style>
+</head>
+<body class="final-page blueprint-page">
+    <div class="grain"></div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">☾</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="modal active" id="blueprint-modal" aria-hidden="false" role="dialog" aria-modal="true" aria-label="Your Blueprint">
+        <div class="modal-content blueprint-modal-content" role="document">
+            <button type="button" class="modal-close" id="blueprint-close" aria-label="Close">×</button>
+            <h2>Here’s your Blueprint</h2>
+            <p class="modal-subtitle">Click the button that interests you — it’ll take you to that part of the website.</p>
+            <div id="blueprint-modal-body" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        (() => {
+            const KEY_V2 = 'ode_blueprint_v2';
+            const KEY_V1 = 'ode_blueprint_v1';
+            const modal = document.getElementById('blueprint-modal');
+            const closeBtn = document.getElementById('blueprint-close');
+            const body = document.getElementById('blueprint-modal-body');
+
+            let currentUser = null;
+            let currentView = 'home';
+
+            const safeParse = (val) => {
+                try { return val ? JSON.parse(val) : null; } catch { return null; }
+            };
+
+            const readBlueprint = () => {
+                const v2 = safeParse(localStorage.getItem(KEY_V2)) || safeParse(sessionStorage.getItem(KEY_V2));
+                if (v2 && typeof v2 === 'object') return v2;
+                const v1 = safeParse(localStorage.getItem(KEY_V1)) || safeParse(sessionStorage.getItem(KEY_V1));
+                if (v1 && typeof v1 === 'object') return v1;
+                return null;
+            };
+
+            const setUser = (user) => {
+                currentUser = user || null;
+            };
+
+            try {
+                window.addEventListener('odeauth', (e) => setUser(e?.detail?.user || null));
+            } catch {
+                // ignore
+            }
+
+            try {
+                fetch('/api/auth/me', { credentials: 'include' })
+                    .then((r) => r.json())
+                    .then((data) => setUser(data?.user || null))
+                    .catch(() => {});
+            } catch {
+                // ignore
+            }
+
+            const blueprint = readBlueprint();
+            const primaryIntents = Array.isArray(blueprint?.primary_intents) ? blueprint.primary_intents : Array.isArray(blueprint?.wants) ? blueprint.wants : [];
+            const supportPrefs = Array.isArray(blueprint?.support_preferences) ? blueprint.support_preferences : [];
+            const executionStyle = String(blueprint?.execution_style || '').trim();
+
+            const openAuth = (mode = 'signup') => {
+                if (typeof window.odeOpenAuthModal === 'function') {
+                    window.odeOpenAuthModal(mode);
+                    return;
+                }
+                window.location.href = 'index.html#mission';
+            };
+
+            const wants = Array.from(new Set([...(primaryIntents || []), ...(supportPrefs || [])]));
+
+            const trackEvent = async ({ event, props }) => {
+                try {
+                    await fetch('/api/track/event', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            event,
+                            path: `${location.pathname}${location.search}${location.hash}`,
+                            props: props || {}
+                        })
+                    });
+                } catch {
+                    // ignore
+                }
+            };
+
+            const submitLead = async ({ source, email, phone, snapshot }) => {
+                try {
+                    await fetch('/api/track/lead', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            source: source || 'blueprint',
+                            email: email || null,
+                            phone: phone || null,
+                            wants,
+                            snapshot: snapshot && typeof snapshot === 'object' ? snapshot : {},
+                            path: `${location.pathname}${location.search}${location.hash}`,
+                        })
+                    });
+                } catch {
+                    // ignore
+                }
+            };
+
+            const go = (href) => {
+                window.location.href = href;
+            };
+
+            const setView = (view) => {
+                currentView = view;
+                render();
+            };
+
+            const makePrimaryBtn = ({ label, onClick, href }) => {
+                const btn = document.createElement(href ? 'a' : 'button');
+                btn.className = 'btn btn-primary';
+                btn.textContent = label;
+                if (href) btn.href = href;
+                else {
+                    btn.type = 'button';
+                    btn.addEventListener('click', onClick);
+                }
+                return btn;
+            };
+
+            const makeGhostBtn = ({ label, onClick, href }) => {
+                const btn = document.createElement(href ? 'a' : 'button');
+                btn.className = 'btn btn-ghost';
+                btn.textContent = label;
+                if (href) btn.href = href;
+                else {
+                    btn.type = 'button';
+                    btn.addEventListener('click', onClick);
+                }
+                return btn;
+            };
+
+            const renderHome = () => {
+                const wrap = document.createElement('div');
+
+                if (!blueprint) {
+                    wrap.innerHTML = `<p class="blueprint-modal-note">No saved selections found. Go back and choose what you’re trying to do.</p>`;
+                    const actions = document.createElement('div');
+                    actions.className = 'blueprint-modal-actions';
+                    actions.appendChild(makePrimaryBtn({ label: 'Go to Blueprint', href: 'index.html#mission' }));
+                    wrap.appendChild(actions);
+                    return wrap;
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'blueprint-modal-actions';
+
+                const wantsMacros = primaryIntents.includes('track_calories_macros') || primaryIntents.includes('lower_grocery_costs');
+                if (wantsMacros) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: 'Macros without overspending',
+                        onClick: () => {
+                            trackEvent({ event: 'blueprint_click', props: { action: 'macros_without_overspending' } });
+                            go('index.html?ns=start#resources');
+                        }
+                    }));
+                }
+
+                if (primaryIntents.includes('get_workout_plan')) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: executionStyle === 'diy' ? 'Start a self-paced workout plan' : 'Build a custom program',
+                        onClick: () => {
+                            trackEvent({ event: 'blueprint_click', props: { action: 'workout_plan', executionStyle } });
+                            go('training.html');
+                        }
+                    }));
+                }
+
+                if (supportPrefs.includes('supplements_delivered')) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: 'Supplements → Store',
+                        onClick: () => {
+                            trackEvent({ event: 'blueprint_click', props: { action: 'supplements_store' } });
+                            go('store.html');
+                        }
+                    }));
+                }
+
+                if (supportPrefs.includes('meals_planned_or_cooked')) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: 'Meals delivered (request a call)',
+                        onClick: () => setView('meals')
+                    }));
+                }
+
+                if (supportPrefs.includes('coaching_1on1')) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: 'Custom One-on-One Coaching',
+                        onClick: () => setView('one_on_one')
+                    }));
+                }
+
+                if (supportPrefs.includes('coaching_self_paced')) {
+                    actions.appendChild(makePrimaryBtn({
+                        label: 'Self-Paced Coaching (generate a plan)',
+                        onClick: () => {
+                            trackEvent({ event: 'blueprint_click', props: { action: 'self_paced_training' } });
+                            go('training.html');
+                        }
+                    }));
+                }
+
+                wrap.appendChild(actions);
+
+                const back = document.createElement('div');
+                back.className = 'blueprint-modal-back';
+                back.appendChild(makeGhostBtn({
+                    label: 'Redo',
+                    onClick: () => {
+                        try { localStorage.removeItem(KEY_V2); } catch {}
+                        try { sessionStorage.removeItem(KEY_V2); } catch {}
+                        try { localStorage.removeItem(KEY_V1); } catch {}
+                        try { sessionStorage.removeItem(KEY_V1); } catch {}
+                        go('index.html#mission');
+                    }
+                }));
+                back.appendChild(makeGhostBtn({ label: 'Home', href: 'index.html#resources' }));
+                wrap.appendChild(back);
+
+                return wrap;
+            };
+
+            const renderMeals = () => {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = `
+                    <h3>Meals delivered</h3>
+                    <p class="blueprint-modal-note">Leave your contact info and preferences. We'll call you within 24 hours to confirm date, time, and delivery location.</p>
+                `;
+
+                const form = document.createElement('form');
+                form.innerHTML = `
+                    <label class="auth-label">Email</label>
+                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+                    <label class="auth-label">Phone</label>
+                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
+
+                    <label class="auth-label">Times NOT to call</label>
+                    <input class="auth-input" name="do_not_call" placeholder="e.g. Mon?Fri 9am?5pm, after 9pm">
+
+                    <label class="auth-label">Extra notes</label>
+                    <input class="auth-input" name="extra_notes" placeholder="Anything we should know? (address notes, dietary, schedule, etc.)">
+
+                    <button type="submit" class="btn btn-primary auth-submit">Submit my request</button>
+                    <p class="blueprint-modal-note" id="meals-status" role="status" aria-live="polite"></p>
+                `;
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const status = form.querySelector('#meals-status');
+                    if (status) status.textContent = 'Submitting?';
+
+                    const fd = new FormData(form);
+                    const email = String(fd.get('email') || '').trim();
+                    const phone = String(fd.get('phone') || '').trim();
+
+                    if (!email || !phone) {
+                        if (status) status.textContent = 'Please add your email and phone number so we can reach you.';
+                        return;
+                    }
+
+                    await submitLead({
+                        source: 'meals_delivered',
+                        email,
+                        phone,
+                        snapshot: {
+                            do_not_call: String(fd.get('do_not_call') || '').trim() || null,
+                            extra_notes: String(fd.get('extra_notes') || '').trim() || null,
+                            userSignedIn: Boolean(currentUser),
+                        }
+                    });
+
+                    if (status) status.textContent = 'Got it — we\'ll call you within 24 hours.';
+                });
+
+                wrap.appendChild(form);
+
+                const back = document.createElement('div');
+                back.className = 'blueprint-modal-back';
+                back.appendChild(makeGhostBtn({ label: 'Back', onClick: () => setView('home') }));
+                wrap.appendChild(back);
+                return wrap;
+            };
+
+            const renderOneOnOne = () => {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = `
+                    <h3>Custom One-on-One Coaching</h3>
+                    <p class="blueprint-modal-note">Enter your email and phone. Next, you’ll go to Training to create an account (if you don’t have one yet). If you already have one, sign in and stand by for a call within 24 hours.</p>
+                `;
+
+                const form = document.createElement('form');
+                form.innerHTML = `
+                    <label class="auth-label">Email</label>
+                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                    <label class="auth-label">Phone</label>
+                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
+                    <button type="submit" class="btn btn-primary auth-submit">Next</button>
+                    <p class="blueprint-modal-note" id="coach-status" role="status" aria-live="polite"></p>
+                `;
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const status = form.querySelector('#coach-status');
+                    if (status) status.textContent = 'Submitting?';
+                    const fd = new FormData(form);
+                    const email = String(fd.get('email') || '').trim();
+                    const phone = String(fd.get('phone') || '').trim();
+                    if (!email || !phone) {
+                        if (status) status.textContent = 'Please add your email and phone number so we can reach you.';
+                        return;
+                    }
+                    await submitLead({
+                        source: 'coaching_1on1',
+                        email,
+                        phone,
+                        snapshot: {
+                            userSignedIn: Boolean(currentUser),
+                        }
+                    });
+                    try { sessionStorage.setItem('ode_training_handoff_1on1', '1'); } catch {}
+                    if (status) status.textContent = 'Next: Training?';
+                    window.setTimeout(() => go('training.html'), 250);
+                });
+                wrap.appendChild(form);
+
+                const back = document.createElement('div');
+                back.className = 'blueprint-modal-back';
+                back.appendChild(makeGhostBtn({ label: 'Back', onClick: () => setView('home') }));
+                wrap.appendChild(back);
+                return wrap;
+            };
+
+            const renderSelfPaced = () => {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = `
+                    <h3>Self-Paced Coaching</h3>
+                    <p class="blueprint-modal-note">Create an account, add your constraints, and we’ll generate a plan. You can link your grocery plan to your account.</p>
+                `;
+
+                const actions = document.createElement('div');
+                actions.className = 'blueprint-modal-actions';
+
+                const authBtn = makePrimaryBtn({
+                    label: currentUser ? 'You’re signed in' : 'Create an account',
+                    onClick: () => openAuth('signup'),
+                });
+                if (currentUser) authBtn.setAttribute('disabled', 'true');
+                actions.appendChild(authBtn);
+                wrap.appendChild(actions);
+
+                const form = document.createElement('form');
+                form.innerHTML = `
+                    <label class="auth-label">Email (optional)</label>
+                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com">
+                    <label class="auth-label">Phone (optional)</label>
+                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555">
+                    <label class="auth-label">Goal</label>
+                    <input class="auth-input" name="goal" placeholder="e.g. strength, hypertrophy" required>
+                    <label class="auth-label">Days per week</label>
+                    <input class="auth-input" name="days" placeholder="e.g. 4" required>
+                    <label class="auth-label">Equipment</label>
+                    <input class="auth-input" name="equipment" placeholder="e.g. full gym, home" required>
+                    <label class="auth-label">Constraints (optional)</label>
+                    <input class="auth-input" name="constraints" placeholder="Schedule, injuries, preferences…">
+                    <button type="submit" class="btn btn-primary auth-submit">Generate my plan</button>
+                    <p class="blueprint-modal-note" id="sp-status" role="status" aria-live="polite"></p>
+                `;
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const status = form.querySelector('#sp-status');
+                    if (status) status.textContent = 'Saving…';
+                    const fd = new FormData(form);
+
+                    const constraintsPayload = {
+                        goal: String(fd.get('goal') || '').trim(),
+                        days: String(fd.get('days') || '').trim(),
+                        equipment: String(fd.get('equipment') || '').trim(),
+                        constraints: String(fd.get('constraints') || '').trim() || null,
+                        userSignedIn: Boolean(currentUser),
+                        linkGroceryPlan: primaryIntents.includes('lower_grocery_costs'),
+                    };
+
+                    try {
+                        localStorage.setItem('ode_self_paced_constraints_v1', JSON.stringify(constraintsPayload));
+                    } catch {
+                        // ignore
+                    }
+
+                    const email = String(fd.get('email') || '').trim();
+                    const phone = String(fd.get('phone') || '').trim();
+                    if (!currentUser && !email && !phone) {
+                        if (status) status.textContent = 'Add an email or phone (or create an account) so we can reach you.';
+                        return;
+                    }
+                    await submitLead({
+                        source: 'coaching_self_paced',
+                        email,
+                        phone,
+                        snapshot: constraintsPayload
+                    });
+                    if (status) status.textContent = 'Done. Opening the plan generator…';
+                    window.setTimeout(() => go('index.html?open=builder#resources'), 500);
+                });
+                wrap.appendChild(form);
+
+                const back = document.createElement('div');
+                back.className = 'blueprint-modal-back';
+                back.appendChild(makeGhostBtn({ label: 'Back', onClick: () => setView('home') }));
+                wrap.appendChild(back);
+                return wrap;
+            };
+
+            const render = () => {
+                if (!body) return;
+                body.innerHTML = '';
+                const viewEl =
+                    currentView === 'meals' ? renderMeals()
+                    : currentView === 'one_on_one' ? renderOneOnOne()
+                    : currentView === 'self_paced' ? renderSelfPaced()
+                    : renderHome();
+                body.appendChild(viewEl);
+            };
+
+            const close = () => {
+                modal?.classList.remove('active');
+                modal?.setAttribute('aria-hidden', 'true');
+                go('index.html#mission');
+            };
+
+            closeBtn?.addEventListener('click', close);
+            modal?.addEventListener('click', (e) => {
+                if (e.target === modal) close();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') close();
+            });
+
+            render();
+        })();
+    </script>
+</body>
+</html>

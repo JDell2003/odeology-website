@@ -1,0 +1,10 @@
+{
+  "budgetMonthly": 300,
+  "stores": ["Walmart", "Sams"],
+  "items": [
+    { "name": "Chicken breast", "quantity": 10, "unit": "lb" },
+    { "name": "Jasmine rice", "quantity": 5, "unit": "lb" },
+    { "name": "Eggs", "quantity": 2, "unit": "ct" },
+    { "name": "Olive oil", "quantity": 32, "unit": "oz" }
+  ]
+}

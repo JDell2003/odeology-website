@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0.85"/>
+    </linearGradient>
+    <radialGradient id="r" cx="30%" cy="15%" r="80%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="14" y="14" width="212" height="212" rx="30" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <rect x="14" y="14" width="212" height="212" rx="30" fill="url(#r)"/>
+  <path fill="url(#g)" d="M96 54c12 0 20 9 20 22v20c0 10-3 18-10 25l-10 10v55H78v-50l11-11c-8-7-11-15-11-27V76c0-13 6-22 18-22Zm48 0c12 0 18 9 18 22v22c0 12-3 20-11 27l11 11v50h-18v-55l-10-10c-7-7-10-15-10-25V76c0-13 8-22 20-22Z"/>
+  <path fill="rgba(0,0,0,0.18)" d="M90 72c0-7 4-12 10-12s10 5 10 12v26c0 8-2 14-8 20l-12 12v42H86v-44l13-13c-6-5-9-11-9-19V72Zm60 0c0-7-4-12-10-12s-10 5-10 12v26c0 8 3 14 9 19l13 13v44h-4v-42l-12-12c-6-6-8-12-8-20V72Z"/>
+</svg>

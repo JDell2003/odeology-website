@@ -1,0 +1,26 @@
+{
+  "name": "jasons-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static landing page with optional Node proxy server",
+  "scripts": {
+    "dev": "node --env-file .env server.js",
+    "start": "node --env-file .env server.js",
+    "serve": "npx http-server .",
+    "scrape:prices": "node js/scrape-prices.js",
+    "plan:groceries": "node js/planner.js",
+    "scrape:api": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.18.0",
+    "puppeteer": "^24.36.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "undici": "^6.19.8"
+  }
+}
