@@ -7390,9 +7390,12 @@ body.modal-open {
         letter-spacing: -0.01em;
     }
 
-    .contact .section-header {
-        margin-bottom: 1rem;
-    }
+.contact .section-header {
+    margin-bottom: 1rem;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
 
     .btn {
         padding: 0.78rem 1rem;
@@ -16817,6 +16820,12 @@ body.control-collapsed,
 body.training-page.control-open,
 body.training-page.control-collapsed {
     padding-left: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding-left: 0.9rem !important;
+    }
 }
 
 /* ============================================
