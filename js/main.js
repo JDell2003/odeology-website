@@ -335,16 +335,55 @@ function persistGrocerySession() { return; } // Permanently disabled
 function setupNav() {
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
+    const body = document.body;
 
     if (!hamburger || !navMenu) return;
 
+    let backdrop = document.querySelector('.nav-drawer-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'nav-drawer-backdrop';
+        document.body.appendChild(backdrop);
+    }
+
+    const closeDrawer = () => {
+        navMenu.classList.remove('active');
+        body.classList.remove('nav-drawer-open');
+        hamburger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openDrawer = () => {
+        navMenu.classList.add('active');
+        body.classList.add('nav-drawer-open');
+        hamburger.setAttribute('aria-expanded', 'true');
+    };
+
+    hamburger.setAttribute('aria-expanded', 'false');
     hamburger.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
+        if (navMenu.classList.contains('active')) closeDrawer();
+        else openDrawer();
     });
 
     navMenu.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => navMenu.classList.remove('active'));
+        link.addEventListener('click', () => closeDrawer());
     });
+
+    backdrop.addEventListener('click', closeDrawer);
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 900) closeDrawer();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDrawer();
+    });
+
+    // Guard against duplicate "Macro Calculator" items injected by legacy code.
+    const macroLinks = Array.from(navMenu.querySelectorAll('a')).filter((a) => {
+        const label = String(a.textContent || '').trim().toLowerCase();
+        return label === 'macro calculator';
+    });
+    if (macroLinks.length > 1) {
+        macroLinks.slice(1).forEach((a) => a.closest('li')?.remove());
+    }
 }
 
 function setupMacroNavLink() {
@@ -1066,6 +1105,14 @@ function initNutritionFunnel() {
     const next1 = document.getElementById('ns-next-1');
     const next2 = document.getElementById('ns-next-2');
     const back2 = document.getElementById('ns-back-2');
+    const heightUnitBtns = Array.from(document.querySelectorAll('[data-height-unit]'));
+    const heightLabel = document.getElementById('ns-height-label');
+    const heightInchesWrap = document.getElementById('ns-height-inches-wrap');
+    const heightFeetWrap = document.getElementById('ns-height-feet-wrap');
+    const heightInchesInput = document.getElementById('ns-height');
+    const heightFeetInput = document.getElementById('ns-height-ft');
+    const heightInInput = document.getElementById('ns-height-in');
+    let heightUnit = 'inches';
 
     const unlockBtn = document.getElementById('ns-unlock-btn');
     const emailForm = document.getElementById('ns-email-form');
@@ -1129,11 +1176,6 @@ function initNutritionFunnel() {
         flow.classList.remove('hidden');
         nutritionState.step = 1;
         showStep(1);
-        try {
-            flow.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } catch {
-            // ignore
-        }
     };
 
     startBtn?.addEventListener('click', startFlow);
@@ -1570,15 +1612,67 @@ function initNutritionFunnel() {
         btn.classList.add('active');
     }
 
+    function readHeightInches() {
+        if (heightUnit === 'feet') {
+            const feet = Number(heightFeetInput?.value);
+            const inches = Number(heightInInput?.value);
+            if (!Number.isFinite(feet) || !Number.isFinite(inches)) return NaN;
+            return feet * 12 + inches;
+        }
+        return Number(heightInchesInput?.value);
+    }
+
+    function setHeightUnit(unit) {
+        heightUnit = unit === 'feet' ? 'feet' : 'inches';
+        const isFeet = heightUnit === 'feet';
+
+        if (heightInchesWrap) heightInchesWrap.classList.toggle('hidden', isFeet);
+        if (heightFeetWrap) heightFeetWrap.classList.toggle('hidden', !isFeet);
+        if (heightLabel) heightLabel.textContent = isFeet ? 'Height (inches)' : 'Height (inches)';
+
+        if (heightInchesInput) heightInchesInput.required = !isFeet;
+        if (heightFeetInput) heightFeetInput.required = isFeet;
+        if (heightInInput) heightInInput.required = isFeet;
+
+        heightUnitBtns.forEach((btn) => {
+            const active = btn.dataset.heightUnit === heightUnit;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        if (isFeet) {
+            const totalInches = Number(heightInchesInput?.value);
+            if (Number.isFinite(totalInches) && totalInches > 0) {
+                const feet = Math.floor(totalInches / 12);
+                const inches = Math.round(totalInches % 12);
+                if (heightFeetInput) heightFeetInput.value = String(feet);
+                if (heightInInput) heightInInput.value = String(inches);
+            }
+        } else {
+            const feet = Number(heightFeetInput?.value);
+            const inches = Number(heightInInput?.value);
+            if (Number.isFinite(feet) && Number.isFinite(inches)) {
+                const total = feet * 12 + inches;
+                if (heightInchesInput) heightInchesInput.value = String(total);
+            }
+        }
+    }
+
+    heightUnitBtns.forEach((btn) => {
+        btn.addEventListener('click', () => setHeightUnit(btn.dataset.heightUnit || 'inches'));
+    });
+    setHeightUnit('inches');
+
     function collectStep2() {
         const sex = nutritionState.selections.sex;
         const intensity = nutritionState.selections.intensity;
-        const heightIn = Number(document.getElementById('ns-height').value);
+        const heightIn = readHeightInches();
         const weightLbs = Number(document.getElementById('ns-weight').value);
         const goalWeightLbs = Number(document.getElementById('ns-goal-weight')?.value);
 
-        if (!sex || !intensity || !heightIn || !weightLbs || !goalWeightLbs) {
-            alert('Fill in sex, height, current bodyweight, goal bodyweight, and training intensity.');
+        const heightOk = Number.isFinite(heightIn) && heightIn >= 48 && heightIn <= 84;
+        if (!sex || !intensity || !heightOk || !weightLbs || !goalWeightLbs) {
+            alert('Fill in sex, valid height, current bodyweight, goal bodyweight, and training intensity.');
             return false;
         }
 
@@ -2374,10 +2468,23 @@ function resetNutritionFlow() {
 
     document.querySelectorAll('.ns-button-grid button, .ns-icon-grid button').forEach(btn => btn.classList.remove('active'));
 
-    ['ns-height','ns-weight','ns-goal-weight','ns-email'].forEach(id => {
+    ['ns-height','ns-height-ft','ns-height-in','ns-weight','ns-goal-weight','ns-email'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
+    document.querySelectorAll('[data-height-unit]').forEach((btn) => {
+        const isInches = btn.dataset.heightUnit === 'inches';
+        btn.classList.toggle('active', isInches);
+        btn.setAttribute('aria-selected', isInches ? 'true' : 'false');
+    });
+    document.getElementById('ns-height-inches-wrap')?.classList.remove('hidden');
+    document.getElementById('ns-height-feet-wrap')?.classList.add('hidden');
+    const inchesInput = document.getElementById('ns-height');
+    const feetInput = document.getElementById('ns-height-ft');
+    const inchInput = document.getElementById('ns-height-in');
+    if (inchesInput) inchesInput.required = true;
+    if (feetInput) feetInput.required = false;
+    if (inchInput) inchInput.required = false;
     ['ns-calories','ns-confidence','ns-protein','ns-carbs','ns-fats','ns-protein-pct','ns-carbs-pct','ns-fats-pct']
         .forEach(id => setText(id, EM_DASH));
 
@@ -3226,16 +3333,6 @@ function setupComingSoonLinks() {
     const trainingNav = document.querySelector('.nav-training');
     if (trainingNav) {
         lockLink(trainingNav);
-    }
-
-    const navMenu = document.getElementById('nav-menu');
-    if (navMenu && !navMenu.querySelector('a[href="macro-calculator.html"]')) {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = 'macro-calculator.html';
-        a.textContent = 'Macro Calculator';
-        li.appendChild(a);
-        navMenu.appendChild(li);
     }
 
     const storeNav = document.querySelector('.nav-menu a[href="store.html"]');
@@ -5771,32 +5868,20 @@ async function enableGroceryAccountSaveButton() {
    ============================================ */
 
 function initThemeToggle() {
-    const toggle = document.getElementById('theme-toggle');
     const root = document.documentElement;
-    const saved = localStorage.getItem('ode_theme');
-    if (saved) {
-        root.setAttribute('data-theme', saved);
-        if (toggle) {
-            toggle.querySelector('.theme-icon').textContent = saved === 'light' ? '\u2600' : '\u263E';
-        }
+    const toggle = document.getElementById('theme-toggle');
+
+    // Theme switching is intentionally disabled; site is locked to light mode.
+    root.setAttribute('data-theme', 'light');
+    root.classList.remove('theme-transition');
+    document.body.classList.remove('theme-wipe-dark', 'theme-wipe-light');
+    try {
+        localStorage.removeItem('ode_theme');
+    } catch {
+        // ignore
     }
 
-    if (!toggle) return;
-
-    toggle.addEventListener('click', () => {
-        const current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-        const next = current === 'light' ? 'dark' : 'light';
-        root.classList.add('theme-transition');
-        document.body.classList.remove('theme-wipe-dark', 'theme-wipe-light');
-        document.body.classList.add(next === 'light' ? 'theme-wipe-light' : 'theme-wipe-dark');
-        root.setAttribute('data-theme', next);
-        localStorage.setItem('ode_theme', next);
-        toggle.querySelector('.theme-icon').textContent = next === 'light' ? '\u2600' : '\u263E';
-        setTimeout(() => {
-            root.classList.remove('theme-transition');
-            document.body.classList.remove('theme-wipe-dark', 'theme-wipe-light');
-        }, 900);
-    });
+    if (toggle) toggle.remove();
 }
 
 /* ============================================
@@ -5804,13 +5889,12 @@ function initThemeToggle() {
    ============================================ */
 
 function initAuthUi() {
-    const themeToggle = document.getElementById('theme-toggle');
-    if (!themeToggle) return;
-
-    const navbarContainer = themeToggle.closest('.navbar-container') || themeToggle.parentElement;
+    const navbarContainer = document.querySelector('.navbar-container');
     if (!navbarContainer) return;
 
-    const { wrapper, signInBtn, signUpBtn, userBtn, menu } = ensureAuthNavbarUi(navbarContainer, themeToggle);
+    const navMenu = document.getElementById('nav-menu');
+    const { wrapper, signInBtn, signUpBtn, userBtn, menu, sep } = ensureAuthNavbarUi(navbarContainer);
+    const mobileAuth = ensureMobileAuthUi(navMenu);
     const modal = ensureAuthModal();
 
     let currentUser = null;
@@ -5827,9 +5911,13 @@ function initAuthUi() {
         currentUser = null;
         signInBtn.classList.remove('hidden');
         signUpBtn.classList.remove('hidden');
+        if (sep) sep.classList.remove('hidden');
         userBtn.classList.add('hidden');
         menu.classList.add('hidden');
         menu.innerHTML = '';
+        if (mobileAuth?.loginBtn) mobileAuth.loginBtn.classList.remove('hidden');
+        if (mobileAuth?.signupBtn) mobileAuth.signupBtn.classList.remove('hidden');
+        if (mobileAuth?.userRow) mobileAuth.userRow.classList.add('hidden');
         syncControlPanelLabel(null);
         emitAuthChanged(null);
     };
@@ -5839,9 +5927,16 @@ function initAuthUi() {
         const label = user?.displayName || user?.username || 'Account';
         signInBtn.classList.add('hidden');
         signUpBtn.classList.add('hidden');
+        if (sep) sep.classList.add('hidden');
         userBtn.classList.remove('hidden');
         userBtn.textContent = label;
         userBtn.setAttribute('aria-label', 'Account menu');
+        if (mobileAuth?.loginBtn) mobileAuth.loginBtn.classList.add('hidden');
+        if (mobileAuth?.signupBtn) mobileAuth.signupBtn.classList.add('hidden');
+        if (mobileAuth?.userRow) {
+            mobileAuth.userRow.classList.remove('hidden');
+            if (mobileAuth.userName) mobileAuth.userName.textContent = label;
+        }
         syncControlPanelLabel(user);
 
         menu.innerHTML = `
@@ -5908,6 +6003,19 @@ function initAuthUi() {
         e.preventDefault();
         openModal('signup');
     });
+    mobileAuth?.loginBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openModal('login');
+    });
+    mobileAuth?.signupBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openModal('signup');
+    });
+    mobileAuth?.logoutBtn?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await authLogout();
+        setSignedOutUi();
+    });
 
     userBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -5961,7 +6069,7 @@ function initAuthGate() {
     })();
 }
 
-function ensureAuthNavbarUi(navbarContainer, themeToggle) {
+function ensureAuthNavbarUi(navbarContainer) {
     let wrapper = document.getElementById('auth-wrap');
     if (!wrapper) {
         wrapper = document.createElement('div');
@@ -5971,19 +6079,24 @@ function ensureAuthNavbarUi(navbarContainer, themeToggle) {
         const signInBtn = document.createElement('button');
         signInBtn.type = 'button';
         signInBtn.id = 'auth-signin-btn';
-        signInBtn.className = 'auth-nav-btn auth-nav-btn-primary';
+        signInBtn.className = 'auth-nav-btn auth-nav-link';
         signInBtn.textContent = 'Sign in';
+
+        const sep = document.createElement('span');
+        sep.id = 'auth-sep';
+        sep.className = 'auth-nav-sep';
+        sep.textContent = '|';
 
         const signUpBtn = document.createElement('button');
         signUpBtn.type = 'button';
         signUpBtn.id = 'auth-signup-btn';
-        signUpBtn.className = 'auth-nav-btn auth-nav-btn-ghost';
+        signUpBtn.className = 'auth-nav-btn auth-nav-link';
         signUpBtn.textContent = 'Sign up';
 
         const userBtn = document.createElement('button');
         userBtn.type = 'button';
         userBtn.id = 'auth-user-btn';
-        userBtn.className = 'auth-nav-btn auth-nav-btn-primary hidden';
+        userBtn.className = 'auth-nav-btn auth-nav-user hidden';
         userBtn.textContent = 'Account';
 
         const menu = document.createElement('div');
@@ -5991,12 +6104,12 @@ function ensureAuthNavbarUi(navbarContainer, themeToggle) {
         menu.className = 'auth-menu hidden';
 
         wrapper.appendChild(signInBtn);
+        wrapper.appendChild(sep);
         wrapper.appendChild(signUpBtn);
         wrapper.appendChild(userBtn);
         wrapper.appendChild(menu);
 
-        // User asked for Sign in / Sign up to the LEFT of the theme toggle.
-        themeToggle.insertAdjacentElement('beforebegin', wrapper);
+        navbarContainer.appendChild(wrapper);
     }
 
     return {
@@ -6004,7 +6117,36 @@ function ensureAuthNavbarUi(navbarContainer, themeToggle) {
         signInBtn: wrapper.querySelector('#auth-signin-btn'),
         signUpBtn: wrapper.querySelector('#auth-signup-btn'),
         userBtn: wrapper.querySelector('#auth-user-btn'),
-        menu: wrapper.querySelector('#auth-menu')
+        menu: wrapper.querySelector('#auth-menu'),
+        sep: wrapper.querySelector('#auth-sep')
+    };
+}
+
+function ensureMobileAuthUi(navMenu) {
+    if (!navMenu) return null;
+    let wrap = navMenu.querySelector('#auth-mobile-wrap');
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'auth-mobile-wrap';
+        wrap.className = 'auth-mobile-wrap';
+        wrap.innerHTML = `
+            <button type="button" class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-signup">Sign up</button>
+            <button type="button" class="auth-mobile-btn auth-mobile-btn-ghost" id="auth-mobile-login">Log in</button>
+            <div class="auth-mobile-user-row hidden" id="auth-mobile-user-row">
+                <p class="auth-mobile-username" id="auth-mobile-username">Account</p>
+                <button type="button" class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-logout">Sign out</button>
+            </div>
+        `.trim();
+        navMenu.appendChild(wrap);
+    }
+
+    return {
+        wrap,
+        signupBtn: wrap.querySelector('#auth-mobile-signup'),
+        loginBtn: wrap.querySelector('#auth-mobile-login'),
+        userRow: wrap.querySelector('#auth-mobile-user-row'),
+        userName: wrap.querySelector('#auth-mobile-username'),
+        logoutBtn: wrap.querySelector('#auth-mobile-logout')
     };
 }
 
@@ -8308,33 +8450,61 @@ async function setupGroceryPlanPage() {
         const toggle = document.getElementById('mobile-grocery-toggle');
         const closeBtn = document.getElementById('mobile-grocery-close');
         const backdrop = document.getElementById('mobile-drawer-backdrop');
-        if (!drawer || !toggle || !closeBtn || !backdrop) return;
+        const tabGroceryButtons = Array.from(document.querySelectorAll('[data-mobile-tab="grocery"]'));
+        const tabMealsButtons = Array.from(document.querySelectorAll('[data-mobile-tab="meals"]'));
+        const mealPlan = document.getElementById('meal-plan');
+        if (!drawer || !closeBtn || !backdrop) return;
 
         const mql = window.matchMedia('(max-width: 900px)');
         const isMobile = () => !!mql.matches;
+
+        const setActiveTab = (tab) => {
+            tabGroceryButtons.forEach((btn) => btn.classList.toggle('active', tab === 'grocery'));
+            tabMealsButtons.forEach((btn) => btn.classList.toggle('active', tab === 'meals'));
+        };
 
         const open = () => {
             if (!isMobile()) return;
             drawer.classList.add('is-open');
             backdrop.classList.remove('hidden');
             backdrop.setAttribute('aria-hidden', 'false');
+            setActiveTab('grocery');
         };
         const close = () => {
             drawer.classList.remove('is-open');
             backdrop.classList.add('hidden');
             backdrop.setAttribute('aria-hidden', 'true');
+            setActiveTab('meals');
         };
 
-        // Default: open the drawer first on mobile.
-        if (isMobile()) open();
+        // Default: show meals content first on mobile.
+        if (isMobile()) close();
         else close();
 
-        toggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!isMobile()) return;
-            if (drawer.classList.contains('is-open')) close();
-            else open();
+        if (toggle) {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!isMobile()) return;
+                if (drawer.classList.contains('is-open')) close();
+                else open();
+            });
+        }
+
+        tabGroceryButtons.forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!isMobile()) return;
+                open();
+            });
         });
+
+        tabMealsButtons.forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                close();
+            });
+        });
+
         closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             close();
@@ -8346,6 +8516,69 @@ async function setupGroceryPlanPage() {
         mql.addEventListener('change', () => {
             // If user rotates / resizes into desktop, ensure the drawer isn't stuck open.
             if (!isMobile()) close();
+        });
+    })();
+
+    // Mobile-only: draggable layout-size control between grocery and meals cards.
+    (() => {
+        const control = document.getElementById('mobile-size-control');
+        const slider = document.getElementById('mobile-size-slider');
+        const status = document.getElementById('mobile-size-status');
+        if (!control || !slider || !status) return;
+
+        const mql = window.matchMedia('(max-width: 900px)');
+        const STORAGE_KEY = 'ode_mobile_plan_size';
+
+        const toMode = (value) => {
+            if (value <= 20) return 'compact';
+            if (value >= 80) return 'comfy';
+            return 'balanced';
+        };
+
+        const apply = (rawValue, persist = false) => {
+            const n = Math.max(0, Math.min(100, Number(rawValue) || 56));
+            slider.value = String(n);
+
+            const smoothScale = 0.9 + ((n / 100) * 0.18);
+            planPage.style.setProperty('--mobile-ui-scale', smoothScale.toFixed(3));
+
+            const mode = toMode(n);
+            planPage.classList.toggle('mobile-density-compact', mode === 'compact');
+            planPage.classList.toggle('mobile-density-comfy', mode === 'comfy');
+
+            if (mode === 'compact') status.textContent = 'Image-first preview mode';
+            else if (mode === 'comfy') status.textContent = 'Comfort mode';
+            else status.textContent = 'Balanced view';
+
+            if (persist) {
+                try { localStorage.setItem(STORAGE_KEY, String(n)); } catch (_) {}
+            }
+        };
+
+        const stored = (() => {
+            try { return Number(localStorage.getItem(STORAGE_KEY)); } catch (_) { return NaN; }
+        })();
+
+        const initial = Number.isFinite(stored) ? stored : Number(slider.value || 56);
+        apply(initial, false);
+
+        slider.addEventListener('input', () => {
+            if (!mql.matches) return;
+            apply(slider.value, false);
+        });
+
+        slider.addEventListener('change', () => {
+            if (!mql.matches) return;
+            apply(slider.value, true);
+        });
+
+        mql.addEventListener('change', () => {
+            if (!mql.matches) {
+                planPage.classList.remove('mobile-density-compact', 'mobile-density-comfy');
+                status.textContent = 'Balanced view';
+                return;
+            }
+            apply(slider.value, false);
         });
     })();
 
@@ -8887,6 +9120,28 @@ async function setupGroceryPlanPage() {
 
         const customMacroBtn = document.getElementById('custom-macro-btn');
         const reconfigureBtn = document.getElementById('reconfigure-btn');
+        const spotlightReconfigureNote = () => {
+            let tries = 0;
+            const maxTries = 12;
+            const trySpotlight = () => {
+                const note = document.getElementById('macro-reconfigure-note');
+                if (!note) return false;
+                if (note.classList.contains('hidden')) return false;
+                if (!String(note.textContent || '').trim()) return false;
+                note.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                note.classList.remove('reconfigure-note-spotlight');
+                // Restart animation on repeated clicks.
+                void note.offsetWidth;
+                note.classList.add('reconfigure-note-spotlight');
+                window.setTimeout(() => note.classList.remove('reconfigure-note-spotlight'), 1600);
+                return true;
+            };
+            if (trySpotlight()) return;
+            const timer = window.setInterval(() => {
+                tries += 1;
+                if (trySpotlight() || tries >= maxTries) window.clearInterval(timer);
+            }, 80);
+        };
         if (customMacroBtn && customMacroBtn.dataset.wiredMacro !== '1') {
             customMacroBtn.dataset.wiredMacro = '1';
             customMacroBtn.addEventListener('click', (e) => {
@@ -8977,6 +9232,7 @@ async function setupGroceryPlanPage() {
                 syncMacrosFromMacroTargetsBase();
                 updateMacroDisplay(1);
                 renderBaselinePlan();
+                spotlightReconfigureNote();
                 console.log('[RECONFIGURE]', { calories: next.calories, protein: next.proteinG, carbs: next.carbG, fat: next.fatG });
             });
         }
@@ -10526,6 +10782,28 @@ async function setupGroceryPlanPage() {
     const undoBtn = document.getElementById('undo-btn');
     const reconfigureBtn = document.getElementById('reconfigure-btn');
     const planCta = document.getElementById('plan-cta');
+    const spotlightReconfigureNote = () => {
+        let tries = 0;
+        const maxTries = 12;
+        const trySpotlight = () => {
+            const note = document.getElementById('macro-reconfigure-note');
+            if (!note) return false;
+            if (note.classList.contains('hidden')) return false;
+            if (!String(note.textContent || '').trim()) return false;
+            note.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            note.classList.remove('reconfigure-note-spotlight');
+            // Restart animation on repeated clicks.
+            void note.offsetWidth;
+            note.classList.add('reconfigure-note-spotlight');
+            window.setTimeout(() => note.classList.remove('reconfigure-note-spotlight'), 1600);
+            return true;
+        };
+        if (trySpotlight()) return;
+        const timer = window.setInterval(() => {
+            tries += 1;
+            if (trySpotlight() || tries >= maxTries) window.clearInterval(timer);
+        }, 80);
+    };
     
     // Define missing modal elements with safe fallbacks
     const cheaperMacrosBtn = document.getElementById('cheaper-macros');
@@ -10674,6 +10952,7 @@ async function setupGroceryPlanPage() {
             updateMacroDisplay(1);
             renderMealGrid(portionScale);
             lastTotals = renderBudgetAndList();
+            spotlightReconfigureNote();
             console.log('[RECONFIGURE]', { calories: next.calories, protein: next.proteinG, carbs: next.carbG, fat: next.fatG });
         });
     }

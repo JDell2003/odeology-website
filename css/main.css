@@ -988,14 +988,14 @@ body.training-page {
 
 .plan-top {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: flex-start;
-    gap: 1.5rem;
-    flex-wrap: nowrap;
-    margin-bottom: 1.5rem;
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
 }
 
 .plan-top-left {
+    width: 100%;
     flex: 0 0 auto;
 }
 
@@ -1025,7 +1025,8 @@ body.training-page {
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 14px;
     padding: 0.9rem 1.2rem;
-    flex: 1 1 auto;
+    width: 100%;
+    flex: 0 0 auto;
     min-width: 0;
 }
 
@@ -1035,6 +1036,7 @@ body.training-page {
     gap: 0.2rem;
     text-align: center;
     min-width: 70px;
+    flex: 1 1 0;
 }
 
 .summary-item .label {
@@ -1373,6 +1375,24 @@ body.training-page {
 
 .macro-reconfigure-note.hidden {
     display: none;
+}
+
+#macro-reconfigure-note.reconfigure-note-spotlight {
+    display: block;
+    border-radius: 10px;
+    outline: 2px solid rgba(231, 163, 77, 0.95);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(231, 163, 77, 0.24), 0 0 0 8px rgba(231, 163, 77, 0.12);
+    animation: reconfigureNotePulse 1.2s ease-out;
+}
+
+@keyframes reconfigureNotePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 163, 77, 0.42), 0 0 0 0 rgba(231, 163, 77, 0.2);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgba(231, 163, 77, 0.24), 0 0 0 8px rgba(231, 163, 77, 0.12);
+    }
 }
 
 .budget-row .label {
@@ -2104,7 +2124,7 @@ body.training-page {
 }
 
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
     .calendar-nav {
         grid-template-columns: 1fr;
     }
@@ -2970,6 +2990,14 @@ body.training-page {
     background: #f6e7d3;
 }
 
+.mobile-plan-switch {
+    display: none;
+}
+
+.mobile-plan-switch-inline {
+    margin-top: 0.15rem;
+}
+
 .item-switch {
     border: 1px solid rgba(0,0,0,0.12);
     background: #f4efe7;
@@ -3014,7 +3042,39 @@ body.training-page {
    Keeps desktop layout unchanged.
    ============================================ */
 @media (max-width: 900px) {
+    .mobile-plan-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.35rem;
+        padding: 0.48rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-plan-switch-btn {
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: #ffffff;
+        color: #2b2014;
+        border-radius: 10px;
+        padding: 0.58rem 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+    }
+
+    .mobile-plan-switch-btn.active {
+        background: #1f2f42;
+        color: #ffffff;
+        border-color: #1f2f42;
+        box-shadow: 0 8px 18px rgba(16, 28, 41, 0.22);
+    }
+
     .mobile-grocery-toggle {
+        display: none !important;
         position: fixed;
         left: max(14px, env(safe-area-inset-left));
         bottom: max(14px, env(safe-area-inset-bottom));
@@ -3171,8 +3231,8 @@ body.training-page {
     .plan-summary-bar {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.45rem;
-        padding: 0.65rem;
+        gap: 0.55rem;
+        padding: 0.75rem;
         border-radius: 12px;
     }
 
@@ -3183,11 +3243,11 @@ body.training-page {
     }
 
     .summary-item .label {
-        font-size: 0.6rem;
+        font-size: 0.68rem;
     }
 
     .summary-item .value {
-        font-size: 0.86rem;
+        font-size: 0.98rem;
     }
 
     .plan-card {
@@ -3286,11 +3346,11 @@ body.training-page {
     }
 
     .summary-item {
-        padding: 0.2rem 0.1rem;
+        padding: 0.3rem 0.2rem;
     }
 
     .summary-item .value {
-        font-size: 0.86rem;
+        font-size: 0.98rem;
     }
 
     .weekly-list .card-head {
@@ -3387,24 +3447,25 @@ body.training-page {
         margin-bottom: 0.75rem;
     }
 
-    /* Macro essentials: single-card swipe carousel on mobile */
+    /* Macro essentials: show all product cards normally on mobile */
     #macro-essentials .essentials-grid {
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 100%;
-        gap: 0;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 0.1rem;
-        scrollbar-width: none;
+        grid-template-columns: 1fr;
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        gap: 0.7rem;
+        overflow: visible;
+        scroll-snap-type: none;
+        padding-bottom: 0;
         align-items: start;
     }
 
     #macro-essentials .essential-card {
-        scroll-snap-align: start;
+        scroll-snap-align: none;
         border-radius: 16px;
         align-self: start;
+        width: 100%;
+        max-width: 100%;
     }
 
     #macro-essentials .essentials-grid::-webkit-scrollbar {
@@ -3461,10 +3522,7 @@ body.training-page {
     }
 
     #macro-essentials .essentials-dots {
-        display: flex;
-        justify-content: center;
-        gap: 0.35rem;
-        margin-top: 0.35rem;
+        display: none;
     }
 
     #macro-essentials .essentials-dots .dot {
@@ -8176,6 +8234,14 @@ body.modal-open {
         max-height: 320px;
         opacity: 1;
         display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .nav-menu li,
+    .nav-menu a {
+        width: 100%;
     }
 
     .hamburger {
@@ -8568,9 +8634,12 @@ body.modal-open {
 
     .control-panel {
         width: var(--control-width);
-        padding: 0.4rem 0.6rem 0.9rem;
-        border-right: 1px solid rgba(237, 234, 228, 0.08);
-        box-shadow: inset -1px 0 0 rgba(237, 234, 228, 0.06), 12px 0 30px rgba(0, 0, 0, 0.25);
+        left: auto;
+        right: 0;
+        padding: 0.55rem 0.65rem 0.9rem;
+        border-right: 0;
+        border-left: 1px solid rgba(237, 234, 228, 0.08);
+        box-shadow: inset 1px 0 0 rgba(237, 234, 228, 0.06), -12px 0 30px rgba(0, 0, 0, 0.25);
         transform: translateX(0);
         opacity: 1;
         pointer-events: auto;
@@ -8583,8 +8652,15 @@ body.modal-open {
         pointer-events: auto;
     }
 
+    .control-panel::after {
+        left: 0;
+        right: auto;
+        background: linear-gradient(270deg, rgba(237, 234, 228, 0.10), rgba(237, 234, 228, 0));
+    }
+
     .control-panel-header {
-        padding: 0.35rem 0.25rem;
+        padding: 0.2rem 0.15rem 0.35rem;
+        justify-content: flex-start;
     }
 
     .section-label {
@@ -16470,4 +16546,1118 @@ html[data-theme="light"] .ode-tour-btn.primary {
     align-self: end;
     margin-top: 0.35rem;
     border-radius: 999px;
+}
+
+/* ============================================
+   Nutrition Hero Redesign
+   ============================================ */
+:where(section.resources.nutrition-funnel) {
+    padding: 0;
+    background: var(--bg);
+    margin-top: calc(var(--navbar-height) * -1);
+}
+
+.nutrition-funnel .ns-hero {
+    position: relative;
+    min-height: 100dvh;
+    overflow: hidden;
+    display: grid;
+    align-items: center;
+}
+
+.nutrition-funnel .ns-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("../assets/hero-nutrition.jpg");
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.03);
+}
+
+.nutrition-funnel .ns-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(8, 6, 4, 0.7) 0%, rgba(10, 8, 6, 0.56) 30%, rgba(197, 141, 79, 0.52) 100%),
+        radial-gradient(130% 85% at 50% 100%, rgba(197, 141, 79, 0.35) 0%, rgba(197, 141, 79, 0.08) 55%, rgba(0, 0, 0, 0) 100%);
+}
+
+:root[data-theme="light"] .nutrition-funnel .ns-hero::after {
+    background:
+        linear-gradient(180deg, rgba(24, 18, 12, 0.58) 0%, rgba(24, 18, 12, 0.44) 34%, rgba(231, 163, 77, 0.44) 100%),
+        radial-gradient(130% 85% at 50% 100%, rgba(231, 163, 77, 0.33) 0%, rgba(231, 163, 77, 0.1) 58%, rgba(0, 0, 0, 0) 100%);
+}
+
+.nutrition-funnel .ns-wrapper {
+    position: relative;
+    z-index: 2;
+    width: min(1040px, 92vw);
+    margin: 0 auto;
+    padding: calc(var(--navbar-height) + clamp(1.1rem, 2.8vh, 2.1rem)) 0 clamp(2.25rem, 5vh, 3.25rem);
+    display: grid;
+    min-height: 100dvh;
+    align-content: center;
+    gap: 1.3rem;
+}
+
+.nutrition-funnel .ns-entry {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: clamp(1.05rem, 2.4vw, 1.5rem);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    background: rgba(15, 11, 8, 0.84);
+    box-shadow: 0 26px 64px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    display: grid;
+    gap: 1rem;
+    text-align: center;
+}
+
+.nutrition-funnel .ns-entry .ns-actions.column {
+    align-items: center;
+    margin-top: 0.35rem;
+}
+
+:root[data-theme="light"] .nutrition-funnel .ns-entry {
+    background: rgba(255, 250, 244, 0.92);
+    border-color: rgba(195, 123, 37, 0.32);
+    box-shadow: 0 20px 56px rgba(58, 35, 17, 0.18);
+}
+
+.nutrition-funnel .ns-flow:not(.hidden) {
+    margin-top: 0.8rem;
+}
+
+.nutrition-funnel .ns-kicker {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.nutrition-funnel .ns-hero-title {
+    margin: 0;
+    font-size: clamp(2.05rem, 5.3vw, 4.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    text-wrap: balance;
+}
+
+.nutrition-funnel .ns-hero-subtitle {
+    margin: 0 auto;
+    max-width: 70ch;
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    line-height: 1.45;
+    font-weight: 550;
+    color: var(--muted);
+    text-wrap: pretty;
+}
+
+.nutrition-funnel .ns-proof-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.3rem;
+    flex-wrap: wrap;
+}
+
+.nutrition-funnel .ns-proof-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1rem;
+    font-weight: 650;
+    color: var(--ink);
+}
+
+.nutrition-funnel .ns-proof-item > span:first-child {
+    color: var(--accent);
+    font-weight: 900;
+}
+
+.nutrition-funnel .ns-entry .btn-primary {
+    width: min(460px, 100%);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: linear-gradient(120deg, rgba(9, 8, 7, 0.94), rgba(26, 21, 16, 0.92));
+    color: #fff;
+    font-size: clamp(1.05rem, 1.7vw, 1.28rem);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    padding: 1.02rem 1.5rem;
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.42);
+}
+
+.nutrition-funnel .ns-entry .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.48);
+    border-color: rgba(255, 255, 255, 0.36);
+}
+
+.nutrition-funnel .ns-flow {
+    width: min(1000px, 100%);
+    margin: 0 auto;
+    background: rgba(15, 11, 8, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 26px 64px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+}
+
+:root[data-theme="light"] .nutrition-funnel .ns-flow {
+    background: rgba(255, 250, 244, 0.92);
+    border-color: rgba(195, 123, 37, 0.32);
+}
+
+@media (max-width: 980px) {
+    .nutrition-funnel .ns-hero {
+        min-height: 100dvh;
+    }
+
+    .nutrition-funnel .ns-wrapper {
+        width: min(760px, 93vw);
+        padding-top: calc(var(--navbar-height) + clamp(0.85rem, 2.4vh, 1.6rem));
+        min-height: 100dvh;
+    }
+
+    .nutrition-funnel .ns-hero-title {
+        font-size: clamp(1.85rem, 8vw, 2.9rem);
+    }
+
+    .nutrition-funnel .ns-hero-subtitle {
+        max-width: 52ch;
+        font-size: 1.03rem;
+    }
+
+    .nutrition-funnel .ns-proof-list {
+        justify-content: center;
+        gap: 0.65rem;
+    }
+
+    .nutrition-funnel .ns-proof-item {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .nutrition-funnel .ns-wrapper {
+        width: 92vw;
+        padding-top: calc(var(--navbar-height) + 0.75rem);
+        padding-bottom: 1.35rem;
+        min-height: 100dvh;
+        gap: 0.85rem;
+    }
+
+    .nutrition-funnel .ns-entry {
+        gap: 0.75rem;
+    }
+
+    .nutrition-funnel .ns-kicker {
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+    }
+
+    .nutrition-funnel .ns-hero-title {
+        font-size: clamp(1.7rem, 8.8vw, 2.35rem);
+        line-height: 1.08;
+    }
+
+    .nutrition-funnel .ns-hero-subtitle {
+        font-size: 0.98rem;
+        line-height: 1.45;
+        max-width: 36ch;
+    }
+
+    .nutrition-funnel .ns-proof-list {
+        margin-top: 0.25rem;
+    }
+
+    .nutrition-funnel .ns-proof-item {
+        font-size: 0.94rem;
+    }
+
+    .nutrition-funnel .ns-entry .btn-primary {
+        width: 100%;
+        font-size: 1rem;
+        padding: 0.95rem 1.2rem;
+    }
+
+    .nutrition-funnel .ns-flow {
+        padding: 1rem;
+        border-radius: 14px;
+    }
+}
+
+@supports not (height: 100dvh) {
+    .nutrition-funnel .ns-hero {
+        min-height: 100vh;
+    }
+
+    .nutrition-funnel .ns-wrapper {
+        min-height: 100vh;
+    }
+}
+
+/* ============================================
+   Control Panel: Temporarily Hidden
+   ============================================ */
+#control-panel {
+    display: none !important;
+}
+
+body.control-open,
+body.control-collapsed,
+body.training-page.control-open,
+body.training-page.control-collapsed {
+    padding-left: 0 !important;
+}
+
+/* ============================================
+   Navbar Redesign + Theme Toggle Removal
+   ============================================ */
+.theme-toggle {
+    display: none !important;
+}
+
+.navbar {
+    background: rgba(247, 250, 253, 0.96);
+    border-bottom: 1px solid rgba(27, 53, 73, 0.16);
+}
+
+.navbar-container {
+    max-width: 1280px;
+    min-height: var(--navbar-height);
+    padding: 0.6rem 1.15rem;
+    gap: 1rem;
+}
+
+.navbar-brand {
+    font-size: clamp(1.34rem, 2.1vw, 1.72rem);
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.nav-menu {
+    position: static;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(0.55rem, 1.4vw, 1.5rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nav-menu a {
+    color: #0f2435;
+    font-size: 1.08rem;
+    font-weight: 800;
+    padding: 0.5rem 0.55rem;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.nav-menu a::after {
+    display: none;
+}
+
+.nav-menu a:hover {
+    color: #081624;
+    background: rgba(22, 62, 89, 0.09);
+}
+
+.auth-wrap {
+    order: 3;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.auth-nav-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #0f2435;
+    font-weight: 900;
+    font-size: 1.07rem;
+    letter-spacing: 0.01em;
+}
+
+.auth-nav-btn:hover {
+    color: #081624;
+    border: 0;
+}
+
+.auth-nav-sep {
+    color: rgba(15, 36, 53, 0.62);
+    font-weight: 700;
+}
+
+.auth-nav-user {
+    color: #081624;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.auth-menu {
+    right: 0;
+    top: calc(100% + 10px);
+    min-width: 150px;
+    background: rgba(250, 253, 255, 0.98);
+    border: 1px solid rgba(30, 69, 96, 0.24);
+    border-radius: 12px;
+}
+
+.auth-mobile-wrap {
+    display: none;
+}
+
+.nav-drawer-backdrop {
+    position: fixed;
+    top: var(--navbar-height);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(5, 11, 16, 0.62);
+    backdrop-filter: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 119;
+}
+
+body.nav-drawer-open .nav-drawer-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 900px) {
+    .hamburger {
+        display: flex;
+        margin-left: auto;
+        order: 4;
+        z-index: 131;
+    }
+
+    .hamburger span {
+        width: 23px;
+        height: 2px;
+        border-radius: 3px;
+        background: #101010;
+    }
+
+    .auth-wrap {
+        display: none;
+    }
+
+    .nav-menu {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        width: min(86vw, 380px);
+        height: 100dvh;
+        min-height: 100vh;
+        max-height: none !important;
+        background: #f6f8fb;
+        border-left: 1px solid rgba(8, 27, 42, 0.12);
+        box-shadow: -18px 0 42px rgba(0, 0, 0, 0.32);
+        z-index: 130;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 0.1rem;
+        padding: calc(var(--navbar-height) + 1rem) 1.1rem 1.25rem;
+        border-radius: 0;
+        transform: translateX(100%);
+        opacity: 1;
+        transition: transform 0.22s ease;
+        overflow-y: auto;
+    }
+
+    .nav-menu.active {
+        transform: translateX(0);
+    }
+
+    .nav-menu li {
+        width: 100%;
+    }
+
+    .nav-menu a {
+        display: block;
+        width: 100%;
+        color: #0f2231;
+        padding: 0.76rem 0.45rem;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 1.12rem;
+    }
+
+    .nav-menu a:hover {
+        color: #0b1a26;
+        background: rgba(17, 45, 66, 0.07);
+    }
+
+    .auth-mobile-wrap {
+        display: grid;
+        gap: 0.55rem;
+        margin-top: 0.8rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(12, 36, 53, 0.12);
+    }
+
+    .auth-mobile-btn {
+        width: 100%;
+        border-radius: 10px;
+        padding: 0.78rem 0.9rem;
+        font-weight: 900;
+        font-size: 1.04rem;
+        letter-spacing: 0.02em;
+        border: 1px solid rgba(16, 43, 63, 0.2);
+        cursor: pointer;
+    }
+
+    .auth-mobile-btn-primary {
+        background: #24384a;
+        color: #f8fbff;
+        border-color: #24384a;
+    }
+
+    .auth-mobile-btn-ghost {
+        background: transparent;
+        color: #0d2232;
+    }
+
+    .auth-mobile-user-row {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .auth-mobile-username {
+        margin: 0;
+        font-weight: 900;
+        color: #0d2232;
+        font-size: 1.08rem;
+    }
+
+    /* Explicitly hide "Your Target" card on mobile/tablet widths */
+    #ns-target-card {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   Nutrition Step Button Polish
+   ============================================ */
+.nutrition-funnel .ns-flow .ns-button-grid,
+.nutrition-funnel .ns-flow .ns-icon-grid {
+    gap: 0.72rem;
+}
+
+.nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.nutrition-funnel .ns-flow .ns-pill,
+.nutrition-funnel .ns-flow .ns-icon-pill {
+    width: 100%;
+    min-height: 56px;
+    border-radius: 12px;
+    border: 1px solid rgba(35, 65, 86, 0.2);
+    background: rgba(255, 255, 255, 0.88);
+    color: #10273a;
+    font-weight: 800;
+    font-size: 1rem;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    padding: 0.82rem 0.9rem;
+    text-align: left;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.nutrition-funnel .ns-flow .ns-pill:hover,
+.nutrition-funnel .ns-flow .ns-icon-pill:hover {
+    border-color: rgba(20, 56, 81, 0.46);
+    background: rgba(238, 246, 252, 0.98);
+}
+
+.nutrition-funnel .ns-flow .ns-pill.active,
+.nutrition-funnel .ns-flow .ns-icon-pill.active {
+    border-color: #1f4f72;
+    background: linear-gradient(180deg, #f1f8fe 0%, #e3f0fb 100%);
+    color: #0a2438;
+    box-shadow: 0 0 0 2px rgba(31, 79, 114, 0.2), 0 12px 26px rgba(19, 52, 74, 0.16);
+    transform: translateY(-1px);
+}
+
+.nutrition-funnel .ns-flow .ns-pill.active::before,
+.nutrition-funnel .ns-flow .ns-icon-pill.active::before {
+    content: "✓";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #163e5d;
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 900;
+    flex: 0 0 20px;
+}
+
+.nutrition-funnel .ns-flow .ns-icon-pill span {
+    margin-right: 0;
+    font-size: 1.02rem;
+}
+
+@media (max-width: 640px) {
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nutrition-funnel .ns-flow .ns-pill,
+    .nutrition-funnel .ns-flow .ns-icon-pill {
+        min-height: 54px;
+        font-size: 0.98rem;
+        padding: 0.78rem 0.82rem;
+    }
+}
+
+.nutrition-funnel .ns-height-inline {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+}
+
+.nutrition-funnel .ns-height-inline .ns-duo {
+    flex: 1 1 auto;
+}
+
+.nutrition-funnel .ns-height-unit-toggle {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.18rem;
+    padding: 0.15rem;
+    border-radius: 999px;
+    border: 1px solid rgba(35, 65, 86, 0.24);
+    background: rgba(255, 255, 255, 0.9);
+    width: auto;
+    min-width: 96px;
+    height: 42px;
+    flex: 0 0 auto;
+}
+
+.nutrition-funnel .ns-height-unit-btn {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: #123247;
+    font-weight: 850;
+    font-size: 0.82rem;
+    text-transform: lowercase;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.nutrition-funnel .ns-height-unit-btn.active {
+    border-color: rgba(24, 63, 90, 0.25);
+    background: #e8f3fb;
+    color: #0c2a3f;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 640px) {
+    .nutrition-funnel .ns-height-inline {
+        gap: 0.5rem;
+    }
+
+    .nutrition-funnel .ns-height-unit-toggle {
+        min-width: 86px;
+        height: 40px;
+    }
+
+    .nutrition-funnel .ns-height-unit-btn {
+        font-size: 0.78rem;
+        padding: 0.3rem 0.45rem;
+    }
+
+    /* Keep explicit hide at smaller phone widths too */
+    #ns-target-card {
+        display: none !important;
+    }
+}
+
+/* Improve visibility of typed text in funnel inputs */
+.nutrition-funnel .ns-flow .ns-field input,
+.nutrition-funnel .ns-flow .ns-field select,
+.nutrition-funnel .ns-flow textarea {
+    color: #0a1f30;
+    font-weight: 800;
+    caret-color: #0a1f30;
+}
+
+    .nutrition-funnel .ns-flow .ns-field input::placeholder,
+.nutrition-funnel .ns-flow textarea::placeholder {
+    color: rgba(12, 39, 58, 0.55);
+    font-weight: 650;
+    opacity: 1;
+}
+
+/* iPhone-width hard fit pass: keep everything inside ~430px viewport */
+@media (max-width: 430px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .final-page .mobile-size-control {
+        display: none !important;
+    }
+
+    .final-page .plan-page {
+        padding: 0.9rem 0.65rem 6rem;
+        overflow-x: clip;
+    }
+
+    .final-page .plan-shell,
+    .final-page .plan-grid,
+    .final-page .plan-stack,
+    .final-page .plan-card,
+    .final-page .plan-summary-bar,
+    .final-page .grocery-list,
+    .final-page #grocery-list-items,
+    .final-page .meal-grid,
+    .final-page .grocery-items-grid,
+    .final-page .budget-breakdown,
+    .final-page .budget-button-group {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .final-page .plan-summary-bar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.52rem;
+        padding: 0.68rem;
+    }
+
+    .final-page .summary-item {
+        padding: 0.34rem 0.24rem;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        align-items: center;
+        text-align: center;
+    }
+
+    .final-page .summary-item .label {
+        font-size: 0.58rem;
+        letter-spacing: 0.04em;
+    }
+
+    .final-page .summary-item .value {
+        font-size: 0.84rem;
+        line-height: 1.15;
+        word-break: break-word;
+    }
+
+    .final-page .card-head {
+        gap: 0.45rem;
+    }
+
+    .final-page .card-head h3 {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    .final-page .budget-button-group .btn {
+        white-space: normal;
+        line-height: 1.2;
+    }
+
+    .final-page .grocery-item-row {
+        padding: 0.55rem 0.62rem;
+        padding-right: 2rem;
+    }
+
+    .final-page .grocery-item-top {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 0.5rem;
+    }
+
+    .final-page .grocery-thumb-box {
+        width: 56px;
+        height: 56px;
+    }
+
+    .final-page .grocery-link {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .final-page .grocery-item-container-size,
+    .final-page .grocery-item-consumption,
+    .final-page .grocery-item-purchase {
+        font-size: 0.78rem;
+    }
+
+    .final-page #meal-plan .meal-item {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "name name"
+            "macros measurement";
+        gap: 0.2rem 0.45rem;
+        align-items: center;
+    }
+
+    .final-page #meal-plan .meal-item-measurement {
+        justify-self: end;
+        text-align: right;
+    }
+
+    .final-page #meal-plan .meal-item-macros {
+        justify-self: start;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .final-page #meal-plan {
+        border-radius: 16px;
+        border: 1px solid rgba(216, 137, 31, 0.2);
+        background: linear-gradient(180deg, #fffefb 0%, #fff7eb 100%);
+    }
+
+    .final-page #meal-plan .card-head {
+        margin-bottom: 0.25rem;
+    }
+
+    .final-page #meal-plan .pill-group {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.35rem;
+    }
+
+    .final-page #meal-plan .meal-grid,
+    .final-page #meal-plan .meal-blocks {
+        gap: 0.55rem;
+    }
+
+    .final-page #meal-plan .meal-block {
+        padding: 0.58rem 0.62rem;
+        border-left: 3px solid #d8891f;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    .final-page #meal-plan .meal-title {
+        font-size: 0.82rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #2b2014;
+    }
+
+    .final-page #meal-plan .meal-items {
+        gap: 0.3rem;
+    }
+
+    .final-page #meal-plan .meal-item {
+        padding: 0.38rem 0.44rem;
+        border-radius: 10px;
+        background: #fffaf3;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .final-page #meal-plan .meal-item-name {
+        font-size: 0.8rem;
+        font-weight: 650;
+        line-height: 1.25;
+    }
+
+    .final-page #meal-plan .meal-item-measurement {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.16rem 0.44rem;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        color: #7c5e41;
+        background: rgba(216, 137, 31, 0.14);
+    }
+
+    .final-page #meal-plan .meal-item-macros {
+        font-size: 0.64rem;
+        color: rgba(63, 45, 29, 0.72);
+        letter-spacing: 0.01em;
+    }
+
+    .final-page #meal-plan .meal-summary {
+        font-size: 0.78rem;
+        padding-top: 0.34rem;
+    }
+
+    .final-page #meal-plan .meal-daily-total {
+        padding: 0.62rem;
+        border-radius: 12px;
+        border-width: 1px;
+    }
+
+    .final-page #meal-plan .daily-total-label {
+        font-size: 0.68rem;
+    }
+
+    .final-page #meal-plan .daily-total-value {
+        font-size: 0.86rem;
+    }
+
+    .final-page #meal-plan .macro-summary-row {
+        gap: 0.4rem;
+    }
+
+    .final-page #meal-plan .macro-col {
+        flex: 1 1 calc(50% - 0.4rem);
+        padding: 0.3rem 0.35rem;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .final-page #meal-plan .macro-label {
+        font-size: 0.62rem;
+    }
+
+    .final-page #meal-plan .macro-target {
+        font-size: 0.8rem;
+    }
+
+    .final-page #meal-plan .macro-actual {
+        font-size: 0.66rem;
+    }
+
+    .final-page #meal-plan .macro-note {
+        margin-top: 0.72rem;
+        padding: 0.55rem 0.62rem;
+        border-radius: 10px;
+    }
+
+    .final-page #meal-plan .macro-note p {
+        font-size: 0.74rem;
+        line-height: 1.35;
+    }
+
+    .final-page #supplement-shop {
+        margin-top: 0.65rem;
+        border-radius: 16px;
+        border: 1px solid rgba(16, 28, 41, 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .final-page #supplement-shop .card-head {
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .final-page #supplement-shop .card-head h3 {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    .final-page #supplement-shop .pill-group {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .final-page #supplement-shop .pill {
+        font-size: 0.58rem;
+        padding: 0.22rem 0.5rem;
+    }
+
+    .final-page #supplement-shop .essentials-grid {
+        grid-template-columns: 1fr;
+        gap: 0.62rem;
+    }
+
+    .final-page #supplement-shop .supplement-card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .final-page #supplement-shop .supplement-card .essential-image {
+        min-height: 0;
+        height: 132px;
+    }
+
+    .final-page #supplement-shop .supplement-card .image-carousel,
+    .final-page #supplement-shop .supplement-card .carousel-track,
+    .final-page #supplement-shop .supplement-card .carousel-track img {
+        height: 132px;
+    }
+
+    .final-page #supplement-shop .supplement-card .essential-body {
+        padding: 0.62rem 0.66rem;
+        gap: 0.45rem;
+    }
+
+    .final-page #supplement-shop .essential-body h4 {
+        font-size: 0.84rem;
+        line-height: 1.2;
+    }
+
+    .final-page #supplement-shop .essential-desc {
+        font-size: 0.74rem;
+        line-height: 1.3;
+        margin-bottom: 0.2rem;
+    }
+
+    .final-page #supplement-shop .supplement-footnote {
+        font-size: 0.68rem;
+        line-height: 1.3;
+    }
+
+    .final-page #supplement-shop .supplement-buy-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.45rem;
+    }
+
+    .final-page #supplement-shop .supplement-buy-row .essential-meta {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.2rem 0.5rem;
+        width: 100%;
+    }
+
+    .final-page #supplement-shop .supplement-buy-row .essential-cta {
+        width: 100%;
+        white-space: normal;
+        text-align: center;
+        padding: 0.52rem 0.6rem;
+        font-size: 0.74rem;
+    }
+
+    .final-page #grocery-list.plan-card.weekly-list {
+        width: 100vw;
+        border-radius: 0;
+    }
+}
+
+/* Mobile-only size control between Weekly Grocery List and Daily Meals */
+.final-page .mobile-size-control {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    #plan-page {
+        --mobile-ui-scale: 1;
+    }
+
+    #plan-page.mobile-density-compact {
+        --mobile-ui-scale: 0.9;
+    }
+
+    #plan-page.mobile-density-comfy {
+        --mobile-ui-scale: 1.08;
+    }
+
+    .final-page .mobile-size-control {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.45rem;
+        align-items: center;
+        width: 100%;
+        position: sticky;
+        top: 0.5rem;
+        z-index: 25;
+        padding: 0.55rem 0.65rem 0.3rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .final-page .mobile-size-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: rgba(26, 18, 12, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .final-page .mobile-size-control input[type="range"] {
+        width: 100%;
+        margin: 0;
+        accent-color: #1b120c;
+    }
+
+    .final-page .mobile-size-status {
+        grid-column: 1 / -1;
+        margin: 0.08rem 0 0;
+        font-size: 0.76rem;
+        color: rgba(27, 18, 12, 0.74);
+        text-align: center;
+        font-weight: 600;
+    }
+
+    #plan-page .plan-card {
+        padding: calc(0.8rem * var(--mobile-ui-scale)) calc(0.9rem * var(--mobile-ui-scale));
+    }
+
+    #plan-page .card-head h3 {
+        font-size: calc(0.95rem * var(--mobile-ui-scale));
+    }
+
+    #plan-page .grocery-item-row {
+        padding: calc(0.6rem * var(--mobile-ui-scale));
+    }
+
+    #plan-page .meal-item {
+        font-size: calc(0.88rem * var(--mobile-ui-scale));
+    }
+
+    #plan-page .macro-note p {
+        font-size: calc(0.85rem * var(--mobile-ui-scale));
+    }
+
+    /* Left edge: image-first preview mode to avoid text pile-up */
+    #plan-page.mobile-density-compact .grocery-item-info,
+    #plan-page.mobile-density-compact .macro-note,
+    #plan-page.mobile-density-compact .macro-warnings {
+        display: none;
+    }
+
+    /* Right edge: readability mode with more breathing room */
+    #plan-page.mobile-density-comfy .grocery-item-info {
+        gap: 0.4rem;
+    }
+
+    #plan-page.mobile-density-comfy .meal-item {
+        gap: 0.36rem;
+    }
+
+    #plan-page.mobile-density-comfy .meal-item-macros {
+        white-space: normal;
+        line-height: 1.45;
+    }
 }

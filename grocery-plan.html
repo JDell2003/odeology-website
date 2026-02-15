@@ -48,6 +48,10 @@
                         <span class="value" id="p-budget">—</span>
                     </div>
                 </div>
+                <div class="mobile-plan-switch" id="mobile-plan-switch" aria-label="Mobile section switcher">
+                    <button type="button" class="mobile-plan-switch-btn active" id="mobile-tab-grocery" data-mobile-tab="grocery">View Grocery List</button>
+                    <button type="button" class="mobile-plan-switch-btn" id="mobile-tab-meals" data-mobile-tab="meals">Meals</button>
+                </div>
             </div>
 
             <div class="plan-grid">
@@ -67,12 +71,31 @@
                             <span class="value" id="p-monthly-cost">—</span>
                         </div>
                     </div>
+                    <div class="mobile-plan-switch mobile-plan-switch-inline" aria-label="Mobile section switcher">
+                        <button type="button" class="mobile-plan-switch-btn active" id="mobile-tab-grocery-inline" data-mobile-tab="grocery">View Grocery List</button>
+                        <button type="button" class="mobile-plan-switch-btn" id="mobile-tab-meals-inline" data-mobile-tab="meals">Meals</button>
+                    </div>
                     <div class="popup-row hidden" id="popup-row">
                         <div class="ns-muted tight" id="popup-error"></div>
                         <button class="popup-retry" id="popup-retry" type="button">Retry popup</button>
                     </div>
                     <div class="grocery-list" id="grocery-list-items"></div>
                 </section>
+
+                <div class="mobile-size-control" id="mobile-size-control" aria-label="Mobile layout size control">
+                    <span class="mobile-size-label">Images</span>
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="56"
+                        id="mobile-size-slider"
+                        aria-label="Drag left or right to make elements smaller or bigger"
+                    >
+                    <span class="mobile-size-label">Readable</span>
+                    <p class="mobile-size-status" id="mobile-size-status">Balanced view</p>
+                </div>
 
                 <div class="plan-stack">
                     <section class="plan-card meal-split" id="meal-plan">
