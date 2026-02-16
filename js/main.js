@@ -339,6 +339,30 @@ function setupNav() {
 
     if (!hamburger || !navMenu) return;
 
+    // Hard-normalize top navbar items so desktop/mobile always show Training in nav.
+    const path = String(location.pathname || '').toLowerCase();
+    const isIndex = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
+    const isOverviewPage = document.body?.classList?.contains('overview-page');
+    const homeHref = isIndex ? '#' : 'index.html';
+    const macroHref = isIndex ? '#resources' : 'index.html#resources';
+    const faqHref = isIndex ? '#contact' : 'index.html#contact';
+    const trainingHref = isOverviewPage ? '#training-panel' : 'overview.html';
+    navMenu.innerHTML = `
+        <li><a href="${homeHref}">Home</a></li>
+        <li><a href="${macroHref}">Macro Calculator</a></li>
+        <li><a href="${trainingHref}">Training</a></li>
+        <li><a href="${faqHref}">FAQ</a></li>
+    `;
+
+    // On Overview, Training opens the hidden left control panel.
+    const trainingNavLink = navMenu.querySelector('a[href="#training-panel"], a[href="overview.html"]');
+    if (isOverviewPage && controlPanel && trainingNavLink) {
+        trainingNavLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openControlPanel();
+        });
+    }
+
     let backdrop = document.querySelector('.nav-drawer-backdrop');
     if (!backdrop) {
         backdrop = document.createElement('div');
@@ -383,6 +407,46 @@ function setupNav() {
     });
     if (macroLinks.length > 1) {
         macroLinks.slice(1).forEach((a) => a.closest('li')?.remove());
+    }
+
+    // Normalize top-level nav labels across pages:
+    // remove legacy tabs and ensure a single "Training" tab exists.
+    const legacyLabels = new Set(['how it works', 'how it works?', 'why odeology', 'why odeology?', 'pricing']);
+    let trainingLi = null;
+    Array.from(navMenu.querySelectorAll('li')).forEach((li) => {
+        const link = li.querySelector('a');
+        if (!link) return;
+        const label = String(link.textContent || '').trim().toLowerCase();
+        if (legacyLabels.has(label)) {
+            li.remove();
+            return;
+        }
+        if (label === 'training') {
+            if (!trainingLi) trainingLi = li;
+            else {
+                li.remove();
+                return;
+            }
+            link.setAttribute('href', 'training-coming-soon.html');
+        }
+    });
+
+    if (!trainingLi) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = 'training-coming-soon.html';
+        a.textContent = 'Training';
+        li.appendChild(a);
+        const faqLi = Array.from(navMenu.querySelectorAll('li')).find((item) => {
+            const link = item.querySelector('a');
+            const label = String(link?.textContent || '').trim().toLowerCase();
+            return label === 'faq';
+        });
+        if (faqLi && faqLi.parentElement === navMenu) {
+            navMenu.insertBefore(li, faqLi);
+        } else {
+            navMenu.appendChild(li);
+        }
     }
 }
 
@@ -3322,7 +3386,14 @@ function setupComingSoonLinks() {
     lockLink(storeControl, { addSub: true });
     lockLink(progressControl, { addSub: true });
     lockLink(dashControl, { addSub: true });
-    lockLink(leaderboardControl, { addSub: true });
+    // Leaderboard is now live in control panel.
+    if (leaderboardControl) {
+        leaderboardControl.classList.remove('coming-soon-item', 'is-locked', 'coming-soon-link');
+        leaderboardControl.removeAttribute('aria-disabled');
+        const textEl = leaderboardControl.querySelector('.text') || leaderboardControl;
+        const sub = textEl.querySelector('.control-sub');
+        if (sub) sub.remove();
+    }
 
     document.querySelectorAll('.nav-training-sub').forEach((el) => {
         el.textContent = 'Coming soon';
@@ -3366,12 +3437,12 @@ function setupComingSoonLinks() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initThemeToggle();
-    initAuthUi();
-    initAuthGate();
     initTracking();
     setupPreloader();
     setupNav();
     setupMacroNavLink();
+    initAuthUi();
+    initAuthGate();
     setupTrialBadge();
     setupComingSoonLinks();
     setupSmoothScroll();
@@ -5053,6 +5124,7 @@ function setupProgressPhotos() {
         const openBtn = document.getElementById('overview-photos-open');
         const viewAllBtn = document.getElementById('overview-photos-viewall');
         const latestEl = document.getElementById('overview-photos-latest');
+        const historyListEl = document.getElementById('overview-photo-history-list');
         const frontImg = document.getElementById('overview-photo-front');
         const sideImg = document.getElementById('overview-photo-side');
         const backImg = document.getElementById('overview-photo-back');
@@ -5093,6 +5165,85 @@ function setupProgressPhotos() {
             if (sideMeta) sideMeta.textContent = s ? fmt(s.day) : 'No side photo yet';
             if (backMeta) backMeta.textContent = b ? fmt(b.day) : 'No back photo yet';
             if (latestEl) latestEl.textContent = `Latest: ${latestDay ? fmtLong(latestDay) : '\u2014'}`;
+
+            if (historyListEl) {
+                const byDay = new Map();
+                photos.forEach((p) => {
+                    const day = String(p?.day || '').slice(0, 10);
+                    if (!day) return;
+                    const pose = (p?.pose === 'side' || p?.pose === 'back') ? p.pose : 'front';
+                    const row = byDay.get(day) || { day, front: null, side: null, back: null };
+                    row[pose] = p;
+                    byDay.set(day, row);
+                });
+
+                const days = Array.from(byDay.keys()).sort((a, b) => String(b).localeCompare(String(a)));
+                const previousDays = days.filter((d) => !latestDay || d !== latestDay);
+
+                if (!previousDays.length) {
+                    const day = todayIso();
+                    historyListEl.innerHTML = `
+                        <article class="overview-photo-history-row">
+                            <button type="button" class="overview-photo-history-date" data-photo-day="${escapeHtml(day)}">${escapeHtml(fmtLong(day))}</button>
+                            <div class="overview-photo-history-placeholders" aria-label="No previous photos yet">
+                                <div class="overview-photo-history-placeholder-slot">
+                                    <div class="overview-photo-history-placeholder-label">Front</div>
+                                    <div class="overview-photo-history-placeholder" aria-hidden="true">+</div>
+                                </div>
+                                <div class="overview-photo-history-placeholder-slot">
+                                    <div class="overview-photo-history-placeholder-label">Side</div>
+                                    <div class="overview-photo-history-placeholder" aria-hidden="true">+</div>
+                                </div>
+                                <div class="overview-photo-history-placeholder-slot">
+                                    <div class="overview-photo-history-placeholder-label">Back</div>
+                                    <div class="overview-photo-history-placeholder" aria-hidden="true">+</div>
+                                </div>
+                            </div>
+                        </article>
+                    `;
+
+                    historyListEl.querySelectorAll('[data-photo-day]').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            const picked = String(btn.getAttribute('data-photo-day') || '').slice(0, 10);
+                            if (!picked) return;
+                            open({ day: picked, pose: 'front' });
+                        });
+                    });
+                } else {
+                    const thumbHtml = (p, label) => {
+                        if (!p?.imageDataUrl) {
+                            return `<div class="overview-photo-history-thumb" title="${escapeHtml(label)}"></div>`;
+                        }
+                        return `
+                            <div class="overview-photo-history-thumb" title="${escapeHtml(label)}">
+                                <img src="${escapeHtml(p.imageDataUrl)}" alt="${escapeHtml(label)} progress photo">
+                            </div>
+                        `;
+                    };
+
+                    historyListEl.innerHTML = previousDays.slice(0, 6).map((day) => {
+                        const row = byDay.get(day);
+                        return `
+                            <article class="overview-photo-history-row">
+                                <button type="button" class="overview-photo-history-date" data-photo-day="${escapeHtml(day)}">${escapeHtml(fmtLong(day))}</button>
+                                <div class="overview-photo-history-strip">
+                                    ${thumbHtml(row?.front, 'Front')}
+                                    ${thumbHtml(row?.side, 'Side')}
+                                    ${thumbHtml(row?.back, 'Back')}
+                                </div>
+                            </article>
+                        `;
+                    }).join('');
+
+                    historyListEl.querySelectorAll('[data-photo-day]').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            const day = String(btn.getAttribute('data-photo-day') || '').slice(0, 10);
+                            if (!day) return;
+                            open({ day, pose: 'front' });
+                        });
+                    });
+                }
+            }
         };
 
         if (openBtn.dataset.wired !== '1') {
@@ -5895,6 +6046,7 @@ function initAuthUi() {
     const navMenu = document.getElementById('nav-menu');
     const { wrapper, signInBtn, signUpBtn, userBtn, menu, sep } = ensureAuthNavbarUi(navbarContainer);
     const mobileAuth = ensureMobileAuthUi(navMenu);
+    const controlAuth = ensureControlPanelAuthUi();
     const modal = ensureAuthModal();
 
     let currentUser = null;
@@ -5918,6 +6070,8 @@ function initAuthUi() {
         if (mobileAuth?.loginBtn) mobileAuth.loginBtn.classList.remove('hidden');
         if (mobileAuth?.signupBtn) mobileAuth.signupBtn.classList.remove('hidden');
         if (mobileAuth?.userRow) mobileAuth.userRow.classList.add('hidden');
+        if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
+        if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.remove('hidden');
         syncControlPanelLabel(null);
         emitAuthChanged(null);
     };
@@ -5937,6 +6091,8 @@ function initAuthUi() {
             mobileAuth.userRow.classList.remove('hidden');
             if (mobileAuth.userName) mobileAuth.userName.textContent = label;
         }
+        if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
+        if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.add('hidden');
         syncControlPanelLabel(user);
 
         menu.innerHTML = `
@@ -6032,6 +6188,13 @@ function initAuthUi() {
         } else {
             openModal('login');
         }
+    });
+    const controlSignUpBtn = document.getElementById('control-signup');
+    controlSignUpBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const panel = document.getElementById('control-panel');
+        panel?.classList.remove('open');
+        openModal('signup');
     });
 
     refreshMe();
@@ -6148,6 +6311,38 @@ function ensureMobileAuthUi(navMenu) {
         userName: wrap.querySelector('#auth-mobile-username'),
         logoutBtn: wrap.querySelector('#auth-mobile-logout')
     };
+}
+
+function ensureControlPanelAuthUi() {
+    const panel = document.getElementById('control-panel');
+    if (!panel) return null;
+
+    let signInBtn = panel.querySelector('#control-signin');
+    let signUpBtn = panel.querySelector('#control-signup');
+    if (!signInBtn || !signUpBtn) {
+        const section = document.createElement('div');
+        section.className = 'control-section';
+        section.dataset.authSection = '1';
+        section.innerHTML = `
+            <p class="section-label">ACCOUNT</p>
+            <button class="control-link" id="control-signin" type="button">
+                <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+                <span class="text">Sign in</span>
+            </button>
+            <button class="control-link" id="control-signup" type="button">
+                <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+                <span class="text">Sign up</span>
+            </button>
+        `.trim();
+
+        const firstSection = panel.querySelector('.control-section');
+        if (firstSection) panel.insertBefore(section, firstSection);
+        else panel.appendChild(section);
+    }
+
+    signInBtn = panel.querySelector('#control-signin');
+    signUpBtn = panel.querySelector('#control-signup');
+    return { signInBtn, signUpBtn };
 }
 
 function ensureAuthModal() {
@@ -6461,16 +6656,76 @@ function calculateAdjustedBaselineFoods(baselineArray, macroResults, mealsPerDay
    CONTROL PANEL (LEFT)
    ============================================ */
 function setupControlPanel() {
-    if (!controlPanel || !controlCloseBtn) return;
+    if (!controlPanel) return;
+    const path = String(location.pathname || '').toLowerCase();
+    const isHomePage = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
+    const isMobileControl = (() => {
+        try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
+    })();
 
-    controlPanel.classList.add('collapsed');
-    document.body.classList.add('control-collapsed');
+    if (isHomePage) {
+        document.body.classList.remove('has-control-panel', 'control-pinned', 'control-open', 'control-collapsed');
+        controlPanel.classList.remove('open', 'collapsed');
+        document.getElementById('control-mobile-fab')?.remove();
+        return;
+    }
 
-    controlCloseBtn.addEventListener('click', toggleControlPanel);
+    // Any page that includes the control panel should show it.
+    document.body.classList.add('has-control-panel');
+    if (isMobileControl) {
+        // Phone: keep control panel collapsible.
+        document.body.classList.remove('control-pinned');
+        collapseControlPanel();
 
-    document.querySelectorAll('.control-panel a, .control-link').forEach(link => {
-        link.addEventListener('click', collapseControlPanel);
-    });
+        let closeBtn = document.getElementById('control-close');
+        if (!closeBtn) {
+            const header = controlPanel.querySelector('.control-panel-header') || (() => {
+                const h = document.createElement('div');
+                h.className = 'control-panel-header';
+                controlPanel.insertBefore(h, controlPanel.firstChild);
+                return h;
+            })();
+            closeBtn = document.createElement('button');
+            closeBtn.className = 'control-close';
+            closeBtn.id = 'control-close';
+            closeBtn.setAttribute('aria-label', 'Collapse panel');
+            closeBtn.textContent = '×';
+            header.appendChild(closeBtn);
+        }
+        closeBtn.setAttribute('aria-label', 'Close control panel');
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', toggleControlPanel);
+
+        let fab = document.getElementById('control-mobile-fab');
+        if (!fab) {
+            fab = document.createElement('button');
+            fab.type = 'button';
+            fab.id = 'control-mobile-fab';
+            fab.className = 'control-mobile-fab';
+            fab.textContent = 'Control Panel';
+            fab.setAttribute('aria-label', 'Open control panel');
+            document.body.appendChild(fab);
+        }
+        const syncFab = () => {
+            const isOpen = controlPanel.classList.contains('open') && !controlPanel.classList.contains('collapsed');
+            fab.classList.toggle('hidden', isOpen);
+            fab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        };
+        fab.addEventListener('click', () => {
+            openControlPanel();
+            syncFab();
+        });
+        closeBtn.addEventListener('click', () => {
+            window.setTimeout(syncFab, 0);
+        });
+        syncFab();
+    } else {
+        // Desktop: keep pinned/open.
+        document.body.classList.add('control-pinned');
+        openControlPanel();
+        if (controlCloseBtn) controlCloseBtn.remove();
+        document.getElementById('control-mobile-fab')?.remove();
+    }
 
     // (Intentionally no Account/Progress-photos buttons in the control panel UI.)
 }
@@ -11077,7 +11332,8 @@ async function setupGroceryPlanPage() {
         buildCustomPanel();
     });
 
-    const calendarEl = document.getElementById('food-calendar');
+    const isGroceryCalendarPage = document.body?.classList?.contains('grocery-calendar-page');
+    const calendarEl = isGroceryCalendarPage ? null : document.getElementById('food-calendar');
     const month1El = document.getElementById('calendar-month-1');
     const calendarRange = document.getElementById('calendar-range');
     const calendarPrev = document.getElementById('calendar-prev');
@@ -11652,6 +11908,7 @@ function openControlPanel() {
 }
 
 function collapseControlPanel() {
+    if (document.body.classList.contains('control-pinned')) return;
     controlPanel?.classList.remove('open');
     controlPanel?.classList.add('collapsed');
     document.body.classList.add('control-collapsed');

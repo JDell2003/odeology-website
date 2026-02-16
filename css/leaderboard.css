@@ -60,6 +60,13 @@ html[data-theme="light"] .leaderboard-page .lb-you {
     letter-spacing: -0.02em;
 }
 
+.leaderboard-page .lb-you-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
 .leaderboard-page .lb-you-right {
     font-weight: 900;
     white-space: nowrap;
@@ -123,6 +130,14 @@ html[data-theme="light"] .leaderboard-page .lb-avatar {
 .leaderboard-page .lb-avatar.noimg {
     display: grid;
     place-items: center;
+}
+
+.leaderboard-page .lb-avatar:not(.noimg) .lb-avatar-fallback {
+    display: none;
+}
+
+.leaderboard-page .lb-avatar.noimg img {
+    display: none;
 }
 
 .leaderboard-page .lb-avatar-fallback {

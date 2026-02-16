@@ -8637,12 +8637,12 @@ body.modal-open {
 
     .control-panel {
         width: var(--control-width);
-        left: auto;
-        right: 0;
+        left: 0;
+        right: auto;
         padding: 0.55rem 0.65rem 0.9rem;
-        border-right: 0;
-        border-left: 1px solid rgba(237, 234, 228, 0.08);
-        box-shadow: inset 1px 0 0 rgba(237, 234, 228, 0.06), -12px 0 30px rgba(0, 0, 0, 0.25);
+        border-right: 1px solid rgba(237, 234, 228, 0.08);
+        border-left: 0;
+        box-shadow: inset -1px 0 0 rgba(237, 234, 228, 0.06), 12px 0 30px rgba(0, 0, 0, 0.25);
         transform: translateX(0);
         opacity: 1;
         pointer-events: auto;
@@ -8655,10 +8655,21 @@ body.modal-open {
         pointer-events: auto;
     }
 
+    .control-panel.collapsed {
+        transform: translateX(-100%);
+        width: var(--control-width);
+        padding: 0.55rem 0.65rem 0.9rem;
+    }
+
+    body.has-control-panel.control-collapsed,
+    body.has-control-panel.control-open {
+        padding-left: 0 !important;
+    }
+
     .control-panel::after {
-        left: 0;
-        right: auto;
-        background: linear-gradient(270deg, rgba(237, 234, 228, 0.10), rgba(237, 234, 228, 0));
+        right: 0;
+        left: auto;
+        background: linear-gradient(90deg, rgba(237, 234, 228, 0.10), rgba(237, 234, 228, 0));
     }
 
     .control-panel-header {
@@ -16822,9 +16833,84 @@ body.training-page.control-collapsed {
     padding-left: 0 !important;
 }
 
+/* Re-enable panel on pages that actually include it, and keep layout offset. */
+body.has-control-panel #control-panel {
+    display: flex !important;
+}
+
+@media (min-width: 701px) {
+    body.has-control-panel.control-open {
+        padding-left: var(--control-width) !important;
+    }
+
+    body.has-control-panel.control-collapsed {
+        padding-left: var(--control-collapsed-width) !important;
+    }
+}
+
 @media (max-width: 640px) {
     .container {
         padding-left: 0.9rem !important;
+    }
+
+    .control-mobile-fab {
+        display: grid !important;
+        place-items: center;
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        width: 72px;
+        height: 72px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background:
+            radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.14), transparent 40%),
+            linear-gradient(155deg, #0f1013, #07080a 72%);
+        color: #f7f7f8;
+        font-size: 9.5px;
+        font-weight: 900;
+        line-height: 1.15;
+        letter-spacing: 0.015em;
+        text-transform: uppercase;
+        text-align: center;
+        padding: 8px;
+        z-index: 95;
+        box-shadow:
+            0 12px 24px rgba(0, 0, 0, 0.34),
+            inset 0 1px 0 rgba(255, 255, 255, 0.20),
+            inset 0 -10px 16px rgba(0, 0, 0, 0.20);
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .control-mobile-fab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.34);
+        box-shadow:
+            0 16px 30px rgba(0, 0, 0, 0.40),
+            inset 0 1px 0 rgba(255, 255, 255, 0.24),
+            inset 0 -10px 16px rgba(0, 0, 0, 0.24);
+    }
+
+    .control-mobile-fab:active {
+        transform: translateY(0);
+    }
+
+    .control-mobile-fab.hidden {
+        display: none !important;
+    }
+
+    .control-panel-header {
+        justify-content: flex-end !important;
+    }
+
+    .control-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        font-size: 1.15rem;
+        font-weight: 900;
+        line-height: 1;
+        padding: 0;
     }
 }
 
@@ -16833,6 +16919,10 @@ body.training-page.control-collapsed {
    ============================================ */
 .theme-toggle {
     display: none !important;
+}
+
+.control-mobile-fab {
+    display: none;
 }
 
 .navbar {

@@ -37,6 +37,8 @@
     const monthLabel = (date) => date.toLocaleString('default', { month: 'long' });
 
     let cachedWeeklySchedule = null;
+    let cachedProfileGroceryItems = [];
+    let mealFallbackResizeBound = false;
 
     const waitFor = async (predicate, { timeoutMs = 10000, intervalMs = 200 } = {}) => {
         const start = Date.now();
@@ -288,6 +290,7 @@
         const listTarget = $('#grocery-list-items');
         if (!listTarget || !Array.isArray(items) || !items.length) return false;
         if (listTarget.querySelector('.grocery-card, .grocery-item-row')) return true;
+        cachedProfileGroceryItems = items.slice();
 
         const fmtMoney = (n) => (Number.isFinite(Number(n)) ? `$${Number(n).toFixed(2)}` : null);
         const computedWeekly = (() => {
@@ -503,25 +506,37 @@
                 const show = active === 'all' || section === active;
                 el.classList.toggle('is-hidden', !show);
             });
+            const photoHistory = document.getElementById('overview-photo-history');
+            if (photoHistory) {
+                photoHistory.classList.toggle('is-hidden', active !== 'photos');
+            }
             buttons.forEach((btn) => {
                 btn.classList.toggle('active', btn.dataset.filter === active);
             });
+            document.body.classList.toggle('overview-restock-focus', active === 'restock');
+
+            if (active === 'all') {
+                const groceryHead = document.getElementById('overview-grocery-head');
+                const groceryCard = document.getElementById('grocery-list');
+                if (groceryHead && groceryCard) {
+                    groceryHead.setAttribute('aria-expanded', 'true');
+                    groceryCard.classList.add('is-expanded');
+                }
+            }
         };
 
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 const filter = btn.dataset.filter || 'all';
                 applyFilter(filter);
-                if (isMobile()) {
+                if (isMobile() && filter !== 'all') {
                     nav.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             });
         });
 
         mql.addEventListener('change', () => {
-            if (!isMobile()) {
-                applyFilter('all');
-            }
+            applyFilter('all');
         });
 
         applyFilter('all');
@@ -654,6 +669,45 @@
         const startDate = getStartDate();
         cachedWeeklySchedule = buildWeeklySchedule(items, startDate, { weeks: 4 });
         return cachedWeeklySchedule;
+    };
+
+    const buildNext7DayBuySchedule = (items, startDate) => {
+        const horizonDays = 7;
+        const days = Array.from({ length: horizonDays }, (_, i) => {
+            const d = new Date(startDate);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + i);
+            return d;
+        });
+        const events = days.map(() => []);
+        const lowDaysThreshold = 2;
+
+        items.forEach((item) => {
+            const daysPerContainer = Number(item.daysPerContainer);
+            const price = Number(item.price);
+            if (!Number.isFinite(daysPerContainer) || daysPerContainer <= 0) return;
+
+            let remainingDays = daysPerContainer;
+            for (let i = 0; i < horizonDays; i += 1) {
+                if (remainingDays <= lowDaysThreshold) {
+                    const runout = new Date(days[i]);
+                    runout.setDate(runout.getDate() + Math.max(0, Math.round(remainingDays)));
+                    events[i].push({
+                        name: item.name,
+                        qty: 1,
+                        price: Number.isFinite(price) ? price : null,
+                        runoutDate: runout.toISOString().slice(0, 10)
+                    });
+                    remainingDays = daysPerContainer;
+                }
+                remainingDays -= 1;
+            }
+        });
+
+        return days.map((date, idx) => ({
+            date,
+            items: events[idx] || []
+        }));
     };
 
     const buildListSchedule = (items, startDate, { horizonDays = 28, maxDates = 5 } = {}) => {
@@ -1143,6 +1197,271 @@
         try { w.print(); } catch {}
     };
 
+    const printCombinedGroceryMeals = ({ schedule, meals }) => {
+        const safeSchedule = Array.isArray(schedule) ? schedule : [];
+        const safeMeals = Array.isArray(meals) ? meals : [];
+        const normalize = (s) => String(s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        const fmtDay = (d) => d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+        const groceryCards = Array.from(document.querySelectorAll('#grocery-list-items .grocery-card'));
+        const groceryItemsFromCards = groceryCards.map((card) => {
+            const name = String(card.querySelector('.grocery-card-title')?.textContent || '').trim();
+            const image = String(card.querySelector('.grocery-card-image img')?.getAttribute('src') || '').trim();
+            const rows = Array.from(card.querySelectorAll('.detail-row'));
+            const read = (label) => {
+                const row = rows.find((r) => String(r.querySelector('.detail-label')?.textContent || '').trim().toLowerCase() === label);
+                return String(row?.querySelector('.detail-value')?.textContent || '').trim();
+            };
+            return {
+                name,
+                image,
+                qty: read('qty'),
+                category: read('category'),
+                daily: read('daily use'),
+                price: read('price')
+            };
+        }).filter((it) => it.name);
+
+        const groceryItems = groceryItemsFromCards.length
+            ? groceryItemsFromCards
+            : safeSchedule.flatMap((bucket) => (Array.isArray(bucket?.items) ? bucket.items : []).map((row) => {
+                const qty = Number(row?.qty || 1) || 1;
+                const price = Number(row?.price);
+                return {
+                    name: String(row?.name || 'Item').trim(),
+                    image: String(row?.image || '').trim(),
+                    qty: `${qty}x`,
+                    category: '',
+                    daily: '',
+                    price: Number.isFinite(price) ? `$${(price * qty).toFixed(2)}` : ''
+                };
+            }));
+
+        const imageByName = new Map();
+        groceryItems.forEach((it) => {
+            const key = normalize(it.name);
+            if (!key) return;
+                if (!imageByName.has(key) && it.image) imageByName.set(key, it.image);
+        });
+
+        const parsed = parsePlanItems();
+        const weekItems = Array.isArray(parsed?.items) ? parsed.items : [];
+        const weekSchedule = buildNext7DayBuySchedule(weekItems, getStartDate());
+
+        const resolveMealImage = (foodName) => {
+            const key = normalize(foodName);
+            if (!key) return '';
+            if (imageByName.has(key)) return imageByName.get(key);
+            for (const [nameKey, src] of imageByName.entries()) {
+                if (nameKey.includes(key) || key.includes(nameKey)) return src;
+            }
+            return '';
+        };
+
+        const aggregated7Day = (() => {
+            const map = new Map();
+            weekSchedule.forEach((day) => {
+                const rows = Array.isArray(day?.items) ? day.items : [];
+                rows.forEach((it) => {
+                    const key = normalize(it?.name || 'item');
+                    if (!key) return;
+                    const existing = map.get(key) || {
+                        name: String(it?.name || 'Item'),
+                        qty: 0,
+                        price: null,
+                        earliestRunout: null
+                    };
+                    const qty = Number(it?.qty || 1) || 1;
+                    existing.qty += qty;
+                    if (!Number.isFinite(existing.price) && Number.isFinite(it?.price)) {
+                        existing.price = Number(it.price);
+                    }
+                    const runout = String(it?.runoutDate || '');
+                    if (runout) {
+                        if (!existing.earliestRunout || runout < existing.earliestRunout) {
+                            existing.earliestRunout = runout;
+                        }
+                    }
+                    map.set(key, existing);
+                });
+            });
+            return Array.from(map.values()).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        })();
+
+        const avgWeeklyList = (() => {
+            if (safeSchedule.length) {
+                const weeks = safeSchedule.length;
+                const map = new Map();
+                safeSchedule.forEach((bucket) => {
+                    const rows = Array.isArray(bucket?.items) ? bucket.items : [];
+                    rows.forEach((it) => {
+                        const key = normalize(it?.name || 'item');
+                        if (!key) return;
+                        const existing = map.get(key) || {
+                            name: String(it?.name || 'Item'),
+                            totalQty: 0,
+                            price: null,
+                            image: ''
+                        };
+                        existing.totalQty += Number(it?.qty || 1) || 1;
+                        if (!Number.isFinite(existing.price) && Number.isFinite(it?.price)) {
+                            existing.price = Number(it.price);
+                        }
+                        if (!existing.image && it?.image) existing.image = String(it.image);
+                        map.set(key, existing);
+                    });
+                });
+                return Array.from(map.values())
+                    .map((it) => ({
+                        name: it.name,
+                        qty: Math.max(1, Math.round(it.totalQty / Math.max(1, weeks))),
+                        price: it.price,
+                        image: it.image
+                    }))
+                    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+            }
+
+            if (groceryItems.length) {
+                return groceryItems.map((it) => ({
+                    name: String(it?.name || 'Item'),
+                    qty: 1,
+                    price: Number.isFinite(parseFloat(String(it?.price || '').replace(/[^0-9.]/g, '')))
+                        ? parseFloat(String(it.price).replace(/[^0-9.]/g, ''))
+                        : null,
+                    image: String(it?.image || '')
+                }));
+            }
+
+            return [];
+        })();
+
+        const groceryBody = aggregated7Day.length ? `
+            <section class="print-section">
+                <div class="muted">Items projected to run out in the next 7 days.</div>
+                <ul class="print-list">
+                    ${aggregated7Day.map((it) => {
+                        const runoutLabel = it?.earliestRunout
+                            ? new Date(it.earliestRunout).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                            : '';
+                        const thumb = resolveMealImage(it?.name || '');
+                        return `
+                            <li class="print-list-card">
+                                <span class="thumb">${thumb ? `<img src="${escapeHtml(thumb)}" alt="">` : ''}</span>
+                                <span>
+                                    <strong>${escapeHtml(String(it?.name || 'Item'))}</strong>
+                                    <span class="meta-line">${escapeHtml(`Buy ${it.qty}x | Runs out soon: ${runoutLabel || '-'}`)}</span>
+                                </span>
+                                <span class="price">${Number.isFinite(it?.price) ? `$${(Number(it.price) * Number(it.qty || 1)).toFixed(2)}` : ''}</span>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            </section>
+        ` : (avgWeeklyList.length ? `
+            <section class="print-section">
+                <div class="muted">No urgent buys in the next 7 days. Average weekly grocery list:</div>
+                <ul class="print-list">
+                    ${avgWeeklyList.map((it) => {
+                        const thumb = it?.image ? String(it.image) : resolveMealImage(it?.name || '');
+                        return `
+                            <li class="print-list-card">
+                                <span class="thumb">${thumb ? `<img src="${escapeHtml(thumb)}" alt="">` : ''}</span>
+                                <span>
+                                    <strong>${escapeHtml(String(it?.name || 'Item'))}</strong>
+                                    <span class="meta-line">${escapeHtml(`Avg weekly qty: ${Number(it?.qty || 1)}x`)}</span>
+                                </span>
+                                <span class="price">${Number.isFinite(it?.price) ? `$${(Number(it.price) * Number(it?.qty || 1)).toFixed(2)}` : ''}</span>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            </section>
+        ` : '<div class="muted">No grocery list available.</div>');
+
+        const mealsBody = safeMeals.map((meal) => {
+            const items = Array.isArray(meal?.items) ? meal.items : [];
+            return `
+                <section class="print-section">
+                    <h3>${escapeHtml(String(meal?.title || 'Meal'))}</h3>
+                    ${meal?.totals ? `<div class="muted">${escapeHtml(String(meal.totals))}</div>` : ''}
+                    ${items.length ? `
+                        <ul class="print-list">
+                            ${items.map((it) => {
+                                const name = String(it?.name || 'Food');
+                                const src = resolveMealImage(name);
+                                return `<li class="print-list-card">
+                                    <span class="thumb">${src ? `<img src="${escapeHtml(src)}" alt="">` : ''}</span>
+                                    <span>
+                                        <strong>${escapeHtml(name)}</strong>
+                                        <span class="meta-line">${escapeHtml([String(it?.measurement || '').trim(), String(it?.macros || '').trim()].filter(Boolean).join(' | '))}</span>
+                                    </span>
+                                    <span></span>
+                                </li>`;
+                            }).join('')}
+                        </ul>
+                    ` : '<div class="muted">No meal items.</div>'}
+                </section>
+            `;
+        }).join('');
+
+        const w = window.open('', '_blank');
+        if (!w) return;
+        try { w.opener = null; } catch {}
+        w.document.open();
+        w.document.write(`
+            <!doctype html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width,initial-scale=1">
+                <title>Grocery and Meals</title>
+                <style>
+                    :root { color-scheme: light; }
+                    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; color: #111; }
+                    h1 { margin: 0 0 8px; font-size: 24px; }
+                    h2 { margin: 22px 0 10px; font-size: 18px; }
+                    h3 { margin: 0 0 6px; font-size: 15px; }
+                    .muted { color: rgba(0,0,0,0.62); }
+                    .actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 12px 0 16px; flex-wrap: wrap; }
+                    .print-btn { appearance: none; border: 1px solid rgba(0,0,0,0.12); background: #111; color: #fff; padding: 10px 12px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+                    .print-section { margin: 12px 0; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.10); }
+                    .print-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+                    .print-list-card { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; border: 1px solid rgba(0,0,0,0.10); border-radius: 10px; padding: 8px 10px; align-items: center; }
+                    .thumb { width: 44px; height: 44px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); overflow: hidden; background: #f3f3f3; display: grid; place-items: center; }
+                    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+                    .meta-line { display: block; color: rgba(0,0,0,0.62); font-size: 12px; margin-top: 3px; }
+                    .page-break { break-before: page; page-break-before: always; }
+                    @media print { body { margin: 14mm; } .actions { display: none; } }
+                </style>
+            </head>
+            <body>
+                <h1>Grocery and Meals</h1>
+                <div class="muted">Generated ${escapeHtml(new Date().toLocaleDateString())}</div>
+                <div class="actions">
+                    <button class="print-btn" type="button" onclick="window.print()">Print / Save as PDF</button>
+                    <div class="muted">Page 1: next 7-day grocery list. Page 2: meals with images.</div>
+                </div>
+                <h2>Weekly Grocery List (Next 7 Days)</h2>
+                ${groceryBody}
+                <div class="page-break"></div>
+                <h2>Meals</h2>
+                ${mealsBody || '<div class="muted">No meals available.</div>'}
+                <script>
+                    window.addEventListener('load', () => {
+                        try {
+                            window.focus();
+                            setTimeout(() => { try { window.print(); } catch (e) {} }, 80);
+                        } catch (e) {}
+                    });
+                </script>
+            </body>
+            </html>
+        `);
+        w.document.close();
+        try { w.focus(); } catch {}
+        try { w.print(); } catch {}
+    };
+
     const initGroceryViewToggle = ({ items, startDate, unit }) => {
         const toolbar = $('#overview-grocery-toolbar');
         const cardsView = $('#overview-grocery-view-cards');
@@ -1181,6 +1500,22 @@
         const mql = window.matchMedia('(max-width: 700px)');
         const isPhone = () => !!mql.matches;
 
+        const forceCardsForPhone = () => {
+            activeView = 'cards';
+            cardsView.classList.remove('hidden');
+            listView.classList.add('hidden');
+            weeklyView.classList.add('hidden');
+            buttons.forEach((b) => {
+                const on = b.getAttribute('data-grocery-view') === 'cards';
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            if (printBtn) printBtn.classList.add('hidden');
+            exportBtn?.classList.add('hidden');
+            exportWeeklyBtn?.classList.add('hidden');
+            if (hintEl) hintEl.textContent = 'Grocery Cards: Quick view of items and restock timing.';
+        };
+
         const setView = (view) => {
             const v = view === 'list' || view === 'weekly' || view === 'cards' ? view : 'cards';
             const next = isPhone() ? 'cards' : v;
@@ -1204,7 +1539,7 @@
                     ? 'Weekly Buy List: For those who buy groceries once per week (Sunday plan).'
                     : (next === 'list'
                         ? 'Daily Buy List: For those who buy groceries when they run out.'
-                        : 'Cards: Quick view of items and restock timing.');
+                        : 'Grocery Cards: Quick view of items and restock timing.');
             }
 
             if (next === 'list') {
@@ -1259,9 +1594,14 @@
         });
 
         setView(saved || 'cards');
+        if (isPhone()) forceCardsForPhone();
 
         mql.addEventListener('change', () => {
-            if (isPhone()) setView('cards');
+            if (isPhone()) {
+                forceCardsForPhone();
+                return;
+            }
+            setView(saved || 'cards');
         });
     };
 
@@ -1284,10 +1624,12 @@
             });
 
             if (v === 'cards') {
+                syncMealCardsWithProfileGroceries();
                 summary.classList.add('hidden');
                 details.classList.remove('hidden');
                 $('#overview-meals-head')?.setAttribute('aria-expanded', 'true');
             } else {
+                renderDetailedMealsBreakdown(summary);
                 summary.classList.remove('hidden');
                 details.classList.add('hidden');
                 $('#overview-meals-head')?.setAttribute('aria-expanded', 'false');
@@ -1300,8 +1642,9 @@
 
         pdfBtn?.addEventListener('click', () => {
             const schedule = getWeeklyScheduleForPdf();
-            if (!schedule) return;
-            try { printWeeklySchedule({ schedule }); } catch {}
+            const meals = getMealsForOverview();
+            if (!schedule && !meals.length) return;
+            try { printCombinedGroceryMeals({ schedule, meals }); } catch {}
         });
 
         setView('cards');
@@ -1365,11 +1708,36 @@
     const buildMealsSummary = () => {
         const mealBlocks = $$('.meal-block');
         if (!mealBlocks.length) {
-            return [{
-                title: 'No meals yet',
-                sub: 'Build a grocery plan to generate meals.',
-                right: ''
-            }];
+            const readSnapshot = () => {
+                try {
+                    const raw = localStorage.getItem('ode_meal_plan_snapshot_v1');
+                    const snap = raw ? JSON.parse(raw) : null;
+                    const meals = Array.isArray(snap?.meals) ? snap.meals : [];
+                    return meals;
+                } catch {
+                    return [];
+                }
+            };
+
+            const snapMeals = readSnapshot();
+            if (!snapMeals.length) {
+                return [{
+                    title: 'No meals yet',
+                    sub: 'Build a grocery plan to generate meals.',
+                    right: ''
+                }];
+            }
+
+            const projected = snapMeals.slice(0, 4).map((meal, idx) => {
+                const title = `Meal ${Number(meal?.index) || (idx + 1)}`;
+                const items = Array.isArray(meal?.items) ? meal.items.slice(0, 2) : [];
+                const sub = items.length
+                    ? items.map((it) => String(it?.foodName || '').trim()).filter(Boolean).join(' · ')
+                    : 'Projected foods';
+                return { title, sub, right: '' };
+            });
+
+            return projected;
         }
 
         const take = mealBlocks.slice(0, 2);
@@ -1391,6 +1759,242 @@
             });
         }
         return rows;
+    };
+
+    const escapeHtml = (s) => String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const getMealsForOverview = () => {
+        const mealBlocks = $$('.meal-block');
+        if (mealBlocks.length) {
+            return mealBlocks.map((block, idx) => {
+                const title = ($('.meal-title', block)?.textContent || `Meal ${idx + 1}`).trim();
+                const totals = ($('.meal-summary', block)?.textContent || '').trim();
+                const items = $$('.meal-item', block).map((row) => ({
+                    name: String($('.meal-item-name', row)?.textContent || '').replace(/^[^A-Za-z0-9]+/, '').trim(),
+                    measurement: String($('.meal-item-measurement', row)?.textContent || '').trim(),
+                    macros: String($('.meal-item-macros', row)?.textContent || '').trim()
+                })).filter((it) => it.name);
+                return { title, totals, items };
+            }).filter((meal) => meal.title);
+        }
+
+        try {
+            const raw = localStorage.getItem('ode_meal_plan_snapshot_v1');
+            const snap = raw ? JSON.parse(raw) : null;
+            const meals = Array.isArray(snap?.meals) ? snap.meals : [];
+            return meals.map((meal, idx) => {
+                const title = `Meal ${Number(meal?.index) || (idx + 1)}`;
+                const items = Array.isArray(meal?.items) ? meal.items.map((it) => {
+                    const p = Number(it?.protein_g);
+                    const c = Number(it?.carbs_g);
+                    const f = Number(it?.fat_g);
+                    const macroBits = [];
+                    if (Number.isFinite(p)) macroBits.push(`${p}g P`);
+                    if (Number.isFinite(c)) macroBits.push(`${c}g C`);
+                    if (Number.isFinite(f)) macroBits.push(`${f}g F`);
+                    return {
+                        name: String(it?.foodName || '').trim(),
+                        measurement: String(it?.measurementText || '').trim(),
+                        macros: macroBits.join(' | ')
+                    };
+                }).filter((it) => it.name) : [];
+                return { title, totals: '', items };
+            }).filter((meal) => meal.title);
+        } catch {
+            return [];
+        }
+    };
+
+    const renderDetailedMealsBreakdown = (targetEl) => {
+        if (!targetEl) return;
+        const meals = getMealsForOverview();
+        if (!meals.length) {
+            targetEl.innerHTML = `
+                <div class="overview-summary-item">
+                    <div class="overview-summary-left">
+                        <div class="overview-summary-title">No meals yet</div>
+                        <div class="overview-summary-sub">Build a grocery plan to generate meals.</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        targetEl.innerHTML = meals.map((meal) => {
+            const items = Array.isArray(meal?.items) ? meal.items : [];
+            const list = items.length
+                ? `
+                    <div class="overview-meal-detail-items">
+                        ${items.map((it) => `
+                            <div class="overview-meal-detail-row">
+                                <div class="overview-meal-detail-food">${escapeHtml(it.name)}</div>
+                                <div class="overview-meal-detail-meta">
+                                    ${it.measurement ? `<span>${escapeHtml(it.measurement)}</span>` : ''}
+                                    ${it.macros ? `<span>${escapeHtml(it.macros)}</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `
+                : `<div class="overview-summary-sub">No meal items yet.</div>`;
+            return `
+                <div class="overview-summary-item overview-meal-detail">
+                    <div class="overview-summary-left">
+                        <div class="overview-summary-title">${escapeHtml(meal.title)}</div>
+                        ${meal.totals ? `<div class="overview-summary-sub">${escapeHtml(meal.totals)}</div>` : ''}
+                        ${list}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    };
+
+    const syncMealCardsWithProfileGroceries = () => {
+        const mealGrid = $('#meal-grid');
+        if (!mealGrid) return;
+
+        const applyMealFallbackViewportLimit = () => {
+            const fallbackGrid = mealGrid.querySelector('.grocery-items-grid[data-source="profile-grocery"]');
+            if (!fallbackGrid) return;
+
+            const isPhone = window.matchMedia('(max-width: 700px)').matches;
+            if (!isPhone) {
+                fallbackGrid.style.maxHeight = '';
+                return;
+            }
+
+            const cards = Array.from(fallbackGrid.querySelectorAll('.grocery-card'));
+            if (cards.length <= 2) {
+                fallbackGrid.style.maxHeight = '';
+                return;
+            }
+
+            const firstRowTop = Math.round(cards[0].offsetTop);
+            const firstRowCards = cards.filter((card) => Math.round(card.offsetTop) === firstRowTop);
+            const firstRowBottom = firstRowCards.reduce((max, card) => Math.max(max, card.offsetTop + card.offsetHeight), 0);
+            if (!firstRowBottom) return;
+
+            fallbackGrid.style.maxHeight = `${Math.ceil(firstRowBottom)}px`;
+        };
+
+        const hasMealCards = !!mealGrid.querySelector('.meal-block, .meal-blocks');
+        if (hasMealCards) return;
+
+        const escape = (s) => String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
+        let items = Array.isArray(cachedProfileGroceryItems) ? cachedProfileGroceryItems.slice() : [];
+
+        if (!items.length) {
+            const sourceCards = Array.from(document.querySelectorAll('#grocery-list-items .grocery-card'));
+            items = sourceCards.map((card) => {
+                const rowMap = {};
+                Array.from(card.querySelectorAll('.detail-row')).forEach((row) => {
+                    const k = (row.querySelector('.detail-label')?.textContent || '').trim().toLowerCase();
+                    const v = (row.querySelector('.detail-value')?.textContent || '').trim();
+                    if (k) rowMap[k] = v;
+                });
+                return {
+                    name: (card.querySelector('.grocery-card-title')?.textContent || '').trim(),
+                    quantity: rowMap.qty || '',
+                    category: rowMap.category || '',
+                    image: card.querySelector('.grocery-card-image img')?.getAttribute('src') || '',
+                    url: card.querySelector('.grocery-card-link')?.getAttribute('href') || '',
+                    dailyText: rowMap['daily use'] || '',
+                    priceText: rowMap.price || '',
+                    daysText: (card.querySelector('.duration-text strong')?.textContent || '').trim() || 'N/A'
+                };
+            }).filter((x) => x.name);
+        }
+
+        if (!items.length) return;
+
+        const gridHtml = items.map((it) => {
+            const name = String(it?.name || '').trim() || 'Item';
+            const quantity = String(it?.quantity || '').trim() || '—';
+            const category = String(it?.category || '').trim() || 'Misc';
+            const img = String(it?.image || '').trim();
+            const url = String(it?.url || '').trim();
+            const dailyNum = Number(it?.daily);
+            const dailyUnit = String(it?.unit || '').trim() || 'servings';
+            const dailyText = String(it?.dailyText || '').trim() || (Number.isFinite(dailyNum) ? `${dailyNum.toFixed(2)} ${dailyUnit}` : `— ${dailyUnit}`);
+            const daysNum = Number(it?.daysPerContainer);
+            const daysText = String(it?.daysText || '').trim() || (Number.isFinite(daysNum) ? `${Math.round(daysNum)} days` : 'N/A');
+            const priceNum = Number(it?.containerPrice);
+            const priceText = String(it?.priceText || '').trim() || (Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}` : '—');
+            const footerNum = Number(it?.estimatedWeeklyCost ?? it?.estimatedCost);
+            const footerText = Number.isFinite(footerNum) ? `$${footerNum.toFixed(2)} est` : '';
+
+            return `
+                <div class="grocery-card" data-query="${escape(name.toLowerCase())}">
+                    <div class="grocery-card-image ${img ? '' : 'no-image'}">
+                        ${img ? `<img src="${escape(img)}" alt="${escape(name)}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">` : ''}
+                        ${url ? `
+                            <a href="${escape(url)}" target="_blank" class="grocery-card-link" rel="noopener" title="View item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        ` : ''}
+                    </div>
+                    <div class="grocery-card-body">
+                        <h4 class="grocery-card-title">${escape(name)}</h4>
+                        <div class="grocery-card-duration">
+                            <span class="duration-icon">⏱</span>
+                            <span class="duration-text">Container lasts <strong>${escape(daysText)}</strong></span>
+                        </div>
+                        <div class="grocery-card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Qty</span>
+                                <span class="detail-value">${escape(quantity)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Category</span>
+                                <span class="detail-value">${escape(category)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Daily use</span>
+                                <span class="detail-value">${escape(dailyText)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Price</span>
+                                <span class="detail-value">${escape(priceText)}</span>
+                            </div>
+                        </div>
+                        <div class="grocery-card-footer">
+                            <span class="container-price">${escape(footerText)}</span>
+                            <label class="grocery-check-modern">
+                                <input type="checkbox" class="grocery-check-input" data-query="${escape(name.toLowerCase())}">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        mealGrid.innerHTML = `<div class="grocery-items-grid" data-source="profile-grocery">${gridHtml}</div>`;
+        const cloneGrid = mealGrid.querySelector('.grocery-items-grid[data-source="profile-grocery"]');
+        if (!cloneGrid) return;
+
+        applyMealFallbackViewportLimit();
+        requestAnimationFrame(applyMealFallbackViewportLimit);
+        setTimeout(applyMealFallbackViewportLimit, 120);
+        Array.from(cloneGrid.querySelectorAll('img')).forEach((img) => {
+            img.addEventListener('load', applyMealFallbackViewportLimit, { once: true });
+            img.addEventListener('error', applyMealFallbackViewportLimit, { once: true });
+        });
+
+        if (!mealFallbackResizeBound) {
+            mealFallbackResizeBound = true;
+            window.addEventListener('resize', applyMealFallbackViewportLimit, { passive: true });
+        }
     };
 
     const buildTrackerSummary = ({ days, events }) => {
@@ -1425,6 +2029,62 @@
         }
 
         return { rows, nextText };
+    };
+
+    const buildRestockHorizonRows = ({ items, startDate, horizonDays }) => {
+        const events = predictRunouts(Array.isArray(items) ? items : [], startDate, { horizonDays });
+        const byDate = new Map();
+        events.forEach((evt) => {
+            const key = String(evt?.runoutDate || '');
+            if (!key) return;
+            const list = byDate.get(key) || [];
+            list.push(evt);
+            byDate.set(key, list);
+        });
+
+        const sortedDates = Array.from(byDate.keys()).sort((a, b) => new Date(a) - new Date(b));
+        const total = events.length;
+        const next = sortedDates[0] || null;
+        const nextDate = next ? new Date(next) : null;
+
+        const rows = [];
+        rows.push({
+            title: nextDate ? `Next restock: ${nextDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}` : 'Next restock: —',
+            sub: `Total restocks in ${horizonDays} days: ${total}`,
+            right: nextDate ? `${Math.ceil((nextDate - new Date(startDate)) / 86400000)}d` : ''
+        });
+
+        sortedDates.slice(0, 4).forEach((iso) => {
+            const d = new Date(iso);
+            const list = byDate.get(iso) || [];
+            const names = list.slice(0, 2).map((x) => x.name).filter(Boolean);
+            rows.push({
+                title: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+                sub: names.length ? names.join(' · ') : `${list.length} item${list.length === 1 ? '' : 's'}`,
+                right: `${list.length} item${list.length === 1 ? '' : 's'}`
+            });
+        });
+
+        if (rows.length === 1) {
+            rows.push({
+                title: 'No restocks predicted',
+                sub: `Nothing is projected to run out in the next ${horizonDays} days.`,
+                right: ''
+            });
+        }
+
+        return rows;
+    };
+
+    const renderExtendedRestockSections = ({ items, startDate }) => {
+        renderSummaryList(
+            $('#overview-tracker-summary-14'),
+            buildRestockHorizonRows({ items, startDate, horizonDays: 14 })
+        );
+        renderSummaryList(
+            $('#overview-tracker-summary-30'),
+            buildRestockHorizonRows({ items, startDate, horizonDays: 30 })
+        );
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -1611,6 +2271,7 @@
         const parsed = parsePlanItems();
         const { items, unit } = parsed;
         toggleEmptyState(items.length > 0);
+        syncMealCardsWithProfileGroceries();
 
         updateMealHeaderMacros();
 
@@ -1626,6 +2287,7 @@
         const tracker = buildTrackerSummary(week);
         renderSummaryList($('#overview-tracker-summary'), tracker.rows);
         $('#overview-tracker-next') && ($('#overview-tracker-next').textContent = `Next: ${tracker.nextText}`);
+        renderExtendedRestockSections({ items: hasAnyGrocery ? items : [], startDate });
 
         initGroceryViewToggle({ items, startDate, unit });
 
@@ -1797,8 +2459,9 @@
                     const base = 420 + Math.floor(rnd() * 280) + idx * 8;
                     const dr = mulberry32(seedFromString(`ode_leaderboard_${month}_${day}_${n.handle}`));
                     const delta = Math.floor(dr() * 31) - 15;
-                    const avatarSeed = seedFromString(`ode_leaderboard_avatar_${month}_${day}_${n.handle}`);
-                    const gender = dr() > 0.5 ? 'women' : 'men';
+                    const avatarSeed = seedFromString(`ode_leaderboard_avatar_${n.handle}`);
+                    const genderRnd = mulberry32(seedFromString(`ode_leaderboard_avatar_gender_${n.handle}`));
+                    const gender = genderRnd() > 0.5 ? 'women' : 'men';
                     const joinDaysAgo = joinList[idx] ?? idx;
                     const joinedAt = new Date(today);
                     joinedAt.setUTCDate(joinedAt.getUTCDate() - joinDaysAgo);

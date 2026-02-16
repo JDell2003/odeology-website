@@ -5,6 +5,9 @@
     const youEl = $('#lb-you');
     const youSub = $('#lb-you-sub');
     const youRight = $('#lb-you-right');
+    const youAvatar = $('#lb-you-avatar');
+    const youAvatarImg = $('#lb-you-avatar-img');
+    const youAvatarFallback = $('#lb-you-avatar-fallback');
 
     const modal = $('#lb-modal');
     const modalTitle = $('#lb-modal-title');
@@ -524,8 +527,29 @@
                 youEl.classList.remove('hidden');
                 youSub.textContent = `Rank #${you.rank} ${MID_DOT} ${Number(you.points || 0).toLocaleString()} pts`;
                 youRight.textContent = `This month (${data?.month || ''})`;
+                if (youAvatar && youAvatarImg && youAvatarFallback) {
+                    const displayName = String(you.displayName || 'You');
+                    const avatarUrl = String(you.avatarUrl || '').trim();
+                    youAvatarFallback.textContent = initialsFromName(displayName);
+                    if (avatarUrl) {
+                        youAvatar.classList.remove('noimg');
+                        youAvatarImg.src = avatarUrl;
+                        youAvatarImg.alt = `${displayName} profile photo`;
+                        youAvatarImg.onerror = () => {
+                            youAvatar.classList.add('noimg');
+                            youAvatarImg.removeAttribute('src');
+                        };
+                    } else {
+                        youAvatar.classList.add('noimg');
+                        youAvatarImg.removeAttribute('src');
+                    }
+                }
             } else if (youEl) {
                 youEl.classList.add('hidden');
+                if (youAvatar && youAvatarImg) {
+                    youAvatar.classList.add('noimg');
+                    youAvatarImg.removeAttribute('src');
+                }
             }
 
             if (location.hash === '#awards') setModal('awards');

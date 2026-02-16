@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Odeology | odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        :root {
+            --why-bg: #f9f1e6;
+            --why-surface: #fffdf9;
+            --why-surface-2: #f5e3cb;
+            --why-ink: #1f130b;
+            --why-muted: #5a4433;
+            --why-accent: #da8a37;
+            --why-accent-2: #8f430d;
+            --why-line: rgba(45, 30, 18, 0.16);
+            --why-shadow: 0 22px 44px rgba(60, 27, 5, 0.14);
+        }
+
+        body {
+            margin: 0;
+            color: var(--why-ink);
+            background:
+                radial-gradient(circle at 8% 8%, rgba(201, 138, 74, 0.24), transparent 34%),
+                radial-gradient(circle at 96% 0%, rgba(255, 255, 255, 0.8), transparent 28%),
+                var(--why-bg);
+        }
+
+        .why-page {
+            width: min(1200px, 94%);
+            margin: 0 auto;
+            padding: 5.6rem 0 3rem;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .top-nav {
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 0.45rem;
+            border: 1px solid rgba(143, 67, 13, 0.2);
+            border-radius: 14px;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.88), rgba(245, 227, 203, 0.72));
+            box-shadow: 0 10px 22px rgba(60, 27, 5, 0.08);
+        }
+
+        .top-nav .btn {
+            border: 1px solid rgba(143, 67, 13, 0.26);
+            background: #fffdf9;
+            color: #5b3216;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            padding: 0.55rem 0.9rem;
+            border-radius: 999px;
+            box-shadow: 0 6px 14px rgba(60, 27, 5, 0.08);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .top-nav .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(143, 67, 13, 0.5);
+            background: linear-gradient(120deg, #fff9f0, #fbe7cf);
+            box-shadow: 0 10px 18px rgba(60, 27, 5, 0.14);
+        }
+
+        .top-nav .btn:first-child {
+            background: linear-gradient(120deg, #8f430d, #d88d3f);
+            color: #fff9f2;
+            border-color: transparent;
+        }
+
+        .top-nav .btn:first-child:hover {
+            background: linear-gradient(120deg, #7c390a, #c67d34);
+        }
+
+        .hero {
+            border: 1px solid var(--why-line);
+            border-radius: 24px;
+            background: linear-gradient(130deg, rgba(201, 138, 74, 0.18), rgba(255, 250, 244, 0.95));
+            box-shadow: var(--why-shadow);
+            padding: clamp(1rem, 2.6vw, 2rem);
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .hero h1 {
+            margin: 0 0 0.6rem;
+            font-size: clamp(2rem, 4.4vw, 3.7rem);
+            line-height: 1.02;
+            color: #1c130c;
+        }
+
+        .hero p {
+            margin: 0 0 0.55rem;
+            color: var(--why-muted);
+            max-width: 65ch;
+        }
+
+        .hero-card {
+            border: 1px solid var(--why-line);
+            border-radius: 16px;
+            background: rgba(255, 250, 244, 0.78);
+            padding: 0.95rem;
+        }
+
+        .hero-card strong {
+            color: #1f140b;
+        }
+
+        .hero-stats {
+            display: grid;
+            gap: 0.62rem;
+            grid-template-columns: repeat(2, minmax(130px, 1fr));
+        }
+
+        .mini-stat {
+            border: 1px solid var(--why-line);
+            border-radius: 12px;
+            background: var(--why-surface);
+            padding: 0.75rem;
+        }
+
+        .mini-stat b {
+            display: block;
+            font-size: 1.2rem;
+            color: var(--why-accent-2);
+        }
+
+        .section {
+            border: 1px solid rgba(143, 67, 13, 0.25);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fffefb, #fff9f1);
+            box-shadow: var(--why-shadow);
+            padding: 1rem;
+        }
+
+        .section h2 {
+            margin: 0 0 0.45rem;
+            font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+        }
+
+        .section p {
+            color: var(--why-muted);
+            margin: 0 0 0.75rem;
+        }
+
+        .system-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .flow {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .flow-row {
+            border: 1px solid var(--why-line);
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: var(--why-surface-2);
+        }
+
+        .flow-row b {
+            color: #392314;
+        }
+
+        .lab {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .inputs {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(130px, 1fr));
+            gap: 0.6rem;
+        }
+
+        .inputs label {
+            display: grid;
+            gap: 0.25rem;
+            color: #452d1a;
+            font-size: 0.8rem;
+        }
+
+        .inputs input,
+        .inputs select {
+            padding: 0.55rem 0.62rem;
+            border-radius: 9px;
+            border: 1px solid var(--why-line);
+            background: #fff;
+            color: #2a1a0d;
+            font-family: var(--font-body);
+        }
+
+        .eqs {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .eq {
+            border: 1px solid rgba(143, 67, 13, 0.2);
+            border-left: 4px solid var(--why-accent);
+            border-radius: 10px;
+            padding: 0.65rem;
+            background: linear-gradient(180deg, #ffffff, #fff6eb);
+            color: #3b291b;
+            font-size: 0.9rem;
+            box-shadow: 0 8px 16px rgba(60, 27, 5, 0.08);
+        }
+
+        .eq b { color: #7d431b; }
+
+        .eq-note {
+            margin-top: 0.5rem;
+            padding: 0.6rem;
+            border-radius: 10px;
+            border: 1px dashed rgba(143, 67, 13, 0.38);
+            background: #fff3e2;
+            color: #5f3a1d;
+            font-size: 0.88rem;
+        }
+
+        .viz-grid {
+            display: grid;
+            grid-template-columns: 0.7fr 1.3fr;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .ring {
+            width: min(170px, 100%);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            margin: 0 auto;
+            background: conic-gradient(#d38f4b 0deg, #d38f4b 120deg, #af6a2f 120deg, #af6a2f 240deg, #6f3f18 240deg, #6f3f18 360deg);
+            position: relative;
+            box-shadow: inset 0 0 0 10px rgba(255, 250, 244, 0.8);
+        }
+
+        .ring::after {
+            content: "";
+            position: absolute;
+            inset: 30px;
+            border-radius: 50%;
+            background: #fffaf4;
+            border: 1px solid var(--why-line);
+        }
+
+        .kpis {
+            display: grid;
+            gap: 0.35rem;
+            color: #3b2a1b;
+        }
+
+        .kpis b { color: #7d431b; }
+
+        .chart-wrap {
+            border: 1px solid var(--why-line);
+            border-radius: 12px;
+            background: #fff;
+            padding: 0.5rem;
+            margin-top: 0.6rem;
+        }
+
+        #weightChart {
+            width: 100%;
+            height: 230px;
+            display: block;
+        }
+
+        .macro-bars {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 0.7rem;
+        }
+
+        .macro-row {
+            display: grid;
+            gap: 0.2rem;
+            font-size: 0.82rem;
+            color: #5b4736;
+        }
+
+        .macro-track {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(93, 74, 57, 0.2);
+            overflow: hidden;
+        }
+
+        .macro-fill {
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            transition: width 0.6s ease;
+        }
+
+        .macro-fill.p { background: linear-gradient(90deg, #c9782f, #edb070); }
+        .macro-fill.c { background: linear-gradient(90deg, #a65923, #d6894d); }
+        .macro-fill.f { background: linear-gradient(90deg, #783610, #b5682f); }
+
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 0.7rem;
+        }
+
+        .term {
+            border: 1px solid var(--why-line);
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: #fff;
+        }
+
+        .term h3 {
+            font-size: 0.98rem;
+            margin: 0 0 0.3rem;
+            color: #2f1e12;
+        }
+
+        .offers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 0.72rem;
+        }
+
+        .offer {
+            border: 1px solid var(--why-line);
+            border-radius: 12px;
+            background: linear-gradient(140deg, #fff, #f6e9d8);
+            padding: 0.82rem;
+            transform: translateY(14px);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .offer.in {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .offer h3 {
+            margin: 0 0 0.28rem;
+            font-size: 0.98rem;
+            color: #5a3218;
+        }
+
+        .value-stack {
+            display: grid;
+            gap: 0.62rem;
+        }
+
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(130px, 1fr));
+            gap: 0.55rem;
+            margin-top: 0.65rem;
+        }
+
+        .impact {
+            border: 1px solid rgba(143, 67, 13, 0.2);
+            background: #fff8ef;
+            border-radius: 10px;
+            padding: 0.6rem;
+        }
+
+        .impact small {
+            color: #715740;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .impact b {
+            display: block;
+            color: #7d431b;
+            margin-top: 0.2rem;
+            font-size: 1rem;
+        }
+
+        .line {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .line small {
+            color: #5b4736;
+            font-size: 0.78rem;
+        }
+
+        .meter {
+            height: 10px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(93, 74, 57, 0.2);
+        }
+
+        .fill {
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            transition: width 0.8s ease;
+            background: linear-gradient(90deg, #7f441c, #d59a58);
+        }
+
+        .cta {
+            text-align: center;
+            padding: 1.1rem;
+            background: linear-gradient(130deg, rgba(201, 138, 74, 0.2), #fffaf4);
+        }
+
+        @media (max-width: 980px) {
+            .hero,
+            .system-grid,
+            .viz-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inputs {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .impact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-nav {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .inputs,
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .top-nav {
+                padding: 0.4rem;
+                gap: 0.5rem;
+            }
+
+            .top-nav .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Macro Calculator</a></li>
+                <li><a href="training-coming-soon.html">Training</a></li>
+                <li><a href="index.html#contact">FAQ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="why-page">
+        <div class="top-nav">
+            <a class="btn btn-ghost" href="index.html#resources">Back Home</a>
+            <a class="btn btn-ghost" href="training-coming-soon.html">Training</a>
+        </div>
+
+        <section class="hero">
+            <div>
+                <p class="eyebrow">WHY ODEOLOGY</p>
+                <h1>Built from gym-floor experience, not theory-only coaching.</h1>
+                <p>Built by a NASM trainer who operated two gyms and led the number one training department in the College Park region of Georgia.</p>
+                <p>This is a complete performance system: custom training, nutrition equations, recovery support, and software tracking in one place.</p>
+            </div>
+            <aside class="hero-card">
+                <strong>Credentials + Positioning</strong>
+                <div class="hero-stats" style="margin-top:0.6rem;">
+                    <div class="mini-stat"><b>NASM</b><span>Certified trainer foundation.</span></div>
+                    <div class="mini-stat"><b>2 Gyms</b><span>Operational and coaching leadership.</span></div>
+                    <div class="mini-stat"><b>#1 Dept</b><span>Top training dept in College Park region.</span></div>
+                    <div class="mini-stat"><b>Full Stack</b><span>Training + nutrition + recovery + tracking.</span></div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="section system-grid">
+            <article>
+                <h2>Equation Architecture</h2>
+                <p>This is the engine behind the recommendations. It explains exactly how numbers are generated and why they update.</p>
+                <div class="flow">
+                    <div class="flow-row"><b>Step 1:</b> BMR (Mifflin-St Jeor) estimates baseline energy use.</div>
+                    <div class="flow-row"><b>Step 2:</b> TDEE = BMR x activity multiplier based on training output.</div>
+                    <div class="flow-row"><b>Step 3:</b> Goal delta adjusts calories for cut, recomp, maintain, or bulk.</div>
+                    <div class="flow-row"><b>Step 4:</b> Protein anchored to bodyweight for tissue recovery and performance.</div>
+                    <div class="flow-row"><b>Step 5:</b> Fats set for hormonal and recovery support; carbs fill remaining calories.</div>
+                </div>
+            </article>
+            <article class="lab">
+                <h2>Live Model Lab</h2>
+                <div class="inputs">
+                    <label>Sex<select id="sex"><option value="male">Male</option><option value="female">Female</option></select></label>
+                    <label>Age<input id="age" type="number" value="28" min="16" max="80"></label>
+                    <label>Weight (lbs)<input id="weight" type="number" value="185" min="90" max="420"></label>
+                    <label>Height (in)<input id="height" type="number" value="70" min="54" max="84"></label>
+                    <label>Activity<select id="activity"><option value="1.2">Sedentary 1.2</option><option value="1.375">Light 1.375</option><option value="1.55" selected>Moderate 1.55</option><option value="1.725">Hard 1.725</option><option value="1.9">Athlete 1.9</option></select></label>
+                    <label>Goal<select id="goal"><option value="-450">Cut</option><option value="-150">Recomp</option><option value="0">Maintain</option><option value="300">Lean Bulk</option></select></label>
+                </div>
+                <div class="eqs">
+                    <div id="eq1" class="eq"></div>
+                    <div id="eq2" class="eq"></div>
+                    <div id="eq3" class="eq"></div>
+                    <div id="eq4" class="eq"></div>
+                    <div id="eq5" class="eq"></div>
+                </div>
+                <div class="eq-note" id="eqNote">Plain-English summary appears here.</div>
+                <div class="impact-grid">
+                    <div class="impact"><small>Weekly trend</small><b id="weeklyOut">0.00 lbs/week</b></div>
+                    <div class="impact"><small>Monthly trend</small><b id="monthlyOut">0.00 lbs/month</b></div>
+                    <div class="impact"><small>Direction</small><b id="directionOut">Maintain</b></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="section">
+            <h2>Visual Outputs</h2>
+            <p>Macro composition and 12-week projected bodyweight trend based on your goal settings.</p>
+            <div class="viz-grid">
+                <div class="ring" id="ring"></div>
+                <div>
+                    <div class="kpis">
+                        <div>Daily Calories: <b id="calOut">0 kcal</b></div>
+                        <div>Protein: <b id="pOut">0g</b></div>
+                        <div>Carbs: <b id="cOut">0g</b></div>
+                        <div>Fats: <b id="fOut">0g</b></div>
+                    </div>
+                    <div class="macro-bars">
+                        <div class="macro-row">Protein % of calories<div class="macro-track"><div class="macro-fill p" id="pBar"></div></div></div>
+                        <div class="macro-row">Carbs % of calories<div class="macro-track"><div class="macro-fill c" id="cBar"></div></div></div>
+                        <div class="macro-row">Fats % of calories<div class="macro-track"><div class="macro-fill f" id="fBar"></div></div></div>
+                    </div>
+                    <div class="chart-wrap"><canvas id="weightChart" width="620" height="230"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Equation Glossary</h2>
+            <div class="glossary">
+                <article class="term"><h3>BMR</h3><p>Basal Metabolic Rate: energy your body needs at rest to maintain basic function.</p></article>
+                <article class="term"><h3>TDEE</h3><p>Total Daily Energy Expenditure: BMR scaled by activity/training demand.</p></article>
+                <article class="term"><h3>Goal Delta</h3><p>Calorie adjustment from TDEE to drive fat loss, recomposition, or lean gain.</p></article>
+                <article class="term"><h3>Protein Anchor</h3><p>Protein tied to bodyweight to support muscle retention, growth, and recovery.</p></article>
+                <article class="term"><h3>Fat Floor</h3><p>Minimum daily fats used for hormone function and recovery quality.</p></article>
+                <article class="term"><h3>Carb Allocation</h3><p>Remaining calories assigned to carbs for training output and glycogen support.</p></article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>What Training Includes</h2>
+            <p>Everything below is included to maximize execution and reduce friction.</p>
+            <div class="offers" id="offers">
+                <article class="offer"><h3>Free Machine Included</h3><p>This comes with training so you do not have to drive 20 minutes to the gym and 20 minutes back. Train at home, save time, remove friction, and get results faster.</p></article>
+                <article class="offer"><h3>Free Supplements Shipped</h3><p>Core supplement stack shipped to your door for consistency and recovery.</p></article>
+                <article class="offer"><h3>Unlimited Custom Workouts</h3><p>As many program updates as needed as your body and goals evolve.</p></article>
+                <article class="offer"><h3>Software Tracking</h3><p>Daily tracking for lifts, bodyweight, recovery, and adherence in one dashboard.</p></article>
+                <article class="offer"><h3>Lifetime Self-Paced Training Access</h3><p>Even when we are done working together, you will still have an app that helps you keep getting results without someone holding your hand.</p></article>
+                <article class="offer"><h3>Results and Accountability</h3><p>Structured check-ins and feedback loops to keep the plan executing weekly.</p></article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Value Delivery Stack</h2>
+            <div class="value-stack">
+                <div class="line"><small>Program personalization depth</small><div class="meter"><div class="fill" data-w="97"></div></div></div>
+                <div class="line"><small>Nutrition precision and meal strategy</small><div class="meter"><div class="fill" data-w="94"></div></div></div>
+                <div class="line"><small>Recovery and supplement support</small><div class="meter"><div class="fill" data-w="92"></div></div></div>
+                <div class="line"><small>Tracking and accountability</small><div class="meter"><div class="fill" data-w="99"></div></div></div>
+            </div>
+        </section>
+
+        <section class="section cta">
+            <h2>Elite coaching with transparent logic.</h2>
+            <p>Use the model, see the math, then execute with full support.</p>
+            <a class="btn btn-primary" href="index.html#resources">Build My Plan</a>
+        </section>
+    </main>
+
+    <script>
+        const ids = {
+            sex: document.getElementById("sex"),
+            age: document.getElementById("age"),
+            weight: document.getElementById("weight"),
+            height: document.getElementById("height"),
+            activity: document.getElementById("activity"),
+            goal: document.getElementById("goal"),
+            eq1: document.getElementById("eq1"),
+            eq2: document.getElementById("eq2"),
+            eq3: document.getElementById("eq3"),
+            eq4: document.getElementById("eq4"),
+            eq5: document.getElementById("eq5"),
+            eqNote: document.getElementById("eqNote"),
+            weeklyOut: document.getElementById("weeklyOut"),
+            monthlyOut: document.getElementById("monthlyOut"),
+            directionOut: document.getElementById("directionOut"),
+            calOut: document.getElementById("calOut"),
+            pOut: document.getElementById("pOut"),
+            cOut: document.getElementById("cOut"),
+            fOut: document.getElementById("fOut"),
+            pBar: document.getElementById("pBar"),
+            cBar: document.getElementById("cBar"),
+            fBar: document.getElementById("fBar"),
+            ring: document.getElementById("ring"),
+            chart: document.getElementById("weightChart")
+        };
+
+        function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+        function r(n) { return Math.round(n); }
+
+        function runModel() {
+            const sex = ids.sex.value;
+            const age = clamp(Number(ids.age.value) || 28, 16, 80);
+            const wt = clamp(Number(ids.weight.value) || 185, 90, 420);
+            const ht = clamp(Number(ids.height.value) || 70, 54, 84);
+            const activity = Number(ids.activity.value) || 1.55;
+            const delta = Number(ids.goal.value) || 0;
+
+            const kg = wt * 0.453592;
+            const cm = ht * 2.54;
+            const s = sex === "male" ? 5 : -161;
+
+            const bmr = 10 * kg + 6.25 * cm - 5 * age + s;
+            const tdee = bmr * activity;
+            const calories = Math.max(1200, tdee + delta);
+
+            const protein = r(wt * 1.0);
+            const fats = r(wt * 0.35);
+            const carbs = r(Math.max(0, (calories - protein * 4 - fats * 9) / 4));
+
+            ids.eq1.innerHTML = "<b>Basal Metabolic Rate (BMR)</b> = 10xkg + 6.25xcm - 5xage + sex offset = <b>" + r(bmr) + " kcal/day</b>";
+            ids.eq2.innerHTML = "<b>Total Daily Energy Expenditure (TDEE)</b> = BMR x activity multiplier = " + r(bmr) + " x " + activity + " = <b>" + r(tdee) + " kcal/day</b>";
+            ids.eq3.innerHTML = "<b>Goal Calories</b> = TDEE + goal adjustment = " + r(tdee) + " + (" + delta + ") = <b>" + r(calories) + " kcal/day</b>";
+            ids.eq4.innerHTML = "<b>Protein + Fat Targets</b> = bodyweight-based anchors = <b>" + protein + "g protein</b>, <b>" + fats + "g fats</b>";
+            ids.eq5.innerHTML = "<b>Carbohydrate Allocation</b> = (goal calories - proteinx4 - fatx9) / 4 = <b>" + carbs + "g carbs</b>";
+
+            const weekly = (delta * 7) / 3500;
+            const monthly = weekly * 4.345;
+            const direction = weekly < -0.05 ? "Fat loss phase" : weekly > 0.05 ? "Muscle gain phase" : "Maintenance phase";
+            ids.eqNote.textContent = "In plain English: your resting burn is estimated, scaled by activity, adjusted for your goal, then split into protein, fats, and carbs for performance and recovery.";
+            ids.weeklyOut.textContent = weekly.toFixed(2) + " lbs/week";
+            ids.monthlyOut.textContent = monthly.toFixed(2) + " lbs/month";
+            ids.directionOut.textContent = direction;
+
+            ids.calOut.textContent = r(calories) + " kcal";
+            ids.pOut.textContent = protein + "g";
+            ids.cOut.textContent = carbs + "g";
+            ids.fOut.textContent = fats + "g";
+
+            const pDeg = (protein * 4 / calories) * 360;
+            const cDeg = (carbs * 4 / calories) * 360;
+            ids.ring.style.background = "conic-gradient(#d38f4b 0deg, #d38f4b " + pDeg + "deg, #af6a2f " + pDeg + "deg, #af6a2f " + (pDeg + cDeg) + "deg, #6f3f18 " + (pDeg + cDeg) + "deg, #6f3f18 360deg)";
+            ids.pBar.style.width = ((protein * 4 / calories) * 100).toFixed(1) + "%";
+            ids.cBar.style.width = ((carbs * 4 / calories) * 100).toFixed(1) + "%";
+            ids.fBar.style.width = ((fats * 9 / calories) * 100).toFixed(1) + "%";
+
+            drawChart(wt, delta);
+        }
+
+        function drawChart(startWeight, goalDelta) {
+            const c = ids.chart;
+            const x = c.getContext("2d");
+            const w = c.width;
+            const h = c.height;
+
+            x.clearRect(0, 0, w, h);
+            x.fillStyle = "#fff";
+            x.fillRect(0, 0, w, h);
+
+            x.strokeStyle = "rgba(83,58,35,0.18)";
+            for (let i = 0; i <= 5; i++) {
+                const y = 16 + (i * (h - 34) / 5);
+                x.beginPath(); x.moveTo(40, y); x.lineTo(w - 14, y); x.stroke();
+            }
+
+            const weekly = (goalDelta * 7) / 3500;
+            const vals = [];
+            for (let i = 0; i <= 12; i++) vals.push(startWeight + weekly * i);
+
+            const min = Math.min(...vals) - 1;
+            const max = Math.max(...vals) + 1;
+            const span = Math.max(0.1, max - min);
+
+            x.strokeStyle = "#9f5f2c";
+            x.lineWidth = 2.4;
+            x.beginPath();
+            vals.forEach((v, i) => {
+                const px = 40 + i * ((w - 58) / 12);
+                const py = 16 + ((max - v) / span) * (h - 34);
+                if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+            });
+            x.stroke();
+
+            x.fillStyle = "#cd8f50";
+            vals.forEach((v, i) => {
+                const px = 40 + i * ((w - 58) / 12);
+                const py = 16 + ((max - v) / span) * (h - 34);
+                x.beginPath(); x.arc(px, py, 2.6, 0, Math.PI * 2); x.fill();
+            });
+
+            x.fillStyle = "#5a3a22";
+            x.font = "12px Space Grotesk, sans-serif";
+            x.fillText("Week 0", 40, h - 6);
+            x.fillText("Week 12", w - 64, h - 6);
+            x.fillText(Math.round(vals[0]) + " lbs", 6, 16);
+            x.fillText(Math.round(vals[12]) + " lbs", 6, h - 20);
+        }
+
+        function animateVisuals() {
+            const offers = document.querySelectorAll(".offer");
+            const fills = document.querySelectorAll(".fill");
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((e) => {
+                    if (!e.isIntersecting) return;
+                    if (e.target.classList.contains("offer")) {
+                        const delay = Number(e.target.dataset.delay || 0);
+                        setTimeout(() => e.target.classList.add("in"), delay);
+                    }
+                    if (e.target.classList.contains("fill")) {
+                        e.target.style.width = e.target.dataset.w + "%";
+                    }
+                    io.unobserve(e.target);
+                });
+            }, { threshold: 0.2 });
+
+            offers.forEach((o, i) => {
+                o.dataset.delay = String(i * 70);
+                io.observe(o);
+            });
+            fills.forEach((f) => io.observe(f));
+        }
+
+        [ids.sex, ids.age, ids.weight, ids.height, ids.activity, ids.goal].forEach((i) => {
+            i.addEventListener("input", runModel);
+            i.addEventListener("change", runModel);
+        });
+
+        (function () {
+            const hamburger = document.getElementById("hamburger");
+            const navMenu = document.getElementById("nav-menu");
+            if (!hamburger || !navMenu) return;
+            hamburger.addEventListener("click", function () {
+                hamburger.classList.toggle("active");
+                navMenu.classList.toggle("active");
+            });
+            navMenu.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    hamburger.classList.remove("active");
+                    navMenu.classList.remove("active");
+                });
+            });
+        })();
+
+        runModel();
+        animateVisuals();
+    </script>
+</body>
+</html>

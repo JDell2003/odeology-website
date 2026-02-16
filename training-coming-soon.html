@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training | odeology_</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .training-blank {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: calc(var(--navbar-height) + 2rem) 1rem 2rem;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(197, 141, 79, 0.16), transparent 35%),
+                radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.08), transparent 30%),
+                var(--bg);
+        }
+
+        .training-blank-inner {
+            width: min(620px, 100%);
+            text-align: center;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            padding: 2rem 1.25rem;
+        }
+
+        .training-blank-inner h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .training-blank-inner p {
+            margin-bottom: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Macro Calculator</a></li>
+                <li><a href="overview.html">Training</a></li>
+                <li><a href="index.html#contact">FAQ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="training-blank">
+        <section class="training-blank-inner">
+            <p class="eyebrow">Training</p>
+            <h1>Training Page</h1>
+            <p>This page is intentionally blank for now.</p>
+            <a class="btn btn-primary" href="overview.html">Get Training</a>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const hamburger = document.getElementById("hamburger");
+            const navMenu = document.getElementById("nav-menu");
+            if (!hamburger || !navMenu) return;
+            hamburger.addEventListener("click", function () {
+                hamburger.classList.toggle("active");
+                navMenu.classList.toggle("active");
+            });
+            navMenu.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    hamburger.classList.remove("active");
+                    navMenu.classList.remove("active");
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
