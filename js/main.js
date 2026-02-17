@@ -1228,7 +1228,6 @@ function initNutritionFunnel() {
         budgetTotal: document.getElementById('g-budget-total'),
         wakeTime: document.getElementById('g-wake-time'),
         zip: document.getElementById('g-zip'),
-        dietaryPref: document.getElementById('g-dietary-pref'),
         allergies: document.getElementById('g-allergies'),
         tasteCost: document.getElementById('g-taste-cost')
     };
@@ -1295,8 +1294,10 @@ function initNutritionFunnel() {
         groceryGate?.classList.add('hidden');
 
         if (startGroceryPrimary) {
-            startGroceryPrimary.focus();
-            setTimeout(() => handoff?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            if (reason !== 'signed_in_auto') {
+                startGroceryPrimary.focus();
+                setTimeout(() => handoff?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
         }
     };
 
@@ -1379,17 +1380,6 @@ function initNutritionFunnel() {
     gInputs.meals?.addEventListener('input', () => {
         gInputs.meals.dataset.userSet = '1';
         updateProteinRecommendation(true);
-    });
-
-    // Handle dietary preference buttons
-    document.querySelectorAll('.diet-options .diet-btn')?.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.diet-options .diet-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            gInputs.dietaryPref.value = btn.dataset.diet;
-            console.log('Dietary preference selected:', btn.dataset.diet);
-        });
     });
 
     // Handle allergies checkboxes
@@ -2149,7 +2139,7 @@ function buildPlanHtml(res, selections) {
           <div class="card"><div class="muted">Protein</div><div class="number">${res.proteinG} g</div><div class="muted">${res.proteinPct}% of kcal</div></div>
           <div class="card"><div class="muted">Carbs</div><div class="number">${res.carbG} g</div><div class="muted">${res.carbPct}% of kcal</div></div>
           <div class="card"><div class="muted">Fats</div><div class="number">${res.fatG} g</div><div class="muted">${res.fatPct}% of kcal</div></div>
-          <div class="card"><div class="muted">Real-World Check</div><div class="muted">Good starting point. Use for 7 days.</div><div class="muted" style="margin-top:8px; font-size:0.9em;">&#8226; Weight not dropping? Cut 100 calories<br>&#8226; Weight not rising? Add 100 calories</div><div class="muted" style="margin-top:8px; font-size:0.85em;">We build it in 60 seconds. Check portions if you do it yourself.</div><div class="muted" style="margin-top:8px; opacity:0.7; font-size:0.85em;">Used by 150+ lifters</div></div>
+          <div class="card"><div class="muted">Real-World Check</div><div class="muted">Good starting point. Use for 14 days.</div><div class="muted" style="margin-top:8px; font-size:0.9em;">&#8226; Weight not dropping? Cut 100 calories<br>&#8226; Weight not rising? Add 100 calories</div><div class="muted" style="margin-top:8px; font-size:0.85em;">We build it in 60 seconds. Check portions if you do it yourself.</div><div class="muted" style="margin-top:8px; opacity:0.7; font-size:0.85em;">Used by 150+ lifters</div></div>
         </div>
       </div>
 
@@ -8037,16 +8027,6 @@ function setupGroceryFinalPage() {
             } else {
                 input.checked = false;
                 input.disabled = true;
-            }
-        });
-        // Disable all dietary preferences except 'No restrictions'
-        document.querySelectorAll('.diet-btn').forEach(btn => {
-            if (btn.dataset.diet !== 'no-restrictions') {
-                btn.disabled = true;
-                btn.classList.remove('active');
-                if (!btn.textContent.includes('coming soon')) btn.textContent += ' (coming soon)';
-            } else {
-                btn.classList.add('active');
             }
         });
     const form = document.getElementById('g-final-form');

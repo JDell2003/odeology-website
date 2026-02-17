@@ -677,7 +677,7 @@ async function upsertWeighin({ userId, weightLb, goalMode }) {
   if (!w) return { ok: false, error: 'Invalid weight' };
 
   if (!evalAt || !Number.isFinite(evalWeight)) {
-    // Establish baseline for weekly checks.
+    // Establish baseline for bi-weekly checks.
     await db.query(
       `
         INSERT INTO app_training_profiles (user_id, eval_weight_lb, eval_weight_at, last_weighin_lb, last_weighin_at, onboarding_complete)
@@ -706,7 +706,7 @@ async function upsertWeighin({ userId, weightLb, goalMode }) {
     [userId, w, todayIso]
   );
 
-  if (daysSince != null && daysSince >= 7) {
+  if (daysSince != null && daysSince >= 14) {
     const expRaw = String(profile?.experience || '').trim().toLowerCase();
     const bulkTargets = (() => {
       // Defaults to the "intermediate" guidance range, since that's where most users live.
@@ -717,7 +717,7 @@ async function upsertWeighin({ userId, weightLb, goalMode }) {
     })();
 
     // Normalize into an approximate weekly pace even if the user checked in late (e.g., 9–10 days).
-    const weekScale = 7 / Math.max(7, Number(daysSince) || 7);
+    const weekScale = 14 / Math.max(14, Number(daysSince) || 14);
     const weeklyLoss = (Number(evalWeight) - w) * weekScale; // positive = losing
     const weeklyGain = (w - Number(evalWeight)) * weekScale; // positive = gaining
 

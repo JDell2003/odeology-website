@@ -17173,7 +17173,7 @@ body.nav-drawer-open .nav-drawer-backdrop {
 }
 
 .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .nutrition-funnel .ns-flow .ns-pill,
