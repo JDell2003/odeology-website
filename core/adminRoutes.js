@@ -229,6 +229,15 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_messages_user_id ON app_messages(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_messages_guest_id ON app_messages(guest_id);');
 
+    await safeQuery(`
+    CREATE TABLE IF NOT EXISTS app_user_profiles (
+      user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      profile jsonb NOT NULL DEFAULT '{}'::jsonb
+    );
+  `);
+
     schemaEnsured = true;
   })().finally(() => {
     schemaEnsurePromise = null;
@@ -413,7 +422,65 @@ async function getUserDetail(res, userId) {
     [userId]
   );
 
-  sendJson(res, 200, { user, leads: leadsRes.rows || [], events: eventsRes.rows || [] });
+  let profile = null;
+  let trainingProfile = null;
+  let latestGrocery = null;
+
+  try {
+    const profileRes = await db.query(
+      `
+        SELECT user_id, created_at, updated_at, profile
+        FROM app_user_profiles
+        WHERE user_id = $1
+        LIMIT 1;
+      `,
+      [userId]
+    );
+    profile = profileRes.rows?.[0] || null;
+  } catch (err) {
+    if (String(err?.code || '') !== '42P01') throw err;
+  }
+
+  try {
+    const trainingRes = await db.query(
+      `
+        SELECT user_id, updated_at, onboarding_complete, discipline, experience, days_per_week,
+               strength, equipment_access, first_name, age, location_city, location_state, goals, injuries, profile_image
+        FROM app_training_profiles
+        WHERE user_id = $1
+        LIMIT 1;
+      `,
+      [userId]
+    );
+    trainingProfile = trainingRes.rows?.[0] || null;
+  } catch (err) {
+    if (String(err?.code || '') !== '42P01') throw err;
+  }
+
+  try {
+    const groceryRes = await db.query(
+      `
+        SELECT id, created_at, source, totals, meta
+        FROM app_grocery_lists
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `,
+      [userId]
+    );
+    latestGrocery = groceryRes.rows?.[0] || null;
+  } catch (err) {
+    if (String(err?.code || '') !== '42P01') throw err;
+  }
+
+  sendJson(res, 200, {
+    user,
+    leads: leadsRes.rows || [],
+    events: eventsRes.rows || [],
+    profile,
+    trainingProfile,
+    latestGrocery
+  });
 }
 
 async function updateUserNotes(req, res, userId) {

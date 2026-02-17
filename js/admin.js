@@ -681,6 +681,22 @@ async function loadAccount(userId) {
   body.appendChild(notes);
   body.appendChild(saveBtn);
 
+  if (json.profile) {
+    body.appendChild(el('h3', { class: 'admin-h3' }, 'Profile data'));
+    body.appendChild(el('div', { class: 'admin-muted', style: 'margin-bottom:0.35rem;' }, `Updated: ${fmtDate(json.profile.updated_at)}`));
+    body.appendChild(el('pre', { class: 'admin-pre' }, JSON.stringify(json.profile.profile || {}, null, 2)));
+  }
+
+  if (json.trainingProfile) {
+    body.appendChild(el('h3', { class: 'admin-h3' }, 'Training profile'));
+    body.appendChild(el('pre', { class: 'admin-pre' }, JSON.stringify(json.trainingProfile || {}, null, 2)));
+  }
+
+  if (json.latestGrocery) {
+    body.appendChild(el('h3', { class: 'admin-h3' }, 'Latest grocery list'));
+    body.appendChild(el('pre', { class: 'admin-pre' }, JSON.stringify(json.latestGrocery || {}, null, 2)));
+  }
+
   body.appendChild(el('h3', { class: 'admin-h3' }, `Leads (${json.leads?.length || 0})`));
   body.appendChild(el('pre', { class: 'admin-pre' }, JSON.stringify(json.leads || [], null, 2)));
 

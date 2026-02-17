@@ -272,6 +272,11 @@ function sanitizeTotals(raw) {
   };
 }
 
+function scaleNumber(value, factor) {
+  if (!Number.isFinite(value)) return null;
+  return Math.round(value * factor * 100) / 100;
+}
+
 module.exports = async function groceriesRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/groceries/')) return false;
 
@@ -454,6 +459,130 @@ module.exports = async function groceriesRoutes(req, res, url) {
     } catch (err) {
       console.error('[groceries-save]', err?.message || err);
       return sendJson(res, 500, { error: 'Failed to save grocery list' });
+    }
+  }
+
+  if (url.pathname === '/api/groceries/adjust' && req.method === 'POST') {
+    const userId = await resolveUserIdFromSession(req);
+    if (!userId) return sendJson(res, 401, { error: 'Not signed in' });
+
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+
+    const listId = cleanText(payload?.listId, 120);
+    const newCalories = Number(payload?.newCalories);
+    if (!Number.isFinite(newCalories) || newCalories <= 0) {
+      return sendJson(res, 400, { error: 'Missing newCalories' });
+    }
+
+    try {
+      const listRes = listId
+        ? await db.query(
+          `
+            SELECT id, created_at, source, totals, items, meta
+            FROM app_grocery_lists
+            WHERE user_id = $1 AND id = $2
+            LIMIT 1;
+          `,
+          [userId, listId]
+        )
+        : await db.query(
+          `
+            SELECT id, created_at, source, totals, items, meta
+            FROM app_grocery_lists
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1;
+          `,
+          [userId]
+        );
+
+      const row = listRes.rows?.[0];
+      if (!row) return sendJson(res, 404, { error: 'No grocery list found' });
+
+      const meta = row.meta && typeof row.meta === 'object' ? row.meta : {};
+      const macroTargets = meta.macroTargets && typeof meta.macroTargets === 'object' ? meta.macroTargets : null;
+      const currentCalories = Number(macroTargets?.calories);
+      if (!Number.isFinite(currentCalories) || currentCalories <= 0) {
+        return sendJson(res, 400, { error: 'Missing macro targets on grocery list' });
+      }
+
+      const factor = newCalories / currentCalories;
+      const items = Array.isArray(row.items) ? row.items : [];
+      const adjustedItems = items.map((item) => {
+        const next = { ...item };
+        const weekly = Number(item?.estimatedWeeklyCost);
+        const total = Number(item?.estimatedCost);
+        const daily = Number(item?.daily);
+        const daysPerContainer = Number(item?.daysPerContainer);
+        const containerPrice = Number(item?.containerPrice);
+
+        next.estimatedWeeklyCost = scaleNumber(weekly, factor) ?? item?.estimatedWeeklyCost ?? null;
+        next.estimatedCost = scaleNumber(total, factor) ?? item?.estimatedCost ?? null;
+        if (Number.isFinite(daily)) next.daily = Math.round(daily * factor * 1000) / 1000;
+        if (Number.isFinite(daysPerContainer)) next.daysPerContainer = Math.round(daysPerContainer / Math.max(0.2, factor) * 100) / 100;
+        if (Number.isFinite(containerPrice)) next.containerPrice = containerPrice;
+        return next;
+      });
+
+      const currentTotals = sanitizeTotals(row.totals);
+      const currentWeekly = Number(currentTotals?.totalEstimatedWeeklyCost);
+      const updatedWeekly = Number.isFinite(currentWeekly)
+        ? scaleNumber(currentWeekly, factor)
+        : null;
+
+      const updatedTotals = {
+        totalEstimatedWeeklyCost: updatedWeekly,
+        totalEstimatedCost: currentTotals?.totalEstimatedCost
+          ? scaleNumber(Number(currentTotals.totalEstimatedCost), factor)
+          : null,
+        currency: currentTotals?.currency || 'USD'
+      };
+
+      const updatedMeta = {
+        ...meta,
+        macroTargets: {
+          ...(macroTargets || {}),
+          calories: newCalories
+        },
+        adjustment: {
+          appliedAt: new Date().toISOString(),
+          previousCalories: currentCalories,
+          newCalories,
+          factor: Math.round(factor * 1000) / 1000,
+          previousWeeklyCost: Number.isFinite(currentWeekly) ? currentWeekly : null,
+          newWeeklyCost: updatedWeekly
+        }
+      };
+
+      const inserted = await db.query(
+        `
+          INSERT INTO app_grocery_lists (user_id, source, totals, items, meta)
+          VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb)
+          RETURNING id, created_at;
+        `,
+        [userId, 'training_adjustment', JSON.stringify(updatedTotals), JSON.stringify(adjustedItems), JSON.stringify(updatedMeta)]
+      );
+
+      const deltaWeekly = (Number.isFinite(updatedWeekly) && Number.isFinite(currentWeekly))
+        ? Math.round((updatedWeekly - currentWeekly) * 100) / 100
+        : null;
+
+      return sendJson(res, 200, {
+        ok: true,
+        id: inserted.rows?.[0]?.id || null,
+        createdAt: inserted.rows?.[0]?.created_at || null,
+        deltaWeeklyCost: deltaWeekly,
+        totals: updatedTotals,
+        meta: updatedMeta
+      });
+    } catch (err) {
+      console.error('[groceries-adjust]', err?.message || err);
+      return sendJson(res, 500, { error: 'Failed to adjust grocery list' });
     }
   }
 

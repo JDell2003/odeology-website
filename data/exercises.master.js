@@ -12,6 +12,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/3_4_Sit-Up/0.jpg",
       "free-exercise-db/exercises/3_4_Sit-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -27,6 +38,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/90_90_Hamstring/0.jpg",
       "free-exercise-db/exercises/90_90_Hamstring/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -42,6 +62,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ab_Crunch_Machine/0.jpg",
       "free-exercise-db/exercises/Ab_Crunch_Machine/1.jpg"
+    ],
+    "equipment": [
+      "Machine",
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -57,6 +91,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ab_Roller/0.jpg",
       "free-exercise-db/exercises/Ab_Roller/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -72,6 +118,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Adductor/0.jpg",
       "free-exercise-db/exercises/Adductor/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -87,6 +142,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Advanced_Kettlebell_Windmill/0.jpg",
       "free-exercise-db/exercises/Advanced_Kettlebell_Windmill/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -102,6 +172,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Air_Bike/0.jpg",
       "free-exercise-db/exercises/Air_Bike/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -117,6 +196,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/All_Fours_Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/All_Fours_Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -132,6 +220,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternate_Hammer_Curl/0.jpg",
       "free-exercise-db/exercises/Alternate_Hammer_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -147,6 +247,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternate_Heel_Touchers/0.jpg",
       "free-exercise-db/exercises/Alternate_Heel_Touchers/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -162,6 +273,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternate_Incline_Dumbbell_Curl/0.jpg",
       "free-exercise-db/exercises/Alternate_Incline_Dumbbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -177,6 +300,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternate_Leg_Diagonal_Bound/0.jpg",
       "free-exercise-db/exercises/Alternate_Leg_Diagonal_Bound/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -192,6 +329,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Cable_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Alternating_Cable_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -207,6 +356,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Deltoid_Raise/0.jpg",
       "free-exercise-db/exercises/Alternating_Deltoid_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -222,6 +383,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Floor_Press/0.jpg",
       "free-exercise-db/exercises/Alternating_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -237,6 +413,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Hang_Clean/0.jpg",
       "free-exercise-db/exercises/Alternating_Hang_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "UpperBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -252,6 +445,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Kettlebell_Press/0.jpg",
       "free-exercise-db/exercises/Alternating_Kettlebell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -267,6 +472,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Kettlebell_Row/0.jpg",
       "free-exercise-db/exercises/Alternating_Kettlebell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -282,6 +502,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Alternating_Renegade_Row/0.jpg",
       "free-exercise-db/exercises/Alternating_Renegade_Row/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Chest",
+      "Lats",
+      "Triceps",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -297,6 +534,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ankle_Circles/0.jpg",
       "free-exercise-db/exercises/Ankle_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -312,6 +558,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ankle_On_The_Knee/0.jpg",
       "free-exercise-db/exercises/Ankle_On_The_Knee/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -327,6 +582,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Anterior_Tibialis-SMR/0.jpg",
       "free-exercise-db/exercises/Anterior_Tibialis-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -342,6 +606,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Anti-Gravity_Press/0.jpg",
       "free-exercise-db/exercises/Anti-Gravity_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -357,6 +635,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pushups/0.jpg",
       "free-exercise-db/exercises/Pushups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -372,6 +663,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Arm_Circles/0.jpg",
       "free-exercise-db/exercises/Arm_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -387,6 +687,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Arnold_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Arnold_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -402,6 +714,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Around_The_Worlds/0.jpg",
       "free-exercise-db/exercises/Around_The_Worlds/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -417,6 +741,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Dips/0.jpg",
       "free-exercise-db/exercises/Bench_Dips/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -432,6 +770,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Atlas_Stone_Trainer/0.jpg",
       "free-exercise-db/exercises/Atlas_Stone_Trainer/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -447,6 +802,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Atlas_Stones/0.jpg",
       "free-exercise-db/exercises/Atlas_Stones/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Adductors",
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -462,6 +834,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Axle_Deadlift/0.jpg",
       "free-exercise-db/exercises/Axle_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "MidBack",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -477,6 +866,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/0.jpg",
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -492,6 +893,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Back_Flyes_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Back_Flyes_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "MidBack",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -507,6 +921,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -522,6 +951,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -537,6 +981,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -552,6 +1011,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Backward_Drag/0.jpg",
       "free-exercise-db/exercises/Backward_Drag/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -567,6 +1042,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Backward_Medicine_Ball_Throw/0.jpg",
       "free-exercise-db/exercises/Backward_Medicine_Ball_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -582,6 +1072,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Balance_Board/0.jpg",
       "free-exercise-db/exercises/Balance_Board/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -597,6 +1099,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ball_Leg_Curl/0.jpg",
       "free-exercise-db/exercises/Ball_Leg_Curl/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -612,6 +1125,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Assisted_Pull-Up/0.jpg",
       "free-exercise-db/exercises/Band_Assisted_Pull-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bands",
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Forearms",
+      "MidBack",
+      "Biceps",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -627,6 +1157,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Good_Morning/0.jpg",
       "free-exercise-db/exercises/Band_Good_Morning/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -642,6 +1184,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Good_Morning_Pull_Through/0.jpg",
       "free-exercise-db/exercises/Band_Good_Morning_Pull_Through/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -657,6 +1211,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Hip_Adductions/0.jpg",
       "free-exercise-db/exercises/Band_Hip_Adductions/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -672,6 +1235,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Pull_Apart/0.jpg",
       "free-exercise-db/exercises/Band_Pull_Apart/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -687,6 +1262,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Band_Skull_Crusher/0.jpg",
       "free-exercise-db/exercises/Band_Skull_Crusher/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -702,6 +1288,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Ab_Rollout/0.jpg",
       "free-exercise-db/exercises/Barbell_Ab_Rollout/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "SpinalErectors",
+      "Delts",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -717,6 +1317,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Ab_Rollout_-_On_Knees/0.jpg",
       "free-exercise-db/exercises/Barbell_Ab_Rollout_-_On_Knees/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "SpinalErectors",
+      "Delts",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -732,6 +1346,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -747,6 +1375,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -762,6 +1402,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Curls_Lying_Against_An_Incline/0.jpg",
       "free-exercise-db/exercises/Barbell_Curls_Lying_Against_An_Incline/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -777,6 +1430,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -792,6 +1462,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Full_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Full_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -807,6 +1492,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Glute_Bridge/0.jpg",
       "free-exercise-db/exercises/Barbell_Glute_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -822,6 +1521,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Guillotine_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Barbell_Guillotine_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -837,6 +1550,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Hack_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Hack_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Hamstrings",
+      "Glutes",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight",
+      "machineStable"
     ]
   },
   {
@@ -852,6 +1583,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Hip_Thrust/0.jpg",
       "free-exercise-db/exercises/Barbell_Hip_Thrust/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -867,6 +1612,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -882,6 +1641,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Incline_Shoulder_Raise/0.jpg",
       "free-exercise-db/exercises/Barbell_Incline_Shoulder_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -897,6 +1669,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Lunge/0.jpg",
       "free-exercise-db/exercises/Barbell_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -912,6 +1698,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Rear_Delt_Row/0.jpg",
       "free-exercise-db/exercises/Barbell_Rear_Delt_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -927,6 +1728,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Rollout_from_Bench/0.jpg",
       "free-exercise-db/exercises/Barbell_Rollout_from_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "Delts",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -942,6 +1759,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Seated_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Barbell_Seated_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -957,6 +1785,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Barbell_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -972,6 +1813,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Shrug/0.jpg",
       "free-exercise-db/exercises/Barbell_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -987,6 +1838,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Shrug_Behind_The_Back/0.jpg",
       "free-exercise-db/exercises/Barbell_Shrug_Behind_The_Back/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1002,6 +1866,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Side_Bend/0.jpg",
       "free-exercise-db/exercises/Barbell_Side_Bend/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "SpinalErectors",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1017,6 +1894,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Side_Split_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Side_Split_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "SpinalErectors",
+      "Glutes",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1032,6 +1924,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1047,6 +1954,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat_To_A_Bench/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1062,6 +1984,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Step_Ups/0.jpg",
       "free-exercise-db/exercises/Barbell_Step_Ups/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1077,6 +2014,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Walking_Lunge/0.jpg",
       "free-exercise-db/exercises/Barbell_Walking_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1092,6 +2043,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Battling_Ropes/0.jpg",
       "free-exercise-db/exercises/Battling_Ropes/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1107,6 +2068,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bear_Crawl_Sled_Drags/0.jpg",
       "free-exercise-db/exercises/Bear_Crawl_Sled_Drags/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "UpperBack",
+      "Forearms",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1122,6 +2099,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Behind_Head_Chest_Stretch/0.jpg",
       "free-exercise-db/exercises/Behind_Head_Chest_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1137,6 +2123,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Dips/0.jpg",
       "free-exercise-db/exercises/Bench_Dips/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1152,6 +2151,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Jump/0.jpg",
       "free-exercise-db/exercises/Bench_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1167,6 +2178,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1182,6 +2207,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Press_-_Powerlifting/0.jpg",
       "free-exercise-db/exercises/Bench_Press_-_Powerlifting/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Forearms",
+      "Lats",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1197,6 +2239,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Press_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Bench_Press_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1212,6 +2267,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1227,6 +2296,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1242,6 +2325,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1257,6 +2354,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1272,6 +2383,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Press_with_Chains/0.jpg",
       "free-exercise-db/exercises/Bench_Press_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Lats",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1287,6 +2414,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bench_Sprint/0.jpg",
       "free-exercise-db/exercises/Bench_Sprint/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1302,6 +2441,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Barbell_Row/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Barbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1317,6 +2472,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -1332,6 +2500,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Low-Pulley_Side_Lateral/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Low-Pulley_Side_Lateral/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "SpinalErectors",
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1347,6 +2529,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_One-Arm_Long_Bar_Row/0.jpg",
       "free-exercise-db/exercises/Bent_Over_One-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "SpinalErectors",
+      "UpperBack",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1362,6 +2561,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Two-Arm_Long_Bar_Row/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Two-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1377,6 +2591,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Two-Dumbbell_Row/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Two-Dumbbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1392,6 +2622,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Two-Dumbbell_Row_With_Palms_In/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Two-Dumbbell_Row_With_Palms_In/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1407,6 +2652,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Press/0.jpg",
       "free-exercise-db/exercises/Bent_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1422,6 +2684,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent-Arm_Barbell_Pullover/0.jpg",
       "free-exercise-db/exercises/Bent-Arm_Barbell_Pullover/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Lats",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1437,6 +2715,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent-Arm_Dumbbell_Pullover/0.jpg",
       "free-exercise-db/exercises/Bent-Arm_Dumbbell_Pullover/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Lats",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1452,6 +2745,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent-Knee_Hip_Raise/0.jpg",
       "free-exercise-db/exercises/Bent-Knee_Hip_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1467,6 +2771,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1482,6 +2798,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bicycling/0.jpg",
       "free-exercise-db/exercises/Bicycling/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1497,6 +2822,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bicycling_Stationary/0.jpg",
       "free-exercise-db/exercises/Bicycling_Stationary/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -1512,6 +2848,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Board_Press/0.jpg",
       "free-exercise-db/exercises/Board_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Forearms",
+      "Lats",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1527,6 +2880,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Body_Tricep_Press/0.jpg",
       "free-exercise-db/exercises/Body_Tricep_Press/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1542,6 +2906,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Body-Up/0.jpg",
       "free-exercise-db/exercises/Body-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Abs",
+      "Forearms",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1557,6 +2934,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bodyweight_Flyes/0.jpg",
       "free-exercise-db/exercises/Bodyweight_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1572,6 +2963,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bodyweight_Mid_Row/0.jpg",
       "free-exercise-db/exercises/Bodyweight_Mid_Row/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1587,6 +2992,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bodyweight_Squat/0.jpg",
       "free-exercise-db/exercises/Bodyweight_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1602,6 +3020,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bodyweight_Walking_Lunge/0.jpg",
       "free-exercise-db/exercises/Bodyweight_Walking_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -1617,6 +3048,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bosu_Ball_Cable_Crunch_With_Side_Bends/0.jpg",
       "free-exercise-db/exercises/Bosu_Ball_Cable_Crunch_With_Side_Bends/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight",
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1632,6 +3077,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bottoms_Up/0.jpg",
       "free-exercise-db/exercises/Bottoms_Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1647,6 +3103,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bottoms-Up_Clean_From_The_Hang_Position/0.jpg",
       "free-exercise-db/exercises/Bottoms-Up_Clean_From_The_Hang_Position/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Biceps",
+      "Delts",
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1662,6 +3135,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Box_Jump_Multiple_Response/0.jpg",
       "free-exercise-db/exercises/Box_Jump_Multiple_Response/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1677,6 +3164,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Box_Skip/0.jpg",
       "free-exercise-db/exercises/Box_Skip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1692,6 +3193,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Box_Squat/0.jpg",
       "free-exercise-db/exercises/Box_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1707,6 +3224,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Box_Squat_with_Bands/0.jpg",
       "free-exercise-db/exercises/Box_Squat_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1722,6 +3257,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Box_Squat_with_Chains/0.jpg",
       "free-exercise-db/exercises/Box_Squat_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1737,6 +3289,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Brachialis-SMR/0.jpg",
       "free-exercise-db/exercises/Brachialis-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1752,6 +3313,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bradford_Rocky_Presses/0.jpg",
       "free-exercise-db/exercises/Bradford_Rocky_Presses/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -1767,6 +3340,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Butt_Lift_Bridge/0.jpg",
       "free-exercise-db/exercises/Butt_Lift_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1782,6 +3368,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Butt-Ups/0.jpg",
       "free-exercise-db/exercises/Butt-Ups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -1797,6 +3394,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Butterfly/0.jpg",
       "free-exercise-db/exercises/Butterfly/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -1812,6 +3420,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Cable_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1827,6 +3449,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Crossover/0.jpg",
       "free-exercise-db/exercises/Cable_Crossover/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1842,6 +3477,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Crunch/0.jpg",
       "free-exercise-db/exercises/Cable_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1857,6 +3505,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Deadlifts/0.jpg",
       "free-exercise-db/exercises/Cable_Deadlifts/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1872,6 +3535,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Hammer_Curls_-_Rope_Attachment/0.jpg",
       "free-exercise-db/exercises/Cable_Hammer_Curls_-_Rope_Attachment/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1887,6 +3562,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Hip_Adduction/0.jpg",
       "free-exercise-db/exercises/Cable_Hip_Adduction/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1902,6 +3587,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Incline_Pushdown/0.jpg",
       "free-exercise-db/exercises/Cable_Incline_Pushdown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1917,6 +3614,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Incline_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Cable_Incline_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1932,6 +3641,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Internal_Rotation/0.jpg",
       "free-exercise-db/exercises/Cable_Internal_Rotation/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1947,6 +3666,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Iron_Cross/0.jpg",
       "free-exercise-db/exercises/Cable_Iron_Cross/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1962,6 +3693,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Judo_Flip/0.jpg",
       "free-exercise-db/exercises/Cable_Judo_Flip/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1977,6 +3723,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Lying_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Cable_Lying_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -1992,6 +3750,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_One_Arm_Tricep_Extension/0.jpg",
       "free-exercise-db/exercises/Cable_One_Arm_Tricep_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -2007,6 +3777,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Preacher_Curl/0.jpg",
       "free-exercise-db/exercises/Cable_Preacher_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2022,6 +3804,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Rear_Delt_Fly/0.jpg",
       "free-exercise-db/exercises/Cable_Rear_Delt_Fly/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2037,6 +3831,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Reverse_Crunch/0.jpg",
       "free-exercise-db/exercises/Cable_Reverse_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2052,6 +3859,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Rope_Overhead_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Cable_Rope_Overhead_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2067,6 +3886,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Rope_Rear-Delt_Rows/0.jpg",
       "free-exercise-db/exercises/Cable_Rope_Rear-Delt_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2082,6 +3915,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Cable_Rows/0.jpg",
       "free-exercise-db/exercises/Seated_Cable_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2097,6 +3946,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Russian_Twists/0.jpg",
       "free-exercise-db/exercises/Cable_Russian_Twists/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2112,6 +3973,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Seated_Crunch/0.jpg",
       "free-exercise-db/exercises/Cable_Seated_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2127,6 +4001,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Seated_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Cable_Seated_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2142,6 +4029,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Cable_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2157,6 +4056,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Shrugs/0.jpg",
       "free-exercise-db/exercises/Cable_Shrugs/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2172,6 +4081,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Cable_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2187,6 +4106,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Press/0.jpg",
       "free-exercise-db/exercises/Calf_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -2202,6 +4132,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Press_On_The_Leg_Press_Machine/0.jpg",
       "free-exercise-db/exercises/Calf_Press_On_The_Leg_Press_Machine/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -2217,6 +4158,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Calf_Raises/0.jpg",
       "free-exercise-db/exercises/Standing_Calf_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -2232,6 +4184,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Raise_On_A_Dumbbell/0.jpg",
       "free-exercise-db/exercises/Calf_Raise_On_A_Dumbbell/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2247,6 +4209,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Raises_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Calf_Raises_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2262,6 +4233,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Stretch_Elbows_Against_Wall/0.jpg",
       "free-exercise-db/exercises/Calf_Stretch_Elbows_Against_Wall/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2277,6 +4258,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf_Stretch_Hands_Against_Wall/0.jpg",
       "free-exercise-db/exercises/Calf_Stretch_Hands_Against_Wall/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2292,6 +4283,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calf-Machine_Shoulder_Shrug/0.jpg",
       "free-exercise-db/exercises/Calf-Machine_Shoulder_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -2307,6 +4309,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Calves-SMR/0.jpg",
       "free-exercise-db/exercises/Calves-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2322,6 +4333,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Car_Deadlift/0.jpg",
       "free-exercise-db/exercises/Car_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2337,6 +4363,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Car_Drivers/0.jpg",
       "free-exercise-db/exercises/Car_Drivers/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2352,6 +4391,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Carioca_Quick_Step/0.jpg",
       "free-exercise-db/exercises/Carioca_Quick_Step/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Abductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2367,6 +4421,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cat_Stretch/0.jpg",
       "free-exercise-db/exercises/Cat_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2382,6 +4445,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Catch_and_Overhead_Throw/0.jpg",
       "free-exercise-db/exercises/Catch_and_Overhead_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Chest",
+      "Delts",
+      "Quads",
+      "Hamstrings",
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2397,6 +4477,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chain_Handle_Extension/0.jpg",
       "free-exercise-db/exercises/Chain_Handle_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2412,6 +4503,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chain_Press/0.jpg",
       "free-exercise-db/exercises/Chain_Press/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2427,6 +4531,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chair_Leg_Extended_Stretch/0.jpg",
       "free-exercise-db/exercises/Chair_Leg_Extended_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2442,6 +4555,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chair_Lower_Back_Stretch/0.jpg",
       "free-exercise-db/exercises/Chair_Lower_Back_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2457,6 +4579,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chair_Squat/0.jpg",
       "free-exercise-db/exercises/Chair_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -2472,6 +4609,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chair_Upper_Body_Stretch/0.jpg",
       "free-exercise-db/exercises/Chair_Upper_Body_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2487,6 +4633,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_And_Front_Of_Shoulder_Stretch/0.jpg",
       "free-exercise-db/exercises/Chest_And_Front_Of_Shoulder_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2502,6 +4657,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_Push_multiple_response/0.jpg",
       "free-exercise-db/exercises/Chest_Push_multiple_response/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2517,6 +4687,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_Push_single_response/0.jpg",
       "free-exercise-db/exercises/Chest_Push_single_response/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2532,6 +4717,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_Push_from_3_point_stance/0.jpg",
       "free-exercise-db/exercises/Chest_Push_from_3_point_stance/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2547,6 +4747,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_Push_with_Run_Release/0.jpg",
       "free-exercise-db/exercises/Chest_Push_with_Run_Release/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2562,6 +4777,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chest_Stretch_on_Stability_Ball/0.jpg",
       "free-exercise-db/exercises/Chest_Stretch_on_Stability_Ball/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2577,6 +4802,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Incline_Row/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Incline_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -2592,6 +4835,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pullups/0.jpg",
       "free-exercise-db/exercises/Pullups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2607,6 +4864,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Childs_Pose/0.jpg",
       "free-exercise-db/exercises/Childs_Pose/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2622,6 +4888,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chin_To_Chest_Stretch/0.jpg",
       "free-exercise-db/exercises/Chin_To_Chest_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2637,6 +4912,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Chin-Up/0.jpg",
       "free-exercise-db/exercises/Chin-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2652,6 +4942,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Circus_Bell/0.jpg",
       "free-exercise-db/exercises/Circus_Bell/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2667,6 +4973,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean/0.jpg",
       "free-exercise-db/exercises/Clean/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2682,6 +5005,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_and_Jerk/0.jpg",
       "free-exercise-db/exercises/Clean_and_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2697,6 +5037,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_and_Press/0.jpg",
       "free-exercise-db/exercises/Clean_and_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2712,6 +5069,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_Deadlift/0.jpg",
       "free-exercise-db/exercises/Clean_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "MidBack",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2727,6 +5101,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_from_Blocks/0.jpg",
       "free-exercise-db/exercises/Clean_from_Blocks/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "UpperBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2742,6 +5132,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_Pull/0.jpg",
       "free-exercise-db/exercises/Clean_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2757,6 +5163,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clean_Shrug/0.jpg",
       "free-exercise-db/exercises/Clean_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2772,6 +5191,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Clock_Push-Up/0.jpg",
       "free-exercise-db/exercises/Clock_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2787,6 +5219,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Barbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Barbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2802,6 +5249,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Barbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Barbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2817,6 +5279,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2832,6 +5309,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_EZ_Bar_Curl/0.jpg",
       "free-exercise-db/exercises/Close-Grip_EZ_Bar_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2847,6 +5336,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_EZ-Bar_Curl_with_Band/0.jpg",
       "free-exercise-db/exercises/Close-Grip_EZ-Bar_Curl_with_Band/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2862,6 +5364,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_EZ-Bar_Press/0.jpg",
       "free-exercise-db/exercises/Close-Grip_EZ-Bar_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2877,6 +5394,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Front_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Front_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -2892,6 +5425,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Push-Up_off_of_a_Dumbbell/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Push-Up_off_of_a_Dumbbell/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell",
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2907,6 +5457,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Close-Grip_Standing_Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Close-Grip_Standing_Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2922,6 +5484,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cocoons/0.jpg",
       "free-exercise-db/exercises/Cocoons/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2937,6 +5510,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Conans_Wheel/0.jpg",
       "free-exercise-db/exercises/Conans_Wheel/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Forearms",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2952,6 +5542,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Concentration_Curls/0.jpg",
       "free-exercise-db/exercises/Concentration_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2967,6 +5569,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cross_Body_Hammer_Curl/0.jpg",
       "free-exercise-db/exercises/Cross_Body_Hammer_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -2982,6 +5596,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cross_Over_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Cross_Over_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -2997,6 +5624,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cross-Body_Crunch/0.jpg",
       "free-exercise-db/exercises/Cross-Body_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3012,6 +5650,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Crossover_Reverse_Lunge/0.jpg",
       "free-exercise-db/exercises/Crossover_Reverse_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -3027,6 +5674,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Crucifix/0.jpg",
       "free-exercise-db/exercises/Crucifix/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3042,6 +5701,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Crunch_-_Hands_Overhead/0.jpg",
       "free-exercise-db/exercises/Crunch_-_Hands_Overhead/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3057,6 +5727,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Crunch_-_Legs_On_Exercise_Ball/0.jpg",
       "free-exercise-db/exercises/Crunch_-_Legs_On_Exercise_Ball/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight",
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -3072,6 +5755,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Crunches/0.jpg",
       "free-exercise-db/exercises/Crunches/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3087,6 +5781,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cuban_Press/0.jpg",
       "free-exercise-db/exercises/Cuban_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3102,6 +5808,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dancers_Stretch/0.jpg",
       "free-exercise-db/exercises/Dancers_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3117,6 +5832,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dead_Bug/0.jpg",
       "free-exercise-db/exercises/Dead_Bug/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3132,6 +5856,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3147,6 +5888,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3162,6 +5920,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3177,6 +5952,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Deadlift_with_Bands/0.jpg",
       "free-exercise-db/exercises/Deadlift_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "MidBack",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3192,6 +5985,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Deadlift_with_Chains/0.jpg",
       "free-exercise-db/exercises/Deadlift_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "MidBack",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3207,6 +6017,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Barbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Decline_Barbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3222,6 +6046,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Close-Grip_Bench_To_Skull_Crusher/0.jpg",
       "free-exercise-db/exercises/Decline_Close-Grip_Bench_To_Skull_Crusher/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3237,6 +6076,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Crunch/0.jpg",
       "free-exercise-db/exercises/Decline_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3252,6 +6102,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Dumbbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Decline_Dumbbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3267,6 +6131,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Dumbbell_Flyes/0.jpg",
       "free-exercise-db/exercises/Decline_Dumbbell_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3282,6 +6158,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Decline_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3297,6 +6185,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_EZ_Bar_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Decline_EZ_Bar_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3312,6 +6212,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Oblique_Crunch/0.jpg",
       "free-exercise-db/exercises/Decline_Oblique_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3327,6 +6238,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Push-Up/0.jpg",
       "free-exercise-db/exercises/Decline_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3342,6 +6266,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Reverse_Crunch/0.jpg",
       "free-exercise-db/exercises/Decline_Reverse_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3357,6 +6292,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Decline_Smith_Press/0.jpg",
       "free-exercise-db/exercises/Decline_Smith_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -3372,6 +6323,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Deficit_Deadlift/0.jpg",
       "free-exercise-db/exercises/Deficit_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "MidBack",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3387,6 +6355,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Depth_Jump_Leap/0.jpg",
       "free-exercise-db/exercises/Depth_Jump_Leap/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3402,6 +6384,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dip_Machine/0.jpg",
       "free-exercise-db/exercises/Dip_Machine/1.jpg"
+    ],
+    "equipment": [
+      "Machine",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -3417,6 +6416,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dips_-_Chest_Version/0.jpg",
       "free-exercise-db/exercises/Dips_-_Chest_Version/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3432,6 +6444,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dips_-_Triceps_Version/0.jpg",
       "free-exercise-db/exercises/Dips_-_Triceps_Version/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3447,6 +6473,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Donkey_Calf_Raises/0.jpg",
       "free-exercise-db/exercises/Donkey_Calf_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3462,6 +6497,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Kettlebell_Alternating_Hang_Clean/0.jpg",
       "free-exercise-db/exercises/Double_Kettlebell_Alternating_Hang_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3477,6 +6529,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Kettlebell_Jerk/0.jpg",
       "free-exercise-db/exercises/Double_Kettlebell_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3492,6 +6560,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Kettlebell_Push_Press/0.jpg",
       "free-exercise-db/exercises/Double_Kettlebell_Push_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3507,6 +6591,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Kettlebell_Snatch/0.jpg",
       "free-exercise-db/exercises/Double_Kettlebell_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3522,6 +6621,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Kettlebell_Windmill/0.jpg",
       "free-exercise-db/exercises/Double_Kettlebell_Windmill/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3537,6 +6652,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Double_Leg_Butt_Kick/0.jpg",
       "free-exercise-db/exercises/Double_Leg_Butt_Kick/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3552,6 +6681,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Downward_Facing_Balance/0.jpg",
       "free-exercise-db/exercises/Downward_Facing_Balance/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Abs",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3567,6 +6708,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Drag_Curl/0.jpg",
       "free-exercise-db/exercises/Drag_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3582,6 +6735,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Drop_Push/0.jpg",
       "free-exercise-db/exercises/Drop_Push/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -3597,6 +6763,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Alternate_Bicep_Curl/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Alternate_Bicep_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3612,6 +6790,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3627,6 +6819,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Bench_Press_with_Neutral_Grip/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Bench_Press_with_Neutral_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3642,6 +6848,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Bicep_Curl/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Bicep_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3657,6 +6875,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Clean/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3672,6 +6907,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Floor_Press/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3687,6 +6937,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Flyes/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3702,6 +6964,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Incline_Row/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Incline_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3717,6 +6996,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Incline_Shoulder_Raise/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Incline_Shoulder_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3732,6 +7023,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Lunges/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Lunges/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3747,6 +7052,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3762,6 +7081,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Lying_Pronation/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Lying_Pronation/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3777,6 +7107,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Lying_Rear_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Lying_Rear_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3792,6 +7135,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Lying_Supination/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Lying_Supination/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3807,6 +7161,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_One-Arm_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Dumbbell_One-Arm_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3822,6 +7188,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Dumbbell_One-Arm_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3837,6 +7215,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_One-Arm_Upright_Row/0.jpg",
       "free-exercise-db/exercises/Dumbbell_One-Arm_Upright_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3852,6 +7243,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Prone_Incline_Curl/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Prone_Incline_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3867,6 +7270,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Raise/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3882,6 +7298,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Rear_Lunge/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Rear_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3897,6 +7327,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Scaption/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Scaption/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3912,6 +7354,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Seated_Box_Jump/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Seated_Box_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3927,6 +7383,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Seated_One-Leg_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Seated_One-Leg_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -3942,6 +7409,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3957,6 +7436,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Shrug/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3972,6 +7461,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Side_Bend/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Side_Bend/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -3987,6 +7488,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Squat/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4002,6 +7518,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Squat_To_A_Bench/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4017,6 +7548,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Step_Ups/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Step_Ups/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4032,6 +7577,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dumbbell_Tricep_Extension_-Pronated_Grip/0.jpg",
       "free-exercise-db/exercises/Dumbbell_Tricep_Extension_-Pronated_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4047,6 +7604,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dynamic_Back_Stretch/0.jpg",
       "free-exercise-db/exercises/Dynamic_Back_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4062,6 +7628,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dynamic_Chest_Stretch/0.jpg",
       "free-exercise-db/exercises/Dynamic_Chest_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4077,6 +7652,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elbow_Circles/0.jpg",
       "free-exercise-db/exercises/Elbow_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4092,6 +7676,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elbow_to_Knee/0.jpg",
       "free-exercise-db/exercises/Elbow_to_Knee/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4107,6 +7702,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elbows_Back/0.jpg",
       "free-exercise-db/exercises/Elbows_Back/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4122,6 +7726,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elevated_Back_Lunge/0.jpg",
       "free-exercise-db/exercises/Elevated_Back_Lunge/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4137,6 +7755,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elevated_Cable_Rows/0.jpg",
       "free-exercise-db/exercises/Elevated_Cable_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack",
+      "Biceps",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4152,6 +7785,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Elliptical_Trainer/0.jpg",
       "free-exercise-db/exercises/Elliptical_Trainer/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -4167,6 +7811,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Exercise_Ball_Crunch/0.jpg",
       "free-exercise-db/exercises/Exercise_Ball_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight",
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4182,6 +7839,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Exercise_Ball_Pull-In/0.jpg",
       "free-exercise-db/exercises/Exercise_Ball_Pull-In/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4197,6 +7866,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Extended_Range_One-Arm_Kettlebell_Floor_Press/0.jpg",
       "free-exercise-db/exercises/Extended_Range_One-Arm_Kettlebell_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4212,6 +7895,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/External_Rotation/0.jpg",
       "free-exercise-db/exercises/External_Rotation/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4227,6 +7920,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/External_Rotation_with_Band/0.jpg",
       "free-exercise-db/exercises/External_Rotation_with_Band/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4242,6 +7944,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/External_Rotation_with_Cable/0.jpg",
       "free-exercise-db/exercises/External_Rotation_with_Cable/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4257,6 +7969,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/EZ-Bar_Curl/0.jpg",
       "free-exercise-db/exercises/EZ-Bar_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4272,6 +7996,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/EZ-Bar_Skullcrusher/0.jpg",
       "free-exercise-db/exercises/EZ-Bar_Skullcrusher/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4287,6 +8024,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Face_Pull/0.jpg",
       "free-exercise-db/exercises/Face_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "MidBack",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4302,6 +8052,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Farmers_Walk/0.jpg",
       "free-exercise-db/exercises/Farmers_Walk/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4317,6 +8084,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Fast_Skipping/0.jpg",
       "free-exercise-db/exercises/Fast_Skipping/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4332,6 +8108,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Finger_Curls/0.jpg",
       "free-exercise-db/exercises/Finger_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4347,6 +8133,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Flat_Bench_Cable_Flyes/0.jpg",
       "free-exercise-db/exercises/Flat_Bench_Cable_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4362,6 +8160,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Flat_Bench_Leg_Pull-In/0.jpg",
       "free-exercise-db/exercises/Flat_Bench_Leg_Pull-In/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4377,6 +8186,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Flat_Bench_Lying_Leg_Raise/0.jpg",
       "free-exercise-db/exercises/Flat_Bench_Lying_Leg_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4392,6 +8213,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Flexor_Incline_Dumbbell_Curls/0.jpg",
       "free-exercise-db/exercises/Flexor_Incline_Dumbbell_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4407,6 +8240,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Floor_Glute-Ham_Raise/0.jpg",
       "free-exercise-db/exercises/Floor_Glute-Ham_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4422,6 +8266,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Floor_Press/0.jpg",
       "free-exercise-db/exercises/Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4437,6 +8296,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Floor_Press_with_Chains/0.jpg",
       "free-exercise-db/exercises/Floor_Press_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4452,6 +8326,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Flutter_Kicks/0.jpg",
       "free-exercise-db/exercises/Flutter_Kicks/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4467,6 +8353,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Foot-SMR/0.jpg",
       "free-exercise-db/exercises/Foot-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4482,6 +8377,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Forward_Drag_with_Press/0.jpg",
       "free-exercise-db/exercises/Forward_Drag_with_Press/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "Delts",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4497,6 +8408,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Frankenstein_Squat/0.jpg",
       "free-exercise-db/exercises/Frankenstein_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4512,6 +8438,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Freehand_Jump_Squat/0.jpg",
       "free-exercise-db/exercises/Freehand_Jump_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4527,6 +8465,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Frog_Hops/0.jpg",
       "free-exercise-db/exercises/Frog_Hops/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4542,6 +8489,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Frog_Sit-Ups/0.jpg",
       "free-exercise-db/exercises/Frog_Sit-Ups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4557,6 +8515,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Front_Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4572,6 +8544,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Barbell_Squat_To_A_Bench/0.jpg",
       "free-exercise-db/exercises/Front_Barbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4587,6 +8573,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Box_Jump/0.jpg",
       "free-exercise-db/exercises/Front_Box_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4602,6 +8602,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Cable_Raise/0.jpg",
       "free-exercise-db/exercises/Front_Cable_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4617,6 +8629,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Cone_Hops_or_hurdle_hops/0.jpg",
       "free-exercise-db/exercises/Front_Cone_Hops_or_hurdle_hops/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4632,6 +8658,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Dumbbell_Raise/0.jpg",
       "free-exercise-db/exercises/Front_Dumbbell_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4647,6 +8685,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Incline_Dumbbell_Raise/0.jpg",
       "free-exercise-db/exercises/Front_Incline_Dumbbell_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4662,6 +8712,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Leg_Raises/0.jpg",
       "free-exercise-db/exercises/Front_Leg_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4677,6 +8736,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Plate_Raise/0.jpg",
       "free-exercise-db/exercises/Front_Plate_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4692,6 +8762,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Raise_And_Pullover/0.jpg",
       "free-exercise-db/exercises/Front_Raise_And_Pullover/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4707,6 +8791,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Squat_Clean_Grip/0.jpg",
       "free-exercise-db/exercises/Front_Squat_Clean_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4722,6 +8821,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Squat_Clean_Grip/0.jpg",
       "free-exercise-db/exercises/Front_Squat_Clean_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4737,6 +8851,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Squats_With_Two_Kettlebells/0.jpg",
       "free-exercise-db/exercises/Front_Squats_With_Two_Kettlebells/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4752,6 +8880,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Front_Two-Dumbbell_Raise/0.jpg",
       "free-exercise-db/exercises/Front_Two-Dumbbell_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4767,6 +8907,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Full_Range-Of-Motion_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Full_Range-Of-Motion_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -4782,6 +8938,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Gironda_Sternum_Chins/0.jpg",
       "free-exercise-db/exercises/Gironda_Sternum_Chins/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4797,6 +8967,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Glute_Ham_Raise/0.jpg",
       "free-exercise-db/exercises/Glute_Ham_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -4812,6 +8995,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Glute_Kickback/0.jpg",
       "free-exercise-db/exercises/Glute_Kickback/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -4827,6 +9021,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Goblet_Squat/0.jpg",
       "free-exercise-db/exercises/Goblet_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4842,6 +9051,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Good_Morning/0.jpg",
       "free-exercise-db/exercises/Good_Morning/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4857,6 +9080,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Good_Morning_off_Pins/0.jpg",
       "free-exercise-db/exercises/Good_Morning_off_Pins/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4872,6 +9109,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Gorilla_Chin_Crunch/0.jpg",
       "free-exercise-db/exercises/Gorilla_Chin_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4887,6 +9137,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Groin_and_Back_Stretch/0.jpg",
       "free-exercise-db/exercises/Groin_and_Back_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4902,6 +9161,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Groiners/0.jpg",
       "free-exercise-db/exercises/Groiners/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4917,6 +9185,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hack_Squat/0.jpg",
       "free-exercise-db/exercises/Hack_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -4932,6 +9215,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hammer_Curls/0.jpg",
       "free-exercise-db/exercises/Hammer_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4947,6 +9242,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hammer_Grip_Incline_DB_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Hammer_Grip_Incline_DB_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -4962,6 +9271,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Leg_Curls/0.jpg",
       "free-exercise-db/exercises/Lying_Leg_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -4977,6 +9299,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hamstring_Stretch/0.jpg",
       "free-exercise-db/exercises/Hamstring_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -4992,6 +9323,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hamstring-SMR/0.jpg",
       "free-exercise-db/exercises/Hamstring-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5007,6 +9347,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Handstand_Push-Ups/0.jpg",
       "free-exercise-db/exercises/Handstand_Push-Ups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5022,6 +9373,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hang_Clean/0.jpg",
       "free-exercise-db/exercises/Hang_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5037,6 +9405,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hang_Clean_-_Below_the_Knees/0.jpg",
       "free-exercise-db/exercises/Hang_Clean_-_Below_the_Knees/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5052,6 +9437,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hang_Snatch/0.jpg",
       "free-exercise-db/exercises/Hang_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5067,6 +9469,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hang_Snatch_-_Below_Knees/0.jpg",
       "free-exercise-db/exercises/Hang_Snatch_-_Below_Knees/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5082,6 +9501,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hanging_Bar_Good_Morning/0.jpg",
       "free-exercise-db/exercises/Hanging_Bar_Good_Morning/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5097,6 +9530,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hanging_Leg_Raise/0.jpg",
       "free-exercise-db/exercises/Hanging_Leg_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5112,6 +9556,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hanging_Leg_Raise/0.jpg",
       "free-exercise-db/exercises/Hanging_Leg_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5127,6 +9582,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hanging_Pike/0.jpg",
       "free-exercise-db/exercises/Hanging_Pike/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5142,6 +9608,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Heaving_Snatch_Balance/0.jpg",
       "free-exercise-db/exercises/Heaving_Snatch_Balance/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5157,6 +9640,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Heavy_Bag_Thrust/0.jpg",
       "free-exercise-db/exercises/Heavy_Bag_Thrust/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "Quads",
+      "Hamstrings",
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5172,6 +9671,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/High_Cable_Curls/0.jpg",
       "free-exercise-db/exercises/High_Cable_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -5187,6 +9698,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hip_Circles_prone/0.jpg",
       "free-exercise-db/exercises/Hip_Circles_prone/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5202,6 +9722,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hip_Extension_with_Bands/0.jpg",
       "free-exercise-db/exercises/Hip_Extension_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5217,6 +9748,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hip_Flexion_with_Band/0.jpg",
       "free-exercise-db/exercises/Hip_Flexion_with_Band/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5232,6 +9772,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hip_Lift_with_Band/0.jpg",
       "free-exercise-db/exercises/Hip_Lift_with_Band/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5247,6 +9800,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Hip_Thrust/0.jpg",
       "free-exercise-db/exercises/Barbell_Hip_Thrust/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5262,6 +9829,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hug_A_Ball/0.jpg",
       "free-exercise-db/exercises/Hug_A_Ball/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5277,6 +9853,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hug_Knees_To_Chest/0.jpg",
       "free-exercise-db/exercises/Hug_Knees_To_Chest/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5292,6 +9877,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hurdle_Hops/0.jpg",
       "free-exercise-db/exercises/Hurdle_Hops/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5307,6 +9906,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/0.jpg",
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5322,6 +9933,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Hyperextensions_With_No_Hyperextension_Bench/0.jpg",
       "free-exercise-db/exercises/Hyperextensions_With_No_Hyperextension_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Biceps",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -5337,6 +9963,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Iliotibial_Tract-SMR/0.jpg",
       "free-exercise-db/exercises/Iliotibial_Tract-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5352,6 +9987,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Inchworm/0.jpg",
       "free-exercise-db/exercises/Inchworm/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5367,6 +10011,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5382,6 +10039,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Barbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Incline_Barbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5397,6 +10067,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Bench_Pull/0.jpg",
       "free-exercise-db/exercises/Incline_Bench_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Lats",
+      "Delts",
+      "Biceps",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5412,6 +10098,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Cable_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Incline_Cable_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -5427,6 +10127,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Cable_Flye/0.jpg",
       "free-exercise-db/exercises/Incline_Cable_Flye/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -5442,6 +10155,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Dumbbell_Bench_With_Palms_Facing_In/0.jpg",
       "free-exercise-db/exercises/Incline_Dumbbell_Bench_With_Palms_Facing_In/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5457,6 +10184,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Dumbbell_Curl/0.jpg",
       "free-exercise-db/exercises/Incline_Dumbbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5472,6 +10211,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Dumbbell_Flyes/0.jpg",
       "free-exercise-db/exercises/Incline_Dumbbell_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5487,6 +10239,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Dumbbell_Flyes_-_With_A_Twist/0.jpg",
       "free-exercise-db/exercises/Incline_Dumbbell_Flyes_-_With_A_Twist/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5502,6 +10267,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Incline_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5517,6 +10296,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Hammer_Curls/0.jpg",
       "free-exercise-db/exercises/Incline_Hammer_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5532,6 +10323,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Inner_Biceps_Curl/0.jpg",
       "free-exercise-db/exercises/Incline_Inner_Biceps_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5547,6 +10350,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5562,6 +10378,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up_Close-Grip/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up_Close-Grip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5577,6 +10407,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up_Depth_Jump/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up_Depth_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5592,6 +10435,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up_Medium/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up_Medium/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5607,6 +10464,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up_Reverse_Grip/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up_Reverse_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5622,6 +10493,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Incline_Push-Up_Wide/0.jpg",
       "free-exercise-db/exercises/Incline_Push-Up_Wide/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5637,6 +10522,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Intermediate_Groin_Stretch/0.jpg",
       "free-exercise-db/exercises/Intermediate_Groin_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5652,6 +10546,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Intermediate_Hip_Flexor_and_Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/Intermediate_Hip_Flexor_and_Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5667,6 +10570,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Internal_Rotation_with_Band/0.jpg",
       "free-exercise-db/exercises/Internal_Rotation_with_Band/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5682,6 +10594,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Inverted_Row/0.jpg",
       "free-exercise-db/exercises/Inverted_Row/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5697,6 +10623,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Inverted_Row_with_Straps/0.jpg",
       "free-exercise-db/exercises/Inverted_Row_with_Straps/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5712,6 +10652,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Iron_Cross/0.jpg",
       "free-exercise-db/exercises/Iron_Cross/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5727,6 +10684,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Iron_Crosses_stretch/0.jpg",
       "free-exercise-db/exercises/Iron_Crosses_stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5742,6 +10708,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Isometric_Chest_Squeezes/0.jpg",
       "free-exercise-db/exercises/Isometric_Chest_Squeezes/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5757,6 +10736,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Isometric_Neck_Exercise_-_Front_And_Back/0.jpg",
       "free-exercise-db/exercises/Isometric_Neck_Exercise_-_Front_And_Back/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5772,6 +10760,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Isometric_Neck_Exercise_-_Sides/0.jpg",
       "free-exercise-db/exercises/Isometric_Neck_Exercise_-_Sides/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5787,6 +10784,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Isometric_Wipers/0.jpg",
       "free-exercise-db/exercises/Isometric_Wipers/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5802,6 +10813,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/IT_Band_and_Glute_Stretch/0.jpg",
       "free-exercise-db/exercises/IT_Band_and_Glute_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5817,6 +10837,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Jackknife_Sit-Up/0.jpg",
       "free-exercise-db/exercises/Jackknife_Sit-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5832,6 +10863,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Janda_Sit-Up/0.jpg",
       "free-exercise-db/exercises/Janda_Sit-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -5847,6 +10889,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Jefferson_Squats/0.jpg",
       "free-exercise-db/exercises/Jefferson_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5862,6 +10920,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Jerk_Balance/0.jpg",
       "free-exercise-db/exercises/Jerk_Balance/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5877,6 +10951,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Jerk_Dip_Squat/0.jpg",
       "free-exercise-db/exercises/Jerk_Dip_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5892,6 +10982,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/JM_Press/0.jpg",
       "free-exercise-db/exercises/JM_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5907,6 +11011,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Jogging_Treadmill/0.jpg",
       "free-exercise-db/exercises/Jogging_Treadmill/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -5922,6 +11037,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Keg_Load/0.jpg",
       "free-exercise-db/exercises/Keg_Load/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5937,6 +11069,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Arnold_Press/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Arnold_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5952,6 +11096,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Dead_Clean/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Dead_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5967,6 +11127,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Figure_8/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Figure_8/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5982,6 +11156,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Hang_Clean/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Hang_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack",
+      "Quads",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -5997,6 +11188,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_One-Legged_Deadlift/0.jpg",
       "free-exercise-db/exercises/Kettlebell_One-Legged_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6012,6 +11216,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Pass_Between_The_Legs/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Pass_Between_The_Legs/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6027,6 +11246,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Pirate_Ships/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Pirate_Ships/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Abs",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6042,6 +11274,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Pistol_Squat/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Pistol_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6057,6 +11304,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Seated_Press/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Seated_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -6072,6 +11332,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Seesaw_Press/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Seesaw_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6087,6 +11359,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Sumo_High_Pull/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Sumo_High_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "Delts",
+      "Biceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6102,6 +11391,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Thruster/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Thruster/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6117,6 +11422,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Turkish_Get-Up_Lunge_style/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Turkish_Get-Up_Lunge_style/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Hamstrings",
+      "Quads",
+      "Triceps",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6132,6 +11454,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Turkish_Get-Up_Squat_style/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Turkish_Get-Up_Squat_style/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Hamstrings",
+      "Quads",
+      "Triceps",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6147,6 +11486,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kettlebell_Windmill/0.jpg",
       "free-exercise-db/exercises/Kettlebell_Windmill/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6162,6 +11517,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kipping_Muscle_Up/0.jpg",
       "free-exercise-db/exercises/Kipping_Muscle_Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Forearms",
+      "MidBack",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6177,6 +11548,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Knee_Across_The_Body/0.jpg",
       "free-exercise-db/exercises/Knee_Across_The_Body/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6192,6 +11572,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Knee_Circles/0.jpg",
       "free-exercise-db/exercises/Knee_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6207,6 +11596,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Knee_Tuck_Jump/0.jpg",
       "free-exercise-db/exercises/Knee_Tuck_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6222,6 +11625,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Knee_Hip_Raise_On_Parallel_Bars/0.jpg",
       "free-exercise-db/exercises/Knee_Hip_Raise_On_Parallel_Bars/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6237,6 +11651,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Arm_Drill/0.jpg",
       "free-exercise-db/exercises/Kneeling_Arm_Drill/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6252,6 +11675,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists/0.jpg",
       "free-exercise-db/exercises/Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -6267,6 +11703,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Cable_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Kneeling_Cable_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6282,6 +11730,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Forearm_Stretch/0.jpg",
       "free-exercise-db/exercises/Kneeling_Forearm_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6297,6 +11754,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_High_Pulley_Row/0.jpg",
       "free-exercise-db/exercises/Kneeling_High_Pulley_Row/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6312,6 +11783,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Hip_Flexor/0.jpg",
       "free-exercise-db/exercises/Kneeling_Hip_Flexor/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6327,6 +11807,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Jump_Squat/0.jpg",
       "free-exercise-db/exercises/Kneeling_Jump_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Quads",
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6342,6 +11836,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Single-Arm_High_Pulley_Row/0.jpg",
       "free-exercise-db/exercises/Kneeling_Single-Arm_High_Pulley_Row/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -6357,6 +11865,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Kneeling_Squat/0.jpg",
       "free-exercise-db/exercises/Kneeling_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Hamstrings",
+      "SpinalErectors",
+      "Glutes",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6372,6 +11896,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Landmine_180s/0.jpg",
       "free-exercise-db/exercises/Landmine_180s/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6387,6 +11926,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Landmine_Linear_Jammer/0.jpg",
       "free-exercise-db/exercises/Landmine_Linear_Jammer/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Chest",
+      "Hamstrings",
+      "Quads",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6402,6 +11958,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6417,6 +11989,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6432,6 +12021,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lateral_Bound/0.jpg",
       "free-exercise-db/exercises/Lateral_Bound/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6447,6 +12050,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lateral_Box_Jump/0.jpg",
       "free-exercise-db/exercises/Lateral_Box_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6462,6 +12079,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lateral_Cone_Hops/0.jpg",
       "free-exercise-db/exercises/Lateral_Cone_Hops/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6477,6 +12108,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Side_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6492,6 +12135,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lateral_Raise_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Lateral_Raise_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6507,6 +12161,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Latissimus_Dorsi-SMR/0.jpg",
       "free-exercise-db/exercises/Latissimus_Dorsi-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6522,6 +12185,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Leg_Curls/0.jpg",
       "free-exercise-db/exercises/Lying_Leg_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6537,6 +12213,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg_Extensions/0.jpg",
       "free-exercise-db/exercises/Leg_Extensions/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6552,6 +12241,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg_Lift/0.jpg",
       "free-exercise-db/exercises/Leg_Lift/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6567,6 +12268,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg_Press/0.jpg",
       "free-exercise-db/exercises/Leg_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6582,6 +12298,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg_Pull-In/0.jpg",
       "free-exercise-db/exercises/Leg_Pull-In/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6597,6 +12324,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg-Over_Floor_Press/0.jpg",
       "free-exercise-db/exercises/Leg-Over_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6612,6 +12353,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leg-Up_Hamstring_Stretch/0.jpg",
       "free-exercise-db/exercises/Leg-Up_Hamstring_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6627,6 +12377,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Leverage_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6642,6 +12407,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Deadlift/0.jpg",
       "free-exercise-db/exercises/Leverage_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6657,6 +12437,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Decline_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Leverage_Decline_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6672,6 +12467,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_High_Row/0.jpg",
       "free-exercise-db/exercises/Leverage_High_Row/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6687,6 +12498,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Incline_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Leverage_Incline_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6702,6 +12528,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Iso_Row/0.jpg",
       "free-exercise-db/exercises/Leverage_Iso_Row/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6717,6 +12558,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Leverage_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6732,6 +12586,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Leverage_Shrug/0.jpg",
       "free-exercise-db/exercises/Leverage_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6747,6 +12614,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Linear_3-Part_Start_Technique/0.jpg",
       "free-exercise-db/exercises/Linear_3-Part_Start_Technique/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6762,6 +12638,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Linear_Acceleration_Wall_Drill/0.jpg",
       "free-exercise-db/exercises/Linear_Acceleration_Wall_Drill/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6777,6 +12665,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Linear_Depth_Jump/0.jpg",
       "free-exercise-db/exercises/Linear_Depth_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6792,6 +12692,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Log_Lift/0.jpg",
       "free-exercise-db/exercises/Log_Lift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Chest",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6807,6 +12724,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/London_Bridges/0.jpg",
       "free-exercise-db/exercises/London_Bridges/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6822,6 +12752,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Looking_At_Ceiling/0.jpg",
       "free-exercise-db/exercises/Looking_At_Ceiling/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6837,6 +12776,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Low_Cable_Crossover/0.jpg",
       "free-exercise-db/exercises/Low_Cable_Crossover/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6852,6 +12804,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Low_Cable_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Low_Cable_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6867,6 +12831,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Low_Pulley_Row_To_Neck/0.jpg",
       "free-exercise-db/exercises/Low_Pulley_Row_To_Neck/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "UpperBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6882,6 +12861,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lower_Back_Curl/0.jpg",
       "free-exercise-db/exercises/Lower_Back_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6897,6 +12885,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lower_Back-SMR/0.jpg",
       "free-exercise-db/exercises/Lower_Back-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -6912,6 +12909,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lunge_Pass_Through/0.jpg",
       "free-exercise-db/exercises/Lunge_Pass_Through/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Quads",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -6927,6 +12939,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lunge_Sprint/0.jpg",
       "free-exercise-db/exercises/Lunge_Sprint/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -6942,6 +12968,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Bent_Leg_Groin/0.jpg",
       "free-exercise-db/exercises/Lying_Bent_Leg_Groin/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6957,6 +12993,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Cable_Curl/0.jpg",
       "free-exercise-db/exercises/Lying_Cable_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -6972,6 +13020,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Cambered_Barbell_Row/0.jpg",
       "free-exercise-db/exercises/Lying_Cambered_Barbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "UpperBack",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -6987,6 +13052,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Close-Grip_Bar_Curl_On_High_Pulley/0.jpg",
       "free-exercise-db/exercises/Lying_Close-Grip_Bar_Curl_On_High_Pulley/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7002,6 +13079,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head/0.jpg",
       "free-exercise-db/exercises/Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7017,6 +13107,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Close-Grip_Barbell_Triceps_Press_To_Chin/0.jpg",
       "free-exercise-db/exercises/Lying_Close-Grip_Barbell_Triceps_Press_To_Chin/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7032,6 +13135,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Crossover/0.jpg",
       "free-exercise-db/exercises/Lying_Crossover/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7047,6 +13160,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Dumbbell_Tricep_Extension/0.jpg",
       "free-exercise-db/exercises/Lying_Dumbbell_Tricep_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7062,6 +13190,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Face_Down_Plate_Neck_Resistance/0.jpg",
       "free-exercise-db/exercises/Lying_Face_Down_Plate_Neck_Resistance/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7077,6 +13215,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Face_Up_Plate_Neck_Resistance/0.jpg",
       "free-exercise-db/exercises/Lying_Face_Up_Plate_Neck_Resistance/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7092,6 +13240,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Glute/0.jpg",
       "free-exercise-db/exercises/Lying_Glute/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7107,6 +13265,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Hamstring/0.jpg",
       "free-exercise-db/exercises/Lying_Hamstring/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7122,6 +13290,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_High_Bench_Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Lying_High_Bench_Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7137,6 +13318,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Leg_Curls/0.jpg",
       "free-exercise-db/exercises/Lying_Leg_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7152,6 +13346,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Machine_Squat/0.jpg",
       "free-exercise-db/exercises/Lying_Machine_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7167,6 +13376,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_One-Arm_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Lying_One-Arm_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7182,6 +13404,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Prone_Quadriceps/0.jpg",
       "free-exercise-db/exercises/Lying_Prone_Quadriceps/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7197,6 +13429,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Rear_Delt_Raise/0.jpg",
       "free-exercise-db/exercises/Lying_Rear_Delt_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7212,6 +13457,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Supine_Dumbbell_Curl/0.jpg",
       "free-exercise-db/exercises/Lying_Supine_Dumbbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7227,6 +13485,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_T-Bar_Row/0.jpg",
       "free-exercise-db/exercises/Lying_T-Bar_Row/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7242,6 +13516,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Triceps_Press/0.jpg",
       "free-exercise-db/exercises/Lying_Triceps_Press/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -7257,6 +13543,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Machine_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Machine_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7272,6 +13573,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Machine_Bicep_Curl/0.jpg",
       "free-exercise-db/exercises/Machine_Bicep_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7287,6 +13601,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Machine_Preacher_Curls/0.jpg",
       "free-exercise-db/exercises/Machine_Preacher_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7302,6 +13629,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Machine_Shoulder_Military_Press/0.jpg",
       "free-exercise-db/exercises/Machine_Shoulder_Military_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7317,6 +13657,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Machine_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Machine_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7332,6 +13685,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Medicine_Ball_Chest_Pass/0.jpg",
       "free-exercise-db/exercises/Medicine_Ball_Chest_Pass/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7347,6 +13714,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Medicine_Ball_Full_Twist/0.jpg",
       "free-exercise-db/exercises/Medicine_Ball_Full_Twist/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7362,6 +13742,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Medicine_Ball_Scoop_Throw/0.jpg",
       "free-exercise-db/exercises/Medicine_Ball_Scoop_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Hamstrings",
+      "Quads",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7377,6 +13773,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Middle_Back_Shrug/0.jpg",
       "free-exercise-db/exercises/Middle_Back_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7392,6 +13798,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Middle_Back_Stretch/0.jpg",
       "free-exercise-db/exercises/Middle_Back_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7407,6 +13822,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Mixed_Grip_Chin/0.jpg",
       "free-exercise-db/exercises/Mixed_Grip_Chin/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7422,6 +13851,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Monster_Walk/0.jpg",
       "free-exercise-db/exercises/Monster_Walk/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7437,6 +13875,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Mountain_Climbers/0.jpg",
       "free-exercise-db/exercises/Mountain_Climbers/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Hamstrings",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7452,6 +13903,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Moving_Claw_Series/0.jpg",
       "free-exercise-db/exercises/Moving_Claw_Series/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7467,6 +13927,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Muscle_Snatch/0.jpg",
       "free-exercise-db/exercises/Muscle_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "Triceps",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7482,6 +13959,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Muscle_Up/0.jpg",
       "free-exercise-db/exercises/Muscle_Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Forearms",
+      "MidBack",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7497,6 +13990,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Narrow_Stance_Hack_Squats/0.jpg",
       "free-exercise-db/exercises/Narrow_Stance_Hack_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7512,6 +14020,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Narrow_Stance_Leg_Press/0.jpg",
       "free-exercise-db/exercises/Narrow_Stance_Leg_Press/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -7527,6 +14050,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Narrow_Stance_Squats/0.jpg",
       "free-exercise-db/exercises/Narrow_Stance_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7542,6 +14080,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Natural_Glute_Ham_Raise/0.jpg",
       "free-exercise-db/exercises/Natural_Glute_Ham_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7557,6 +14107,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Neck_Press/0.jpg",
       "free-exercise-db/exercises/Neck_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7572,6 +14136,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Neck-SMR/0.jpg",
       "free-exercise-db/exercises/Neck-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7587,6 +14160,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Oblique_Crunches/0.jpg",
       "free-exercise-db/exercises/Oblique_Crunches/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7602,6 +14186,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Oblique_Crunches_-_On_The_Floor/0.jpg",
       "free-exercise-db/exercises/Oblique_Crunches_-_On_The_Floor/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7617,6 +14212,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Olympic_Squat/0.jpg",
       "free-exercise-db/exercises/Olympic_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7632,6 +14241,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/On_Your_Side_Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/On_Your_Side_Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7647,6 +14265,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/On-Your-Back_Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/On-Your-Back_Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7662,6 +14289,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Against_Wall/0.jpg",
       "free-exercise-db/exercises/One_Arm_Against_Wall/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -7677,6 +14314,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Chin-Up/0.jpg",
       "free-exercise-db/exercises/One_Arm_Chin-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "Lats",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -7692,6 +14344,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Dumbbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/One_Arm_Dumbbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7707,6 +14373,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Dumbbell_Preacher_Curl/0.jpg",
       "free-exercise-db/exercises/One_Arm_Dumbbell_Preacher_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -7722,6 +14401,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Floor_Press/0.jpg",
       "free-exercise-db/exercises/One_Arm_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7737,6 +14431,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/One_Arm_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -7752,6 +14461,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Pronated_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/One_Arm_Pronated_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7767,6 +14488,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Arm_Supinated_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/One_Arm_Supinated_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7782,6 +14515,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Half_Locust/0.jpg",
       "free-exercise-db/exercises/One_Half_Locust/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7797,6 +14539,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Handed_Hang/0.jpg",
       "free-exercise-db/exercises/One_Handed_Hang/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -7812,6 +14563,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Knee_To_Chest/0.jpg",
       "free-exercise-db/exercises/One_Knee_To_Chest/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -7827,6 +14587,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One_Leg_Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/One_Leg_Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7842,6 +14616,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Dumbbell_Row/0.jpg",
       "free-exercise-db/exercises/One-Arm_Dumbbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7857,6 +14647,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Flat_Bench_Dumbbell_Flye/0.jpg",
       "free-exercise-db/exercises/One-Arm_Flat_Bench_Dumbbell_Flye/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7872,6 +14674,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_High-Pulley_Cable_Side_Bends/0.jpg",
       "free-exercise-db/exercises/One-Arm_High-Pulley_Cable_Side_Bends/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -7887,6 +14701,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Incline_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/One-Arm_Incline_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7902,6 +14728,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Clean/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack",
+      "Quads",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7917,6 +14760,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Clean_and_Jerk/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Clean_and_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7932,6 +14790,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Floor_Press/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Floor_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7947,6 +14818,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Jerk/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7962,6 +14849,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Military_Press_To_The_Side/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Military_Press_To_The_Side/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7977,6 +14876,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Para_Press/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Para_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -7992,6 +14903,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Push_Press/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Push_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8007,6 +14934,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Row/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8022,6 +14964,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Snatch/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack",
+      "Triceps",
+      "Quads"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8037,6 +14996,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Jerk/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8052,6 +15027,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Snatch/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Quads",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8067,6 +15057,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Kettlebell_Swings/0.jpg",
       "free-exercise-db/exercises/One-Arm_Kettlebell_Swings/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Delts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8082,6 +15086,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Long_Bar_Row/0.jpg",
       "free-exercise-db/exercises/One-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8097,6 +15116,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Medicine_Ball_Slam/0.jpg",
       "free-exercise-db/exercises/One-Arm_Medicine_Ball_Slam/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Lats",
+      "Delts",
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8112,6 +15148,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Open_Palm_Kettlebell_Clean/0.jpg",
       "free-exercise-db/exercises/One-Arm_Open_Palm_Kettlebell_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8127,6 +15180,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Overhead_Kettlebell_Squats/0.jpg",
       "free-exercise-db/exercises/One-Arm_Overhead_Kettlebell_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8142,6 +15211,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Side_Deadlift/0.jpg",
       "free-exercise-db/exercises/One-Arm_Side_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8157,6 +15242,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Arm_Side_Laterals/0.jpg",
       "free-exercise-db/exercises/One-Arm_Side_Laterals/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8172,6 +15269,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/One-Legged_Cable_Kickback/0.jpg",
       "free-exercise-db/exercises/One-Legged_Cable_Kickback/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -8187,6 +15296,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Open_Palm_Kettlebell_Clean/0.jpg",
       "free-exercise-db/exercises/Open_Palm_Kettlebell_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "Hamstrings",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8202,6 +15328,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Mountain_Climbers/0.jpg",
       "free-exercise-db/exercises/Mountain_Climbers/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8217,6 +15352,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Otis-Up/0.jpg",
       "free-exercise-db/exercises/Otis-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8232,6 +15381,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Cable_Curl/0.jpg",
       "free-exercise-db/exercises/Overhead_Cable_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8247,6 +15408,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Lat/0.jpg",
       "free-exercise-db/exercises/Overhead_Lat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8262,6 +15432,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Barbell_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8277,6 +15460,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Slam/0.jpg",
       "free-exercise-db/exercises/Overhead_Slam/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8292,6 +15490,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Squat/0.jpg",
       "free-exercise-db/exercises/Overhead_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8307,6 +15522,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Stretch/0.jpg",
       "free-exercise-db/exercises/Overhead_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8322,6 +15546,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Overhead_Triceps/0.jpg",
       "free-exercise-db/exercises/Overhead_Triceps/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8337,6 +15570,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Rope_Overhead_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Cable_Rope_Overhead_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8352,6 +15597,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pallof_Press/0.jpg",
       "free-exercise-db/exercises/Pallof_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8367,6 +15626,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pallof_Press_With_Rotation/0.jpg",
       "free-exercise-db/exercises/Pallof_Press_With_Rotation/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8382,6 +15656,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
       "free-exercise-db/exercises/Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8397,6 +15681,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Palms-Down_Wrist_Curl_Over_A_Bench/0.jpg",
       "free-exercise-db/exercises/Palms-Down_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8412,6 +15706,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/0.jpg",
       "free-exercise-db/exercises/Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8427,6 +15731,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
       "free-exercise-db/exercises/Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8442,6 +15756,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Parallel_Bar_Dip/0.jpg",
       "free-exercise-db/exercises/Parallel_Bar_Dip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8457,6 +15785,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
       "free-exercise-db/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8472,6 +15814,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8487,6 +15846,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Lats",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8502,6 +15878,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8517,6 +15908,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pelvic_Tilt_Into_Bridge/0.jpg",
       "free-exercise-db/exercises/Pelvic_Tilt_Into_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8532,6 +15932,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Peroneals_Stretch/0.jpg",
       "free-exercise-db/exercises/Peroneals_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8547,6 +15956,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Peroneals-SMR/0.jpg",
       "free-exercise-db/exercises/Peroneals-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8562,6 +15980,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Physioball_Hip_Bridge/0.jpg",
       "free-exercise-db/exercises/Physioball_Hip_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8577,6 +16008,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pin_Presses/0.jpg",
       "free-exercise-db/exercises/Pin_Presses/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Forearms",
+      "Lats",
+      "MidBack",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8592,6 +16040,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Piriformis-SMR/0.jpg",
       "free-exercise-db/exercises/Piriformis-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8607,6 +16064,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plank/0.jpg",
       "free-exercise-db/exercises/Plank/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8622,6 +16088,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plate_Pinch/0.jpg",
       "free-exercise-db/exercises/Plate_Pinch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8637,6 +16112,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plate_Twist/0.jpg",
       "free-exercise-db/exercises/Plate_Twist/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8652,6 +16138,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Platform_Hamstring_Slides/0.jpg",
       "free-exercise-db/exercises/Platform_Hamstring_Slides/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8667,6 +16164,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plie_Dumbbell_Squat/0.jpg",
       "free-exercise-db/exercises/Plie_Dumbbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8682,6 +16194,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plyo_Kettlebell_Pushups/0.jpg",
       "free-exercise-db/exercises/Plyo_Kettlebell_Pushups/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8697,6 +16223,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plyo_Push-up/0.jpg",
       "free-exercise-db/exercises/Plyo_Push-up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8712,6 +16251,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Posterior_Tibialis_Stretch/0.jpg",
       "free-exercise-db/exercises/Posterior_Tibialis_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8727,6 +16275,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Clean/0.jpg",
       "free-exercise-db/exercises/Power_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "MidBack",
+      "Quads",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8742,6 +16307,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Clean_from_Blocks/0.jpg",
       "free-exercise-db/exercises/Power_Clean_from_Blocks/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8757,6 +16337,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Jerk/0.jpg",
       "free-exercise-db/exercises/Power_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8772,6 +16369,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Partials/0.jpg",
       "free-exercise-db/exercises/Power_Partials/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8787,6 +16397,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Snatch/0.jpg",
       "free-exercise-db/exercises/Power_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "UpperBack",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8802,6 +16429,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Snatch_from_Blocks/0.jpg",
       "free-exercise-db/exercises/Power_Snatch_from_Blocks/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8817,6 +16461,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Power_Stairs/0.jpg",
       "free-exercise-db/exercises/Power_Stairs/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8832,6 +16485,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Preacher_Curl/0.jpg",
       "free-exercise-db/exercises/Preacher_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -8847,6 +16513,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Preacher_Hammer_Dumbbell_Curl/0.jpg",
       "free-exercise-db/exercises/Preacher_Hammer_Dumbbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -8862,6 +16541,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Press_Sit-Up/0.jpg",
       "free-exercise-db/exercises/Press_Sit-Up/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8877,6 +16572,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Prone_Manual_Hamstring/0.jpg",
       "free-exercise-db/exercises/Prone_Manual_Hamstring/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8892,6 +16596,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Prowler_Sprint/0.jpg",
       "free-exercise-db/exercises/Prowler_Sprint/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8907,6 +16620,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pull_Through/0.jpg",
       "free-exercise-db/exercises/Pull_Through/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "SpinalErectors",
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8922,6 +16649,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pullups/0.jpg",
       "free-exercise-db/exercises/Pullups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8937,6 +16678,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -8952,6 +16710,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pullups/0.jpg",
       "free-exercise-db/exercises/Pullups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -8967,6 +16739,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push_Press/0.jpg",
       "free-exercise-db/exercises/Push_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8982,6 +16770,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push_Press_-_Behind_the_Neck/0.jpg",
       "free-exercise-db/exercises/Push_Press_-_Behind_the_Neck/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -8997,6 +16798,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push_Up_to_Side_Plank/0.jpg",
       "free-exercise-db/exercises/Push_Up_to_Side_Plank/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9012,6 +16827,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push-Up_Wide/0.jpg",
       "free-exercise-db/exercises/Push-Up_Wide/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9027,6 +16856,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push-Ups_-_Close_Triceps_Position/0.jpg",
       "free-exercise-db/exercises/Push-Ups_-_Close_Triceps_Position/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9042,6 +16885,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push-Ups_With_Feet_Elevated/0.jpg",
       "free-exercise-db/exercises/Push-Ups_With_Feet_Elevated/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9057,6 +16913,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Push-Ups_With_Feet_On_An_Exercise_Ball/0.jpg",
       "free-exercise-db/exercises/Push-Ups_With_Feet_On_An_Exercise_Ball/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight",
+      "StabilityBall"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9072,6 +16943,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pushups/0.jpg",
       "free-exercise-db/exercises/Pushups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9087,6 +16971,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pushups_Close_and_Wide_Hand_Positions/0.jpg",
       "free-exercise-db/exercises/Pushups_Close_and_Wide_Hand_Positions/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9102,6 +16999,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pyramid/0.jpg",
       "free-exercise-db/exercises/Pyramid/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9117,6 +17023,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9132,6 +17047,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Quadriceps-SMR/0.jpg",
       "free-exercise-db/exercises/Quadriceps-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9147,6 +17071,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Quick_Leap/0.jpg",
       "free-exercise-db/exercises/Quick_Leap/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9162,6 +17097,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rack_Delivery/0.jpg",
       "free-exercise-db/exercises/Rack_Delivery/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "UpperBack",
+      "Quads",
+      "Hamstrings",
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9177,6 +17128,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rack_Pull_with_Bands/0.jpg",
       "free-exercise-db/exercises/Rack_Pull_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "UpperBack",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9192,6 +17161,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rack_Pulls/0.jpg",
       "free-exercise-db/exercises/Rack_Pulls/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "UpperBack",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9207,6 +17192,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Cable_Rear_Delt_Fly/0.jpg",
       "free-exercise-db/exercises/Cable_Rear_Delt_Fly/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9222,6 +17219,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rear_Leg_Raises/0.jpg",
       "free-exercise-db/exercises/Rear_Leg_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9237,6 +17243,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Recumbent_Bike/0.jpg",
       "free-exercise-db/exercises/Recumbent_Bike/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -9252,6 +17269,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Return_Push_from_Stance/0.jpg",
       "free-exercise-db/exercises/Return_Push_from_Stance/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps",
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9267,6 +17301,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Band_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Reverse_Band_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Forearms",
+      "Lats",
+      "MidBack",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9282,6 +17334,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Band_Box_Squat/0.jpg",
       "free-exercise-db/exercises/Reverse_Band_Box_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9297,6 +17367,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Band_Deadlift/0.jpg",
       "free-exercise-db/exercises/Reverse_Band_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "Quads",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9312,6 +17400,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Band_Power_Squat/0.jpg",
       "free-exercise-db/exercises/Reverse_Band_Power_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9327,6 +17432,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Band_Sumo_Deadlift/0.jpg",
       "free-exercise-db/exercises/Reverse_Band_Sumo_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9342,6 +17465,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Reverse_Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9357,6 +17492,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Barbell_Preacher_Curls/0.jpg",
       "free-exercise-db/exercises/Reverse_Barbell_Preacher_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9372,6 +17520,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Cable_Curl/0.jpg",
       "free-exercise-db/exercises/Reverse_Cable_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9387,6 +17547,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Crunch/0.jpg",
       "free-exercise-db/exercises/Reverse_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9402,6 +17573,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Flyes/0.jpg",
       "free-exercise-db/exercises/Reverse_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9417,6 +17600,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Flyes_With_External_Rotation/0.jpg",
       "free-exercise-db/exercises/Reverse_Flyes_With_External_Rotation/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9432,6 +17627,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Grip_Bent-Over_Rows/0.jpg",
       "free-exercise-db/exercises/Reverse_Grip_Bent-Over_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9447,6 +17658,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Grip_Triceps_Pushdown/0.jpg",
       "free-exercise-db/exercises/Reverse_Grip_Triceps_Pushdown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9462,6 +17685,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Hyperextension/0.jpg",
       "free-exercise-db/exercises/Reverse_Hyperextension/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -9477,6 +17714,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Machine_Flyes/0.jpg",
       "free-exercise-db/exercises/Reverse_Machine_Flyes/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -9492,6 +17742,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Plate_Curls/0.jpg",
       "free-exercise-db/exercises/Reverse_Plate_Curls/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9507,6 +17768,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Reverse_Triceps_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Reverse_Triceps_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9522,6 +17797,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rhomboids-SMR/0.jpg",
       "free-exercise-db/exercises/Rhomboids-SMR/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9537,6 +17821,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rickshaw_Carry/0.jpg",
       "free-exercise-db/exercises/Rickshaw_Carry/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9552,6 +17853,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rickshaw_Deadlift/0.jpg",
       "free-exercise-db/exercises/Rickshaw_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9567,6 +17883,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Ring_Dips/0.jpg",
       "free-exercise-db/exercises/Ring_Dips/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9582,6 +17912,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rocket_Jump/0.jpg",
       "free-exercise-db/exercises/Rocket_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9597,6 +17938,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rocking_Standing_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Rocking_Standing_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9612,6 +17963,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rocky_Pull-Ups_Pulldowns/0.jpg",
       "free-exercise-db/exercises/Rocky_Pull-Ups_Pulldowns/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9627,6 +17993,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Romanian_Deadlift/0.jpg",
       "free-exercise-db/exercises/Romanian_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9642,6 +18021,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Romanian_Deadlift_from_Deficit/0.jpg",
       "free-exercise-db/exercises/Romanian_Deadlift_from_Deficit/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9657,6 +18051,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rope_Climb/0.jpg",
       "free-exercise-db/exercises/Rope_Climb/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9672,6 +18083,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rope_Crunch/0.jpg",
       "free-exercise-db/exercises/Rope_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9687,6 +18111,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rope_Jumping/0.jpg",
       "free-exercise-db/exercises/Rope_Jumping/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9702,6 +18136,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rope_Straight-Arm_Pulldown/0.jpg",
       "free-exercise-db/exercises/Rope_Straight-Arm_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9717,6 +18163,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Round_The_World_Shoulder_Stretch/0.jpg",
       "free-exercise-db/exercises/Round_The_World_Shoulder_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9732,6 +18187,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Bent_Over_Barbell_Row/0.jpg",
       "free-exercise-db/exercises/Bent_Over_Barbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9747,6 +18218,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Rowing_Stationary/0.jpg",
       "free-exercise-db/exercises/Rowing_Stationary/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -9762,6 +18244,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Runners_Stretch/0.jpg",
       "free-exercise-db/exercises/Runners_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9777,6 +18268,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Running_Treadmill/0.jpg",
       "free-exercise-db/exercises/Running_Treadmill/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -9792,6 +18294,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Russian_Twist/0.jpg",
       "free-exercise-db/exercises/Russian_Twist/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "SpinalErectors",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9807,6 +18321,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sandbag_Load/0.jpg",
       "free-exercise-db/exercises/Sandbag_Load/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abs",
+      "Biceps",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -9822,6 +18353,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Scapular_Pull-Up/0.jpg",
       "free-exercise-db/exercises/Scapular_Pull-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Lats",
+      "MidBack",
+      "Biceps",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9837,6 +18382,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Scissor_Kick/0.jpg",
       "free-exercise-db/exercises/Scissor_Kick/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9852,6 +18406,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Scissors_Jump/0.jpg",
       "free-exercise-db/exercises/Scissors_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -9867,6 +18433,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Band_Hamstring_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Band_Hamstring_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9882,6 +18460,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Barbell_Military_Press/0.jpg",
       "free-exercise-db/exercises/Seated_Barbell_Military_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9897,6 +18488,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Barbell_Twist/0.jpg",
       "free-exercise-db/exercises/Seated_Barbell_Twist/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9912,6 +18516,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9927,6 +18544,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Bent-Over_Rear_Delt_Raise/0.jpg",
       "free-exercise-db/exercises/Seated_Bent-Over_Rear_Delt_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9942,6 +18572,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -9957,6 +18600,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Biceps/0.jpg",
       "free-exercise-db/exercises/Seated_Biceps/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9972,6 +18625,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Cable_Rows/0.jpg",
       "free-exercise-db/exercises/Seated_Cable_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -9987,6 +18656,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Cable_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Seated_Cable_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10002,6 +18683,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Seated_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -10017,6 +18709,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Calf_Stretch/0.jpg",
       "free-exercise-db/exercises/Seated_Calf_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10032,6 +18734,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Close-Grip_Concentration_Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Close-Grip_Concentration_Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10047,6 +18762,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Dumbbell_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Dumbbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10062,6 +18790,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Dumbbell_Inner_Biceps_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Dumbbell_Inner_Biceps_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10077,6 +18818,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Dumbbell_Palms-Down_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10092,6 +18844,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Dumbbell_Palms-Up_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10107,6 +18870,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Seated_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10122,6 +18898,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Flat_Bench_Leg_Pull-In/0.jpg",
       "free-exercise-db/exercises/Seated_Flat_Bench_Leg_Pull-In/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10137,6 +18925,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Floor_Hamstring_Stretch/0.jpg",
       "free-exercise-db/exercises/Seated_Floor_Hamstring_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10152,6 +18950,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Front_Deltoid/0.jpg",
       "free-exercise-db/exercises/Seated_Front_Deltoid/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10167,6 +18975,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Glute/0.jpg",
       "free-exercise-db/exercises/Seated_Glute/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10182,6 +19000,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Good_Mornings/0.jpg",
       "free-exercise-db/exercises/Seated_Good_Mornings/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10197,6 +19029,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Hamstring/0.jpg",
       "free-exercise-db/exercises/Seated_Hamstring/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10212,6 +19054,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Adductor_Groin/0.jpg",
       "free-exercise-db/exercises/Adductor_Groin/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10227,6 +19078,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Hamstring_and_Calf_Stretch/0.jpg",
       "free-exercise-db/exercises/Seated_Hamstring_and_Calf_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10242,6 +19103,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Head_Harness_Neck_Resistance/0.jpg",
       "free-exercise-db/exercises/Seated_Head_Harness_Neck_Resistance/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10257,6 +19128,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Leg_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Leg_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -10272,6 +19156,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Leg_Tucks/0.jpg",
       "free-exercise-db/exercises/Seated_Leg_Tucks/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10287,6 +19183,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_One-arm_Cable_Pulley_Rows/0.jpg",
       "free-exercise-db/exercises/Seated_One-arm_Cable_Pulley_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "UpperBack",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -10302,6 +19214,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10317,6 +19240,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10332,6 +19266,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Overhead_Stretch/0.jpg",
       "free-exercise-db/exercises/Seated_Overhead_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10347,6 +19291,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Palm-Up_Barbell_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Palm-Up_Barbell_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10362,6 +19317,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Palms-Down_Barbell_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Palms-Down_Barbell_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10377,6 +19343,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Side_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Seated_Side_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10392,6 +19371,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Triceps_Press/0.jpg",
       "free-exercise-db/exercises/Seated_Triceps_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -10407,6 +19399,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10422,6 +19424,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/See-Saw_Press_Alternating_Side_Press/0.jpg",
       "free-exercise-db/exercises/See-Saw_Press_Alternating_Side_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -10437,6 +19452,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Shotgun_Row/0.jpg",
       "free-exercise-db/exercises/Shotgun_Row/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10452,6 +19481,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Shoulder_Circles/0.jpg",
       "free-exercise-db/exercises/Shoulder_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10467,6 +19505,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Shoulder_Press_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Shoulder_Press_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10482,6 +19531,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Shoulder_Raise/0.jpg",
       "free-exercise-db/exercises/Shoulder_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10497,6 +19555,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Shoulder_Stretch/0.jpg",
       "free-exercise-db/exercises/Shoulder_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10512,6 +19579,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Bridge/0.jpg",
       "free-exercise-db/exercises/Side_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10527,6 +19606,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Hop-Sprint/0.jpg",
       "free-exercise-db/exercises/Side_Hop-Sprint/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10542,6 +19634,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Jackknife/0.jpg",
       "free-exercise-db/exercises/Side_Jackknife/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10557,6 +19660,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Lateral_Raise/0.jpg",
       "free-exercise-db/exercises/Side_Lateral_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -10572,6 +19687,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Laterals_to_Front_Raise/0.jpg",
       "free-exercise-db/exercises/Side_Laterals_to_Front_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -10587,6 +19714,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Leg_Raises/0.jpg",
       "free-exercise-db/exercises/Side_Leg_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10602,6 +19738,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Lying_Groin_Stretch/0.jpg",
       "free-exercise-db/exercises/Side_Lying_Groin_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10617,6 +19763,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Neck_Stretch/0.jpg",
       "free-exercise-db/exercises/Side_Neck_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10632,6 +19787,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Standing_Long_Jump/0.jpg",
       "free-exercise-db/exercises/Side_Standing_Long_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10647,6 +19814,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_to_Side_Box_Shuffle/0.jpg",
       "free-exercise-db/exercises/Side_to_Side_Box_Shuffle/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10662,6 +19842,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_To_Side_Chins/0.jpg",
       "free-exercise-db/exercises/Side_To_Side_Chins/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Forearms",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10677,6 +19873,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side_Wrist_Pull/0.jpg",
       "free-exercise-db/exercises/Side_Wrist_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10692,6 +19897,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Side-Lying_Floor_Stretch/0.jpg",
       "free-exercise-db/exercises/Side-Lying_Floor_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -10707,6 +19922,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single_Dumbbell_Raise/0.jpg",
       "free-exercise-db/exercises/Single_Dumbbell_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "UpperBack",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -10722,6 +19951,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single_Leg_Butt_Kick/0.jpg",
       "free-exercise-db/exercises/Single_Leg_Butt_Kick/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10737,6 +19975,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single_Leg_Glute_Bridge/0.jpg",
       "free-exercise-db/exercises/Single_Leg_Glute_Bridge/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10752,6 +20003,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single_Leg_Push-off/0.jpg",
       "free-exercise-db/exercises/Single_Leg_Push-off/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10767,6 +20029,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Arm_Cable_Crossover/0.jpg",
       "free-exercise-db/exercises/Single-Arm_Cable_Crossover/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -10782,6 +20056,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Arm_Linear_Jammer/0.jpg",
       "free-exercise-db/exercises/Single-Arm_Linear_Jammer/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -10797,6 +20084,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Arm_Push-Up/0.jpg",
       "free-exercise-db/exercises/Single-Arm_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10812,6 +20112,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Cone_Sprint_Drill/0.jpg",
       "free-exercise-db/exercises/Single-Cone_Sprint_Drill/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10827,6 +20136,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Leg_High_Box_Squat/0.jpg",
       "free-exercise-db/exercises/Single-Leg_High_Box_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10842,6 +20164,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Leg_Hop_Progression/0.jpg",
       "free-exercise-db/exercises/Single-Leg_Hop_Progression/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10857,6 +20192,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Leg_Lateral_Hop/0.jpg",
       "free-exercise-db/exercises/Single-Leg_Lateral_Hop/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10872,6 +20220,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Leg_Leg_Extension/0.jpg",
       "free-exercise-db/exercises/Single-Leg_Leg_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -10887,6 +20248,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Single-Leg_Stride_Jump/0.jpg",
       "free-exercise-db/exercises/Single-Leg_Stride_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -10902,6 +20276,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sit_Squats/0.jpg",
       "free-exercise-db/exercises/Sit_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10917,6 +20300,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sit-Up/0.jpg",
       "free-exercise-db/exercises/Sit-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10932,6 +20326,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Skating/0.jpg",
       "free-exercise-db/exercises/Skating/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10947,6 +20350,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Drag_-_Harness/0.jpg",
       "free-exercise-db/exercises/Sled_Drag_-_Harness/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Forearms",
+      "UpperBack",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10962,6 +20380,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Overhead_Backward_Walk/0.jpg",
       "free-exercise-db/exercises/Sled_Overhead_Backward_Walk/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "MidBack",
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack",
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10977,6 +20411,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Overhead_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Sled_Overhead_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -10992,6 +20437,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Push/0.jpg",
       "free-exercise-db/exercises/Sled_Push/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Glutes",
+      "Hamstrings",
+      "Triceps",
+      "Forearms",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11007,6 +20468,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Reverse_Flye/0.jpg",
       "free-exercise-db/exercises/Sled_Reverse_Flye/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11022,6 +20494,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sled_Row/0.jpg",
       "free-exercise-db/exercises/Sled_Row/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11037,6 +20523,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sledgehammer_Swings/0.jpg",
       "free-exercise-db/exercises/Sledgehammer_Swings/1.jpg"
+    ],
+    "equipment": [
+      "Sled"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Lats",
+      "MidBack",
+      "Delts",
+      "Quads",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11052,6 +20554,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Incline_Shoulder_Raise/0.jpg",
       "free-exercise-db/exercises/Smith_Incline_Shoulder_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight",
+      "machineStable"
     ]
   },
   {
@@ -11067,6 +20585,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Behind_the_Back_Shrug/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Behind_the_Back_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11082,6 +20614,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11097,6 +20645,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Bent_Over_Row/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Bent_Over_Row/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "Delts",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11112,6 +20678,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11127,6 +20705,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Close-Grip_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Close-Grip_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11142,6 +20736,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Decline_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Decline_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11157,6 +20767,25 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Hang_Power_Clean/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Hang_Power_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "Delts",
+      "UpperBack",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11172,6 +20801,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Hip_Raise/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Hip_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11187,6 +20831,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Incline_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Incline_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11202,6 +20862,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Leg_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Leg_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11217,6 +20893,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_One-Arm_Upright_Row/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_One-Arm_Upright_Row/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11232,6 +20923,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Overhead_Shoulder_Press/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Overhead_Shoulder_Press/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11247,6 +20952,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Pistol_Squat/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Pistol_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11262,6 +20983,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Reverse_Calf_Raises/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Reverse_Calf_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11277,6 +21010,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Squat/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11292,6 +21042,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Stiff-Legged_Deadlift/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Stiff-Legged_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11307,6 +21072,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Machine_Upright_Row/0.jpg",
       "free-exercise-db/exercises/Smith_Machine_Upright_Row/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11322,6 +21104,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Smith_Single-Leg_Split_Squat/0.jpg",
       "free-exercise-db/exercises/Smith_Single-Leg_Split_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Smith",
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11337,6 +21135,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch/0.jpg",
       "free-exercise-db/exercises/Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Biceps",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11352,6 +21167,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch_Balance/0.jpg",
       "free-exercise-db/exercises/Snatch_Balance/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11367,6 +21199,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch_Deadlift/0.jpg",
       "free-exercise-db/exercises/Snatch_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11382,6 +21231,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch_from_Blocks/0.jpg",
       "free-exercise-db/exercises/Snatch_from_Blocks/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11397,6 +21263,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch_Pull/0.jpg",
       "free-exercise-db/exercises/Snatch_Pull/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11412,6 +21293,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Snatch_Shrug/0.jpg",
       "free-exercise-db/exercises/Snatch_Shrug/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11427,6 +21321,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Speed_Band_Overhead_Triceps/0.jpg",
       "free-exercise-db/exercises/Speed_Band_Overhead_Triceps/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11442,6 +21347,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Speed_Box_Squat/0.jpg",
       "free-exercise-db/exercises/Speed_Box_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11457,6 +21376,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Speed_Squats/0.jpg",
       "free-exercise-db/exercises/Speed_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11472,6 +21406,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Spell_Caster/0.jpg",
       "free-exercise-db/exercises/Spell_Caster/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11487,6 +21435,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Spider_Crawl/0.jpg",
       "free-exercise-db/exercises/Spider_Crawl/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11502,6 +21463,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Spider_Curl/0.jpg",
       "free-exercise-db/exercises/Spider_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11517,6 +21489,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Spinal_Stretch/0.jpg",
       "free-exercise-db/exercises/Spinal_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11532,6 +21513,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Clean/0.jpg",
       "free-exercise-db/exercises/Split_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11547,6 +21545,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Jerk/0.jpg",
       "free-exercise-db/exercises/Split_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11562,6 +21577,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Jump/0.jpg",
       "free-exercise-db/exercises/Split_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11577,6 +21604,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Snatch/0.jpg",
       "free-exercise-db/exercises/Split_Snatch/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Quads",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11592,6 +21636,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Squat_with_Dumbbells/0.jpg",
       "free-exercise-db/exercises/Split_Squat_with_Dumbbells/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11607,6 +21665,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Split_Squats/0.jpg",
       "free-exercise-db/exercises/Split_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -11622,6 +21689,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Squat_Jerk/0.jpg",
       "free-exercise-db/exercises/Squat_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts",
+      "Triceps",
+      "Quads",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11637,6 +21721,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Squat_with_Bands/0.jpg",
       "free-exercise-db/exercises/Squat_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11652,6 +21753,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Squat_with_Chains/0.jpg",
       "free-exercise-db/exercises/Squat_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11667,6 +21784,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Squat_with_Plate_Movers/0.jpg",
       "free-exercise-db/exercises/Squat_with_Plate_Movers/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11682,6 +21815,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Squats_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Squats_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11697,6 +21844,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stairmaster/0.jpg",
       "free-exercise-db/exercises/Stairmaster/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11712,6 +21870,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Alternating_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Alternating_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11727,6 +21897,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Barbell_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Standing_Barbell_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11742,6 +21922,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Barbell_Press_Behind_Neck/0.jpg",
       "free-exercise-db/exercises/Standing_Barbell_Press_Behind_Neck/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11757,6 +21950,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11772,6 +21978,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11787,6 +22005,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Biceps_Cable_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Biceps_Cable_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -11802,6 +22032,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Biceps_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Biceps_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -11817,6 +22056,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Bradford_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Bradford_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11832,6 +22083,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Cable_Chest_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Cable_Chest_Press/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -11847,6 +22112,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Cable_Lift/0.jpg",
       "free-exercise-db/exercises/Standing_Cable_Lift/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -11862,6 +22140,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Cable_Wood_Chop/0.jpg",
       "free-exercise-db/exercises/Standing_Cable_Wood_Chop/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -11877,6 +22168,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Calf_Raises/0.jpg",
       "free-exercise-db/exercises/Standing_Calf_Raises/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -11892,6 +22194,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Concentration_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Concentration_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11907,6 +22221,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Calf_Raise/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Calf_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11922,6 +22246,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11937,6 +22273,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Reverse_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Reverse_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11952,6 +22300,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11967,6 +22327,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11982,6 +22354,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Dumbbell_Upright_Row/0.jpg",
       "free-exercise-db/exercises/Standing_Dumbbell_Upright_Row/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps",
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -11997,6 +22383,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Elevated_Quad_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Elevated_Quad_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12012,6 +22407,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Front_Barbell_Raise_Over_Head/0.jpg",
       "free-exercise-db/exercises/Standing_Front_Barbell_Raise_Over_Head/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12027,6 +22434,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Gastrocnemius_Calf_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Gastrocnemius_Calf_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12042,6 +22458,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Hamstring_and_Calf_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Hamstring_and_Calf_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12057,6 +22482,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Hip_Circles/0.jpg",
       "free-exercise-db/exercises/Standing_Hip_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12072,6 +22506,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Hip_Flexors/0.jpg",
       "free-exercise-db/exercises/Standing_Hip_Flexors/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12087,6 +22530,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Inner-Biceps_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Inner-Biceps_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12102,6 +22557,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Lateral_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Lateral_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12117,6 +22581,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Leg_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Leg_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -12132,6 +22609,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Long_Jump/0.jpg",
       "free-exercise-db/exercises/Standing_Long_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12147,6 +22636,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Low-Pulley_Deltoid_Raise/0.jpg",
       "free-exercise-db/exercises/Standing_Low-Pulley_Deltoid_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -12162,6 +22664,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Low-Pulley_One-Arm_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Low-Pulley_One-Arm_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -12177,6 +22693,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Military_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Military_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12192,6 +22720,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Olympic_Plate_Hand_Squeeze/0.jpg",
       "free-exercise-db/exercises/Standing_Olympic_Plate_Hand_Squeeze/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Biceps"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12207,6 +22746,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_One-Arm_Cable_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_One-Arm_Cable_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
     ]
   },
   {
@@ -12222,6 +22773,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/0.jpg",
       "free-exercise-db/exercises/Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12237,6 +22800,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12252,6 +22829,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Overhead_Barbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Overhead_Barbell_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12267,6 +22857,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Palm-In_One-Arm_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Palm-In_One-Arm_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12282,6 +22884,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Palms-In_Dumbbell_Press/0.jpg",
       "free-exercise-db/exercises/Standing_Palms-In_Dumbbell_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12297,6 +22911,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/0.jpg",
       "free-exercise-db/exercises/Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12312,6 +22936,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Pelvic_Tilt/0.jpg",
       "free-exercise-db/exercises/Standing_Pelvic_Tilt/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12327,6 +22960,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Rope_Crunch/0.jpg",
       "free-exercise-db/exercises/Standing_Rope_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -12342,6 +22988,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Soleus_And_Achilles_Stretch/0.jpg",
       "free-exercise-db/exercises/Standing_Soleus_And_Achilles_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12357,6 +23012,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Toe_Touches/0.jpg",
       "free-exercise-db/exercises/Standing_Toe_Touches/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12372,6 +23036,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Towel_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Standing_Towel_Triceps_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12387,6 +23062,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Standing_Two-Arm_Overhead_Throw/0.jpg",
       "free-exercise-db/exercises/Standing_Two-Arm_Overhead_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Lats",
+      "Quads",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12402,6 +23094,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Star_Jump/0.jpg",
       "free-exercise-db/exercises/Star_Jump/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12417,6 +23122,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Step_Mill/0.jpg",
       "free-exercise-db/exercises/Step_Mill/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -12432,6 +23148,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Step-up_with_Knee_Raise/0.jpg",
       "free-exercise-db/exercises/Step-up_with_Knee_Raise/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Quads",
+      "Glutes",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -12447,6 +23177,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stiff_Leg_Barbell_Good_Morning/0.jpg",
       "free-exercise-db/exercises/Stiff_Leg_Barbell_Good_Morning/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12462,6 +23206,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stiff-Legged_Barbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Stiff-Legged_Barbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12477,6 +23234,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stiff-Legged_Dumbbell_Deadlift/0.jpg",
       "free-exercise-db/exercises/Stiff-Legged_Dumbbell_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12492,6 +23262,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stomach_Vacuum/0.jpg",
       "free-exercise-db/exercises/Stomach_Vacuum/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12507,6 +23286,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Straight_Bar_Bench_Mid_Rows/0.jpg",
       "free-exercise-db/exercises/Straight_Bar_Bench_Mid_Rows/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12522,6 +23316,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Straight_Raises_on_Incline_Bench/0.jpg",
       "free-exercise-db/exercises/Straight_Raises_on_Incline_Bench/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack",
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12537,6 +23344,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Straight-Arm_Dumbbell_Pullover/0.jpg",
       "free-exercise-db/exercises/Straight-Arm_Dumbbell_Pullover/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Lats",
+      "Delts",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12552,6 +23374,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Straight-Arm_Pulldown/0.jpg",
       "free-exercise-db/exercises/Straight-Arm_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -12567,6 +23401,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pullups/0.jpg",
       "free-exercise-db/exercises/Pullups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12582,6 +23430,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pushups/0.jpg",
       "free-exercise-db/exercises/Pushups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12597,6 +23458,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Stride_Jump_Crossover/0.jpg",
       "free-exercise-db/exercises/Stride_Jump_Crossover/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12612,6 +23486,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sumo_Deadlift/0.jpg",
       "free-exercise-db/exercises/Sumo_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12627,6 +23518,24 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sumo_Deadlift_with_Bands/0.jpg",
       "free-exercise-db/exercises/Sumo_Deadlift_with_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Barbell",
+      "Bands"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "MidBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12642,6 +23551,23 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Sumo_Deadlift_with_Chains/0.jpg",
       "free-exercise-db/exercises/Sumo_Deadlift_with_Chains/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Forearms",
+      "Glutes",
+      "SpinalErectors",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12657,6 +23583,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Superman/0.jpg",
       "free-exercise-db/exercises/Superman/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12672,6 +23607,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Supine_Chest_Throw/0.jpg",
       "free-exercise-db/exercises/Supine_Chest_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12687,6 +23636,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Supine_One-Arm_Overhead_Throw/0.jpg",
       "free-exercise-db/exercises/Supine_One-Arm_Overhead_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Lats",
+      "Delts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12702,6 +23665,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Supine_Two-Arm_Overhead_Throw/0.jpg",
       "free-exercise-db/exercises/Supine_Two-Arm_Overhead_Throw/1.jpg"
+    ],
+    "equipment": [
+      "MedicineBall"
+    ],
+    "difficulty": 3,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Lats",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12717,6 +23694,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Suspended_Fallout/0.jpg",
       "free-exercise-db/exercises/Suspended_Fallout/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "SpinalErectors",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12732,6 +23722,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Suspended_Push-Up/0.jpg",
       "free-exercise-db/exercises/Suspended_Push-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12747,6 +23750,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Suspended_Reverse_Crunch/0.jpg",
       "free-exercise-db/exercises/Suspended_Reverse_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12762,6 +23776,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Suspended_Row/0.jpg",
       "free-exercise-db/exercises/Suspended_Row/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12777,6 +23805,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Suspended_Split_Squat/0.jpg",
       "free-exercise-db/exercises/Suspended_Split_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
     ]
   },
   {
@@ -12792,6 +23835,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Svend_Press/0.jpg",
       "free-exercise-db/exercises/Svend_Press/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms",
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12807,6 +23864,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/T-Bar_Row_with_Handle/0.jpg",
       "free-exercise-db/exercises/T-Bar_Row_with_Handle/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12822,6 +23894,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Tate_Press/0.jpg",
       "free-exercise-db/exercises/Tate_Press/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12837,6 +23923,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/The_Straddle/0.jpg",
       "free-exercise-db/exercises/The_Straddle/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12852,6 +23947,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Thigh_Abductor/0.jpg",
       "free-exercise-db/exercises/Thigh_Abductor/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -12867,6 +23975,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Thigh_Adductor/0.jpg",
       "free-exercise-db/exercises/Thigh_Adductor/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -12882,6 +24004,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Tire_Flip/0.jpg",
       "free-exercise-db/exercises/Tire_Flip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Chest",
+      "Forearms",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12897,6 +24035,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Toe_Touchers/0.jpg",
       "free-exercise-db/exercises/Toe_Touchers/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12912,6 +24059,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Torso_Rotation/0.jpg",
       "free-exercise-db/exercises/Torso_Rotation/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 2,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12927,6 +24083,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Trail_Running_Walking/0.jpg",
       "free-exercise-db/exercises/Trail_Running_Walking/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12942,6 +24107,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Trap_Bar_Deadlift/0.jpg",
       "free-exercise-db/exercises/Trap_Bar_Deadlift/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12957,6 +24136,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Tricep_Dumbbell_Kickback/0.jpg",
       "free-exercise-db/exercises/Tricep_Dumbbell_Kickback/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "unilateral",
+      "freeWeight"
     ]
   },
   {
@@ -12972,6 +24163,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Tricep_Side_Stretch/0.jpg",
       "free-exercise-db/exercises/Tricep_Side_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -12987,6 +24187,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Lying_Dumbbell_Tricep_Extension/0.jpg",
       "free-exercise-db/exercises/Lying_Dumbbell_Tricep_Extension/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13002,6 +24216,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Overhead_Extension_with_Rope/0.jpg",
       "free-exercise-db/exercises/Triceps_Overhead_Extension_with_Rope/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13017,6 +24243,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Pushdown/0.jpg",
       "free-exercise-db/exercises/Triceps_Pushdown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13032,6 +24270,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Pushdown/0.jpg",
       "free-exercise-db/exercises/Triceps_Pushdown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13047,6 +24297,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Pushdown_-_Rope_Attachment/0.jpg",
       "free-exercise-db/exercises/Triceps_Pushdown_-_Rope_Attachment/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13062,6 +24324,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Pushdown_-_V-Bar_Attachment/0.jpg",
       "free-exercise-db/exercises/Triceps_Pushdown_-_V-Bar_Attachment/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13077,6 +24351,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Triceps_Stretch/0.jpg",
       "free-exercise-db/exercises/Triceps_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13092,6 +24375,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Tuck_Crunch/0.jpg",
       "free-exercise-db/exercises/Tuck_Crunch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13107,6 +24401,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Two-Arm_Dumbbell_Preacher_Curl/0.jpg",
       "free-exercise-db/exercises/Two-Arm_Dumbbell_Preacher_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   },
   {
@@ -13122,6 +24429,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Clean/0.jpg",
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Clean/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "UpperBack",
+      "Quads"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13137,6 +24460,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Jerk/0.jpg",
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Jerk/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Quads",
+      "Triceps",
+      "Hamstrings",
+      "Glutes",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13152,6 +24491,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Military_Press/0.jpg",
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Military_Press/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13167,6 +24518,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Row/0.jpg",
       "free-exercise-db/exercises/Two-Arm_Kettlebell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "Lats",
+      "RearDelts",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13182,6 +24548,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Underhand_Cable_Pulldowns/0.jpg",
       "free-exercise-db/exercises/Underhand_Cable_Pulldowns/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13197,6 +24579,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upper_Back_Stretch/0.jpg",
       "free-exercise-db/exercises/Upper_Back_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13212,6 +24603,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upper_Back-Leg_Grab/0.jpg",
       "free-exercise-db/exercises/Upper_Back-Leg_Grab/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13227,6 +24627,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upright_Barbell_Row/0.jpg",
       "free-exercise-db/exercises/Upright_Barbell_Row/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13242,6 +24654,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upright_Cable_Row/0.jpg",
       "free-exercise-db/exercises/Upright_Cable_Row/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13257,6 +24682,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upright_Row_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Upright_Row_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13272,6 +24709,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Upward_Stretch/0.jpg",
       "free-exercise-db/exercises/Upward_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13287,6 +24733,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/V-Bar_Pulldown/0.jpg",
       "free-exercise-db/exercises/V-Bar_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13302,6 +24764,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/V-Bar_Pullup/0.jpg",
       "free-exercise-db/exercises/V-Bar_Pullup/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13317,6 +24794,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Vertical_Swing/0.jpg",
       "free-exercise-db/exercises/Vertical_Swing/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Quads",
+      "Delts",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13332,6 +24824,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Walking_Treadmill/0.jpg",
       "free-exercise-db/exercises/Walking_Treadmill/1.jpg"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": 2,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
     ]
   },
   {
@@ -13347,6 +24850,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Ball_Hyperextension/0.jpg",
       "free-exercise-db/exercises/Weighted_Ball_Hyperextension/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "MidBack",
+      "Biceps",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13362,6 +24880,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Ball_Side_Bend/0.jpg",
       "free-exercise-db/exercises/Weighted_Ball_Side_Bend/1.jpg"
+    ],
+    "equipment": [
+      "StabilityBall"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "TVA"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13377,6 +24906,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Bench_Dip/0.jpg",
       "free-exercise-db/exercises/Weighted_Bench_Dip/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Chest",
+      "Delts",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13392,6 +24934,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Crunches/0.jpg",
       "free-exercise-db/exercises/Weighted_Crunches/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight",
+      "MedicineBall"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13407,6 +24962,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Dips_-_Chest_Version/0.jpg",
       "free-exercise-db/exercises/Dips_-_Chest_Version/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13422,6 +24990,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Jump_Squat/0.jpg",
       "free-exercise-db/exercises/Weighted_Jump_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Skill",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13437,6 +25019,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Plank/0.jpg",
       "free-exercise-db/exercises/Plank/1.jpg"
+    ],
+    "equipment": [
+      "Cable",
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13452,6 +25045,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Pull_Ups/0.jpg",
       "free-exercise-db/exercises/Weighted_Pull_Ups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13467,6 +25074,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pullups/0.jpg",
       "free-exercise-db/exercises/Pullups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13482,6 +25103,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Pushups/0.jpg",
       "free-exercise-db/exercises/Pushups/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13497,6 +25131,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Sissy_Squat/0.jpg",
       "free-exercise-db/exercises/Weighted_Sissy_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13512,6 +25160,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Sit-Ups_-_With_Bands/0.jpg",
       "free-exercise-db/exercises/Weighted_Sit-Ups_-_With_Bands/1.jpg"
+    ],
+    "equipment": [
+      "Bands",
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13527,6 +25187,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Weighted_Squat/0.jpg",
       "free-exercise-db/exercises/Weighted_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13542,6 +25215,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide_Stance_Barbell_Squat/0.jpg",
       "free-exercise-db/exercises/Wide_Stance_Barbell_Squat/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13557,6 +25245,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide_Stance_Stiff_Legs/0.jpg",
       "free-exercise-db/exercises/Wide_Stance_Stiff_Legs/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Adductors",
+      "Glutes",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13572,6 +25274,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Barbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Barbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13587,6 +25303,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Decline_Barbell_Bench_Press/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Decline_Barbell_Bench_Press/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "FrontDelts"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13602,6 +25332,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Decline_Barbell_Pullover/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Decline_Barbell_Pullover/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts",
+      "Triceps",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13617,6 +25361,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13632,6 +25392,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Pulldown_Behind_The_Neck/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Pulldown_Behind_The_Neck/1.jpg"
+    ],
+    "equipment": [
+      "Cable"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported"
     ]
   },
   {
@@ -13647,6 +25423,21 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Rear_Pull-Up/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Rear_Pull-Up/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Biceps",
+      "MidBack",
+      "Delts",
+      "RearDelts",
+      "UpperBack"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13662,6 +25453,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wide-Grip_Standing_Barbell_Curl/0.jpg",
       "free-exercise-db/exercises/Wide-Grip_Standing_Barbell_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13677,6 +25480,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wind_Sprints/0.jpg",
       "free-exercise-db/exercises/Wind_Sprints/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Cardio",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13692,6 +25504,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Windmills/0.jpg",
       "free-exercise-db/exercises/Windmills/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13707,6 +25528,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Worlds_Greatest_Stretch/0.jpg",
       "free-exercise-db/exercises/Worlds_Greatest_Stretch/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13722,6 +25552,15 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wrist_Circles/0.jpg",
       "free-exercise-db/exercises/Wrist_Circles/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Mobility",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13737,6 +25576,17 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wrist_Roller/0.jpg",
       "free-exercise-db/exercises/Wrist_Roller/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Delts"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13752,6 +25602,16 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Wrist_Rotations_with_Straight_Bar/0.jpg",
       "free-exercise-db/exercises/Wrist_Rotations_with_Straight_Bar/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13767,6 +25627,22 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Yoke_Walk/0.jpg",
       "free-exercise-db/exercises/Yoke_Walk/1.jpg"
+    ],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Abs",
+      "Abductors",
+      "Adductors",
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
     ]
   },
   {
@@ -13782,6 +25658,20 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Zercher_Squats/0.jpg",
       "free-exercise-db/exercises/Zercher_Squats/1.jpg"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": 5,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13797,6 +25687,18 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Zottman_Curl/0.jpg",
       "free-exercise-db/exercises/Zottman_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "freeWeight"
     ]
   },
   {
@@ -13812,6 +25714,19 @@ export const exercises = [
     "images": [
       "free-exercise-db/exercises/Zottman_Preacher_Curl/0.jpg",
       "free-exercise-db/exercises/Zottman_Preacher_Curl/1.jpg"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": 3,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "freeWeight"
     ]
   }
 ];

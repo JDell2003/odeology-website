@@ -34,6 +34,7 @@ const trackRoutes = require('./core/trackRoutes');
 const trainingRoutes = require('./core/trainingRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
+const profileRoutes = require('./core/profileRoutes');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
@@ -1627,11 +1628,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await trackRoutes(req, res, url)) {
-        return;
+      return;
+    }
+
+    if (await profileRoutes(req, res, url)) {
+      return;
     }
 
     if (await adminRoutes(req, res, url)) {
-        return;
+      return;
     }
 
     if (await authRoutes(req, res, url)) {

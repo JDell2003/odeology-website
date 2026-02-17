@@ -7666,14 +7666,18 @@ body.modal-open {
     }
 
     .ns-macros {
-        grid-template-columns: 1fr;
-        gap: 0.7rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.55rem;
         margin-top: 0.65rem;
     }
 
     .ns-macro-card {
-        padding: 0.85rem 0.95rem;
+        padding: 0.75rem 0.6rem;
         border-radius: 14px;
+    }
+
+    .ns-macro-card h4 {
+        font-size: 1rem;
     }
 
     .ns-handoff-headline {
@@ -17244,11 +17248,19 @@ body.nav-drawer-open .nav-drawer-backdrop {
 .nutrition-funnel .ns-height-inline {
     display: flex;
     align-items: flex-end;
+    flex-wrap: nowrap;
     gap: 0.6rem;
 }
 
 .nutrition-funnel .ns-height-inline .ns-duo {
     flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Keep feet + inches on a single row when unit is set to feet */
+.nutrition-funnel #ns-height-feet-wrap.ns-duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
 }
 
 .nutrition-funnel .ns-height-unit-toggle {
