@@ -2,7 +2,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const db = require('./db');
+const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience } = require('./trainingEngine');
+const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const enrichPlanWithExerciseMedia = async () => {};
 
@@ -10,9 +12,44 @@ const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYT
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
+const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 
 const mediaEnrichInFlight = new Set();
 const QUOTE_BANK_PATH = path.join(__dirname, 'quoteBank.json');
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+}
+
+function logTransientTrainingError(err, context) {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') return;
+  const d = db.getDiagnostics ? db.getDiagnostics() : {};
+  console.warn('[training][db-transient]', {
+    context: context || 'unknown',
+    code: err?.code || null,
+    message: err?.message || String(err),
+    sslEnabled: Boolean(d?.sslEnabled),
+    totalCount: Number(d?.totalCount || 0),
+    idleCount: Number(d?.idleCount || 0),
+    waitingCount: Number(d?.waitingCount || 0)
+  });
+}
+
+function sendDbUnavailable(res) {
+  return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+}
+
+function handleTrainingDbFailure(res, err, context, fallbackMessage) {
+  if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+    logTransientTrainingError(err, context);
+    return sendDbUnavailable(res);
+  }
+  if (fallbackMessage) {
+    console.error(`[${context}]`, err?.message || err);
+    return sendJson(res, 500, { error: fallbackMessage });
+  }
+  throw err;
+}
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -78,8 +115,20 @@ function normalizeDiscipline(raw) {
   const v = String(raw || '').trim().toLowerCase();
   if (v === 'powerlifting') return 'powerlifting';
   if (v === 'bodybuilding') return 'bodybuilding';
+  if (v === 'powerbuilding') return 'powerbuilding';
   if (v === 'calisthenics') return 'calisthenics';
   return null;
+}
+
+function resolveOblueprintDiscipline(trainingFeel) {
+  const v = String(trainingFeel || '').trim();
+  if (v === 'Aesthetic bodybuilding') return 'bodybuilding';
+  if (v === 'Powerbuilding') return 'powerbuilding';
+  return null;
+}
+
+function isOblueprintRequest(payload) {
+  return !!resolveOblueprintDiscipline(payload?.trainingFeel);
 }
 
 function normalizeEquipmentAccess(raw) {
@@ -164,12 +213,17 @@ async function ensureSchema() {
     } catch (err) {
       const code = String(err?.code || '');
       if (code === '23505' || code === '42P07') return;
+      if (isTransientPgError(err)) {
+        throw new DbUnavailableError('Database unavailable during training schema query', err);
+      }
       throw err;
     }
   };
 
   schemaEnsurePromise = (async () => {
-    await safeQuery('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
+    for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        await safeQuery('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_users (
@@ -308,7 +362,18 @@ async function ensureSchema() {
     await safeQuery('CREATE UNIQUE INDEX IF NOT EXISTS uq_app_progress_photos_user_day_pose ON app_progress_photos(user_id, day, pose);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_progress_photos_user_id ON app_progress_photos(user_id);');
 
-    schemaEnsured = true;
+        schemaEnsured = true;
+        return;
+      } catch (err) {
+        const transient = err instanceof DbUnavailableError || isTransientPgError(err) || isTransientPgError(err?.cause);
+        if (!transient) throw err;
+        logTransientTrainingError(err?.cause || err, `ensureSchema:attempt_${attempt + 1}`);
+        if (attempt >= SCHEMA_RETRY_DELAYS_MS.length) {
+          throw (err instanceof DbUnavailableError ? err : new DbUnavailableError('Database unavailable while ensuring training schema', err));
+        }
+        await sleep(SCHEMA_RETRY_DELAYS_MS[attempt]);
+      }
+    }
   })().finally(() => {
     schemaEnsurePromise = null;
   });
@@ -511,6 +576,19 @@ async function createNewPlan(userId, { discipline, daysPerWeek, experience, stre
     }
   }
   return row;
+}
+
+async function createNewOblueprintPlan(userId, { discipline, daysPerWeek, plan }) {
+  await db.query('UPDATE app_training_plans SET active = false, updated_at = now() WHERE user_id = $1 AND active = true;', [userId]);
+  const inserted = await db.query(
+    `
+      INSERT INTO app_training_plans (user_id, active, version, discipline, days_per_week, plan)
+      VALUES ($1, true, 1, $2, $3, $4::jsonb)
+      RETURNING id, version, discipline, days_per_week, plan, updated_at;
+    `,
+    [userId, discipline, daysPerWeek, JSON.stringify(plan)]
+  );
+  return inserted.rows?.[0] || null;
 }
 
 async function upsertWorkoutLog({ userId, planId, weekIndex, dayIndex, performedAt, entries, notes }) {
@@ -814,6 +892,7 @@ async function upsertWeighin({ userId, weightLb, goalMode }) {
 async function trainingRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/training')) return false;
   const pathname = url.pathname.length > 1 && url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
+  try {
 
   function validatePlanInputs(payload) {
     const discipline = normalizeDiscipline(payload?.discipline);
@@ -921,6 +1000,23 @@ async function trainingRoutes(req, res, url) {
       return sendJson(res, 400, { error: err.message });
     }
 
+    if (isOblueprintRequest(payload)) {
+      const plan = buildOblueprintPlan(payload);
+      if (plan?.error) return sendJson(res, 400, plan);
+      return sendJson(res, 200, {
+        ok: true,
+        plan: {
+          id: null,
+          version: 0,
+          discipline: plan?.meta?.discipline || resolveOblueprintDiscipline(payload?.trainingFeel),
+          days_per_week: Number(plan?.meta?.daysPerWeek) || Number(payload?.daysPerWeek) || 0,
+          plan,
+          updated_at: new Date().toISOString(),
+          preview: true
+        }
+      });
+    }
+
     const validated = validatePlanInputs(payload);
     if (!validated.ok) return sendJson(res, 400, { error: validated.error });
 
@@ -960,8 +1056,7 @@ async function trainingRoutes(req, res, url) {
         }
       });
     } catch (err) {
-      console.error('[training-preview]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to build preview plan' });
+      return handleTrainingDbFailure(res, err, 'training-preview', 'Failed to build preview plan');
     }
   }
 
@@ -1060,8 +1155,7 @@ async function trainingRoutes(req, res, url) {
       );
       return sendJson(res, 200, { ok: true });
     } catch (err) {
-      console.error('[training-reset]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to reset training data' });
+      return handleTrainingDbFailure(res, err, 'training-reset', 'Failed to reset training data');
     }
   }
 
@@ -1081,8 +1175,7 @@ async function trainingRoutes(req, res, url) {
       const row = result.rows?.[0] || null;
       return sendJson(res, 200, { checkin: row });
     } catch (err) {
-      console.error('[training-checkin-get]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to load check-in' });
+      return handleTrainingDbFailure(res, err, 'training-checkin-get', 'Failed to load check-in');
     }
   }
 
@@ -1115,8 +1208,7 @@ async function trainingRoutes(req, res, url) {
       const row = result.rows?.[0] || null;
       return sendJson(res, 200, { ok: true, checkin: row });
     } catch (err) {
-      console.error('[training-checkin-post]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to save check-in' });
+      return handleTrainingDbFailure(res, err, 'training-checkin-post', 'Failed to save check-in');
     }
   }
 
@@ -1135,8 +1227,7 @@ async function trainingRoutes(req, res, url) {
       if (!result.ok) return sendJson(res, 400, { error: result.error || 'Invalid weigh-in' });
       return sendJson(res, 200, result);
     } catch (err) {
-      console.error('[training-weighin]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to save weigh-in' });
+      return handleTrainingDbFailure(res, err, 'training-weighin', 'Failed to save weigh-in');
     }
   }
 
@@ -1153,8 +1244,7 @@ async function trainingRoutes(req, res, url) {
       if (!profile) return sendJson(res, 400, { error: 'Invalid profile update' });
       return sendJson(res, 200, { ok: true, profile });
     } catch (err) {
-      console.error('[training-profile]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to update profile' });
+      return handleTrainingDbFailure(res, err, 'training-profile', 'Failed to update profile');
     }
   }
 
@@ -1183,8 +1273,7 @@ async function trainingRoutes(req, res, url) {
       }));
       return sendJson(res, 200, { ok: true, photos });
     } catch (err) {
-      console.error('[training-progress-photos-get]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to load progress photos' });
+      return handleTrainingDbFailure(res, err, 'training-progress-photos-get', 'Failed to load progress photos');
     }
   }
 
@@ -1228,8 +1317,7 @@ async function trainingRoutes(req, res, url) {
         } : null
       });
     } catch (err) {
-      console.error('[training-progress-photos-post]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to save progress photo' });
+      return handleTrainingDbFailure(res, err, 'training-progress-photos-post', 'Failed to save progress photo');
     }
   }
 
@@ -1239,6 +1327,28 @@ async function trainingRoutes(req, res, url) {
       payload = await readJsonBody(req);
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
+    }
+
+    if (isOblueprintRequest(payload)) {
+      const planBuilt = buildOblueprintPlan(payload);
+      if (planBuilt?.error) return sendJson(res, 400, planBuilt);
+      const discipline = resolveOblueprintDiscipline(payload?.trainingFeel);
+      const daysPerWeek = Number(planBuilt?.meta?.daysPerWeek) || clampInt(payload?.daysPerWeek, 2, 6, null);
+      if (!discipline || !daysPerWeek) return sendJson(res, 400, { error: 'INVALID_INPUT', field: 'trainingFeel', reason: 'Unsupported or invalid onboarding payload' });
+      try {
+        await upsertProfile(user.id, {
+          discipline,
+          experience: payload?.experience || '6–24m',
+          daysPerWeek,
+          strength: {},
+          equipmentAccess: {},
+          profile: { firstName: payload?.name || '' }
+        });
+        const plan = await createNewOblueprintPlan(user.id, { discipline, daysPerWeek, plan: planBuilt });
+        return sendJson(res, 200, { ok: true, plan, logs: [] });
+      } catch (err) {
+        return handleTrainingDbFailure(res, err, 'training-onboarding-oblueprint', 'Failed to save onboarding');
+      }
     }
 
     const validated = validatePlanInputs(payload);
@@ -1256,8 +1366,7 @@ async function trainingRoutes(req, res, url) {
       const logs = plan ? await listWorkoutLogs({ userId: user.id, planId: plan.id }) : [];
       return sendJson(res, 200, { ok: true, plan, logs });
     } catch (err) {
-      console.error('[training-onboarding]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to save onboarding' });
+      return handleTrainingDbFailure(res, err, 'training-onboarding', 'Failed to save onboarding');
     }
   }
 
@@ -1268,8 +1377,7 @@ async function trainingRoutes(req, res, url) {
       const logs = await listWorkoutLogs({ userId: user.id, planId });
       return sendJson(res, 200, { logs });
     } catch (err) {
-      console.error('[training-logs]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to load logs' });
+      return handleTrainingDbFailure(res, err, 'training-logs', 'Failed to load logs');
     }
   }
 
@@ -1307,8 +1415,7 @@ async function trainingRoutes(req, res, url) {
       });
       return sendJson(res, 200, { ok: true, plan: updatedPlan });
     } catch (err) {
-      console.error('[training-log]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to save log' });
+      return handleTrainingDbFailure(res, err, 'training-log', 'Failed to save log');
     }
   }
 
@@ -1329,8 +1436,7 @@ async function trainingRoutes(req, res, url) {
       );
       return sendJson(res, 200, { ok: true });
     } catch (err) {
-      console.error('[training-event]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to log event' });
+      return handleTrainingDbFailure(res, err, 'training-event', 'Failed to log event');
     }
   }
 
@@ -1354,12 +1460,18 @@ async function trainingRoutes(req, res, url) {
       if (!plan) return sendJson(res, 404, { error: 'Plan or exercise not found' });
       return sendJson(res, 200, { ok: true, plan });
     } catch (err) {
-      console.error('[training-override]', err?.message || err);
-      return sendJson(res, 500, { error: 'Failed to update plan' });
+      return handleTrainingDbFailure(res, err, 'training-override', 'Failed to update plan');
     }
   }
 
-  return sendJson(res, 404, { error: 'Unknown training route' });
+    return sendJson(res, 404, { error: 'Unknown training route' });
+  } catch (err) {
+    if (err instanceof DbUnavailableError || isTransientPgError(err) || isTransientPgError(err?.cause)) {
+      logTransientTrainingError(err?.cause || err, `trainingRoutes:${req.method}:${pathname}`);
+      return sendDbUnavailable(res);
+    }
+    throw err;
+  }
 }
 
 module.exports = trainingRoutes;

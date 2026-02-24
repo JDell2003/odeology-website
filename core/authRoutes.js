@@ -1,12 +1,14 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const SESSION_TTL_DAYS = Math.max(1, Number(process.env.SESSION_TTL_DAYS || 30));
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.AUTH_MAX_BODY_BYTES || 200_000));
 
 let schemaEnsured = false;
+const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -113,13 +115,38 @@ async function readJsonBody(req) {
   });
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+}
+
+function logTransientDbError(err, context) {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') return;
+  const d = db.getDiagnostics ? db.getDiagnostics() : {};
+  console.warn('[auth][db-transient]', {
+    context: context || 'unknown',
+    code: err?.code || null,
+    message: err?.message || String(err),
+    sslEnabled: Boolean(d?.sslEnabled),
+    totalCount: Number(d?.totalCount || 0),
+    idleCount: Number(d?.idleCount || 0),
+    waitingCount: Number(d?.waitingCount || 0)
+  });
+}
+
+function sendDbUnavailable(res) {
+  return sendJson(res, 503, {
+    ok: false,
+    error: 'DB_UNAVAILABLE',
+    message: 'Service temporarily unavailable. Try again.'
+  });
+}
+
 async function ensureSchema() {
   if (schemaEnsured) return;
   if (!db.isConfigured()) return;
-
-  await db.query('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
-
-  await db.query(`
+  const schemaStatements = [
+    'CREATE EXTENSION IF NOT EXISTS pgcrypto;',
+    `
     CREATE TABLE IF NOT EXISTS app_users (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       created_at timestamptz NOT NULL DEFAULT now(),
@@ -133,14 +160,13 @@ async function ensureSchema() {
       last_login timestamptz,
       admin_notes text NOT NULL DEFAULT ''
     );
-  `);
-  await db.query('ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone text;');
-  await db.query('ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_seen timestamptz;');
-  await db.query('ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_login timestamptz;');
-  await db.query("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS admin_notes text NOT NULL DEFAULT '';");
-  await db.query('CREATE UNIQUE INDEX IF NOT EXISTS app_users_phone_key ON app_users(phone) WHERE phone IS NOT NULL;');
-
-  await db.query(`
+  `,
+    'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone text;',
+    'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_seen timestamptz;',
+    'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_login timestamptz;',
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS admin_notes text NOT NULL DEFAULT '';",
+    'CREATE UNIQUE INDEX IF NOT EXISTS app_users_phone_key ON app_users(phone) WHERE phone IS NOT NULL;',
+    `
     CREATE TABLE IF NOT EXISTS app_identities (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
@@ -150,10 +176,9 @@ async function ensureSchema() {
       created_at timestamptz NOT NULL DEFAULT now(),
       UNIQUE(provider, provider_user_id)
     );
-  `);
-  await db.query('CREATE INDEX IF NOT EXISTS idx_app_identities_user_id ON app_identities(user_id);');
-
-  await db.query(`
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_identities_user_id ON app_identities(user_id);',
+    `
     CREATE TABLE IF NOT EXISTS app_sessions (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       session_token_hash text UNIQUE NOT NULL,
@@ -161,21 +186,36 @@ async function ensureSchema() {
       created_at timestamptz NOT NULL DEFAULT now(),
       expires_at timestamptz NOT NULL
     );
-  `);
-  await db.query('CREATE INDEX IF NOT EXISTS idx_app_sessions_user_id ON app_sessions(user_id);');
-  await db.query('CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at);');
-
-  await db.query(`
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_sessions_user_id ON app_sessions(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at);',
+    `
     CREATE TABLE IF NOT EXISTS app_oauth_states (
       state_hash text PRIMARY KEY,
       return_to text NOT NULL,
       created_at timestamptz NOT NULL DEFAULT now(),
       expires_at timestamptz NOT NULL
     );
-  `);
-  await db.query('CREATE INDEX IF NOT EXISTS idx_app_oauth_states_expires_at ON app_oauth_states(expires_at);');
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_oauth_states_expires_at ON app_oauth_states(expires_at);'
+  ];
 
-  schemaEnsured = true;
+  for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      for (const sql of schemaStatements) {
+        await db.query(sql);
+      }
+      schemaEnsured = true;
+      return;
+    } catch (err) {
+      if (!isTransientPgError(err)) throw err;
+      logTransientDbError(err, `ensureSchema:attempt_${attempt + 1}`);
+      if (attempt >= SCHEMA_RETRY_DELAYS_MS.length) {
+        throw new DbUnavailableError('Database unavailable while ensuring auth schema', err);
+      }
+      await sleep(SCHEMA_RETRY_DELAYS_MS[attempt]);
+    }
+  }
 }
 
 async function getUserFromRequest(req) {
@@ -540,48 +580,56 @@ async function maybeCleanup() {
 
 module.exports = async function authRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/auth/')) return false;
+  try {
+    await maybeCleanup();
 
-  await maybeCleanup();
+    if (url.pathname === '/api/auth/google/ready' && req.method === 'GET') {
+      const missing = [];
+      if (!process.env.GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
+      if (!process.env.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+      if (!process.env.GOOGLE_REDIRECT_URI) missing.push('GOOGLE_REDIRECT_URI');
+      return sendJson(res, 200, { ok: missing.length === 0, missing });
+    }
 
-  if (url.pathname === '/api/auth/google/ready' && req.method === 'GET') {
-    const missing = [];
-    if (!process.env.GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
-    if (!process.env.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
-    if (!process.env.GOOGLE_REDIRECT_URI) missing.push('GOOGLE_REDIRECT_URI');
-    return sendJson(res, 200, { ok: missing.length === 0, missing });
-  }
+    if (url.pathname === '/api/auth/me' && req.method === 'GET') {
+      const user = await getUserFromRequest(req);
+      sendJson(res, 200, { user });
+      return true;
+    }
 
-  if (url.pathname === '/api/auth/me' && req.method === 'GET') {
-    const user = await getUserFromRequest(req);
-    sendJson(res, 200, { user });
+    if (url.pathname === '/api/auth/signup' && req.method === 'POST') {
+      await handleLocalSignup(req, res);
+      return true;
+    }
+
+    if (url.pathname === '/api/auth/login' && req.method === 'POST') {
+      await handleLocalLogin(req, res);
+      return true;
+    }
+
+    if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
+      await handleLogout(req, res);
+      return true;
+    }
+
+    if (url.pathname === '/api/auth/google/start' && req.method === 'GET') {
+      await handleGoogleStart(req, res, url);
+      return true;
+    }
+
+    if (url.pathname === '/api/auth/google/callback' && req.method === 'GET') {
+      await handleGoogleCallback(req, res, url);
+      return true;
+    }
+
+    sendJson(res, 404, { error: 'Not found' });
     return true;
+  } catch (err) {
+    if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+      logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
+      sendDbUnavailable(res);
+      return true;
+    }
+    throw err;
   }
-
-  if (url.pathname === '/api/auth/signup' && req.method === 'POST') {
-    await handleLocalSignup(req, res);
-    return true;
-  }
-
-  if (url.pathname === '/api/auth/login' && req.method === 'POST') {
-    await handleLocalLogin(req, res);
-    return true;
-  }
-
-  if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
-    await handleLogout(req, res);
-    return true;
-  }
-
-  if (url.pathname === '/api/auth/google/start' && req.method === 'GET') {
-    await handleGoogleStart(req, res, url);
-    return true;
-  }
-
-  if (url.pathname === '/api/auth/google/callback' && req.method === 'GET') {
-    await handleGoogleCallback(req, res, url);
-    return true;
-  }
-
-  sendJson(res, 404, { error: 'Not found' });
-  return true;
 };

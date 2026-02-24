@@ -2,8 +2,131 @@
   const root = document.getElementById('training-root');
   if (!root) return;
 
+  const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
+
+  function readLocalIntake() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(TRAINING_INTAKE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function isIntakeComplete(intake) {
+    if (!intake || typeof intake !== 'object') return false;
+    if (intake.completedAt) return true;
+    const step = Number(intake.step);
+    return Number.isFinite(step) && step >= 10;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function renderTrainingGate({ user, intakeDone }) {
+    const name = user?.displayName || user?.username || 'athlete';
+    const signedIn = Boolean(user);
+
+    if (!signedIn) {
+      root.innerHTML = `
+        <section class="plan-card">
+          <div class="card-head"><h4>Training</h4></div>
+          <div class="overview-card-summary">
+            <div class="overview-summary-list">
+              <div class="overview-summary-item">
+                <div class="overview-summary-left">
+                  <div class="overview-summary-title">Create your account</div>
+                  <div class="overview-summary-sub ns-muted">Make an account and you will get your training plan here.</div>
+                </div>
+              </div>
+            </div>
+            <a class="btn btn-primary" href="training-coming-soon.html">Go to Training Intake</a>
+          </div>
+        </section>
+      `.trim();
+      return;
+    }
+
+    if (!intakeDone) {
+      root.innerHTML = `
+        <section class="plan-card">
+          <div class="card-head"><h4>Training</h4></div>
+          <div class="overview-card-summary">
+            <div class="overview-summary-list">
+              <div class="overview-summary-item">
+                <div class="overview-summary-left">
+                  <div class="overview-summary-title">Training not made yet</div>
+                  <div class="overview-summary-sub ns-muted">Answer Training Coming Soon questions first, then your workouts will appear here.</div>
+                </div>
+              </div>
+            </div>
+            <a class="btn btn-primary" href="training-coming-soon.html">Answer Training Questions</a>
+          </div>
+        </section>
+      `.trim();
+      return;
+    }
+
+    root.innerHTML = `
+      <section class="plan-card">
+        <div class="card-head"><h4>Training</h4></div>
+        <div class="overview-card-summary">
+          <div class="overview-summary-list">
+            <div class="overview-summary-item">
+              <div class="overview-summary-left">
+                <div class="overview-summary-title">Training intake complete</div>
+                <div class="overview-summary-sub ns-muted">Welcome ${escapeHtml(name)}. Workout generation will populate here once the engine is wired.</div>
+              </div>
+            </div>
+          </div>
+          <a class="btn btn-ghost" href="training-coming-soon.html">Review Intake Answers</a>
+        </div>
+      </section>
+    `.trim();
+  }
+
+  async function initTrainingPlaceholder() {
+    let user = null;
+    let intakeDone = isIntakeComplete(readLocalIntake());
+
+    try {
+      const meResp = await fetch('/api/auth/me', { credentials: 'include' });
+      const meData = await meResp.json().catch(() => ({}));
+      user = meData?.user || null;
+    } catch {
+      user = null;
+    }
+
+    if (user && !intakeDone) {
+      try {
+        const pResp = await fetch('/api/profile', { credentials: 'include' });
+        const pData = await pResp.json().catch(() => ({}));
+        const remoteIntake = pData?.profile?.profile?.training_intake || null;
+        intakeDone = isIntakeComplete(remoteIntake);
+      } catch {
+        // ignore
+      }
+    }
+
+    renderTrainingGate({ user, intakeDone });
+  }
+
+  initTrainingPlaceholder();
+  return;
+
   function lockControlPanelOpen() {
     try {
+      const isMobileControl = (() => {
+        try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
+      })();
+      if (isMobileControl) return;
+
       document.body.classList.add('control-open');
       document.body.classList.remove('control-collapsed');
       const cp = document.getElementById('control-panel');

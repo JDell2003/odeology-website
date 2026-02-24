@@ -38,6 +38,7 @@ const profileRoutes = require('./core/profileRoutes');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
+const IS_DEV = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
 
 const mime = {
     '.html': 'text/html',
@@ -1578,6 +1579,27 @@ const fetchShorts = async (maxResults) => {
     }
 };
 
+const isHashedAssetName = (name) => /\.[a-f0-9]{8,}\./i.test(String(name || ''));
+
+const cacheControlForStatic = (filePath, ext) => {
+    if (IS_DEV) {
+        if (ext === '.js') return 'no-store';
+        return 'no-store';
+    }
+
+    const base = path.basename(filePath);
+    if (ext === '.html') return 'no-store';
+    if (ext === '.js') {
+        if (isHashedAssetName(base)) return 'public, max-age=31536000, immutable';
+        return 'no-store';
+    }
+    if (ext === '.css') {
+        if (isHashedAssetName(base)) return 'public, max-age=31536000, immutable';
+        return 'public, max-age=3600';
+    }
+    return 'public, max-age=86400';
+};
+
 const serveStatic = (req, res, pathname) => {
     let filePath = path.join(PUBLIC_DIR, pathname);
     if (pathname === '/' || pathname === '') {
@@ -1594,10 +1616,17 @@ const serveStatic = (req, res, pathname) => {
             res.writeHead(err.code === 'ENOENT' ? 404 : 500);
             return res.end('Not found');
         }
-        res.writeHead(200, {
+        const responseHeaders = {
             'Content-Type': contentType,
-            'Cache-Control': 'no-store'
-        });
+            'Cache-Control': cacheControlForStatic(filePath, ext)
+        };
+        res.writeHead(200, responseHeaders);
+        if (pathname === '/js/main.js') {
+            console.log('[asset] /js/main.js', {
+                filePath,
+                headers: responseHeaders
+            });
+        }
         res.end(content);
     });
 };
@@ -2213,6 +2242,7 @@ server.on('error', (err) => {
 
 server.listen(listenPort, () => {
     console.log(`Server running on http://localhost:${listenPort}`);
+    console.log('[asset] main.js resolved path:', path.resolve(PUBLIC_DIR, 'js', 'main.js'));
 });
 
 const shutdown = async () => {
@@ -2223,6 +2253,14 @@ const shutdown = async () => {
     }
     process.exit(0);
 };
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[process] unhandledRejection', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[process] uncaughtException', err?.message || err);
+});
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

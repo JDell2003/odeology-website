@@ -138,7 +138,6 @@
             <div class="overview-header-right" id="overview-actions">
                 <button class="btn btn-ghost" type="button" id="overview-tour-btn" aria-label="Start quick tour">Tour</button>
                 <a class="btn btn-ghost" href="index.html?ns=start#ns-entry">New macro plan</a>
-                <a class="btn btn-primary" href="grocery-plan.html">Full plan</a>
             </div>
         </header>
         <div class="overview-mini-nav" id="overview-mini-nav" aria-label="Overview sections">
@@ -168,9 +167,17 @@
                                     <span class="month-days" id="overview-month-days">&mdash;</span>
                                 </div>
                                 <div class="month-cost">
-                                    <span class="month-cost-label">Projected spend</span>
+                                    <span class="month-cost-label" id="overview-month-cost-label">Avg month (28d)</span>
                                     <span class="month-cost-value" id="overview-month-projected">&mdash;</span>
                                 </div>
+                            </div>
+                            <div class="cost-window-toggle-row cost-window-toggle-overview" aria-label="Monthly cost window toggle">
+                                <span class="cost-window-option active" data-mode-label="avg_28">Avg month (28d)</span>
+                                <label class="cost-window-switch">
+                                    <input type="checkbox" data-cost-window-switch aria-label="Toggle monthly cost view">
+                                    <span class="cost-window-slider"></span>
+                                </label>
+                                <span class="cost-window-option" data-mode-label="rest_month">Rest of month</span>
                             </div>
 
                              <div class="overview-grocery-toolbar" id="overview-grocery-toolbar" aria-label="Grocery list view toggle">
@@ -179,6 +186,7 @@
                                      <button type="button" class="overview-grocery-toggle-btn active" data-grocery-view="cards" role="tab" aria-selected="true">Grocery Cards</button>
                                      <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="list" role="tab" aria-selected="false" title="For those who buy groceries when they run out">Daily Buy List</button>
                                      <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="weekly" role="tab" aria-selected="false" title="For those who buy groceries once per week">Weekly Buy List</button>
+                                     <a class="overview-grocery-toggle-btn overview-grocery-fullplan-btn" href="grocery-plan.html">Full Plan</a>
                                  </div>
                                  <button type="button" class="btn btn-ghost overview-grocery-print hidden" id="overview-grocery-print">Full Grocery PDF</button>
                              </div>
@@ -242,7 +250,7 @@
                 </div>
 
                 <div class="overview-col">
-                    <section class="plan-card overview-training" data-overview-section="training">
+                    <section class="plan-card overview-training" id="overview-training-card" data-overview-section="training">
                         <div class="card-head">
                             <h4>Training</h4>
                         </div>
@@ -381,7 +389,8 @@
         </section>
     </main>
 
-    <script src="js/main.js?v=2026-02-16-7"></script>
+    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
     <script src="js/overview.js?v=2026-02-16-17"></script>
 </body>
 </html>
+

@@ -253,7 +253,7 @@
 
     /* Phone: cards-only toggle with PDF button */
     .overview-page .overview-grocery-toggle {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         justify-items: center;
     }
 
@@ -897,6 +897,10 @@ html[data-theme="light"] .overview-page .overview-grocery-toggle {
     padding: 8px 12px;
     border-radius: 999px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .overview-page .overview-grocery-toggle-btn.active {
@@ -914,6 +918,15 @@ html[data-theme="light"] .overview-page .overview-grocery-toggle {
 html[data-theme="light"] .overview-page .overview-grocery-toggle-btn.active {
     background: rgba(0, 140, 110, 0.10);
     border-color: rgba(0, 140, 110, 0.22);
+}
+
+.overview-page .overview-grocery-fullplan-btn {
+    border: 1px solid rgba(231, 163, 77, 0.28);
+    color: var(--ink);
+}
+
+html[data-theme="light"] .overview-page .overview-grocery-fullplan-btn {
+    border-color: rgba(0, 0, 0, 0.14);
 }
 
 .overview-page .overview-grocery-views {

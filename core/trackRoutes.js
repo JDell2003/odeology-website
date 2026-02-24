@@ -1,11 +1,14 @@
 const crypto = require('crypto');
 const db = require('./db');
+const { isTransientPgError } = require('./dbErrors');
 
 const GUEST_COOKIE_NAME = process.env.GUEST_COOKIE_NAME || 'gid';
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES || 400_000));
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
+const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
+let lastTransientTrackLogAt = 0;
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -51,6 +54,34 @@ function sendJson(res, status, payload, extraHeaders = {}) {
   });
   res.end(JSON.stringify(payload));
   return true;
+}
+
+function sendNoContent(res, extraHeaders = {}) {
+  res.writeHead(204, {
+    'Access-Control-Allow-Origin': '*',
+    ...extraHeaders
+  });
+  res.end();
+  return true;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+}
+
+function logTransientTrackError(err, context) {
+  const now = Date.now();
+  const isDev = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
+  if (!isDev && now - lastTransientTrackLogAt < 60_000) return;
+  if (now - lastTransientTrackLogAt < 60_000) return;
+  lastTransientTrackLogAt = now;
+  if (isDev) {
+    console.warn('[track][db-transient]', {
+      context,
+      code: err?.code || null,
+      message: err?.message || String(err)
+    });
+  }
 }
 
 async function readJsonBody(req) {
@@ -117,7 +148,9 @@ async function ensureSchema() {
   };
 
   schemaEnsurePromise = (async () => {
-    await safeQuery('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
+    for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        await safeQuery('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
 
     await safeQuery(`
     CREATE TABLE IF NOT EXISTS app_guests (
@@ -198,7 +231,15 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_messages_user_id ON app_messages(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_messages_guest_id ON app_messages(guest_id);');
 
-    schemaEnsured = true;
+        schemaEnsured = true;
+        return;
+      } catch (err) {
+        if (!isTransientPgError(err)) throw err;
+        logTransientTrackError(err, `ensureSchema:attempt_${attempt + 1}`);
+        if (attempt >= SCHEMA_RETRY_DELAYS_MS.length) throw err;
+        await sleep(SCHEMA_RETRY_DELAYS_MS[attempt]);
+      }
+    }
   })().finally(() => {
     schemaEnsurePromise = null;
   });
@@ -426,17 +467,39 @@ async function createOrUpdateLead({ lead, userId, guestId }) {
 
 module.exports = async function trackRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/track')) return false;
+  const isNonCriticalTrackRoute = (
+    (url.pathname === '/api/track/ping' && req.method === 'GET')
+    || (url.pathname === '/api/track/event' && req.method === 'POST')
+  );
 
   if (!db.isConfigured()) return sendJson(res, 501, { error: 'Database not configured' });
   try {
     await ensureSchema();
   } catch (err) {
+    if (isTransientPgError(err) && isNonCriticalTrackRoute) {
+      logTransientTrackError(err, 'trackRoutes:ensureSchema');
+      return sendNoContent(res);
+    }
     console.error('[track-schema]', err?.message || err);
     return sendJson(res, 500, { error: 'Tracking unavailable' });
   }
 
-  const { guestId, setCookie } = await ensureGuest(req, res);
-  const userId = await resolveUserIdFromSession(req);
+  let guestId = null;
+  let setCookie = null;
+  let userId = null;
+  try {
+    const guestData = await ensureGuest(req, res);
+    guestId = guestData?.guestId || null;
+    setCookie = guestData?.setCookie || null;
+    userId = await resolveUserIdFromSession(req);
+  } catch (err) {
+    if (isTransientPgError(err) && isNonCriticalTrackRoute) {
+      logTransientTrackError(err, 'trackRoutes:identityLookup');
+      return sendNoContent(res);
+    }
+    console.error('[track-identity]', err?.message || err);
+    return sendJson(res, 500, { error: 'Tracking unavailable' });
+  }
 
   if (url.pathname === '/api/track/message' && req.method === 'POST') {
     try {
@@ -502,6 +565,10 @@ module.exports = async function trackRoutes(req, res, url) {
         props: payload?.props
       });
     } catch (err) {
+      if (isTransientPgError(err)) {
+        logTransientTrackError(err, 'trackRoutes:event');
+        return sendNoContent(res, setCookie ? { 'Set-Cookie': setCookie } : {});
+      }
       return sendJson(res, 400, { error: err.message }, setCookie ? { 'Set-Cookie': setCookie } : {});
     }
 

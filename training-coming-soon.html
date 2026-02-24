@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -436,18 +436,18 @@
           <h1>Create Your Custom Workout Plan in 30 Seconds</h1>
           <p>Built for your goals, equipment, and experience level. Science-backed and ready fast.</p>
           <div class="hero-checks">
-            <span>✓ Free forever plan</span>
-            <span>✓ No credit card required</span>
-            <span>✓ Built by lifters, for lifters</span>
+            <span>? Free forever plan</span>
+            <span>? No credit card required</span>
+            <span>? Built by lifters, for lifters</span>
           </div>
           <button class="btn btn-primary" id="ns-start">Get My Free Workout Plan</button>
         </div>
       </div>
-      <div class="hero-down">⌄</div>
+      <div class="hero-down">?</div>
     </section>
 
     <section class="wrap intake hidden" id="intake">
-      <button class="intake-close" id="intake-close" type="button" aria-label="Close intake">×</button>
+      <button class="intake-close" id="intake-close" type="button" aria-label="Close intake">�</button>
       <div class="intake-shell">
         <div>
           <div class="progress">
@@ -473,7 +473,7 @@
       </div>
     </div>
   </div>
-  <script src="js/main.js?v=2026-02-16-3"></script>
+  <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
   <script>
     (function() {
       const K='ode_training_intake_v2', H='ode_training_intake_history_v2';
@@ -569,10 +569,10 @@
         {t:'Nutrition + meal data',h:'Phase behavior',x:'We sync your meal data and compare it to your goal to keep nutrition aligned.'},
         {t:'Profile finish',h:'Final handoff',x:'Only name and profile photo are manual inputs here. Everything else is slider/button driven.'}
       ];
-      const formatNumber=(n,d=0)=>Number.isFinite(n)?n.toFixed(d):'—';
-      const formatMacro=(n,unit)=>Number.isFinite(n)?`${Math.round(n)}${unit}`:'—';
+      const formatNumber=(n,d=0)=>Number.isFinite(n)?n.toFixed(d):'�';
+      const formatMacro=(n,unit)=>Number.isFinite(n)?`${Math.round(n)}${unit}`:'�';
       const formatDateShort=(iso)=>{try{return iso?new Date(iso).toLocaleDateString():''}catch{return ''}};
-      const formatSigned=(n,d=2)=>Number.isFinite(n)?`${n>0?'+':''}${n.toFixed(d)}`:'—';
+      const formatSigned=(n,d=2)=>Number.isFinite(n)?`${n>0?'+':''}${n.toFixed(d)}`:'�';
       const lbFromPct=(pct,weightLb)=>Number.isFinite(pct)&&Number.isFinite(weightLb)?(weightLb*(pct/100)):null;
       const estimateTdee=()=>{
         if(!S.sex||!Number.isFinite(S.age)||!Number.isFinite(S.heightIn)||!Number.isFinite(S.weightLb))return null;
@@ -617,7 +617,7 @@
         const lbs=Number.isFinite(weight)?Math.round(weight*(pct/100)*10)/10:null;
         const mode=getGoalMode();
         const verb=mode==='bulk'?'Gain':'Lose';
-        const lbText=Number.isFinite(lbs)?`${formatNumber(lbs,1)} lb/week`:'—';
+        const lbText=Number.isFinite(lbs)?`${formatNumber(lbs,1)} lb/week`:'�';
         return `${verb} ${lbText} (${pct}% bodyweight)`;
       };
       const bulkLabel=(lb)=>{
@@ -818,7 +818,7 @@
           if(!S.mealAdjustmentApplied){
             queue.push({
               title:'Apply the change?',
-              body:`You selected a target of ${String(S.phaseRate).replace('% bodyweight/week','%/week')}, but didn’t apply the adjustment.`,
+              body:`You selected a target of ${String(S.phaseRate).replace('% bodyweight/week','%/week')}, but didn�t apply the adjustment.`,
               primaryLabel:'Apply now',
               secondaryLabel:'Keep the same',
               onPrimary:()=>{applyMealAdjustment(summary.recommendedCalories);},
@@ -861,7 +861,7 @@
         if(s===3)h='<h3>Training background and strength level</h3><p class="d">Rough values are enough. We use them to set the right first-block intensity.</p><div class="fg" data-g="experience"><div class="t">Training experience</div>'+btns([{l:'< 6 months',v:'<6m'},{l:'6-24 months',v:'6-24m'},{l:'2-5 years',v:'2-5y'},{l:'5+ years',v:'5y+'}],S.experience,false,false)+'</div><div class="g3"><div><div class="t">Bench (lb): <strong id="bO">'+S.bench+'</strong></div><input id="bench" type="range" min="45" max="405" value="'+S.bench+'"/></div><div><div class="t">Squat (lb): <strong id="sqO">'+S.squat+'</strong></div><input id="squat" type="range" min="45" max="585" value="'+S.squat+'"/></div><div><div class="t">Deadlift (lb): <strong id="dO">'+S.deadlift+'</strong></div><input id="deadlift" type="range" min="65" max="675" value="'+S.deadlift+'"/></div></div><div class="fg" data-g="trainToFailure"><div class="t">Can you safely train close to failure?</div>'+btns([{l:'Yes',v:'yes'},{l:'No',v:'no'}],S.trainToFailure,false,true)+'</div>';
         if(s===4)h='<h3>Schedule and session time</h3><p class="d">This sets your split and exercise count so the plan fits your week.</p><div><div class="t">How many days can you workout in a week: <strong id="dyO">'+S.daysPerWeek+'</strong></div><input id="daysPerWeek" type="range" min="2" max="6" value="'+S.daysPerWeek+'"/></div><div class="fg" data-g="sessionLength"><div class="t">Session length</div>'+btns([{l:'30 min',v:'30'},{l:'45 min',v:'45'},{l:'60 min',v:'60'},{l:'75+ min',v:'75+'}],S.sessionLength,false,true)+'</div><div class="fg"><div class="t">What days do you prefer to train on</div>'+db()+'</div>';
         if(s===5)h='<h3>Where and how you train</h3><p class="d">We filter movements to what you can actually run.</p><div class="fg" data-g="location"><div class="t">Location</div>'+btns([{l:'Home',v:'home'},{l:'Commercial gym',v:'commercial gym'}],S.location,false,true)+'</div><div class="fg"><div class="t">Equipment access (multi-select)</div>'+mb([{l:'Barbell',v:'barbell'},{l:'Dumbbells',v:'dumbbells'},{l:'Cables',v:'cables'},{l:'Machines',v:'machines'},{l:'Smith',v:'smith'},{l:'Bands',v:'bands'},{l:'Pull-up bar',v:'pull-up bar'}],S.equipment,'equipment')+'</div>';
-        if(s===6)h='<h3>Bodybuilding emphasis</h3><p class="d">Pick up to 3 priority groups so we can bias volume and rotation.</p><div class="fg"><div class="t">Priority groups (pick 1-3) <button type="button" class="info" data-tip="We bias these muscle groups for 8–12 weeks, then rotate focus so every group gets a full growth phase without overuse. This keeps progress individualized and sustainable.">!</button></div>'+mb([{l:'Chest',v:'chest'},{l:'Back',v:'back'},{l:'Shoulders',v:'shoulders'},{l:'Arms',v:'arms'},{l:'Legs',v:'legs'},{l:'Glutes',v:'glutes'},{l:'Abs',v:'abs'}],S.focus,'focus')+'</div><div class="fg" data-g="loadStyle"><div class="t">Training style <button type="button" class="info" data-tip="Choose the feel you prefer: machines/cables (stable, joint‑friendly), free weights (skill + stability), or balanced mix.">!</button></div>'+btns([{l:'Mostly machines/cables',v:'machines/cables'},{l:'Mostly free weights',v:'free weights'},{l:'Balanced mix',v:'mixed'}],S.loadStyle,false,false)+'</div>';
+        if(s===6)h='<h3>Bodybuilding emphasis</h3><p class="d">Pick up to 3 priority groups so we can bias volume and rotation.</p><div class="fg"><div class="t">Priority groups (pick 1-3) <button type="button" class="info" data-tip="We bias these muscle groups for 8�12 weeks, then rotate focus so every group gets a full growth phase without overuse. This keeps progress individualized and sustainable.">!</button></div>'+mb([{l:'Chest',v:'chest'},{l:'Back',v:'back'},{l:'Shoulders',v:'shoulders'},{l:'Arms',v:'arms'},{l:'Legs',v:'legs'},{l:'Glutes',v:'glutes'},{l:'Abs',v:'abs'}],S.focus,'focus')+'</div><div class="fg" data-g="loadStyle"><div class="t">Training style <button type="button" class="info" data-tip="Choose the feel you prefer: machines/cables (stable, joint-friendly), free weights (skill + stability), or balanced mix.">!</button></div>'+btns([{l:'Mostly machines/cables',v:'machines/cables'},{l:'Mostly free weights',v:'free weights'},{l:'Balanced mix',v:'mixed'}],S.loadStyle,false,false)+'</div>';
         if(s===7){
           const injuries = ['shoulder','elbow','wrist','back','hip','knee'];
           let follow = '';
@@ -869,7 +869,7 @@
             follow = '<div class="injury-follow">'+S.injuries.map(i=>{
               const d = S.injuryDetails && S.injuryDetails[i] ? S.injuryDetails[i] : {severity:5,recency:'< 4 weeks'};
               return '<div class="injury-card" data-injury="'+i+'">'+
-                '<button type="button" class="remove" title="Remove">🗑</button>'+
+                '<button type="button" class="remove" title="Remove">??</button>'+
                 '<div class="injury-title">'+i.charAt(0).toUpperCase()+i.slice(1)+'</div>'+
                 '<div class="injury-row">'+
                   '<div><div class="t">Pain level (1-10): <strong class="sevO">'+d.severity+'</strong></div><input class="sev" type="range" min="1" max="10" value="'+d.severity+'"/></div>'+
@@ -899,16 +899,16 @@
           const recCalories=summary?.recommendedCalories;
           const mismatch=Number.isFinite(summary?.deltaLb) && Math.abs(summary.deltaLb) >= 0.15;
           const recText=Number.isFinite(deltaCalories)&&Number.isFinite(recCalories)
-            ? `To match your target, ${deltaCalories>0?'increase':'decrease'} by ${deltaCalories>0?'+':''}${formatNumber(Math.abs(deltaCalories),0)} kcal/day → ${formatNumber(recCalories,0)} kcal/day`
+            ? `To match your target, ${deltaCalories>0?'increase':'decrease'} by ${deltaCalories>0?'+':''}${formatNumber(Math.abs(deltaCalories),0)} kcal/day ? ${formatNumber(recCalories,0)} kcal/day`
             : '';
           const priceText=Number.isFinite(summary?.deltaWeekly)
             ? `Estimated grocery change: ${summary.deltaWeekly>0?'+':''}$${formatNumber(Math.abs(summary.deltaWeekly),2)} / week`
             : '';
           h='<h3>Nutrition + meal data</h3><p class="d">We look for meal data tied to your account and estimate your weekly trend.</p>';
           if(S.mealStatus==='loading'){
-            h+='<div class="meal-card"><div class="meal-muted">Loading meal data…</div></div>';
+            h+='<div class="meal-card"><div class="meal-muted">Loading meal data�</div></div>';
           }else if(S.mealStatus==='signed_out'){
-            h+='<div class="meal-card"><div class="meal-row"><div><div class="meal-muted">Waiting for sign-in…</div><div class="meal-muted">We are checking for your account meal data.</div></div><button type="button" class="btnx g" id="meal-retry">I just signed in</button></div></div>';
+            h+='<div class="meal-card"><div class="meal-row"><div><div class="meal-muted">Waiting for sign-in�</div><div class="meal-muted">We are checking for your account meal data.</div></div><button type="button" class="btnx g" id="meal-retry">I just signed in</button></div></div>';
           }else if(!mealCache){
             h+='<div class="meal-card"><div class="meal-row"><div><div class="meal-muted">No meal data associated with account.</div><div class="meal-muted">Generate a meal plan in 30 seconds using the Macro + Grocery Generator. Free.</div></div><a class="meal-link" href="index.html?ns=start">Open generator</a></div></div>';
           }else{
@@ -945,7 +945,7 @@
           const phaseBtns=phaseOptions.map(o=>'<button type="button" class="opt'+(String(S.phaseRate)===String(o.v)&&!S.keepPlanSame?' a':'')+' y" data-v="'+o.v+'">'+o.l+'</button>').join('');
           h+='<div class="fg" data-g="phaseRate"><div class="t">Adjust current plan?</div><div class="opts">'+keepBtn+phaseBtns+'</div></div>';
         }
-        if(s===10)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="fg"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg"><div class="t">Profile picture</div><div class="profile-wrap"><label class="profile-circle" for="profilePhoto"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'ADD')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt="" style="'+(S.profilePhotoData?'':'display:none')+'"/><span class="profile-pencil">✎</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="outputStyle"><div class="t">Output style</div>'+btns([{l:'RPE/RIR cues',v:'RPE/RIR'},{l:'Simple sets x reps',v:'sets x reps'}],S.outputStyle,false,true)+'</div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div>';
+        if(s===10)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="fg"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg"><div class="t">Profile picture</div><div class="profile-wrap"><label class="profile-circle" for="profilePhoto"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'ADD')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt="" style="'+(S.profilePhotoData?'':'display:none')+'"/><span class="profile-pencil">?</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="outputStyle"><div class="t">Output style</div>'+btns([{l:'RPE/RIR cues',v:'RPE/RIR'},{l:'Simple sets x reps',v:'sets x reps'}],S.outputStyle,false,true)+'</div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div>';
         h+='<div class="acts"><div class="row"><button type="button" class="btnx g" data-a="s">Save draft</button>'+(s>1?'<button type="button" class="btnx g" data-a="b">Back</button>':'')+'</div><button type="button" class="btnx p" data-a="n">'+(s===10?'Save + Enter Engine':'Next')+'</button></div>';
         el.c.innerHTML=h;
 
@@ -1080,3 +1080,4 @@
   </script>
 </body>
 </html>
+

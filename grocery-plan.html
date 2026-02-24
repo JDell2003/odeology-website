@@ -22,7 +22,8 @@
                     <div class="plan-top-actions">
                     </div>
                 </div>
-                <div class="plan-summary-bar" id="plan-macros">
+                <div class="plan-summary-stack">
+<div class="plan-summary-bar" id="plan-macros">
                     <div class="summary-item">
                         <span class="label">Store</span>
                         <span class="value" id="p-store">—</span>
@@ -48,6 +49,45 @@
                         <span class="value" id="p-budget">—</span>
                     </div>
                 </div>
+                <section class="plan-micros-card" id="plan-micros-card" aria-label="Micronutrients tracker">
+                    <button class="plan-summary-bar plan-micros-toggle" id="plan-micros-toggle" type="button" aria-expanded="false" aria-controls="plan-micros-content">
+                        <span class="plan-micros-arrow" aria-hidden="true">&#9662;</span>
+                        <span class="plan-micros-title">Micronutrients</span>
+                        <span class="plan-micros-arrow" aria-hidden="true">&#9662;</span>
+                    </button>
+                    <div class="plan-micros-content hidden" id="plan-micros-content">
+                        <div class="plan-micros-tier">
+                            <h4>Tier 1: Core Health Minimums</h4>
+                            <div class="plan-micro-list">
+                                <div class="plan-micro-row"><span class="plan-micro-name">Fiber:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Potassium:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Sodium:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Magnesium:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Calcium:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Iron:</span><span class="plan-micro-value">-</span></div>
+                            </div>
+                        </div>
+                        <div class="plan-micros-tier">
+                            <h4>Tier 2: Performance Boosters</h4>
+                            <div class="plan-micro-list">
+                                <div class="plan-micro-row"><span class="plan-micro-name">Zinc:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Vitamin D:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Vitamin C:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Vitamin A:</span><span class="plan-micro-value">-</span></div>
+                            </div>
+                        </div>
+                        <div class="plan-micros-tier">
+                            <h4>Tier 3: Optimization Extras</h4>
+                            <div class="plan-micro-list">
+                                <div class="plan-micro-row"><span class="plan-micro-name">Folate:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">B12:</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Omega-3 (EPA+DHA):</span><span class="plan-micro-value">-</span></div>
+                                <div class="plan-micro-row"><span class="plan-micro-name">Choline:</span><span class="plan-micro-value">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                </div>
                 <div class="mobile-plan-switch" id="mobile-plan-switch" aria-label="Mobile section switcher">
                     <button type="button" class="mobile-plan-switch-btn active" id="mobile-tab-grocery" data-mobile-tab="grocery">View Grocery List</button>
                     <button type="button" class="mobile-plan-switch-btn" id="mobile-tab-meals" data-mobile-tab="meals">Meals</button>
@@ -67,9 +107,17 @@
                             <span class="value" id="p-weekly-cost">—</span>
                         </div>
                         <div class="cost-item">
-                            <span class="label">Avg Monthly</span>
+                            <span class="label" id="p-monthly-cost-label">Avg month (28d)</span>
                             <span class="value" id="p-monthly-cost">—</span>
                         </div>
+                    </div>
+                    <div class="cost-window-toggle-row" aria-label="Monthly cost window toggle">
+                        <span class="cost-window-option active" data-mode-label="avg_28">Avg month (28d)</span>
+                        <label class="cost-window-switch">
+                            <input type="checkbox" data-cost-window-switch aria-label="Toggle monthly cost view">
+                            <span class="cost-window-slider"></span>
+                        </label>
+                        <span class="cost-window-option" data-mode-label="rest_month">Rest of month</span>
                     </div>
                     <div class="mobile-plan-switch mobile-plan-switch-inline" aria-label="Mobile section switcher">
                         <button type="button" class="mobile-plan-switch-btn active" id="mobile-tab-grocery-inline" data-mobile-tab="grocery">View Grocery List</button>
@@ -98,6 +146,17 @@
                 </div>
 
                 <div class="plan-stack">
+                    <section class="plan-card meal-budget-banner" id="meal-budget-banner" aria-label="Budget">
+                        <div class="card-head">
+                            <h3>Budget</h3>
+                        </div>
+                        <div class="meal-budget-value" id="meal-budget-inline">—</div>
+                        <div class="meal-budget-options" id="meal-budget-options" aria-label="Selected budget tier">
+                            <button type="button" class="meal-budget-option" data-budget-tier="under-200" disabled>Under $200</button>
+                            <button type="button" class="meal-budget-option" data-budget-tier="200-400" disabled>$200 - $400</button>
+                            <button type="button" class="meal-budget-option" data-budget-tier="400-plus" disabled>$400+</button>
+                        </div>
+                    </section>
                     <section class="plan-card meal-split" id="meal-plan">
                         <div class="card-head">
                             <h3>Your daily meals (auto-generated)</h3>
@@ -127,6 +186,96 @@
                                 <span class="macro-label">Fat</span>
                                 <span class="macro-target" id="target-fat">—</span>
                                 <span class="macro-actual" id="actual-fat">—</span>
+                            </div>
+                        </div>
+                        <div class="micro-summary-row" id="micro-summary-row" aria-label="Micronutrients projected versus actual">
+                            <button class="micro-summary-toggle" id="micro-summary-toggle" type="button" aria-expanded="false" aria-controls="micro-summary-content">
+                                <span class="micro-summary-toggle-copy">
+                                    <span class="micro-summary-toggle-label">Micronutrients</span>
+                                    <span class="micro-summary-toggle-meta">Minimum vs Actual</span>
+                                </span>
+                                <span class="micro-summary-toggle-arrow-wrap">
+                                    <span class="micro-summary-toggle-arrow" aria-hidden="true">&#9662;</span>
+                                </span>
+                            </button>
+                            <div class="micro-summary-content hidden" id="micro-summary-content">
+                                <div class="micro-summary-head">
+                                    <span class="micro-summary-head-name">Micronutrient</span>
+                                    <span class="micro-summary-head-value">Estimated Minimums</span>
+                                    <span class="micro-summary-head-value">Actual</span>
+                                </div>
+                                <div class="micro-summary-list">
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Fiber</span>
+                                    <span class="micro-summary-projected" id="target-micro-fiber">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-fiber">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Potassium</span>
+                                    <span class="micro-summary-projected" id="target-micro-potassium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-potassium">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Sodium</span>
+                                    <span class="micro-summary-projected" id="target-micro-sodium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-sodium">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Magnesium</span>
+                                    <span class="micro-summary-projected" id="target-micro-magnesium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-magnesium">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Calcium</span>
+                                    <span class="micro-summary-projected" id="target-micro-calcium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-calcium">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Iron</span>
+                                    <span class="micro-summary-projected" id="target-micro-iron">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-iron">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Zinc</span>
+                                    <span class="micro-summary-projected" id="target-micro-zinc">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-zinc">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Vitamin D</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-d">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-d">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Vitamin C</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-c">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-c">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Vitamin A</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-a">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-a">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Folate</span>
+                                    <span class="micro-summary-projected" id="target-micro-folate">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-folate">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">B12</span>
+                                    <span class="micro-summary-projected" id="target-micro-b12">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-b12">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Omega-3 (EPA+DHA)</span>
+                                    <span class="micro-summary-projected" id="target-micro-omega-3">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-omega-3">—</span>
+                                </div>
+                                <div class="micro-summary-item">
+                                    <span class="micro-summary-name">Choline</span>
+                                    <span class="micro-summary-projected" id="target-micro-choline">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-choline">—</span>
+                                </div>
+                            </div>
                             </div>
                         </div>
                         <div class="macro-note">
@@ -404,9 +553,13 @@
         </div>
     </div>
 
-    <script src="js/main.js?v=2026-02-16-3"></script>
+    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
 </body>
 </html>
+
+
+
+
 
 
 

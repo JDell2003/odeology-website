@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -160,7 +160,7 @@
                     <!-- Loader -->
                     <div class="ns-loader hidden" id="ns-loader">
                         <div class="ns-loader-dot"></div>
-                        <p id="ns-loader-text">Calculating caloriesâ€¦</p>
+                        <p id="ns-loader-text">Calculating calories…</p>
                     </div>
 
                     <!-- Steps -->
@@ -199,7 +199,37 @@
                             <p class="eyebrow">Sex</p>
                             <div class="ns-button-grid" data-group="sex">
                                 <button type="button" data-value="MALE" class="ns-pill">Male</button>
-                                <button type="button" data-value="FEMALE" class="ns-pill">Female</button>
+                                <button type="button" data-value="FEMALE" class="ns-pill ns-pill-female" id="ns-sex-female">
+                                    <span>Female</span>
+                                    <span class="ns-pregnant-toggle" id="ns-pregnant-toggle-wrap" aria-label="Pregnancy status">
+                                        <span class="ns-pregnant-label">Pregnant?</span>
+                                        <span class="ns-pregnant-options" role="radiogroup" aria-label="Pregnant">
+                                            <span class="ns-pregnant-option" data-pregnant-value="YES" role="radio" aria-checked="false" tabindex="0">Yes</span>
+                                            <span class="ns-pregnant-option" data-pregnant-value="NO" role="radio" aria-checked="false" tabindex="0">No</span>
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ns-duo">
+                            <label class="ns-field">
+                                <span>Age (years)</span>
+                                <input type="number" id="ns-age" min="14" max="80" placeholder="30" required>
+                            </label>
+                            <label class="ns-field hidden" id="ns-lactating-wrap">
+                                <span>Lactating?</span>
+                                <select id="ns-lactating">
+                                    <option value="NO" selected>No</option>
+                                    <option value="YES">Yes</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="ns-group hidden" id="ns-trimester-wrap">
+                            <p class="eyebrow">Pregnancy trimester</p>
+                            <div class="ns-button-grid tight" data-group="trimester">
+                                <button type="button" data-value="1" class="ns-pill">Trimester 1</button>
+                                <button type="button" data-value="2" class="ns-pill">Trimester 2</button>
+                                <button type="button" data-value="3" class="ns-pill">Trimester 3</button>
                             </div>
                         </div>
                         <div class="ns-group">
@@ -257,19 +287,19 @@
                                 <div class="ns-results">
                                     <div class="ns-result-card primary">
                                         <p class="eyebrow">Daily calories</p>
-                                        <h3 id="ns-calories">â€”</h3>
+                                        <h3 id="ns-calories">—</h3>
                                         <p class="ns-muted">Aligned to your goal and training style.</p>
                                     </div>
                                     <div class="ns-result-card" id="ns-target-card">
                                         <p class="eyebrow">Your Target</p>
-                                        <p class="ns-info strong">Good starting point. Run it for 7 days.</p>
+                                        <p class="ns-info strong" id="ns-target-intro">Good starting point. Run it for 7 days.</p>
                                         <ul class="ns-list" style="margin: 8px 0; font-size: 0.9em;">
-                                            <li>Current: <strong><span id="ns-current-weight">â€”</span> lb</strong></li>
-                                            <li>Goal: <strong><span id="ns-goal-weight-display">â€”</span> lb</strong></li>
-                                            <li>Gap: <strong><span id="ns-weight-gap">â€”</span> lb</strong></li>
-                                            <li id="ns-time-to-goal-row"><span id="ns-time-to-goal-prefix">If you lose</span> <strong><span id="ns-target-rate">2</span> lb/week</strong>: ~<strong><span id="ns-weeks-to-goal">â€”</span> weeks</strong> to goal</li>
+                                            <li>Current: <strong><span id="ns-current-weight">—</span> lb</strong></li>
+                                            <li>Goal: <strong><span id="ns-goal-weight-display">—</span> lb</strong></li>
+                                            <li>Gap: <strong><span id="ns-weight-gap">—</span> lb</strong></li>
+                                            <li id="ns-time-to-goal-row"><span id="ns-time-to-goal-prefix">If you lose</span> <strong><span id="ns-target-rate">1.5</span> lb/week</strong>: ~<strong><span id="ns-weeks-to-goal">—</span> weeks</strong> to goal</li>
                                         </ul>
-                                        <p class="ns-info small" style="margin-top: 8px;">Make an account to track your weight. If the scale doesn't move after 7 days, macros auto-adjust to better match your goal.</p>
+                                        <p class="ns-info small" id="ns-target-outro" style="margin-top: 8px;">Make an account to track your weight. If the scale doesn't move after 7 days, macros auto-adjust to better match your goal.</p>
                                     </div>
                                 </div>
 
@@ -277,18 +307,18 @@
                                 <div class="ns-macros locked" id="ns-macros">
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Protein</p>
-                                        <h4 id="ns-protein">â€”</h4>
-                                        <p class="ns-muted" id="ns-protein-pct">â€”</p>
+                                        <h4 id="ns-protein">—</h4>
+                                        <p class="ns-muted" id="ns-protein-pct">—</p>
                                     </div>
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Carbs</p>
-                                        <h4 id="ns-carbs">â€”</h4>
-                                        <p class="ns-muted" id="ns-carbs-pct">â€”</p>
+                                        <h4 id="ns-carbs">—</h4>
+                                        <p class="ns-muted" id="ns-carbs-pct">—</p>
                                     </div>
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Fats</p>
-                                        <h4 id="ns-fats">â€”</h4>
-                                        <p class="ns-muted" id="ns-fats-pct">â€”</p>
+                                        <h4 id="ns-fats">—</h4>
+                                        <p class="ns-muted" id="ns-fats-pct">—</p>
                                     </div>
                                     <div class="ns-lock-overlay">
                                         <p>Macros locked</p>
@@ -331,7 +361,7 @@
                             <aside class="ns-side-col">
                                 <div class="ns-video-card ns-next-box">
                                     <div class="ns-next-top">
-                                        <p class="ns-next-kicker">What happens next Â· ~60 seconds</p>
+                                        <p class="ns-next-kicker">What happens next · ~60 seconds</p>
                                     </div>
 
                                     <div class="ns-next-mid">
@@ -400,19 +430,19 @@
                 <div class="grocery-req" id="grocery-req">
                     <div class="req-line">
                         <span class="label">Select at least</span>
-                        <span class="value">3 proteins â€¢ 2 carbs â€¢ 1 fat</span>
+                        <span class="value">3 proteins • 2 carbs • 1 fat</span>
                     </div>
                     <div class="req-line">
                         <span class="label">Remaining</span>
-                        <span class="value" id="g-req-remaining">3 proteins â€¢ 2 carbs â€¢ 1 fat</span>
+                        <span class="value" id="g-req-remaining">3 proteins • 2 carbs • 1 fat</span>
                     </div>
                 </div>
 
                 <div class="grocery-macros" id="grocery-macros">
-                    <div><span class="label">Calories</span><span id="g-mac-cal">â€”</span></div>
-                    <div><span class="label">Protein</span><span id="g-mac-pro">â€”</span></div>
-                    <div><span class="label">Carbs</span><span id="g-mac-car">â€”</span></div>
-                    <div><span class="label">Fats</span><span id="g-mac-fat">â€”</span></div>
+                    <div><span class="label">Calories</span><span id="g-mac-cal">—</span></div>
+                    <div><span class="label">Protein</span><span id="g-mac-pro">—</span></div>
+                    <div><span class="label">Carbs</span><span id="g-mac-car">—</span></div>
+                    <div><span class="label">Fats</span><span id="g-mac-fat">—</span></div>
                 </div>
             </div>
 
@@ -562,13 +592,18 @@
             </div>
             <p class="ns-modal-info">We need your macros to calculate exact portions, costs, and build your personalized grocery list.</p>
             <button class="btn btn-primary" id="ns-grocery-start-unlock">Got it, let's unlock ?</button>
-            <p class="ns-modal-free">100% free â€¢ No credit card</p>
+            <p class="ns-modal-free">100% free • No credit card</p>
         </div>
     </div>
 
     <script type="module" src="js/usda.js"></script>
-    <script src="js/main.js?v=2026-02-16-3"></script>
+    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
 </body>
 </html>
+
+
+
+
+
 
 

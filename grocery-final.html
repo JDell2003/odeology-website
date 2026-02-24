@@ -30,13 +30,23 @@
                 <form class="final-form" id="g-final-form">
                     <!-- SECTION A: REQUIRED INPUTS -->
                     <div class="final-section-a">
-                        <label class="ns-field">
+                        <label class="ns-field budget-field">
                             <span>Monthly grocery budget</span>
+                            <div class="budget-forecast">
+                                <p class="budget-forecast-main" id="budget-forecast-main">Estimated monthly grocery cost at full target: —</p>
+                                <p class="budget-forecast-sub" id="budget-forecast-sub">Make the cost cheaper:</p>
+                                <div class="budget-forecast-actions" id="budget-forecast-actions"></div>
+                                <p class="budget-forecast-save" id="budget-forecast-save"></p>
+                            </div>
                             <div class="budget-options">
                                 <button type="button" class="budget-btn" data-budget="200">Under $200</button>
                                 <button type="button" class="budget-btn active" data-budget="300">$200 – $400</button>
                                 <button type="button" class="budget-btn" data-budget="400">$400+</button>
                             </div>
+                            <button type="button" class="budget-forecast-toggle" id="budget-forecast-toggle" aria-expanded="false">
+                                <span class="toggle-label">Make your options cheaper?</span>
+                                <span class="toggle-arrow" aria-hidden="true">▾</span>
+                            </button>
                             <input type="hidden" id="g-budget-total" value="300" required>
                         </label>
 
@@ -79,26 +89,6 @@
                         </label>
 
                         <input type="hidden" id="g-prep" value="daily" required>
-
-                        <label class="ns-field">
-                            <span>⚠️ Allergies & Intolerances</span>
-                            <p class="ns-muted small" style="margin-bottom: 0.5rem; font-size: 0.9rem;">Select all that apply.</p>
-                            <div class="allergies-options">
-                                <div class="allergy-item coming-soon-item">Eggs (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Dairy (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Shellfish (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Fish (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Peanuts (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Tree nuts (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Soy (coming soon)</div>
-                                <div class="allergy-item coming-soon-item">Gluten (coming soon)</div>
-                                <label class="allergy-checkbox">
-                                    <input type="checkbox" value="none" class="allergy-input" checked>
-                                    <span>None</span>
-                                </label>
-                            </div>
-                            <input type="hidden" id="g-allergies" value="" required>
-                        </label>
 
                         <label class="ns-field">
                             <span>💰 Taste vs Cost Preference</span>
@@ -162,6 +152,8 @@
         </div>
     </section>
 
-    <script src="js/main.js?v=2026-02-16-3"></script>
+    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
 </body>
 </html>
+
+
