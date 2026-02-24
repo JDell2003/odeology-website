@@ -156,6 +156,15 @@
                             <button type="button" class="meal-budget-option" data-budget-tier="200-400" disabled>$200 - $400</button>
                             <button type="button" class="meal-budget-option" data-budget-tier="400-plus" disabled>$400+</button>
                         </div>
+                        <button type="button" class="budget-forecast-toggle" id="plan-budget-forecast-toggle" aria-expanded="false">
+                            <span class="toggle-label">Make your options cheaper?</span>
+                            <span class="toggle-arrow" aria-hidden="true">&#9662;</span>
+                        </button>
+                        <div class="budget-forecast" id="plan-budget-forecast">
+                            <p class="budget-forecast-main" id="plan-budget-forecast-main">Current post-tax price: —/month.</p>
+                            <p class="budget-forecast-sub">Make the cost cheaper:</p>
+                            <div class="budget-forecast-actions" id="plan-budget-forecast-actions"></div>
+                        </div>
                     </section>
                     <section class="plan-card meal-split" id="meal-plan">
                         <div class="card-head">
@@ -306,7 +315,6 @@
                                 <div class="budget-button-group">
                                     <button class="btn btn-ghost" id="custom-macro-btn" type="button" title="Manually revise your macro targets and re-generate the plan">Make custom macro plan</button>
                                     <button class="btn btn-ghost" id="undo-btn" type="button" title="Undo changes and restore original plan">Undo</button>
-                                    <button class="btn btn-ghost" id="reconfigure-btn" type="button" title="Recalculate macro targets from your inputs and rebuild the plan">Reconfigure plan</button>
                                 </div>
                             </div>
                         </div>

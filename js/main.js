@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    CONFIG
    ============================================ */
 
@@ -446,7 +446,10 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
         carbs_g: Math.max(0, Number(macroTargets?.carbs_g) || 0),
         fat_g: Math.max(0, Number(macroTargets?.fat_g) || 0)
     };
+    const activeBudgetMode = String((typeof getActiveBudgetModeFromSession === 'function' ? getActiveBudgetModeFromSession() : 'best') || 'best').toLowerCase();
+    const isBestMode = activeBudgetMode === 'best';
     const proteinCeiling = targets.protein_g + 5;
+    const proteinCarbHeadroomCeiling = Math.min(proteinCeiling, targets.protein_g + 1);
     const meals = srcMeals.map((meal) => ({
         ...meal,
         foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
@@ -558,12 +561,31 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             return classifyType(food) === 'protein';
         });
     };
+    const mealHasCarb = (meal) => {
+        return (meal?.foods || []).some((item) => {
+            const food = byId.get(String(item?.foodId || ''));
+            return classifyType(food) === 'carb';
+        });
+    };
+    const snapshotMeals = () => meals.map((meal) => ({
+        ...meal,
+        totals: { ...(meal?.totals || {}) },
+        foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
+    }));
+    const restoreMeals = (snapshot) => {
+        if (!Array.isArray(snapshot)) return;
+        meals.splice(0, meals.length, ...snapshot.map((meal) => ({
+            ...meal,
+            totals: { ...(meal?.totals || {}) },
+            foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
+        })));
+    };
 
     let totals = recomputeAll();
     const oilMaxServings = 2.0;
 
-    const tryTrimProtein = () => {
-        if ((Number(totals?.protein_g) || 0) <= proteinCeiling) return false;
+    const tryTrimProtein = (targetCeiling = proteinCeiling) => {
+        if ((Number(totals?.protein_g) || 0) <= targetCeiling) return false;
         const candidates = [];
         meals.forEach((meal, mealIdx) => {
             (meal?.foods || []).forEach((item) => {
@@ -602,6 +624,18 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
         return false;
     };
 
+    const ensureProteinHeadroomForCarbFill = () => {
+        let changed = false;
+        let guard = 0;
+        while ((Number(totals?.protein_g) || 0) > proteinCarbHeadroomCeiling && guard < 40) {
+            const didTrim = tryTrimProtein(proteinCarbHeadroomCeiling);
+            if (!didTrim) break;
+            changed = true;
+            guard += 1;
+        }
+        return changed;
+    };
+
     const tryAddOil = () => {
         if (!oilFood) return false;
         const fatDef = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
@@ -622,7 +656,9 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             const beforeTotals = { ...totals };
             if (!setServingDelta(mealIdx, oilFood, +0.5, 0.5)) continue;
             totals = recomputeAll();
-            const proteinOk = (Number(totals?.protein_g) || 0) <= proteinCeiling;
+            const proteinBefore = Number(beforeTotals?.protein_g) || 0;
+            const proteinAfter = Number(totals?.protein_g) || 0;
+            const proteinOk = proteinAfter <= Math.max(proteinCeiling, proteinBefore);
             const noMacroOvershoot = (
                 (Number(totals?.fat_g) || 0) <= ((Number(targets?.fat_g) || 0) + 10) &&
                 (Number(totals?.calories) || 0) <= ((Number(targets?.calories) || 0) + 180)
@@ -648,7 +684,7 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             const meal = meals[mealIdx];
             const beforeFoods = meal.foods.map((i) => ({ ...i }));
             const beforeTotals = { ...totals };
-            if (!setServingDelta(mealIdx, riceFood, +0.5, 0.25)) continue;
+            if (!setServingDelta(mealIdx, riceFood, +0.25, 0.25)) continue;
             totals = recomputeAll();
             const proteinOk = (Number(totals?.protein_g) || 0) <= proteinCeiling;
             const carbsOk = (Number(totals?.carbs_g) || 0) <= ((Number(targets?.carbs_g) || 0) + 20);
@@ -656,6 +692,82 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             if (proteinOk && carbsOk && caloriesOk) return true;
             meal.foods = beforeFoods;
             recomputeMealTotals(meal);
+            totals = beforeTotals;
+        }
+        return false;
+    };
+
+    const trySwapCarbToFat = () => {
+        if (!oilFood) return false;
+        const carbOverNow = (Number(totals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0);
+        const fatUnderNow = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
+        if (carbOverNow < 6 || fatUnderNow < 4) return false;
+
+        const preferredCarbIds = ['white_rice_dry', 'russet_potatoes', 'banana_fresh_each', 'instant_oats'];
+        const carbCandidates = [];
+        meals.forEach((meal, mealIdx) => {
+            (meal?.foods || []).forEach((item) => {
+                const id = String(item?.foodId || '');
+                const food = byId.get(id);
+                if (!food || classifyType(food) !== 'carb') return;
+                const servings = Number(item?.servings) || 0;
+                if (servings <= 0.25) return;
+                const idx = preferredCarbIds.indexOf(id);
+                const priority = idx >= 0 ? (100 - idx) : 0;
+                carbCandidates.push({
+                    mealIdx,
+                    food,
+                    priority,
+                    carbs: Number(item?.carbs_g) || 0
+                });
+            });
+        });
+        carbCandidates.sort((a, b) => {
+            if (a.priority !== b.priority) return b.priority - a.priority;
+            return b.carbs - a.carbs;
+        });
+
+        for (const candidate of carbCandidates) {
+            const beforeTotals = { ...totals };
+            const beforeMeals = snapshotMeals();
+            const meal = meals[candidate.mealIdx];
+            if (!setServingDelta(candidate.mealIdx, candidate.food, -0.25, 0.25)) continue;
+            if (!mealHasCarb(meal)) {
+                restoreMeals(beforeMeals);
+                totals = beforeTotals;
+                continue;
+            }
+            totals = recomputeAll();
+
+            const didAddOil = tryAddOil();
+            if (didAddOil) totals = recomputeAll();
+
+            const carbOverAfter = (Number(totals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0);
+            const fatUnderAfter = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
+            const calAbsBefore = Math.abs((Number(beforeTotals?.calories) || 0) - (Number(targets?.calories) || 0));
+            const calAbsAfter = Math.abs((Number(totals?.calories) || 0) - (Number(targets?.calories) || 0));
+
+            const progress = (
+                carbOverAfter < carbOverNow &&
+                fatUnderAfter <= fatUnderNow &&
+                calAbsAfter <= (calAbsBefore + 40) &&
+                (Number(totals?.protein_g) || 0) <= proteinCeiling
+            );
+            if (progress) {
+                try {
+                    console.info('[PLAN_GENERATION][CARB_TO_FAT_SWAP]', {
+                        trimmedCarbFood: candidate?.food?.id || null,
+                        addedOil: Boolean(didAddOil),
+                        before: beforeTotals,
+                        after: totals
+                    });
+                } catch {
+                    // ignore
+                }
+                return true;
+            }
+
+            restoreMeals(beforeMeals);
             totals = beforeTotals;
         }
         return false;
@@ -669,20 +781,36 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
         const dF = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
         const done = (
             dP >= -5 &&
-            Math.abs(dC) <= 15 &&
-            Math.abs(dF) <= 8 &&
-            Math.abs(dCal) <= 120
+            Math.abs(dC) <= (isBestMode ? 8 : 15) &&
+            Math.abs(dF) <= (isBestMode ? 5 : 8) &&
+            Math.abs(dCal) <= (isBestMode ? 70 : 120)
         );
         if (done) break;
         let changed = false;
-        if (!changed && (Number(totals?.protein_g) || 0) > proteinCeiling) changed = tryTrimProtein();
-        if (!changed && dF > 2) changed = tryAddOil();
+        if (!changed && (dC > 12 || dCal > 100) && (Number(totals?.protein_g) || 0) > proteinCarbHeadroomCeiling) changed = ensureProteinHeadroomForCarbFill();
+        if (!changed && (Number(totals?.protein_g) || 0) > proteinCeiling) changed = tryTrimProtein(proteinCeiling);
+        if (!changed && dC < -6 && dF > 3) changed = trySwapCarbToFat();
         if (!changed && (dC > 8 || dCal > 80)) changed = tryAddRice();
+        if (!changed && dF > 2) changed = tryAddOil();
+        if (!changed && dCal > 80) changed = tryAddRice();
         if (!changed && dCal > 80) changed = tryAddOil();
         if (!changed) break;
     }
 
     totals = recomputeAll();
+    try {
+        console.info('[PLAN_GENERATION][MACRO_CLOSURE_RULES]', {
+            mode: activeBudgetMode,
+            isBestMode,
+            proteinCeiling,
+            proteinCarbHeadroomCeiling,
+            riceFood: riceFood?.id || null,
+            oilFood: oilFood?.id || null,
+            final: totals
+        });
+    } catch {
+        // ignore
+    }
     return {
         ...plan,
         meals,
@@ -1013,7 +1141,7 @@ const controlCloseBtn = document.getElementById('control-close');
    NAVIGATION
    ============================================ */
 
-// ÃƒÂ¢Ã¢â‚¬ÂºÃ¢â‚¬Â FOOD WIZARD KILL SWITCH - PERMANENTLY DISABLED
+// ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂºÃƒÂ¢Ã¢â€šÂ¬Ã‚Â FOOD WIZARD KILL SWITCH - PERMANENTLY DISABLED
 // These functions exist in legacy code but are permanently disabled
 const FOOD_WIZARD_ENABLED = false;
 
@@ -1263,9 +1391,9 @@ function initTrainingHandoffOneOnOne() {
     const render = (user) => {
         const signedIn = Boolean(user);
         if (signedIn) {
-            if (copyEl) copyEl.textContent = 'Thanks — youâ€™re all set. Stand by for a call within 24 hours.';
+            if (copyEl) copyEl.textContent = 'Thanks â€” youÃ¢â‚¬â„¢re all set. Stand by for a call within 24 hours.';
             if (cta) {
-                cta.textContent = 'Youâ€™re signed in';
+                cta.textContent = 'YouÃ¢â‚¬â„¢re signed in';
                 cta.setAttribute('disabled', 'true');
                 cta.setAttribute('aria-disabled', 'true');
             }
@@ -1483,7 +1611,7 @@ function showBudgetWarningModal(userProtein, maxProtein, weeklyBudget, tier) {
         const modalHtml = `
             <div class="budget-warning-modal" id="budget-warning-modal">
                 <div class="budget-warning-content">
-                    <h3>ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Budget vs Protein Mismatch</h3>
+                    <h3>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Budget vs Protein Mismatch</h3>
                     <p class="warning-text">
                         Your protein target of <strong>${userProtein}g/day</strong> exceeds what's achievable 
                         with your <strong>$${weeklyBudget}/week</strong> budget.
@@ -1494,13 +1622,13 @@ function showBudgetWarningModal(userProtein, maxProtein, weeklyBudget, tier) {
                     </p>
                     <div class="warning-options">
                         <button class="btn btn-primary" id="budget-lower-protein">
-                            ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Lower protein to ${maxProtein}g
+                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Lower protein to ${maxProtein}g
                         </button>
                         <button class="btn btn-secondary" id="budget-increase">
-                            ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â° I'll increase my budget
+                            ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° I'll increase my budget
                         </button>
                         <button class="btn btn-warning" id="budget-continue-anyway">
-                            ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Continue anyway (survival mode)
+                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continue anyway (survival mode)
                         </button>
                     </div>
                 </div>
@@ -2015,7 +2143,7 @@ const WALMART_BASELINE_FOODS = [
     serving: { amount: 1, unit: "each" },
     servingLabel: "1 medium (118g)",
     servingGrams: 118,
-    // assumed 1 medium banana â‰ˆ 118g (4.16 oz) for conversions
+    // assumed 1 medium banana Ã¢â€°Ë† 118g (4.16 oz) for conversions
     macros: { calories: 105, protein: 1.3, carbs: 27, fat: 0.4 },
     micros: {
       fiber_g: 3.1,
@@ -2420,7 +2548,7 @@ function buildSaltWaterHydrationNote({ goal, targets, profile, selections }) {
         type: 'hydration',
         title: 'Salt Water',
         recipe,
-        timing: '30â€“60 minutes pre-workout OR with first meal',
+        timing: '30Ã¢â‚¬â€œ60 minutes pre-workout OR with first meal',
         why: 'Cutting + sweating lowers sodium. Low sodium can make workouts feel weak, cause headaches, and increase cravings. This helps training performance and keeps pumps/energy more stable.',
         warning: 'If you have high blood pressure, kidney disease, or are on sodium-restricting meds, skip this unless your doctor says ok. This is for hydration/performance on a cut, not for fat loss.'
     };
@@ -2717,9 +2845,9 @@ const groceryFoods = {
 };
 
 const NS_LOADER_LINES = [
-    'Calculating caloriesÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦',
-    'Adjusting for your training styleÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦',
-    'Finalizing baseline protocolÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦'
+    'Calculating caloriesÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦',
+    'Adjusting for your training styleÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦',
+    'Finalizing baseline protocolÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦'
 ];
 
 let nsLoaderInterval = null;
@@ -4271,7 +4399,7 @@ function paintResults(res) {
             wrap.innerHTML = `
                 <button id="ns-why-calories-toggle" type="button" aria-expanded="false" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid rgba(0,0,0,0.12);background:rgba(255,255,255,0.55);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:700;font-size:0.9rem;">
                     <span>Why these calories?</span>
-                    <span id="ns-why-calories-chevron" aria-hidden="true" style="transition:transform 280ms ease;display:inline-block;">▾</span>
+                    <span id="ns-why-calories-chevron" aria-hidden="true" style="transition:transform 280ms ease;display:inline-block;">â–¾</span>
                 </button>
                 <div id="ns-why-calories-panel" style="max-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:max-height 360ms cubic-bezier(0.22,1,0.36,1), opacity 260ms ease, transform 280ms ease;">
                     <div id="ns-why-calories-body" style="margin-top:8px;padding:10px 12px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;background:rgba(255,255,255,0.4);font-size:0.86rem;line-height:1.48;"></div>
@@ -4605,7 +4733,7 @@ function buildPlanHtml(res, selections) {
             MIXED: 'Mixed Training',
             CALISTHENICS: 'Bodyweight / Calisthenics'
         },
-        frequency: { '1-2': '1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“2 days/week', '3-4': '3ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“4 days/week', '5-6': '5ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“6 days/week' },
+        frequency: { '1-2': '1ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ2 days/week', '3-4': '3ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4 days/week', '5-6': '5ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ6 days/week' },
         sex: { MALE: 'Male', FEMALE: 'Female' },
         intensity: { AVERAGE: 'Average', INTENSE: 'Intense', VERY_INTENSE: 'Very intense' }
     };
@@ -4697,8 +4825,8 @@ function buildPlanHtml(res, selections) {
         <div class="badge">Coach notes</div>
         <div class="macro-note">
           <p>${res.note || 'This is a starting estimate; track the scale for confirmation.'}</p>
-          <p>Maintenance estimate: ${res.maintenanceCalories?.toLocaleString() || '—'} kcal (factor ${res.maintenanceFactor?.toFixed(2) || '—'})</p>
-          <p>Adjustment reasoning: ${res.goalReasoning || '—'}</p>
+          <p>Maintenance estimate: ${res.maintenanceCalories?.toLocaleString() || 'â€”'} kcal (factor ${res.maintenanceFactor?.toFixed(2) || 'â€”'})</p>
+          <p>Adjustment reasoning: ${res.goalReasoning || 'â€”'}</p>
           ${(res.warnings || []).map(w => `<p class="macro-warning warning">${w}</p>`).join('') || ''}
           ${(res.supplements || []).length ? `<p class="macro-warning supplement">Supplements flagged: ${res.supplements.join(', ')}</p>` : ''}
         </div>
@@ -4719,7 +4847,7 @@ async function planGroceryList(state, nutritionResults) {
     // Placeholder: fetch macro data from USDA when wired
     const enriched = await annotateWithUSDA(foods);
 
-    // Placeholder: calculate quantities (keep within Ãƒâ€šÃ‚Â±10% of targets)
+    // Placeholder: calculate quantities (keep within ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±10% of targets)
     const quantities = allocateQuantities(enriched, macroTargets, prefs);
 
     // Placeholder: pricing lookups / scraping
@@ -4732,7 +4860,7 @@ async function planGroceryList(state, nutritionResults) {
         timing: prefs.timing,
         prep: prefs.prep,
         items: priced,
-        meta: { macroTargets, tolerance: 'Ãƒâ€šÃ‚Â±10%' }
+        meta: { macroTargets, tolerance: 'ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±10%' }
     };
 }
 
@@ -4754,7 +4882,7 @@ async function annotateWithUSDA(foods) {
 }
 
 function allocateQuantities(foods, targets, prefs) {
-    // Minimal stub: return foods with a default quantity; real math will balance to macros Ãƒâ€šÃ‚Â±10%
+    // Minimal stub: return foods with a default quantity; real math will balance to macros ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±10%
     return foods.map(f => ({
         ...f,
         quantity: prefs.days ? `${prefs.days} day supply` : '1 unit',
@@ -4890,7 +5018,7 @@ const getContainerInfo = (item) => {
     // Extract size from product name if available
     let displaySize = null;
     const name = String(item.name || '');
-    const sizeMatch = name.match(/(\d+[\.\d]*)\s*[-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“]\s*(\d+[\.\d]*)\s*(lbs?|oz|g|kg)/i);
+    const sizeMatch = name.match(/(\d+[\.\d]*)\s*[-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ]\s*(\d+[\.\d]*)\s*(lbs?|oz|g|kg)/i);
     if (sizeMatch) {
         displaySize = `${sizeMatch[1]}-${sizeMatch[2]} ${sizeMatch[3]}`;
     } else {
@@ -4969,13 +5097,13 @@ const buildWorkoutPlan = (selection, prefs) => {
     const goalNote = goal === 'CUT'
         ? 'Keep rest tight, finish with light conditioning.'
         : goal === 'BULK'
-            ? 'Push volume and keep rest 90ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“150s on compounds.'
+            ? 'Push volume and keep rest 90ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ150s on compounds.'
             : goal === 'STRENGTH'
                 ? 'Prioritize heavy sets and long rest.'
                 : 'Balance load and density.';
 
     return {
-        summary: `${days} days/week Ãƒâ€šÃ‚Â· ${style.replace('_', ' ').toLowerCase()} Ãƒâ€šÃ‚Â· ${goal.toLowerCase()}`,
+        summary: `${days} days/week ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${style.replace('_', ' ').toLowerCase()} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${goal.toLowerCase()}`,
         notes: [timingNote, goalNote],
         days: planDays
     };
@@ -5338,7 +5466,7 @@ function setupBuilderModal() {
     const readText = (id) => {
         const el = document.getElementById(id);
         const t = (el?.textContent || '').trim();
-        return t && t !== '—' ? t : null;
+        return t && t !== 'â€”' ? t : null;
     };
 
     const scrollToResourcesAndGlow = () => {
@@ -5616,7 +5744,7 @@ function setupGetStartedIntake() {
 	        if (step2Next) step2Next.disabled = needsExecutionStyle ? !hasStyle : true;
 	        if (submitBtn) submitBtn.disabled = false;
 
-	        if (trust) trust.textContent = 'This just controls what we show you — nothing is locked.';
+	        if (trust) trust.textContent = 'This just controls what we show you â€” nothing is locked.';
 
 	        const subhead = form.closest('.offer-save-card')?.querySelector('.intake-subhead');
 	        if (subhead) subhead.textContent = `${needsExecutionStyle ? '3' : '2'} questions. Takes about 30 seconds.`;
@@ -6051,7 +6179,7 @@ function ensureBasicCheckinModal() {
 
                 <section class="checkin-step checkin-step-hidden" data-checkin-step data-step-title="Measurements">
                     <h4 class="checkin-step-title">Measurements (optional)</h4>
-                    <p class="checkin-step-sub">If you donÃ¢â‚¬â„¢t measure today, leave these blank.</p>
+                    <p class="checkin-step-sub">If you donÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t measure today, leave these blank.</p>
                     <div class="checkin-grid">
                         <label class="ns-field">
                             <span>Waist (in)</span>
@@ -6077,7 +6205,7 @@ function ensureBasicCheckinModal() {
                     <p class="checkin-step-sub">Same lighting, same pose. 30 seconds now saves weeks of second-guessing later.</p>
                     <div class="checkin-grid">
                         <div class="ns-field checkin-pp-field">
-                            <span>Todayâ€™s photos (recommended)</span>
+                            <span>TodayÃ¢â‚¬â„¢s photos (recommended)</span>
                             <div class="ns-muted tiny">Front + side + back. Relaxed posture. Camera at chest height.</div>
                             <button class="btn btn-primary" type="button" id="checkin-progress-photos">Add / compare photos</button>
                             <div class="ns-muted tiny">You can compare past dates inside the photo screen.</div>
@@ -6091,9 +6219,9 @@ function ensureBasicCheckinModal() {
                     <div class="checkin-grid">
                         <div class="ns-field checkin-meals-field">
                             <span>Log meals</span>
-                            <div class="ns-muted tiny">If you didnâ€™t eat the planned meal, use â€œDidnâ€™t eatâ€ / â€œClear allâ€ inside the popup.</div>
+                            <div class="ns-muted tiny">If you didnÃ¢â‚¬â„¢t eat the planned meal, use Ã¢â‚¬Å“DidnÃ¢â‚¬â„¢t eatÃ¢â‚¬Â / Ã¢â‚¬Å“Clear allÃ¢â‚¬Â inside the popup.</div>
                             <div class="checkin-meals-head">
-                                <div class="ns-muted tiny" id="checkin-meals-summary">—</div>
+                                <div class="ns-muted tiny" id="checkin-meals-summary">â€”</div>
                             </div>
                             <div class="checkin-meal-buttons" id="checkin-meal-buttons" aria-label="Meal buttons"></div>
 
@@ -6109,20 +6237,20 @@ function ensureBasicCheckinModal() {
                         <label class="ns-field">
                             <span>Did you meal prep?</span>
                             <select id="checkin-mealprep">
-                                <option value="">—</option>
+                                <option value="">â€”</option>
                                 <option value="yes">Yes</option>
                                 <option value="no">No</option>
                             </select>
-                            <div class="ns-muted tiny">If â€œNoâ€, add a quick note — it becomes your playbook.</div>
+                            <div class="ns-muted tiny">If Ã¢â‚¬Å“NoÃ¢â‚¬Â, add a quick note â€” it becomes your playbook.</div>
                         </label>
                         <div class="ns-field hidden" id="checkin-mealprep-note-wrap">
                             <span>What got in the way?</span>
                             <textarea id="checkin-mealprep-note" rows="3" placeholder="e.g. ran out of groceries, travel, time, stress..."></textarea>
                         </div>
                         <label class="ns-field">
-                            <span>Mood (1â€“5)</span>
+                            <span>Mood (1Ã¢â‚¬â€œ5)</span>
                             <select id="checkin-mood">
-                                <option value="">—</option>
+                                <option value="">â€”</option>
                                 <option value="1">1 (low)</option>
                                 <option value="2">2</option>
                                 <option value="3">3</option>
@@ -6133,7 +6261,7 @@ function ensureBasicCheckinModal() {
                         <div class="ns-field" id="checkin-mood-note-wrap">
                             <span>Why that mood?</span>
                             <textarea id="checkin-mood-note" rows="3" placeholder="Quick note (sleep, work, stress, wins, etc.)"></textarea>
-                            <div class="ns-muted tiny">This is private — itâ€™s just for your trend awareness.</div>
+                            <div class="ns-muted tiny">This is private â€” itÃ¢â‚¬â„¢s just for your trend awareness.</div>
                         </div>
                     </div>
                 </section>
@@ -6170,10 +6298,10 @@ function ensureCheckinMealModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title" id="cmm-title">Meal</h3>
-                    <p class="checkin-sub" id="cmm-sub">Planned vs. actual. Clear it if you didnâ€™t eat it.</p>
+                    <p class="checkin-sub" id="cmm-sub">Planned vs. actual. Clear it if you didnÃ¢â‚¬â„¢t eat it.</p>
                 </div>
                 <div class="meal-log-head-actions">
-                    <button class="btn btn-ghost" type="button" id="cmm-skip">Didnâ€™t eat</button>
+                    <button class="btn btn-ghost" type="button" id="cmm-skip">DidnÃ¢â‚¬â„¢t eat</button>
                     <button class="btn btn-ghost" type="button" id="cmm-clear">Clear all</button>
                     <button type="button" class="checkin-close" data-cmm-close aria-label="Close">&times;</button>
                 </div>
@@ -6222,7 +6350,7 @@ function ensureProgressPhotosModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title">Progress photos</h3>
-                    <p class="checkin-sub">Front + side + back photos help you see changes that the scale canÃ¢â‚¬â„¢t.</p>
+                    <p class="checkin-sub">Front + side + back photos help you see changes that the scale canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t.</p>
                 </div>
                 <button type="button" class="checkin-close" data-pp-close aria-label="Close">&times;</button>
             </div>
@@ -6313,11 +6441,11 @@ function ensureProgressCompareModal() {
             </div>
             <div class="pc-grid" id="pc-grid">
                 <div class="pc-slot">
-                    <div class="pc-label" id="pc-a-label">—</div>
+                    <div class="pc-label" id="pc-a-label">â€”</div>
                     <img id="pc-a-img" alt="Photo A">
                 </div>
                 <div class="pc-slot">
-                    <div class="pc-label" id="pc-b-label">—</div>
+                    <div class="pc-label" id="pc-b-label">â€”</div>
                     <img id="pc-b-img" alt="Photo B">
                 </div>
             </div>
@@ -6501,10 +6629,10 @@ function setupBasicCheckin() {
             <div class="meal-log-row" data-cmm-row="${i}">
                 <input class="meal-log-input meal-log-name" data-cmm-field="name" data-cmm-i="${i}" placeholder="e.g. Chicken breast" value="${escapeHtml(r.name || '')}">
                 <input class="meal-log-input meal-log-qty" data-cmm-field="qty" data-cmm-i="${i}" placeholder="e.g. 6 oz" value="${escapeHtml(r.qty || '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="kcal" data-cmm-i="${i}" inputmode="numeric" placeholder="—" value="${escapeHtml(r.kcal ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="p" data-cmm-i="${i}" inputmode="numeric" placeholder="—" value="${escapeHtml(r.p ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="c" data-cmm-i="${i}" inputmode="numeric" placeholder="—" value="${escapeHtml(r.c ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="f" data-cmm-i="${i}" inputmode="numeric" placeholder="—" value="${escapeHtml(r.f ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="kcal" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.kcal ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="p" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.p ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="c" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.c ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="f" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.f ?? '')}">
                 <button class="meal-log-del" type="button" data-cmm-del="${i}" aria-label="Remove row">&times;</button>
             </div>
         `).join('');
@@ -6539,7 +6667,7 @@ function setupBasicCheckin() {
         const onPlan = keys.filter((k) => String(mealEntries[k]?.mode) === 'planned').length;
         const offPlan = keys.filter((k) => String(mealEntries[k]?.mode) === 'override').length;
         const summary = logged
-            ? `Logged: ${logged}/${mealsPerDay} Ã¢â‚¬Â¢ On plan: ${onPlan} Ã¢â‚¬Â¢ Off plan: ${offPlan}`
+            ? `Logged: ${logged}/${mealsPerDay} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ On plan: ${onPlan} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Off plan: ${offPlan}`
             : `Logged: 0/${mealsPerDay}`;
         if (mealsSummaryEl) mealsSummaryEl.textContent = summary;
 
@@ -6559,7 +6687,7 @@ function setupBasicCheckin() {
             const plannedPreview = plannedNames.join(', ');
             const plannedMore = planned.length > plannedNames.length;
             const sub = plannedPreview
-                ? `${escapeHtml(plannedPreview)}${plannedMore ? 'â€¦' : ''}`
+                ? `${escapeHtml(plannedPreview)}${plannedMore ? 'Ã¢â‚¬Â¦' : ''}`
                 : 'No premade meal';
             const cls = `btn btn-ghost checkin-meal-btn ${done ? 'done' : ''}`;
             return `
@@ -6605,8 +6733,8 @@ function setupBasicCheckin() {
         if (cmmTitleEl) cmmTitleEl.textContent = `Meal ${mealIndex}`;
         if (cmmSubEl) {
             cmmSubEl.textContent = cmmState.hasPlan
-                ? 'Premade plan loaded. Edit if needed, or tap â€œDidnâ€™t eatâ€.'
-                : 'No plan found yet — add what you ate.';
+                ? 'Premade plan loaded. Edit if needed, or tap Ã¢â‚¬Å“DidnÃ¢â‚¬â„¢t eatÃ¢â‚¬Â.'
+                : 'No plan found yet â€” add what you ate.';
         }
         if (cmmPlanEl) {
             if (!plannedRows.length) {
@@ -6690,7 +6818,7 @@ function setupBasicCheckin() {
         const planned = plannedMealText(idx);
         const hasPlan = plannedMealRows(idx).length > 0;
         const mode = !hasPlan || cmmState.dirty ? 'override' : 'planned';
-        const actualText = rows.map((r) => `Ã¢â‚¬Â¢ ${r.name}${r.qty ? ` — ${r.qty}` : ''}`).join('\n');
+        const actualText = rows.map((r) => `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${r.name}${r.qty ? ` â€” ${r.qty}` : ''}`).join('\n');
 
         mealEntries[String(idx)] = {
             index: idx,
@@ -6729,7 +6857,7 @@ function setupBasicCheckin() {
         e.preventDefault();
         if (!activeMealIndex) return;
         activeOverride = true;
-        if (mealStatusEl) mealStatusEl.textContent = 'Override — type what you ate (servings optional).';
+        if (mealStatusEl) mealStatusEl.textContent = 'Override â€” type what you ate (servings optional).';
         if (mealActualEl) mealActualEl.focus();
     });
 
@@ -6998,8 +7126,8 @@ function setupBasicCheckin() {
         return toIsoLocal(d);
     };
 
-    // "Program week" = fixed 7-day blocks within the month (1Ã¢â‚¬â€œ7, 8Ã¢â‚¬â€œ14, 15Ã¢â‚¬â€œ21, 22Ã¢â‚¬â€œ28, 29Ã¢â‚¬â€œ31).
-    // This matches the "if I'm on the 2nd, show 1stÃ¢â‚¬â€œ7th" requirement.
+    // "Program week" = fixed 7-day blocks within the month (1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“7, 8ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“14, 15ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“21, 22ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“28, 29ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“31).
+    // This matches the "if I'm on the 2nd, show 1stÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“7th" requirement.
     const startOfProgramWeekIso = (iso) => {
         const d = isoToDateLocal(iso);
         const dom = d.getDate();
@@ -7013,14 +7141,14 @@ function setupBasicCheckin() {
 
     const fmtDayLong = (iso) => {
         const d = isoToDateLocal(iso);
-        if (Number.isNaN(d.getTime())) return '—';
+        if (Number.isNaN(d.getTime())) return 'â€”';
         return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     };
 
     const fmtRange = (startIso, endIso) => {
         const s = isoToDateLocal(startIso);
         const e = isoToDateLocal(endIso);
-        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return '—';
+        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 'â€”';
         const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
         const left = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         const right = e.toLocaleDateString(undefined, { month: sameMonth ? 'short' : 'short', day: 'numeric' });
@@ -7035,7 +7163,7 @@ function setupBasicCheckin() {
     const setLocked = (locked) => {
         checkinLocked = !!locked;
         const msg = locked
-            ? 'Locked: you canÃ¢â‚¬â„¢t log future days.'
+            ? 'Locked: you canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t log future days.'
             : '';
 
         if (lockNoteEl) {
@@ -7081,7 +7209,7 @@ function setupBasicCheckin() {
         if (!nextIso) return;
         if (nextIso < currentWeekStartIso || nextIso > currentWeekEndIso) return;
         if (nextIso > todayIso()) {
-            showAlert('You canÃ¢â‚¬â„¢t log future days.');
+            showAlert('You canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t log future days.');
             return;
         }
         selectedDayIso = nextIso;
@@ -7099,7 +7227,7 @@ function setupBasicCheckin() {
         })();
 
         if (weekMetaEl) {
-            const endsTxt = endsInDays == null ? '' : ` Ã‚Â· ends in ${endsInDays} day${endsInDays === 1 ? '' : 's'}`;
+            const endsTxt = endsInDays == null ? '' : ` Ãƒâ€šÃ‚Â· ends in ${endsInDays} day${endsInDays === 1 ? '' : 's'}`;
             weekMetaEl.textContent = `Week: ${fmtRange(currentWeekStartIso, currentWeekEndIso)}${endsTxt}`;
         }
 
@@ -7125,7 +7253,7 @@ function setupBasicCheckin() {
             showAlert('Locked: you can edit check-ins for the current week only.');
             return;
         }
-        showAlert('SavingÃ¢â‚¬Â¦');
+        showAlert('SavingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦');
         const payload = collect();
         const me = await fetchMe();
         const goalMode = inferGoalMode();
@@ -7168,7 +7296,7 @@ function setupBasicCheckin() {
                         showAlert(wData.warning);
                     }
                     if (wData?.flagged) {
-                        showAlert('Ã¢Å¡Â Ã¯Â¸Â Profile flagged: 4+ auto-adjusts without progress.');
+                        showAlert('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Profile flagged: 4+ auto-adjusts without progress.');
                     }
                 }
             } catch {
@@ -7376,7 +7504,7 @@ function setupProgressPhotos() {
 
         const fmt = (iso) => {
             const d = new Date(`${String(iso).slice(0, 10)}T00:00:00`);
-            if (Number.isNaN(d.getTime())) return String(iso || '—');
+            if (Number.isNaN(d.getTime())) return String(iso || 'â€”');
             return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         };
 
@@ -7419,7 +7547,7 @@ function setupProgressPhotos() {
                 previewImg.src = selected.imageDataUrl;
                 previewImg.classList.remove('hidden');
             }
-            if (previewMeta) previewMeta.textContent = `${fmt(selected.day)} Ã¢â‚¬Â¢ ${selected.pose}`;
+            if (previewMeta) previewMeta.textContent = `${fmt(selected.day)} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${selected.pose}`;
         };
 
         const openCompare = async () => {
@@ -7454,8 +7582,8 @@ function setupProgressPhotos() {
                 const b = photos.find((x) => x.pose === p && x.day === bDay) || null;
                 if (aImg) aImg.src = a?.imageDataUrl || '';
                 if (bImg) bImg.src = b?.imageDataUrl || '';
-                if (aLabel) aLabel.textContent = a ? fmt(a.day) : '—';
-                if (bLabel) bLabel.textContent = b ? fmt(b.day) : '—';
+                if (aLabel) aLabel.textContent = a ? fmt(a.day) : 'â€”';
+                if (bLabel) bLabel.textContent = b ? fmt(b.day) : 'â€”';
             };
 
             pc.classList.remove('hidden');
@@ -7661,7 +7789,7 @@ function setupProgressPhotos() {
 
         const fmt = (iso) => {
             const d = new Date(`${String(iso).slice(0, 10)}T00:00:00`);
-            if (Number.isNaN(d.getTime())) return String(iso || '—');
+            if (Number.isNaN(d.getTime())) return String(iso || 'â€”');
             return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         };
 
@@ -8177,10 +8305,11 @@ function ensureOdeConfirmModal() {
     return modal;
 }
 
-function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false } = {}) {
+function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, size = 'default' } = {}) {
     const modal = ensureOdeConfirmModal();
     const titleEl = modal.querySelector('#ode-confirm-title');
     const bodyEl = modal.querySelector('#ode-confirm-body');
+    const cardEl = modal.querySelector('.ode-confirm-card');
     const okBtn = modal.querySelector('#ode-confirm-ok');
     const cancelBtn = modal.querySelector('#ode-confirm-cancel');
     const closeBtn = modal.querySelector('#ode-confirm-close');
@@ -8197,11 +8326,21 @@ function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Can
     };
 
     if (titleEl) titleEl.textContent = safeTitle;
+    if (cardEl) {
+        cardEl.classList.toggle('ode-confirm-card-wide', String(size || '').toLowerCase() === 'wide');
+    }
     if (bodyEl) {
         const lines = safeMsg.split('\n').map((l) => l.trim()).filter(Boolean);
-        bodyEl.innerHTML = lines.length
-            ? lines.map((l) => `<div class="ode-confirm-line">${renderConfirmLine(l)}</div>`).join('')
-            : '';
+        bodyEl.innerHTML = lines.length ? lines.map((l) => {
+            if (l === '---') {
+                return '<div class="ode-confirm-separator" role="separator" aria-hidden="true"></div>';
+            }
+            if (/^[-*]\s+/.test(l)) {
+                const bulletText = l.replace(/^[-*]\s+/, '');
+                return `<div class="ode-confirm-line ode-confirm-bullet"><span class="ode-confirm-bullet-dot" aria-hidden="true">&#8226;</span><span class="ode-confirm-bullet-text">${renderConfirmLine(bulletText)}</span></div>`;
+            }
+            return `<div class="ode-confirm-line">${renderConfirmLine(l)}</div>`;
+        }).join('') : '';
     }
 
     if (okBtn) okBtn.textContent = String(confirmText || 'Confirm');
@@ -9239,11 +9378,11 @@ function setupControlPanel() {
             closeBtn.className = 'control-close';
             closeBtn.id = 'control-close';
             closeBtn.setAttribute('aria-label', 'Collapse panel');
-            closeBtn.textContent = 'Ã—';
+            closeBtn.textContent = 'Ãƒâ€”';
             header.appendChild(closeBtn);
         }
         closeBtn.setAttribute('aria-label', 'Close control panel');
-        closeBtn.textContent = 'Ã—';
+        closeBtn.textContent = 'Ãƒâ€”';
         closeBtn.addEventListener('click', toggleControlPanel);
 
         let fab = document.getElementById('control-mobile-fab');
@@ -9939,7 +10078,7 @@ function saveMealPlanSnapshotForLogging({ meals, mealsPerDay, macroTargets }) {
             }).filter((i) => i.foodName);
 
             const plannedText = items.length
-                ? items.map((i) => `Ã¢â‚¬Â¢ ${i.foodName} — ${i.measurementText}`).join('\n')
+                ? items.map((i) => `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${i.foodName} â€” ${i.measurementText}`).join('\n')
                 : '';
 
             return { index: idx + 1, items, plannedText };
@@ -10220,7 +10359,7 @@ function setupCustomFoodsModal() {
                         <div class="food-source-sub">${escapeHtml(store)}</div>
                     </div>
                     <div class="food-source-actions">
-                        <button class="food-source-trash" type="button" data-custom-food-del="${row.id}" aria-label="Delete">Ã°Å¸—â€˜</button>
+                        <button class="food-source-trash" type="button" data-custom-food-del="${row.id}" aria-label="Delete">ÃƒÂ°Ã…Â¸â€”Ã¢â‚¬Ëœ</button>
                     </div>
                 </div>
             `;
@@ -10397,7 +10536,7 @@ function ensureCustomMacroModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title">Custom macro plan</h3>
-                    <p class="checkin-sub">Set your targets and weÃ¢â‚¬â„¢ll rebuild your meals + groceries.</p>
+                    <p class="checkin-sub">Set your targets and weÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ll rebuild your meals + groceries.</p>
                 </div>
                 <button type="button" class="checkin-close" data-macro-close aria-label="Close">&times;</button>
             </div>
@@ -10524,12 +10663,12 @@ function ensureCustomMacroAuthPromptModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title">Custom access</h3>
-                    <p class="checkin-sub">Make an account and youÃ¢â‚¬â„¢ll get free custom access.</p>
+                    <p class="checkin-sub">Make an account and youÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ll get free custom access.</p>
                 </div>
                 <button type="button" class="checkin-close" data-cm-auth-close aria-label="Close">&times;</button>
             </div>
             <div class="ns-muted" style="margin-top:10px;">
-                Custom foods lets you pick the groceries you actually eat Ã¢â‚¬â€ then weÃ¢â‚¬â„¢ll re-generate your plan.
+                Custom foods lets you pick the groceries you actually eat ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â then weÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ll re-generate your plan.
             </div>
             <div class="foods-actions" style="margin-top: 14px;">
                 <button class="btn btn-ghost" type="button" data-cm-auth-close>Not now</button>
@@ -10686,23 +10825,6 @@ function setupGroceryFinalPage() {
 
     // Mode display removed (requested).
     
-    // ========================================
-    // PHASE 5.6: Price adjustment slider
-    // ========================================
-    if (priceAdjustmentInput && priceAdjustmentValue) {
-        priceAdjustmentInput.addEventListener('input', () => {
-            const val = Number(priceAdjustmentInput.value);
-            if (val === 0) {
-                priceAdjustmentValue.textContent = 'Accurate';
-            } else if (val > 0) {
-                priceAdjustmentValue.textContent = `+${val}%`;
-            } else {
-                priceAdjustmentValue.textContent = `${val}%`;
-            }
-            configureDynamicBudgetOptions();
-        });
-    }
-
     const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
     const clampNum = (v, min, max) => Math.min(max, Math.max(min, Number(v) || 0));
     const formatBudgetRange = (lo, hi) => `$${Math.round(lo)}-$${Math.round(hi)}`;
@@ -10768,6 +10890,72 @@ function setupGroceryFinalPage() {
         const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult;
         return clampNum(roundTo10(adjustedMonthly), 170, 650);
     };
+    const normalizeBudgetTierKey = (raw) => {
+        const v = String(raw || '').trim().toLowerCase();
+        if (v === 'budget' || v === 'balanced' || v === 'best') return v;
+        if (v === 'under-200') return 'budget';
+        if (v === '200-400') return 'balanced';
+        if (v === '400-plus') return 'best';
+        return '';
+    };
+    const normalizeTierOption = (opt, idx = 0) => {
+        const fallbackKey = idx === 0 ? 'budget' : (idx === 1 ? 'balanced' : 'best');
+        const key = normalizeBudgetTierKey(opt?.key || fallbackKey) || fallbackKey;
+        const low = Math.max(0, Number(opt?.low) || 0);
+        const high = Math.max(low, Number(opt?.high) || 0);
+        const value = Number.isFinite(Number(opt?.value))
+            ? Number(opt.value)
+            : roundTo10((low + high) / 2);
+        const title = String(
+            opt?.title
+            || (key === 'budget' ? 'Minimum Effective Plan' : (key === 'balanced' ? 'Balanced Results' : 'Best Performance'))
+        ).trim();
+        return { key, title, low, high, value };
+    };
+    const buildTierOptionsFromBestCost = (bestCostRaw) => {
+        const bestCost = clampNum(roundTo10(bestCostRaw), 120, 900);
+        const budgetLow = Math.max(90, roundTo10(bestCost * 0.62));
+        const budgetHigh = Math.max(budgetLow + 20, roundTo10(bestCost * 0.78));
+        const balancedLow = Math.max(budgetHigh, roundTo10(bestCost * 0.78));
+        const balancedHigh = Math.max(balancedLow + 20, roundTo10(bestCost * 0.92));
+        const bestLow = Math.max(balancedHigh, roundTo10(bestCost * 0.92));
+        const bestHigh = Math.max(bestLow + 20, roundTo10(bestCost * 1.08));
+        return [
+            { key: 'budget', title: 'Minimum Effective Plan', low: budgetLow, high: budgetHigh, value: roundTo10((budgetLow + budgetHigh) / 2) },
+            { key: 'balanced', title: 'Balanced Results', low: balancedLow, high: balancedHigh, value: roundTo10((balancedLow + balancedHigh) / 2) },
+            { key: 'best', title: 'Best Performance', low: bestLow, high: bestHigh, value: roundTo10(bestCost) }
+        ];
+    };
+    const getSavedTierOptions = () => {
+        const raw = Array.isArray(savedPrefs?.budgetTierOptions) ? savedPrefs.budgetTierOptions : [];
+        const normalized = raw
+            .map((opt, idx) => normalizeTierOption(opt, idx))
+            .filter((opt) => opt.low > 0 && opt.high >= opt.low);
+        const hasAllKeys = ['budget', 'balanced', 'best'].every((k) => normalized.some((opt) => opt.key === k));
+        if (!hasAllKeys) return null;
+        return ['budget', 'balanced', 'best'].map((k) => normalized.find((opt) => opt.key === k));
+    };
+    const syncPriceAdjustmentValueLabel = () => {
+        if (!priceAdjustmentInput || !priceAdjustmentValue) return;
+        const val = Number(priceAdjustmentInput.value);
+        if (val === 0) {
+            priceAdjustmentValue.textContent = 'Accurate';
+        } else if (val > 0) {
+            priceAdjustmentValue.textContent = `+${val}%`;
+        } else {
+            priceAdjustmentValue.textContent = `${val}%`;
+        }
+    };
+
+    // ========================================
+    // PHASE 5.6: Price adjustment slider
+    // ========================================
+    if (priceAdjustmentInput && priceAdjustmentValue) {
+        priceAdjustmentInput.addEventListener('input', () => {
+            syncPriceAdjustmentValueLabel();
+            configureDynamicBudgetOptions();
+        });
+    }
     const getCurrentLossRate = () => {
         const fromSession = Number(sessionData?.selections?.lossRateLbsPerWeek ?? sessionData?.selections?.lbsPerWeek);
         const fromPrefs = Number(savedPrefs?.lossRateLbsPerWeek ?? savedPrefs?.lbsPerWeek);
@@ -10850,7 +11038,7 @@ function setupGroceryFinalPage() {
         carEl.textContent = `${Number(macrosBlock.carbG || 0)} g`;
         fatEl.textContent = `${Number(macrosBlock.fatG || 0)} g`;
     };
-    const configureDynamicBudgetOptions = () => {
+    const configureDynamicBudgetOptions = ({ preferSavedTiers = false } = {}) => {
         if (!budgetButtons.length || !budgetInput) return;
 
         const cals = Number(profileMacros?.calories) || 2200;
@@ -10858,42 +11046,17 @@ function setupGroceryFinalPage() {
         const fat = Number(profileMacros?.fatG) || 65;
 
         // Lightweight estimate anchored to macro demand + user pricing prefs.
-        const optimalMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: protein, fatG: fat });
-
-        // Keep BEST centered around projected full-target cost.
-        const budgetLow = Math.max(120, roundTo10(optimalMonthly * 0.62));
-        const budgetHigh = Math.max(budgetLow + 20, roundTo10(optimalMonthly * 0.78));
-        const balancedLow = Math.max(budgetHigh, roundTo10(optimalMonthly * 0.78));
-        const balancedHigh = Math.max(balancedLow + 20, roundTo10(optimalMonthly * 0.92));
-        const bestLow = Math.max(balancedHigh, roundTo10(optimalMonthly * 0.92));
-        const bestHigh = Math.max(bestLow + 20, roundTo10(optimalMonthly * 1.08));
-
-        const tiers = [
-            {
-                key: 'budget',
-                title: 'Minimum Effective Plan',
-                low: budgetLow,
-                high: budgetHigh,
-                value: roundTo10((budgetLow + budgetHigh) / 2),
-                tooltip: 'Calories protected. Protein floor protected. Lower variety and tighter flexibility. Results are still achievable with consistency.'
-            },
-            {
-                key: 'balanced',
-                title: 'Balanced Results',
-                low: balancedLow,
-                high: balancedHigh,
-                value: roundTo10((balancedLow + balancedHigh) / 2),
-                tooltip: 'Calories protected. Protein slightly below optimal. Moderate variety. Designed for steady, sustainable progress.'
-            },
-            {
-                key: 'best',
-                title: 'Best Performance',
-                low: bestLow,
-                high: bestHigh,
-                value: roundTo10(optimalMonthly),
-                tooltip: 'Highest protein target support. Best food variety. Strong recovery support. Supports stronger training consistency.'
-            }
-        ];
+        const estimatedBestMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: protein, fatG: fat });
+        const computedTiers = buildTierOptionsFromBestCost(estimatedBestMonthly);
+        const savedTierOptions = preferSavedTiers ? getSavedTierOptions() : null;
+        const tiers = Array.isArray(savedTierOptions) && savedTierOptions.length === 3 ? savedTierOptions : computedTiers;
+        const bestTier = tiers.find((t) => t.key === 'best');
+        const optimalMonthly = Number(bestTier?.value || estimatedBestMonthly);
+        const tooltipByKey = {
+            budget: 'Calories protected. Minimum protein protected. Lower variety and tighter flexibility. Results are still achievable with consistency.',
+            balanced: 'Calories protected. Protein slightly below optimal. Moderate variety. Designed for steady, sustainable progress.',
+            best: 'Highest protein target support. Best food variety. Strong recovery support. Supports stronger training consistency.'
+        };
 
         const goalRaw = sessionData?.selections?.goal || savedPrefs?.mode || nutritionState?.selections?.goal || null;
         const normalizedGoal = normalizeGoalInput(goalRaw);
@@ -10947,7 +11110,7 @@ function setupGroceryFinalPage() {
                 title: 'Best Performance',
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (kept fixed for this tier).`,
-                    `**Macros:** Protein [[${Math.round(protein)}g]] · Fat [[${Math.round(fat)}g]] · Carbs [[${Math.round(bestCarbs)}g]].`,
+                    `**Macros:** Protein [[${Math.round(protein)}g]] Â· Fat [[${Math.round(fat)}g]] Â· Carbs [[${Math.round(bestCarbs)}g]].`,
                     `**Cost equation used:** daily estimate = [[2.4 + (calories x 0.0022) + (protein x 0.014) + (fat x 0.01)]].`,
                     `**Projected monthly groceries:** [[${formatMoney(optimalMonthly)}]].`,
                     `**What this usually feels like:** best recovery, strongest training consistency, best performance.`
@@ -10957,10 +11120,9 @@ function setupGroceryFinalPage() {
                 title: 'Balanced Results',
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (same as full target).`,
-                    `**Protein equation:** [[max(protein floor, best protein x 0.92)]].`,
-                    `**Protein floor math:** [[0.75 x ${goalWeightExplain} = ${Math.round(proteinFloor)}g]].`,
-                    `**Balanced macros:** Protein [[${Math.round(balancedProtein)}g]] · Fat [[${Math.round(balancedFat)}g]] · Carbs [[${Math.round(balancedCarbs)}g]].`,
-                    `**Fat protection:** from calories, [[22% of ${Math.round(cals)} kcal = ${fatFromCalories}g fat]]; sex minimum is [[${fatSexMin}g]]. We use the higher one: [[${Math.round(fatFloor)}g]].`,
+                    `**Protein rule:** keep at least [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}), then use about [[92% of Best protein]] when that is higher.`,
+                    `**Balanced macros:** Protein [[${Math.round(balancedProtein)}g]] Â· Fat [[${Math.round(balancedFat)}g]] Â· Carbs [[${Math.round(balancedCarbs)}g]].`,
+                    `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`,
                     `**What this may feel like:** solid progress, slightly less recovery margin than Best.`,
                     `**If you feel flat for 3-4 days:** move to Best Performance or add [[25-40g carbs]].`
                 ]
@@ -10969,10 +11131,9 @@ function setupGroceryFinalPage() {
                 title: 'Minimum Effective Plan',
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (kept fixed).`,
-                    `**Protein equation:** [[protein floor only = 0.75 x goal weight]].`,
-                    `**Protein floor math:** [[0.75 x ${goalWeightExplain} = ${Math.round(proteinFloor)}g]].`,
-                    `**Minimum Effective macros:** Protein [[${Math.round(minimumProtein)}g]] · Fat [[${Math.round(minimumFat)}g]] · Carbs [[${Math.round(minimumCarbs)}g]].`,
-                    `**Fat protection:** from calories, [[22% of ${Math.round(cals)} kcal = ${fatFromCalories}g fat]]; sex minimum is [[${fatSexMin}g]]. We use the higher one: [[${Math.round(fatFloor)}g]].`,
+                    `**Protein rule:** use minimum protein = [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}).`,
+                    `**Minimum Effective macros:** Protein [[${Math.round(minimumProtein)}g]] Â· Fat [[${Math.round(minimumFat)}g]] Â· Carbs [[${Math.round(minimumCarbs)}g]].`,
+                    `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`,
                     `**What this may feel like:** simpler meals and lower cost, but more hunger and lower training comfort.`,
                     `**If hunger, mood, or recovery drops hard:** move up to Balanced or add [[1 protein serving + 1 carb serving]].`
                 ]
@@ -11030,14 +11191,131 @@ function setupGroceryFinalPage() {
             if (!tier) return;
             btn.dataset.budget = String(tier.value);
             btn.dataset.budgetTier = tier.key;
-            btn.title = tier.tooltip;
+            btn.dataset.budgetLow = String(tier.low);
+            btn.dataset.budgetHigh = String(tier.high);
+            btn.dataset.budgetTitle = tier.title;
+            btn.title = tooltipByKey[tier.key] || '';
             btn.innerHTML = `<span class="budget-btn-title">${tier.title}</span><span class="budget-btn-sub">${formatBudgetRange(tier.low, tier.high)}</span><span class="budget-btn-help" aria-hidden="true"></span>`;
         });
 
+        const savedMode = normalizeBudgetTierKey(savedPrefs?.budgetMode || '');
+        if (preferSavedTiers && savedMode) {
+            budgetButtons.forEach((btn) => btn.classList.toggle('active', String(btn.dataset.budgetTier || '') === savedMode));
+        }
         const activeBtn = budgetButtons.find((btn) => btn.classList.contains('active')) || budgetButtons[1] || budgetButtons[0];
         if (activeBtn) budgetInput.value = activeBtn.dataset.budget || String(roundTo10(optimalMonthly));
     };
-    configureDynamicBudgetOptions();
+    configureDynamicBudgetOptions({ preferSavedTiers: true });
+
+    const finalBudgetModeRank = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetTierKey(modeKeyRaw);
+        if (modeKey === 'budget') return 0;
+        if (modeKey === 'balanced') return 1;
+        return 2; // best
+    };
+    const finalBudgetModeTitle = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetTierKey(modeKeyRaw);
+        const fromExplainer = budgetTierExplainers?.[modeKey]?.title;
+        if (fromExplainer) return fromExplainer;
+        if (modeKey === 'budget') return 'Minimum Effective Plan';
+        if (modeKey === 'balanced') return 'Balanced Results';
+        return 'Best Performance';
+    };
+    const buildFinalBudgetDowngradeMessage = (fromModeRaw, toModeRaw) => {
+        const fromMode = normalizeBudgetTierKey(fromModeRaw);
+        const toMode = normalizeBudgetTierKey(toModeRaw);
+        const fromTitle = finalBudgetModeTitle(fromMode);
+        const toTitle = finalBudgetModeTitle(toMode);
+        const payload = budgetTierExplainers?.[toMode] || null;
+        const goalRaw = String(
+            sessionData?.selections?.goal
+            || savedPrefs?.mode
+            || nutritionState?.selections?.goal
+            || ''
+        ).trim();
+        const goalMode = normalizeGoalInput(goalRaw);
+        const pairKey = `${fromMode}->${toMode}`;
+        const isCutGoal = goalMode === 'CUT';
+        const downsideBullets = (() => {
+            if (isCutGoal) {
+                if (pairKey === 'best->balanced') {
+                    return [
+                        'Scale loss usually still happens, but training performance can feel [[~5-8% flatter]].',
+                        'Recovery quality may feel lower on hard sessions vs Best.',
+                        'If strength drops across 2 workouts in a row, move back to Best.'
+                    ];
+                }
+                if (pairKey === 'balanced->budget') {
+                    return [
+                        'Hunger and cravings usually increase compared with Balanced.',
+                        'Recovery margin and training comfort usually drop more than Balanced.',
+                        'If mood, sleep, or performance drop for 3-4 days, move back to Balanced.'
+                    ];
+                }
+                return [
+                    'This is the largest downgrade for a cut: gym output can feel [[~8-15% flatter]] than Best.',
+                    'Muscle-retention margin is lower than higher tiers.',
+                    'If recovery or performance slides for 3-4 days, move up one tier.'
+                ];
+            }
+            if (pairKey === 'best->balanced') {
+                return [
+                    'Size/strength progress can still happen, but usually [[~5-10% slower]] than Best.',
+                    'Top-end workout performance may stall sooner.',
+                    'If progress stalls for 1-2 weeks, move back to Best.'
+                ];
+            }
+            if (pairKey === 'balanced->budget') {
+                return [
+                    'Gain pace usually slows further compared with Balanced.',
+                    'Recovery quality is usually lower on repeated hard sessions.',
+                    'If lifts stall for 2 weeks, move back to Balanced.'
+                ];
+            }
+            return [
+                'This is the largest downgrade: size/strength progress can be [[~10-20% slower]] vs Best.',
+                'Recovery buffer is lower for heavy training weeks.',
+                'If progress stalls for 2 weeks, move up one tier.'
+            ];
+        })();
+
+        const lines = [
+            `Switch from ${fromTitle} to ${toTitle}.`,
+            '**Official calculations for the new plan**'
+        ];
+        if (payload && Array.isArray(payload.lines) && payload.lines.length) {
+            lines.push(...payload.lines);
+        } else {
+            lines.push('The new plan keeps calorie targets protected and adjusts macro precision for lower cost.');
+        }
+        lines.push('---');
+        lines.push('**Potential downsides if you apply this downgrade**');
+        lines.push(...downsideBullets.map((line) => `- ${line}`));
+        return lines.join('\n');
+    };
+    const confirmFinalBudgetDowngradeIfNeeded = async (fromModeRaw, toModeRaw) => {
+        const fromMode = normalizeBudgetTierKey(fromModeRaw);
+        const toMode = normalizeBudgetTierKey(toModeRaw);
+        if (!fromMode || !toMode || fromMode === toMode) return true;
+        if (finalBudgetModeRank(toMode) >= finalBudgetModeRank(fromMode)) return true;
+
+        const msg = buildFinalBudgetDowngradeMessage(fromMode, toMode);
+        const nextTitle = finalBudgetModeTitle(toMode);
+        if (typeof odeConfirm === 'function') {
+            try {
+                return await odeConfirm({
+                    title: `Switch to ${nextTitle}?`,
+                    message: msg,
+                    confirmText: 'Apply downgrade',
+                    cancelText: 'Keep current plan',
+                    size: 'wide'
+                });
+            } catch {
+                return false;
+            }
+        }
+        return window.confirm(msg);
+    };
 
     if (budgetForecastActionsEl) {
         budgetForecastActionsEl.addEventListener('click', async (e) => {
@@ -11117,18 +11395,69 @@ function setupGroceryFinalPage() {
             const nextMonthly = estimateMonthlyFromMacros(nextMacros);
             const deltaMonthly = nextMonthly - currentMonthly;
             const deltaCal = Number(nextMacros.calories || 0) - Number(profileMacros?.calories || 0);
+            const projectedStateGoal = normalizeGoalInput(projectedState.goal || currentState.goal);
+            const projectedFreq = String(projectedState.frequency || currentFreq || '').trim();
+            const currentFreqText = formatFrequencyLabel(currentFreq);
+            const projectedFreqText = formatFrequencyLabel(projectedFreq);
+            const currentRateText = `${Number(currentRate || 0).toFixed(1)} lb/week`;
+            const projectedRateText = `${Number(projectedState.lossRateLbsPerWeek || currentRate || 0).toFixed(1)} lb/week`;
+            const monthlyDeltaLabel = `${deltaMonthly >= 0 ? '+' : '-'}${formatMoney(Math.abs(deltaMonthly))}`;
             const summaryLines = [
-                `Current calories: ${Math.round(Number(profileMacros?.calories || 0)).toLocaleString()} kcal/day`,
-                `Projected calories: ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day (${deltaCal >= 0 ? '+' : ''}${Math.round(deltaCal)} kcal)`,
-                `Current monthly groceries: ${formatMoney(currentMonthly)}`,
-                `Projected monthly groceries: ${formatMoney(nextMonthly)} (${deltaMonthly >= 0 ? '+' : ''}${formatMoney(Math.abs(deltaMonthly))})`
+                '**What changes if you apply this**',
+                `- Training days/week: [[${currentFreqText} -> ${projectedFreqText}]]`
             ];
+            if (projectedStateGoal === 'CUT') {
+                summaryLines.push(`- Fat-loss pace: [[${currentRateText} -> ${projectedRateText}]]`);
+            } else if (projectedStateGoal === 'BUILD' || projectedStateGoal === 'STRENGTH') {
+                const beforeMode = normalizeGoalInput(currentState.goal) === 'STRENGTH' ? 'Strength-priority' : 'Build';
+                const afterMode = projectedStateGoal === 'STRENGTH' ? 'Strength-priority' : 'Build';
+                summaryLines.push(`- Gain mode: [[${beforeMode} -> ${afterMode}]]`);
+            }
+            summaryLines.push(`- Calories target: [[${Math.round(Number(profileMacros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]] (${deltaCal >= 0 ? '+' : ''}${Math.round(deltaCal)} kcal)`);
+            summaryLines.push(`- Monthly groceries: [[${formatMoney(currentMonthly)} -> ${formatMoney(nextMonthly)}]] (${monthlyDeltaLabel})`);
+            summaryLines.push('---');
+            summaryLines.push('**Pros**');
             if (action === 'lower-frequency') {
-                summaryLines.push('Note: fewer training days can reduce adaptation/performance demand.');
+                summaryLines.push('- [[Lower monthly cost pressure]] from reduced energy demand.');
+                summaryLines.push('- [[More recovery time]] between sessions.');
+                summaryLines.push('- Easier to stay consistent if schedule is tight.');
             } else if (action === 'faster-cut') {
-                summaryLines.push('Note: faster cuts increase hunger and adherence pressure.');
+                summaryLines.push('- [[Faster fat-loss timeline]] toward goal weight.');
+                summaryLines.push('- [[Lower grocery spend]] from lower calorie targets.');
+                summaryLines.push('- Useful as a short budget-saving phase.');
             } else if (action === 'slower-bulk') {
-                summaryLines.push('Note: slower bulk lowers surplus and cost, but weight gain pace slows.');
+                summaryLines.push('- [[Lower monthly cost]] from a smaller surplus.');
+                summaryLines.push('- [[Lower unnecessary fat-gain risk]] while still building.');
+                summaryLines.push('- Easier appetite control across the week.');
+            } else if (action === 'apply-both') {
+                if (projectedStateGoal === 'CUT') {
+                    summaryLines.push('- [[Largest immediate cost drop]] for your cut.');
+                    summaryLines.push('- Combines lower activity demand with faster fat-loss settings.');
+                    summaryLines.push('- Can keep progress moving when budget is tight.');
+                } else {
+                    summaryLines.push('- [[Largest cost reduction]] available for your build phase.');
+                    summaryLines.push('- Lower weekly food demand plus a smaller surplus.');
+                    summaryLines.push('- Better control of monthly spend without restarting setup.');
+                }
+            }
+            summaryLines.push('**Cons / Tradeoffs**');
+            if (action === 'lower-frequency') {
+                summaryLines.push('- [[Slower gym adaptation]] from reduced training volume.');
+                summaryLines.push('- You may see slower improvements in conditioning or work capacity.');
+            } else if (action === 'faster-cut') {
+                summaryLines.push('- [[Higher hunger and cravings]] as the deficit increases.');
+                summaryLines.push('- Training performance and recovery can feel flatter on hard days.');
+            } else if (action === 'slower-bulk') {
+                summaryLines.push('- [[Slower size and strength gain pace]].');
+                summaryLines.push('- You may need a longer timeline to hit the same scale target.');
+            } else if (action === 'apply-both') {
+                if (projectedStateGoal === 'CUT') {
+                    summaryLines.push('- [[Highest adherence pressure]] among cut cost options.');
+                    summaryLines.push('- Recovery and gym output can drop if sleep/stress are not managed.');
+                } else {
+                    summaryLines.push('- [[Slowest gain pace]] among build options.');
+                    summaryLines.push('- Lower weekly training frequency can reduce total growth stimulus.');
+                }
             }
 
             let confirmed = false;
@@ -11137,7 +11466,8 @@ function setupGroceryFinalPage() {
                     title: `${actionTitle} - Preview`,
                     message: summaryLines.join('\n'),
                     confirmText: 'Apply change',
-                    cancelText: 'Keep current plan'
+                    cancelText: 'Keep current plan',
+                    size: 'wide'
                 });
             } else {
                 confirmed = window.confirm(summaryLines.join('\n'));
@@ -11160,8 +11490,13 @@ function setupGroceryFinalPage() {
 
     // Budget button handlers
     budgetButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
             e.preventDefault();
+            const toMode = normalizeBudgetTierKey(btn.dataset.budgetTier || '');
+            const currentActive = budgetButtons.find((b) => b.classList.contains('active'));
+            const fromMode = normalizeBudgetTierKey(currentActive?.dataset?.budgetTier || savedPrefs?.budgetMode || '');
+            const shouldProceed = await confirmFinalBudgetDowngradeIfNeeded(fromMode, toMode);
+            if (!shouldProceed) return;
             budgetButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             if (budgetInput) budgetInput.value = btn.dataset.budget;
@@ -11396,7 +11731,7 @@ function setupGroceryFinalPage() {
                         <div class="food-source-sub">${escapeHtml(String(f.store || ''))}</div>
                     </div>
                     <div class="food-source-actions">
-                        <button class="food-source-trash" type="button" data-food-custom-del="${escapeHtml(row.id)}" aria-label="Delete">Ã°Å¸—â€˜</button>
+                        <button class="food-source-trash" type="button" data-food-custom-del="${escapeHtml(row.id)}" aria-label="Delete">ÃƒÂ°Ã…Â¸â€”Ã¢â‚¬Ëœ</button>
                     </div>
                 </div>
             `);
@@ -11456,7 +11791,7 @@ function setupGroceryFinalPage() {
         foodToggle.addEventListener('click', async (e) => {
             e.preventDefault();
             if (!meUserResolved) {
-                setFoodNote('Checking your accountâ€¦');
+                setFoodNote('Checking your accountÃ¢â‚¬Â¦');
                 await loadMeUser();
                 setFoodNote('');
             }
@@ -11557,7 +11892,7 @@ function setupGroceryFinalPage() {
         if (prepInput && savedPrefs.prep) prepInput.value = String(savedPrefs.prep);
         if (priceAdjustmentInput && Number.isFinite(Number(savedPrefs.priceAdjustment))) {
             priceAdjustmentInput.value = String(savedPrefs.priceAdjustment);
-            priceAdjustmentInput.dispatchEvent(new Event('input'));
+            syncPriceAdjustmentValueLabel();
         }
 
         const dietaryPrefInput = document.getElementById('g-dietary-pref');
@@ -11584,22 +11919,29 @@ function setupGroceryFinalPage() {
                 btn.classList.toggle('active', isActive);
             });
         };
-        if (budgetButtons.length && Number.isFinite(Number(savedPrefs.budgetTotal))) {
-            const target = Number(savedPrefs.budgetTotal);
-            let nearest = budgetButtons[0];
-            let nearestDist = Number.POSITIVE_INFINITY;
-            budgetButtons.forEach((btn) => {
-                const val = Number(btn.dataset.budget || 0);
-                const dist = Math.abs(val - target);
-                if (dist < nearestDist) {
-                    nearest = btn;
-                    nearestDist = dist;
-                }
-            });
+        if (budgetButtons.length) {
+            const savedMode = normalizeBudgetTierKey(savedPrefs.budgetMode);
+            let selectedBtn = savedMode
+                ? budgetButtons.find((btn) => String(btn.dataset.budgetTier || '') === savedMode)
+                : null;
+            if (!selectedBtn && Number.isFinite(Number(savedPrefs.budgetTotal))) {
+                const target = Number(savedPrefs.budgetTotal);
+                let nearest = budgetButtons[0];
+                let nearestDist = Number.POSITIVE_INFINITY;
+                budgetButtons.forEach((btn) => {
+                    const val = Number(btn.dataset.budget || 0);
+                    const dist = Math.abs(val - target);
+                    if (dist < nearestDist) {
+                        nearest = btn;
+                        nearestDist = dist;
+                    }
+                });
+                selectedBtn = nearest;
+            }
             budgetButtons.forEach((btn) => btn.classList.remove('active'));
-            if (nearest) {
-                nearest.classList.add('active');
-                budgetInput.value = nearest.dataset.budget || String(savedPrefs.budgetTotal);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                budgetInput.value = selectedBtn.dataset.budget || String(savedPrefs.budgetTotal || '');
             }
         }
         syncChoiceButtonGroup('.meal-btn', 'data-meals', savedPrefs.mealsPerDay);
@@ -11668,7 +12010,7 @@ function setupGroceryFinalPage() {
         traceLog('MACROS_LOADED', { macros });
 
         // If the user has training auto-adjust enabled (signed-in), apply it here so the grocery plan adapts.
-        // We keep protein stable and shift calories mostly via carbs (Ã‚Â±50g per Ã‚Â±200 kcal).
+        // We keep protein stable and shift calories mostly via carbs (Ãƒâ€šÃ‚Â±50g per Ãƒâ€šÃ‚Â±200 kcal).
         let trainingCalorieOffset = 0;
         try {
             const resp = await fetch('/api/training/state', { credentials: 'include' });
@@ -11704,8 +12046,52 @@ function setupGroceryFinalPage() {
         // Apply selected budget mode transform (stage 1): keep calories fixed,
         // raise protein floor to 0.75 x goal weight, keep fat floor protected,
         // and recompute carbs as remainder.
+        const normalizeBudgetModeForPrefs = (raw) => {
+            const v = String(raw || '').trim().toLowerCase();
+            if (v === 'budget' || v === 'balanced' || v === 'best') return v;
+            if (v === 'under-200') return 'budget';
+            if (v === '200-400') return 'balanced';
+            if (v === '400-plus') return 'best';
+            return 'balanced';
+        };
         const activeBudgetBtn = budgetButtons.find((b) => b.classList.contains('active')) || budgetButtons[1] || budgetButtons[0];
-        const selectedBudgetMode = String(activeBudgetBtn?.dataset?.budgetTier || 'balanced').trim();
+        const selectedBudgetMode = normalizeBudgetModeForPrefs(activeBudgetBtn?.dataset?.budgetTier || 'balanced');
+        const macroBaselineBeforeBudgetMode = {
+            calories: Math.max(1200, Math.round(Number(macros.calories) || 0)),
+            proteinG: Math.max(0, Math.round(Number(macros.proteinG) || 0)),
+            carbG: Math.max(0, Math.round(Number(macros.carbG) || 0)),
+            fatG: Math.max(0, Math.round(Number(macros.fatG) || 0))
+        };
+        const budgetTierOptionsForPrefs = budgetButtons.map((btn, idx) => {
+            const rawTier = String(btn?.dataset?.budgetTier || '').trim().toLowerCase();
+            let key = '';
+            if (rawTier === 'budget' || rawTier === 'under-200') key = 'budget';
+            else if (rawTier === 'balanced' || rawTier === '200-400') key = 'balanced';
+            else if (rawTier === 'best' || rawTier === '400-plus') key = 'best';
+            else key = idx === 0 ? 'budget' : (idx === 1 ? 'balanced' : 'best');
+            const title = String(
+                btn?.dataset?.budgetTitle
+                || btn?.querySelector?.('.budget-btn-title')?.textContent
+                || btn?.textContent
+                || ''
+            ).trim();
+            const sub = String(btn?.querySelector?.('.budget-btn-sub')?.textContent || '').trim();
+            const value = Number(btn?.dataset?.budget || 0);
+            const lowFromData = Number(btn?.dataset?.budgetLow);
+            const highFromData = Number(btn?.dataset?.budgetHigh);
+            const rangeMatch = sub.match(/\$?\s*([\d,]+)\s*[-â€“â€”]\s*\$?\s*([\d,]+)/);
+            const lowParsed = rangeMatch ? Number(String(rangeMatch[1]).replace(/,/g, '')) : 0;
+            const highParsed = rangeMatch ? Number(String(rangeMatch[2]).replace(/,/g, '')) : 0;
+            const low = Number.isFinite(lowFromData) && lowFromData > 0 ? lowFromData : lowParsed;
+            const high = Number.isFinite(highFromData) && highFromData > 0 ? highFromData : highParsed;
+            return {
+                key,
+                title,
+                low: Number.isFinite(low) ? low : 0,
+                high: Number.isFinite(high) ? high : 0,
+                value: Number.isFinite(value) ? value : 0
+            };
+        }).filter((opt) => Boolean(opt.key));
         const sexRawForBudget = String(
             nutritionState.selections?.sex
             || sessionData?.selections?.sex
@@ -11842,7 +12228,9 @@ function setupGroceryFinalPage() {
                 carbG: macros.carbG,
                 fatG: macros.fatG
             },
-            budgetMode: selectedBudgetMode
+            budgetMode: selectedBudgetMode,
+            budgetTierOptions: budgetTierOptionsForPrefs,
+            macroBaseline: macroBaselineBeforeBudgetMode
         };
         traceLog('GOAL_MODE_RESOLVED', {
             goalRaw,
@@ -11893,7 +12281,7 @@ function setupGroceryFinalPage() {
             userProteinTarget
         });
         
-        console.group('%cÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â° BUDGET VALIDATION', 'font-size: 14px; font-weight: bold; color: #f59e0b');
+        console.group('%cÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° BUDGET VALIDATION', 'font-size: 14px; font-weight: bold; color: #f59e0b');
         console.log(`Weekly budget: $${weeklyBudget}`);
         console.log(`Budget tier: ${budgetTier.toUpperCase()}`);
         console.log(`Max achievable protein: ${maxAchievableProtein}g/day`);
@@ -11903,7 +12291,7 @@ function setupGroceryFinalPage() {
         
         // Check if user's protein target exceeds what's achievable with budget
         if (userProteinTarget > maxAchievableProtein) {
-            console.warn(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â BUDGET MISMATCH: Protein target ${userProteinTarget}g exceeds max achievable ${maxAchievableProtein}g`);
+            console.warn(`ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â BUDGET MISMATCH: Protein target ${userProteinTarget}g exceeds max achievable ${maxAchievableProtein}g`);
             
             // Show budget warning modal and wait for user decision
             const decision = await showBudgetWarningModal(userProteinTarget, maxAchievableProtein, weeklyBudget, budgetTier);
@@ -11912,7 +12300,7 @@ function setupGroceryFinalPage() {
                 // Update macros with lowered protein
                 macros.proteinG = decision.newProtein;
                 prefs.macros.proteinG = decision.newProtein;
-                console.log(`ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Protein target lowered to ${decision.newProtein}g`);
+                console.log(`ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Protein target lowered to ${decision.newProtein}g`);
             } else if (decision.action === 'increase-budget') {
                 // User wants to go back and increase budget - don't proceed
                 console.log('User chose to increase budget - staying on form');
@@ -11920,7 +12308,7 @@ function setupGroceryFinalPage() {
             } else if (decision.action === 'continue-survival') {
                 // Force survival tier rules
                 prefs.budgetTier = 'survival';
-                console.log('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Continuing with survival tier rules');
+                console.log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continuing with survival tier rules');
             }
         }
         
@@ -12823,7 +13211,7 @@ async function setupGroceryPlanPage() {
         };
 
         let headlineText = `You're on track!`;
-        let bodyHtml = `We aim for tight targets: <strong>Protein Â±5%</strong> (most important for muscle), <strong>Calories Â±10â€“15%</strong>, and <strong>Carbs/Fat Â±10%</strong>.`;
+        let bodyHtml = `We aim for tight targets: <strong>Protein Ã‚Â±5%</strong> (most important for muscle), <strong>Calories Ã‚Â±10Ã¢â‚¬â€œ15%</strong>, and <strong>Carbs/Fat Ã‚Â±10%</strong>.`;
 
         if (deficits.length) {
             const top = deficits.slice(0, 2).map(p => `<strong>${p.label}</strong> by <strong>${formatDelta(p)}</strong> (${formatPctShort(p)})`);
@@ -12869,7 +13257,7 @@ async function setupGroceryPlanPage() {
             const note = document.createElement('div');
             note.className = 'ns-muted tiny';
             note.style.marginTop = '6px';
-            note.textContent = 'Tip: After adding your own foods, click Ã¢â‚¬Å“Update macros manuallyÃ¢â‚¬Â to rebuild your plan.';
+            note.textContent = 'Tip: After adding your own foods, click ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œUpdate macros manuallyÃƒÂ¢Ã¢â€šÂ¬Ã‚Â to rebuild your plan.';
             updateMacrosBtn.parentElement?.appendChild(note);
         }
     };
@@ -12886,7 +13274,7 @@ async function setupGroceryPlanPage() {
         customMacroBtnGlobal.addEventListener('click', handleCustomMacroPlanCtaClick);
     }
     
-    console.group('%cÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ GROCERY PLAN - Macro Targets', 'font-size: 12px; font-weight: bold; color: #22c55e');
+    console.group('%cÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ GROCERY PLAN - Macro Targets', 'font-size: 12px; font-weight: bold; color: #22c55e');
     console.log('Source:', prefs?.macros ? 'User calculated macros' : 'Default fallback values');
     console.log(`Calories: ${macros.calories} kcal`);
     console.log(`Protein: ${macros.proteinG}g`);
@@ -12902,6 +13290,707 @@ async function setupGroceryPlanPage() {
     const budgetEl = document.getElementById('p-budget');
     const mealBudgetInlineEl = document.getElementById('meal-budget-inline');
     const mealBudgetOptionEls = Array.from(document.querySelectorAll('.meal-budget-option'));
+    const mealBudgetOptionsWrap = document.getElementById('meal-budget-options');
+    const planBudgetForecastWrapEl = document.getElementById('plan-budget-forecast');
+    const planBudgetForecastToggleEl = document.getElementById('plan-budget-forecast-toggle');
+    const planBudgetForecastMainEl = document.getElementById('plan-budget-forecast-main');
+    const planBudgetForecastActionsEl = document.getElementById('plan-budget-forecast-actions');
+    let onPlanBudgetModeSwitch = null;
+    let activeBudgetMacroBaselineRef = null;
+    const normalizeBudgetModeKey = (raw) => {
+        const v = String(raw || '').trim().toLowerCase();
+        if (v === 'budget' || v === 'balanced' || v === 'best') return v;
+        if (v === 'under-200') return 'budget';
+        if (v === '200-400') return 'balanced';
+        if (v === '400-plus') return 'best';
+        return 'balanced';
+    };
+    const modeMidpointFactor = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        if (modeKey === 'budget') return 0.70;
+        if (modeKey === 'balanced') return 0.85;
+        return 1.0; // best
+    };
+    const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
+    const clampNum = (v, min, max) => Math.min(max, Math.max(min, Number(v) || 0));
+    const formatBudgetRange = (lo, hi) => `$${Math.round(lo)}-$${Math.round(hi)}`;
+    const estimateMonthlyFromMacrosForPlan = (m) => {
+        const mc = m || {};
+        const cals = Number(mc.calories) || 2200;
+        const protein = Number(mc.proteinG) || 160;
+        const fat = Number(mc.fatG) || 65;
+        const daily = 2.4 + (cals * 0.0022) + (protein * 0.014) + (fat * 0.01);
+        const tastePref = String(prefs?.tasteCost || 'balance').trim().toLowerCase();
+        const tasteMult = tastePref === 'cheapest' ? 0.94 : (tastePref === 'premium' ? 1.08 : 1.0);
+        const priceAdjRaw = Number(prefs?.priceAdjustment ?? 0);
+        const priceAdjMult = Number.isFinite(priceAdjRaw) ? (1 + (priceAdjRaw / 100)) : 1.0;
+        const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult;
+        return clampNum(roundTo10(adjustedMonthly), 170, 650);
+    };
+    const normalizeTierOption = (opt) => {
+        const key = normalizeBudgetModeKey(opt?.key);
+        const low = Math.max(0, Number(opt?.low) || 0);
+        const high = Math.max(low, Number(opt?.high) || 0);
+        const value = Number.isFinite(Number(opt?.value))
+            ? Number(opt.value)
+            : roundTo10((low + high) / 2);
+        return {
+            key,
+            title: String(opt?.title || (key === 'budget' ? 'Minimum Effective Plan' : (key === 'balanced' ? 'Balanced Results' : 'Best Performance'))),
+            low,
+            high,
+            value
+        };
+    };
+    const buildPlanTierOptionsFromBestCost = (bestCostRaw) => {
+        const bestCost = clampNum(roundTo10(bestCostRaw), 120, 900);
+        const budgetLow = Math.max(90, roundTo10(bestCost * 0.62));
+        const budgetHigh = Math.max(budgetLow + 20, roundTo10(bestCost * 0.78));
+        const balancedLow = Math.max(budgetHigh, roundTo10(bestCost * 0.78));
+        const balancedHigh = Math.max(balancedLow + 20, roundTo10(bestCost * 0.92));
+        const bestLow = Math.max(balancedHigh, roundTo10(bestCost * 0.92));
+        const bestHigh = Math.max(bestLow + 20, roundTo10(bestCost * 1.08));
+        return [
+            { key: 'budget', title: 'Minimum Effective Plan', low: budgetLow, high: budgetHigh, value: roundTo10((budgetLow + budgetHigh) / 2) },
+            { key: 'balanced', title: 'Balanced Results', low: balancedLow, high: balancedHigh, value: roundTo10((balancedLow + balancedHigh) / 2) },
+            { key: 'best', title: 'Best Performance', low: bestLow, high: bestHigh, value: roundTo10(bestCost) }
+        ];
+    };
+    const derivePlanBudgetTierOptions = () => {
+        const fromPrefs = Array.isArray(prefs?.budgetTierOptions) ? prefs.budgetTierOptions : [];
+        const normalizedPrefs = fromPrefs
+            .map(normalizeTierOption)
+            .filter((opt) => opt.low > 0 && opt.high >= opt.low);
+        const hasAllKeys = ['budget', 'balanced', 'best'].every((key) => normalizedPrefs.some((opt) => opt.key === key));
+        if (hasAllKeys) {
+            return ['budget', 'balanced', 'best'].map((key) => normalizedPrefs.find((opt) => opt.key === key));
+        }
+        const baselineMacros = prefs?.macroBaseline || prefs?.macros || macros || {};
+        const optimalMonthly = estimateMonthlyFromMacrosForPlan(baselineMacros);
+        return buildPlanTierOptionsFromBestCost(optimalMonthly);
+    };
+    let planBudgetTierOptions = derivePlanBudgetTierOptions();
+    let planBudgetTierByKey = new Map(planBudgetTierOptions.map((opt) => [opt.key, opt]));
+    let latestPlanMonthlyTotalWithTax = null;
+    const syncPlanBudgetTierMap = () => {
+        planBudgetTierByKey = new Map(planBudgetTierOptions.map((opt) => [opt.key, opt]));
+    };
+    const parseCurrencyNumber = (rawText) => {
+        const cleaned = String(rawText || '').replace(/[^0-9.-]/g, '');
+        const value = Number(cleaned);
+        return Number.isFinite(value) ? value : null;
+    };
+    const updatePlanBudgetStatusBadge = ({ budgetOverride = null, monthlyTotalOverride = null } = {}) => {
+        const budgetAllocEl = document.getElementById('budget-allocated');
+        const budgetTotalEl = document.getElementById('budget-total');
+        const budgetStatusEl = document.getElementById('budget-status');
+        const statusBadge = budgetStatusEl?.querySelector('.status-badge');
+        if (!statusBadge) return;
+
+        const budgetFromOverride = Number(budgetOverride);
+        const budgetFromPrefs = Number(prefs?.budgetTotal || 0);
+        const budgetFromDom = parseCurrencyNumber(budgetAllocEl?.textContent);
+        const budgetValue = Number.isFinite(budgetFromOverride)
+            ? budgetFromOverride
+            : (Number.isFinite(budgetFromPrefs) && budgetFromPrefs > 0 ? budgetFromPrefs : (budgetFromDom || 0));
+
+        const monthlyFromOverride = Number(monthlyTotalOverride);
+        const monthlyFromCache = Number(latestPlanMonthlyTotalWithTax);
+        const monthlyFromDom = parseCurrencyNumber(budgetTotalEl?.textContent);
+        const monthlyValue = Number.isFinite(monthlyFromOverride)
+            ? monthlyFromOverride
+            : (Number.isFinite(monthlyFromCache) && monthlyFromCache > 0 ? monthlyFromCache : (monthlyFromDom || 0));
+
+        if (budgetAllocEl && budgetValue > 0) {
+            budgetAllocEl.textContent = formatCurrency(budgetValue);
+        }
+
+        if (!(budgetValue > 0)) {
+            statusBadge.textContent = 'Select a budget to compare';
+            budgetStatusEl.setAttribute('data-budget-status', 'unset');
+            return;
+        }
+        if (!(monthlyValue > 0)) {
+            statusBadge.textContent = 'Building estimate...';
+            budgetStatusEl.setAttribute('data-budget-status', 'pending');
+            return;
+        }
+
+        const delta = budgetValue - monthlyValue;
+        if (Math.abs(delta) < 0.5) {
+            statusBadge.textContent = 'On budget';
+            budgetStatusEl.setAttribute('data-budget-status', 'on');
+            return;
+        }
+        if (delta >= 0) {
+            statusBadge.textContent = `Under budget by ${formatCurrency(delta)}`;
+            budgetStatusEl.setAttribute('data-budget-status', 'under');
+            return;
+        }
+        statusBadge.textContent = `Over budget by ${formatCurrency(Math.abs(delta))}`;
+        budgetStatusEl.setAttribute('data-budget-status', 'over');
+    };
+    const applyPlanBudgetBanner = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || planBudgetTierOptions[0] || null;
+        if (mealBudgetOptionEls.length) {
+            mealBudgetOptionEls.forEach((el, idx) => {
+                const opt = planBudgetTierOptions[idx] || null;
+                if (!opt) return;
+                el.disabled = false;
+                el.dataset.budgetTier = opt.key;
+                el.innerHTML = `<span class="meal-budget-option-title">${escapeHtml(opt.title)}</span><span class="meal-budget-option-range">${escapeHtml(formatBudgetRange(opt.low, opt.high))}</span>`;
+                el.classList.toggle('active', opt.key === modeKey);
+            });
+        }
+        if (budgetEl) {
+            budgetEl.textContent = selected ? formatCurrency(Number(selected.value || 0)) : 'â€”';
+        }
+        updatePlanBudgetStatusBadge({
+            budgetOverride: selected ? Number(selected.value || 0) : null
+        });
+    };
+    const rebasePlanBudgetTiersFromActual = (actualMonthlyWithTax, modeKeyRaw) => {
+        const actual = Number(actualMonthlyWithTax);
+        if (!Number.isFinite(actual) || actual <= 0) return;
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const inferredBestCost = actual / modeMidpointFactor(modeKey);
+        planBudgetTierOptions = buildPlanTierOptionsFromBestCost(inferredBestCost);
+        syncPlanBudgetTierMap();
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        const selected = planBudgetTierByKey.get(modeKey) || null;
+        if (selected) {
+            prefs.budgetMode = modeKey;
+            prefs.budgetTotal = Number(selected.value || 0);
+        }
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        applyPlanBudgetBanner(modeKey);
+    };
+    // Keep tier ranges stable while user switches budget modes.
+    // If we already have saved tier options, do not auto-rebase from actual totals.
+    const hasSavedPlanTierOptions = Array.isArray(prefs?.budgetTierOptions)
+        && prefs.budgetTierOptions.length >= 3;
+    let hasAutoRebasedPlanBudgetTiers = false;
+    const maybeRebasePlanBudgetTiersFromActual = (actualMonthlyWithTax) => {
+        if (hasSavedPlanTierOptions) return;
+        if (hasAutoRebasedPlanBudgetTiers) return;
+        rebasePlanBudgetTiersFromActual(actualMonthlyWithTax, 'best');
+        hasAutoRebasedPlanBudgetTiers = true;
+    };
+    const persistPlanBudgetSelection = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || null;
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetMode = modeKey;
+        if (selected) prefs.budgetTotal = Number(selected.value || 0);
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        return selected;
+    };
+    const budgetModeRank = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        if (modeKey === 'budget') return 0;
+        if (modeKey === 'balanced') return 1;
+        return 2; // best
+    };
+    const budgetModeTitle = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        if (modeKey === 'budget') return 'Minimum Effective Plan';
+        if (modeKey === 'balanced') return 'Balanced Results';
+        return 'Best Performance';
+    };
+    const resolveGoalWeightForBudgetSwitchPreview = () => {
+        const goalWeight = Number(
+            prefs?.goalWeightLbs
+            || nutritionState?.selections?.goalWeightLbs
+            || sessionData?.selections?.goalWeightLbs
+            || 0
+        );
+        if (Number.isFinite(goalWeight) && goalWeight > 0) return goalWeight;
+        const currentWeight = Number(
+            prefs?.weightLbs
+            || nutritionState?.selections?.weightLbs
+            || sessionData?.selections?.weightLbs
+            || 0
+        );
+        return (Number.isFinite(currentWeight) && currentWeight > 0) ? currentWeight : 170;
+    };
+    const buildBudgetModePreviewMacros = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const calcCarbRemainder = (cal, pro, fat) => Math.max(0, Math.round((Number(cal || 0) - ((Number(pro || 0) * 4) + (Number(fat || 0) * 9))) / 4));
+        const src = prefs?.macroBaseline || initialMacrosSnapshot || macros || {};
+        const caloriesFixed = Math.max(1200, Math.round(Number(src?.calories) || Number(macros?.calories) || 2000));
+        const bestProtein = Math.max(0, Math.round(Number(src?.proteinG) || Number(macros?.proteinG) || 150));
+        const bestFat = Math.max(0, Math.round(Number(src?.fatG) || Number(macros?.fatG) || 65));
+        const sexRaw = String(
+            prefs?.sex
+            || nutritionState?.selections?.sex
+            || sessionData?.selections?.sex
+            || ''
+        ).trim().toUpperCase();
+        const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
+        const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
+        const goalWeightUsed = resolveGoalWeightForBudgetSwitchPreview();
+        const proteinFloor = Math.round(0.75 * goalWeightUsed);
+        const balancedProtein = Math.max(proteinFloor, Math.round(bestProtein * 0.92));
+        if (modeKey === 'budget') {
+            const proteinG = Math.max(0, proteinFloor);
+            const fatG = Math.max(bestFat, fatFloor);
+            return { calories: caloriesFixed, proteinG, fatG, carbG: calcCarbRemainder(caloriesFixed, proteinG, fatG), fatFloor, fatSexMin, proteinFloor };
+        }
+        if (modeKey === 'balanced') {
+            const proteinG = Math.max(0, balancedProtein);
+            const fatG = Math.max(bestFat, fatFloor);
+            return { calories: caloriesFixed, proteinG, fatG, carbG: calcCarbRemainder(caloriesFixed, proteinG, fatG), fatFloor, fatSexMin, proteinFloor };
+        }
+        const proteinG = Math.max(0, Math.round(bestProtein));
+        const fatG = Math.max(0, Math.round(bestFat));
+        return { calories: caloriesFixed, proteinG, fatG, carbG: calcCarbRemainder(caloriesFixed, proteinG, fatG), fatFloor, fatSexMin, proteinFloor };
+    };
+    const buildBudgetDowngradeMessage = (fromModeRaw, toModeRaw) => {
+        const fromMode = normalizeBudgetModeKey(fromModeRaw);
+        const toMode = normalizeBudgetModeKey(toModeRaw);
+        const fromMacros = buildBudgetModePreviewMacros(fromMode);
+        const toMacros = buildBudgetModePreviewMacros(toMode);
+        const proteinDelta = Math.round((toMacros?.proteinG || 0) - (fromMacros?.proteinG || 0));
+        const carbDelta = Math.round((toMacros?.carbG || 0) - (fromMacros?.carbG || 0));
+        const fromTitle = budgetModeTitle(fromMode);
+        const toTitle = budgetModeTitle(toMode);
+        const lineProteinDelta = `${proteinDelta >= 0 ? '+' : ''}${proteinDelta}g`;
+        const lineCarbDelta = `${carbDelta >= 0 ? '+' : ''}${carbDelta}g`;
+        const goalRaw = String(
+            prefs?.goal
+            || prefs?.mode
+            || nutritionState?.selections?.goal
+            || sessionData?.selections?.goal
+            || ''
+        ).trim();
+        const goalMode = normalizeGoal(goalRaw);
+        const pairKey = `${fromMode}->${toMode}`;
+        const isCutGoal = goalMode === 'CUT';
+        const buildDownsideBullets = () => {
+            if (isCutGoal) {
+                if (pairKey === 'best->balanced') {
+                    return [
+                        'Scale weight loss is usually similar, but gym output can feel [[~5-8% flatter]].',
+                        'You may lose 1-2 hard reps on late working sets compared with Best.',
+                        'Physique trend: fat loss continues, but muscle fullness/\"hard\" look can be less consistent week to week.',
+                        'If pumps and performance stay flat for 3-4 days, move back to Best.'
+                    ];
+                }
+                if (pairKey === 'balanced->budget') {
+                    return [
+                        'Scale loss can still happen, but hunger and cravings usually increase.',
+                        'Training comfort and recovery usually drop more than with Balanced.',
+                        'Physique trend: fat loss can continue, but muscle-retention margin gets tighter and \"flat\" days increase.',
+                        'If strength drops across 2 workouts in a row, move back to Balanced.'
+                    ];
+                }
+                return [
+                    'This is the largest cut in recovery support; gym output can feel [[~8-15% flatter]].',
+                    'Strength maintenance risk is higher versus Best, especially on hard training days.',
+                    'Physique trend: fat loss can continue, but fullness and strength retention are less reliable.',
+                    'If recovery, mood, or performance dip for 3-4 days, move up one tier.'
+                ];
+            }
+
+            if (pairKey === 'best->balanced') {
+                return [
+                    'You should still progress, but size/strength gains are usually [[~5-10% slower]] than Best.',
+                    'Hard training days may feel less explosive and top-set performance can stall sooner.',
+                    'Physique trend: still improving, but changes usually look less dramatic week to week.',
+                    'If progression stalls for 1-2 weeks, move back to Best.'
+                ];
+            }
+            if (pairKey === 'balanced->budget') {
+                return [
+                    'Gain pace usually slows further and recovery quality drops.',
+                    'You may need extra weeks to hit the same size/strength milestones.',
+                    'Physique trend: progress remains possible, but \"filled out\" look usually comes slower.',
+                    'If lifts stall for 2 weeks, move back to Balanced.'
+                ];
+            }
+            return [
+                'This is the largest downgrade: size/strength progress can be [[~10-20% slower]] versus Best.',
+                'Recovery buffer is lower, so hard sessions may feel noticeably tougher.',
+                'Physique trend: progress is still possible, but visual changes usually come slower and less consistently.',
+                'If lifts or body changes stall for 2 weeks, move up one tier.'
+            ];
+        };
+        const equationLine = toMode === 'balanced'
+            ? 'Protein rule in Balanced: keep at least [[0.75 x goal weight]], and usually run around [[8% lower than Best]].'
+            : 'Protein rule in Minimum Effective: set protein to [[0.75 x goal weight]] (minimum for this tier).';
+        const downsideBullets = buildDownsideBullets();
+
+        return [
+            `Switch from ${fromTitle} to ${toTitle}.`,
+            `**Official calculations**`,
+            `Calories stay fixed: [[${Math.round(toMacros.calories)} kcal/day]].`,
+            equationLine,
+            `Protein: [[${Math.round(fromMacros.proteinG)}g -> ${Math.round(toMacros.proteinG)}g]] (${lineProteinDelta}).`,
+            `Carbs: [[${Math.round(fromMacros.carbG)}g -> ${Math.round(toMacros.carbG)}g]] (${lineCarbDelta}).`,
+            `Fat rule: use the higher of [[22% of calories]] or [[${Math.round(toMacros.fatSexMin || 50)}g baseline]] = [[${Math.round(toMacros.fatFloor || 0)}g/day]].`,
+            '---',
+            `**Potential downsides if you apply this downgrade**`,
+            ...downsideBullets.map((line) => `- ${line}`)
+        ].join('\n');
+    };
+    const confirmBudgetDowngradeIfNeeded = async (fromModeRaw, toModeRaw) => {
+        const fromMode = normalizeBudgetModeKey(fromModeRaw);
+        const toMode = normalizeBudgetModeKey(toModeRaw);
+        if (fromMode === toMode) return true;
+        if (budgetModeRank(toMode) >= budgetModeRank(fromMode)) return true;
+
+        const msg = buildBudgetDowngradeMessage(fromMode, toMode);
+        const nextTitle = budgetModeTitle(toMode);
+        if (typeof odeConfirm === 'function') {
+            try {
+                return await odeConfirm({
+                    title: `Switch to ${nextTitle}?`,
+                    message: msg,
+                    confirmText: 'Apply downgrade',
+                    cancelText: 'Keep current plan',
+                    size: 'wide'
+                });
+            } catch {
+                return false;
+            }
+        }
+        return window.confirm(msg);
+    };
+    const updatePlanBudgetForecastSummary = (monthlyTotalWithTax) => {
+        if (!planBudgetForecastMainEl) return;
+        const total = Number(monthlyTotalWithTax);
+        planBudgetForecastMainEl.textContent = Number.isFinite(total) && total > 0
+            ? `Current post-tax price: ${formatCurrency(total)}/month.`
+            : 'Current post-tax price: â€”/month.';
+    };
+    const formatPlanFreqDownLabel = (freq) => {
+        if (freq === '5-6') return 'Decrease workouts per week (5-6 -> 3-4)';
+        if (freq === '3-4') return 'Decrease workouts per week (3-4 -> 1-2)';
+        return 'Decrease workouts per week';
+    };
+    const formatPlanFrequencyLabel = (rawFreq) => {
+        const f = String(rawFreq || '').trim();
+        if (f === '1-2') return '1-2 training days/week';
+        if (f === '3-4') return '3-4 training days/week';
+        if (f === '5-6') return '5-6 training days/week';
+        return 'training frequency not set';
+    };
+    const getPlanCurrentLossRate = () => {
+        const fromPrefs = Number(prefs?.lossRateLbsPerWeek ?? prefs?.lbsPerWeek);
+        const fromSession = Number(sessionData?.selections?.lossRateLbsPerWeek ?? sessionData?.selections?.lbsPerWeek);
+        const fromState = Number(nutritionState?.selections?.lossRateLbsPerWeek ?? nutritionState?.selections?.lbsPerWeek);
+        if (Number.isFinite(fromPrefs) && fromPrefs > 0) return fromPrefs;
+        if (Number.isFinite(fromSession) && fromSession > 0) return fromSession;
+        if (Number.isFinite(fromState) && fromState > 0) return fromState;
+        return 1.5;
+    };
+    const buildPlanCurrentFormState = (overrides = {}) => ({
+        goal: prefs?.goal || prefs?.mode || sessionData?.selections?.goal || nutritionState?.selections?.goal || null,
+        style: prefs?.style || sessionData?.selections?.style || nutritionState?.selections?.style || null,
+        frequency: prefs?.frequency || sessionData?.selections?.frequency || nutritionState?.selections?.frequency || null,
+        sex: prefs?.sex || sessionData?.selections?.sex || nutritionState?.selections?.sex || null,
+        pregnant: prefs?.pregnant || sessionData?.selections?.pregnant || nutritionState?.selections?.pregnant || 'NO',
+        lactating: prefs?.lactating || sessionData?.selections?.lactating || nutritionState?.selections?.lactating || 'NO',
+        trimester: prefs?.trimester || sessionData?.selections?.trimester || nutritionState?.selections?.trimester || null,
+        ageYears: prefs?.ageYears || sessionData?.selections?.ageYears || nutritionState?.selections?.ageYears || null,
+        heightIn: prefs?.heightIn || sessionData?.selections?.heightIn || nutritionState?.selections?.heightIn || null,
+        weightLbs: prefs?.weightLbs || sessionData?.selections?.weightLbs || nutritionState?.selections?.weightLbs || null,
+        goalWeightLbs: prefs?.goalWeightLbs || sessionData?.selections?.goalWeightLbs || nutritionState?.selections?.goalWeightLbs || null,
+        intensity: prefs?.intensity || sessionData?.selections?.intensity || nutritionState?.selections?.intensity || null,
+        lossRateLbsPerWeek: getPlanCurrentLossRate(),
+        ...overrides
+    });
+    const projectPlanCaloriesAndMacros = (formState) => {
+        try {
+            const normalized = normalizeInputs(formState, { strictMode: false, throwOnError: false });
+            const errs = Array.isArray(normalized?.errors) ? normalized.errors : [];
+            if (errs.length) return { errors: errs };
+            const c = calcCalories(normalized);
+            const m = calcMacros(normalized, { target: c.target });
+            const caloriesTarget = Number.isFinite(m?.calories_target) ? Number(m.calories_target) : Number(c?.target || 0);
+            return {
+                errors: [],
+                calories: { target: caloriesTarget },
+                macros: {
+                    protein_g: Number(m?.protein_g || 0),
+                    carb_g: Number(m?.carb_g || 0),
+                    fat_g: Number(m?.fat_g || 0)
+                }
+            };
+        } catch (err) {
+            return { errors: ['PROJECTION_FAILED'], detail: String(err?.message || err || 'unknown') };
+        }
+    };
+    const getCurrentPlanBudgetMode = () => {
+        const activeBtn = mealBudgetOptionEls.find((el) => el.classList.contains('active'));
+        return normalizeBudgetModeKey(activeBtn?.dataset?.budgetTier || prefs?.budgetMode || 'balanced');
+    };
+    const applyPlanProjectedState = ({ nextMacros, nextOverrides }) => {
+        if (!nextMacros) return;
+        macros.calories = Number(nextMacros.calories || 0);
+        macros.proteinG = Number(nextMacros.proteinG || 0);
+        macros.carbG = Number(nextMacros.carbG || 0);
+        macros.fatG = Number(nextMacros.fatG || 0);
+
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        Object.assign(prefs, nextOverrides || {});
+        if (prefs.goal) prefs.mode = prefs.goal;
+        if (prefs.mode) prefs.goal = prefs.mode;
+        prefs.macros = {
+            calories: macros.calories,
+            proteinG: macros.proteinG,
+            carbG: macros.carbG,
+            fatG: macros.fatG
+        };
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+
+        if (sessionData && typeof sessionData === 'object') {
+            sessionData.macros = { ...prefs.macros };
+            sessionData.proteinTarget = prefs.macros.proteinG;
+            sessionData.selections = { ...(sessionData.selections || {}), ...(nextOverrides || {}) };
+            try { sessionStorage.setItem('grocerySession', JSON.stringify(sessionData)); } catch {}
+        }
+        if (nutritionState?.selections && typeof nutritionState.selections === 'object') {
+            Object.assign(nutritionState.selections, nextOverrides || {});
+        }
+        if (activeBudgetMacroBaselineRef && typeof activeBudgetMacroBaselineRef === 'object') {
+            activeBudgetMacroBaselineRef.calories = Number(macros.calories || 0);
+            activeBudgetMacroBaselineRef.proteinG = Number(macros.proteinG || 0);
+            activeBudgetMacroBaselineRef.carbG = Number(macros.carbG || 0);
+            activeBudgetMacroBaselineRef.fatG = Number(macros.fatG || 0);
+        }
+    };
+    const renderPlanBudgetForecastActions = () => {
+        if (!planBudgetForecastActionsEl) return;
+        const goalRaw = String(prefs?.goal || prefs?.mode || sessionData?.selections?.goal || nutritionState?.selections?.goal || '').trim();
+        const goalMode = normalizeGoal(goalRaw);
+        const freqNow = String(prefs?.frequency || sessionData?.selections?.frequency || nutritionState?.selections?.frequency || '').trim();
+        const currentRate = getPlanCurrentLossRate();
+        const actions = [];
+        const canLowerFreq = freqNow && freqNow !== '1-2';
+        actions.push({
+            key: 'lower-frequency',
+            label: formatPlanFreqDownLabel(freqNow),
+            disabled: !canLowerFreq
+        });
+        if (goalMode === 'CUT') {
+            const nextRate = currentRate < 1.5 ? 1.5 : (currentRate < 2 ? 2 : 2);
+            const canIncreaseCutSpeed = currentRate < 2;
+            actions.push({
+                key: 'faster-cut',
+                label: canIncreaseCutSpeed
+                    ? `Increase cut speed (${Number(currentRate).toFixed(1)} -> ${Number(nextRate).toFixed(1)} lb/week)`
+                    : 'Cut speed already maxed (2.0 lb/week)',
+                disabled: !canIncreaseCutSpeed
+            });
+            actions.push({
+                key: 'apply-both',
+                label: 'Apply both',
+                disabled: !(canLowerFreq || canIncreaseCutSpeed)
+            });
+        } else if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
+            const canSlowerBulk = goalMode !== 'STRENGTH';
+            actions.push({
+                key: 'slower-bulk',
+                label: canSlowerBulk ? 'Bulk slower (smaller surplus)' : 'Bulk speed already reduced',
+                disabled: !canSlowerBulk
+            });
+            actions.push({
+                key: 'apply-both',
+                label: 'Apply both',
+                disabled: !(canLowerFreq || canSlowerBulk)
+            });
+        }
+        planBudgetForecastActionsEl.innerHTML = actions
+            .map((a) => `<button type="button" class="budget-forecast-action-btn" data-plan-budget-action="${escapeHtml(a.key)}" ${a.disabled ? 'disabled' : ''}>${escapeHtml(a.label)}</button>`)
+            .join('');
+    };
+    if (planBudgetForecastToggleEl && planBudgetForecastWrapEl && planBudgetForecastToggleEl.dataset.bound !== '1') {
+        planBudgetForecastToggleEl.dataset.bound = '1';
+        planBudgetForecastToggleEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            const nextOpen = !planBudgetForecastWrapEl.classList.contains('is-open');
+            planBudgetForecastWrapEl.classList.toggle('is-open', nextOpen);
+            planBudgetForecastToggleEl.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+        });
+    }
+    if (planBudgetForecastActionsEl && planBudgetForecastActionsEl.dataset.bound !== '1') {
+        planBudgetForecastActionsEl.dataset.bound = '1';
+        planBudgetForecastActionsEl.addEventListener('click', async (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest('[data-plan-budget-action]') : null;
+            if (!btn || btn.disabled) return;
+            e.preventDefault();
+            const action = String(btn.getAttribute('data-plan-budget-action') || '').trim();
+
+            const currentState = buildPlanCurrentFormState();
+            const currentMonthly = estimateMonthlyFromMacrosForPlan(macros);
+            const currentFreq = String(currentState.frequency || '').trim();
+            const currentRate = Number(currentState.lossRateLbsPerWeek || 1.5);
+            const goalNorm = normalizeGoal(currentState.goal);
+
+            let nextOverrides = null;
+            let actionTitle = '';
+            if (action === 'lower-frequency') {
+                const nextFreq = currentFreq === '5-6' ? '3-4' : (currentFreq === '3-4' ? '1-2' : '');
+                if (!nextFreq) {
+                    alert('Workouts per week is already at the lowest option.');
+                    return;
+                }
+                nextOverrides = { frequency: nextFreq };
+                actionTitle = 'Train fewer days';
+            } else if (action === 'faster-cut') {
+                if (goalNorm !== 'CUT') return;
+                const nextRate = currentRate < 1.5 ? 1.5 : (currentRate < 2 ? 2 : 2);
+                if (nextRate <= currentRate) {
+                    alert('Cut speed is already at the max allowed (2.0 lb/week).');
+                    return;
+                }
+                nextOverrides = { lossRateLbsPerWeek: nextRate };
+                actionTitle = 'Increase cut speed';
+            } else if (action === 'slower-bulk') {
+                if (goalNorm !== 'BULK' && goalNorm !== 'STRENGTH') return;
+                if (goalNorm === 'STRENGTH') {
+                    alert('Bulk speed is already reduced.');
+                    return;
+                }
+                nextOverrides = { goal: 'STRENGTH', mode: 'STRENGTH' };
+                actionTitle = 'Bulk slower';
+            } else if (action === 'apply-both') {
+                const batchOverrides = {};
+                const nextFreq = currentFreq === '5-6' ? '3-4' : (currentFreq === '3-4' ? '1-2' : '');
+                if (nextFreq) batchOverrides.frequency = nextFreq;
+                if (goalNorm === 'CUT') {
+                    const nextRate = currentRate < 1.5 ? 1.5 : (currentRate < 2 ? 2 : 2);
+                    if (nextRate > currentRate) batchOverrides.lossRateLbsPerWeek = nextRate;
+                    actionTitle = 'Apply both (cut cost levers)';
+                } else if (goalNorm === 'BULK' || goalNorm === 'STRENGTH') {
+                    if (goalNorm !== 'STRENGTH') {
+                        batchOverrides.goal = 'STRENGTH';
+                        batchOverrides.mode = 'STRENGTH';
+                    }
+                    actionTitle = 'Apply both (bulk cost levers)';
+                } else {
+                    return;
+                }
+                if (!Object.keys(batchOverrides).length) {
+                    alert('No further cost reductions are available for this plan.');
+                    return;
+                }
+                nextOverrides = batchOverrides;
+            } else {
+                return;
+            }
+
+            const projectedState = buildPlanCurrentFormState(nextOverrides);
+            const next = projectPlanCaloriesAndMacros(projectedState);
+            if (!next || !next.calories || !next.macros || (Array.isArray(next.errors) && next.errors.length)) {
+                alert('Could not project this change yet. Please use redo calculation for now.');
+                return;
+            }
+
+            const nextMacros = {
+                calories: Number(next.calories.target || 0),
+                proteinG: Number(next.macros.protein_g || 0),
+                carbG: Number(next.macros.carb_g || 0),
+                fatG: Number(next.macros.fat_g || 0)
+            };
+            const nextMonthly = estimateMonthlyFromMacrosForPlan(nextMacros);
+            const deltaMonthly = nextMonthly - currentMonthly;
+            const deltaCal = Number(nextMacros.calories || 0) - Number(macros?.calories || 0);
+            const projectedGoalNorm = normalizeGoal(projectedState.goal || currentState.goal);
+            const projectedFreq = String(projectedState.frequency || currentFreq || '').trim();
+            const currentFreqText = formatPlanFrequencyLabel(currentFreq);
+            const projectedFreqText = formatPlanFrequencyLabel(projectedFreq);
+            const currentRateText = `${Number(currentRate || 0).toFixed(1)} lb/week`;
+            const projectedRateText = `${Number(projectedState.lossRateLbsPerWeek || currentRate || 0).toFixed(1)} lb/week`;
+            const monthlyDeltaLabel = `${deltaMonthly >= 0 ? '+' : '-'}${formatCurrency(Math.abs(deltaMonthly))}`;
+            const summaryLines = [
+                '**What changes if you apply this**',
+                `- Training days/week: [[${currentFreqText} -> ${projectedFreqText}]]`
+            ];
+            if (projectedGoalNorm === 'CUT') {
+                summaryLines.push(`- Fat-loss pace: [[${currentRateText} -> ${projectedRateText}]]`);
+            } else if (projectedGoalNorm === 'BULK' || projectedGoalNorm === 'STRENGTH') {
+                const beforeMode = goalNorm === 'STRENGTH' ? 'Strength-priority' : 'Build';
+                const afterMode = projectedGoalNorm === 'STRENGTH' ? 'Strength-priority' : 'Build';
+                summaryLines.push(`- Gain mode: [[${beforeMode} -> ${afterMode}]]`);
+            }
+            summaryLines.push(`- Calories target: [[${Math.round(Number(macros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]] (${deltaCal >= 0 ? '+' : ''}${Math.round(deltaCal)} kcal)`);
+            summaryLines.push(`- Monthly groceries: [[${formatCurrency(currentMonthly)} -> ${formatCurrency(nextMonthly)}]] (${monthlyDeltaLabel})`);
+            summaryLines.push('---');
+            summaryLines.push('**Pros**');
+            if (action === 'lower-frequency') {
+                summaryLines.push('- [[Lower monthly cost pressure]] from reduced energy demand.');
+                summaryLines.push('- [[More recovery time]] between sessions.');
+                summaryLines.push('- Easier to stay consistent if schedule is tight.');
+            } else if (action === 'faster-cut') {
+                summaryLines.push('- [[Faster fat-loss timeline]] toward goal weight.');
+                summaryLines.push('- [[Lower grocery spend]] from lower calorie targets.');
+                summaryLines.push('- Useful as a short budget-saving phase.');
+            } else if (action === 'slower-bulk') {
+                summaryLines.push('- [[Lower monthly cost]] from a smaller surplus.');
+                summaryLines.push('- [[Lower unnecessary fat-gain risk]] while still building.');
+                summaryLines.push('- Easier appetite control across the week.');
+            } else if (action === 'apply-both') {
+                if (projectedGoalNorm === 'CUT') {
+                    summaryLines.push('- [[Largest immediate cost drop]] for your cut.');
+                    summaryLines.push('- Combines lower activity demand with faster fat-loss settings.');
+                    summaryLines.push('- Can keep progress moving when budget is tight.');
+                } else {
+                    summaryLines.push('- [[Largest cost reduction]] available for your build phase.');
+                    summaryLines.push('- Lower weekly food demand plus a smaller surplus.');
+                    summaryLines.push('- Better control of monthly spend without restarting setup.');
+                }
+            }
+            summaryLines.push('**Cons / Tradeoffs**');
+            if (action === 'lower-frequency') {
+                summaryLines.push('- [[Slower gym adaptation]] from reduced training volume.');
+                summaryLines.push('- You may see slower improvements in conditioning or work capacity.');
+            } else if (action === 'faster-cut') {
+                summaryLines.push('- [[Higher hunger and cravings]] as the deficit increases.');
+                summaryLines.push('- Training performance and recovery can feel flatter on hard days.');
+            } else if (action === 'slower-bulk') {
+                summaryLines.push('- [[Slower size and strength gain pace]].');
+                summaryLines.push('- You may need a longer timeline to hit the same scale target.');
+            } else if (action === 'apply-both') {
+                if (projectedGoalNorm === 'CUT') {
+                    summaryLines.push('- [[Highest adherence pressure]] among cut cost options.');
+                    summaryLines.push('- Recovery and gym output can drop if sleep/stress are not managed.');
+                } else {
+                    summaryLines.push('- [[Slowest gain pace]] among build options.');
+                    summaryLines.push('- Lower weekly training frequency can reduce total growth stimulus.');
+                }
+            }
+
+            let confirmed = false;
+            if (typeof odeConfirm === 'function') {
+                confirmed = await odeConfirm({
+                    title: `${actionTitle} - Preview`,
+                    message: summaryLines.join('\n'),
+                    confirmText: 'Apply change',
+                    cancelText: 'Keep current plan',
+                    size: 'wide'
+                });
+            } else {
+                confirmed = window.confirm(summaryLines.join('\n'));
+            }
+            if (!confirmed) return;
+
+            applyPlanProjectedState({ nextMacros, nextOverrides });
+            renderPlanBudgetForecastActions();
+
+            const modeKey = getCurrentPlanBudgetMode();
+            const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || null;
+            if (typeof onPlanBudgetModeSwitch === 'function') {
+                onPlanBudgetModeSwitch(modeKey, selected);
+            }
+        });
+        renderPlanBudgetForecastActions();
+    }
+    renderPlanBudgetForecastActions();
     
     const updateMacroDisplay = (scale = 1) => {
         if (!macros) return;
@@ -12922,20 +14011,28 @@ async function setupGroceryPlanPage() {
     if (storeEl && prefs?.store) {
         storeEl.textContent = prefs.store;
     }
-    if (budgetEl && prefs?.budgetTotal) {
-        budgetEl.textContent = formatCurrency(Number(prefs.budgetTotal));
-    }
-    if (mealBudgetInlineEl) {
-        mealBudgetInlineEl.textContent = '—';
-    }
-    if (mealBudgetOptionEls.length) {
-        const budgetNum = Number(prefs?.budgetTotal || 0);
-        let selectedTier = '200-400';
-        if (budgetNum > 0 && budgetNum <= 200) selectedTier = 'under-200';
-        else if (budgetNum >= 400) selectedTier = '400-plus';
-        mealBudgetOptionEls.forEach((el) => {
-            const tier = String(el.getAttribute('data-budget-tier') || '');
-            el.classList.toggle('active', tier === selectedTier);
+    const initialPlanBudgetMode = normalizeBudgetModeKey(prefs?.budgetMode || 'balanced');
+    applyPlanBudgetBanner(initialPlanBudgetMode);
+    updatePlanBudgetForecastSummary(Number(prefs?.budgetTotal || 0));
+    if (mealBudgetOptionsWrap && mealBudgetOptionsWrap.dataset.bound !== '1') {
+        mealBudgetOptionsWrap.dataset.bound = '1';
+        mealBudgetOptionsWrap.addEventListener('click', async (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest('.meal-budget-option') : null;
+            if (!btn) return;
+            const modeKey = normalizeBudgetModeKey(btn.dataset.budgetTier || 'balanced');
+            const activeBtn = mealBudgetOptionEls.find((el) => el.classList.contains('active'));
+            const currentMode = normalizeBudgetModeKey(
+                activeBtn?.dataset?.budgetTier
+                || prefs?.budgetMode
+                || 'balanced'
+            );
+            const shouldProceed = await confirmBudgetDowngradeIfNeeded(currentMode, modeKey);
+            if (!shouldProceed) return;
+            const selected = persistPlanBudgetSelection(modeKey);
+            applyPlanBudgetBanner(modeKey);
+            if (typeof onPlanBudgetModeSwitch === 'function') {
+                onPlanBudgetModeSwitch(modeKey, selected);
+            }
         });
     }
 
@@ -13109,6 +14206,64 @@ async function setupGroceryPlanPage() {
             carbs_g: macros.carbG || 200,
             fat_g: macros.fatG || 65
         };
+        const budgetModeMacroBaseline = (() => {
+            const src = prefs?.macroBaseline || prefs?.macros || {
+                calories: macroTargetsBase.calories,
+                proteinG: macroTargetsBase.protein_g,
+                carbG: macroTargetsBase.carbs_g,
+                fatG: macroTargetsBase.fat_g
+            };
+            return {
+                calories: Math.max(1200, Math.round(Number(src?.calories) || Number(macroTargetsBase.calories) || 2000)),
+                proteinG: Math.max(0, Math.round(Number(src?.proteinG) || Number(macroTargetsBase.protein_g) || 150)),
+                carbG: Math.max(0, Math.round(Number(src?.carbG) || Number(macroTargetsBase.carbs_g) || 200)),
+                fatG: Math.max(0, Math.round(Number(src?.fatG) || Number(macroTargetsBase.fat_g) || 65))
+            };
+        })();
+        activeBudgetMacroBaselineRef = budgetModeMacroBaseline;
+        const calcCarbRemainderForPlan = (cal, pro, fat) => Math.max(0, Math.round((Number(cal || 0) - ((Number(pro || 0) * 4) + (Number(fat || 0) * 9))) / 4));
+        const resolveGoalWeightForPlanBudget = () => {
+            const gw = Number(
+                prefs?.goalWeightLbs
+                || nutritionState.selections?.goalWeightLbs
+                || sessionData?.selections?.goalWeightLbs
+                || 0
+            );
+            if (Number.isFinite(gw) && gw > 0) return gw;
+            const cw = Number(
+                prefs?.weightLbs
+                || nutritionState.selections?.weightLbs
+                || sessionData?.selections?.weightLbs
+                || 0
+            );
+            return (Number.isFinite(cw) && cw > 0) ? cw : 170;
+        };
+        const buildBudgetModeMacrosForPlan = (modeKeyRaw) => {
+            const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+            const caloriesFixed = Math.max(1200, Number(budgetModeMacroBaseline.calories) || 2000);
+            const bestProtein = Math.max(0, Number(budgetModeMacroBaseline.proteinG) || 0);
+            const bestFat = Math.max(0, Number(budgetModeMacroBaseline.fatG) || 0);
+            const sexRaw = String(prefs?.sex || nutritionState.selections?.sex || sessionData?.selections?.sex || '').trim().toUpperCase();
+            const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
+            const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
+            const goalWeightUsed = resolveGoalWeightForPlanBudget();
+            const proteinFloor = Math.round(0.75 * goalWeightUsed);
+            const balancedProtein = Math.max(proteinFloor, Math.round(bestProtein * 0.92));
+
+            if (modeKey === 'budget') {
+                const proteinG = Math.max(0, proteinFloor);
+                const fatG = Math.max(bestFat, fatFloor);
+                return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG) };
+            }
+            if (modeKey === 'balanced') {
+                const proteinG = Math.max(0, balancedProtein);
+                const fatG = Math.max(bestFat, fatFloor);
+                return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG) };
+            }
+            const proteinG = Math.max(0, Math.round(bestProtein));
+            const fatG = Math.max(0, Math.round(bestFat));
+            return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG) };
+        };
 
         let portionScale = 1;
         const initialMacroTargetsBaseSnapshot = { ...macroTargetsBase };
@@ -13126,6 +14281,7 @@ async function setupGroceryPlanPage() {
                 carbG: macros.carbG,
                 fatG: macros.fatG
             };
+            prefs.macroBaseline = { ...budgetModeMacroBaseline };
             try {
                 sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs));
             } catch {
@@ -13332,7 +14488,7 @@ async function setupGroceryPlanPage() {
                 if (mealGrid) {
                     mealGrid.innerHTML = `
                         <div class="upgrade-message">
-                            <h4>ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Cannot Generate Plan</h4>
+                            <h4>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Cannot Generate Plan</h4>
                             <p>With the foods included in the free plan, we cannot fully match your macros.</p>
                         </div>
                     `;
@@ -13472,7 +14628,7 @@ async function setupGroceryPlanPage() {
                 microActualEls[key] = document.getElementById(`actual-${microIdMap[key]}`);
             });
             const formatMicroProjected = (cfg) => {
-                if (!cfg) return '—';
+                if (!cfg) return 'â€”';
                 const goalText = `${cfg.goal}${cfg.unit} (${cfg.goalType})`;
                 const ulText = Number.isFinite(cfg.ul) ? `UL ${cfg.ul}${cfg.unit}` : 'No UL set';
                 return `${goalText} | ${ulText}`;
@@ -13562,7 +14718,7 @@ async function setupGroceryPlanPage() {
             };
             const formatMicroActual = (value, unit, isPartial = false) => {
                 const num = Number(value);
-                if (!Number.isFinite(num)) return '—';
+                if (!Number.isFinite(num)) return 'â€”';
                 const abs = Math.abs(num);
                 let digits = 0;
                 if (unit === 'g') digits = abs < 10 ? 1 : 0;
@@ -13607,9 +14763,9 @@ async function setupGroceryPlanPage() {
                 }
                 if (microActualEls[key]) {
                     const raw = microActuals[key];
-                    const hasValue = raw && raw !== '-' && raw !== '—';
+                    const hasValue = raw && raw !== '-' && raw !== 'â€”';
                     if (!hasValue) {
-                        microActualEls[key].textContent = '—';
+                        microActualEls[key].textContent = 'â€”';
                         applyMicroStatus(microActualEls[key], 'PENDING');
                         return;
                     }
@@ -13919,35 +15075,30 @@ async function setupGroceryPlanPage() {
             });
 
             // Budget breakdown
-            const budget = Number(prefs?.budgetTotal || 0);
             const taxRate = 0.08;
             const estimatedTax = inventoryCosts.avgMonthlyCost * taxRate;
             const monthlyTotalWithTax = inventoryCosts.avgMonthlyCost + estimatedTax;
+            latestPlanMonthlyTotalWithTax = monthlyTotalWithTax;
+            maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax);
+            const budget = Number(prefs?.budgetTotal || 0);
             const budgetDelta = budget ? budget - monthlyTotalWithTax : null;
 
             const budgetAllocEl = document.getElementById('budget-allocated');
             const budgetEstEl = document.getElementById('budget-estimated');
             const budgetTaxesEl = document.getElementById('budget-taxes');
             const budgetTotalEl = document.getElementById('budget-total');
-            const budgetStatusEl = document.getElementById('budget-status');
 
             if (budgetAllocEl) budgetAllocEl.textContent = budget ? formatCurrency(budget) : EM_DASH;
             if (budgetEstEl) budgetEstEl.textContent = formatCurrency(inventoryCosts.avgMonthlyCost);
             if (budgetTaxesEl) budgetTaxesEl.textContent = formatCurrency(estimatedTax);
             if (budgetTotalEl) budgetTotalEl.textContent = formatCurrency(monthlyTotalWithTax);
+            if (budgetEl) budgetEl.textContent = formatCurrency(monthlyTotalWithTax);
             if (mealBudgetInlineEl) mealBudgetInlineEl.textContent = formatCurrency(monthlyTotalWithTax);
-            if (budgetStatusEl) {
-                const statusBadge = budgetStatusEl.querySelector('.status-badge');
-                if (statusBadge) {
-                    if (budgetDelta === null || !Number.isFinite(budgetDelta)) {
-                        statusBadge.textContent = 'Set a budget to compare';
-                    } else if (budgetDelta >= 0) {
-                        statusBadge.textContent = `Under budget by ${formatCurrency(budgetDelta)}`;
-                    } else {
-                        statusBadge.textContent = `Over budget by ${formatCurrency(Math.abs(budgetDelta))}`;
-                    }
-                }
-            }
+            updatePlanBudgetForecastSummary(monthlyTotalWithTax);
+            updatePlanBudgetStatusBadge({
+                budgetOverride: budget,
+                monthlyTotalOverride: monthlyTotalWithTax
+            });
 
             // Tracking: capture what the guest actually got (macros + costs + budget delta).
             try {
@@ -14077,6 +15228,27 @@ async function setupGroceryPlanPage() {
         };
 
         renderBaselinePlan();
+
+        onPlanBudgetModeSwitch = (modeKeyRaw, selectedTier) => {
+            const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'balanced');
+            const nextMacros = buildBudgetModeMacrosForPlan(modeKey);
+            macroTargetsBase.calories = nextMacros.calories;
+            macroTargetsBase.protein_g = nextMacros.proteinG;
+            macroTargetsBase.carbs_g = nextMacros.carbG;
+            macroTargetsBase.fat_g = nextMacros.fatG;
+            portionScale = 1;
+            syncMacrosFromMacroTargetsBase();
+            prefs = prefs && typeof prefs === 'object' ? prefs : {};
+            prefs.budgetMode = modeKey;
+            if (selectedTier && Number.isFinite(Number(selectedTier.value))) {
+                prefs.budgetTotal = Number(selectedTier.value);
+            }
+            prefs.budgetTierOptions = planBudgetTierOptions;
+            prefs.macroBaseline = { ...budgetModeMacroBaseline };
+            try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+            updateMacroDisplay(1);
+            renderBaselinePlan();
+        };
 
         // "Make it cheaper": reduce portions by 10% (cost drops; macros drop proportionally).
         const cheaperModal = document.getElementById('cheaper-modal');
@@ -17043,6 +18215,8 @@ async function setupGroceryPlanPage() {
         const taxRate = 0.08;
         const estimatedTax = monthlyTotal * taxRate;
         const monthlyTotalWithTax = monthlyTotal + estimatedTax;
+        latestPlanMonthlyTotalWithTax = monthlyTotalWithTax;
+        maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax);
         const budget = Number(prefs?.budgetTotal || 0);
         const budgetDelta = budget ? budget - monthlyTotalWithTax : null;
 
@@ -17153,7 +18327,7 @@ async function setupGroceryPlanPage() {
 
         const listNote = document.getElementById('grocery-list-note');
         if (listNote && Number.isFinite(weeklyTotal)) {
-            listNote.textContent = `Estimated weekly: ${formatCurrency(weeklyTotal)} Ãƒâ€šÃ‚Â· monthly: ${formatCurrency(monthlyTotal)}.`;
+            listNote.textContent = `Estimated weekly: ${formatCurrency(weeklyTotal)} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· monthly: ${formatCurrency(monthlyTotal)}.`;
         }
 
         // Update budget breakdown fields
@@ -17161,26 +18335,18 @@ async function setupGroceryPlanPage() {
         const budgetEstEl = document.getElementById('budget-estimated');
         const budgetTaxesEl = document.getElementById('budget-taxes');
         const budgetTotalEl = document.getElementById('budget-total');
-        const budgetStatusEl = document.getElementById('budget-status');
 
         if (budgetAllocEl) budgetAllocEl.textContent = budget ? formatCurrency(budget) : EM_DASH;
         if (budgetEstEl) budgetEstEl.textContent = Number.isFinite(monthlyTotal) ? formatCurrency(monthlyTotal) : EM_DASH;
         if (budgetTaxesEl) budgetTaxesEl.textContent = Number.isFinite(estimatedTax) ? formatCurrency(estimatedTax) : EM_DASH;
         if (budgetTotalEl) budgetTotalEl.textContent = Number.isFinite(monthlyTotalWithTax) ? formatCurrency(monthlyTotalWithTax) : EM_DASH;
+        if (budgetEl) budgetEl.textContent = Number.isFinite(monthlyTotalWithTax) ? formatCurrency(monthlyTotalWithTax) : EM_DASH;
         if (mealBudgetInlineEl) mealBudgetInlineEl.textContent = Number.isFinite(monthlyTotalWithTax) ? formatCurrency(monthlyTotalWithTax) : EM_DASH;
-        
-        if (budgetStatusEl) {
-            const statusBadge = budgetStatusEl.querySelector('.status-badge');
-            if (statusBadge) {
-                if (budgetDelta === null || !Number.isFinite(budgetDelta)) {
-                    statusBadge.textContent = 'Set a budget to compare';
-                } else if (budgetDelta >= 0) {
-                    statusBadge.textContent = `Under budget by ${formatCurrency(budgetDelta)}`;
-                } else {
-                    statusBadge.textContent = `Over budget by ${formatCurrency(Math.abs(budgetDelta))}`;
-                }
-            }
-        }
+        updatePlanBudgetForecastSummary(monthlyTotalWithTax);
+        updatePlanBudgetStatusBadge({
+            budgetOverride: budget,
+            monthlyTotalOverride: monthlyTotalWithTax
+        });
 
         const budgetEl = document.getElementById('budget-summary-body');
         if (budgetEl) {
@@ -17298,6 +18464,84 @@ async function setupGroceryPlanPage() {
     // Lockdown pass: UI does not alter nutrition math (no macro scaling).
     renderMealGrid(1);
     let lastTotals = renderBudgetAndList();
+    const budgetModeMacroBaselineForPlan = (() => {
+        const src = prefs?.macroBaseline || initialMacrosSnapshot || macros || {};
+        return {
+            calories: Math.max(1200, Math.round(Number(src?.calories) || Number(initialMacrosSnapshot?.calories) || Number(macros?.calories) || 2000)),
+            proteinG: Math.max(0, Math.round(Number(src?.proteinG) || Number(initialMacrosSnapshot?.proteinG) || Number(macros?.proteinG) || 150)),
+            carbG: Math.max(0, Math.round(Number(src?.carbG) || Number(initialMacrosSnapshot?.carbG) || Number(macros?.carbG) || 200)),
+            fatG: Math.max(0, Math.round(Number(src?.fatG) || Number(initialMacrosSnapshot?.fatG) || Number(macros?.fatG) || 65))
+        };
+    })();
+    activeBudgetMacroBaselineRef = budgetModeMacroBaselineForPlan;
+    const calcCarbRemainderForBudgetSwitch = (cal, pro, fat) => Math.max(0, Math.round((Number(cal || 0) - ((Number(pro || 0) * 4) + (Number(fat || 0) * 9))) / 4));
+    const resolveGoalWeightForBudgetSwitch = () => {
+        const goalWeight = Number(
+            prefs?.goalWeightLbs
+            || nutritionState.selections?.goalWeightLbs
+            || sessionData?.selections?.goalWeightLbs
+            || 0
+        );
+        if (Number.isFinite(goalWeight) && goalWeight > 0) return goalWeight;
+        const currentWeight = Number(
+            prefs?.weightLbs
+            || nutritionState.selections?.weightLbs
+            || sessionData?.selections?.weightLbs
+            || 0
+        );
+        return (Number.isFinite(currentWeight) && currentWeight > 0) ? currentWeight : 170;
+    };
+    const buildBudgetModeMacrosForNormalPlan = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const caloriesFixed = Math.max(1200, Number(budgetModeMacroBaselineForPlan.calories) || 2000);
+        const bestProtein = Math.max(0, Number(budgetModeMacroBaselineForPlan.proteinG) || 0);
+        const bestFat = Math.max(0, Number(budgetModeMacroBaselineForPlan.fatG) || 0);
+        const sexRaw = String(prefs?.sex || nutritionState.selections?.sex || sessionData?.selections?.sex || '').trim().toUpperCase();
+        const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
+        const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
+        const proteinFloor = Math.round(0.75 * resolveGoalWeightForBudgetSwitch());
+        const balancedProtein = Math.max(proteinFloor, Math.round(bestProtein * 0.92));
+
+        if (modeKey === 'budget') {
+            const proteinG = Math.max(0, proteinFloor);
+            const fatG = Math.max(bestFat, fatFloor);
+            return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG) };
+        }
+        if (modeKey === 'balanced') {
+            const proteinG = Math.max(0, balancedProtein);
+            const fatG = Math.max(bestFat, fatFloor);
+            return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG) };
+        }
+        const proteinG = Math.max(0, Math.round(bestProtein));
+        const fatG = Math.max(0, Math.round(bestFat));
+        return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG) };
+    };
+    onPlanBudgetModeSwitch = (modeKeyRaw, selectedTier) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'balanced');
+        const nextMacros = buildBudgetModeMacrosForNormalPlan(modeKey);
+        macros.calories = nextMacros.calories;
+        macros.proteinG = nextMacros.proteinG;
+        macros.carbG = nextMacros.carbG;
+        macros.fatG = nextMacros.fatG;
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetMode = modeKey;
+        if (selectedTier && Number.isFinite(Number(selectedTier.value))) {
+            prefs.budgetTotal = Number(selectedTier.value);
+        }
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        prefs.macroBaseline = { ...budgetModeMacroBaselineForPlan };
+        prefs.macros = {
+            calories: macros.calories,
+            proteinG: macros.proteinG,
+            carbG: macros.carbG,
+            fatG: macros.fatG
+        };
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        portionScale = 1;
+        updateMacroDisplay(1);
+        renderMealGrid(1);
+        lastTotals = renderBudgetAndList();
+    };
 
     const cheaperModal = document.getElementById('cheaper-modal');
     const cheaperClose = document.getElementById('cheaper-close');
@@ -17528,7 +18772,7 @@ async function setupGroceryPlanPage() {
                     const monthlyCost = getMonthlyCostForChoice(item, choice);
                     const priceText = Number.isFinite(monthlyCost) ? `${formatCurrency(monthlyCost)}/mo` : '-';
                     const name = choice?.name || item.query || item.name;
-                    return `<option value="${idx}" ${idx === currentIdx ? 'selected' : ''}>${name} Ãƒâ€šÃ‚Â· ${priceText}</option>`;
+                    return `<option value="${idx}" ${idx === currentIdx ? 'selected' : ''}>${name} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${priceText}</option>`;
                 }).join('');
                 const currentChoice = choices[currentIdx] || choices[0] || null;
                 const currentCost = getMonthlyCostForChoice(item, currentChoice);
@@ -17725,7 +18969,7 @@ async function setupGroceryPlanPage() {
             const titleText = sortedEvents.map(event => {
                 const statusText = event.status === 'buy' ? `BUY (${event.price})` : (event.status === 'low' ? 'LOW' : 'OK');
                 const remainingValue = Number.isFinite(event.displayRemaining) ? event.displayRemaining : event.remaining;
-                return `${event.name} ${EM_DASH} ${remainingValue.toFixed(2)} servings left Ãƒâ€šÃ‚Â· ${statusText}`;
+                return `${event.name} ${EM_DASH} ${remainingValue.toFixed(2)} servings left ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${statusText}`;
             }).join('\n');
 
             cells.push(`
@@ -17972,7 +19216,7 @@ async function setupGroceryPlanPage() {
                                 }
                                 const badgeClass = event.status === 'buy' || event.status === 'expired' ? 'buy' : (event.status === 'low' ? 'low' : '');
                                 const badgeLabel = event.status === 'expired' ? 'Expired' : (event.status === 'buy' ? 'Buy today' : (event.status === 'low' ? 'Low' : 'OK'));
-                                const priceText = event.status === 'buy' || event.status === 'expired' ? ` Ãƒâ€šÃ‚Â· ${event.price}` : '';
+                                const priceText = event.status === 'buy' || event.status === 'expired' ? ` ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${event.price}` : '';
                                 return `
                                     <div class="calendar-detail-item">
                                         <div class="calendar-detail-name">${event.name}</div>
@@ -18190,6 +19434,10 @@ document.addEventListener('keydown', (e) => {
         collapseControlPanel();
     }
 });
+
+
+
+
 
 
 

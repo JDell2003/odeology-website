@@ -2844,7 +2844,7 @@ body.training-page {
 }
 
 .meal-budget-value::before {
-    content: "Selected:";
+    content: "Price (post estimated tax):";
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -2855,23 +2855,68 @@ body.training-page {
 .meal-budget-options {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
 .meal-budget-option {
-    border: 1px solid rgba(166, 136, 100, 0.34);
-    background: rgba(255, 255, 255, 0.78);
-    color: #6a5f52;
-    border-radius: 12px;
-    padding: 9px 10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    border: 1px solid rgba(166, 136, 100, 0.38);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 245, 233, 0.92) 100%);
+    color: #3f3529;
+    border-radius: 14px;
+    padding: 10px 12px;
     font-size: 12px;
     font-weight: 700;
     line-height: 1.15;
-    text-align: center;
-    transition: all 0.22s ease;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
-    cursor: default;
+    text-align: left;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 5px 14px rgba(89, 58, 20, 0.08);
+    cursor: pointer;
+}
+
+.meal-budget-option::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(90deg, rgba(214, 140, 48, 0.05), rgba(214, 140, 48, 0.36), rgba(214, 140, 48, 0.05));
+    opacity: 0.5;
+}
+
+.meal-budget-option-title {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+    color: #2f261c;
+}
+
+.meal-budget-option-range {
+    display: block;
+    font-size: 1.02rem;
+    font-weight: 850;
+    letter-spacing: 0.01em;
+    color: #18120c;
+}
+
+.meal-budget-option:not(.active):hover {
+    transform: translateY(-1px);
+    border-color: rgba(201, 126, 35, 0.52);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 8px 18px rgba(201, 126, 35, 0.16);
 }
 
 .meal-budget-option:disabled {
@@ -2880,11 +2925,26 @@ body.training-page {
 }
 
 .meal-budget-option.active {
-    background: linear-gradient(135deg, #f3b252 0%, #de9332 100%);
-    border-color: #c67d2a;
-    color: #1e1407;
-    box-shadow: 0 6px 16px rgba(198, 125, 42, 0.33);
+    background: linear-gradient(135deg, #f4be69 0%, #e39b3a 52%, #d98922 100%);
+    border-color: rgba(171, 104, 26, 0.9);
+    color: #1f1306;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 228, 176, 0.65),
+        0 10px 22px rgba(186, 111, 27, 0.3);
     transform: translateY(-1px);
+}
+
+.meal-budget-option.active .meal-budget-option-title {
+    color: rgba(36, 19, 2, 0.86);
+}
+
+.meal-budget-option.active .meal-budget-option-range {
+    color: #1b0f04;
+}
+
+.meal-budget-option.active::before {
+    background: linear-gradient(90deg, rgba(255, 243, 216, 0.25), rgba(255, 243, 216, 0.95), rgba(255, 243, 216, 0.25));
+    opacity: 1;
 }
 
 @media (max-width: 760px) {
@@ -2892,12 +2952,18 @@ body.training-page {
         font-size: 1.08rem;
     }
     .meal-budget-options {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 7px;
     }
     .meal-budget-option {
-        padding: 8px 6px;
-        font-size: 11px;
+        padding: 10px 11px;
+        gap: 2px;
+    }
+    .meal-budget-option-title {
+        font-size: 0.67rem;
+    }
+    .meal-budget-option-range {
+        font-size: 0.92rem;
     }
 }
 
@@ -11411,6 +11477,10 @@ html[data-theme="light"] .avatar-cropper-viewport {
     box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
 }
 
+.ode-confirm-card.ode-confirm-card-wide {
+    width: min(760px, 96vw);
+}
+
 html[data-theme="light"] .ode-confirm-card {
     background: linear-gradient(135deg, #f5efe6 0%, #fff7ec 100%);
 }
@@ -11461,12 +11531,42 @@ html:not([data-theme="light"]) .ode-confirm-close {
     line-height: 1.35;
 }
 
+.ode-confirm-card.ode-confirm-card-wide .ode-confirm-body {
+    max-height: min(62vh, 520px);
+    overflow: auto;
+    padding-right: 10px;
+}
+
 html:not([data-theme="light"]) .ode-confirm-body {
     color: rgba(255, 255, 255, 0.86);
 }
 
 .ode-confirm-line + .ode-confirm-line {
     margin-top: 8px;
+}
+
+.ode-confirm-separator {
+    height: 1px;
+    margin: 10px 0;
+    background: rgba(27, 18, 12, 0.2);
+}
+
+.ode-confirm-bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.ode-confirm-bullet-dot {
+    margin-top: 1px;
+    font-size: 1.05em;
+    font-weight: 900;
+    color: #d18a20;
+    line-height: 1.2;
+}
+
+.ode-confirm-bullet-text {
+    flex: 1;
 }
 
 .ode-confirm-strong {
@@ -11491,6 +11591,10 @@ html:not([data-theme="light"]) .ode-confirm-strong {
 html:not([data-theme="light"]) .ode-confirm-chip {
     background: linear-gradient(180deg, transparent 58%, rgba(245, 166, 35, 0.36) 58%);
     color: rgba(255, 236, 213, 0.95);
+}
+
+html:not([data-theme="light"]) .ode-confirm-separator {
+    background: rgba(255, 255, 255, 0.22);
 }
 
 .ode-confirm-actions {
