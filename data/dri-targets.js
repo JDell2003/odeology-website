@@ -1,0 +1,1505 @@
+/* External DRI target source loaded before js/main.js */
+globalThis.__ODE_DRI_TARGETS = {
+  "version": "1.0.0",
+  "generated_from": "data/micros_spec.json",
+  "nutrient_order": [
+    "fiber",
+    "potassium",
+    "sodium",
+    "magnesium",
+    "calcium",
+    "iron",
+    "zinc",
+    "vitamin_d",
+    "vitamin_c",
+    "vitamin_a",
+    "folate",
+    "b12",
+    "omega_3",
+    "choline"
+  ],
+  "unit_map": {
+    "fiber": "g",
+    "potassium": "mg",
+    "sodium": "mg",
+    "magnesium": "mg",
+    "calcium": "mg",
+    "iron": "mg",
+    "zinc": "mg",
+    "vitamin_d": "mcg",
+    "vitamin_c": "mg",
+    "vitamin_a": "mcg RAE",
+    "folate": "mcg DFE",
+    "b12": "mcg",
+    "omega_3": "mg EPA+DHA",
+    "choline": "mg"
+  },
+  "male": {
+    "14-18": {
+      "fiber": {
+        "goal": 38,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 3000,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 410,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "iron": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 34
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 75,
+        "type": "RDA",
+        "ul": 1800
+      },
+      "vitamin_a": {
+        "goal": 900,
+        "type": "RDA",
+        "ul": 2800
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3000
+      }
+    },
+    "19-30": {
+      "fiber": {
+        "goal": 38,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 3400,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 90,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 900,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "31-50": {
+      "fiber": {
+        "goal": 38,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 3400,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 420,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 90,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 900,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "51-70": {
+      "fiber": {
+        "goal": 30,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 3400,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1300,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 420,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 90,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 900,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "71+": {
+      "fiber": {
+        "goal": 30,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 3400,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1200,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 420,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1200,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 20,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 90,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 900,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    }
+  },
+  "female": {
+    "14-18": {
+      "fiber": {
+        "goal": 25,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2300,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 360,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "iron": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 9,
+        "type": "RDA",
+        "ul": 34
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 65,
+        "type": "RDA",
+        "ul": 1800
+      },
+      "vitamin_a": {
+        "goal": 700,
+        "type": "RDA",
+        "ul": 2800
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 400,
+        "type": "AI",
+        "ul": 3000
+      }
+    },
+    "19-30": {
+      "fiber": {
+        "goal": 25,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2600,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 310,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 18,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 75,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 700,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 425,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "31-50": {
+      "fiber": {
+        "goal": 25,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2600,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 320,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 18,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 75,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 700,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 425,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "51-70": {
+      "fiber": {
+        "goal": 21,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2600,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1300,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 320,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1200,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 75,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 700,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 425,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "71+": {
+      "fiber": {
+        "goal": 21,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2600,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1200,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 320,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1200,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "iron": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 8,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 20,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 75,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 700,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.4,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 425,
+        "type": "AI",
+        "ul": 3500
+      }
+    }
+  },
+  "pregnant_by_age_band": {
+    "14-18": {
+      "fiber": {
+        "goal": 28,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2900,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 400,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "iron": {
+        "goal": 27,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 12,
+        "type": "RDA",
+        "ul": 34
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 80,
+        "type": "RDA",
+        "ul": 1800
+      },
+      "vitamin_a": {
+        "goal": 750,
+        "type": "RDA",
+        "ul": 2800
+      },
+      "folate": {
+        "goal": 600,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.6,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 400,
+        "type": "AI",
+        "ul": 3000
+      }
+    },
+    "19-30": {
+      "fiber": {
+        "goal": 28,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2900,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 350,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 27,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 85,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 770,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 600,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.6,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 450,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "31-50": {
+      "fiber": {
+        "goal": 28,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2900,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 350,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 27,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 85,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 770,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 600,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.6,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 450,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "51-70": {
+      "fiber": {
+        "goal": 28,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2900,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 350,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 27,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 85,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 770,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 600,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.6,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 450,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "71+": {
+      "fiber": {
+        "goal": 28,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2900,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 350,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 27,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 11,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 85,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 770,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 600,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.6,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 450,
+        "type": "AI",
+        "ul": 3500
+      }
+    }
+  },
+  "lactating_by_age_band": {
+    "14-18": {
+      "fiber": {
+        "goal": 29,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2800,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 360,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "iron": {
+        "goal": 10,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 13,
+        "type": "RDA",
+        "ul": 34
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 115,
+        "type": "RDA",
+        "ul": 1800
+      },
+      "vitamin_a": {
+        "goal": 1200,
+        "type": "RDA",
+        "ul": 2800
+      },
+      "folate": {
+        "goal": 500,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.8,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3000
+      }
+    },
+    "19-30": {
+      "fiber": {
+        "goal": 29,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2800,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 310,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 9,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 12,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 120,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 500,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.8,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "31-50": {
+      "fiber": {
+        "goal": 29,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2800,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 310,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 9,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 12,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 120,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 500,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.8,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "51-70": {
+      "fiber": {
+        "goal": 29,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2800,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 310,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 9,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 12,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 120,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 500,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.8,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    },
+    "71+": {
+      "fiber": {
+        "goal": 29,
+        "type": "AI"
+      },
+      "potassium": {
+        "goal": 2800,
+        "type": "AI"
+      },
+      "sodium": {
+        "goal": 1500,
+        "type": "AI",
+        "ul": 2300
+      },
+      "magnesium": {
+        "goal": 310,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies only to supplemental magnesium."
+      },
+      "calcium": {
+        "goal": 1000,
+        "type": "RDA",
+        "ul": 2500
+      },
+      "iron": {
+        "goal": 9,
+        "type": "RDA",
+        "ul": 45
+      },
+      "zinc": {
+        "goal": 12,
+        "type": "RDA",
+        "ul": 40
+      },
+      "vitamin_d": {
+        "goal": 15,
+        "type": "RDA",
+        "ul": 100
+      },
+      "vitamin_c": {
+        "goal": 120,
+        "type": "RDA",
+        "ul": 2000
+      },
+      "vitamin_a": {
+        "goal": 1300,
+        "type": "RDA",
+        "ul": 3000
+      },
+      "folate": {
+        "goal": 500,
+        "type": "RDA",
+        "ul": null,
+        "ul_note": "UL applies to synthetic folic acid only."
+      },
+      "b12": {
+        "goal": 2.8,
+        "type": "RDA"
+      },
+      "omega_3": {
+        "goal": null,
+        "type": "TRACKED",
+        "ul": null,
+        "note": "No official DRI target exists for EPA+DHA specifically.",
+        "basis": "EPA+DHA"
+      },
+      "choline": {
+        "goal": 550,
+        "type": "AI",
+        "ul": 3500
+      }
+    }
+  }
+};

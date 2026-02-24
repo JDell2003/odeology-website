@@ -2323,6 +2323,40 @@ const WALMART_MICRO_PROFILE_ID_ALIASES = {
 
 function applyWalmartMicroProfiles(foods, profiles) {
     if (!Array.isArray(foods) || !Array.isArray(profiles)) return foods;
+    const microValueSources = {
+        LABEL_AMOUNT: 'LABEL_AMOUNT',
+        DV_CONVERTED: 'DV_CONVERTED',
+        USDA_FILL: 'USDA_FILL',
+        EXISTING: 'EXISTING',
+        DV_ONLY: 'DV_ONLY',
+        LABEL_LT: 'LABEL_LT',
+        MISSING: 'MISSING',
+        UNKNOWN_SOURCE: 'UNKNOWN_SOURCE'
+    };
+    const microFoodKeyByNutrient = {
+        fiber: 'fiber_g',
+        potassium: 'potassium_mg',
+        sodium: 'sodium_mg',
+        magnesium: 'magnesium_mg',
+        calcium: 'calcium_mg',
+        iron: 'iron_mg',
+        zinc: 'zinc_mg',
+        vitamin_d: 'vitamin_d_mcg',
+        vitamin_c: 'vitamin_c_mg',
+        vitamin_a: 'vitamin_a_mcg_rae',
+        folate: 'folate_mcg',
+        b12: 'b12_mcg',
+        omega_3: 'omega3_epa_dha_mg',
+        choline: 'choline_mg'
+    };
+    const microDvReferenceByAmountKey = {
+        calcium_mg: 1300,
+        iron_mg: 18,
+        vitamin_d_mcg: 20,
+        vitamin_c_mg: 90,
+        vitamin_a_mcg_rae: 900,
+        folate_mcg: 400
+    };
     const toNum = (v) => {
         if (v === null || v === undefined || v === "") return null;
         const n = Number(v);
@@ -2339,30 +2373,62 @@ function applyWalmartMicroProfiles(foods, profiles) {
         const label = profile?.label || {};
         const usda = profile?.usda_fill || {};
         const existing = (food?.micros && typeof food.micros === 'object') ? food.micros : {};
+        const existingValueSource = (food?.micro_value_source && typeof food.micro_value_source === 'object') ? food.micro_value_source : {};
         const merged = { ...existing };
+        const valueSource = { ...existingValueSource };
         const pairs = [
-            ["fiber_g", "fiber_g"],
-            ["potassium_mg", "potassium_mg"],
-            ["sodium_mg", "sodium_mg"],
-            ["magnesium_mg", "magnesium_mg"],
-            ["calcium_mg", "calcium_mg"],
-            ["iron_mg", "iron_mg"],
-            ["zinc_mg", "zinc_mg"],
-            ["vitamin_d_mcg", "vitamin_d_mcg"],
-            ["vitamin_c_mg", "vitamin_c_mg"],
-            ["vitamin_a_mcg_rae", "vitamin_a_mcg_rae"],
-            ["folate_mcg", "folate_mcg"],
-            ["b12_mcg", "b12_mcg"],
-            ["omega3_epa_dha_mg", "omega3_epa_dha_mg"],
-            ["choline_mg", "choline_mg"]
+            ['fiber', 'fiber_g'],
+            ['potassium', 'potassium_mg'],
+            ['sodium', 'sodium_mg'],
+            ['magnesium', 'magnesium_mg'],
+            ['calcium', 'calcium_mg'],
+            ['iron', 'iron_mg'],
+            ['zinc', 'zinc_mg'],
+            ['vitamin_d', 'vitamin_d_mcg'],
+            ['vitamin_c', 'vitamin_c_mg'],
+            ['vitamin_a', 'vitamin_a_mcg_rae'],
+            ['folate', 'folate_mcg'],
+            ['b12', 'b12_mcg'],
+            ['omega_3', 'omega3_epa_dha_mg'],
+            ['choline', 'choline_mg']
         ];
-        pairs.forEach(([k]) => {
-            const val = pickNum(label?.[k], usda?.[k], existing?.[k]);
-            if (val !== null) merged[k] = val;
-        });
+        const setValueSource = (nutrientKey, amountKey, source) => {
+            if (!nutrientKey || !amountKey || !source) return;
+            valueSource[nutrientKey] = source;
+            valueSource[amountKey] = source;
+        };
+        const setAmount = (nutrientKey, amountKey) => {
+            const labelVal = toNum(label?.[amountKey]);
+            if (labelVal !== null) {
+                merged[amountKey] = labelVal;
+                setValueSource(nutrientKey, amountKey, microValueSources.LABEL_AMOUNT);
+                return;
+            }
+            const usdaVal = toNum(usda?.[amountKey]);
+            if (usdaVal !== null) {
+                merged[amountKey] = usdaVal;
+                setValueSource(nutrientKey, amountKey, microValueSources.USDA_FILL);
+                return;
+            }
+            const existingVal = toNum(existing?.[amountKey]);
+            if (existingVal !== null) {
+                merged[amountKey] = existingVal;
+                setValueSource(nutrientKey, amountKey, microValueSources.EXISTING);
+                return;
+            }
+            setValueSource(nutrientKey, amountKey, valueSource[nutrientKey] || microValueSources.MISSING);
+        };
+        pairs.forEach(([nutrientKey, amountKey]) => setAmount(nutrientKey, amountKey));
         if (!Number.isFinite(merged.vitamin_a_mcg_rae)) {
-            const altA = pickNum(label?.vitamin_a_mcg, usda?.vitamin_a_mcg);
-            if (altA !== null) merged.vitamin_a_mcg_rae = altA;
+            const altALabel = toNum(label?.vitamin_a_mcg);
+            const altAUsda = toNum(usda?.vitamin_a_mcg);
+            if (altALabel !== null) {
+                merged.vitamin_a_mcg_rae = altALabel;
+                setValueSource('vitamin_a', 'vitamin_a_mcg_rae', microValueSources.LABEL_AMOUNT);
+            } else if (altAUsda !== null) {
+                merged.vitamin_a_mcg_rae = altAUsda;
+                setValueSource('vitamin_a', 'vitamin_a_mcg_rae', microValueSources.USDA_FILL);
+            }
         }
         const dvOnlyPairs = [
             ["calcium_mg", "calcium_percent_dv"],
@@ -2373,19 +2439,39 @@ function applyWalmartMicroProfiles(foods, profiles) {
             ["folate_mcg", "folic_acid_percent_dv"]
         ];
         dvOnlyPairs.forEach(([amountKey, dvKey]) => {
-            const hasDvOnly = Number.isFinite(toNum(label?.[dvKey]));
+            const dvPct = toNum(label?.[dvKey]);
+            const hasDvOnly = Number.isFinite(dvPct);
             const hasAmountOnLabel = Number.isFinite(toNum(label?.[amountKey]));
             if (hasDvOnly && !hasAmountOnLabel) {
+                const nutrientKey = Object.keys(microFoodKeyByNutrient).find((k) => microFoodKeyByNutrient[k] === amountKey) || amountKey;
+                const dvRefAmount = Number(microDvReferenceByAmountKey?.[amountKey]);
+                if (Number.isFinite(dvRefAmount) && dvRefAmount > 0) {
+                    const converted = (Number(dvPct) / 100) * dvRefAmount;
+                    if (Number.isFinite(converted)) {
+                        // Prefer label-converted amount over USDA fallback when label only provides %DV.
+                        merged[amountKey] = Number(converted.toFixed(3));
+                        setValueSource(nutrientKey, amountKey, microValueSources.DV_CONVERTED);
+                        return;
+                    }
+                }
                 merged[amountKey] = null;
+                setValueSource(nutrientKey, amountKey, microValueSources.DV_ONLY);
             }
         });
         const fiberIsLessThan = Boolean(profile?.label_flags?.fiber_is_less_than) || Number.isFinite(toNum(label?.fiber_g_max));
         if (fiberIsLessThan && !Number.isFinite(toNum(label?.fiber_g))) {
             merged.fiber_g = null;
+            setValueSource('fiber', 'fiber_g', microValueSources.LABEL_LT);
             const fiberMax = toNum(label?.fiber_g_max);
             if (fiberMax !== null) merged.fiber_g_max = fiberMax;
         }
-        return merged;
+        pairs.forEach(([nutrientKey, amountKey]) => {
+            const current = toNum(merged?.[amountKey]);
+            if (current === null && !valueSource[nutrientKey]) {
+                setValueSource(nutrientKey, amountKey, microValueSources.MISSING);
+            }
+        });
+        return { merged, valueSource };
     };
 
     const byId = new Map(foods.map((f) => [String(f?.id || ''), f]));
@@ -2407,7 +2493,9 @@ function applyWalmartMicroProfiles(foods, profiles) {
             if (labelServingText) food.servingLabel = labelServingText;
             if (labelServingGrams !== null) food.servingGrams = labelServingGrams;
         }
-        food.micros = upsertMicros(food, profile);
+        const microMerge = upsertMicros(food, profile);
+        food.micros = microMerge.merged;
+        food.micro_value_source = microMerge.valueSource;
         const nextSources = [];
         if (profile?.label_flags?.source) nextSources.push(String(profile.label_flags.source));
         if (profile?.usda_fill?.source) nextSources.push(String(profile.usda_fill.source));
@@ -4142,6 +4230,73 @@ const DRI_NUTRIENT_ORDER = [
     'fiber', 'potassium', 'sodium', 'magnesium', 'calcium', 'iron',
     'zinc', 'vitamin_d', 'vitamin_c', 'vitamin_a', 'folate', 'b12', 'omega_3', 'choline'
 ];
+const MICRO_OMEGA_BASIS = 'EPA+DHA';
+const MICRO_VALUE_SOURCES = Object.freeze({
+    LABEL_AMOUNT: 'LABEL_AMOUNT',
+    DV_CONVERTED: 'DV_CONVERTED',
+    USDA_FILL: 'USDA_FILL',
+    EXISTING: 'EXISTING',
+    DV_ONLY: 'DV_ONLY',
+    LABEL_LT: 'LABEL_LT',
+    MISSING: 'MISSING',
+    UNKNOWN_SOURCE: 'UNKNOWN_SOURCE'
+});
+const MICRO_FOOD_KEY_BY_NUTRIENT = Object.freeze({
+    fiber: 'fiber_g',
+    potassium: 'potassium_mg',
+    sodium: 'sodium_mg',
+    magnesium: 'magnesium_mg',
+    calcium: 'calcium_mg',
+    iron: 'iron_mg',
+    zinc: 'zinc_mg',
+    vitamin_d: 'vitamin_d_mcg',
+    vitamin_c: 'vitamin_c_mg',
+    vitamin_a: 'vitamin_a_mcg_rae',
+    folate: 'folate_mcg',
+    b12: 'b12_mcg',
+    omega_3: 'omega3_epa_dha_mg',
+    choline: 'choline_mg'
+});
+const MICRO_DV_REFERENCE_BY_AMOUNT_KEY = Object.freeze({
+    calcium_mg: 1300,          // FDA DV (adults/children >=4)
+    iron_mg: 18,               // FDA DV
+    vitamin_d_mcg: 20,         // FDA DV
+    vitamin_c_mg: 90,          // FDA DV
+    vitamin_a_mcg_rae: 900,    // FDA DV (mcg RAE)
+    folate_mcg: 400            // FDA DV (mcg DFE)
+});
+
+function validateMicronutrientReferenceRows(rows) {
+    const out = [];
+    const srcRows = Array.isArray(rows) ? rows : [];
+    const seen = new Set();
+    srcRows.forEach((row) => {
+        const nutrientId = String(row?.nutrient_id || '');
+        if (!nutrientId) return;
+        seen.add(nutrientId);
+        const trackedOnly = Boolean(row?.tracked_only) || String(row?.goal_type || '').toUpperCase() === 'TRACKED';
+        const goal = Number(row?.goal_value);
+        if (!trackedOnly && (!Number.isFinite(goal) || goal <= 0)) out.push(`${nutrientId} is missing a valid goal.`);
+        if (!String(row?.unit || '').trim()) out.push(`${nutrientId} is missing a unit.`);
+    });
+    DRI_NUTRIENT_ORDER.forEach((id) => {
+        if (!seen.has(id)) out.push(`Missing target row for ${id}.`);
+    });
+    const omegaRow = srcRows.find((row) => String(row?.nutrient_id || '') === 'omega_3');
+    if (omegaRow && !String(omegaRow.unit || '').includes(MICRO_OMEGA_BASIS)) {
+        out.push(`omega_3 unit must include ${MICRO_OMEGA_BASIS}.`);
+    }
+    return out;
+}
+
+function getExternalDriTargets() {
+    const external = (typeof globalThis === 'object' && globalThis)
+        ? globalThis.__ODE_DRI_TARGETS
+        : null;
+    if (!external || typeof external !== 'object') return null;
+    if (!external.male || !external.female) return null;
+    return external;
+}
 
 function getMicronutrientTargets(selectionLike, options = {}) {
     const sel = selectionLike && typeof selectionLike === 'object' ? selectionLike : {};
@@ -4153,27 +4308,38 @@ function getMicronutrientTargets(selectionLike, options = {}) {
     const trimester = pregnant ? String(sel.trimester || '').trim() : '';
     const assumptionMode = ageProfile.assumed || Boolean(options.assumeAdult1930IfMissing);
 
-    const MALE = {
+    let MALE = {
         '14-18': { fiber: { goal: 38, type: 'AI' }, potassium: { goal: 3000, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 410, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1300, type: 'RDA', ul: 3000 }, iron: { goal: 11, type: 'RDA', ul: 45 }, zinc: { goal: 11, type: 'RDA', ul: 34 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 75, type: 'RDA', ul: 1800 }, vitamin_a: { goal: 900, type: 'RDA', ul: 2800 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1600, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: 3000 } },
         '19-30': { fiber: { goal: 38, type: 'AI' }, potassium: { goal: 3400, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1000, type: 'RDA', ul: 2500 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 11, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 90, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 900, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1600, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: 3500 } },
         '31-50': { fiber: { goal: 38, type: 'AI' }, potassium: { goal: 3400, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 420, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1000, type: 'RDA', ul: 2500 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 11, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 90, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 900, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1600, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: 3500 } },
         '51-70': { fiber: { goal: 30, type: 'AI' }, potassium: { goal: 3400, type: 'AI' }, sodium: { goal: 1300, type: 'AI', ul: 2300 }, magnesium: { goal: 420, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1000, type: 'RDA', ul: 2000 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 11, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 90, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 900, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1600, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: 3500 } },
         '71+': { fiber: { goal: 30, type: 'AI' }, potassium: { goal: 3400, type: 'AI' }, sodium: { goal: 1200, type: 'AI', ul: 2300 }, magnesium: { goal: 420, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1200, type: 'RDA', ul: 2000 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 11, type: 'RDA', ul: 40 }, vitamin_d: { goal: 20, type: 'RDA', ul: 100 }, vitamin_c: { goal: 90, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 900, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1600, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: 3500 } }
     };
-    const FEMALE = {
+    let FEMALE = {
         '14-18': { fiber: { goal: 25, type: 'AI' }, potassium: { goal: 2300, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 360, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1300, type: 'RDA', ul: 3000 }, iron: { goal: 15, type: 'RDA', ul: 45 }, zinc: { goal: 9, type: 'RDA', ul: 34 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 65, type: 'RDA', ul: 1800 }, vitamin_a: { goal: 700, type: 'RDA', ul: 2800 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1100, type: 'AI' }, choline: { goal: 400, type: 'AI', ul: 3000 } },
         '19-30': { fiber: { goal: 25, type: 'AI' }, potassium: { goal: 2600, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 310, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1000, type: 'RDA', ul: 2500 }, iron: { goal: 18, type: 'RDA', ul: 45 }, zinc: { goal: 8, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 75, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 700, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1100, type: 'AI' }, choline: { goal: 425, type: 'AI', ul: 3500 } },
         '31-50': { fiber: { goal: 25, type: 'AI' }, potassium: { goal: 2600, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: 320, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1000, type: 'RDA', ul: 2500 }, iron: { goal: 18, type: 'RDA', ul: 45 }, zinc: { goal: 8, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 75, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 700, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1100, type: 'AI' }, choline: { goal: 425, type: 'AI', ul: 3500 } },
         '51-70': { fiber: { goal: 21, type: 'AI' }, potassium: { goal: 2600, type: 'AI' }, sodium: { goal: 1300, type: 'AI', ul: 2300 }, magnesium: { goal: 320, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1200, type: 'RDA', ul: 2000 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 8, type: 'RDA', ul: 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: 75, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 700, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1100, type: 'AI' }, choline: { goal: 425, type: 'AI', ul: 3500 } },
         '71+': { fiber: { goal: 21, type: 'AI' }, potassium: { goal: 2600, type: 'AI' }, sodium: { goal: 1200, type: 'AI', ul: 2300 }, magnesium: { goal: 320, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: 1200, type: 'RDA', ul: 2000 }, iron: { goal: 8, type: 'RDA', ul: 45 }, zinc: { goal: 8, type: 'RDA', ul: 40 }, vitamin_d: { goal: 20, type: 'RDA', ul: 100 }, vitamin_c: { goal: 75, type: 'RDA', ul: 2000 }, vitamin_a: { goal: 700, type: 'RDA', ul: 3000 }, folate: { goal: 400, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.4, type: 'RDA' }, omega_3: { goal: 1100, type: 'AI' }, choline: { goal: 425, type: 'AI', ul: 3500 } }
     };
-    const PREG = { fiber: { goal: 28, type: 'AI' }, potassium: { goal: 2900, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: ageBand === '14-18' ? 400 : 350, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: ageBand === '14-18' ? 1300 : 1000, type: 'RDA', ul: ageBand === '14-18' ? 3000 : 2500 }, iron: { goal: 27, type: 'RDA', ul: 45 }, zinc: { goal: ageBand === '14-18' ? 12 : 11, type: 'RDA', ul: ageBand === '14-18' ? 34 : 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: ageBand === '14-18' ? 80 : 85, type: 'RDA', ul: ageBand === '14-18' ? 1800 : 2000 }, vitamin_a: { goal: ageBand === '14-18' ? 750 : 770, type: 'RDA', ul: ageBand === '14-18' ? 2800 : 3000 }, folate: { goal: 600, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.6, type: 'RDA' }, omega_3: { goal: 1400, type: 'AI' }, choline: { goal: ageBand === '14-18' ? 400 : 450, type: 'AI', ul: ageBand === '14-18' ? 3000 : 3500 } };
-    const LACT = { fiber: { goal: 29, type: 'AI' }, potassium: { goal: 2800, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: ageBand === '14-18' ? 360 : 310, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: ageBand === '14-18' ? 1300 : 1000, type: 'RDA', ul: ageBand === '14-18' ? 3000 : 2500 }, iron: { goal: ageBand === '14-18' ? 10 : 9, type: 'RDA', ul: 45 }, zinc: { goal: ageBand === '14-18' ? 13 : 12, type: 'RDA', ul: ageBand === '14-18' ? 34 : 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: ageBand === '14-18' ? 115 : 120, type: 'RDA', ul: ageBand === '14-18' ? 1800 : 2000 }, vitamin_a: { goal: ageBand === '14-18' ? 1200 : 1300, type: 'RDA', ul: ageBand === '14-18' ? 2800 : 3000 }, folate: { goal: 500, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.8, type: 'RDA' }, omega_3: { goal: 1300, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: ageBand === '14-18' ? 3000 : 3500 } };
+    let PREG = { fiber: { goal: 28, type: 'AI' }, potassium: { goal: 2900, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: ageBand === '14-18' ? 400 : 350, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: ageBand === '14-18' ? 1300 : 1000, type: 'RDA', ul: ageBand === '14-18' ? 3000 : 2500 }, iron: { goal: 27, type: 'RDA', ul: 45 }, zinc: { goal: ageBand === '14-18' ? 12 : 11, type: 'RDA', ul: ageBand === '14-18' ? 34 : 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: ageBand === '14-18' ? 80 : 85, type: 'RDA', ul: ageBand === '14-18' ? 1800 : 2000 }, vitamin_a: { goal: ageBand === '14-18' ? 750 : 770, type: 'RDA', ul: ageBand === '14-18' ? 2800 : 3000 }, folate: { goal: 600, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.6, type: 'RDA' }, omega_3: { goal: 1400, type: 'AI' }, choline: { goal: ageBand === '14-18' ? 400 : 450, type: 'AI', ul: ageBand === '14-18' ? 3000 : 3500 } };
+    let LACT = { fiber: { goal: 29, type: 'AI' }, potassium: { goal: 2800, type: 'AI' }, sodium: { goal: 1500, type: 'AI', ul: 2300 }, magnesium: { goal: ageBand === '14-18' ? 360 : 310, type: 'RDA', ul: null, ul_note: 'UL applies only to supplemental magnesium.' }, calcium: { goal: ageBand === '14-18' ? 1300 : 1000, type: 'RDA', ul: ageBand === '14-18' ? 3000 : 2500 }, iron: { goal: ageBand === '14-18' ? 10 : 9, type: 'RDA', ul: 45 }, zinc: { goal: ageBand === '14-18' ? 13 : 12, type: 'RDA', ul: ageBand === '14-18' ? 34 : 40 }, vitamin_d: { goal: 15, type: 'RDA', ul: 100 }, vitamin_c: { goal: ageBand === '14-18' ? 115 : 120, type: 'RDA', ul: ageBand === '14-18' ? 1800 : 2000 }, vitamin_a: { goal: ageBand === '14-18' ? 1200 : 1300, type: 'RDA', ul: ageBand === '14-18' ? 2800 : 3000 }, folate: { goal: 500, type: 'RDA', ul: null, ul_note: 'UL applies to synthetic folic acid only.' }, b12: { goal: 2.8, type: 'RDA' }, omega_3: { goal: 1300, type: 'AI' }, choline: { goal: 550, type: 'AI', ul: ageBand === '14-18' ? 3000 : 3500 } };
+
+    const externalDri = getExternalDriTargets();
+    if (externalDri) {
+        if (externalDri.male && typeof externalDri.male === 'object') MALE = externalDri.male;
+        if (externalDri.female && typeof externalDri.female === 'object') FEMALE = externalDri.female;
+        const pregByAge = (externalDri.pregnant_by_age_band && typeof externalDri.pregnant_by_age_band === 'object') ? externalDri.pregnant_by_age_band : null;
+        const lactByAge = (externalDri.lactating_by_age_band && typeof externalDri.lactating_by_age_band === 'object') ? externalDri.lactating_by_age_band : null;
+        if (pregByAge && pregByAge[ageBand]) PREG = pregByAge[ageBand];
+        if (lactByAge && lactByAge[ageBand]) LACT = lactByAge[ageBand];
+    }
 
     let table = sex === 'FEMALE' ? FEMALE[ageBand] : MALE[ageBand];
     if (sex === 'FEMALE' && pregnant) table = PREG;
     if (sex === 'FEMALE' && lactating) table = LACT;
 
+    const externalUnitByKey = (externalDri && externalDri.unit_map && typeof externalDri.unit_map === 'object') ? externalDri.unit_map : null;
     const unitByKey = {
         fiber: 'g',
         potassium: 'mg',
@@ -4187,9 +4353,15 @@ function getMicronutrientTargets(selectionLike, options = {}) {
         vitamin_a: 'mcg RAE',
         folate: 'mcg DFE',
         b12: 'mcg',
-        omega_3: 'mg ALA',
+        omega_3: 'mg',
         choline: 'mg'
     };
+    if (externalUnitByKey) {
+        Object.keys(externalUnitByKey).forEach((key) => {
+            unitByKey[key] = String(externalUnitByKey[key] || unitByKey[key] || '').trim() || unitByKey[key];
+        });
+    }
+    unitByKey.omega_3 = `mg ${MICRO_OMEGA_BASIS}`;
     const refs = {};
     const rows = [];
     DRI_NUTRIENT_ORDER.forEach((key) => {
@@ -4203,6 +4375,15 @@ function getMicronutrientTargets(selectionLike, options = {}) {
             ul_note: row.ul_note || null,
             source_ref: 'National Academies DRIs / NIH ODS'
         };
+        if (key === 'omega_3') {
+            entry.goal_type = 'TRACKED';
+            entry.goal_value = null;
+            entry.ul_value = null;
+            entry.ul_note = 'No official DRI target exists for EPA+DHA specifically.';
+            entry.source_ref = 'Tracked intake only (EPA + DHA basis)';
+            entry.tracked_only = true;
+            entry.target_basis = MICRO_OMEGA_BASIS;
+        }
         refs[key] = entry;
         rows.push(entry);
     });
@@ -4210,6 +4391,8 @@ function getMicronutrientTargets(selectionLike, options = {}) {
     const warnings = [];
     if (assumptionMode) warnings.push('Targets assume age 19-30; enter age for accurate RDIs.');
     if (pregnant && !trimester) warnings.push('Pregnancy targets need trimester; using general pregnancy category.');
+    const configIssues = validateMicronutrientReferenceRows(rows);
+    if (configIssues.length) warnings.push(...configIssues.map((issue) => `Micronutrient config warning: ${issue}`));
 
     return {
         refs,
@@ -4233,24 +4416,102 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
         : Object.values(microRefs && typeof microRefs === 'object' ? microRefs : {});
     const actualMap = actuals && typeof actuals === 'object' ? actuals : {};
     const pendingMap = options.pending && typeof options.pending === 'object' ? options.pending : {};
+    const qualityMap = options.quality && typeof options.quality === 'object' ? options.quality : {};
+    const coverageThreshold = Number.isFinite(Number(options.coverageThreshold))
+        ? Number(options.coverageThreshold)
+        : 85;
+    const sourceContext = String(options.sourceContext || 'food_only').toLowerCase();
+    const veryLowSodiumFloorMg = Number.isFinite(Number(options.veryLowSodiumFloorMg))
+        ? Number(options.veryLowSodiumFloorMg)
+        : 800;
     return refsArray.map((ref) => {
         const key = String(ref?.nutrient_id || '');
         const unit = String(ref?.unit || 'mg');
+        const trackedOnly = Boolean(ref?.tracked_only) || String(ref?.goal_type || '').toUpperCase() === 'TRACKED';
         const goal = Number(ref?.goal_value);
-        const ul = Number.isFinite(Number(ref?.ul_value)) ? Number(ref.ul_value) : null;
-        const pending = Boolean(pendingMap[key]);
+        const ulRaw = Number.isFinite(Number(ref?.ul_value)) ? Number(ref.ul_value) : null;
+        const ulNote = String(ref?.ul_note || '').toLowerCase();
+        const ulRequiresSupplementContext = /supplement|synthetic/.test(ulNote);
+        const ulApplies = Number.isFinite(ulRaw) && ulRaw > 0
+            && !(ulRequiresSupplementContext && sourceContext !== 'supplement' && sourceContext !== 'mixed');
+        const ul = ulApplies ? ulRaw : null;
+        const coveragePct = Number(qualityMap?.[key]?.coverage_pct);
+        const hasCoverageMetric = Number.isFinite(coveragePct);
+        const lowCoverage = hasCoverageMetric && coveragePct < coverageThreshold;
+        const pending = Boolean(pendingMap[key]) || lowCoverage;
         const actualRaw = actualMap[key];
         const actual = Number.isFinite(Number(actualRaw)) && !pending ? Number(actualRaw) : null;
+        if (trackedOnly) {
+            if (!Number.isFinite(actual)) {
+                return {
+                    nutrient_id: key,
+                    unit,
+                    actual: null,
+                    goal_type: 'TRACKED',
+                    goal: null,
+                    ul: null,
+                    pct_goal: null,
+                    pct_ul: null,
+                    status: lowCoverage ? 'INCOMPLETE_DATA' : 'PENDING',
+                    source_ref: ref?.source_ref || 'Tracked intake only',
+                    ul_note: ref?.ul_note || null,
+                    tracked_only: true,
+                    coverage_pct: hasCoverageMetric ? coveragePct : null
+                };
+            }
+            return {
+                nutrient_id: key,
+                unit,
+                actual,
+                goal_type: 'TRACKED',
+                goal: null,
+                ul: null,
+                pct_goal: null,
+                pct_ul: null,
+                status: 'TRACKED',
+                source_ref: ref?.source_ref || 'Tracked intake only',
+                ul_note: ref?.ul_note || null,
+                tracked_only: true,
+                coverage_pct: hasCoverageMetric ? coveragePct : null
+            };
+        }
+        if (lowCoverage) {
+            return {
+                nutrient_id: key,
+                unit,
+                actual: Number.isFinite(Number(actualRaw)) ? Number(actualRaw) : null,
+                goal_type: ref?.goal_type || 'AI',
+                goal: Number.isFinite(goal) && goal > 0 ? goal : null,
+                ul,
+                pct_goal: null,
+                pct_ul: null,
+                status: 'INCOMPLETE_DATA',
+                source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS',
+                ul_note: ref?.ul_note || null,
+                coverage_pct: coveragePct
+            };
+        }
         if (!Number.isFinite(actual) || !Number.isFinite(goal) || goal <= 0) {
-            return { nutrient_id: key, unit, actual: null, goal_type: ref?.goal_type || 'AI', goal, ul, pct_goal: null, pct_ul: null, status: 'PENDING', source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS', ul_note: ref?.ul_note || null };
+            return { nutrient_id: key, unit, actual: null, goal_type: ref?.goal_type || 'AI', goal, ul, pct_goal: null, pct_ul: null, status: 'PENDING', source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS', ul_note: ref?.ul_note || null, coverage_pct: hasCoverageMetric ? coveragePct : null };
         }
         const pctGoal = (actual / goal) * 100;
-        const pctUl = Number.isFinite(ul) && ul > 0 ? (actual / ul) * 100 : null;
+        const pctUl = ulApplies && Number.isFinite(ul) && ul > 0 ? (actual / ul) * 100 : null;
         let status = 'OK';
-        if (Number.isFinite(pctUl) && pctUl > 100) status = 'OVER_UL';
-        else if (pctGoal > 200 || (Number.isFinite(pctUl) && pctUl >= 80)) status = 'HIGH';
-        else if (pctGoal < 80) status = 'LOW';
-        return { nutrient_id: key, unit, actual, goal_type: ref?.goal_type || 'AI', goal, ul, pct_goal: pctGoal, pct_ul: pctUl, status, source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS', ul_note: ref?.ul_note || null };
+        if (Number.isFinite(pctUl) && pctUl > 100) {
+            status = 'OVER_UL';
+        } else if (Number.isFinite(pctUl) && pctUl >= 80) {
+            status = 'HIGH';
+        } else if (pctGoal < 80) {
+            if (key === 'sodium') {
+                status = actual < veryLowSodiumFloorMg ? 'LOW' : 'OK';
+            } else {
+                status = 'LOW';
+            }
+        } else if (!Number.isFinite(pctUl) && pctGoal > 120) {
+            // Informational only: above target where no applicable UL exists.
+            status = 'ABOVE_TARGET_NO_UL';
+        }
+        return { nutrient_id: key, unit, actual, goal_type: ref?.goal_type || 'AI', goal, ul, pct_goal: pctGoal, pct_ul: pctUl, status, source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS', ul_note: ref?.ul_note || null, coverage_pct: hasCoverageMetric ? coveragePct : null };
     });
 }
 
@@ -14600,9 +14861,10 @@ async function setupGroceryPlanPage() {
                 microConfigs[k] = {
                     unit: microProfile.refs[k]?.unit || unitByMicroKey[k] || 'mg',
                     goalType: microProfile.refs[k]?.goal_type || 'AI',
-                    goal: Number(microProfile.refs[k]?.goal_value) || 0,
+                    goal: Number.isFinite(Number(microProfile.refs[k]?.goal_value)) ? Number(microProfile.refs[k]?.goal_value) : null,
                     ul: Number.isFinite(Number(microProfile.refs[k]?.ul_value)) ? Number(microProfile.refs[k].ul_value) : null,
-                    ulNote: microProfile.refs[k]?.ul_note || ''
+                    ulNote: microProfile.refs[k]?.ul_note || '',
+                    trackedOnly: Boolean(microProfile.refs[k]?.tracked_only)
                 };
             });
             const microIdMap = {
@@ -14629,6 +14891,9 @@ async function setupGroceryPlanPage() {
             });
             const formatMicroProjected = (cfg) => {
                 if (!cfg) return 'â€”';
+                if (cfg.trackedOnly || String(cfg.goalType || '').toUpperCase() === 'TRACKED') {
+                    return `Tracked intake (${cfg.unit}) | No DRI goal`;
+                }
                 const goalText = `${cfg.goal}${cfg.unit} (${cfg.goalType})`;
                 const ulText = Number.isFinite(cfg.ul) ? `UL ${cfg.ul}${cfg.unit}` : 'No UL set';
                 return `${goalText} | ${ulText}`;
@@ -14692,9 +14957,19 @@ async function setupGroceryPlanPage() {
             const computeMicroActualsFromMeals = (meals, foods) => {
                 const totals = {};
                 const missing = {};
+                const quality = {};
+                const microKeys = Object.keys(microConfigs);
                 Object.keys(microConfigs).forEach((k) => {
                     totals[k] = 0;
                     missing[k] = false;
+                    quality[k] = {
+                        known_food_count: 0,
+                        unknown_food_count: 0,
+                        contributing_food_count: 0,
+                        coverage_pct: 0,
+                        state: 'UNKNOWN',
+                        value_source_counts: {}
+                    };
                 });
                 const srcMeals = Array.isArray(meals) ? meals : [];
                 const byId = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
@@ -14704,17 +14979,37 @@ async function setupGroceryPlanPage() {
                         if (servings <= 0) return;
                         const mapped = byId.get(String(item?.foodId || ''));
                         if (!mapped) return;
-                        Object.keys(microConfigs).forEach((key) => {
+                        const sourceMap = (mapped?.micro_value_source && typeof mapped.micro_value_source === 'object') ? mapped.micro_value_source : {};
+                        microKeys.forEach((key) => {
+                            const qualityRow = quality[key];
+                            qualityRow.contributing_food_count += 1;
                             const perServing = resolveMicrosPerServing(mapped, key);
                             if (Number.isFinite(perServing)) {
                                 totals[key] += perServing * servings;
+                                qualityRow.known_food_count += 1;
+                                const sourceKey = String(sourceMap?.[key] || MICRO_VALUE_SOURCES.UNKNOWN_SOURCE);
+                                qualityRow.value_source_counts[sourceKey] = (qualityRow.value_source_counts[sourceKey] || 0) + 1;
                             } else {
                                 missing[key] = true;
+                                qualityRow.unknown_food_count += 1;
+                                const sourceKey = String(sourceMap?.[key] || MICRO_VALUE_SOURCES.MISSING);
+                                qualityRow.value_source_counts[sourceKey] = (qualityRow.value_source_counts[sourceKey] || 0) + 1;
                             }
                         });
                     });
                 });
-                return { totals, missing };
+                microKeys.forEach((key) => {
+                    const qualityRow = quality[key];
+                    const contributing = Number(qualityRow.contributing_food_count) || 0;
+                    const known = Number(qualityRow.known_food_count) || 0;
+                    const unknown = Number(qualityRow.unknown_food_count) || 0;
+                    qualityRow.coverage_pct = contributing > 0 ? (known / contributing) * 100 : 0;
+                    if (contributing <= 0 || known <= 0) qualityRow.state = 'UNKNOWN';
+                    else if (unknown > 0) qualityRow.state = 'PARTIAL';
+                    else qualityRow.state = 'KNOWN';
+                    missing[key] = qualityRow.state === 'UNKNOWN';
+                });
+                return { totals, missing, quality };
             };
             const formatMicroActual = (value, unit, isPartial = false) => {
                 const num = Number(value);
@@ -14726,14 +15021,18 @@ async function setupGroceryPlanPage() {
                 const rounded = Number(num.toFixed(digits));
                 return `${rounded.toLocaleString()}${unit}${isPartial ? '*' : ''}`;
             };
-            const writeMicroPanelActuals = (actualTotals, missingByKey) => {
+            const writeMicroPanelActuals = (actualTotals, partialByKey, pendingByKey) => {
                 document.querySelectorAll('.plan-micro-row').forEach((row) => {
                     const name = row.querySelector('.plan-micro-name')?.textContent || '';
                     const key = normalizeMicroKey(name);
                     if (!key || !microConfigs[key]) return;
                     const valueEl = row.querySelector('.plan-micro-value');
                     if (!valueEl) return;
-                    valueEl.textContent = formatMicroActual(actualTotals[key], microConfigs[key].unit, Boolean(missingByKey?.[key]));
+                    if (Boolean(pendingByKey?.[key])) {
+                        valueEl.textContent = '—';
+                        return;
+                    }
+                    valueEl.textContent = formatMicroActual(actualTotals[key], microConfigs[key].unit, Boolean(partialByKey?.[key]));
                 });
             };
             const applyMicroStatus = (actualEl, status) => {
@@ -14742,20 +15041,43 @@ async function setupGroceryPlanPage() {
                 if (status === 'OK') actualEl.classList.add('on-target');
                 else if (status === 'OVER UL' || status === 'OVER_UL') actualEl.classList.add('off-target');
                 else if (status === 'LOW' || status === 'HIGH') actualEl.classList.add('caution');
+                else if (status === 'ABOVE_TARGET_NO_UL') actualEl.classList.add('on-target');
+                else if (status === 'INCOMPLETE_DATA') actualEl.classList.add('pending');
+                else if (status === 'TRACKED') actualEl.classList.add('pending');
                 else actualEl.classList.add('pending');
             };
             const microActualComputation = computeMicroActualsFromMeals(builtMeals, plannerFoods);
             const microActualTotals = microActualComputation.totals;
-            const microActualMissing = microActualComputation.missing;
-            const microStatusRows = computeMicroStatuses(microProfile.rows || microProfile.refs, microActualTotals, { pending: microActualMissing });
+            const microActualQuality = microActualComputation.quality || {};
+            const microActualPending = {};
+            const microActualPartial = {};
+            Object.keys(microConfigs).forEach((key) => {
+                const qualityState = String(microActualQuality?.[key]?.state || '').toUpperCase();
+                microActualPending[key] = qualityState === 'UNKNOWN';
+                microActualPartial[key] = qualityState === 'PARTIAL';
+            });
+            const microStatusRows = computeMicroStatuses(microProfile.rows || microProfile.refs, microActualTotals, {
+                pending: microActualPending,
+                quality: microActualQuality,
+                // Only treat true unknown coverage as incomplete.
+                // Partial coverage should still score as low/ok/high.
+                coverageThreshold: 1,
+                sourceContext: 'food_only',
+                veryLowSodiumFloorMg: 800
+            });
             const microStatusByKey = {};
             (microStatusRows || []).forEach((row) => { microStatusByKey[row.nutrient_id] = row; });
             const microActuals = {};
             Object.keys(microConfigs).forEach((key) => {
-                microActuals[key] = formatMicroActual(microActualTotals[key], microConfigs[key].unit, Boolean(microActualMissing?.[key]));
+                if (microActualPending[key]) {
+                    microActuals[key] = '—';
+                } else {
+                    microActuals[key] = formatMicroActual(microActualTotals[key], microConfigs[key].unit, Boolean(microActualPartial?.[key]));
+                }
             });
-            writeMicroPanelActuals(microActualTotals, microActualMissing);
+            writeMicroPanelActuals(microActualTotals, microActualPartial, microActualPending);
             if (window && typeof window === 'object') window.currentPlanMicros = microActuals;
+            if (window && typeof window === 'object') window.currentPlanMicrosDataQuality = microActualQuality;
             Object.keys(microConfigs).forEach((key) => {
                 if (microTargetEls[key]) {
                     microTargetEls[key].textContent = formatMicroProjected(microConfigs[key]);
@@ -14773,8 +15095,23 @@ async function setupGroceryPlanPage() {
                     const pctGoalText = Number.isFinite(statusRow.pct_goal) ? `${Math.round(statusRow.pct_goal)}% Goal` : 'Goal n/a';
                     const pctUlText = Number.isFinite(statusRow.pct_ul) ? `${Math.round(statusRow.pct_ul)}% UL` : 'No UL';
                     const statusTag = String(statusRow.status || 'PENDING');
-                    microActualEls[key].textContent = `${raw} | ${pctGoalText} | ${pctUlText} | ${statusTag}`;
-                    microActualEls[key].title = `Status: ${statusTag}`;
+                    const statusLabel = statusTag === 'ABOVE_TARGET_NO_UL'
+                        ? 'Above target (no UL)'
+                        : (statusTag === 'INCOMPLETE_DATA' ? 'Incomplete data' : statusTag);
+                    const qualityRow = microActualQuality?.[key] || null;
+                    const qualityState = String(qualityRow?.state || 'UNKNOWN');
+                    const coverageText = Number.isFinite(Number(qualityRow?.coverage_pct))
+                        ? `${Math.round(Number(qualityRow.coverage_pct))}% data coverage`
+                        : 'coverage n/a';
+                    const sourceCounts = (qualityRow && qualityRow.value_source_counts && typeof qualityRow.value_source_counts === 'object')
+                        ? Object.entries(qualityRow.value_source_counts).filter(([, count]) => Number(count) > 0).map(([source, count]) => `${source}:${count}`).join(', ')
+                        : '';
+                    if (statusTag === 'TRACKED') {
+                        microActualEls[key].textContent = `${raw} | Tracked only | No DRI goal`;
+                    } else {
+                        microActualEls[key].textContent = `${raw} | ${pctGoalText} | ${pctUlText} | ${statusLabel}`;
+                    }
+                    microActualEls[key].title = `Status: ${statusLabel} | Data: ${qualityState} (${coverageText})${sourceCounts ? ` | Sources: ${sourceCounts}` : ''}`;
                     applyMicroStatus(microActualEls[key], statusTag);
                 }
             });
@@ -14784,7 +15121,14 @@ async function setupGroceryPlanPage() {
                     microMetaEl.textContent = microProfile.warnings.join(' ');
                     microMetaEl.title = microProfile.warnings.join(' ');
                 } else {
-                    microMetaEl.textContent = 'Goal + UL vs Actual';
+                    const qualityRows = Object.values(microActualQuality || {});
+                    const partialCount = qualityRows.filter((row) => String(row?.state || '').toUpperCase() === 'PARTIAL').length;
+                    const unknownCount = qualityRows.filter((row) => String(row?.state || '').toUpperCase() === 'UNKNOWN').length;
+                    if (partialCount > 0 || unknownCount > 0) {
+                        microMetaEl.textContent = `Goal + UL vs Actual | Data quality: ${partialCount} partial, ${unknownCount} unknown`;
+                    } else {
+                        microMetaEl.textContent = 'Goal + UL vs Actual | Data quality: complete';
+                    }
                     microMetaEl.title = '';
                 }
             }

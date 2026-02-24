@@ -1,0 +1,1789 @@
+{
+    "schema_version":  "1.1.0",
+    "generated_from":  "js/main.js",
+    "generated_on":  "2026-02-24T06:38:32.9253632-05:00",
+    "purpose":  "Micronutrient spec for target generation, actual intake aggregation, status evaluation, and UI messaging.",
+    "nutrient_order":  [
+                           "fiber",
+                           "potassium",
+                           "sodium",
+                           "magnesium",
+                           "calcium",
+                           "iron",
+                           "zinc",
+                           "vitamin_d",
+                           "vitamin_c",
+                           "vitamin_a",
+                           "folate",
+                           "b12",
+                           "omega_3",
+                           "choline"
+                       ],
+    "unit_map":  {
+                     "fiber":  "g",
+                     "potassium":  "mg",
+                     "sodium":  "mg",
+                     "magnesium":  "mg",
+                     "calcium":  "mg",
+                     "iron":  "mg",
+                     "zinc":  "mg",
+                     "vitamin_d":  "mcg",
+                     "vitamin_c":  "mg",
+                     "vitamin_a":  "mcg RAE",
+                     "folate":  "mcg DFE",
+                     "b12":  "mcg",
+                     "omega_3":  "mg EPA+DHA",
+                     "choline":  "mg"
+                 },
+    "target_profiles":  {
+                            "male":  {
+                                         "14-18":  {
+                                                       "fiber":  {
+                                                                     "goal":  38,
+                                                                     "type":  "AI"
+                                                                 },
+                                                       "potassium":  {
+                                                                         "goal":  3000,
+                                                                         "type":  "AI"
+                                                                     },
+                                                       "sodium":  {
+                                                                      "goal":  1500,
+                                                                      "type":  "AI",
+                                                                      "ul":  2300
+                                                                  },
+                                                       "magnesium":  {
+                                                                         "goal":  410,
+                                                                         "type":  "RDA",
+                                                                         "ul":  null,
+                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                     },
+                                                       "calcium":  {
+                                                                       "goal":  1300,
+                                                                       "type":  "RDA",
+                                                                       "ul":  3000
+                                                                   },
+                                                       "iron":  {
+                                                                    "goal":  11,
+                                                                    "type":  "RDA",
+                                                                    "ul":  45
+                                                                },
+                                                       "zinc":  {
+                                                                    "goal":  11,
+                                                                    "type":  "RDA",
+                                                                    "ul":  34
+                                                                },
+                                                       "vitamin_d":  {
+                                                                         "goal":  15,
+                                                                         "type":  "RDA",
+                                                                         "ul":  100
+                                                                     },
+                                                       "vitamin_c":  {
+                                                                         "goal":  75,
+                                                                         "type":  "RDA",
+                                                                         "ul":  1800
+                                                                     },
+                                                       "vitamin_a":  {
+                                                                         "goal":  900,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2800
+                                                                     },
+                                                       "folate":  {
+                                                                      "goal":  400,
+                                                                      "type":  "RDA",
+                                                                      "ul":  null,
+                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                  },
+                                                       "b12":  {
+                                                                   "goal":  2.4,
+                                                                   "type":  "RDA"
+                                                               },
+                                                       "omega_3":  {
+                                                                       "goal":  null,
+                                                                       "type":  "TRACKED",
+                                                                       "ul":  null,
+                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                       "basis":  "EPA+DHA"
+                                                                   },
+                                                       "choline":  {
+                                                                       "goal":  550,
+                                                                       "type":  "AI",
+                                                                       "ul":  3000
+                                                                   }
+                                                   },
+                                         "19-30":  {
+                                                       "fiber":  {
+                                                                     "goal":  38,
+                                                                     "type":  "AI"
+                                                                 },
+                                                       "potassium":  {
+                                                                         "goal":  3400,
+                                                                         "type":  "AI"
+                                                                     },
+                                                       "sodium":  {
+                                                                      "goal":  1500,
+                                                                      "type":  "AI",
+                                                                      "ul":  2300
+                                                                  },
+                                                       "magnesium":  {
+                                                                         "goal":  400,
+                                                                         "type":  "RDA",
+                                                                         "ul":  null,
+                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                     },
+                                                       "calcium":  {
+                                                                       "goal":  1000,
+                                                                       "type":  "RDA",
+                                                                       "ul":  2500
+                                                                   },
+                                                       "iron":  {
+                                                                    "goal":  8,
+                                                                    "type":  "RDA",
+                                                                    "ul":  45
+                                                                },
+                                                       "zinc":  {
+                                                                    "goal":  11,
+                                                                    "type":  "RDA",
+                                                                    "ul":  40
+                                                                },
+                                                       "vitamin_d":  {
+                                                                         "goal":  15,
+                                                                         "type":  "RDA",
+                                                                         "ul":  100
+                                                                     },
+                                                       "vitamin_c":  {
+                                                                         "goal":  90,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2000
+                                                                     },
+                                                       "vitamin_a":  {
+                                                                         "goal":  900,
+                                                                         "type":  "RDA",
+                                                                         "ul":  3000
+                                                                     },
+                                                       "folate":  {
+                                                                      "goal":  400,
+                                                                      "type":  "RDA",
+                                                                      "ul":  null,
+                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                  },
+                                                       "b12":  {
+                                                                   "goal":  2.4,
+                                                                   "type":  "RDA"
+                                                               },
+                                                       "omega_3":  {
+                                                                       "goal":  null,
+                                                                       "type":  "TRACKED",
+                                                                       "ul":  null,
+                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                       "basis":  "EPA+DHA"
+                                                                   },
+                                                       "choline":  {
+                                                                       "goal":  550,
+                                                                       "type":  "AI",
+                                                                       "ul":  3500
+                                                                   }
+                                                   },
+                                         "31-50":  {
+                                                       "fiber":  {
+                                                                     "goal":  38,
+                                                                     "type":  "AI"
+                                                                 },
+                                                       "potassium":  {
+                                                                         "goal":  3400,
+                                                                         "type":  "AI"
+                                                                     },
+                                                       "sodium":  {
+                                                                      "goal":  1500,
+                                                                      "type":  "AI",
+                                                                      "ul":  2300
+                                                                  },
+                                                       "magnesium":  {
+                                                                         "goal":  420,
+                                                                         "type":  "RDA",
+                                                                         "ul":  null,
+                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                     },
+                                                       "calcium":  {
+                                                                       "goal":  1000,
+                                                                       "type":  "RDA",
+                                                                       "ul":  2500
+                                                                   },
+                                                       "iron":  {
+                                                                    "goal":  8,
+                                                                    "type":  "RDA",
+                                                                    "ul":  45
+                                                                },
+                                                       "zinc":  {
+                                                                    "goal":  11,
+                                                                    "type":  "RDA",
+                                                                    "ul":  40
+                                                                },
+                                                       "vitamin_d":  {
+                                                                         "goal":  15,
+                                                                         "type":  "RDA",
+                                                                         "ul":  100
+                                                                     },
+                                                       "vitamin_c":  {
+                                                                         "goal":  90,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2000
+                                                                     },
+                                                       "vitamin_a":  {
+                                                                         "goal":  900,
+                                                                         "type":  "RDA",
+                                                                         "ul":  3000
+                                                                     },
+                                                       "folate":  {
+                                                                      "goal":  400,
+                                                                      "type":  "RDA",
+                                                                      "ul":  null,
+                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                  },
+                                                       "b12":  {
+                                                                   "goal":  2.4,
+                                                                   "type":  "RDA"
+                                                               },
+                                                       "omega_3":  {
+                                                                       "goal":  null,
+                                                                       "type":  "TRACKED",
+                                                                       "ul":  null,
+                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                       "basis":  "EPA+DHA"
+                                                                   },
+                                                       "choline":  {
+                                                                       "goal":  550,
+                                                                       "type":  "AI",
+                                                                       "ul":  3500
+                                                                   }
+                                                   },
+                                         "51-70":  {
+                                                       "fiber":  {
+                                                                     "goal":  30,
+                                                                     "type":  "AI"
+                                                                 },
+                                                       "potassium":  {
+                                                                         "goal":  3400,
+                                                                         "type":  "AI"
+                                                                     },
+                                                       "sodium":  {
+                                                                      "goal":  1300,
+                                                                      "type":  "AI",
+                                                                      "ul":  2300
+                                                                  },
+                                                       "magnesium":  {
+                                                                         "goal":  420,
+                                                                         "type":  "RDA",
+                                                                         "ul":  null,
+                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                     },
+                                                       "calcium":  {
+                                                                       "goal":  1000,
+                                                                       "type":  "RDA",
+                                                                       "ul":  2000
+                                                                   },
+                                                       "iron":  {
+                                                                    "goal":  8,
+                                                                    "type":  "RDA",
+                                                                    "ul":  45
+                                                                },
+                                                       "zinc":  {
+                                                                    "goal":  11,
+                                                                    "type":  "RDA",
+                                                                    "ul":  40
+                                                                },
+                                                       "vitamin_d":  {
+                                                                         "goal":  15,
+                                                                         "type":  "RDA",
+                                                                         "ul":  100
+                                                                     },
+                                                       "vitamin_c":  {
+                                                                         "goal":  90,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2000
+                                                                     },
+                                                       "vitamin_a":  {
+                                                                         "goal":  900,
+                                                                         "type":  "RDA",
+                                                                         "ul":  3000
+                                                                     },
+                                                       "folate":  {
+                                                                      "goal":  400,
+                                                                      "type":  "RDA",
+                                                                      "ul":  null,
+                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                  },
+                                                       "b12":  {
+                                                                   "goal":  2.4,
+                                                                   "type":  "RDA"
+                                                               },
+                                                       "omega_3":  {
+                                                                       "goal":  null,
+                                                                       "type":  "TRACKED",
+                                                                       "ul":  null,
+                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                       "basis":  "EPA+DHA"
+                                                                   },
+                                                       "choline":  {
+                                                                       "goal":  550,
+                                                                       "type":  "AI",
+                                                                       "ul":  3500
+                                                                   }
+                                                   },
+                                         "71+":  {
+                                                     "fiber":  {
+                                                                   "goal":  30,
+                                                                   "type":  "AI"
+                                                               },
+                                                     "potassium":  {
+                                                                       "goal":  3400,
+                                                                       "type":  "AI"
+                                                                   },
+                                                     "sodium":  {
+                                                                    "goal":  1200,
+                                                                    "type":  "AI",
+                                                                    "ul":  2300
+                                                                },
+                                                     "magnesium":  {
+                                                                       "goal":  420,
+                                                                       "type":  "RDA",
+                                                                       "ul":  null,
+                                                                       "ul_note":  "UL applies only to supplemental magnesium."
+                                                                   },
+                                                     "calcium":  {
+                                                                     "goal":  1200,
+                                                                     "type":  "RDA",
+                                                                     "ul":  2000
+                                                                 },
+                                                     "iron":  {
+                                                                  "goal":  8,
+                                                                  "type":  "RDA",
+                                                                  "ul":  45
+                                                              },
+                                                     "zinc":  {
+                                                                  "goal":  11,
+                                                                  "type":  "RDA",
+                                                                  "ul":  40
+                                                              },
+                                                     "vitamin_d":  {
+                                                                       "goal":  20,
+                                                                       "type":  "RDA",
+                                                                       "ul":  100
+                                                                   },
+                                                     "vitamin_c":  {
+                                                                       "goal":  90,
+                                                                       "type":  "RDA",
+                                                                       "ul":  2000
+                                                                   },
+                                                     "vitamin_a":  {
+                                                                       "goal":  900,
+                                                                       "type":  "RDA",
+                                                                       "ul":  3000
+                                                                   },
+                                                     "folate":  {
+                                                                    "goal":  400,
+                                                                    "type":  "RDA",
+                                                                    "ul":  null,
+                                                                    "ul_note":  "UL applies to synthetic folic acid only."
+                                                                },
+                                                     "b12":  {
+                                                                 "goal":  2.4,
+                                                                 "type":  "RDA"
+                                                             },
+                                                     "omega_3":  {
+                                                                     "goal":  null,
+                                                                     "type":  "TRACKED",
+                                                                     "ul":  null,
+                                                                     "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                     "basis":  "EPA+DHA"
+                                                                 },
+                                                     "choline":  {
+                                                                     "goal":  550,
+                                                                     "type":  "AI",
+                                                                     "ul":  3500
+                                                                 }
+                                                 }
+                                     },
+                            "female":  {
+                                           "14-18":  {
+                                                         "fiber":  {
+                                                                       "goal":  25,
+                                                                       "type":  "AI"
+                                                                   },
+                                                         "potassium":  {
+                                                                           "goal":  2300,
+                                                                           "type":  "AI"
+                                                                       },
+                                                         "sodium":  {
+                                                                        "goal":  1500,
+                                                                        "type":  "AI",
+                                                                        "ul":  2300
+                                                                    },
+                                                         "magnesium":  {
+                                                                           "goal":  360,
+                                                                           "type":  "RDA",
+                                                                           "ul":  null,
+                                                                           "ul_note":  "UL applies only to supplemental magnesium."
+                                                                       },
+                                                         "calcium":  {
+                                                                         "goal":  1300,
+                                                                         "type":  "RDA",
+                                                                         "ul":  3000
+                                                                     },
+                                                         "iron":  {
+                                                                      "goal":  15,
+                                                                      "type":  "RDA",
+                                                                      "ul":  45
+                                                                  },
+                                                         "zinc":  {
+                                                                      "goal":  9,
+                                                                      "type":  "RDA",
+                                                                      "ul":  34
+                                                                  },
+                                                         "vitamin_d":  {
+                                                                           "goal":  15,
+                                                                           "type":  "RDA",
+                                                                           "ul":  100
+                                                                       },
+                                                         "vitamin_c":  {
+                                                                           "goal":  65,
+                                                                           "type":  "RDA",
+                                                                           "ul":  1800
+                                                                       },
+                                                         "vitamin_a":  {
+                                                                           "goal":  700,
+                                                                           "type":  "RDA",
+                                                                           "ul":  2800
+                                                                       },
+                                                         "folate":  {
+                                                                        "goal":  400,
+                                                                        "type":  "RDA",
+                                                                        "ul":  null,
+                                                                        "ul_note":  "UL applies to synthetic folic acid only."
+                                                                    },
+                                                         "b12":  {
+                                                                     "goal":  2.4,
+                                                                     "type":  "RDA"
+                                                                 },
+                                                         "omega_3":  {
+                                                                         "goal":  null,
+                                                                         "type":  "TRACKED",
+                                                                         "ul":  null,
+                                                                         "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                         "basis":  "EPA+DHA"
+                                                                     },
+                                                         "choline":  {
+                                                                         "goal":  400,
+                                                                         "type":  "AI",
+                                                                         "ul":  3000
+                                                                     }
+                                                     },
+                                           "19-30":  {
+                                                         "fiber":  {
+                                                                       "goal":  25,
+                                                                       "type":  "AI"
+                                                                   },
+                                                         "potassium":  {
+                                                                           "goal":  2600,
+                                                                           "type":  "AI"
+                                                                       },
+                                                         "sodium":  {
+                                                                        "goal":  1500,
+                                                                        "type":  "AI",
+                                                                        "ul":  2300
+                                                                    },
+                                                         "magnesium":  {
+                                                                           "goal":  310,
+                                                                           "type":  "RDA",
+                                                                           "ul":  null,
+                                                                           "ul_note":  "UL applies only to supplemental magnesium."
+                                                                       },
+                                                         "calcium":  {
+                                                                         "goal":  1000,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2500
+                                                                     },
+                                                         "iron":  {
+                                                                      "goal":  18,
+                                                                      "type":  "RDA",
+                                                                      "ul":  45
+                                                                  },
+                                                         "zinc":  {
+                                                                      "goal":  8,
+                                                                      "type":  "RDA",
+                                                                      "ul":  40
+                                                                  },
+                                                         "vitamin_d":  {
+                                                                           "goal":  15,
+                                                                           "type":  "RDA",
+                                                                           "ul":  100
+                                                                       },
+                                                         "vitamin_c":  {
+                                                                           "goal":  75,
+                                                                           "type":  "RDA",
+                                                                           "ul":  2000
+                                                                       },
+                                                         "vitamin_a":  {
+                                                                           "goal":  700,
+                                                                           "type":  "RDA",
+                                                                           "ul":  3000
+                                                                       },
+                                                         "folate":  {
+                                                                        "goal":  400,
+                                                                        "type":  "RDA",
+                                                                        "ul":  null,
+                                                                        "ul_note":  "UL applies to synthetic folic acid only."
+                                                                    },
+                                                         "b12":  {
+                                                                     "goal":  2.4,
+                                                                     "type":  "RDA"
+                                                                 },
+                                                         "omega_3":  {
+                                                                         "goal":  null,
+                                                                         "type":  "TRACKED",
+                                                                         "ul":  null,
+                                                                         "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                         "basis":  "EPA+DHA"
+                                                                     },
+                                                         "choline":  {
+                                                                         "goal":  425,
+                                                                         "type":  "AI",
+                                                                         "ul":  3500
+                                                                     }
+                                                     },
+                                           "31-50":  {
+                                                         "fiber":  {
+                                                                       "goal":  25,
+                                                                       "type":  "AI"
+                                                                   },
+                                                         "potassium":  {
+                                                                           "goal":  2600,
+                                                                           "type":  "AI"
+                                                                       },
+                                                         "sodium":  {
+                                                                        "goal":  1500,
+                                                                        "type":  "AI",
+                                                                        "ul":  2300
+                                                                    },
+                                                         "magnesium":  {
+                                                                           "goal":  320,
+                                                                           "type":  "RDA",
+                                                                           "ul":  null,
+                                                                           "ul_note":  "UL applies only to supplemental magnesium."
+                                                                       },
+                                                         "calcium":  {
+                                                                         "goal":  1000,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2500
+                                                                     },
+                                                         "iron":  {
+                                                                      "goal":  18,
+                                                                      "type":  "RDA",
+                                                                      "ul":  45
+                                                                  },
+                                                         "zinc":  {
+                                                                      "goal":  8,
+                                                                      "type":  "RDA",
+                                                                      "ul":  40
+                                                                  },
+                                                         "vitamin_d":  {
+                                                                           "goal":  15,
+                                                                           "type":  "RDA",
+                                                                           "ul":  100
+                                                                       },
+                                                         "vitamin_c":  {
+                                                                           "goal":  75,
+                                                                           "type":  "RDA",
+                                                                           "ul":  2000
+                                                                       },
+                                                         "vitamin_a":  {
+                                                                           "goal":  700,
+                                                                           "type":  "RDA",
+                                                                           "ul":  3000
+                                                                       },
+                                                         "folate":  {
+                                                                        "goal":  400,
+                                                                        "type":  "RDA",
+                                                                        "ul":  null,
+                                                                        "ul_note":  "UL applies to synthetic folic acid only."
+                                                                    },
+                                                         "b12":  {
+                                                                     "goal":  2.4,
+                                                                     "type":  "RDA"
+                                                                 },
+                                                         "omega_3":  {
+                                                                         "goal":  null,
+                                                                         "type":  "TRACKED",
+                                                                         "ul":  null,
+                                                                         "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                         "basis":  "EPA+DHA"
+                                                                     },
+                                                         "choline":  {
+                                                                         "goal":  425,
+                                                                         "type":  "AI",
+                                                                         "ul":  3500
+                                                                     }
+                                                     },
+                                           "51-70":  {
+                                                         "fiber":  {
+                                                                       "goal":  21,
+                                                                       "type":  "AI"
+                                                                   },
+                                                         "potassium":  {
+                                                                           "goal":  2600,
+                                                                           "type":  "AI"
+                                                                       },
+                                                         "sodium":  {
+                                                                        "goal":  1300,
+                                                                        "type":  "AI",
+                                                                        "ul":  2300
+                                                                    },
+                                                         "magnesium":  {
+                                                                           "goal":  320,
+                                                                           "type":  "RDA",
+                                                                           "ul":  null,
+                                                                           "ul_note":  "UL applies only to supplemental magnesium."
+                                                                       },
+                                                         "calcium":  {
+                                                                         "goal":  1200,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2000
+                                                                     },
+                                                         "iron":  {
+                                                                      "goal":  8,
+                                                                      "type":  "RDA",
+                                                                      "ul":  45
+                                                                  },
+                                                         "zinc":  {
+                                                                      "goal":  8,
+                                                                      "type":  "RDA",
+                                                                      "ul":  40
+                                                                  },
+                                                         "vitamin_d":  {
+                                                                           "goal":  15,
+                                                                           "type":  "RDA",
+                                                                           "ul":  100
+                                                                       },
+                                                         "vitamin_c":  {
+                                                                           "goal":  75,
+                                                                           "type":  "RDA",
+                                                                           "ul":  2000
+                                                                       },
+                                                         "vitamin_a":  {
+                                                                           "goal":  700,
+                                                                           "type":  "RDA",
+                                                                           "ul":  3000
+                                                                       },
+                                                         "folate":  {
+                                                                        "goal":  400,
+                                                                        "type":  "RDA",
+                                                                        "ul":  null,
+                                                                        "ul_note":  "UL applies to synthetic folic acid only."
+                                                                    },
+                                                         "b12":  {
+                                                                     "goal":  2.4,
+                                                                     "type":  "RDA"
+                                                                 },
+                                                         "omega_3":  {
+                                                                         "goal":  null,
+                                                                         "type":  "TRACKED",
+                                                                         "ul":  null,
+                                                                         "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                         "basis":  "EPA+DHA"
+                                                                     },
+                                                         "choline":  {
+                                                                         "goal":  425,
+                                                                         "type":  "AI",
+                                                                         "ul":  3500
+                                                                     }
+                                                     },
+                                           "71+":  {
+                                                       "fiber":  {
+                                                                     "goal":  21,
+                                                                     "type":  "AI"
+                                                                 },
+                                                       "potassium":  {
+                                                                         "goal":  2600,
+                                                                         "type":  "AI"
+                                                                     },
+                                                       "sodium":  {
+                                                                      "goal":  1200,
+                                                                      "type":  "AI",
+                                                                      "ul":  2300
+                                                                  },
+                                                       "magnesium":  {
+                                                                         "goal":  320,
+                                                                         "type":  "RDA",
+                                                                         "ul":  null,
+                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                     },
+                                                       "calcium":  {
+                                                                       "goal":  1200,
+                                                                       "type":  "RDA",
+                                                                       "ul":  2000
+                                                                   },
+                                                       "iron":  {
+                                                                    "goal":  8,
+                                                                    "type":  "RDA",
+                                                                    "ul":  45
+                                                                },
+                                                       "zinc":  {
+                                                                    "goal":  8,
+                                                                    "type":  "RDA",
+                                                                    "ul":  40
+                                                                },
+                                                       "vitamin_d":  {
+                                                                         "goal":  20,
+                                                                         "type":  "RDA",
+                                                                         "ul":  100
+                                                                     },
+                                                       "vitamin_c":  {
+                                                                         "goal":  75,
+                                                                         "type":  "RDA",
+                                                                         "ul":  2000
+                                                                     },
+                                                       "vitamin_a":  {
+                                                                         "goal":  700,
+                                                                         "type":  "RDA",
+                                                                         "ul":  3000
+                                                                     },
+                                                       "folate":  {
+                                                                      "goal":  400,
+                                                                      "type":  "RDA",
+                                                                      "ul":  null,
+                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                  },
+                                                       "b12":  {
+                                                                   "goal":  2.4,
+                                                                   "type":  "RDA"
+                                                               },
+                                                       "omega_3":  {
+                                                                       "goal":  null,
+                                                                       "type":  "TRACKED",
+                                                                       "ul":  null,
+                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                       "basis":  "EPA+DHA"
+                                                                   },
+                                                       "choline":  {
+                                                                       "goal":  425,
+                                                                       "type":  "AI",
+                                                                       "ul":  3500
+                                                                   }
+                                                   }
+                                       },
+                            "pregnant_by_age_band":  {
+                                                         "14-18":  {
+                                                                       "fiber":  {
+                                                                                     "goal":  28,
+                                                                                     "type":  "AI"
+                                                                                 },
+                                                                       "potassium":  {
+                                                                                         "goal":  2900,
+                                                                                         "type":  "AI"
+                                                                                     },
+                                                                       "sodium":  {
+                                                                                      "goal":  1500,
+                                                                                      "type":  "AI",
+                                                                                      "ul":  2300
+                                                                                  },
+                                                                       "magnesium":  {
+                                                                                         "goal":  400,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  null,
+                                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                     },
+                                                                       "calcium":  {
+                                                                                       "goal":  1300,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  3000
+                                                                                   },
+                                                                       "iron":  {
+                                                                                    "goal":  27,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  45
+                                                                                },
+                                                                       "zinc":  {
+                                                                                    "goal":  12,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  34
+                                                                                },
+                                                                       "vitamin_d":  {
+                                                                                         "goal":  15,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  100
+                                                                                     },
+                                                                       "vitamin_c":  {
+                                                                                         "goal":  80,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  1800
+                                                                                     },
+                                                                       "vitamin_a":  {
+                                                                                         "goal":  750,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  2800
+                                                                                     },
+                                                                       "folate":  {
+                                                                                      "goal":  600,
+                                                                                      "type":  "RDA",
+                                                                                      "ul":  null,
+                                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                  },
+                                                                       "b12":  {
+                                                                                   "goal":  2.6,
+                                                                                   "type":  "RDA"
+                                                                               },
+                                                                       "omega_3":  {
+                                                                                       "goal":  null,
+                                                                                       "type":  "TRACKED",
+                                                                                       "ul":  null,
+                                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                       "basis":  "EPA+DHA"
+                                                                                   },
+                                                                       "choline":  {
+                                                                                       "goal":  400,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  3000
+                                                                                   }
+                                                                   },
+                                                         "19-30":  {
+                                                                       "fiber":  {
+                                                                                     "goal":  28,
+                                                                                     "type":  "AI"
+                                                                                 },
+                                                                       "potassium":  {
+                                                                                         "goal":  2900,
+                                                                                         "type":  "AI"
+                                                                                     },
+                                                                       "sodium":  {
+                                                                                      "goal":  1500,
+                                                                                      "type":  "AI",
+                                                                                      "ul":  2300
+                                                                                  },
+                                                                       "magnesium":  {
+                                                                                         "goal":  350,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  null,
+                                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                     },
+                                                                       "calcium":  {
+                                                                                       "goal":  1000,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  2500
+                                                                                   },
+                                                                       "iron":  {
+                                                                                    "goal":  27,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  45
+                                                                                },
+                                                                       "zinc":  {
+                                                                                    "goal":  11,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  40
+                                                                                },
+                                                                       "vitamin_d":  {
+                                                                                         "goal":  15,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  100
+                                                                                     },
+                                                                       "vitamin_c":  {
+                                                                                         "goal":  85,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  2000
+                                                                                     },
+                                                                       "vitamin_a":  {
+                                                                                         "goal":  770,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  3000
+                                                                                     },
+                                                                       "folate":  {
+                                                                                      "goal":  600,
+                                                                                      "type":  "RDA",
+                                                                                      "ul":  null,
+                                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                  },
+                                                                       "b12":  {
+                                                                                   "goal":  2.6,
+                                                                                   "type":  "RDA"
+                                                                               },
+                                                                       "omega_3":  {
+                                                                                       "goal":  null,
+                                                                                       "type":  "TRACKED",
+                                                                                       "ul":  null,
+                                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                       "basis":  "EPA+DHA"
+                                                                                   },
+                                                                       "choline":  {
+                                                                                       "goal":  450,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  3500
+                                                                                   }
+                                                                   },
+                                                         "31-50":  {
+                                                                       "fiber":  {
+                                                                                     "goal":  28,
+                                                                                     "type":  "AI"
+                                                                                 },
+                                                                       "potassium":  {
+                                                                                         "goal":  2900,
+                                                                                         "type":  "AI"
+                                                                                     },
+                                                                       "sodium":  {
+                                                                                      "goal":  1500,
+                                                                                      "type":  "AI",
+                                                                                      "ul":  2300
+                                                                                  },
+                                                                       "magnesium":  {
+                                                                                         "goal":  350,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  null,
+                                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                     },
+                                                                       "calcium":  {
+                                                                                       "goal":  1000,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  2500
+                                                                                   },
+                                                                       "iron":  {
+                                                                                    "goal":  27,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  45
+                                                                                },
+                                                                       "zinc":  {
+                                                                                    "goal":  11,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  40
+                                                                                },
+                                                                       "vitamin_d":  {
+                                                                                         "goal":  15,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  100
+                                                                                     },
+                                                                       "vitamin_c":  {
+                                                                                         "goal":  85,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  2000
+                                                                                     },
+                                                                       "vitamin_a":  {
+                                                                                         "goal":  770,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  3000
+                                                                                     },
+                                                                       "folate":  {
+                                                                                      "goal":  600,
+                                                                                      "type":  "RDA",
+                                                                                      "ul":  null,
+                                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                  },
+                                                                       "b12":  {
+                                                                                   "goal":  2.6,
+                                                                                   "type":  "RDA"
+                                                                               },
+                                                                       "omega_3":  {
+                                                                                       "goal":  null,
+                                                                                       "type":  "TRACKED",
+                                                                                       "ul":  null,
+                                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                       "basis":  "EPA+DHA"
+                                                                                   },
+                                                                       "choline":  {
+                                                                                       "goal":  450,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  3500
+                                                                                   }
+                                                                   },
+                                                         "51-70":  {
+                                                                       "fiber":  {
+                                                                                     "goal":  28,
+                                                                                     "type":  "AI"
+                                                                                 },
+                                                                       "potassium":  {
+                                                                                         "goal":  2900,
+                                                                                         "type":  "AI"
+                                                                                     },
+                                                                       "sodium":  {
+                                                                                      "goal":  1500,
+                                                                                      "type":  "AI",
+                                                                                      "ul":  2300
+                                                                                  },
+                                                                       "magnesium":  {
+                                                                                         "goal":  350,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  null,
+                                                                                         "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                     },
+                                                                       "calcium":  {
+                                                                                       "goal":  1000,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  2500
+                                                                                   },
+                                                                       "iron":  {
+                                                                                    "goal":  27,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  45
+                                                                                },
+                                                                       "zinc":  {
+                                                                                    "goal":  11,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  40
+                                                                                },
+                                                                       "vitamin_d":  {
+                                                                                         "goal":  15,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  100
+                                                                                     },
+                                                                       "vitamin_c":  {
+                                                                                         "goal":  85,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  2000
+                                                                                     },
+                                                                       "vitamin_a":  {
+                                                                                         "goal":  770,
+                                                                                         "type":  "RDA",
+                                                                                         "ul":  3000
+                                                                                     },
+                                                                       "folate":  {
+                                                                                      "goal":  600,
+                                                                                      "type":  "RDA",
+                                                                                      "ul":  null,
+                                                                                      "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                  },
+                                                                       "b12":  {
+                                                                                   "goal":  2.6,
+                                                                                   "type":  "RDA"
+                                                                               },
+                                                                       "omega_3":  {
+                                                                                       "goal":  null,
+                                                                                       "type":  "TRACKED",
+                                                                                       "ul":  null,
+                                                                                       "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                       "basis":  "EPA+DHA"
+                                                                                   },
+                                                                       "choline":  {
+                                                                                       "goal":  450,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  3500
+                                                                                   }
+                                                                   },
+                                                         "71+":  {
+                                                                     "fiber":  {
+                                                                                   "goal":  28,
+                                                                                   "type":  "AI"
+                                                                               },
+                                                                     "potassium":  {
+                                                                                       "goal":  2900,
+                                                                                       "type":  "AI"
+                                                                                   },
+                                                                     "sodium":  {
+                                                                                    "goal":  1500,
+                                                                                    "type":  "AI",
+                                                                                    "ul":  2300
+                                                                                },
+                                                                     "magnesium":  {
+                                                                                       "goal":  350,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  null,
+                                                                                       "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                   },
+                                                                     "calcium":  {
+                                                                                     "goal":  1000,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  2500
+                                                                                 },
+                                                                     "iron":  {
+                                                                                  "goal":  27,
+                                                                                  "type":  "RDA",
+                                                                                  "ul":  45
+                                                                              },
+                                                                     "zinc":  {
+                                                                                  "goal":  11,
+                                                                                  "type":  "RDA",
+                                                                                  "ul":  40
+                                                                              },
+                                                                     "vitamin_d":  {
+                                                                                       "goal":  15,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  100
+                                                                                   },
+                                                                     "vitamin_c":  {
+                                                                                       "goal":  85,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  2000
+                                                                                   },
+                                                                     "vitamin_a":  {
+                                                                                       "goal":  770,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  3000
+                                                                                   },
+                                                                     "folate":  {
+                                                                                    "goal":  600,
+                                                                                    "type":  "RDA",
+                                                                                    "ul":  null,
+                                                                                    "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                },
+                                                                     "b12":  {
+                                                                                 "goal":  2.6,
+                                                                                 "type":  "RDA"
+                                                                             },
+                                                                     "omega_3":  {
+                                                                                     "goal":  null,
+                                                                                     "type":  "TRACKED",
+                                                                                     "ul":  null,
+                                                                                     "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                     "basis":  "EPA+DHA"
+                                                                                 },
+                                                                     "choline":  {
+                                                                                     "goal":  450,
+                                                                                     "type":  "AI",
+                                                                                     "ul":  3500
+                                                                                 }
+                                                                 }
+                                                     },
+                            "lactating_by_age_band":  {
+                                                          "14-18":  {
+                                                                        "fiber":  {
+                                                                                      "goal":  29,
+                                                                                      "type":  "AI"
+                                                                                  },
+                                                                        "potassium":  {
+                                                                                          "goal":  2800,
+                                                                                          "type":  "AI"
+                                                                                      },
+                                                                        "sodium":  {
+                                                                                       "goal":  1500,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  2300
+                                                                                   },
+                                                                        "magnesium":  {
+                                                                                          "goal":  360,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  null,
+                                                                                          "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                      },
+                                                                        "calcium":  {
+                                                                                        "goal":  1300,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  3000
+                                                                                    },
+                                                                        "iron":  {
+                                                                                     "goal":  10,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  45
+                                                                                 },
+                                                                        "zinc":  {
+                                                                                     "goal":  13,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  34
+                                                                                 },
+                                                                        "vitamin_d":  {
+                                                                                          "goal":  15,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  100
+                                                                                      },
+                                                                        "vitamin_c":  {
+                                                                                          "goal":  115,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  1800
+                                                                                      },
+                                                                        "vitamin_a":  {
+                                                                                          "goal":  1200,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  2800
+                                                                                      },
+                                                                        "folate":  {
+                                                                                       "goal":  500,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  null,
+                                                                                       "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                   },
+                                                                        "b12":  {
+                                                                                    "goal":  2.8,
+                                                                                    "type":  "RDA"
+                                                                                },
+                                                                        "omega_3":  {
+                                                                                        "goal":  null,
+                                                                                        "type":  "TRACKED",
+                                                                                        "ul":  null,
+                                                                                        "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                        "basis":  "EPA+DHA"
+                                                                                    },
+                                                                        "choline":  {
+                                                                                        "goal":  550,
+                                                                                        "type":  "AI",
+                                                                                        "ul":  3000
+                                                                                    }
+                                                                    },
+                                                          "19-30":  {
+                                                                        "fiber":  {
+                                                                                      "goal":  29,
+                                                                                      "type":  "AI"
+                                                                                  },
+                                                                        "potassium":  {
+                                                                                          "goal":  2800,
+                                                                                          "type":  "AI"
+                                                                                      },
+                                                                        "sodium":  {
+                                                                                       "goal":  1500,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  2300
+                                                                                   },
+                                                                        "magnesium":  {
+                                                                                          "goal":  310,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  null,
+                                                                                          "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                      },
+                                                                        "calcium":  {
+                                                                                        "goal":  1000,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  2500
+                                                                                    },
+                                                                        "iron":  {
+                                                                                     "goal":  9,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  45
+                                                                                 },
+                                                                        "zinc":  {
+                                                                                     "goal":  12,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  40
+                                                                                 },
+                                                                        "vitamin_d":  {
+                                                                                          "goal":  15,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  100
+                                                                                      },
+                                                                        "vitamin_c":  {
+                                                                                          "goal":  120,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  2000
+                                                                                      },
+                                                                        "vitamin_a":  {
+                                                                                          "goal":  1300,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  3000
+                                                                                      },
+                                                                        "folate":  {
+                                                                                       "goal":  500,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  null,
+                                                                                       "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                   },
+                                                                        "b12":  {
+                                                                                    "goal":  2.8,
+                                                                                    "type":  "RDA"
+                                                                                },
+                                                                        "omega_3":  {
+                                                                                        "goal":  null,
+                                                                                        "type":  "TRACKED",
+                                                                                        "ul":  null,
+                                                                                        "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                        "basis":  "EPA+DHA"
+                                                                                    },
+                                                                        "choline":  {
+                                                                                        "goal":  550,
+                                                                                        "type":  "AI",
+                                                                                        "ul":  3500
+                                                                                    }
+                                                                    },
+                                                          "31-50":  {
+                                                                        "fiber":  {
+                                                                                      "goal":  29,
+                                                                                      "type":  "AI"
+                                                                                  },
+                                                                        "potassium":  {
+                                                                                          "goal":  2800,
+                                                                                          "type":  "AI"
+                                                                                      },
+                                                                        "sodium":  {
+                                                                                       "goal":  1500,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  2300
+                                                                                   },
+                                                                        "magnesium":  {
+                                                                                          "goal":  310,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  null,
+                                                                                          "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                      },
+                                                                        "calcium":  {
+                                                                                        "goal":  1000,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  2500
+                                                                                    },
+                                                                        "iron":  {
+                                                                                     "goal":  9,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  45
+                                                                                 },
+                                                                        "zinc":  {
+                                                                                     "goal":  12,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  40
+                                                                                 },
+                                                                        "vitamin_d":  {
+                                                                                          "goal":  15,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  100
+                                                                                      },
+                                                                        "vitamin_c":  {
+                                                                                          "goal":  120,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  2000
+                                                                                      },
+                                                                        "vitamin_a":  {
+                                                                                          "goal":  1300,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  3000
+                                                                                      },
+                                                                        "folate":  {
+                                                                                       "goal":  500,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  null,
+                                                                                       "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                   },
+                                                                        "b12":  {
+                                                                                    "goal":  2.8,
+                                                                                    "type":  "RDA"
+                                                                                },
+                                                                        "omega_3":  {
+                                                                                        "goal":  null,
+                                                                                        "type":  "TRACKED",
+                                                                                        "ul":  null,
+                                                                                        "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                        "basis":  "EPA+DHA"
+                                                                                    },
+                                                                        "choline":  {
+                                                                                        "goal":  550,
+                                                                                        "type":  "AI",
+                                                                                        "ul":  3500
+                                                                                    }
+                                                                    },
+                                                          "51-70":  {
+                                                                        "fiber":  {
+                                                                                      "goal":  29,
+                                                                                      "type":  "AI"
+                                                                                  },
+                                                                        "potassium":  {
+                                                                                          "goal":  2800,
+                                                                                          "type":  "AI"
+                                                                                      },
+                                                                        "sodium":  {
+                                                                                       "goal":  1500,
+                                                                                       "type":  "AI",
+                                                                                       "ul":  2300
+                                                                                   },
+                                                                        "magnesium":  {
+                                                                                          "goal":  310,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  null,
+                                                                                          "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                      },
+                                                                        "calcium":  {
+                                                                                        "goal":  1000,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  2500
+                                                                                    },
+                                                                        "iron":  {
+                                                                                     "goal":  9,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  45
+                                                                                 },
+                                                                        "zinc":  {
+                                                                                     "goal":  12,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  40
+                                                                                 },
+                                                                        "vitamin_d":  {
+                                                                                          "goal":  15,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  100
+                                                                                      },
+                                                                        "vitamin_c":  {
+                                                                                          "goal":  120,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  2000
+                                                                                      },
+                                                                        "vitamin_a":  {
+                                                                                          "goal":  1300,
+                                                                                          "type":  "RDA",
+                                                                                          "ul":  3000
+                                                                                      },
+                                                                        "folate":  {
+                                                                                       "goal":  500,
+                                                                                       "type":  "RDA",
+                                                                                       "ul":  null,
+                                                                                       "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                   },
+                                                                        "b12":  {
+                                                                                    "goal":  2.8,
+                                                                                    "type":  "RDA"
+                                                                                },
+                                                                        "omega_3":  {
+                                                                                        "goal":  null,
+                                                                                        "type":  "TRACKED",
+                                                                                        "ul":  null,
+                                                                                        "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                        "basis":  "EPA+DHA"
+                                                                                    },
+                                                                        "choline":  {
+                                                                                        "goal":  550,
+                                                                                        "type":  "AI",
+                                                                                        "ul":  3500
+                                                                                    }
+                                                                    },
+                                                          "71+":  {
+                                                                      "fiber":  {
+                                                                                    "goal":  29,
+                                                                                    "type":  "AI"
+                                                                                },
+                                                                      "potassium":  {
+                                                                                        "goal":  2800,
+                                                                                        "type":  "AI"
+                                                                                    },
+                                                                      "sodium":  {
+                                                                                     "goal":  1500,
+                                                                                     "type":  "AI",
+                                                                                     "ul":  2300
+                                                                                 },
+                                                                      "magnesium":  {
+                                                                                        "goal":  310,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  null,
+                                                                                        "ul_note":  "UL applies only to supplemental magnesium."
+                                                                                    },
+                                                                      "calcium":  {
+                                                                                      "goal":  1000,
+                                                                                      "type":  "RDA",
+                                                                                      "ul":  2500
+                                                                                  },
+                                                                      "iron":  {
+                                                                                   "goal":  9,
+                                                                                   "type":  "RDA",
+                                                                                   "ul":  45
+                                                                               },
+                                                                      "zinc":  {
+                                                                                   "goal":  12,
+                                                                                   "type":  "RDA",
+                                                                                   "ul":  40
+                                                                               },
+                                                                      "vitamin_d":  {
+                                                                                        "goal":  15,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  100
+                                                                                    },
+                                                                      "vitamin_c":  {
+                                                                                        "goal":  120,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  2000
+                                                                                    },
+                                                                      "vitamin_a":  {
+                                                                                        "goal":  1300,
+                                                                                        "type":  "RDA",
+                                                                                        "ul":  3000
+                                                                                    },
+                                                                      "folate":  {
+                                                                                     "goal":  500,
+                                                                                     "type":  "RDA",
+                                                                                     "ul":  null,
+                                                                                     "ul_note":  "UL applies to synthetic folic acid only."
+                                                                                 },
+                                                                      "b12":  {
+                                                                                  "goal":  2.8,
+                                                                                  "type":  "RDA"
+                                                                              },
+                                                                      "omega_3":  {
+                                                                                      "goal":  null,
+                                                                                      "type":  "TRACKED",
+                                                                                      "ul":  null,
+                                                                                      "note":  "No official DRI target exists for EPA+DHA specifically.",
+                                                                                      "basis":  "EPA+DHA"
+                                                                                  },
+                                                                      "choline":  {
+                                                                                      "goal":  550,
+                                                                                      "type":  "AI",
+                                                                                      "ul":  3500
+                                                                                  }
+                                                                  }
+                                                      }
+                        },
+    "input_fields_used_for_target_selection":  {
+                                                   "required":  [
+                                                                    "sex",
+                                                                    "ageYears"
+                                                                ],
+                                                   "conditional":  [
+                                                                       "pregnant",
+                                                                       "lactating",
+                                                                       "trimester"
+                                                                   ],
+                                                   "notes":  [
+                                                                 "Age defaults to 25 when missing in helper path.",
+                                                                 "Pregnancy/lactation logic only applies when sex=FEMALE."
+                                                             ]
+                                               },
+    "actual_intake_aggregation":  {
+                                      "equation":  "actual[nutrient] = SUM(servings(food_in_meals) * food.micros[nutrient_key])",
+                                      "keys_by_nutrient":  {
+                                                               "fiber":  [
+                                                                             "fiber_g",
+                                                                             "fiber"
+                                                                         ],
+                                                               "potassium":  [
+                                                                                 "potassium_mg",
+                                                                                 "potassium"
+                                                                             ],
+                                                               "sodium":  [
+                                                                              "sodium_mg",
+                                                                              "sodium"
+                                                                          ],
+                                                               "magnesium":  [
+                                                                                 "magnesium_mg",
+                                                                                 "magnesium"
+                                                                             ],
+                                                               "calcium":  [
+                                                                               "calcium_mg",
+                                                                               "calcium"
+                                                                           ],
+                                                               "iron":  [
+                                                                            "iron_mg",
+                                                                            "iron"
+                                                                        ],
+                                                               "zinc":  [
+                                                                            "zinc_mg",
+                                                                            "zinc"
+                                                                        ],
+                                                               "vitamin_d":  [
+                                                                                 "vitamin_d_mcg",
+                                                                                 "vitamin_d"
+                                                                             ],
+                                                               "vitamin_c":  [
+                                                                                 "vitamin_c_mg",
+                                                                                 "vitamin_c"
+                                                                             ],
+                                                               "vitamin_a":  [
+                                                                                 "vitamin_a_mcg_rae",
+                                                                                 "vitamin_a"
+                                                                             ],
+                                                               "folate":  [
+                                                                              "folate_mcg",
+                                                                              "folate"
+                                                                          ],
+                                                               "b12":  [
+                                                                           "b12_mcg",
+                                                                           "b12"
+                                                                       ],
+                                                               "omega_3":  [
+                                                                               "omega3_epa_dha_mg",
+                                                                               "omega_3_mg",
+                                                                               "omega_3"
+                                                                           ],
+                                                               "choline":  [
+                                                                               "choline_mg",
+                                                                               "choline"
+                                                                           ]
+                                                           },
+                                      "omega_basis":  "EPA+DHA"
+                                  },
+    "status_logic":  {
+                         "pct_goal_equation":  "pct_goal = (actual / goal) * 100",
+                         "pct_ul_equation":  "pct_ul = (actual / ul) * 100 when ul exists",
+                         "rules_in_order":  [
+                                                "PENDING when actual missing or goal invalid",
+                                                "OVER_UL when pct_ul \u003e 100",
+                                                "HIGH when pct_goal \u003e 200 OR pct_ul \u003e= 80",
+                                                "LOW when pct_goal \u003c 80",
+                                                "OK otherwise"
+                                            ]
+                     },
+    "known_gotchas":  [
+                          {
+                              "id":  "dv_only_labels",
+                              "severity":  "medium",
+                              "issue":  "Some foods contain %DV-only label data without amount; values can be treated as null.",
+                              "recommended_fix":  "Either convert %DV to amount via FDA DV constants or explicitly mark as uncounted in quality metadata."
+                          }
+                      ],
+    "data_quality_model":  {
+                               "states":  [
+                                              "KNOWN",
+                                              "PARTIAL",
+                                              "UNKNOWN"
+                                          ],
+                               "per_nutrient_daily_fields":  [
+                                                                 "known_food_count",
+                                                                 "unknown_food_count",
+                                                                 "coverage_pct"
+                                                             ],
+                               "display_rules":  [
+                                                     "KNOWN when all contributing foods have numeric micro values.",
+                                                     "PARTIAL when at least one contributing food is missing a value.",
+                                                     "UNKNOWN when no contributing foods have values."
+                                                 ],
+                               "value_source_states":  [
+                                                           "LABEL_AMOUNT",
+                                                           "USDA_FILL",
+                                                           "EXISTING",
+                                                           "DV_ONLY",
+                                                           "LABEL_LT",
+                                                           "MISSING",
+                                                           "UNKNOWN_SOURCE"
+                                                       ],
+                               "daily_output_fields":  [
+                                                           "known_food_count",
+                                                           "unknown_food_count",
+                                                           "contributing_food_count",
+                                                           "coverage_pct",
+                                                           "state",
+                                                           "value_source_counts"
+                                                       ]
+                           },
+    "extension_backlog":  {
+                              "phase_1":  [
+                                              {
+                                                  "nutrient_id":  "iodine",
+                                                  "unit":  "mcg",
+                                                  "reason":  "Iodized salt is already in default foods and pregnancy/lactation relevance is high."
+                                              },
+                                              {
+                                                  "nutrient_id":  "selenium",
+                                                  "unit":  "mcg",
+                                                  "reason":  "Common DRI nutrient and UL-sensitive."
+                                              },
+                                              {
+                                                  "nutrient_id":  "vitamin_e",
+                                                  "unit":  "mg alpha-tocopherol",
+                                                  "reason":  "Common insufficiency marker in real-world diets."
+                                              },
+                                              {
+                                                  "nutrient_id":  "vitamin_k",
+                                                  "unit":  "mcg",
+                                                  "reason":  "Frequently expected in comprehensive micronutrient views."
+                                              }
+                                          ],
+                              "phase_2":  [
+                                              {
+                                                  "nutrient_id":  "thiamin_b1",
+                                                  "unit":  "mg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "riboflavin_b2",
+                                                  "unit":  "mg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "niacin_b3",
+                                                  "unit":  "mg NE"
+                                              },
+                                              {
+                                                  "nutrient_id":  "vitamin_b6",
+                                                  "unit":  "mg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "copper",
+                                                  "unit":  "mg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "manganese",
+                                                  "unit":  "mg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "chromium",
+                                                  "unit":  "mcg"
+                                              },
+                                              {
+                                                  "nutrient_id":  "molybdenum",
+                                                  "unit":  "mcg"
+                                              }
+                                          ]
+                          },
+    "baseline_food_ids_with_micro_data":  [
+                                              {
+                                                  "id":  "ground_beef_80_20",
+                                                  "name":  "80/20 Ground Beef"
+                                              },
+                                              {
+                                                  "id":  "eggs_large",
+                                                  "name":  "Large Eggs (60ct)"
+                                              },
+                                              {
+                                                  "id":  "tilapia_fillet",
+                                                  "name":  "Tilapia Fillets (4lb)"
+                                              },
+                                              {
+                                                  "id":  "white_rice_dry",
+                                                  "name":  "White Rice - Measure Dry (20lb)"
+                                              },
+                                              {
+                                                  "id":  "chocolate_milk_lowfat",
+                                                  "name":  "Chocolate Milk (1gal)"
+                                              },
+                                              {
+                                                  "id":  "olive_oil",
+                                                  "name":  "Extra Virgin Olive Oil (8.5oz)"
+                                              },
+                                              {
+                                                  "id":  "chicken_breast",
+                                                  "name":  "Boneless Skinless Chicken Breast"
+                                              },
+                                              {
+                                                  "id":  "instant_oats",
+                                                  "name":  "Instant Oats (18oz)"
+                                              },
+                                              {
+                                                  "id":  "russet_potatoes",
+                                                  "name":  "Russet Potatoes (5lb)"
+                                              },
+                                              {
+                                                  "id":  "ground_turkey_93_7",
+                                                  "name":  "93/7 Ground Turkey (1lb)"
+                                              },
+                                              {
+                                                  "id":  "mixed_vegetables_birds_eye",
+                                                  "name":  "Birds Eye Frozen Mixed Vegetables (Corn, Carrots, Green Beans, Peas)"
+                                              },
+                                              {
+                                                  "id":  "spinach_chopped_frozen",
+                                                  "name":  "Great Value Chopped Spinach (Frozen)"
+                                              },
+                                              {
+                                                  "id":  "black_beans_dry_gv_4lb",
+                                                  "name":  "Great Value Black Beans (Dry) 4 lb"
+                                              },
+                                              {
+                                                  "id":  "iodized_salt_gv_26oz",
+                                                  "name":  "Great Value Iodized Salt (26 oz)"
+                                              },
+                                              {
+                                                  "id":  "banana_fresh_each",
+                                                  "name":  "Fresh Banana, Each"
+                                              }
+                                          ],
+    "athlete_optional_modifiers":  {
+                                       "heavy_sweat_toggle":  {
+                                                                  "applies_to":  [
+                                                                                     "sodium",
+                                                                                     "potassium"
+                                                                                 ],
+                                                                  "default":  false,
+                                                                  "note":  "Keep DRI as baseline; optional modifier can tune sports-context recommendations."
+                                                              }
+                                   },
+    "invariants":  {
+                       "omega_3":  [
+                                       "unit must be mg EPA+DHA",
+                                       "target basis must match aggregated field omega3_epa_dha_mg"
+                                   ],
+                       "required_fields":  [
+                                               "nutrient_order",
+                                               "unit_map",
+                                               "target_profiles",
+                                               "actual_intake_aggregation.keys_by_nutrient",
+                                               "status_logic"
+                                           ]
+                   },
+    "target_policy":  {
+                          "omega_3":  {
+                                          "mode":  "tracked_only",
+                                          "basis":  "EPA+DHA",
+                                          "note":  "Display intake only; no DRI goal percent or UL comparison."
+                                      }
+                      }
+}
