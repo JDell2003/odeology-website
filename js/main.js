@@ -4008,12 +4008,113 @@ function initNutritionFunnel() {
         console.log('Store selected:', gInputs.store.value);
     });
 
+    const COMING_SOON_STYLE_VALUES = new Set(['MIXED', 'CALISTHENICS']);
+    const styleLabelByKey = {
+        STRENGTH: 'Strength Training',
+        MIXED: 'Mixed Training',
+        CALISTHENICS: 'Bodyweight / Calisthenics'
+    };
+    const showRecompComingSoonPopup = async () => {
+        const title = 'Recomp Coming Soon';
+        const message = [
+            'Recomp is not available in Step 1 yet.',
+            'Choose [[Cut fat]] or [[Gain Weight / Build Muscle]] to continue.'
+        ].join('\n');
+        if (typeof odeConfirm === 'function') {
+            await odeConfirm({
+                title,
+                message,
+                confirmText: 'Got it',
+                cancelText: 'Close'
+            });
+            return;
+        }
+        alert('Recomp is coming soon. Choose Cut fat or Gain Weight / Build Muscle to continue.');
+    };
+    const showStyleComingSoonPopup = async (styleRaw) => {
+        const key = String(styleRaw || '').trim().toUpperCase();
+        const styleLabel = styleLabelByKey[key] || 'This training style';
+        const title = `${styleLabel} Coming Soon`;
+        const message = [
+            `[[${styleLabel}]] is not available yet.`,
+            'Use [[Strength Training]] to continue this flow.'
+        ].join('\n');
+        if (typeof odeConfirm === 'function') {
+            await odeConfirm({
+                title,
+                message,
+                confirmText: 'Got it',
+                cancelText: 'Close'
+            });
+            return;
+        }
+        alert(`${styleLabel} is coming soon. Use Strength Training to continue.`);
+    };
+    const setupRecompComingSoonPill = () => {
+        const goalGroup = document.querySelector('.ns-button-grid[data-group="goal"]');
+        const recompBtn = goalGroup?.querySelector('button[data-value="RECOMP"]');
+        if (!recompBtn) return;
+        recompBtn.classList.remove('active');
+        recompBtn.classList.add('ns-pill-coming-soon');
+        recompBtn.setAttribute('data-coming-soon', 'true');
+        recompBtn.setAttribute('aria-disabled', 'true');
+        const labelTextNode = Array.from(recompBtn.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+        if (labelTextNode) labelTextNode.textContent = 'Recomp ';
+        if (!recompBtn.querySelector('.ns-coming-soon-tag')) {
+            const tag = document.createElement('span');
+            tag.className = 'ns-coming-soon-tag';
+            tag.textContent = 'Coming soon';
+            const helpEl = recompBtn.querySelector('.ns-goal-help');
+            if (helpEl) recompBtn.insertBefore(tag, helpEl);
+            else recompBtn.appendChild(tag);
+        }
+    };
+    const setupStyleComingSoonPills = () => {
+        const styleGroup = document.querySelector('.ns-icon-grid[data-group="style"]');
+        if (!styleGroup) return;
+        styleGroup.querySelectorAll('button[data-value]').forEach((btn) => {
+            const value = String(btn.dataset.value || '').trim().toUpperCase();
+            if (!COMING_SOON_STYLE_VALUES.has(value)) return;
+            btn.classList.remove('active');
+            btn.classList.add('ns-pill-coming-soon');
+            btn.setAttribute('data-coming-soon', 'true');
+            btn.setAttribute('aria-disabled', 'true');
+            if (!btn.querySelector('.ns-coming-soon-tag')) {
+                const tag = document.createElement('span');
+                tag.className = 'ns-coming-soon-tag';
+                tag.textContent = 'Coming soon';
+                btn.appendChild(tag);
+            }
+        });
+    };
+    setupRecompComingSoonPill();
+    setupStyleComingSoonPills();
     document.querySelectorAll('.ns-button-grid, .ns-icon-grid').forEach(group => {
         group.addEventListener('click', e => {
             if (e.target?.closest?.('[data-goal-help]')) return;
             const btn = e.target.closest('button[data-value]');
             if (!btn) return;
             const groupName = group.dataset.group;
+            if (groupName === 'goal') {
+                const isComingSoonGoal = String(btn.dataset.comingSoon || '').toLowerCase() === 'true'
+                    || String(btn.dataset.value || '').toUpperCase() === 'RECOMP';
+                if (isComingSoonGoal) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void showRecompComingSoonPopup();
+                    return;
+                }
+            } else if (groupName === 'style') {
+                const styleValue = String(btn.dataset.value || '').trim().toUpperCase();
+                const isComingSoonStyle = String(btn.dataset.comingSoon || '').toLowerCase() === 'true'
+                    || COMING_SOON_STYLE_VALUES.has(styleValue);
+                if (isComingSoonStyle) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void showStyleComingSoonPopup(styleValue);
+                    return;
+                }
+            }
             selectPill(group, btn);
             nutritionState.selections[groupName] = btn.dataset.value;
             if (groupName === 'sex') syncPregnancyToggleVisibility();
@@ -4049,11 +4150,11 @@ function initNutritionFunnel() {
             title: 'Recomp',
             lines: [
                 '**What it represents**',
-                '- Recomposition: lose fat and gain muscle slowly at near-maintenance calories.',
-                '- Good when you want body-composition change without aggressive scale swings.',
+                '- Recomposition mode is currently [[coming soon]] in Step 1.',
+                '- Right now, choose [[Cut fat]] or [[Gain Weight / Build Muscle]] to continue.',
                 '---',
-                '**Weight rule**',
-                '- Goal weight can be close to current weight; body composition is the priority.'
+                '**Status**',
+                '- This option is visible for roadmap clarity, but it is not selectable yet.'
             ]
         }
     };
@@ -4090,11 +4191,15 @@ function initNutritionFunnel() {
     const goalLabelByKey = {
         CUT: 'Cut fat',
         BULK: 'Gain Weight/ Build Muscle',
-        RECOMP: 'Recomp'
+        RECOMP: 'Recomp (Coming soon)'
     };
     const applyGoalSelection = (goalValueRaw) => {
         const goalValue = String(goalValueRaw || '').trim().toUpperCase();
         if (!goalLabelByKey[goalValue]) return;
+        if (goalValue === 'RECOMP') {
+            void showRecompComingSoonPopup();
+            return;
+        }
         nutritionState.selections.goal = goalValue;
         const goalGroup = document.querySelector('.ns-button-grid[data-group="goal"]');
         const goalBtn = goalGroup?.querySelector(`button[data-value="${goalValue}"]`);
@@ -4117,13 +4222,13 @@ function initNutritionFunnel() {
         if (goal === 'CUT' && goalWeight >= currentWeight) {
             mismatch = true;
             primaryGoal = 'BULK';
-            secondaryGoal = 'RECOMP';
+            secondaryGoal = 'CUT';
             mismatchLine = `You picked [[${goalLabelByKey.CUT}]], but your goal weight is [[${Math.round(goalWeight)} lb]] and your current weight is [[${Math.round(currentWeight)} lb]].`;
             ruleLine = `For [[${goalLabelByKey.CUT}]], goal weight should be [[lower]] than current bodyweight.`;
         } else if (goal === 'BULK' && goalWeight <= currentWeight) {
             mismatch = true;
             primaryGoal = 'CUT';
-            secondaryGoal = 'RECOMP';
+            secondaryGoal = 'BULK';
             mismatchLine = `You picked [[${goalLabelByKey.BULK}]], but your goal weight is [[${Math.round(goalWeight)} lb]] and your current weight is [[${Math.round(currentWeight)} lb]].`;
             ruleLine = `For [[${goalLabelByKey.BULK}]], goal weight should be [[higher]] than current bodyweight.`;
         }
@@ -4133,10 +4238,10 @@ function initNutritionFunnel() {
         const message = [
             mismatchLine,
             ruleLine,
-            'Did you mean one of these instead?'
+            'Switch to the suggested goal, or keep your current goal.'
         ].join('\n');
         const primaryLabel = goalLabelByKey[primaryGoal] || primaryGoal;
-        const secondaryLabel = goalLabelByKey[secondaryGoal] || secondaryGoal;
+        const secondaryLabel = `Keep ${goalLabelByKey[secondaryGoal] || secondaryGoal}`;
 
         if (typeof odeConfirm === 'function') {
             const action = await odeConfirm({
@@ -4148,16 +4253,25 @@ function initNutritionFunnel() {
                 size: 'wide'
             });
             if (action === 'dismiss') return false;
-            applyGoalSelection(action === 'confirm' ? primaryGoal : secondaryGoal);
+            if (action === 'confirm') applyGoalSelection(primaryGoal);
             return true;
         }
 
         const usePrimary = window.confirm(`${title}\n\n${mismatchLine}\n${ruleLine}\n\nOK = ${primaryLabel}\nCancel = ${secondaryLabel}`);
-        applyGoalSelection(usePrimary ? primaryGoal : secondaryGoal);
+        if (usePrimary) applyGoalSelection(primaryGoal);
         return true;
     };
 
     next1?.addEventListener('click', () => {
+        if (String(nutritionState.selections.goal || '').trim().toUpperCase() === 'RECOMP') {
+            void showRecompComingSoonPopup();
+            return;
+        }
+        const selectedStyle = String(nutritionState.selections.style || '').trim().toUpperCase();
+        if (COMING_SOON_STYLE_VALUES.has(selectedStyle)) {
+            void showStyleComingSoonPopup(selectedStyle);
+            return;
+        }
         if (!nutritionState.selections.goal || !nutritionState.selections.style || !nutritionState.selections.frequency) {
             alert('Select a goal, training style, and frequency to continue.');
             return;

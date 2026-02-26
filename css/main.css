@@ -18428,6 +18428,45 @@ body.nav-drawer-open .nav-drawer-backdrop {
     padding-right: 2.15rem;
 }
 
+.nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-pill.ns-pill-coming-soon,
+.nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill.ns-pill-coming-soon {
+    border-style: dashed;
+    border-color: rgba(95, 118, 136, 0.45);
+    background: rgba(244, 247, 250, 0.96);
+    color: #5f7485;
+    cursor: not-allowed;
+}
+
+.nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-pill.ns-pill-coming-soon:hover,
+.nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill.ns-pill-coming-soon:hover {
+    border-color: rgba(95, 118, 136, 0.45);
+    background: rgba(244, 247, 250, 0.96);
+    color: #5f7485;
+    transform: none;
+    box-shadow: none;
+}
+
+.nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-pill .ns-coming-soon-tag,
+.nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill .ns-coming-soon-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(95, 118, 136, 0.45);
+    background: rgba(255, 255, 255, 0.9);
+    color: #4f6476;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-left: 0.15rem;
+}
+
+.nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill .ns-coming-soon-tag {
+    margin-left: auto;
+}
+
 .nutrition-funnel .ns-flow .ns-goal-help {
     position: absolute;
     top: 8px;
@@ -18460,6 +18499,11 @@ body.nav-drawer-open .nav-drawer-backdrop {
 .nutrition-funnel .ns-flow .ns-pill.active .ns-goal-help {
     border-color: rgba(31, 79, 114, 0.55);
     background: rgba(255, 255, 255, 0.96);
+}
+
+.nutrition-funnel .ns-flow .ns-pill.ns-pill-coming-soon .ns-goal-help {
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .nutrition-funnel .ns-flow .ns-pill,
@@ -18519,15 +18563,36 @@ body.nav-drawer-open .nav-drawer-backdrop {
 }
 
 @media (max-width: 640px) {
-    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"],
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] {
+        grid-template-columns: 1fr;
+        gap: 0.56rem;
     }
 
     .nutrition-funnel .ns-flow .ns-pill,
     .nutrition-funnel .ns-flow .ns-icon-pill {
-        min-height: 54px;
-        font-size: 0.98rem;
-        padding: 0.78rem 0.82rem;
+        min-height: 58px;
+        font-size: 0.97rem;
+        padding: 0.84rem 0.84rem;
+    }
+
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-pill.ns-pill-coming-soon,
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill.ns-pill-coming-soon {
+        padding-right: 2.15rem;
+    }
+
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-pill .ns-coming-soon-tag,
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-icon-grid[data-group="style"] .ns-icon-pill .ns-coming-soon-tag {
+        font-size: 0.58rem;
+        padding: 0.14rem 0.36rem;
+        white-space: nowrap;
+    }
+
+    .nutrition-funnel .ns-flow #ns-step-1 .ns-button-grid[data-group="goal"] .ns-goal-help {
+        top: 7px;
+        right: 7px;
+        width: 17px;
+        height: 17px;
     }
 }
 
