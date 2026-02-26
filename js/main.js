@@ -184,8 +184,27 @@ function isLiquidFood(food) {
 function normalizeGoal(value) {
     const g = String(value || '').toUpperCase();
     if (g === 'CUT' || g === 'LOSE' || g === 'FAT-LOSS') return 'CUT';
-    if (g === 'BULK' || g === 'GAIN' || g === 'MUSCLE-GAIN') return 'BULK';
+    if (g === 'BULK' || g === 'BUILD' || g === 'GAIN' || g === 'MUSCLE-GAIN' || g === 'BUILD MUSCLE' || g === 'MUSCLE') return 'BULK';
     if (g === 'STRENGTH') return 'STRENGTH';
+    return 'RECOMP';
+}
+
+function resolveGoalModeForMath(rawGoal, currentWeightLbs = null, goalWeightLbs = null) {
+    const direct = normalizeGoalInput(rawGoal);
+    if (direct === 'CUT') return 'CUT';
+    if (direct === 'BUILD') return 'BULK';
+    if (direct === 'STRENGTH') return 'STRENGTH';
+    if (direct === 'RECOMP') return 'RECOMP';
+
+    const fallback = normalizeGoal(rawGoal);
+    if (fallback === 'CUT' || fallback === 'BULK' || fallback === 'STRENGTH') return fallback;
+
+    const current = Number(currentWeightLbs);
+    const goal = Number(goalWeightLbs);
+    if (Number.isFinite(current) && current > 0 && Number.isFinite(goal) && goal > 0) {
+        if (goal > current) return 'BULK';
+        if (goal < current) return 'CUT';
+    }
     return 'RECOMP';
 }
 
@@ -274,12 +293,18 @@ function getActiveBudgetModeFromSession() {
     return 'best';
 }
 
-function getPlannerOvershootConfig({ isCutPhase, budgetMode, relaxed = false }) {
+function getPlannerOvershootConfig({ isCutPhase, isBuildPhase = false, isRecompPhase = false, budgetMode, relaxed = false }) {
     const mode = String(budgetMode || 'best').toLowerCase();
-    const strictCalOver = isCutPhase ? (mode === 'budget' ? 120 : (mode === 'balanced' ? 80 : 60)) : 0;
-    const strictCarbOver = isCutPhase ? (mode === 'budget' ? 60 : (mode === 'balanced' ? 30 : 15)) : 0;
-    const strictProteinOverPct = isCutPhase ? (mode === 'budget' ? 1.20 : (mode === 'balanced' ? 1.10 : 1.05)) : 1.00;
-    const strictFatOver = isCutPhase ? (mode === 'budget' ? 2 : 0) : 0;
+    const strictCalOver = isCutPhase
+        ? (mode === 'budget' ? 120 : (mode === 'balanced' ? 80 : 60))
+        : (isBuildPhase ? 220 : (isRecompPhase ? 120 : 0));
+    const strictCarbOver = isCutPhase
+        ? (mode === 'budget' ? 60 : (mode === 'balanced' ? 30 : 15))
+        : (isBuildPhase ? 80 : (isRecompPhase ? 40 : 0));
+    const strictProteinOverPct = isCutPhase
+        ? (mode === 'budget' ? 1.20 : (mode === 'balanced' ? 1.10 : 1.05))
+        : (isBuildPhase ? 1.10 : (isRecompPhase ? 1.08 : 1.00));
+    const strictFatOver = isCutPhase ? (mode === 'budget' ? 2 : 0) : (isBuildPhase ? 6 : (isRecompPhase ? 5 : 0));
     if (!relaxed) {
         return {
             caloriesOver: strictCalOver,
@@ -289,10 +314,10 @@ function getPlannerOvershootConfig({ isCutPhase, budgetMode, relaxed = false }) 
         };
     }
     return {
-        caloriesOver: isCutPhase ? (mode === 'budget' ? 180 : 140) : 220,
-        carbsOver: isCutPhase ? (mode === 'budget' ? 90 : 60) : 80,
-        proteinOverPct: isCutPhase ? (strictProteinOverPct + 0.05) : 1.08,
-        fatOver: isCutPhase ? Math.max(strictFatOver, 4) : 6
+        caloriesOver: isCutPhase ? (mode === 'budget' ? 180 : 140) : (isBuildPhase ? 260 : (isRecompPhase ? 180 : 220)),
+        carbsOver: isCutPhase ? (mode === 'budget' ? 90 : 60) : (isBuildPhase ? 120 : (isRecompPhase ? 70 : 80)),
+        proteinOverPct: isCutPhase ? (strictProteinOverPct + 0.05) : (isBuildPhase ? 1.15 : (isRecompPhase ? 1.12 : 1.08)),
+        fatOver: isCutPhase ? Math.max(strictFatOver, 4) : (isBuildPhase ? 8 : (isRecompPhase ? 8 : 6))
     };
 }
 
@@ -819,6 +844,597 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             ...(plan?.meta || {}),
             macroClosureApplied: true,
             macroClosureLabel: String(options?.label || 'closure_default')
+        }
+    };
+}
+
+function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macroTargets, microRefs, options = {} }) {
+    const srcMeals = Array.isArray(plan?.meals) ? plan.meals : [];
+    if (!srcMeals.length) return { ...plan, applied: false, moves: [] };
+    const foods = Array.isArray(selectedFoods) ? selectedFoods : [];
+    if (!foods.length) return { ...plan, applied: false, moves: [] };
+
+    const refsArray = Array.isArray(microRefs)
+        ? microRefs
+        : Object.values(microRefs && typeof microRefs === 'object' ? microRefs : {});
+    if (!refsArray.length) return { ...plan, applied: false, moves: [] };
+
+    const targets = normalizeMacroTargets(macroTargets || {});
+    const byId = new Map(foods.map((f) => [String(f?.id || ''), f]));
+    const refByKey = new Map(
+        refsArray
+            .map((row) => [String(row?.nutrient_id || ''), row])
+            .filter(([key]) => Boolean(key))
+    );
+
+    const priorityNutrients = (
+        Array.isArray(options?.priorityNutrients) && options.priorityNutrients.length
+            ? options.priorityNutrients
+            : ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium']
+    )
+        .map((key) => String(key || '').trim().toLowerCase())
+        .filter((key) => refByKey.has(key));
+
+    const addStepServings = Math.max(0.25, Number(options?.addStepServings) || 0.25);
+    const maxMovesTotal = Math.max(1, Number(options?.maxMovesTotal) || 48);
+    const maxMovesPerNutrient = Math.max(1, Number(options?.maxMovesPerNutrient) || 10);
+    const logLabel = String(options?.label || 'baseline_micro_correction');
+
+    const baseMacroCaps = {
+        calories: (Number(targets.calories) || 0) + Math.max(80, Math.round((Number(targets.calories) || 0) * 0.03)),
+        protein_g: (Number(targets.protein_g) || 0) + 5,
+        carbs_g: (Number(targets.carbs_g) || 0) + 12,
+        fat_g: (Number(targets.fat_g) || 0) + 6
+    };
+
+    const meals = srcMeals.map((meal, idx) => ({
+        ...(meal || {}),
+        id: meal?.id || `meal_${idx + 1}`,
+        foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : [],
+        totals: { ...(meal?.totals || {}) }
+    }));
+
+    const safeMacroPerServing = (food, key) => Math.max(0, Number(food?.macros?.[key]) || 0);
+    const classifyType = (food) => {
+        const explicit = String(food?.type || '').toLowerCase();
+        if (explicit) return explicit;
+        const category = String(food?.category || '').toLowerCase();
+        if (category.includes('protein')) return 'protein';
+        if (category.includes('carb')) return 'carb';
+        if (category.includes('fat')) return 'fat';
+        return 'other';
+    };
+    const isOilLikeFood = (food) => {
+        const text = `${String(food?.id || '').toLowerCase()} ${String(food?.name || '').toLowerCase()}`;
+        return text.includes('olive_oil') || text.includes('olive oil') || text.includes('cooking oil');
+    };
+    const isFatOnlyFood = (food) => {
+        const fat = safeMacroPerServing(food, 'fat_g');
+        const protein = safeMacroPerServing(food, 'protein_g');
+        const carbs = safeMacroPerServing(food, 'carbs_g');
+        return fat >= 6 && protein < 5 && carbs < 5;
+    };
+    const resolveMicrosPerServing = (food, key) => {
+        const micros = (food && typeof food === 'object' && food.micros && typeof food.micros === 'object') ? food.micros : {};
+        const toFinite = (raw) => {
+            if (raw === null || raw === undefined || raw === '') return null;
+            const n = Number(raw);
+            return Number.isFinite(n) ? n : null;
+        };
+        const pick = (...names) => {
+            for (const name of names) {
+                const value = toFinite(micros?.[name]);
+                if (value !== null) return value;
+            }
+            return null;
+        };
+        switch (key) {
+            case 'fiber': return pick('fiber_g', 'fiber');
+            case 'potassium': return pick('potassium_mg', 'potassium');
+            case 'sodium': return pick('sodium_mg', 'sodium');
+            case 'magnesium': return pick('magnesium_mg', 'magnesium');
+            case 'calcium': return pick('calcium_mg', 'calcium');
+            case 'iron': return pick('iron_mg', 'iron');
+            case 'zinc': return pick('zinc_mg', 'zinc');
+            case 'vitamin_d': return pick('vitamin_d_mcg', 'vitamin_d');
+            case 'vitamin_c': return pick('vitamin_c_mg', 'vitamin_c');
+            case 'vitamin_a': return pick('vitamin_a_mcg_rae', 'vitamin_a');
+            case 'folate': return pick('folate_mcg', 'folate');
+            case 'b12': return pick('b12_mcg', 'b12');
+            case 'omega_3': return pick('omega3_epa_dha_mg', 'omega_3_mg', 'omega_3');
+            case 'choline': return pick('choline_mg', 'choline');
+            default: return null;
+        }
+    };
+    const buildItem = (food, servings) => {
+        const s = Math.max(0, Number(servings) || 0);
+        if (!food || s <= 0) return null;
+        const grams = Number.isFinite(food?.servingGrams)
+            ? Math.round(Number(food.servingGrams) * s * 10) / 10
+            : null;
+        return {
+            foodId: String(food?.id || ''),
+            foodName: String(food?.query || food?.name || 'Food'),
+            servings: Math.round(s * 100) / 100,
+            grams,
+            measurementText: `${Math.round(s * 100) / 100} servings`,
+            calories: Math.floor(safeMacroPerServing(food, 'calories') * s),
+            protein_g: Math.floor(safeMacroPerServing(food, 'protein_g') * s),
+            carbs_g: Math.floor(safeMacroPerServing(food, 'carbs_g') * s),
+            fat_g: Math.floor(safeMacroPerServing(food, 'fat_g') * s)
+        };
+    };
+    const recomputeMealTotals = (meal) => {
+        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+        meal.totals = {
+            calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+            protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+            carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+            fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+        };
+    };
+    const recomputeAll = () => {
+        meals.forEach(recomputeMealTotals);
+        return computeTotalsFromBuiltMeals(meals);
+    };
+    const snapshotMeals = () => meals.map((meal) => ({
+        ...(meal || {}),
+        totals: { ...(meal?.totals || {}) },
+        foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
+    }));
+    const restoreMeals = (snapshot) => {
+        if (!Array.isArray(snapshot)) return;
+        meals.splice(0, meals.length, ...snapshot.map((meal) => ({
+            ...(meal || {}),
+            totals: { ...(meal?.totals || {}) },
+            foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
+        })));
+    };
+    const setServingDelta = (mealIdx, food, delta, step = addStepServings) => {
+        if (!food || !Number.isFinite(mealIdx) || mealIdx < 0 || mealIdx >= meals.length) return false;
+        const meal = meals[mealIdx];
+        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+        const idx = items.findIndex((it) => String(it?.foodId || '') === String(food?.id || ''));
+        const current = idx >= 0 ? (Number(items[idx]?.servings) || 0) : 0;
+        const rawNext = current + Number(delta || 0);
+        const next = Math.round((rawNext / step)) * step;
+        if (next <= 0.01) {
+            if (idx < 0) return false;
+            items.splice(idx, 1);
+        } else {
+            const rebuilt = buildItem(food, next);
+            if (!rebuilt) return false;
+            if (idx >= 0) items[idx] = rebuilt;
+            else items.push(rebuilt);
+        }
+        meal.foods = items;
+        recomputeMealTotals(meal);
+        return true;
+    };
+    const computeMicroTotals = () => {
+        const totals = {};
+        refByKey.forEach((_, key) => { totals[key] = 0; });
+        meals.forEach((meal) => {
+            (meal?.foods || []).forEach((item) => {
+                const servings = Math.max(0, Number(item?.servings) || 0);
+                if (servings <= 0) return;
+                const sourceFood = byId.get(String(item?.foodId || ''));
+                if (!sourceFood) return;
+                refByKey.forEach((_, key) => {
+                    const perServing = resolveMicrosPerServing(sourceFood, key);
+                    if (Number.isFinite(perServing)) totals[key] += perServing * servings;
+                });
+            });
+        });
+        return totals;
+    };
+    const getMacroCapsForNutrient = (nutrientKey) => {
+        const key = String(nutrientKey || '').toLowerCase();
+        const caps = { ...baseMacroCaps };
+        if (key === 'fiber' || key === 'vitamin_c') {
+            caps.calories = Math.max(caps.calories, (Number(targets.calories) || 0) + 150);
+            caps.carbs_g = Math.max(caps.carbs_g, (Number(targets.carbs_g) || 0) + 25);
+        }
+        return caps;
+    };
+    const withinMacroCaps = (nextTotals, caps, prevTotals = null) => {
+        const within = (key) => {
+            const cap = Number(caps?.[key]);
+            const next = Number(nextTotals?.[key]) || 0;
+            const prev = Number(prevTotals?.[key]);
+            if (!Number.isFinite(cap)) return true;
+            if (next <= cap) return true;
+            if (Number.isFinite(prev) && prev > cap) return next <= (prev + 0.01);
+            return false;
+        };
+        return within('calories') && within('protein_g') && within('carbs_g') && within('fat_g');
+    };
+    const worsensExistingOverages = (prevTotals, nextTotals, caps) => {
+        const keys = ['calories', 'protein_g', 'carbs_g', 'fat_g'];
+        return keys.some((key) => {
+            const cap = Number(caps?.[key]);
+            const prev = Number(prevTotals?.[key]) || 0;
+            const next = Number(nextTotals?.[key]) || 0;
+            if (!Number.isFinite(cap)) return false;
+            return prev > cap && next > prev;
+        });
+    };
+    const exceedsMicroUl = (nextMicroTotals) => {
+        for (const [key, ref] of refByKey.entries()) {
+            const ul = Number(ref?.ul_value);
+            if (!Number.isFinite(ul) || ul <= 0) continue;
+            const actual = Number(nextMicroTotals?.[key]) || 0;
+            if (actual > (ul * 1.01)) return true;
+        }
+        return false;
+    };
+    const inPlanIds = new Set();
+    meals.forEach((meal) => {
+        (meal?.foods || []).forEach((item) => {
+            const id = String(item?.foodId || '');
+            if (id) inPlanIds.add(id);
+        });
+    });
+    const inPlanFoods = [];
+    const outPlanFoods = [];
+    foods.forEach((food) => {
+        const id = String(food?.id || '');
+        if (!id) return;
+        if (inPlanIds.has(id)) inPlanFoods.push(food);
+        else outPlanFoods.push(food);
+    });
+    const candidateFoodsForNutrient = (nutrientKey, phase = 'in_plan') => {
+        const sourceFoods = phase === 'in_plan' ? inPlanFoods : outPlanFoods;
+        return sourceFoods
+            .filter((food) => Number.isFinite(resolveMicrosPerServing(food, nutrientKey)))
+            .filter((food) => (Number(resolveMicrosPerServing(food, nutrientKey)) || 0) > 0)
+            .filter((food) => Number.isFinite(Number(food?.macros?.calories)))
+            .filter((food) => {
+                const type = classifyType(food);
+                if (type === 'fat' || isOilLikeFood(food) || isFatOnlyFood(food)) return false;
+                return true;
+            })
+            .sort((a, b) => {
+                const score = (food) => {
+                    const micro = Number(resolveMicrosPerServing(food, nutrientKey)) || 0;
+                    const cal = Math.max(1, Number(safeMacroPerServing(food, 'calories')) || 0);
+                    const pro = Number(safeMacroPerServing(food, 'protein_g')) || 0;
+                    const fat = Number(safeMacroPerServing(food, 'fat_g')) || 0;
+                    const inPlanBonus = inPlanIds.has(String(food?.id || '')) ? 0.03 : 0;
+                    return (micro / Math.max(1, cal + (pro * 8) + (fat * 6))) + inPlanBonus;
+                };
+                return score(b) - score(a);
+            })
+            .slice(0, 14);
+    };
+    const mealOrderByLowestCalories = () => (
+        meals
+            .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+            .sort((a, b) => a.calories - b.calories)
+            .map((row) => row.idx)
+    );
+
+    let totals = recomputeAll();
+    let microTotals = computeMicroTotals();
+    const moves = [];
+    let moveCount = 0;
+    const diagnosticsByNutrient = {};
+    const stepForNutrient = (nutrientKey) => (String(nutrientKey || '').toLowerCase() === 'fiber' ? 0.5 : addStepServings);
+    const potassiumRef = refByKey.get('potassium');
+    const potassiumCapFromOptions = Number(options?.potassiumCap);
+    const potassiumCapFromRef = Number(potassiumRef?.ul_value);
+    const potassiumCap = Number.isFinite(potassiumCapFromOptions) && potassiumCapFromOptions > 0
+        ? potassiumCapFromOptions
+        : ((Number.isFinite(potassiumCapFromRef) && potassiumCapFromRef > 0) ? potassiumCapFromRef : 12000);
+    const potassiumReductionStepServings = Math.max(0.25, Number(options?.potassiumReductionStepServings) || 0.25);
+    const maxPotassiumReductionMoves = Math.max(1, Number(options?.maxPotassiumReductionMoves) || 16);
+    const reductionMacroFloors = {
+        calories: Math.max(0, (Number(targets.calories) || 0) - Math.max(140, Math.round((Number(targets.calories) || 0) * 0.06))),
+        protein_g: Math.max(0, (Number(targets.protein_g) || 0) - 10),
+        carbs_g: Math.max(0, (Number(targets.carbs_g) || 0) - 18),
+        fat_g: Math.max(0, (Number(targets.fat_g) || 0) - 6)
+    };
+    const respectsReductionFloors = (nextTotals, prevTotals) => {
+        const keys = ['calories', 'protein_g', 'carbs_g', 'fat_g'];
+        return keys.every((key) => {
+            const floor = Number(reductionMacroFloors?.[key]);
+            if (!Number.isFinite(floor)) return true;
+            const prev = Number(prevTotals?.[key]) || 0;
+            const next = Number(nextTotals?.[key]) || 0;
+            if (prev >= floor) return next >= floor;
+            return next >= (prev - 0.01);
+        });
+    };
+    const potassiumDiag = {
+        cap: potassiumCap,
+        start: Number(microTotals?.potassium) || 0,
+        end: Number(microTotals?.potassium) || 0,
+        attempts: 0,
+        accepted: 0,
+        rejectedByMacroFloors: 0,
+        rejectedByNoPotassiumDrop: 0,
+        passes: []
+    };
+    const runPotassiumReductionPass = (passLabel) => {
+        if (!refByKey.has('potassium')) return;
+        const passTrace = {
+            pass: String(passLabel || 'pass'),
+            start: Number(microTotals?.potassium) || 0,
+            end: Number(microTotals?.potassium) || 0,
+            attempts: 0,
+            accepted: 0
+        };
+        potassiumDiag.passes.push(passTrace);
+        let movesThisPass = 0;
+        while (
+            moveCount < maxMovesTotal
+            && movesThisPass < maxPotassiumReductionMoves
+            && (Number(microTotals?.potassium) || 0) > (potassiumCap + 10)
+        ) {
+            const rankedCandidates = [];
+            meals.forEach((meal, mealIdx) => {
+                (meal?.foods || []).forEach((item) => {
+                    const servings = Math.max(0, Number(item?.servings) || 0);
+                    if (servings <= 0) return;
+                    const sourceFood = byId.get(String(item?.foodId || ''));
+                    if (!sourceFood) return;
+                    const potassiumPerServing = Number(resolveMicrosPerServing(sourceFood, 'potassium')) || 0;
+                    if (potassiumPerServing <= 0) return;
+                    const caloriesPerServing = Number(safeMacroPerServing(sourceFood, 'calories')) || 0;
+                    const proteinPerServing = Number(safeMacroPerServing(sourceFood, 'protein_g')) || 0;
+                    const carbsPerServing = Number(safeMacroPerServing(sourceFood, 'carbs_g')) || 0;
+                    const fatPerServing = Number(safeMacroPerServing(sourceFood, 'fat_g')) || 0;
+                    const macroPenalty = (proteinPerServing * 20) + (fatPerServing * 10) + (carbsPerServing * 2) + (caloriesPerServing * 0.1);
+                    const reductionScore = potassiumPerServing / Math.max(1, macroPenalty);
+                    rankedCandidates.push({
+                        mealIdx,
+                        sourceFood,
+                        item,
+                        servings,
+                        potassiumPerServing,
+                        reductionScore
+                    });
+                });
+            });
+            rankedCandidates.sort((a, b) => {
+                if (b.reductionScore !== a.reductionScore) return b.reductionScore - a.reductionScore;
+                return b.potassiumPerServing - a.potassiumPerServing;
+            });
+            if (!rankedCandidates.length) break;
+            let acceptedMove = null;
+            for (const candidate of rankedCandidates) {
+                passTrace.attempts += 1;
+                potassiumDiag.attempts += 1;
+                const beforeMeals = snapshotMeals();
+                const beforeTotals = { ...totals };
+                const beforeMicros = { ...microTotals };
+                const applied = setServingDelta(
+                    candidate.mealIdx,
+                    candidate.sourceFood,
+                    -potassiumReductionStepServings,
+                    potassiumReductionStepServings
+                );
+                if (!applied) {
+                    restoreMeals(beforeMeals);
+                    totals = beforeTotals;
+                    microTotals = beforeMicros;
+                    continue;
+                }
+                const nextTotals = recomputeAll();
+                if (!respectsReductionFloors(nextTotals, beforeTotals)) {
+                    potassiumDiag.rejectedByMacroFloors += 1;
+                    restoreMeals(beforeMeals);
+                    totals = beforeTotals;
+                    microTotals = beforeMicros;
+                    continue;
+                }
+                const nextMicros = computeMicroTotals();
+                const potassiumDrop = (Number(beforeMicros?.potassium) || 0) - (Number(nextMicros?.potassium) || 0);
+                if (potassiumDrop <= 0.1) {
+                    potassiumDiag.rejectedByNoPotassiumDrop += 1;
+                    restoreMeals(beforeMeals);
+                    totals = beforeTotals;
+                    microTotals = beforeMicros;
+                    continue;
+                }
+                totals = nextTotals;
+                microTotals = nextMicros;
+                acceptedMove = {
+                    nutrient: 'potassium',
+                    adjustment: 'reduce',
+                    foodId: String(candidate?.sourceFood?.id || ''),
+                    mealIdx: candidate.mealIdx,
+                    servingsAdded: -potassiumReductionStepServings,
+                    gain: -Math.round(potassiumDrop * 100) / 100
+                };
+                break;
+            }
+            if (!acceptedMove) break;
+            moves.push(acceptedMove);
+            moveCount += 1;
+            movesThisPass += 1;
+            passTrace.accepted += 1;
+            potassiumDiag.accepted += 1;
+        }
+        passTrace.end = Number(microTotals?.potassium) || 0;
+        potassiumDiag.end = Number(microTotals?.potassium) || 0;
+    };
+    runPotassiumReductionPass('pre_priority');
+
+    for (const nutrientKey of priorityNutrients) {
+        const ref = refByKey.get(nutrientKey);
+        const goal = Number(ref?.goal_value);
+        if (!Number.isFinite(goal) || goal <= 0) continue;
+        const nutrientCaps = getMacroCapsForNutrient(nutrientKey);
+        const stepSize = stepForNutrient(nutrientKey);
+        const nutrientDiag = {
+            nutrient: nutrientKey,
+            goal,
+            stepSize,
+            caps: nutrientCaps,
+            attempts: 0,
+            candidatesInPlan: 0,
+            candidatesOutPlan: 0,
+            rejectedByMacroCaps: 0,
+            rejectedByUl: 0,
+            rejectedByNoGain: 0,
+            selectedFromPhase: []
+        };
+        diagnosticsByNutrient[nutrientKey] = nutrientDiag;
+
+        let movesForNutrient = 0;
+        while (moveCount < maxMovesTotal && movesForNutrient < maxMovesPerNutrient) {
+            const current = Number(microTotals?.[nutrientKey]) || 0;
+            const deficit = goal - current;
+            if (deficit <= Math.max(goal * 0.03, 0.1)) break;
+
+            let bestMove = null;
+            let selectedPhase = '';
+            for (const phase of ['in_plan', 'out_plan']) {
+                const candidates = candidateFoodsForNutrient(nutrientKey, phase);
+                if (phase === 'in_plan') nutrientDiag.candidatesInPlan = Math.max(nutrientDiag.candidatesInPlan, candidates.length);
+                else nutrientDiag.candidatesOutPlan = Math.max(nutrientDiag.candidatesOutPlan, candidates.length);
+                if (!candidates.length) continue;
+                const mealOrder = mealOrderByLowestCalories();
+                for (const food of candidates) {
+                    for (const mealIdx of mealOrder) {
+                        nutrientDiag.attempts += 1;
+                        const beforeMeals = snapshotMeals();
+                        const beforeTotals = { ...totals };
+                        const beforeMicros = { ...microTotals };
+                        const applied = setServingDelta(mealIdx, food, stepSize, stepSize);
+                        if (!applied) {
+                            restoreMeals(beforeMeals);
+                            totals = beforeTotals;
+                            microTotals = beforeMicros;
+                            continue;
+                        }
+                        const nextTotals = recomputeAll();
+                        if (!withinMacroCaps(nextTotals, nutrientCaps, beforeTotals) || worsensExistingOverages(beforeTotals, nextTotals, nutrientCaps)) {
+                            nutrientDiag.rejectedByMacroCaps += 1;
+                            restoreMeals(beforeMeals);
+                            totals = beforeTotals;
+                            microTotals = beforeMicros;
+                            continue;
+                        }
+                        const nextMicros = computeMicroTotals();
+                        if (exceedsMicroUl(nextMicros)) {
+                            nutrientDiag.rejectedByUl += 1;
+                            restoreMeals(beforeMeals);
+                            totals = beforeTotals;
+                            microTotals = beforeMicros;
+                            continue;
+                        }
+                        const gain = (Number(nextMicros?.[nutrientKey]) || 0) - (Number(beforeMicros?.[nutrientKey]) || 0);
+                        if (gain <= 0) {
+                            nutrientDiag.rejectedByNoGain += 1;
+                            restoreMeals(beforeMeals);
+                            totals = beforeTotals;
+                            microTotals = beforeMicros;
+                            continue;
+                        }
+
+                        const proteinPenalty = Math.max(0, (Number(nextTotals?.protein_g) || 0) - (Number(targets?.protein_g) || 0));
+                        const fatPenalty = Math.max(0, (Number(nextTotals?.fat_g) || 0) - (Number(targets?.fat_g) || 0));
+                        const carbPenalty = Math.max(0, (Number(nextTotals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0));
+                        const caloriePenalty = Math.max(0, (Number(nextTotals?.calories) || 0) - (Number(targets?.calories) || 0));
+                        const score = (gain * 1000) - (proteinPenalty * 45) - (fatPenalty * 40) - (carbPenalty * 12) - (caloriePenalty * 0.75);
+
+                        if (!bestMove || score > bestMove.score) {
+                            bestMove = {
+                                mealIdx,
+                                food,
+                                score,
+                                gain,
+                                before: beforeTotals,
+                                after: nextTotals
+                            };
+                            selectedPhase = phase;
+                        }
+
+                        restoreMeals(beforeMeals);
+                        totals = beforeTotals;
+                        microTotals = beforeMicros;
+                    }
+                }
+                if (bestMove) break;
+            }
+
+            if (!bestMove) break;
+            const committed = setServingDelta(bestMove.mealIdx, bestMove.food, stepSize, stepSize);
+            if (!committed) break;
+            totals = recomputeAll();
+            microTotals = computeMicroTotals();
+            nutrientDiag.selectedFromPhase.push(selectedPhase || 'unknown');
+            moves.push({
+                nutrient: nutrientKey,
+                foodId: String(bestMove?.food?.id || ''),
+                mealIdx: bestMove.mealIdx,
+                servingsAdded: stepSize,
+                gain: Math.round((Number(bestMove?.gain) || 0) * 100) / 100
+            });
+            moveCount += 1;
+            movesForNutrient += 1;
+        }
+    }
+    runPotassiumReductionPass('post_priority');
+    if (refByKey.has('potassium')) {
+        diagnosticsByNutrient.potassium_cap = potassiumDiag;
+    }
+
+    const applied = moves.length > 0;
+    if (!applied) {
+        try {
+            console.info('[PLAN_GENERATION][MICRO_CORRECTION]', {
+                label: logLabel,
+                appliedMoves: 0,
+                priorityNutrients,
+                macroCaps: baseMacroCaps,
+                diagnosticsByNutrient,
+                finalTotals: totals,
+                reason: 'No accepted move under current guardrails.'
+            });
+        } catch {
+            // ignore
+        }
+        return {
+            ...plan,
+            meals: srcMeals,
+            dailyTotals: computeTotalsFromBuiltMeals(srcMeals),
+            applied: false,
+            moves: [],
+            microCorrection: {
+                label: logLabel,
+                macroCaps: baseMacroCaps
+            }
+        };
+    }
+
+    try {
+        console.info('[PLAN_GENERATION][MICRO_CORRECTION]', {
+            label: logLabel,
+            appliedMoves: moves.length,
+            priorityNutrients,
+            macroCaps: baseMacroCaps,
+            diagnosticsByNutrient,
+            finalTotals: totals,
+            moves: moves.slice(0, 12)
+        });
+    } catch {
+        // ignore
+    }
+
+    return {
+        ...plan,
+        meals,
+        dailyTotals: totals,
+        applied: true,
+        moves,
+        microTotals,
+        microCorrection: {
+            label: logLabel,
+            macroCaps: baseMacroCaps,
+            diagnosticsByNutrient
         }
     };
 }
@@ -2695,6 +3311,49 @@ function renderCostWindowSummary(snapshot) {
     });
 
     syncCostWindowToggleUi();
+    syncCostWindowCardUi(mode);
+}
+
+function syncCostWindowCardUi(modeRaw) {
+    const mode = modeRaw === COST_WINDOW_MODES.REST_MONTH ? COST_WINDOW_MODES.REST_MONTH : COST_WINDOW_MODES.AVG_28;
+    const daysRemaining = Math.max(
+        1,
+        Math.round(
+            Number(lastCostWindowSnapshot?.daysRemaining) ||
+            Number(daysRemainingInCurrentMonth(new Date())) ||
+            1
+        )
+    );
+    const buysLabel = mode === COST_WINDOW_MODES.REST_MONTH
+        ? `Buys rest of month (${daysRemaining}d)`
+        : 'Buys avg month (28d)';
+    const footerSuffix = mode === COST_WINDOW_MODES.REST_MONTH ? 'this month' : 'avg 28d';
+    document.querySelectorAll('.grocery-card[data-buys-avg28][data-buys-rest][data-cost-avg28][data-cost-rest]').forEach((card) => {
+        const dailyServings = Number(card.dataset.dailyServings);
+        const servingsPerContainer = Number(card.dataset.servingsPerContainer);
+        const containerPrice = Number(card.dataset.containerPrice);
+        const hasLiveMath = Number.isFinite(dailyServings) && dailyServings > 0 && Number.isFinite(servingsPerContainer) && servingsPerContainer > 0;
+        const buysAvgFallback = Math.max(0, Math.round(Number(card.dataset.buysAvg28) || 0));
+        const buysRestFallback = Math.max(0, Math.round(Number(card.dataset.buysRest) || 0));
+        const buysAvg = hasLiveMath ? Math.max(1, Math.ceil((dailyServings * 28) / servingsPerContainer)) : buysAvgFallback;
+        const buysRest = hasLiveMath ? Math.max(1, Math.ceil((dailyServings * daysRemaining) / servingsPerContainer)) : buysRestFallback;
+        const costAvgFallback = Number(card.dataset.costAvg28);
+        const costRestFallback = Number(card.dataset.costRest);
+        const costAvg = Number.isFinite(containerPrice) && containerPrice >= 0 ? buysAvg * containerPrice : costAvgFallback;
+        const costRest = Number.isFinite(containerPrice) && containerPrice >= 0 ? buysRest * containerPrice : costRestFallback;
+        const buysValue = mode === COST_WINDOW_MODES.REST_MONTH ? buysRest : buysAvg;
+        const selectedCost = mode === COST_WINDOW_MODES.REST_MONTH ? costRest : costAvg;
+        const buysLabelEl = card.querySelector('[data-buys-label]');
+        const buysValueEl = card.querySelector('[data-buys-value]');
+        const footerValueEl = card.querySelector('[data-window-cost-value]');
+        if (buysLabelEl) buysLabelEl.textContent = buysLabel;
+        if (buysValueEl) buysValueEl.textContent = `${buysValue}\u00D7`;
+        if (footerValueEl) {
+            footerValueEl.textContent = Number.isFinite(selectedCost)
+                ? `${formatCurrency(selectedCost)} ${footerSuffix}`
+                : `${EM_DASH} ${footerSuffix}`;
+        }
+    });
 }
 
 if (!window.__odeCostToggleBound) {
@@ -2832,6 +3491,7 @@ function calculateInventoryCosts(groceryItems, startDate = new Date()) {
     
     let thisMonthCost = 0;
     let avgMonthlyCost = 0;
+    let avgMonthly28Cost = 0;
     const itemBreakdown = [];
     
     groceryItems.forEach(item => {
@@ -2843,8 +3503,10 @@ function calculateInventoryCosts(groceryItems, startDate = new Date()) {
             itemBreakdown.push({
                 ...item,
                 purchasesThisMonth: 0,
+                purchasesAvg28: 0,
                 thisMonthCost: 0,
                 avgMonthlyCost: 0,
+                avgMonthly28Cost: 0,
                 daysPerContainer: Infinity,
                 nextPurchaseDay: null
             });
@@ -2863,20 +3525,27 @@ function calculateInventoryCosts(groceryItems, startDate = new Date()) {
         
         const itemThisMonthCost = purchasesThisMonth * pricePerContainer;
         thisMonthCost += itemThisMonthCost;
-        
+
         // === AVG MONTHLY CALCULATION ===
         // Based on 30-day normalized consumption
         const avgDaysPerMonth = 30;
         const containersPerMonth = (dailyConsumption * avgDaysPerMonth) / containerSize;
         const itemAvgMonthlyCost = containersPerMonth * pricePerContainer;
         avgMonthlyCost += itemAvgMonthlyCost;
-        
+        const avg28Days = 28;
+        const totalNeededAvg28 = dailyConsumption * avg28Days;
+        const purchasesAvg28 = Math.max(1, Math.ceil(totalNeededAvg28 / containerSize));
+        const itemAvgMonthly28Cost = purchasesAvg28 * pricePerContainer;
+        avgMonthly28Cost += itemAvgMonthly28Cost;
+
         itemBreakdown.push({
             ...item,
             purchasesThisMonth,
+            purchasesAvg28,
             purchaseDays,
             thisMonthCost: itemThisMonthCost,
             avgMonthlyCost: itemAvgMonthlyCost,
+            avgMonthly28Cost: itemAvgMonthly28Cost,
             daysPerContainer: Math.round(daysPerContainer * 10) / 10,
             daysRemainingInMonth
         });
@@ -2885,6 +3554,7 @@ function calculateInventoryCosts(groceryItems, startDate = new Date()) {
     return {
         thisMonthCost: Math.round(thisMonthCost * 100) / 100,
         avgMonthlyCost: Math.round(avgMonthlyCost * 100) / 100,
+        avgMonthly28Cost: Math.round(avgMonthly28Cost * 100) / 100,
         itemBreakdown,
         daysRemainingInMonth,
         startDate
@@ -2933,9 +3603,9 @@ const groceryFoods = {
 };
 
 const NS_LOADER_LINES = [
-    'Calculating caloriesÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦',
-    'Adjusting for your training styleÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦',
-    'Finalizing baseline protocolÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦'
+    'Calculating calories...',
+    'Adjusting for your training style...',
+    'Finalizing baseline protocol...'
 ];
 
 let nsLoaderInterval = null;
@@ -3047,6 +3717,9 @@ function initNutritionFunnel() {
     const groceryStart = document.getElementById('ns-grocery-start');
     const groceryGate = document.getElementById('ns-grocery-gate');
     const groceryGateBtn = document.getElementById('ns-grocery-unlock');
+    const unlockEmailModal = document.getElementById('ns-unlock-email-modal');
+    const unlockEmailClose = document.getElementById('ns-unlock-email-close');
+    const unlockEmailHost = document.getElementById('ns-unlock-email-host');
     const groceryPage = document.getElementById('grocery-page');
     const groceryBack = document.getElementById('grocery-back');
     const groceryNext = document.getElementById('grocery-next');
@@ -3110,6 +3783,8 @@ function initNutritionFunnel() {
             // ignore
         }
         emailForm?.classList.add('hidden');
+        document.getElementById('ns-unlock-email-modal')?.classList.add('hidden');
+        document.body.classList.remove('ns-modal-open');
     };
 
     window.addEventListener('odeauth', (e) => setSignedInMode(e?.detail?.user || null));
@@ -3117,6 +3792,12 @@ function initNutritionFunnel() {
         .then(r => r.json())
         .then((data) => setSignedInMode(data?.user || null))
         .catch(() => {});
+
+    const closeUnlockEmailModal = (hideForm = true) => {
+        unlockEmailModal?.classList.add('hidden');
+        document.body.classList.remove('ns-modal-open');
+        if (hideForm) emailForm?.classList.add('hidden');
+    };
 
     const unlockMacrosUi = (reason) => {
         if (!nutritionState?.results) return;
@@ -3135,32 +3816,48 @@ function initNutritionFunnel() {
         unlockBlock?.classList.add('hidden');
         macrosBlock?.classList.remove('locked');
         macrosBlock?.querySelector('.ns-lock-overlay')?.classList.add('hidden');
+        document.getElementById('ns-why-calories')?.classList.remove('locked');
+        document.querySelector('#ns-why-calories .ns-why-macro-overlay')?.setAttribute('aria-hidden', 'true');
+        closeUnlockEmailModal();
 
         downloadBlock?.classList.add('hidden');
         handoff?.classList.remove('hidden');
         groceryGate?.classList.add('hidden');
 
         if (startGroceryPrimary) {
-            if (reason !== 'signed_in_auto') {
+            const disableAutoScrollReasons = new Set(['signed_in_auto', 'email_unlock_now', 'signed_in_unlock_now']);
+            if (!disableAutoScrollReasons.has(String(reason || ''))) {
                 startGroceryPrimary.focus();
                 setTimeout(() => handoff?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
             }
         }
     };
 
+    const openUnlockEmailModal = () => {
+        if (!unlockEmailModal || !emailForm) {
+            emailForm?.classList.remove('hidden');
+            unlockBlock?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        if (unlockEmailHost && emailForm.parentElement !== unlockEmailHost) {
+            unlockEmailHost.appendChild(emailForm);
+        }
+        emailForm.classList.remove('hidden');
+        unlockEmailModal.classList.remove('hidden');
+        document.body.classList.add('ns-modal-open');
+        setTimeout(() => emailInput?.focus(), 40);
+    };
+
     groceryGateUnlockBtn?.addEventListener('click', () => {
         // Hide modal
         groceryGateModal?.classList.add('hidden');
         
-        // Reveal email form (same as clicking unlock button)
+        // Open email capture modal
         if (isSignedIn()) {
             unlockMacrosUi('signed_in_gate');
             return;
         }
-        emailForm.classList.remove('hidden');
-        
-        // Scroll to unlock section
-        unlockBlock?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openUnlockEmailModal();
     });
 
     startGrocery?.addEventListener('click', () => {
@@ -3218,15 +3915,12 @@ function initNutritionFunnel() {
         // Hide the modal
         groceryStartModal?.classList.add('hidden');
         
-        // Reveal email form
+        // Open email capture modal
         if (isSignedIn()) {
             unlockMacrosUi('signed_in_start_grocery');
             return;
         }
-        emailForm.classList.remove('hidden');
-        
-        // Scroll to unlock section
-        unlockBlock?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openUnlockEmailModal();
     });
     
     groceryStartClose?.addEventListener('click', () => {
@@ -3237,6 +3931,16 @@ function initNutritionFunnel() {
     groceryStartModal?.addEventListener('click', (e) => {
         if (e.target === groceryStartModal) {
             groceryStartModal.classList.add('hidden');
+        }
+    });
+
+    unlockEmailClose?.addEventListener('click', () => closeUnlockEmailModal());
+    unlockEmailModal?.addEventListener('click', (e) => {
+        if (e.target === unlockEmailModal) closeUnlockEmailModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && unlockEmailModal && !unlockEmailModal.classList.contains('hidden')) {
+            closeUnlockEmailModal();
         }
     });
     gInputs.meals?.addEventListener('input', () => {
@@ -3306,6 +4010,7 @@ function initNutritionFunnel() {
 
     document.querySelectorAll('.ns-button-grid, .ns-icon-grid').forEach(group => {
         group.addEventListener('click', e => {
+            if (e.target?.closest?.('[data-goal-help]')) return;
             const btn = e.target.closest('button[data-value]');
             if (!btn) return;
             const groupName = group.dataset.group;
@@ -3315,6 +4020,142 @@ function initNutritionFunnel() {
             updateTagsFromSelections();
         });
     });
+    const goalHelpContent = {
+        CUT: {
+            title: 'Cut fat',
+            lines: [
+                '**What it represents**',
+                '- Drop bodyweight while keeping as much muscle/performance as possible.',
+                '- Calories are set in a deficit.',
+                '- Protein stays high to protect muscle.',
+                '---',
+                '**Weight rule**',
+                '- Goal weight should be [[lower]] than your current bodyweight.'
+            ]
+        },
+        BULK: {
+            title: 'Gain Weight / Build Muscle',
+            lines: [
+                '**What it represents**',
+                '- Add bodyweight with a controlled surplus to build muscle.',
+                '- Protein stays high and carbs support training output.',
+                '- Progress is usually slow and steady, not a dirty bulk.',
+                '---',
+                '**Weight rule**',
+                '- Goal weight should be [[higher]] than your current bodyweight.'
+            ]
+        },
+        RECOMP: {
+            title: 'Recomp',
+            lines: [
+                '**What it represents**',
+                '- Recomposition: lose fat and gain muscle slowly at near-maintenance calories.',
+                '- Good when you want body-composition change without aggressive scale swings.',
+                '---',
+                '**Weight rule**',
+                '- Goal weight can be close to current weight; body composition is the priority.'
+            ]
+        }
+    };
+    const openGoalHelpPopup = async (goalRaw) => {
+        const goalKey = String(goalRaw || '').trim().toUpperCase();
+        const payload = goalHelpContent[goalKey];
+        if (!payload) return;
+        const message = payload.lines.join('\n');
+        if (typeof odeConfirm === 'function') {
+            await odeConfirm({
+                title: `${payload.title} - What this means`,
+                message,
+                confirmText: 'Close',
+                cancelText: 'Close'
+            });
+            return;
+        }
+        alert(message.replace(/\*\*|\[\[|\]\]/g, ''));
+    };
+    document.querySelectorAll('[data-goal-help]').forEach((helpEl) => {
+        helpEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void openGoalHelpPopup(helpEl.getAttribute('data-goal-help'));
+        });
+        helpEl.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            void openGoalHelpPopup(helpEl.getAttribute('data-goal-help'));
+        });
+    });
+
+    const goalLabelByKey = {
+        CUT: 'Cut fat',
+        BULK: 'Gain Weight/ Build Muscle',
+        RECOMP: 'Recomp'
+    };
+    const applyGoalSelection = (goalValueRaw) => {
+        const goalValue = String(goalValueRaw || '').trim().toUpperCase();
+        if (!goalLabelByKey[goalValue]) return;
+        nutritionState.selections.goal = goalValue;
+        const goalGroup = document.querySelector('.ns-button-grid[data-group="goal"]');
+        const goalBtn = goalGroup?.querySelector(`button[data-value="${goalValue}"]`);
+        if (goalGroup && goalBtn) selectPill(goalGroup, goalBtn);
+        updateTagsFromSelections();
+    };
+    const enforceGoalWeightDirection = async ({ goalRaw, currentWeightLbs, goalWeightLbs }) => {
+        const goal = String(goalRaw || '').trim().toUpperCase();
+        const currentWeight = Number(currentWeightLbs);
+        const goalWeight = Number(goalWeightLbs);
+        if (!Number.isFinite(currentWeight) || !Number.isFinite(goalWeight) || currentWeight <= 0 || goalWeight <= 0) {
+            return true;
+        }
+
+        let mismatch = false;
+        let primaryGoal = '';
+        let secondaryGoal = '';
+        let mismatchLine = '';
+        let ruleLine = '';
+        if (goal === 'CUT' && goalWeight >= currentWeight) {
+            mismatch = true;
+            primaryGoal = 'BULK';
+            secondaryGoal = 'RECOMP';
+            mismatchLine = `You picked [[${goalLabelByKey.CUT}]], but your goal weight is [[${Math.round(goalWeight)} lb]] and your current weight is [[${Math.round(currentWeight)} lb]].`;
+            ruleLine = `For [[${goalLabelByKey.CUT}]], goal weight should be [[lower]] than current bodyweight.`;
+        } else if (goal === 'BULK' && goalWeight <= currentWeight) {
+            mismatch = true;
+            primaryGoal = 'CUT';
+            secondaryGoal = 'RECOMP';
+            mismatchLine = `You picked [[${goalLabelByKey.BULK}]], but your goal weight is [[${Math.round(goalWeight)} lb]] and your current weight is [[${Math.round(currentWeight)} lb]].`;
+            ruleLine = `For [[${goalLabelByKey.BULK}]], goal weight should be [[higher]] than current bodyweight.`;
+        }
+        if (!mismatch) return true;
+
+        const title = 'Goal / Weight Mismatch';
+        const message = [
+            mismatchLine,
+            ruleLine,
+            'Did you mean one of these instead?'
+        ].join('\n');
+        const primaryLabel = goalLabelByKey[primaryGoal] || primaryGoal;
+        const secondaryLabel = goalLabelByKey[secondaryGoal] || secondaryGoal;
+
+        if (typeof odeConfirm === 'function') {
+            const action = await odeConfirm({
+                title,
+                message,
+                confirmText: primaryLabel,
+                cancelText: secondaryLabel,
+                returnAction: true,
+                size: 'wide'
+            });
+            if (action === 'dismiss') return false;
+            applyGoalSelection(action === 'confirm' ? primaryGoal : secondaryGoal);
+            return true;
+        }
+
+        const usePrimary = window.confirm(`${title}\n\n${mismatchLine}\n${ruleLine}\n\nOK = ${primaryLabel}\nCancel = ${secondaryLabel}`);
+        applyGoalSelection(usePrimary ? primaryGoal : secondaryGoal);
+        return true;
+    };
 
     next1?.addEventListener('click', () => {
         if (!nutritionState.selections.goal || !nutritionState.selections.style || !nutritionState.selections.frequency) {
@@ -3330,8 +4171,8 @@ function initNutritionFunnel() {
         switchStep(2, 1);
     });
 
-    next2?.addEventListener('click', () => {
-        if (!collectStep2()) return;
+    next2?.addEventListener('click', async () => {
+        if (!(await collectStep2())) return;
         runLoader(() => {
             nutritionState.results = calculateNutritionPlan(nutritionState.selections);
             paintResults(nutritionState.results);
@@ -3358,7 +4199,7 @@ function initNutritionFunnel() {
             unlockMacrosUi('signed_in_click');
             return;
         }
-        emailForm.classList.remove('hidden');
+        openUnlockEmailModal();
     });
 
     const captureNutritionEmail = (reason) => {
@@ -3401,8 +4242,11 @@ function initNutritionFunnel() {
     };
 
     groceryGateBtn?.addEventListener('click', () => {
-        unlockBtn?.click();
-        unlockBlock?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (isSignedIn()) {
+            unlockMacrosUi('signed_in_gate_cta');
+            return;
+        }
+        openUnlockEmailModal();
     });
 
     emailInput?.addEventListener('blur', () => captureNutritionEmail('blur'));
@@ -3639,7 +4483,7 @@ function initNutritionFunnel() {
     });
     setHeightUnit('inches');
 
-    function collectStep2() {
+    async function collectStep2() {
         const sex = nutritionState.selections.sex;
         const intensity = nutritionState.selections.intensity;
         const heightIn = readHeightInches();
@@ -3655,6 +4499,12 @@ function initNutritionFunnel() {
             alert('Fill in age, sex, valid height, current bodyweight, goal bodyweight, and training intensity.');
             return false;
         }
+        const goalDirectionOk = await enforceGoalWeightDirection({
+            goalRaw: nutritionState.selections.goal,
+            currentWeightLbs: weightLbs,
+            goalWeightLbs
+        });
+        if (!goalDirectionOk) return false;
         if (sex === 'FEMALE' && pregnant === 'YES' && !nutritionState.selections.trimester) {
             alert('Select trimester for pregnancy-specific micronutrient targets.');
             return false;
@@ -3720,6 +4570,7 @@ function getNutritionAgeProfile(sel) {
 
 const NUTRITION_ENGINE_DEFAULTS = {
     cutLossRateLbsPerWeek: 1.5,
+    buildGainRateLbsPerWeek: 0.5,
     kcalPerLb: 3500,
     maleCalorieFloor: 1600,
     femaleCalorieFloor: 1400
@@ -3729,6 +4580,7 @@ function normalizeGoalInput(raw) {
     const value = String(raw || '').trim().toUpperCase();
     if (value === 'CUT' || value === 'LOSE' || value === 'FAT-LOSS' || value === 'FAT LOSS') return 'CUT';
     if (value === 'BULK' || value === 'BUILD' || value === 'BUILD MUSCLE' || value === 'MUSCLE') return 'BUILD';
+    if (value === 'RECOMP' || value === 'RE-COMP' || value === 'RECOMPOSITION' || value === 'LOSE FAT + BUILD MUSCLE') return 'RECOMP';
     if (value === 'STRENGTH' || value === 'PRIORITIZE STRENGTH') return 'STRENGTH';
     return '';
 }
@@ -3790,6 +4642,8 @@ function normalizeInputs(formState, options = {}) {
     const weightLbs = Number(src.weightLbs);
     const goalWeightLbs = Number(src.goalWeightLbs);
     const lossRateRaw = Number(src.lossRateLbsPerWeek ?? src.lbsPerWeek);
+    const gainRateRaw = Number(src.gainRateLbsPerWeek ?? src.bulkGainRateLbsPerWeek ?? src.lbsGainPerWeek ?? src.gainRate);
+    const bodyFatPctRaw = Number(src.bodyFatPct ?? src.bodyfatPct ?? src.bodyFatPercent ?? src.bodyfat);
     let pregnant = String(src.pregnant || 'NO').toUpperCase() === 'YES' ? 'YES' : 'NO';
     let lactating = String(src.lactating || 'NO').toUpperCase() === 'YES' ? 'YES' : 'NO';
     const trimester = String(src.trimester || '').trim();
@@ -3839,7 +4693,14 @@ function normalizeInputs(formState, options = {}) {
         weightKg: Number.isFinite(weightLbs) ? (weightLbs * 0.45359237) : null,
         goalWeightLbs,
         intensity,
-        lossRateLbsPerWeek: Number.isFinite(lossRateRaw) ? lossRateRaw : 1.5
+        budgetMode: (() => {
+            const mode = String(src.budgetMode || '').trim().toLowerCase();
+            if (mode === 'budget' || mode === 'balanced' || mode === 'best') return mode;
+            return 'best';
+        })(),
+        lossRateLbsPerWeek: Number.isFinite(lossRateRaw) ? lossRateRaw : 1.5,
+        gainRateLbsPerWeek: Number.isFinite(gainRateRaw) ? gainRateRaw : 0.5,
+        bodyFatPct: Number.isFinite(bodyFatPctRaw) ? bodyFatPctRaw : null
     };
 
     if (errors.length && throwOnError) {
@@ -3857,6 +4718,7 @@ function normalizeInputs(formState, options = {}) {
 function calcCalories(profile, options = {}) {
     const cfg = { ...NUTRITION_ENGINE_DEFAULTS, ...(options || {}) };
     const warnings = [];
+    const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
     const sexConst = profile.sex === 'FEMALE' ? -161 : 5;
     const bmr = Math.round((10 * profile.weightKg) + (6.25 * profile.heightCm) - (5 * profile.ageYears) + sexConst);
     const factorTable = {
@@ -3874,12 +4736,18 @@ function calcCalories(profile, options = {}) {
     let target = maintenance;
     let deficitPerDay = 0;
     let lossRateLbsPerWeek = 0;
+    let gainRateLbsPerWeek = 0;
+    let surplusPerDay = 0;
     let selectedRate = null;
     let selectedDeficit = 0;
+    let selectedGainRate = null;
     let cutFloorApplied = false;
     let cutFloorValue = null;
     let generalFloorApplied = false;
     let generalFloorValue = null;
+    let recompClampMin = null;
+    let recompClampMax = null;
+    let recompSoftCutApplied = false;
     if (profile.goal === 'CUT') {
         const requestedRate = Number(profile.lossRateLbsPerWeek);
         selectedRate = [1.0, 1.5, 2.0].includes(requestedRate) ? requestedRate : cfg.cutLossRateLbsPerWeek;
@@ -3904,8 +4772,37 @@ function calcCalories(profile, options = {}) {
             warnings.push(`Cut set to ${selectedRate} lb/week: aggressive deficit (${requestedDeficit} kcal/day). Monitor performance, sleep, hunger.`);
         }
     } else if (profile.goal === 'BUILD') {
-        const delta = clamp(Math.round(maintenance * 0.08), 200, 400);
-        target = maintenance + delta;
+        const requestedGainRate = Number(profile.gainRateLbsPerWeek);
+        selectedGainRate = [0.25, 0.5, 0.75].includes(requestedGainRate) ? requestedGainRate : cfg.buildGainRateLbsPerWeek;
+        const rawSurplus = (selectedGainRate * 3500) / 7;
+        const clampedSurplus = clamp(Math.round(rawSurplus), 100, 500);
+        target = maintenance + clampedSurplus;
+        gainRateLbsPerWeek = selectedGainRate;
+        surplusPerDay = clampedSurplus;
+        warnings.push(`Build set to ${selectedGainRate.toFixed(2)} lb/week: ${clampedSurplus} kcal/day surplus.`);
+    } else if (profile.goal === 'RECOMP') {
+        const bodyFatPct = Number(profile?.bodyFatPct);
+        const hasBodyFat = Number.isFinite(bodyFatPct);
+        const baseRecomp = hasBodyFat && bodyFatPct >= 20
+            ? (maintenance - 150)
+            : maintenance;
+        if (hasBodyFat && bodyFatPct >= 20) {
+            recompSoftCutApplied = true;
+            warnings.push('Recomp soft-cut applied (body fat >= 20%): maintenance - 150 kcal/day.');
+        } else {
+            warnings.push('Recomp uses maintenance calories to support fat loss + muscle gain over time.');
+        }
+        target = roundTo10(baseRecomp);
+        recompClampMin = Math.round(bmr * 1.10);
+        recompClampMax = maintenance + 150;
+        if (target < recompClampMin) {
+            target = recompClampMin;
+            warnings.push(`Recomp calorie clamp applied: minimum ${recompClampMin} kcal/day.`);
+        }
+        if (target > recompClampMax) {
+            target = recompClampMax;
+            warnings.push(`Recomp calorie clamp applied: maximum ${recompClampMax} kcal/day.`);
+        }
     } else if (profile.goal === 'STRENGTH') {
         const delta = clamp(Math.round(maintenance * 0.04), 100, 300);
         target = maintenance + delta;
@@ -3937,19 +4834,25 @@ function calcCalories(profile, options = {}) {
         target: Math.round(target),
         deficitPerDay: Math.round(deficitPerDay),
         lossRateLbsPerWeek,
+        gainRateLbsPerWeek,
+        surplusPerDay: Math.round(surplusPerDay),
         method: 'mifflin_st_jeor',
         activityFactor: Number(activityFactor.toFixed(2)),
         selectedRate,
         requestedDeficit: selectedDeficit,
+        selectedGainRate,
         cutFloorApplied,
         cutFloorValue,
         generalFloorApplied,
         generalFloorValue,
+        recompClampMin,
+        recompClampMax,
+        recompSoftCutApplied,
         warnings
     };
 }
 
-function calcMacros(profile, caloriesBlock) {
+function calcMacros(profile, caloriesBlock, options = {}) {
     const warnings = [];
     const weightLbs = Number(profile.weightLbs) || 0;
     let caloriesTarget = Math.round(Number(caloriesBlock?.target) || 0);
@@ -3957,7 +4860,136 @@ function calcMacros(profile, caloriesBlock) {
     const isFemale = profile.sex === 'FEMALE';
     const isCut = profile.goal === 'CUT';
     const isBuild = profile.goal === 'BUILD';
+    const isRecomp = profile.goal === 'RECOMP';
     const isStrength = profile.goal === 'STRENGTH';
+    const bwKg = Number.isFinite(weightLbs) ? (weightLbs * 0.45359237) : 0;
+    const bodyFatPct = Number(profile?.bodyFatPct);
+    const basisLbs = (Number.isFinite(bodyFatPct) && bodyFatPct >= 5 && bodyFatPct <= 60)
+        ? Math.max(1, weightLbs * (1 - (bodyFatPct / 100)))
+        : Math.max(1, weightLbs);
+
+    if (isRecomp) {
+        const mode = String(options?.budgetMode || options?.mode || profile?.budgetMode || 'best').toLowerCase();
+        const fatPct = 0.15;
+        const proteinShareOfRemaining = mode === 'budget' ? 0.50 : (mode === 'balanced' ? 0.60 : 0.70);
+        const clampInt = (n) => Math.max(0, Math.round(Number(n) || 0));
+        const calories = Math.round(Number(caloriesTarget || 0));
+
+        let fat_kcal = Math.round(calories * fatPct);
+        let fat_g = clampInt(fat_kcal / 9);
+        fat_kcal = fat_g * 9;
+
+        const remaining_kcal = Math.max(0, calories - fat_kcal);
+        let protein_kcal = Math.round(remaining_kcal * proteinShareOfRemaining);
+        let protein_g = clampInt(protein_kcal / 4);
+        protein_kcal = protein_g * 4;
+
+        let carb_kcal = calories - (fat_kcal + protein_kcal);
+        let carb_g = Math.floor(carb_kcal / 4);
+
+        if (carb_kcal < 0) {
+            warnings.push(`recomp_protein_share_unreachable_clamped: mode=${mode}, proteinShareOfRemaining=${proteinShareOfRemaining}, fatPct=${fatPct}`);
+            protein_kcal = Math.max(0, calories - fat_kcal);
+            protein_g = Math.floor(protein_kcal / 4);
+            protein_kcal = protein_g * 4;
+            carb_kcal = calories - (fat_kcal + protein_kcal);
+            carb_g = Math.max(0, Math.floor(carb_kcal / 4));
+        }
+
+        const proteinKcal = protein_g * 4;
+        const fatKcal = fat_g * 9;
+        const carbKcal = carb_g * 4;
+        const total_kcal = proteinKcal + fatKcal + carbKcal;
+        const deviationPct = caloriesTarget > 0 ? (Math.abs(total_kcal - caloriesTarget) / caloriesTarget) * 100 : 0;
+        return {
+            protein_g,
+            fat_g,
+            carb_g,
+            protein_kcal: proteinKcal,
+            fat_kcal: fatKcal,
+            carb_kcal: carbKcal,
+            protein_pct: total_kcal > 0 ? Math.round((proteinKcal / total_kcal) * 100) : 0,
+            fat_pct: total_kcal > 0 ? Math.round((fatKcal / total_kcal) * 100) : 0,
+            carb_pct: total_kcal > 0 ? Math.max(0, 100 - (Math.round((proteinKcal / total_kcal) * 100) + Math.round((fatKcal / total_kcal) * 100))) : 0,
+            calories_target: caloriesTarget,
+            recompFatPct: fatPct,
+            recompProteinShareOfRemaining: proteinShareOfRemaining,
+            total_kcal,
+            deviationPct,
+            warnings
+        };
+    }
+
+    if (isBuild) {
+        // Initial macro engine is Best-only for build posting.
+        const buildProteinConfig = { targetFactor: 1.15, minFactor: 1.05, capFactor: 1.2 };
+
+        const hardProteinFloor = Math.round(0.70 * basisLbs);
+        const proteinTierMin = Math.max(hardProteinFloor, Math.round(buildProteinConfig.minFactor * basisLbs));
+        const proteinCap = Math.max(proteinTierMin, Math.round(buildProteinConfig.capFactor * basisLbs));
+        let protein_g = clamp(Math.round(buildProteinConfig.targetFactor * basisLbs), proteinTierMin, proteinCap);
+
+        const fatTargetPct = 0.30;
+        const fatFloorG = Math.max(20, Math.floor((Math.max(0, caloriesTarget) * 0.22) / 9));
+        const fatPctCapG = Math.floor((Math.max(0, caloriesTarget) * 0.35) / 9);
+        const fatCapG = Math.max(fatFloorG, fatPctCapG);
+        const rawFatTargetG = Math.round((Math.max(0, caloriesTarget) * fatTargetPct) / 9);
+        let fat_g = clamp(rawFatTargetG, fatFloorG, fatCapG);
+        if (rawFatTargetG > fatCapG) {
+            warnings.push('Fat capped to keep total fat calories at or below 35% in build mode.');
+        }
+
+        const calcCarbs = (cal, pro, fat) => Math.round((Number(cal || 0) - (Number(pro || 0) * 4 + Number(fat || 0) * 9)) / 4);
+        const carbFloorG = Math.max(0, Math.round(2.5 * bwKg));
+        let carb_g = calcCarbs(caloriesTarget, protein_g, fat_g);
+
+        if (carb_g < carbFloorG && fat_g > fatFloorG) {
+            fat_g = fatFloorG;
+            carb_g = calcCarbs(caloriesTarget, protein_g, fat_g);
+            warnings.push('Fat reduced to minimum clamp to protect build carb floor.');
+        }
+
+        while (carb_g < carbFloorG && protein_g > proteinTierMin) {
+            protein_g -= 1;
+            carb_g = calcCarbs(caloriesTarget, protein_g, fat_g);
+        }
+
+        if (carb_g < carbFloorG) {
+            caloriesTarget = (protein_g * 4) + (fat_g * 9) + (carbFloorG * 4);
+            carb_g = calcCarbs(caloriesTarget, protein_g, fat_g);
+            warnings.push('Calories increased to satisfy minimum build carb floor.');
+        }
+
+        if (carb_g < 0) {
+            caloriesTarget = (protein_g * 4) + (fat_g * 9);
+            carb_g = 0;
+            warnings.push('Calories adjusted to avoid negative carbs in build mode.');
+        }
+
+        const protein_kcal = protein_g * 4;
+        const fat_kcal = fat_g * 9;
+        const carb_kcal = carb_g * 4;
+        const total_kcal = protein_kcal + fat_kcal + carb_kcal;
+        const deviationPct = caloriesTarget > 0 ? (Math.abs(total_kcal - caloriesTarget) / caloriesTarget) * 100 : 0;
+        const fatMinForReturn = fatFloorG;
+
+        return {
+            protein_g,
+            fat_g,
+            carb_g,
+            protein_kcal,
+            fat_kcal,
+            carb_kcal,
+            protein_pct: total_kcal > 0 ? Math.round((protein_kcal / total_kcal) * 100) : 0,
+            fat_pct: total_kcal > 0 ? Math.round((fat_kcal / total_kcal) * 100) : 0,
+            carb_pct: total_kcal > 0 ? Math.max(0, 100 - (Math.round((protein_kcal / total_kcal) * 100) + Math.round((fat_kcal / total_kcal) * 100))) : 0,
+            calories_target: caloriesTarget,
+            fat_min_g: fatMinForReturn,
+            total_kcal,
+            deviationPct,
+            warnings
+        };
+    }
 
     // Protein first with explicit clamps by goal + sex.
     const proteinMin = isCut
@@ -4083,7 +5115,9 @@ function computePlan(formState, actualMicros = null, options = {}) {
         weightLbs: Number.isFinite(normalized.weightLbs) ? normalized.weightLbs : null,
         weightKg: Number.isFinite(normalized.weightKg) ? Number(normalized.weightKg.toFixed(2)) : null,
         goalWeightLbs: Number.isFinite(normalized.goalWeightLbs) ? normalized.goalWeightLbs : null,
-        intensity: normalized.intensity || null
+        intensity: normalized.intensity || null,
+        budgetMode: normalized.budgetMode || 'best',
+        gainRateLbsPerWeek: Number.isFinite(normalized.gainRateLbsPerWeek) ? normalized.gainRateLbsPerWeek : 0.5
     };
 
     const warnings = [].concat(normalized.warnings || []);
@@ -4101,8 +5135,20 @@ function computePlan(formState, actualMicros = null, options = {}) {
                 target: c.target,
                 deficitPerDay: c.deficitPerDay,
                 lossRateLbsPerWeek: c.lossRateLbsPerWeek,
+                gainRateLbsPerWeek: c.gainRateLbsPerWeek,
+                surplusPerDay: c.surplusPerDay,
                 method: 'mifflin_st_jeor',
-                activityFactor: c.activityFactor
+                activityFactor: c.activityFactor,
+                selectedRate: c.selectedRate,
+                requestedDeficit: c.requestedDeficit,
+                selectedGainRate: c.selectedGainRate,
+                cutFloorApplied: c.cutFloorApplied,
+                cutFloorValue: c.cutFloorValue,
+                generalFloorApplied: c.generalFloorApplied,
+                generalFloorValue: c.generalFloorValue,
+                recompClampMin: c.recompClampMin,
+                recompClampMax: c.recompClampMax,
+                recompSoftCutApplied: c.recompSoftCutApplied
             };
             warnings.push(...(c.warnings || []));
         } catch {
@@ -4113,7 +5159,7 @@ function computePlan(formState, actualMicros = null, options = {}) {
 
     if (calories && !errors.length) {
         try {
-            const m = calcMacros(normalized, calories);
+            const m = calcMacros(normalized, calories, { budgetMode: normalized.budgetMode });
             if (Number.isFinite(m.calories_target) && m.calories_target > 0 && m.calories_target !== calories.target) {
                 calories.target = Math.round(m.calories_target);
                 calories.deficitPerDay = Math.round((Number(calories.maintenance) || 0) - calories.target);
@@ -4218,7 +5264,13 @@ function calculateNutritionPlan(sel) {
         proteinPct: engine.macros.protein_pct,
         carbPct: engine.macros.carb_pct,
         fatPct: engine.macros.fat_pct,
-        goalReasoning: engine.profile.goal === 'CUT' ? 'Cut target set to ~1.5 lb/week (750 kcal/day deficit).' : (engine.profile.goal === 'BUILD' ? 'Build target set to +8% maintenance.' : 'Strength target set to +4% maintenance.'),
+        goalReasoning: engine.profile.goal === 'CUT'
+            ? 'Cut target set to ~1.5 lb/week (750 kcal/day deficit).'
+            : (engine.profile.goal === 'BUILD'
+                ? `Build target set to ~${Number(engine.calories.gainRateLbsPerWeek || 0.5).toFixed(2)} lb/week (${Math.round(Number(engine.calories.surplusPerDay || 0))} kcal/day surplus).`
+                : (engine.profile.goal === 'RECOMP'
+                    ? 'Recomp target set near maintenance with high protein to support fat loss + muscle gain.'
+                    : 'Strength target set to +4% maintenance.')),
         note: LONG_TERM_NOTE,
         warnings: engine.warnings,
         supplements: [],
@@ -4265,6 +5317,38 @@ const MICRO_DV_REFERENCE_BY_AMOUNT_KEY = Object.freeze({
     vitamin_a_mcg_rae: 900,    // FDA DV (mcg RAE)
     folate_mcg: 400            // FDA DV (mcg DFE)
 });
+const MICRO_DANGER_ZONE_UL_BY_NUTRIENT = Object.freeze({
+    fiber: 75,
+    potassium: 12000,
+    sodium: 5000,
+    magnesium: 1000,
+    calcium: 3000,
+    iron: 45,
+    zinc: 40,
+    vitamin_d: 100,
+    vitamin_c: 2000,
+    vitamin_a: 3000,
+    folate: 1000,
+    b12: 1000,
+    omega_3: 5000,
+    choline: 3500
+});
+
+function applyDangerZoneUpperLimit(entry, nutrientId) {
+    const out = entry && typeof entry === 'object' ? { ...entry } : {};
+    const key = String(nutrientId || out?.nutrient_id || '').trim();
+    const currentUl = Number(out?.ul_value);
+    if (Number.isFinite(currentUl) && currentUl > 0) return out;
+    const fallbackUl = Number(MICRO_DANGER_ZONE_UL_BY_NUTRIENT?.[key]);
+    if (Number.isFinite(fallbackUl) && fallbackUl > 0) {
+        out.ul_value = fallbackUl;
+        const note = String(out?.ul_note || '').trim();
+        const suffix = 'Danger zone upper limit for this app.';
+        out.ul_note = note ? `${note} ${suffix}` : suffix;
+        out.ul_source = 'APP_DANGER_ZONE';
+    }
+    return out;
+}
 
 function validateMicronutrientReferenceRows(rows) {
     const out = [];
@@ -4296,6 +5380,33 @@ function getExternalDriTargets() {
     if (!external || typeof external !== 'object') return null;
     if (!external.male || !external.female) return null;
     return external;
+}
+
+function getOmegaEpaDhaGuidance(selectionLike, ageBand) {
+    const sel = selectionLike && typeof selectionLike === 'object' ? selectionLike : {};
+    const sex = String(sel.sex || '').toUpperCase() === 'FEMALE' ? 'FEMALE' : 'MALE';
+    const pregnant = sex === 'FEMALE' && String(sel.pregnant || '').toUpperCase() === 'YES';
+    const lactating = sex === 'FEMALE' && String(sel.lactating || '').toUpperCase() === 'YES';
+    const isAdultOrTeen = ['14-18', '19-30', '31-50', '51-70', '71+'].includes(String(ageBand || ''));
+    if (!isAdultOrTeen) {
+        return {
+            mode: 'tracked_only',
+            goal: null,
+            ul: null,
+            goal_type: 'TRACKED',
+            source_ref: 'Tracked intake only (EPA + DHA basis)',
+            ul_note: 'No official DRI target exists for EPA+DHA specifically.'
+        };
+    }
+    const goal = (pregnant || lactating) ? 300 : 250;
+    return {
+        mode: 'scored',
+        goal,
+        ul: 5000,
+        goal_type: 'REC',
+        source_ref: 'EPA+DHA practical target based on Dietary Guidelines seafood-equivalent intake and ODS safety context',
+        ul_note: 'Safety ceiling guidance (5,000 mg/day EPA + DHA); DRI exists for ALA, not EPA+DHA.'
+    };
 }
 
 function getMicronutrientTargets(selectionLike, options = {}) {
@@ -4364,6 +5475,7 @@ function getMicronutrientTargets(selectionLike, options = {}) {
     unitByKey.omega_3 = `mg ${MICRO_OMEGA_BASIS}`;
     const refs = {};
     const rows = [];
+    const omegaGuidance = getOmegaEpaDhaGuidance(sel, ageBand);
     DRI_NUTRIENT_ORDER.forEach((key) => {
         const row = table?.[key] || {};
         const entry = {
@@ -4376,16 +5488,26 @@ function getMicronutrientTargets(selectionLike, options = {}) {
             source_ref: 'National Academies DRIs / NIH ODS'
         };
         if (key === 'omega_3') {
-            entry.goal_type = 'TRACKED';
-            entry.goal_value = null;
-            entry.ul_value = null;
-            entry.ul_note = 'No official DRI target exists for EPA+DHA specifically.';
-            entry.source_ref = 'Tracked intake only (EPA + DHA basis)';
-            entry.tracked_only = true;
+            if (omegaGuidance.mode === 'scored') {
+                entry.goal_type = omegaGuidance.goal_type;
+                entry.goal_value = omegaGuidance.goal;
+                entry.ul_value = omegaGuidance.ul;
+                entry.ul_note = omegaGuidance.ul_note;
+                entry.source_ref = omegaGuidance.source_ref;
+                entry.tracked_only = false;
+            } else {
+                entry.goal_type = omegaGuidance.goal_type;
+                entry.goal_value = null;
+                entry.ul_value = null;
+                entry.ul_note = omegaGuidance.ul_note;
+                entry.source_ref = omegaGuidance.source_ref;
+                entry.tracked_only = true;
+            }
             entry.target_basis = MICRO_OMEGA_BASIS;
         }
-        refs[key] = entry;
-        rows.push(entry);
+        const entryWithUpper = applyDangerZoneUpperLimit(entry, key);
+        refs[key] = entryWithUpper;
+        rows.push(entryWithUpper);
     });
 
     const warnings = [];
@@ -4420,7 +5542,6 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
     const coverageThreshold = Number.isFinite(Number(options.coverageThreshold))
         ? Number(options.coverageThreshold)
         : 85;
-    const sourceContext = String(options.sourceContext || 'food_only').toLowerCase();
     const veryLowSodiumFloorMg = Number.isFinite(Number(options.veryLowSodiumFloorMg))
         ? Number(options.veryLowSodiumFloorMg)
         : 800;
@@ -4430,11 +5551,10 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
         const trackedOnly = Boolean(ref?.tracked_only) || String(ref?.goal_type || '').toUpperCase() === 'TRACKED';
         const goal = Number(ref?.goal_value);
         const ulRaw = Number.isFinite(Number(ref?.ul_value)) ? Number(ref.ul_value) : null;
-        const ulNote = String(ref?.ul_note || '').toLowerCase();
-        const ulRequiresSupplementContext = /supplement|synthetic/.test(ulNote);
-        const ulApplies = Number.isFinite(ulRaw) && ulRaw > 0
-            && !(ulRequiresSupplementContext && sourceContext !== 'supplement' && sourceContext !== 'mixed');
-        const ul = ulApplies ? ulRaw : null;
+        const fallbackUl = Number(MICRO_DANGER_ZONE_UL_BY_NUTRIENT?.[key]);
+        const ul = Number.isFinite(ulRaw) && ulRaw > 0
+            ? ulRaw
+            : (Number.isFinite(fallbackUl) && fallbackUl > 0 ? fallbackUl : null);
         const coveragePct = Number(qualityMap?.[key]?.coverage_pct);
         const hasCoverageMetric = Number.isFinite(coveragePct);
         const lowCoverage = hasCoverageMetric && coveragePct < coverageThreshold;
@@ -4449,7 +5569,7 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
                     actual: null,
                     goal_type: 'TRACKED',
                     goal: null,
-                    ul: null,
+                    ul,
                     pct_goal: null,
                     pct_ul: null,
                     status: lowCoverage ? 'INCOMPLETE_DATA' : 'PENDING',
@@ -4465,10 +5585,10 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
                 actual,
                 goal_type: 'TRACKED',
                 goal: null,
-                ul: null,
+                ul,
                 pct_goal: null,
-                pct_ul: null,
-                status: 'TRACKED',
+                pct_ul: Number.isFinite(ul) && ul > 0 ? (actual / ul) * 100 : null,
+                status: Number.isFinite(ul) && ul > 0 && actual > ul ? 'OVER_UL' : 'TRACKED',
                 source_ref: ref?.source_ref || 'Tracked intake only',
                 ul_note: ref?.ul_note || null,
                 tracked_only: true,
@@ -4495,12 +5615,10 @@ function computeMicroStatuses(microRefs, actuals, options = {}) {
             return { nutrient_id: key, unit, actual: null, goal_type: ref?.goal_type || 'AI', goal, ul, pct_goal: null, pct_ul: null, status: 'PENDING', source_ref: ref?.source_ref || 'NASEM DRI / NIH ODS', ul_note: ref?.ul_note || null, coverage_pct: hasCoverageMetric ? coveragePct : null };
         }
         const pctGoal = (actual / goal) * 100;
-        const pctUl = ulApplies && Number.isFinite(ul) && ul > 0 ? (actual / ul) * 100 : null;
+        const pctUl = Number.isFinite(ul) && ul > 0 ? (actual / ul) * 100 : null;
         let status = 'OK';
         if (Number.isFinite(pctUl) && pctUl > 100) {
             status = 'OVER_UL';
-        } else if (Number.isFinite(pctUl) && pctUl >= 80) {
-            status = 'HIGH';
         } else if (pctGoal < 80) {
             if (key === 'sodium') {
                 status = actual < veryLowSodiumFloorMg ? 'LOW' : 'OK';
@@ -4569,6 +5687,66 @@ function runNutritionEngineSelfTests() {
         console.assert((t3.calories?.target || 0) >= 1500 && (t3.calories?.target || 0) <= 1900, 'Test 3 failed: calories should land ~1500-1900');
         console.assert(t3.macros?.fat_g >= 50, 'Test 3 failed: female fat floor should be >= 50g');
         console.assert(t3.macros?.carb_g >= 0, 'Test 3 failed: carbs should not be negative');
+
+        // Test 4: Recomp @ 180 lb should stay around maintenance (±10 rounding).
+        const t4 = runDeterministicNutritionEngine({
+            goal: 'RECOMP',
+            style: 'MIXED',
+            frequency: '5-6',
+            sex: 'MALE',
+            ageYears: 28,
+            heightIn: 70,
+            weightLbs: 180,
+            goalWeightLbs: 180,
+            intensity: 'INTENSE'
+        });
+        const t4Target = Number(t4.calories?.target || 0);
+        const t4Maintenance = Number(t4.calories?.maintenance || 0);
+        console.assert(Math.abs(t4Target - t4Maintenance) <= 10, 'Test 4 failed: recomp calories should be at maintenance (±10).');
+
+        // Test 5: Recomp carbs are never negative.
+        console.assert((Number(t4.macros?.carb_g) || 0) >= 0, 'Test 5 failed: recomp carbs should not be negative.');
+
+        // Test 6: Recomp fat-first should sit near ~15% of calories.
+        const t4FatPct = (Number(t4.macros?.fat_kcal) || 0) / Math.max(1, Number(t4.calories?.target) || 0);
+        console.assert(t4FatPct >= 0.12 && t4FatPct <= 0.18, 'Test 6 failed: recomp fat should be near 15% of calories.');
+
+        // Test 7: Mode-based protein share should descend Best > Balanced > Budget.
+        const rBest = calcMacros(
+            { goal: 'RECOMP', weightLbs: 180, budgetMode: 'best' },
+            { target: 3000 },
+            { budgetMode: 'best' }
+        );
+        const rBalanced = calcMacros(
+            { goal: 'RECOMP', weightLbs: 180, budgetMode: 'balanced' },
+            { target: 3000 },
+            { budgetMode: 'balanced' }
+        );
+        const rBudget = calcMacros(
+            { goal: 'RECOMP', weightLbs: 180, budgetMode: 'budget' },
+            { target: 3000 },
+            { budgetMode: 'budget' }
+        );
+        const shareBest = (Number(rBest?.protein_kcal) || 0) / Math.max(1, (3000 - (Number(rBest?.fat_kcal) || 0)));
+        const shareBalanced = (Number(rBalanced?.protein_kcal) || 0) / Math.max(1, (3000 - (Number(rBalanced?.fat_kcal) || 0)));
+        const shareBudget = (Number(rBudget?.protein_kcal) || 0) / Math.max(1, (3000 - (Number(rBudget?.fat_kcal) || 0)));
+        console.assert(shareBest >= 0.66 && shareBest <= 0.74, 'Test 7 failed: best recomp protein share should be ~70% of remaining.');
+        console.assert(shareBalanced >= 0.56 && shareBalanced <= 0.64, 'Test 7 failed: balanced recomp protein share should be ~60% of remaining.');
+        console.assert(shareBudget >= 0.46 && shareBudget <= 0.54, 'Test 7 failed: budget recomp protein share should be ~50% of remaining.');
+        console.assert((Number(rBest?.protein_g) || 0) > (Number(rBalanced?.protein_g) || 0) && (Number(rBalanced?.protein_g) || 0) > (Number(rBudget?.protein_g) || 0), 'Test 7 failed: protein grams should descend best > balanced > budget.');
+
+        // Test 8: Recomp calorie clamp floor (>= BMR * 1.10).
+        const t4Bmr = Number(t4.calories?.bmr || 0);
+        console.assert(t4Target >= Math.round(t4Bmr * 1.10), 'Test 8 failed: recomp calories should respect BMR*1.10 floor.');
+
+        // Test 9: Recomp output stays deterministic with non-negative carbs at low calories.
+        const t9Macros = calcMacros(
+            { goal: 'RECOMP', weightLbs: 300, sex: 'MALE', bodyFatPct: null, budgetMode: 'best' },
+            { target: 1200 },
+            { budgetMode: 'best' }
+        );
+        console.assert((Number(t9Macros?.carb_g) || 0) >= 0, 'Test 9 failed: recomp carbs should remain non-negative.');
+        console.assert(Number.isFinite(Number(t9Macros?.protein_g)) && Number.isFinite(Number(t9Macros?.fat_g)) && Number.isFinite(Number(t9Macros?.carb_g)), 'Test 9 failed: recomp macro output must remain deterministic.');
     } catch (err) {
         console.warn('Nutrition engine self-tests warning:', err?.message || err);
     }
@@ -4632,6 +5810,62 @@ function paintResults(res) {
                     margin-bottom: 3px;
                     text-transform: uppercase;
                 }
+                .ns-why-macro-lock-shell {
+                    position: relative;
+                    border-radius: 12px;
+                    margin-top: 2px;
+                }
+                .ns-why-macro-content {
+                    transition: filter 180ms ease;
+                }
+                .ns-why-macro-overlay {
+                    position: absolute;
+                    inset: 2px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    padding: 12px 10px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(181, 129, 61, 0.3);
+                    background: linear-gradient(180deg, rgba(255, 249, 240, 0.94), rgba(255, 243, 224, 0.82));
+                    color: rgba(61, 45, 26, 0.96);
+                    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.42);
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 180ms ease;
+                }
+                .ns-why-macro-overlay p {
+                    margin: 0;
+                    font-weight: 800;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    font-size: 0.72rem;
+                }
+                .ns-why-macro-overlay .ns-why-macro-overlay-sub {
+                    margin-top: 6px;
+                    text-transform: none;
+                    letter-spacing: 0;
+                    font-weight: 650;
+                    font-size: 0.75rem;
+                    color: rgba(64, 48, 29, 0.9);
+                }
+                .ns-why-calories.locked .ns-why-macro-content {
+                    filter: blur(4px);
+                    pointer-events: none;
+                    user-select: none;
+                }
+                .ns-why-calories.locked .ns-why-macro-overlay {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+                :root[data-theme="dark"] .ns-why-macro-overlay {
+                    background: linear-gradient(180deg, rgba(36, 27, 18, 0.9), rgba(25, 19, 13, 0.82));
+                    color: rgba(245, 233, 214, 0.95);
+                    border-color: rgba(214, 165, 97, 0.38);
+                    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+                }
                 @media (min-width: 981px) {
                     #ns-why-calories-body {
                         line-height: 1.58 !important;
@@ -4690,6 +5924,8 @@ function paintResults(res) {
                 });
             }
         }
+
+        wrap.classList.toggle('locked', !nutritionState.macrosUnlocked);
 
         const panel = document.getElementById('ns-why-calories-panel');
         const toggle = document.getElementById('ns-why-calories-toggle');
@@ -4826,43 +6062,107 @@ function paintResults(res) {
         const fatRule = Number(m.fat_g || res.fatG || 0);
         const carbsRule = Number(m.carb_g || res.carbG || 0);
         const fatMin = Number(m.fat_min_g || 0);
+        const resultBudgetMode = String(res?.profile?.budgetMode || sel?.budgetMode || 'best').toLowerCase();
+        const recompProteinShare = resultBudgetMode === 'budget' ? 0.50 : (resultBudgetMode === 'balanced' ? 0.60 : 0.70);
+        const recompModeLabel = resultBudgetMode === 'budget' ? 'Minimum Effective' : (resultBudgetMode === 'balanced' ? 'Balanced' : 'Best');
         const goalRaw = String(sel.goal || '').toUpperCase();
-        const goalLabel = goalRaw === 'CUT' ? 'fat-loss cut' : goalRaw === 'BUILD' ? 'muscle-building phase' : goalRaw === 'STRENGTH' ? 'strength-priority phase' : 'custom phase';
+        const goalNorm = normalizeGoal(goalRaw);
+        const goalLabel = goalNorm === 'CUT'
+            ? 'fat-loss cut'
+            : goalNorm === 'BULK'
+                ? 'muscle-building phase'
+                : goalNorm === 'RECOMP'
+                    ? 'recomposition phase'
+                    : goalNorm === 'STRENGTH'
+                        ? 'strength-priority phase'
+                        : 'custom phase';
         const sexLabel = String(sel.sex || '').toUpperCase() === 'FEMALE' ? 'female' : 'male';
-        const proteinMin = goalRaw === 'CUT'
+        const currentWeightLbsForExplain = Math.max(1, Number(sel.weightLbs || 0));
+        const proteinMin = goalNorm === 'CUT'
             ? (sexLabel === 'female' ? 120 : 170)
-            : (sexLabel === 'female' ? 110 : 150);
-        const proteinMax = goalRaw === 'CUT'
+            : (goalNorm === 'RECOMP'
+                ? Math.round(currentWeightLbsForExplain * 0.85)
+                : (sexLabel === 'female' ? 110 : 150));
+        const proteinMax = goalNorm === 'CUT'
             ? (sexLabel === 'female' ? 200 : 240)
-            : (sexLabel === 'female' ? 190 : 220);
-        const proteinBaseFormula = goalRaw === 'CUT'
+            : (goalNorm === 'RECOMP'
+                ? Math.round(currentWeightLbsForExplain * 1.10)
+                : (sexLabel === 'female' ? 190 : 220));
+        const proteinBaseFormula = goalNorm === 'CUT'
             ? `round(bodyweight x 0.9)`
-            : `round(bodyweight x 0.8)`;
-        const proteinBaseValue = goalRaw === 'CUT'
+            : (goalNorm === 'RECOMP' ? `round(bodyweight x 1.0)` : `round(bodyweight x 0.8)`);
+        const proteinBaseValue = goalNorm === 'CUT'
             ? Math.round(Number(sel.weightLbs || 0) * 0.9)
-            : Math.round(Number(sel.weightLbs || 0) * 0.8);
+            : (goalNorm === 'RECOMP'
+                ? Math.round(Number(sel.weightLbs || 0) * 1.0)
+                : Math.round(Number(sel.weightLbs || 0) * 0.8));
+        const selectedBodyFatPct = Number(sel.bodyFatPct ?? sel.bodyfatPct ?? NaN);
+        const basisLbs = (Number.isFinite(selectedBodyFatPct) && selectedBodyFatPct >= 5 && selectedBodyFatPct <= 60)
+            ? Math.max(1, Number(sel.weightLbs || 0) * (1 - (selectedBodyFatPct / 100)))
+            : Math.max(1, Number(sel.weightLbs || 0));
+        const basisLabel = (Number.isFinite(selectedBodyFatPct) && selectedBodyFatPct >= 5 && selectedBodyFatPct <= 60)
+            ? 'lean body mass'
+            : 'current bodyweight';
         let fatPctText = 'goal-specific percentage';
-        if (goalRaw === 'CUT') {
+        if (goalNorm === 'CUT') {
             if (String(sel.frequency || '') === '1-2') fatPctText = '28% (lower training frequency -> more satiety)';
             else if (String(sel.style || '').toUpperCase() === 'CALISTHENICS' || String(sel.frequency || '') === '5-6') fatPctText = '22% (higher output -> prioritize carbs)';
             else fatPctText = '25% (standard cut baseline)';
-        } else if (goalRaw === 'BUILD') {
-            fatPctText = '27-30% range (muscle-gain support)';
-        } else if (goalRaw === 'STRENGTH') {
+        } else if (goalNorm === 'BULK') {
+            fatPctText = '25-30% of calories by tier, with a 22% floor and 35% cap';
+        } else if (goalNorm === 'RECOMP') {
+            fatPctText = `15% fat-first, then protein gets ${Math.round(recompProteinShare * 100)}% of remaining calories (${recompModeLabel} mode)`;
+        } else if (goalNorm === 'STRENGTH') {
             fatPctText = '25-28% range (performance + recovery)';
+        }
+        let proteinExplainLine = `bodyweight rule (${proteinBaseValue}g base), then range ${proteinMin}-${proteinMax}g.`;
+        let fatExplainLine = 'goal profile + minimum healthy amount.';
+        let carbExplainLine = 'calories left after protein and fats.';
+        if (goalNorm === 'RECOMP') {
+            const fatKcalForExplain = fatRule * 9;
+            const remainingKcalForExplain = Math.max(0, target - fatKcalForExplain);
+            const sharePct = Math.round(recompProteinShare * 100);
+            proteinExplainLine = `Mode: ${recompModeLabel}. Protein equation: (remaining calories x ${sharePct}%) / 4. Remaining calories: ${remainingKcalForExplain}. Final used: ${proteinRule}g.`;
+            fatExplainLine = `Fat-first equation: (${target} x 0.15) / 9. Final used: ${fatRule}g.`;
+            carbExplainLine = `Carbs equation: (${target} - (${proteinRule}x4 + ${fatRule}x9)) / 4. Final used: ${carbsRule}g.`;
+        } else if (goalNorm === 'BULK') {
+            const basisRounded = Math.round(basisLbs);
+            const rawProteinBest = Math.round(basisLbs * 1.15);
+            const rawFatBest = Math.round((target * 0.30) / 9);
+            const fatFloorBuild = Math.max(20, Math.floor((target * 0.22) / 9));
+            const fatCapBuild = Math.floor((target * 0.35) / 9);
+            const carbFloorBuild = Math.round(2.5 * wtKg);
+            proteinExplainLine = `Equation: ${basisRounded} lb (${basisLabel}) x 1.15 = ${rawProteinBest}g. Final used: ${proteinRule}g.`;
+            fatExplainLine = `Equation: (${target} x 0.30) / 9 = ${rawFatBest}g. Allowed range: ${fatFloorBuild}-${fatCapBuild}g. Final used: ${fatRule}g.`;
+            carbExplainLine = `Equation: (${target} - (${proteinRule}x4 + ${fatRule}x9)) / 4 = ${carbsRule}g. Minimum build floor: ${carbFloorBuild}g/day.`;
         }
         const minCaloriesForFeasibility = (proteinRule * 4) + (fatMin * 9) + 50;
         const requestedDeficit = Number(c.requestedDeficit || 0);
         const actualDeficit = Number(c.deficitPerDay || 0);
         const selectedRate = Number(c.selectedRate || 0);
+        const selectedGainRate = Number(c.gainRateLbsPerWeek || c.selectedGainRate || 0);
+        const surplusPerDay = Number(c.surplusPerDay || 0);
         const deltaPerDay = Math.round(target - maintenance);
         const estRate = Math.abs(deltaPerDay) > 0 ? ((Math.abs(deltaPerDay) * 7) / 3500) : 0;
         let deficitExplainer = '';
-        if (goalRaw === 'CUT') {
+        if (goalNorm === 'CUT') {
             if (requestedDeficit > 0 && requestedDeficit !== actualDeficit) {
                 deficitExplainer = `For ${goalLabel}, we aimed to subtract <span class="ns-why-chip">${requestedDeficit} kcal/day</span>, and applied <span class="ns-why-chip">${actualDeficit} kcal/day</span> after profile adjustments${selectedRate > 0 ? ` (targeting ~${selectedRate.toFixed(1)} lb/week)` : ''}.`;
             } else if (actualDeficit > 0) {
                 deficitExplainer = `For ${goalLabel}, we subtract <span class="ns-why-chip">${actualDeficit} kcal/day</span> to target about <span class="ns-why-chip">${selectedRate > 0 ? selectedRate.toFixed(1) : estRate.toFixed(1)} lb/week</span>.`;
+            }
+        } else if (goalNorm === 'BULK') {
+            const usedSurplus = surplusPerDay > 0 ? surplusPerDay : Math.max(0, deltaPerDay);
+            const usedRate = selectedGainRate > 0 ? selectedGainRate : estRate;
+            if (usedSurplus > 0) {
+                deficitExplainer = `For ${goalLabel}, we add <span class="ns-why-chip">${Math.round(usedSurplus)} kcal/day</span> above maintenance to target about <span class="ns-why-chip">${usedRate.toFixed(2)} lb/week</span> scale gain.`;
+            }
+        } else if (goalNorm === 'RECOMP') {
+            const softCutApplied = Boolean(c.recompSoftCutApplied);
+            if (softCutApplied) {
+                deficitExplainer = `For ${goalLabel}, we use near-maintenance calories with a small soft cut (<span class="ns-why-chip">~150 kcal/day</span>) to support fat loss + muscle gain at the same time.`;
+            } else {
+                deficitExplainer = `For ${goalLabel}, we target maintenance calories to support recomposition: lose fat + gain muscle slowly while keeping scale weight stable.`;
             }
         } else if (deltaPerDay > 0) {
             deficitExplainer = `For ${goalLabel}, we add <span class="ns-why-chip">${deltaPerDay} kcal/day</span> above maintenance to support performance and recovery.`;
@@ -4883,14 +6183,22 @@ function paintResults(res) {
                 </ul>
                 <div style="height:1px;background:rgba(120,92,57,0.18);margin:8px 0 6px 0;"></div>
                 <div class="ns-why-head">Macro Logic</div>
-                <ul class="ns-why-list" style="margin-bottom:0;">
-                    <li><strong>Protein:</strong> bodyweight rule (${proteinBaseValue}g base), then range ${proteinMin}-${proteinMax}g. Final: <span class="ns-why-chip">${proteinRule}g</span></li>
-                    <li><strong>Fats:</strong> goal profile + minimum healthy amount. Final: <span class="ns-why-chip">${fatRule}g</span></li>
-                    <li><strong>Carbs:</strong> calories left after protein and fats. Final: <span class="ns-why-chip">${carbsRule}g</span></li>
-                </ul>
-                <div class="ns-why-foot">
-                    <span>Protein 1g = 4 kcal | Carbs 1g = 4 kcal</span>
-                    <span> | Fats 1g = 9 kcal</span>
+                <div class="ns-why-macro-lock-shell">
+                    <div class="ns-why-macro-content">
+                        <ul class="ns-why-list" style="margin-bottom:0;">
+                            <li><strong>Protein:</strong> ${proteinExplainLine} Final: <span class="ns-why-chip">${proteinRule}g</span></li>
+                            <li><strong>Fats:</strong> ${fatExplainLine} Final: <span class="ns-why-chip">${fatRule}g</span></li>
+                            <li><strong>Carbs:</strong> ${carbExplainLine} Final: <span class="ns-why-chip">${carbsRule}g</span></li>
+                        </ul>
+                        <div class="ns-why-foot">
+                            <span>Protein 1g = 4 kcal | Carbs 1g = 4 kcal</span>
+                            <span> | Fats 1g = 9 kcal</span>
+                        </div>
+                    </div>
+                    <div class="ns-why-macro-overlay" aria-hidden="${nutritionState.macrosUnlocked ? 'true' : 'false'}">
+                        <p>Macro Logic Locked</p>
+                        <p class="ns-why-macro-overlay-sub">Unlock macros to view the full protein, carbs, and fats equations.</p>
+                    </div>
                 </div>
             `;
             if (panel && toggle && toggle.getAttribute('aria-expanded') === 'true') {
@@ -4927,15 +6235,22 @@ function paintResults(res) {
             setText('ns-weeks-to-goal', String(weeks));
             introText = `You are ${Math.round(currentWeight)} lb and want ${Math.round(goalWeight)} lb, so this plan is built for scale loss while keeping training performance stable.`;
             outroText = `At ~1.5 lb/week, your estimated timeline is about ${weeks} weeks. High protein supports muscle retention while carbs/fats support training and recovery.`;
-        } else if (goal === 'BULK') {
+        } else if (goal === 'BULK' || goal === 'BUILD') {
             setText('ns-time-to-goal-prefix', 'If you gain');
-            setText('ns-target-rate', '0.5-1');
-            const weeksAtOne = gap > 0 ? Math.max(1, Math.ceil(gap / 1)) : 0;
-            const weeksAtHalf = gap > 0 ? Math.max(1, Math.ceil(gap / 0.5)) : 0;
-            const weeks = gap === 0 ? '0' : weeksAtOne === weeksAtHalf ? String(weeksAtOne) : `${weeksAtOne}-${weeksAtHalf}`;
+            setText('ns-target-rate', '0.25-0.75');
+            const weeksAtFast = gap > 0 ? Math.max(1, Math.ceil(gap / 0.75)) : 0;
+            const weeksAtLean = gap > 0 ? Math.max(1, Math.ceil(gap / 0.25)) : 0;
+            const weeks = gap === 0 ? '0' : weeksAtFast === weeksAtLean ? String(weeksAtFast) : `${weeksAtFast}-${weeksAtLean}`;
             setText('ns-weeks-to-goal', weeks);
             introText = `You are ${Math.round(currentWeight)} lb and want ${Math.round(goalWeight)} lb, so this plan targets controlled weight gain with enough protein to drive muscle growth.`;
             outroText = `Most of your scale increase should be quality tissue over time. A realistic muscle gain pace is roughly 0.25-0.5 lb/week with consistent training and sleep.`;
+        } else if (goal === 'RECOMP') {
+            setText('ns-time-to-goal-prefix', 'If bodyweight drifts');
+            setText('ns-target-rate', '0.00-0.25');
+            const weeks = gap > 0 ? Math.max(1, Math.ceil(gap / 0.25)) : 0;
+            setText('ns-weeks-to-goal', String(weeks));
+            introText = `You are ${Math.round(currentWeight)} lb and want ${Math.round(goalWeight)} lb, so this plan holds calories near maintenance and drives body recomposition with high protein.`;
+            outroText = 'Expect slower scale change than cut/bulk. Progress is measured by waist, photos, and strength trends while weight stays more stable.';
         } else if (goal === 'STRENGTH') {
             if (wantsScaleLoss) {
                 setText('ns-time-to-goal-prefix', 'If you lose');
@@ -5482,15 +6797,20 @@ function resetNutritionFlow() {
     const macrosBlock = document.getElementById('ns-macros');
     macrosBlock?.classList.add('locked');
     macrosBlock?.querySelector('.ns-lock-overlay')?.classList.remove('hidden');
+    document.getElementById('ns-why-calories')?.classList.add('locked');
+    document.querySelector('#ns-why-calories .ns-why-macro-overlay')?.setAttribute('aria-hidden', 'false');
 
     const unlockBlock = document.getElementById('ns-unlock-block');
     const emailForm = document.getElementById('ns-email-form');
     const downloadBlock = document.getElementById('ns-download-block');
     const handoff = document.getElementById('ns-handoff');
+    const unlockEmailModal = document.getElementById('ns-unlock-email-modal');
     unlockBlock?.classList.remove('hidden');
     emailForm?.classList.add('hidden');
     downloadBlock?.classList.add('hidden');
     handoff?.classList.add('hidden');
+    unlockEmailModal?.classList.add('hidden');
+    document.body.classList.remove('ns-modal-open');
 
     const progressFill = document.getElementById('ns-progress-fill');
     const progressLabel = document.getElementById('ns-progress-label');
@@ -6143,13 +7463,22 @@ function setupNsNextBoxTyping() {
     const el = document.getElementById('ns-next-typed');
     if (!el) return;
 
-    const fullText = [
-        "Most people fail because they use a macro calculator,",
-        "but don't know how to turn those numbers into food.",
-        "",
-        "In under 60 seconds, we build a grocery list",
-        "that matches your macros."
-    ].join('\n');
+    const lines = [
+        { parts: [{ text: 'Macro numbers are the ' }, { text: 'blueprint', highlight: true }, { text: '.' }] },
+        { parts: [{ text: 'Execution', highlight: true }, { text: ' changes your ' }, { text: 'body', highlight: true }, { text: '.' }] },
+        { spacer: true },
+        { parts: [{ text: 'In ' }, { text: '60 seconds', highlight: true }, { text: ', you get:' }] },
+        { bullet: true, parts: [{ text: 'A ' }, { text: 'performance-driven', highlight: true }, { text: ' grocery list' }] },
+        { bullet: true, parts: [{ text: 'Meals built to hit your ' }, { text: 'targets', highlight: true }] },
+        { bullet: true, parts: [{ text: 'Zero', highlight: true }, { text: ' wasted calories' }] },
+        { bullet: true, parts: [{ text: 'Zero', highlight: true }, { text: ' overthinking' }] },
+        { spacer: true },
+        { parts: [{ text: 'Every food fits your ' }, { text: 'goal', highlight: true }, { text: '.' }] },
+        { parts: [{ text: 'Every portion matches your ' }, { text: 'macros', highlight: true }, { text: '.' }] },
+        { parts: [{ text: 'Every meal supports ' }, { text: 'training', highlight: true }, { text: ' and ' }, { text: 'recovery', highlight: true }, { text: '.' }] },
+        { spacer: true },
+        { parts: [{ text: '100% free', highlight: true }, { text: ' .. ' }, { text: 'Always!', highlight: true }] }
+    ];
 
     const prefersReducedMotion = (() => {
         try {
@@ -6159,27 +7488,129 @@ function setupNsNextBoxTyping() {
         }
     })();
 
-    const typeInto = (node, text) => {
-        if (prefersReducedMotion) {
-            node.textContent = text;
-            return;
-        }
+    const createLineElement = (line) => {
+        const lineEl = document.createElement('span');
+        lineEl.className = 'ns-next-line';
+        if (line?.spacer) lineEl.classList.add('ns-next-line--spacer');
+        if (line?.bullet) lineEl.classList.add('ns-next-line--bullet');
+        if (line?.spacer) lineEl.textContent = ' ';
+        return lineEl;
+    };
+
+    const buildTokenQueue = (parts) => {
+        const queue = [];
+        (Array.isArray(parts) ? parts : []).forEach((part) => {
+            const rawText = String(part?.text || '');
+            if (!rawText) return;
+            const pieces = rawText.split(/(\s+)/).filter((piece) => piece.length > 0);
+            pieces.forEach((piece) => {
+                queue.push({
+                    text: piece,
+                    isSpace: /^\s+$/.test(piece),
+                    highlight: Boolean(part?.highlight)
+                });
+            });
+        });
+        return queue;
+    };
+
+    const renderInstant = (node) => {
+        node.textContent = '';
+        lines.forEach((line) => {
+            const lineEl = createLineElement(line);
+            if (!line?.spacer) {
+                const queue = buildTokenQueue(line.parts || []);
+                queue.forEach((token) => {
+                    if (token.isSpace) {
+                        lineEl.appendChild(document.createTextNode(token.text));
+                        return;
+                    }
+                    const tokenEl = document.createElement('span');
+                    tokenEl.className = 'ns-next-token';
+                    if (token.highlight) tokenEl.classList.add('ns-next-token--hl');
+                    tokenEl.classList.add('is-visible', 'is-typed');
+                    tokenEl.textContent = token.text;
+                    lineEl.appendChild(tokenEl);
+                });
+            }
+            node.appendChild(lineEl);
+        });
+        node.dataset.typedDone = '1';
+    };
+    const clearTypingCursor = (node) => {
+        if (!node) return;
+        node.querySelectorAll('.ns-next-token.is-typing').forEach((token) => token.classList.remove('is-typing'));
+    };
+
+    const typeInto = (node) => {
+        if (prefersReducedMotion) return renderInstant(node);
         if (node.dataset.typed === '1') return;
         node.dataset.typed = '1';
+        node.dataset.typedDone = '0';
         node.textContent = '';
 
-        let idx = 0;
-        const tick = () => {
-            if (idx >= text.length) return;
-            node.textContent += text[idx];
-            idx += 1;
-            window.setTimeout(tick, 14);
+        let lineIndex = 0;
+        const typeNextLine = () => {
+            if (lineIndex >= lines.length) {
+                clearTypingCursor(node);
+                node.dataset.typedDone = '1';
+                return;
+            }
+            const line = lines[lineIndex];
+            lineIndex += 1;
+
+            const lineEl = createLineElement(line);
+            node.appendChild(lineEl);
+
+            if (line?.spacer) {
+                window.setTimeout(typeNextLine, 90);
+                return;
+            }
+
+            const queue = buildTokenQueue(line.parts || []);
+            let tokenIndex = 0;
+            const revealToken = () => {
+                if (tokenIndex >= queue.length) {
+                    window.setTimeout(typeNextLine, Number(line?.linePauseMs) || 120);
+                    return;
+                }
+                const token = queue[tokenIndex];
+                tokenIndex += 1;
+                if (token.isSpace) {
+                    lineEl.appendChild(document.createTextNode(token.text));
+                    window.setTimeout(revealToken, 0);
+                    return;
+                }
+                const tokenEl = document.createElement('span');
+                tokenEl.className = 'ns-next-token';
+                if (token.highlight) tokenEl.classList.add('ns-next-token--hl');
+                tokenEl.textContent = '';
+                lineEl.appendChild(tokenEl);
+                clearTypingCursor(node);
+                requestAnimationFrame(() => tokenEl.classList.add('is-visible', 'is-typing'));
+                let charIndex = 0;
+                const charDelay = token.highlight ? 16 : 13;
+                const typeChar = () => {
+                    if (charIndex >= token.text.length) {
+                        tokenEl.classList.remove('is-typing');
+                        tokenEl.classList.add('is-typed');
+                        window.setTimeout(revealToken, token.highlight ? 68 : 38);
+                        return;
+                    }
+                    tokenEl.textContent += token.text.charAt(charIndex);
+                    charIndex += 1;
+                    window.setTimeout(typeChar, charDelay);
+                };
+                typeChar();
+            };
+            revealToken();
         };
-        tick();
+        typeNextLine();
     };
 
     if (prefersReducedMotion) {
-        typeInto(el, fullText);
+        el.dataset.typedDone = '1';
+        typeInto(el);
         return;
     }
 
@@ -6188,11 +7619,11 @@ function setupNsNextBoxTyping() {
             const visible = entries.some((e) => e.isIntersecting && e.intersectionRatio >= 0.35);
             if (!visible) return;
             observer.disconnect();
-            typeInto(el, fullText);
+            typeInto(el);
         }, { threshold: [0, 0.35, 1] });
         observer.observe(el);
     } catch {
-        typeInto(el, fullText);
+        typeInto(el);
     }
 }
 
@@ -8566,7 +9997,7 @@ function ensureOdeConfirmModal() {
     return modal;
 }
 
-function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, size = 'default' } = {}) {
+function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, size = 'default', returnAction = false, tabs = null } = {}) {
     const modal = ensureOdeConfirmModal();
     const titleEl = modal.querySelector('#ode-confirm-title');
     const bodyEl = modal.querySelector('#ode-confirm-body');
@@ -8585,14 +10016,11 @@ function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Can
         html = html.replace(/\[\[(.+?)\]\]/g, '<span class="ode-confirm-chip">$1</span>');
         return html;
     };
-
-    if (titleEl) titleEl.textContent = safeTitle;
-    if (cardEl) {
-        cardEl.classList.toggle('ode-confirm-card-wide', String(size || '').toLowerCase() === 'wide');
-    }
-    if (bodyEl) {
-        const lines = safeMsg.split('\n').map((l) => l.trim()).filter(Boolean);
-        bodyEl.innerHTML = lines.length ? lines.map((l) => {
+    const buildConfirmLinesHtml = (linesRaw) => {
+        const lines = (Array.isArray(linesRaw) ? linesRaw : [])
+            .map((l) => String(l || '').trim())
+            .filter(Boolean);
+        return lines.length ? lines.map((l) => {
             if (l === '---') {
                 return '<div class="ode-confirm-separator" role="separator" aria-hidden="true"></div>';
             }
@@ -8602,6 +10030,48 @@ function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Can
             }
             return `<div class="ode-confirm-line">${renderConfirmLine(l)}</div>`;
         }).join('') : '';
+    };
+    const normalizedTabs = Array.isArray(tabs)
+        ? tabs
+            .map((t, idx) => ({
+                id: String(t?.id || `tab_${idx + 1}`).trim() || `tab_${idx + 1}`,
+                label: String(t?.label || `Tab ${idx + 1}`).trim() || `Tab ${idx + 1}`,
+                lines: Array.isArray(t?.lines) ? t.lines : []
+            }))
+            .filter((t) => t.id && t.label)
+        : [];
+
+    if (titleEl) titleEl.textContent = safeTitle;
+    if (cardEl) {
+        cardEl.classList.toggle('ode-confirm-card-wide', String(size || '').toLowerCase() === 'wide');
+    }
+    if (bodyEl) {
+        if (normalizedTabs.length >= 2) {
+            bodyEl.innerHTML = `
+                <div class="ode-confirm-tabs" role="tablist" aria-label="Details view">
+                    ${normalizedTabs.map((tab, idx) => `
+                        <button
+                            type="button"
+                            class="ode-confirm-tab ${idx === 0 ? 'is-active' : ''}"
+                            data-ode-tab="${escapeHtml(tab.id)}"
+                            role="tab"
+                            aria-selected="${idx === 0 ? 'true' : 'false'}"
+                            tabindex="${idx === 0 ? '0' : '-1'}"
+                        >${escapeHtml(tab.label)}</button>
+                    `).join('')}
+                </div>
+                <div class="ode-confirm-tab-panels">
+                    ${normalizedTabs.map((tab, idx) => `
+                        <div class="ode-confirm-tab-panel ${idx === 0 ? 'is-active' : 'hidden'}" data-ode-tab-panel="${escapeHtml(tab.id)}" role="tabpanel">
+                            ${buildConfirmLinesHtml(tab.lines)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            const lines = safeMsg.split('\n').map((l) => l.trim()).filter(Boolean);
+            bodyEl.innerHTML = buildConfirmLinesHtml(lines);
+        }
     }
 
     if (okBtn) okBtn.textContent = String(confirmText || 'Confirm');
@@ -8613,41 +10083,83 @@ function odeConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Can
 
     return new Promise((resolve) => {
         let done = false;
+        let onTabClick = null;
+        let onTabKeyDown = null;
 
-        const finish = (value) => {
+        const setActiveTab = (tabIdRaw) => {
+            const tabId = String(tabIdRaw || '').trim();
+            if (!tabId || !bodyEl) return;
+            const tabButtons = Array.from(bodyEl.querySelectorAll('.ode-confirm-tab'));
+            const panels = Array.from(bodyEl.querySelectorAll('.ode-confirm-tab-panel'));
+            tabButtons.forEach((btn) => {
+                const active = String(btn.getAttribute('data-ode-tab') || '') === tabId;
+                btn.classList.toggle('is-active', active);
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                btn.setAttribute('tabindex', active ? '0' : '-1');
+            });
+            panels.forEach((panel) => {
+                const active = String(panel.getAttribute('data-ode-tab-panel') || '') === tabId;
+                panel.classList.toggle('is-active', active);
+                panel.classList.toggle('hidden', !active);
+            });
+        };
+
+        const finish = (action) => {
             if (done) return;
             done = true;
             modal.classList.add('hidden');
             document.body.classList.remove('ode-modal-open');
             cleanup();
-            resolve(!!value);
+            resolve(returnAction ? String(action || 'dismiss') : action === 'confirm');
         };
 
         const onKeyDown = (e) => {
-            if (e.key === 'Escape') finish(false);
-            if (e.key === 'Enter') finish(true);
+            if (e.key === 'Enter' && document.activeElement?.classList?.contains('ode-confirm-tab')) return;
+            if (e.key === 'Escape') finish('dismiss');
+            if (e.key === 'Enter') finish('confirm');
         };
 
         const onBackdrop = (e) => {
-            if (e.target === modal) finish(false);
+            if (e.target === modal) finish('dismiss');
         };
 
         const cleanup = () => {
             okBtn?.removeEventListener('click', onOk);
             cancelBtn?.removeEventListener('click', onCancel);
-            closeBtn?.removeEventListener('click', onCancel);
+            closeBtn?.removeEventListener('click', onClose);
             modal.removeEventListener('click', onBackdrop);
             window.removeEventListener('keydown', onKeyDown);
+            if (bodyEl && onTabClick) bodyEl.removeEventListener('click', onTabClick);
+            if (bodyEl && onTabKeyDown) bodyEl.removeEventListener('keydown', onTabKeyDown);
         };
 
-        const onOk = () => finish(true);
-        const onCancel = () => finish(false);
+        const onOk = () => finish('confirm');
+        const onCancel = () => finish('cancel');
+        const onClose = () => finish('dismiss');
 
         okBtn?.addEventListener('click', onOk);
         cancelBtn?.addEventListener('click', onCancel);
-        closeBtn?.addEventListener('click', onCancel);
+        closeBtn?.addEventListener('click', onClose);
         modal.addEventListener('click', onBackdrop);
         window.addEventListener('keydown', onKeyDown);
+        if (bodyEl && normalizedTabs.length >= 2) {
+            onTabClick = (e) => {
+                const tabBtn = e.target && e.target.closest ? e.target.closest('.ode-confirm-tab[data-ode-tab]') : null;
+                if (!tabBtn || !bodyEl.contains(tabBtn)) return;
+                e.preventDefault();
+                setActiveTab(tabBtn.getAttribute('data-ode-tab'));
+            };
+            onTabKeyDown = (e) => {
+                const tabBtn = e.target && e.target.closest ? e.target.closest('.ode-confirm-tab[data-ode-tab]') : null;
+                if (!tabBtn || !bodyEl.contains(tabBtn)) return;
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                setActiveTab(tabBtn.getAttribute('data-ode-tab'));
+            };
+            bodyEl.addEventListener('click', onTabClick);
+            bodyEl.addEventListener('keydown', onTabKeyDown);
+            setActiveTab(normalizedTabs[0]?.id);
+        }
 
         window.setTimeout(() => okBtn?.focus?.(), 0);
     });
@@ -11088,7 +12600,6 @@ function setupGroceryFinalPage() {
     
     const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
     const clampNum = (v, min, max) => Math.min(max, Math.max(min, Number(v) || 0));
-    const formatBudgetRange = (lo, hi) => `$${Math.round(lo)}-$${Math.round(hi)}`;
     const formatMoney = (n) => {
         const v = Number(n) || 0;
         try {
@@ -11120,6 +12631,99 @@ function setupGroceryFinalPage() {
         return 'intensity not set';
     };
     const calcCarbRemainder = (cal, pro, fat) => Math.max(0, Math.round((Number(cal || 0) - ((Number(pro || 0) * 4) + (Number(fat || 0) * 9))) / 4));
+    const resolveBuildProteinBasisForBudget = ({ weightLbs, bodyFatPct }) => {
+        const weight = Number(weightLbs);
+        const bodyFat = Number(bodyFatPct);
+        if (Number.isFinite(weight) && weight > 0 && Number.isFinite(bodyFat) && bodyFat >= 5 && bodyFat <= 60) {
+            return { value: Math.max(1, weight * (1 - (bodyFat / 100))), label: 'lean body mass' };
+        }
+        if (Number.isFinite(weight) && weight > 0) {
+            return { value: weight, label: 'current bodyweight' };
+        }
+        return { value: 170, label: 'current bodyweight fallback' };
+    };
+    const computeBuildTierBudgetMacros = ({ modeKeyRaw, calories, weightLbs, bodyFatPct }) => {
+        const modeKey = normalizeBudgetTierKey(modeKeyRaw) || 'best';
+        const basis = resolveBuildProteinBasisForBudget({ weightLbs, bodyFatPct });
+        const basisLbs = Math.max(1, Number(basis.value) || 170);
+        const bwKg = Math.max(1, (Number(weightLbs) > 0 ? Number(weightLbs) : basisLbs) * 0.45359237);
+        const cfg = modeKey === 'best'
+            ? { targetFactor: 1.15, minFactor: 1.05, capFactor: 1.20 }
+            : (modeKey === 'budget'
+                ? { targetFactor: 0.75, minFactor: 0.70, capFactor: 0.95 }
+                : { targetFactor: 0.95, minFactor: 0.85, capFactor: 1.10 });
+        const hardProteinFloor = Math.round(0.70 * basisLbs);
+        const proteinFloor = Math.max(hardProteinFloor, Math.round(cfg.minFactor * basisLbs));
+        const proteinCap = Math.max(proteinFloor, Math.round(cfg.capFactor * basisLbs));
+        let proteinG = clamp(Math.round(cfg.targetFactor * basisLbs), proteinFloor, proteinCap);
+
+        const caloriesFixed = Math.max(1200, Math.round(Number(calories) || 0));
+        const fatTargetPct = modeKey === 'best' ? 0.30 : (modeKey === 'budget' ? 0.25 : 0.27);
+        const fatFloorG = Math.max(20, Math.floor((caloriesFixed * 0.22) / 9));
+        const fatPctCap = Math.floor((caloriesFixed * 0.35) / 9);
+        const fatCapG = Math.max(fatFloorG, fatPctCap);
+        let fatG = clamp(Math.round((caloriesFixed * fatTargetPct) / 9), fatFloorG, fatCapG);
+
+        const carbFloor = Math.round(2.5 * bwKg);
+        let carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+        if (carbG < carbFloor && fatG > fatFloorG) {
+            fatG = fatFloorG;
+            carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+        }
+        while (carbG < carbFloor && proteinG > proteinFloor) {
+            proteinG -= 1;
+            carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+        }
+        return {
+            calories: caloriesFixed,
+            proteinG,
+            fatG,
+            carbG,
+            proteinFloor,
+            fatFloor: fatFloorG,
+            fatCap: fatCapG,
+            fatTargetPct,
+            basisLbs,
+            basisLabel: basis.label
+        };
+    };
+    const computeRecompTierBudgetMacros = ({ modeKeyRaw, calories }) => {
+        const modeKey = normalizeBudgetTierKey(modeKeyRaw) || 'best';
+        const caloriesFixed = Math.max(1200, Math.round(Number(calories) || 0));
+        const fatPct = 0.15;
+        const proteinShareOfRemaining = modeKey === 'budget' ? 0.50 : (modeKey === 'balanced' ? 0.60 : 0.70);
+
+        let fatKcal = Math.round(caloriesFixed * fatPct);
+        let fatG = Math.max(0, Math.round(fatKcal / 9));
+        fatKcal = fatG * 9;
+
+        const remainingKcal = Math.max(0, caloriesFixed - fatKcal);
+        let proteinKcal = Math.round(remainingKcal * proteinShareOfRemaining);
+        let proteinG = Math.max(0, Math.round(proteinKcal / 4));
+        proteinKcal = proteinG * 4;
+
+        let carbKcal = caloriesFixed - (fatKcal + proteinKcal);
+        let carbG = Math.floor(carbKcal / 4);
+        let recompProteinShareUnreachableClamped = false;
+        if (carbKcal < 0) {
+            recompProteinShareUnreachableClamped = true;
+            proteinKcal = Math.max(0, caloriesFixed - fatKcal);
+            proteinG = Math.floor(proteinKcal / 4);
+            proteinKcal = proteinG * 4;
+            carbKcal = caloriesFixed - (fatKcal + proteinKcal);
+            carbG = Math.max(0, Math.floor(carbKcal / 4));
+        }
+
+        return {
+            calories: caloriesFixed,
+            proteinG,
+            fatG,
+            carbG: Math.max(0, carbG),
+            recompFatPct: fatPct,
+            recompProteinShareOfRemaining: proteinShareOfRemaining,
+            recompProteinShareUnreachableClamped
+        };
+    };
     const resolveGoalWeightForBudgetMath = ({ goalWeightLbs, currentWeightLbs }) => {
         const gw = Number(goalWeightLbs);
         if (Number.isFinite(gw) && gw > 0) {
@@ -11137,19 +12741,21 @@ function setupGroceryFinalPage() {
         if (freq === '3-4') return 'Decrease workouts per week (3-4 -> 1-2)';
         return 'Decrease workouts per week';
     };
-    const estimateMonthlyFromMacros = (m) => {
+    const estimateMonthlyFromMacros = (m, modeKeyRaw = (savedPrefs?.budgetMode || 'best')) => {
         const mc = m || {};
         const cals = Number(mc.calories) || 2200;
         const protein = Number(mc.proteinG) || 160;
         const fat = Number(mc.fatG) || 65;
-        const daily = 2.4 + (cals * 0.0022) + (protein * 0.014) + (fat * 0.01);
+        const daily = 1.6 + (cals * 0.00165) + (protein * 0.010) + (fat * 0.005);
+        const modeKey = normalizeBudgetTierKey(modeKeyRaw || savedPrefs?.budgetMode || 'best') || 'best';
+        const modeMult = modeKey === 'budget' ? 0.82 : (modeKey === 'balanced' ? 0.92 : 1.0);
         const tasteInputEl = document.getElementById('g-taste-cost');
         const tastePref = String(tasteInputEl?.value || savedPrefs?.tasteCost || 'balance').trim().toLowerCase();
         const tasteMult = tastePref === 'cheapest' ? 0.94 : (tastePref === 'premium' ? 1.08 : 1.0);
         const priceAdjRaw = Number(priceAdjustmentInput?.value ?? savedPrefs?.priceAdjustment ?? 0);
         const priceAdjMult = Number.isFinite(priceAdjRaw) ? (1 + (priceAdjRaw / 100)) : 1.0;
-        const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult;
-        return clampNum(roundTo10(adjustedMonthly), 170, 650);
+        const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult * modeMult;
+        return clampNum(roundTo10(adjustedMonthly), 120, 620);
     };
     const normalizeBudgetTierKey = (raw) => {
         const v = String(raw || '').trim().toLowerCase();
@@ -11173,18 +12779,14 @@ function setupGroceryFinalPage() {
         ).trim();
         return { key, title, low, high, value };
     };
-    const buildTierOptionsFromBestCost = (bestCostRaw) => {
-        const bestCost = clampNum(roundTo10(bestCostRaw), 120, 900);
-        const budgetLow = Math.max(90, roundTo10(bestCost * 0.62));
-        const budgetHigh = Math.max(budgetLow + 20, roundTo10(bestCost * 0.78));
-        const balancedLow = Math.max(budgetHigh, roundTo10(bestCost * 0.78));
-        const balancedHigh = Math.max(balancedLow + 20, roundTo10(bestCost * 0.92));
-        const bestLow = Math.max(balancedHigh, roundTo10(bestCost * 0.92));
-        const bestHigh = Math.max(bestLow + 20, roundTo10(bestCost * 1.08));
+    const buildTierOptionsFromModeCosts = ({ budgetCostRaw, balancedCostRaw, bestCostRaw }) => {
+        const budgetValue = clampNum(roundTo10(budgetCostRaw), 90, 900);
+        const balancedValue = clampNum(roundTo10(balancedCostRaw), 90, 900);
+        const bestValue = clampNum(roundTo10(bestCostRaw), 90, 900);
         return [
-            { key: 'budget', title: 'Minimum Effective Plan', low: budgetLow, high: budgetHigh, value: roundTo10((budgetLow + budgetHigh) / 2) },
-            { key: 'balanced', title: 'Balanced Results', low: balancedLow, high: balancedHigh, value: roundTo10((balancedLow + balancedHigh) / 2) },
-            { key: 'best', title: 'Best Performance', low: bestLow, high: bestHigh, value: roundTo10(bestCost) }
+            { key: 'budget', title: 'Minimum Effective Plan', low: budgetValue, high: budgetValue, value: budgetValue },
+            { key: 'balanced', title: 'Balanced Results', low: balancedValue, high: balancedValue, value: balancedValue },
+            { key: 'best', title: 'Best Performance', low: bestValue, high: bestValue, value: bestValue }
         ];
     };
     const getSavedTierOptions = () => {
@@ -11226,6 +12828,15 @@ function setupGroceryFinalPage() {
         if (Number.isFinite(fromState) && fromState > 0) return fromState;
         return 1.5;
     };
+    const getCurrentGainRate = () => {
+        const fromSession = Number(sessionData?.selections?.gainRateLbsPerWeek ?? sessionData?.selections?.bulkGainRateLbsPerWeek ?? sessionData?.selections?.lbsGainPerWeek);
+        const fromPrefs = Number(savedPrefs?.gainRateLbsPerWeek ?? savedPrefs?.bulkGainRateLbsPerWeek ?? savedPrefs?.lbsGainPerWeek);
+        const fromState = Number(nutritionState?.selections?.gainRateLbsPerWeek ?? nutritionState?.selections?.bulkGainRateLbsPerWeek ?? nutritionState?.selections?.lbsGainPerWeek);
+        if (Number.isFinite(fromSession) && fromSession > 0) return fromSession;
+        if (Number.isFinite(fromPrefs) && fromPrefs > 0) return fromPrefs;
+        if (Number.isFinite(fromState) && fromState > 0) return fromState;
+        return 0.5;
+    };
     const buildCurrentFormState = (overrides = {}) => ({
         goal: sessionData?.selections?.goal || savedPrefs?.mode || nutritionState?.selections?.goal || null,
         style: sessionData?.selections?.style || savedPrefs?.style || nutritionState?.selections?.style || null,
@@ -11240,6 +12851,8 @@ function setupGroceryFinalPage() {
         goalWeightLbs: sessionData?.selections?.goalWeightLbs || savedPrefs?.goalWeightLbs || nutritionState?.selections?.goalWeightLbs || null,
         intensity: sessionData?.selections?.intensity || savedPrefs?.intensity || nutritionState?.selections?.intensity || null,
         lossRateLbsPerWeek: getCurrentLossRate(),
+        gainRateLbsPerWeek: getCurrentGainRate(),
+        budgetMode: String(savedPrefs?.budgetMode || getActiveBudgetModeFromSession() || 'best').toLowerCase(),
         ...overrides
     });
     const projectCaloriesAndMacros = (formState) => {
@@ -11248,7 +12861,7 @@ function setupGroceryFinalPage() {
             const nErrors = Array.isArray(normalized?.errors) ? normalized.errors : [];
             if (nErrors.length) return { errors: nErrors };
             const c = calcCalories(normalized);
-            const m = calcMacros(normalized, { target: c.target });
+            const m = calcMacros(normalized, { target: c.target }, { budgetMode: normalized.budgetMode });
             const caloriesTarget = Number.isFinite(m?.calories_target) ? Number(m.calories_target) : Number(c?.target || 0);
             return {
                 errors: [],
@@ -11306,13 +12919,8 @@ function setupGroceryFinalPage() {
         const protein = Number(profileMacros?.proteinG) || 160;
         const fat = Number(profileMacros?.fatG) || 65;
 
-        // Lightweight estimate anchored to macro demand + user pricing prefs.
-        const estimatedBestMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: protein, fatG: fat });
-        const computedTiers = buildTierOptionsFromBestCost(estimatedBestMonthly);
+        // Build per-tier estimates independently so "best" is not forced to be highest by multipliers.
         const savedTierOptions = preferSavedTiers ? getSavedTierOptions() : null;
-        const tiers = Array.isArray(savedTierOptions) && savedTierOptions.length === 3 ? savedTierOptions : computedTiers;
-        const bestTier = tiers.find((t) => t.key === 'best');
-        const optimalMonthly = Number(bestTier?.value || estimatedBestMonthly);
         const tooltipByKey = {
             budget: 'Calories protected. Minimum protein protected. Lower variety and tighter flexibility. Results are still achievable with consistency.',
             balanced: 'Calories protected. Protein slightly below optimal. Moderate variety. Designed for steady, sustainable progress.',
@@ -11320,10 +12928,10 @@ function setupGroceryFinalPage() {
         };
 
         const goalRaw = sessionData?.selections?.goal || savedPrefs?.mode || nutritionState?.selections?.goal || null;
-        const normalizedGoal = normalizeGoalInput(goalRaw);
         const freqRaw = sessionData?.selections?.frequency || savedPrefs?.frequency || nutritionState?.selections?.frequency || null;
         const intensityRaw = sessionData?.selections?.intensity || savedPrefs?.intensity || nutritionState?.selections?.intensity || null;
         const currentRate = getCurrentLossRate();
+        const currentGainRate = getCurrentGainRate();
         const goalWeight = Number(
             nutritionState?.selections?.goalWeightLbs
             || sessionData?.selections?.goalWeightLbs
@@ -11334,6 +12942,12 @@ function setupGroceryFinalPage() {
         const frequencyPhrase = formatFrequencyLabel(freqRaw);
         const intensityPhrase = formatIntensityLabel(intensityRaw);
         const goalWeightText = goalWeight > 0 ? ` Goal weight: ${Math.round(goalWeight)} lb.` : '';
+        const bodyFatForBudgetMath = Number(
+            sessionData?.selections?.bodyFatPct
+            ?? savedPrefs?.bodyFatPct
+            ?? nutritionState?.selections?.bodyFatPct
+            ?? NaN
+        );
         const sexRaw = String(
             sessionData?.selections?.sex
             || savedPrefs?.sex
@@ -11349,52 +12963,162 @@ function setupGroceryFinalPage() {
             || savedPrefs?.weightLbs
             || 0
         );
+        const resolvedGoalModeForBudgetUi = resolveGoalModeForMath(goalRaw, currentWeight, goalWeight);
+        const normalizedGoal = resolvedGoalModeForBudgetUi === 'BULK'
+            ? 'BUILD'
+            : (resolvedGoalModeForBudgetUi === 'CUT' ? 'CUT' : (resolvedGoalModeForBudgetUi === 'STRENGTH' ? 'STRENGTH' : ''));
+        const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
+        const isBuildLikeGoal = normalizedGoal === 'BUILD' || normalizedGoal === 'STRENGTH';
+        const isRecompGoal = resolvedGoalModeForBudgetUi === 'RECOMP';
+        const fatFloor = Math.max(Math.round((0.22 * cals) / 9), fatSexMin);
+        const fatFromCalories = Math.round((0.22 * cals) / 9);
+        const buildBestTier = isBuildLikeGoal
+            ? computeBuildTierBudgetMacros({ modeKeyRaw: 'best', calories: cals, weightLbs: currentWeight, bodyFatPct: bodyFatForBudgetMath })
+            : null;
+        const buildBalancedTier = isBuildLikeGoal
+            ? computeBuildTierBudgetMacros({ modeKeyRaw: 'balanced', calories: cals, weightLbs: currentWeight, bodyFatPct: bodyFatForBudgetMath })
+            : null;
+        const buildBudgetTier = isBuildLikeGoal
+            ? computeBuildTierBudgetMacros({ modeKeyRaw: 'budget', calories: cals, weightLbs: currentWeight, bodyFatPct: bodyFatForBudgetMath })
+            : null;
+        const recompBestTier = isRecompGoal
+            ? computeRecompTierBudgetMacros({ modeKeyRaw: 'best', calories: cals })
+            : null;
+        const recompBalancedTier = isRecompGoal
+            ? computeRecompTierBudgetMacros({ modeKeyRaw: 'balanced', calories: cals })
+            : null;
+        const recompBudgetTier = isRecompGoal
+            ? computeRecompTierBudgetMacros({ modeKeyRaw: 'budget', calories: cals })
+            : null;
         const goalWeightResolved = resolveGoalWeightForBudgetMath({ goalWeightLbs: goalWeight, currentWeightLbs: currentWeight });
         const goalWeightUsed = goalWeightResolved.value;
-        const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
-        const fatFloor = Math.max(Math.round((0.22 * cals) / 9), fatSexMin);
-        const proteinFloor = Math.round(0.75 * goalWeightUsed);
-        const balancedProtein = Math.max(proteinFloor, Math.round(protein * 0.92));
-        const balancedFat = Math.max(Math.round(fat), fatFloor);
-        const minimumProtein = Math.max(0, proteinFloor);
-        const minimumFat = Math.max(Math.round(fatFloor), 0);
-        const fatFromCalories = Math.round((0.22 * cals) / 9);
-        const bestCarbs = calcCarbRemainder(cals, protein, fat);
-        const balancedCarbs = calcCarbRemainder(cals, balancedProtein, balancedFat);
-        const minimumCarbs = calcCarbRemainder(cals, minimumProtein, minimumFat);
-        const goalWeightExplain = goalWeightResolved.source === 'goal'
-            ? `${Math.round(goalWeightUsed)} lb`
-            : `${Math.round(goalWeightUsed)} lb (${goalWeightResolved.source} weight fallback)`;
+        const cutProteinFloor = Math.round(0.75 * goalWeightUsed);
+        const balancedProtein = isBuildLikeGoal
+            ? Math.round(Number(buildBalancedTier?.proteinG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBalancedTier?.proteinG) || 0)
+                : Math.max(cutProteinFloor, Math.round(protein * 0.92)));
+        const balancedFat = isBuildLikeGoal
+            ? Math.round(Number(buildBalancedTier?.fatG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBalancedTier?.fatG) || 0)
+                : Math.max(Math.round(fat), fatFloor));
+        const minimumProtein = isBuildLikeGoal
+            ? Math.round(Number(buildBudgetTier?.proteinG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBudgetTier?.proteinG) || 0)
+                : Math.max(0, cutProteinFloor));
+        const minimumFat = isBuildLikeGoal
+            ? Math.round(Number(buildBudgetTier?.fatG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBudgetTier?.fatG) || 0)
+                : Math.max(Math.round(fatFloor), 0));
+        const proteinFloor = isBuildLikeGoal
+            ? Math.round(Number(buildBudgetTier?.proteinFloor) || 0)
+            : cutProteinFloor;
+        const bestCarbs = isBuildLikeGoal
+            ? Math.round(Number(buildBestTier?.carbG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBestTier?.carbG) || 0)
+                : calcCarbRemainder(cals, protein, fat));
+        const balancedCarbs = isBuildLikeGoal
+            ? Math.round(Number(buildBalancedTier?.carbG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBalancedTier?.carbG) || 0)
+                : calcCarbRemainder(cals, balancedProtein, balancedFat));
+        const minimumCarbs = isBuildLikeGoal
+            ? Math.round(Number(buildBudgetTier?.carbG) || 0)
+            : (isRecompGoal
+                ? Math.round(Number(recompBudgetTier?.carbG) || 0)
+                : calcCarbRemainder(cals, minimumProtein, minimumFat));
+        const goalWeightExplain = isBuildLikeGoal
+            ? `${Math.round(Number(buildBestTier?.basisLbs) || currentWeight || 170)} lb (${String(buildBestTier?.basisLabel || 'current bodyweight')})`
+            : (goalWeightResolved.source === 'goal'
+                ? `${Math.round(goalWeightUsed)} lb`
+                : `${Math.round(goalWeightUsed)} lb (${goalWeightResolved.source} weight fallback)`);
+        const estimatedBestMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: protein, fatG: fat }, 'best');
+        const estimatedBalancedMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: balancedProtein, fatG: balancedFat }, 'balanced');
+        const estimatedBudgetMonthly = estimateMonthlyFromMacros({ calories: cals, proteinG: minimumProtein, fatG: minimumFat }, 'budget');
+        const computedTiers = buildTierOptionsFromModeCosts({
+            budgetCostRaw: estimatedBudgetMonthly,
+            balancedCostRaw: estimatedBalancedMonthly,
+            bestCostRaw: estimatedBestMonthly
+        });
+        const savedBestTier = Array.isArray(savedTierOptions)
+            ? savedTierOptions.find((t) => normalizeBudgetTierKey(t?.key) === 'best')
+            : null;
+        const savedBestValue = Number(savedBestTier?.value || 0);
+        const savedLooksStale = !Number.isFinite(savedBestValue)
+            || Math.abs(savedBestValue - estimatedBestMonthly) > Math.max(30, Math.round(estimatedBestMonthly * 0.2));
+        const tiers = (Array.isArray(savedTierOptions) && savedTierOptions.length === 3 && !savedLooksStale)
+            ? savedTierOptions
+            : computedTiers;
+        const bestTier = tiers.find((t) => t.key === 'best');
+        const optimalMonthly = Number(bestTier?.value || estimatedBestMonthly);
 
         budgetTierExplainers = {
             best: {
                 title: 'Best Performance',
+                blufLines: [
+                    `**BLUF**`,
+                    `- This is the highest support tier: best recovery and training consistency.`,
+                    `- Monthly cost is projected around [[${formatMoney(optimalMonthly)}]].`,
+                    `- Pick this when performance and fastest progress matter most.`
+                ],
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (kept fixed for this tier).`,
                     `**Macros:** Protein [[${Math.round(protein)}g]] Â· Fat [[${Math.round(fat)}g]] Â· Carbs [[${Math.round(bestCarbs)}g]].`,
-                    `**Cost equation used:** daily estimate = [[2.4 + (calories x 0.0022) + (protein x 0.014) + (fat x 0.01)]].`,
+                    `**Cost equation used:** daily estimate = [[1.6 + (calories x 0.00165) + (protein x 0.010) + (fat x 0.005)]], then tier factor ([[Best x1.00]], [[Balanced x0.92]], [[Minimum x0.82]]).`,
                     `**Projected monthly groceries:** [[${formatMoney(optimalMonthly)}]].`,
                     `**What this usually feels like:** best recovery, strongest training consistency, best performance.`
                 ]
             },
             balanced: {
                 title: 'Balanced Results',
+                blufLines: [
+                    `**BLUF**`,
+                    `- Balanced keeps calories the same but trims cost and complexity.`,
+                    `- Progress stays solid, with slightly less recovery margin than Best.`,
+                    `- Good middle ground when you want results without full top-tier cost.`
+                ],
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (same as full target).`,
-                    `**Protein rule:** keep at least [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}), then use about [[92% of Best protein]] when that is higher.`,
+                    isBuildLikeGoal
+                        ? `**Protein rule:** use build basis [[${goalWeightExplain}]] with Balanced multiplier [[~0.95 x basis]] (floor [[~0.85 x basis]]).`
+                        : (isRecompGoal
+                            ? `**Protein rule:** after fat is locked at [[15%]], Balanced uses [[~60%]] of remaining calories for protein.`
+                            : `**Protein rule:** keep at least [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}), then use about [[92% of Best protein]] when that is higher.`),
                     `**Balanced macros:** Protein [[${Math.round(balancedProtein)}g]] Â· Fat [[${Math.round(balancedFat)}g]] Â· Carbs [[${Math.round(balancedCarbs)}g]].`,
-                    `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`,
+                    isBuildLikeGoal
+                        ? `**Fat rule:** build uses calorie-based fat targets: [[Best ~30%]], [[Balanced ~27%]], [[Minimum ~25%]], with a [[22% floor]] and [[35% calorie cap]].`
+                        : (isRecompGoal
+                            ? `**Fat rule:** Recomp is fat-first at [[15%]] of calories, then protein share, then carbs fill the rest.`
+                            : `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`),
                     `**What this may feel like:** solid progress, slightly less recovery margin than Best.`,
                     `**If you feel flat for 3-4 days:** move to Best Performance or add [[25-40g carbs]].`
                 ]
             },
             budget: {
                 title: 'Minimum Effective Plan',
+                blufLines: [
+                    `**BLUF**`,
+                    `- Lowest-cost tier that still protects core results.`,
+                    `- Calories remain protected, but meal comfort/recovery can feel tougher.`,
+                    `- Use this when saving money is the priority and you can handle tighter adherence.`
+                ],
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (kept fixed).`,
-                    `**Protein rule:** use minimum protein = [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}).`,
+                    isBuildLikeGoal
+                        ? `**Protein rule:** minimum build tier uses about [[0.75 x basis]] with a hard floor near [[0.70 x basis]] on [[${goalWeightExplain}]].`
+                        : (isRecompGoal
+                            ? `**Protein rule:** after fat is locked at [[15%]], Minimum Effective uses [[~50%]] of remaining calories for protein.`
+                            : `**Protein rule:** use minimum protein = [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}).`),
                     `**Minimum Effective macros:** Protein [[${Math.round(minimumProtein)}g]] Â· Fat [[${Math.round(minimumFat)}g]] Â· Carbs [[${Math.round(minimumCarbs)}g]].`,
-                    `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`,
+                    isBuildLikeGoal
+                        ? `**Fat rule:** build uses calorie-based fat targets: [[Best ~30%]], [[Balanced ~27%]], [[Minimum ~25%]], with a [[22% floor]] and [[35% calorie cap]].`
+                        : (isRecompGoal
+                            ? `**Fat rule:** Recomp is fat-first at [[15%]] of calories, then protein share, then carbs fill the rest.`
+                            : `**Fat rule:** keep enough fat for recovery. We use the higher of [[${fatFromCalories}g from calories]] or [[${fatSexMin}g sex baseline]] = [[${Math.round(fatFloor)}g]].`),
                     `**What this may feel like:** simpler meals and lower cost, but more hunger and lower training comfort.`,
                     `**If hunger, mood, or recovery drops hard:** move up to Balanced or add [[1 protein serving + 1 carb serving]].`
                 ]
@@ -11431,15 +13155,17 @@ function setupGroceryFinalPage() {
                     disabled: !(canLowerFreq || canIncreaseCutSpeed)
                 });
             } else if (normalizedGoal === 'BUILD') {
+                const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+                const canSlowBulk = currentGainRate > 0.25;
                 actions.push({
                     key: 'slower-bulk',
-                    label: 'Bulk slower (smaller surplus)',
-                    disabled: false
+                    label: canSlowBulk ? `Bulk slower (${Number(currentGainRate).toFixed(2)} -> ${Number(nextGainRate).toFixed(2)} lb/week)` : 'Bulk speed already reduced (0.25 lb/week)',
+                    disabled: !canSlowBulk
                 });
                 actions.push({
                     key: 'apply-both',
                     label: 'Apply both',
-                    disabled: !canLowerFreq
+                    disabled: !(canLowerFreq || canSlowBulk)
                 });
             }
             budgetForecastActionsEl.innerHTML = actions
@@ -11456,14 +13182,24 @@ function setupGroceryFinalPage() {
             btn.dataset.budgetHigh = String(tier.high);
             btn.dataset.budgetTitle = tier.title;
             btn.title = tooltipByKey[tier.key] || '';
-            btn.innerHTML = `<span class="budget-btn-title">${tier.title}</span><span class="budget-btn-sub">${formatBudgetRange(tier.low, tier.high)}</span><span class="budget-btn-help" aria-hidden="true"></span>`;
+            btn.innerHTML = `<span class="budget-btn-title">${tier.title}</span><span class="budget-btn-sub">Est. ${formatMoney(Number(tier.value || 0))}/month</span><span class="budget-btn-help" aria-hidden="true"></span>`;
         });
 
         const savedMode = normalizeBudgetTierKey(savedPrefs?.budgetMode || '');
         if (preferSavedTiers && savedMode) {
             budgetButtons.forEach((btn) => btn.classList.toggle('active', String(btn.dataset.budgetTier || '') === savedMode));
+        } else if (!savedMode) {
+            budgetButtons.forEach((btn) => btn.classList.toggle('active', normalizeBudgetTierKey(btn?.dataset?.budgetTier) === 'best'));
         }
-        const activeBtn = budgetButtons.find((btn) => btn.classList.contains('active')) || budgetButtons[1] || budgetButtons[0];
+        if (!budgetButtons.some((btn) => btn.classList.contains('active'))) {
+            const defaultBestBtn = budgetButtons.find((btn) => normalizeBudgetTierKey(btn?.dataset?.budgetTier) === 'best');
+            if (defaultBestBtn) defaultBestBtn.classList.add('active');
+        }
+        const activeBtn = budgetButtons.find((btn) => btn.classList.contains('active'))
+            || budgetButtons.find((btn) => normalizeBudgetTierKey(btn?.dataset?.budgetTier) === 'best')
+            || budgetButtons[2]
+            || budgetButtons[1]
+            || budgetButtons[0];
         if (activeBtn) budgetInput.value = activeBtn.dataset.budget || String(roundTo10(optimalMonthly));
     };
     configureDynamicBudgetOptions({ preferSavedTiers: true });
@@ -11540,19 +13276,36 @@ function setupGroceryFinalPage() {
             ];
         })();
 
-        const lines = [
+        const detailsLines = [
             `Switch from ${fromTitle} to ${toTitle}.`,
             '**Official calculations for the new plan**'
         ];
         if (payload && Array.isArray(payload.lines) && payload.lines.length) {
-            lines.push(...payload.lines);
+            detailsLines.push(...payload.lines);
         } else {
-            lines.push('The new plan keeps calorie targets protected and adjusts macro precision for lower cost.');
+            detailsLines.push('The new plan keeps calorie targets protected and adjusts macro precision for lower cost.');
         }
-        lines.push('---');
-        lines.push('**Potential downsides if you apply this downgrade**');
-        lines.push(...downsideBullets.map((line) => `- ${line}`));
-        return lines.join('\n');
+        detailsLines.push('---');
+        detailsLines.push('**Potential downsides if you apply this downgrade**');
+        detailsLines.push(...downsideBullets.map((line) => `- ${line}`));
+        const blufSummary = (() => {
+            if (isCutGoal) {
+                if (pairKey === 'best->balanced') return 'Moderate cost cut with a small drop in training support.';
+                if (pairKey === 'balanced->budget') return 'Aggressive cost cut with noticeably harder adherence/recovery.';
+                return 'Largest cost cut for a cut phase, with the biggest drop in performance support.';
+            }
+            if (pairKey === 'best->balanced') return 'Middle-ground downgrade: slower progress but still solid results.';
+            if (pairKey === 'balanced->budget') return 'Low-cost mode: progress continues, usually at a slower pace.';
+            return 'Largest downgrade: lowest cost, slowest expected progress.';
+        })();
+        const blufLines = [
+            '**BLUF**',
+            `- Switch: [[${fromTitle} -> ${toTitle}]].`,
+            `- ${blufSummary}`,
+            `- Biggest tradeoff: ${downsideBullets[0] || 'Lower recovery/performance margin than your current tier.'}`
+        ];
+        const fallbackMessage = [...blufLines, '---', '**Details**', ...detailsLines].join('\n');
+        return { blufLines, detailsLines, fallbackMessage };
     };
     const confirmFinalBudgetDowngradeIfNeeded = async (fromModeRaw, toModeRaw) => {
         const fromMode = normalizeBudgetTierKey(fromModeRaw);
@@ -11566,7 +13319,11 @@ function setupGroceryFinalPage() {
             try {
                 return await odeConfirm({
                     title: `Switch to ${nextTitle}?`,
-                    message: msg,
+                    message: msg.fallbackMessage,
+                    tabs: [
+                        { id: 'bluf', label: 'BLUF', lines: msg.blufLines },
+                        { id: 'details', label: 'Details', lines: msg.detailsLines }
+                    ],
                     confirmText: 'Apply downgrade',
                     cancelText: 'Keep current plan',
                     size: 'wide'
@@ -11575,7 +13332,7 @@ function setupGroceryFinalPage() {
                 return false;
             }
         }
-        return window.confirm(msg);
+        return window.confirm(msg.fallbackMessage);
     };
 
     if (budgetForecastActionsEl) {
@@ -11586,9 +13343,15 @@ function setupGroceryFinalPage() {
 
             const action = String(btn.getAttribute('data-budget-action') || '').trim();
             const currentState = buildCurrentFormState();
-            const currentMonthly = estimateMonthlyFromMacros(profileMacros);
+            const activeBudgetModeForPreview = normalizeBudgetTierKey(
+                document.querySelector('.budget-btn.active')?.dataset?.budgetTier
+                || savedPrefs?.budgetMode
+                || 'best'
+            ) || 'best';
+            const currentMonthly = estimateMonthlyFromMacros(profileMacros, activeBudgetModeForPreview);
             const currentFreq = String(currentState.frequency || '').trim();
             const currentRate = Number(currentState.lossRateLbsPerWeek || 1.5);
+            const currentGainRate = Number(currentState.gainRateLbsPerWeek || 0.5);
 
             let nextOverrides = null;
             let actionTitle = '';
@@ -11613,8 +13376,12 @@ function setupGroceryFinalPage() {
             } else if (action === 'slower-bulk') {
                 const goalNorm = normalizeGoalInput(currentState.goal);
                 if (goalNorm !== 'BUILD') return;
-                // Use strength-priority phase as the slower-surplus step (+4% vs +8%).
-                nextOverrides = { goal: 'STRENGTH' };
+                const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+                if (nextGainRate >= currentGainRate) {
+                    alert('Bulk speed is already at the lowest option (0.25 lb/week).');
+                    return;
+                }
+                nextOverrides = { gainRateLbsPerWeek: nextGainRate };
                 actionTitle = 'Bulk slower';
             } else if (action === 'apply-both') {
                 const goalNorm = normalizeGoalInput(currentState.goal);
@@ -11626,7 +13393,8 @@ function setupGroceryFinalPage() {
                     if (nextRate > currentRate) batchOverrides.lossRateLbsPerWeek = nextRate;
                     actionTitle = 'Apply both (cut cost levers)';
                 } else if (goalNorm === 'BUILD') {
-                    batchOverrides.goal = 'STRENGTH';
+                    const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+                    if (nextGainRate < currentGainRate) batchOverrides.gainRateLbsPerWeek = nextGainRate;
                     actionTitle = 'Apply both (bulk cost levers)';
                 } else {
                     return;
@@ -11653,7 +13421,7 @@ function setupGroceryFinalPage() {
                 carbG: Number(next.macros.carb_g || 0),
                 fatG: Number(next.macros.fat_g || 0)
             };
-            const nextMonthly = estimateMonthlyFromMacros(nextMacros);
+            const nextMonthly = estimateMonthlyFromMacros(nextMacros, activeBudgetModeForPreview);
             const deltaMonthly = nextMonthly - currentMonthly;
             const deltaCal = Number(nextMacros.calories || 0) - Number(profileMacros?.calories || 0);
             const projectedStateGoal = normalizeGoalInput(projectedState.goal || currentState.goal);
@@ -11662,6 +13430,8 @@ function setupGroceryFinalPage() {
             const projectedFreqText = formatFrequencyLabel(projectedFreq);
             const currentRateText = `${Number(currentRate || 0).toFixed(1)} lb/week`;
             const projectedRateText = `${Number(projectedState.lossRateLbsPerWeek || currentRate || 0).toFixed(1)} lb/week`;
+            const currentGainRateText = `${Number(currentGainRate || 0.5).toFixed(2)} lb/week`;
+            const projectedGainRateText = `${Number(projectedState.gainRateLbsPerWeek || currentGainRate || 0.5).toFixed(2)} lb/week`;
             const monthlyDeltaLabel = `${deltaMonthly >= 0 ? '+' : '-'}${formatMoney(Math.abs(deltaMonthly))}`;
             const summaryLines = [
                 '**What changes if you apply this**',
@@ -11669,10 +13439,10 @@ function setupGroceryFinalPage() {
             ];
             if (projectedStateGoal === 'CUT') {
                 summaryLines.push(`- Fat-loss pace: [[${currentRateText} -> ${projectedRateText}]]`);
-            } else if (projectedStateGoal === 'BUILD' || projectedStateGoal === 'STRENGTH') {
-                const beforeMode = normalizeGoalInput(currentState.goal) === 'STRENGTH' ? 'Strength-priority' : 'Build';
-                const afterMode = projectedStateGoal === 'STRENGTH' ? 'Strength-priority' : 'Build';
-                summaryLines.push(`- Gain mode: [[${beforeMode} -> ${afterMode}]]`);
+            } else if (projectedStateGoal === 'BUILD') {
+                summaryLines.push(`- Gain pace: [[${currentGainRateText} -> ${projectedGainRateText}]]`);
+            } else if (projectedStateGoal === 'STRENGTH') {
+                summaryLines.push('- Goal mode: [[Build -> Strength-priority]]');
             }
             summaryLines.push(`- Calories target: [[${Math.round(Number(profileMacros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]] (${deltaCal >= 0 ? '+' : ''}${Math.round(deltaCal)} kcal)`);
             summaryLines.push(`- Monthly groceries: [[${formatMoney(currentMonthly)} -> ${formatMoney(nextMonthly)}]] (${monthlyDeltaLabel})`);
@@ -11721,17 +13491,41 @@ function setupGroceryFinalPage() {
                 }
             }
 
+            const actionTradeoffLine = (() => {
+                if (action === 'lower-frequency') return 'slower gym adaptation from reduced weekly volume.';
+                if (action === 'faster-cut') return 'higher hunger/cravings and flatter hard-day performance.';
+                if (action === 'slower-bulk') return 'slower size/strength gain pace.';
+                if (action === 'apply-both') {
+                    return projectedGoalNorm === 'CUT'
+                        ? 'highest adherence pressure among cut cost options.'
+                        : 'slowest gain pace among build cost options.';
+                }
+                return 'lower performance margin versus your current setup.';
+            })();
+            const blufLines = [
+                '**BLUF**',
+                `- ${actionTitle}: monthly groceries [[${formatCurrency(currentMonthly)} -> ${formatCurrency(nextMonthly)}]] (${monthlyDeltaLabel}).`,
+                `- Calories target: [[${Math.round(Number(macros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]].`,
+                `- Biggest tradeoff: ${actionTradeoffLine}`
+            ];
+            const detailsLines = [...summaryLines];
+            const fallbackMessage = [...blufLines, '---', '**Details**', ...detailsLines].join('\n');
+
             let confirmed = false;
             if (typeof odeConfirm === 'function') {
                 confirmed = await odeConfirm({
                     title: `${actionTitle} - Preview`,
-                    message: summaryLines.join('\n'),
+                    message: fallbackMessage,
+                    tabs: [
+                        { id: 'bluf', label: 'BLUF', lines: blufLines },
+                        { id: 'details', label: 'Details', lines: detailsLines }
+                    ],
                     confirmText: 'Apply change',
                     cancelText: 'Keep current plan',
                     size: 'wide'
                 });
             } else {
-                confirmed = window.confirm(summaryLines.join('\n'));
+                confirmed = window.confirm(fallbackMessage);
             }
             if (!confirmed) return;
 
@@ -11770,12 +13564,25 @@ function setupGroceryFinalPage() {
                 const key = String(btn.dataset.budgetTier || '').trim();
                 const payload = budgetTierExplainers[key];
                 if (!payload) return;
-                const msg = payload.lines.join('\n');
+                const blufLines = Array.isArray(payload.blufLines) && payload.blufLines.length
+                    ? payload.blufLines
+                    : ['**BLUF**', `- ${payload.title}: adjusts cost vs performance tradeoffs for your plan.`];
+                const explanationLines = Array.isArray(payload.lines) ? payload.lines : [];
+                const msg = [
+                    ...blufLines,
+                    '---',
+                    '**Details**',
+                    ...explanationLines
+                ].join('\n');
                 if (typeof odeConfirm === 'function') {
                     try {
                         await odeConfirm({
                             title: `${payload.title} - Why this option`,
                             message: msg,
+                            tabs: [
+                                { id: 'bluf', label: 'BLUF', lines: blufLines },
+                                { id: 'details', label: 'Details', lines: explanationLines }
+                            ],
                             confirmText: 'Close',
                             cancelText: 'Close'
                         });
@@ -12304,19 +14111,22 @@ function setupGroceryFinalPage() {
         }
         traceLog('TRAINING_OFFSET_APPLIED', { trainingCalorieOffset, macros });
 
-        // Apply selected budget mode transform (stage 1): keep calories fixed,
-        // raise protein floor to 0.75 x goal weight, keep fat floor protected,
-        // and recompute carbs as remainder.
+        // Initial posting pass uses Best macro logic only.
+        // Budget tiers can still be switched later on the plan page.
         const normalizeBudgetModeForPrefs = (raw) => {
             const v = String(raw || '').trim().toLowerCase();
             if (v === 'budget' || v === 'balanced' || v === 'best') return v;
             if (v === 'under-200') return 'budget';
             if (v === '200-400') return 'balanced';
             if (v === '400-plus') return 'best';
-            return 'balanced';
+            return 'best';
         };
-        const activeBudgetBtn = budgetButtons.find((b) => b.classList.contains('active')) || budgetButtons[1] || budgetButtons[0];
-        const selectedBudgetMode = normalizeBudgetModeForPrefs(activeBudgetBtn?.dataset?.budgetTier || 'balanced');
+        const activeBudgetBtn = budgetButtons.find((b) => b.classList.contains('active'))
+            || budgetButtons.find((b) => normalizeBudgetModeForPrefs(b?.dataset?.budgetTier) === 'best')
+            || budgetButtons[2]
+            || budgetButtons[1]
+            || budgetButtons[0];
+        const selectedBudgetMode = normalizeBudgetModeForPrefs(activeBudgetBtn?.dataset?.budgetTier || 'best');
         const macroBaselineBeforeBudgetMode = {
             calories: Math.max(1200, Math.round(Number(macros.calories) || 0)),
             proteinG: Math.max(0, Math.round(Number(macros.proteinG) || 0)),
@@ -12358,44 +14168,62 @@ function setupGroceryFinalPage() {
             || sessionData?.selections?.sex
             || ''
         ).trim().toUpperCase();
+        const goalRawForBudgetMode = String(
+            nutritionState.selections?.goal
+            || sessionData?.selections?.goal
+            || savedPrefs?.mode
+            || ''
+        ).trim();
+        const goalModeForBudgetMode = (() => {
+            const canonical = resolveGoalModeForMath(
+                goalRawForBudgetMode,
+                Number(nutritionState.selections?.weightLbs || sessionData?.selections?.weightLbs || 0),
+                Number(nutritionState.selections?.goalWeightLbs || sessionData?.selections?.goalWeightLbs || 0)
+            );
+            if (canonical === 'BULK') return 'BUILD';
+            if (canonical === 'CUT') return 'CUT';
+            if (canonical === 'STRENGTH') return 'STRENGTH';
+            return '';
+        })();
+        const isBuildLikeBudgetMode = goalModeForBudgetMode === 'BUILD' || goalModeForBudgetMode === 'STRENGTH';
         const currentWeightForBudget = Number(
             nutritionState.selections?.weightLbs
             || sessionData?.selections?.weightLbs
             || 0
+        );
+        const bodyFatForBudgetMode = Number(
+            nutritionState.selections?.bodyFatPct
+            || sessionData?.selections?.bodyFatPct
+            || savedPrefs?.bodyFatPct
+            || NaN
         );
         const goalWeightForBudget = Number(
             nutritionState.selections?.goalWeightLbs
             || sessionData?.selections?.goalWeightLbs
             || 0
         );
-        const resolvedWeightForBudget = resolveGoalWeightForBudgetMath({
-            goalWeightLbs: goalWeightForBudget,
-            currentWeightLbs: currentWeightForBudget
-        }).value;
-        const proteinFloorBudgetMode = Math.round(0.75 * resolvedWeightForBudget);
-        const fatSexMinBudgetMode = sexRawForBudget === 'FEMALE' ? 40 : 50;
         const caloriesFixed = Math.max(1200, Math.round(Number(macros.calories) || 0));
-        const fatFloorBudgetMode = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMinBudgetMode);
         const bestProteinBase = Math.max(0, Math.round(Number(macros.proteinG) || 0));
         const bestFatBase = Math.max(0, Math.round(Number(macros.fatG) || 0));
-        const balancedProteinBudgetMode = Math.max(proteinFloorBudgetMode, Math.round(bestProteinBase * 0.92));
-
-        if (selectedBudgetMode === 'budget') {
-            const nextProtein = Math.max(0, proteinFloorBudgetMode);
-            const nextFat = Math.max(bestFatBase, fatFloorBudgetMode);
-            macros.proteinG = nextProtein;
-            macros.fatG = nextFat;
-            macros.carbG = calcCarbRemainder(caloriesFixed, nextProtein, nextFat);
-            macros.calories = caloriesFixed;
-        } else if (selectedBudgetMode === 'balanced') {
-            const nextProtein = Math.max(0, balancedProteinBudgetMode);
-            const nextFat = Math.max(bestFatBase, fatFloorBudgetMode);
-            macros.proteinG = nextProtein;
-            macros.fatG = nextFat;
-            macros.carbG = calcCarbRemainder(caloriesFixed, nextProtein, nextFat);
-            macros.calories = caloriesFixed;
+        const initialMacroPostingMode = 'best';
+        let proteinFloorBudgetMode = 0;
+        let fatFloorBudgetMode = 0;
+        if (isBuildLikeBudgetMode) {
+            const buildTierMacros = computeBuildTierBudgetMacros({
+                modeKeyRaw: initialMacroPostingMode,
+                calories: caloriesFixed,
+                weightLbs: currentWeightForBudget,
+                bodyFatPct: bodyFatForBudgetMode
+            });
+            proteinFloorBudgetMode = Math.round(Number(buildTierMacros?.proteinFloor) || 0);
+            fatFloorBudgetMode = Math.round(Number(buildTierMacros?.fatFloor) || 0);
+            macros.calories = Math.round(Number(buildTierMacros?.calories) || caloriesFixed);
+            macros.proteinG = Math.round(Number(buildTierMacros?.proteinG) || 0);
+            macros.fatG = Math.round(Number(buildTierMacros?.fatG) || 0);
+            macros.carbG = Math.round(Number(buildTierMacros?.carbG) || 0);
         } else {
-            // Best mode: preserve base macros (calories unchanged).
+            const fatSexMinBudgetMode = sexRawForBudget === 'FEMALE' ? 40 : 50;
+            fatFloorBudgetMode = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMinBudgetMode);
             macros.calories = caloriesFixed;
             macros.proteinG = bestProteinBase;
             macros.fatG = bestFatBase;
@@ -12403,6 +14231,9 @@ function setupGroceryFinalPage() {
         }
         traceLog('BUDGET_MODE_TRANSFORM_APPLIED', {
             selectedBudgetMode,
+            initialMacroPostingMode,
+            goalModeForBudgetMode,
+            isBuildLikeBudgetMode,
             proteinFloorBudgetMode,
             fatFloorBudgetMode,
             macros
@@ -12435,14 +14266,13 @@ function setupGroceryFinalPage() {
             || savedPrefs?.mode
             || inferredGoalFromWeights
             || ''
-        ).trim().toLowerCase();
-        const goalMode = goalRaw === 'cut'
+        ).trim();
+        const canonicalGoalMode = resolveGoalModeForMath(goalRaw, currentWeightForGoalResolve, goalWeightForGoalResolve);
+        const goalMode = canonicalGoalMode === 'CUT'
             ? 'cut'
-            : goalRaw === 'bulk'
+            : (canonicalGoalMode === 'BULK'
                 ? 'bulk'
-                : goalRaw === 'strength'
-                    ? 'strength'
-                    : 'maintain';
+                : (canonicalGoalMode === 'STRENGTH' ? 'strength' : 'maintain'));
         
         // Get bodyweight from nutritionState
         const weightLbs = Number(
@@ -13564,7 +15394,7 @@ async function setupGroceryPlanPage() {
         if (v === 'under-200') return 'budget';
         if (v === '200-400') return 'balanced';
         if (v === '400-plus') return 'best';
-        return 'balanced';
+        return 'best';
     };
     const modeMidpointFactor = (modeKeyRaw) => {
         const modeKey = normalizeBudgetModeKey(modeKeyRaw);
@@ -13574,19 +15404,20 @@ async function setupGroceryPlanPage() {
     };
     const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
     const clampNum = (v, min, max) => Math.min(max, Math.max(min, Number(v) || 0));
-    const formatBudgetRange = (lo, hi) => `$${Math.round(lo)}-$${Math.round(hi)}`;
-    const estimateMonthlyFromMacrosForPlan = (m) => {
+    const estimateMonthlyFromMacrosForPlan = (m, modeKeyRaw = (prefs?.budgetMode || 'best')) => {
         const mc = m || {};
         const cals = Number(mc.calories) || 2200;
         const protein = Number(mc.proteinG) || 160;
         const fat = Number(mc.fatG) || 65;
-        const daily = 2.4 + (cals * 0.0022) + (protein * 0.014) + (fat * 0.01);
+        const daily = 1.6 + (cals * 0.00165) + (protein * 0.010) + (fat * 0.005);
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best') || 'best';
+        const modeMult = modeKey === 'budget' ? 0.82 : (modeKey === 'balanced' ? 0.92 : 1.0);
         const tastePref = String(prefs?.tasteCost || 'balance').trim().toLowerCase();
         const tasteMult = tastePref === 'cheapest' ? 0.94 : (tastePref === 'premium' ? 1.08 : 1.0);
         const priceAdjRaw = Number(prefs?.priceAdjustment ?? 0);
         const priceAdjMult = Number.isFinite(priceAdjRaw) ? (1 + (priceAdjRaw / 100)) : 1.0;
-        const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult;
-        return clampNum(roundTo10(adjustedMonthly), 170, 650);
+        const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult * modeMult;
+        return clampNum(roundTo10(adjustedMonthly), 120, 620);
     };
     const normalizeTierOption = (opt) => {
         const key = normalizeBudgetModeKey(opt?.key);
@@ -13633,6 +15464,8 @@ async function setupGroceryPlanPage() {
     let planBudgetTierOptions = derivePlanBudgetTierOptions();
     let planBudgetTierByKey = new Map(planBudgetTierOptions.map((opt) => [opt.key, opt]));
     let latestPlanMonthlyTotalWithTax = null;
+    let hasSimulatedPlanTierOptions = false;
+    let lastPlanTierSimulationKey = '';
     const syncPlanBudgetTierMap = () => {
         planBudgetTierByKey = new Map(planBudgetTierOptions.map((opt) => [opt.key, opt]));
     };
@@ -13693,14 +15526,14 @@ async function setupGroceryPlanPage() {
     };
     const applyPlanBudgetBanner = (modeKeyRaw) => {
         const modeKey = normalizeBudgetModeKey(modeKeyRaw);
-        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || planBudgetTierOptions[0] || null;
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('best') || planBudgetTierOptions[0] || null;
         if (mealBudgetOptionEls.length) {
             mealBudgetOptionEls.forEach((el, idx) => {
                 const opt = planBudgetTierOptions[idx] || null;
                 if (!opt) return;
                 el.disabled = false;
                 el.dataset.budgetTier = opt.key;
-                el.innerHTML = `<span class="meal-budget-option-title">${escapeHtml(opt.title)}</span><span class="meal-budget-option-range">${escapeHtml(formatBudgetRange(opt.low, opt.high))}</span>`;
+                el.innerHTML = `<span class="meal-budget-option-title">${escapeHtml(opt.title)}</span><span class="meal-budget-option-range">${escapeHtml(`Est. ${formatCurrency(Number(opt.value || 0))}/month`)}</span>`;
                 el.classList.toggle('active', opt.key === modeKey);
             });
         }
@@ -13714,7 +15547,7 @@ async function setupGroceryPlanPage() {
     const rebasePlanBudgetTiersFromActual = (actualMonthlyWithTax, modeKeyRaw) => {
         const actual = Number(actualMonthlyWithTax);
         if (!Number.isFinite(actual) || actual <= 0) return;
-        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
         const inferredBestCost = actual / modeMidpointFactor(modeKey);
         planBudgetTierOptions = buildPlanTierOptionsFromBestCost(inferredBestCost);
         syncPlanBudgetTierMap();
@@ -13729,19 +15562,40 @@ async function setupGroceryPlanPage() {
         applyPlanBudgetBanner(modeKey);
     };
     // Keep tier ranges stable while user switches budget modes.
-    // If we already have saved tier options, do not auto-rebase from actual totals.
-    const hasSavedPlanTierOptions = Array.isArray(prefs?.budgetTierOptions)
-        && prefs.budgetTierOptions.length >= 3;
+    // But if saved ranges are clearly stale vs actual generated cost, rebase once.
     let hasAutoRebasedPlanBudgetTiers = false;
-    const maybeRebasePlanBudgetTiersFromActual = (actualMonthlyWithTax) => {
-        if (hasSavedPlanTierOptions) return;
+    const maybeRebasePlanBudgetTiersFromActual = (actualMonthlyWithTax, modeKeyRaw) => {
+        if (hasSimulatedPlanTierOptions) return;
         if (hasAutoRebasedPlanBudgetTiers) return;
-        rebasePlanBudgetTiersFromActual(actualMonthlyWithTax, 'best');
+
+        const actual = Number(actualMonthlyWithTax);
+        if (!Number.isFinite(actual) || actual <= 0) return;
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('best') || null;
+        if (!selected) {
+            rebasePlanBudgetTiersFromActual(actual, modeKey);
+            hasAutoRebasedPlanBudgetTiers = true;
+            return;
+        }
+
+        const low = Number(selected.low || 0);
+        const high = Number(selected.high || 0);
+        const mid = Number(selected.value || 0);
+        const bandPad = Math.max(12, Math.round((high - low) * 0.2));
+        const isOutsideDisplayedRange = actual < (low - bandPad) || actual > (high + bandPad);
+        const tooFarFromMidpoint = Math.abs(actual - mid) > Math.max(25, Math.round(mid * 0.15));
+
+        // Rebase if there are no saved options, or if current options are materially off.
+        const hasSavedPlanTierOptions = Array.isArray(prefs?.budgetTierOptions) && prefs.budgetTierOptions.length >= 3;
+        const shouldRebase = !hasSavedPlanTierOptions || isOutsideDisplayedRange || tooFarFromMidpoint;
+        if (!shouldRebase) return;
+
+        rebasePlanBudgetTiersFromActual(actual, modeKey);
         hasAutoRebasedPlanBudgetTiers = true;
     };
     const persistPlanBudgetSelection = (modeKeyRaw) => {
         const modeKey = normalizeBudgetModeKey(modeKeyRaw);
-        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || null;
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('best') || null;
         prefs = prefs && typeof prefs === 'object' ? prefs : {};
         prefs.budgetMode = modeKey;
         if (selected) prefs.budgetTotal = Number(selected.value || 0);
@@ -13778,18 +15632,100 @@ async function setupGroceryPlanPage() {
         return (Number.isFinite(currentWeight) && currentWeight > 0) ? currentWeight : 170;
     };
     const buildBudgetModePreviewMacros = (modeKeyRaw) => {
-        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
         const calcCarbRemainder = (cal, pro, fat) => Math.max(0, Math.round((Number(cal || 0) - ((Number(pro || 0) * 4) + (Number(fat || 0) * 9))) / 4));
         const src = prefs?.macroBaseline || initialMacrosSnapshot || macros || {};
         const caloriesFixed = Math.max(1200, Math.round(Number(src?.calories) || Number(macros?.calories) || 2000));
         const bestProtein = Math.max(0, Math.round(Number(src?.proteinG) || Number(macros?.proteinG) || 150));
         const bestFat = Math.max(0, Math.round(Number(src?.fatG) || Number(macros?.fatG) || 65));
+        const goalRaw = String(
+            prefs?.goal
+            || prefs?.mode
+            || nutritionState?.selections?.goal
+            || sessionData?.selections?.goal
+            || ''
+        ).trim();
+        const weightLbs = Number(
+            prefs?.weightLbs
+            || nutritionState?.selections?.weightLbs
+            || sessionData?.selections?.weightLbs
+            || 0
+        );
+        const goalMode = resolveGoalModeForMath(goalRaw, weightLbs, resolveGoalWeightForBudgetSwitchPreview());
+        const bodyFatPct = Number(
+            prefs?.bodyFatPct
+            || nutritionState?.selections?.bodyFatPct
+            || sessionData?.selections?.bodyFatPct
+            || NaN
+        );
+        const basisLbs = (Number.isFinite(bodyFatPct) && bodyFatPct >= 5 && bodyFatPct <= 60)
+            ? Math.max(1, weightLbs * (1 - (bodyFatPct / 100)))
+            : Math.max(1, weightLbs || 170);
+        const bwKg = Math.max(1, (weightLbs || basisLbs) * 0.45359237);
         const sexRaw = String(
             prefs?.sex
             || nutritionState?.selections?.sex
             || sessionData?.selections?.sex
             || ''
         ).trim().toUpperCase();
+        if (goalMode === 'RECOMP') {
+            const calories = Math.round(caloriesFixed);
+            const fatPct = 0.15;
+            const proteinShareOfRemaining = modeKey === 'budget' ? 0.50 : (modeKey === 'balanced' ? 0.60 : 0.70);
+            let fatKcal = Math.round(calories * fatPct);
+            let fatG = Math.max(0, Math.round(fatKcal / 9));
+            fatKcal = fatG * 9;
+            const remainingKcal = Math.max(0, calories - fatKcal);
+            let proteinKcal = Math.round(remainingKcal * proteinShareOfRemaining);
+            let proteinG = Math.max(0, Math.round(proteinKcal / 4));
+            proteinKcal = proteinG * 4;
+            let carbKcal = calories - (fatKcal + proteinKcal);
+            let carbG = Math.floor(carbKcal / 4);
+            let recompProteinShareUnreachableClamped = false;
+            if (carbKcal < 0) {
+                recompProteinShareUnreachableClamped = true;
+                proteinKcal = Math.max(0, calories - fatKcal);
+                proteinG = Math.floor(proteinKcal / 4);
+                proteinKcal = proteinG * 4;
+                carbKcal = calories - (fatKcal + proteinKcal);
+                carbG = Math.max(0, Math.floor(carbKcal / 4));
+            }
+            return {
+                calories,
+                proteinG,
+                fatG,
+                carbG: Math.max(0, carbG),
+                recompFatPct: fatPct,
+                recompProteinShareOfRemaining: proteinShareOfRemaining,
+                recompProteinShareUnreachableClamped
+            };
+        }
+        if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
+            const tierProteinTargetFactor = modeKey === 'best' ? 1.15 : (modeKey === 'budget' ? 0.75 : 0.95);
+            const tierProteinMinFactor = modeKey === 'best' ? 1.05 : (modeKey === 'budget' ? 0.70 : 0.85);
+            const proteinFloor = Math.round(tierProteinMinFactor * basisLbs);
+            let proteinG = Math.round(tierProteinTargetFactor * basisLbs);
+            if (modeKey === 'best') proteinG = Math.min(proteinG, Math.round(1.2 * basisLbs));
+            proteinG = Math.max(proteinG, proteinFloor);
+
+            const fatTargetPct = modeKey === 'best' ? 0.30 : (modeKey === 'budget' ? 0.25 : 0.27);
+            const fatFloor = Math.max(20, Math.floor((caloriesFixed * 0.22) / 9));
+            const fatPctCap = Math.floor((caloriesFixed * 0.35) / 9);
+            const fatCap = Math.max(fatFloor, fatPctCap);
+            let fatG = clamp(Math.round((caloriesFixed * fatTargetPct) / 9), fatFloor, fatCap);
+
+            const carbFloor = Math.round(2.5 * bwKg);
+            let carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+            if (carbG < carbFloor && fatG > fatFloor) {
+                fatG = fatFloor;
+                carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+            }
+            while (carbG < carbFloor && proteinG > proteinFloor) {
+                proteinG -= 1;
+                carbG = calcCarbRemainder(caloriesFixed, proteinG, fatG);
+            }
+            return { calories: caloriesFixed, proteinG, fatG, carbG, fatFloor, fatCap, fatTargetPct, fatSexMin: fatFloor, proteinFloor };
+        }
         const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
         const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
         const goalWeightUsed = resolveGoalWeightForBudgetSwitchPreview();
@@ -13827,9 +15763,43 @@ async function setupGroceryPlanPage() {
             || sessionData?.selections?.goal
             || ''
         ).trim();
-        const goalMode = normalizeGoal(goalRaw);
+        const goalMode = resolveGoalModeForMath(
+            goalRaw,
+            Number(prefs?.weightLbs || nutritionState?.selections?.weightLbs || sessionData?.selections?.weightLbs || 0),
+            Number(prefs?.goalWeightLbs || nutritionState?.selections?.goalWeightLbs || sessionData?.selections?.goalWeightLbs || 0)
+        );
+        const isBuildLikeGoal = goalMode === 'BULK' || goalMode === 'STRENGTH';
+        const isRecompGoal = goalMode === 'RECOMP';
         const pairKey = `${fromMode}->${toMode}`;
         const isCutGoal = goalMode === 'CUT';
+        const messageWeightLbs = Number(
+            prefs?.weightLbs
+            || nutritionState?.selections?.weightLbs
+            || sessionData?.selections?.weightLbs
+            || 0
+        );
+        const messageBodyFatPct = Number(
+            prefs?.bodyFatPct
+            || nutritionState?.selections?.bodyFatPct
+            || sessionData?.selections?.bodyFatPct
+            || NaN
+        );
+        const proteinBasisLbs = (Number.isFinite(messageBodyFatPct) && messageBodyFatPct >= 5 && messageBodyFatPct <= 60)
+            ? Math.max(1, messageWeightLbs * (1 - (messageBodyFatPct / 100)))
+            : Math.max(1, messageWeightLbs || 170);
+        const proteinBasisLabel = (Number.isFinite(messageBodyFatPct) && messageBodyFatPct >= 5 && messageBodyFatPct <= 60)
+            ? 'lean body mass'
+            : 'current bodyweight';
+        const configuredGainRate = Number(
+            prefs?.gainRateLbsPerWeek
+            || prefs?.bulkGainRateLbsPerWeek
+            || nutritionState?.selections?.gainRateLbsPerWeek
+            || nutritionState?.selections?.bulkGainRateLbsPerWeek
+            || sessionData?.selections?.gainRateLbsPerWeek
+            || sessionData?.selections?.bulkGainRateLbsPerWeek
+            || 0.5
+        );
+        const gainRateForMessage = [0.25, 0.5, 0.75].includes(configuredGainRate) ? configuredGainRate : 0.5;
         const buildDownsideBullets = () => {
             if (isCutGoal) {
                 if (pairKey === 'best->balanced') {
@@ -13856,6 +15826,14 @@ async function setupGroceryPlanPage() {
                 ];
             }
 
+            if (isRecompGoal) {
+                return [
+                    'Recomposition is slower by nature, so progress can look flatter week to week.',
+                    'You may still gain strength, but visible body changes usually come from consistency over months.',
+                    'If waist and gym performance stall for 2-3 weeks, move up one tier or tighten food adherence.'
+                ];
+            }
+
             if (pairKey === 'best->balanced') {
                 return [
                     'You should still progress, but size/strength gains are usually [[~5-10% slower]] than Best.',
@@ -13879,23 +15857,69 @@ async function setupGroceryPlanPage() {
                 'If lifts or body changes stall for 2 weeks, move up one tier.'
             ];
         };
-        const equationLine = toMode === 'balanced'
-            ? 'Protein rule in Balanced: keep at least [[0.75 x goal weight]], and usually run around [[8% lower than Best]].'
-            : 'Protein rule in Minimum Effective: set protein to [[0.75 x goal weight]] (minimum for this tier).';
+        const recompSharePct = Math.round((Number(toMacros?.recompProteinShareOfRemaining) || 0) * 100);
+        const equationLine = isCutGoal
+            ? (toMode === 'balanced'
+                ? 'Protein rule in Balanced: keep at least [[0.75 x goal weight]], and usually run around [[8% lower than Best]].'
+                : 'Protein rule in Minimum Effective: set protein to [[0.75 x goal weight]] (minimum for this tier).')
+            : (isRecompGoal
+                ? `Protein rule in Recomp: after fat is locked, protein gets [[${recompSharePct}%]] of the remaining calories for this tier.`
+                : (toMode === 'best'
+                    ? 'Protein rule in Best: start near [[1.15 x basis weight]], then trim only if carbs fall under the floor.'
+                    : (toMode === 'balanced'
+                        ? 'Protein rule in Balanced: [[~0.95 x basis weight]] (cost-efficient lean gain).'
+                        : 'Protein rule in Minimum Effective: [[~0.75 x basis weight]] with a hard floor near [[0.70 x basis weight]].')));
+        const fatRuleLine = isCutGoal
+            ? `Fat rule: use the higher of [[22% of calories]] or [[${Math.round(toMacros.fatSexMin || 50)}g baseline]] = [[${Math.round(toMacros.fatFloor || 0)}g/day]].`
+            : (isRecompGoal
+                ? 'Fat rule in Recomp: set fat first at [[15% of total calories]].'
+                : 'Fat rule: target by calories ([[Best ~30%]], [[Balanced ~27%]], [[Minimum ~25%]]) with a [[22% floor]] and [[35% cap]].');
+        const carbRuleLine = isCutGoal
+            ? 'Carb rule: carbs are whatever calories remain after protein and fat protections.'
+            : (isRecompGoal
+                ? 'Carb rule in Recomp: carbs get whatever calories are left after fat-first and protein-share allocation.'
+                : 'Carb rule: carbs are the remainder, with a minimum floor near [[2.5 g/kg bodyweight]] before a plan is accepted.');
+        const caloriesLine = isCutGoal
+            ? `Calories stay fixed: [[${Math.round(toMacros.calories)} kcal/day]].`
+            : (isRecompGoal
+                ? `Calories stay near maintenance: [[${Math.round(toMacros.calories)} kcal/day]].`
+                : `Calories stay fixed: [[${Math.round(toMacros.calories)} kcal/day]] (bulk pace remains about [[${gainRateForMessage.toFixed(2)} lb/week]] unless you change pace).`);
         const downsideBullets = buildDownsideBullets();
 
-        return [
+        const detailsLines = [
             `Switch from ${fromTitle} to ${toTitle}.`,
             `**Official calculations**`,
-            `Calories stay fixed: [[${Math.round(toMacros.calories)} kcal/day]].`,
+            caloriesLine,
+            ...(isBuildLikeGoal ? [`Protein basis used: [[${Math.round(proteinBasisLbs)} lb ${proteinBasisLabel}]].`] : []),
             equationLine,
             `Protein: [[${Math.round(fromMacros.proteinG)}g -> ${Math.round(toMacros.proteinG)}g]] (${lineProteinDelta}).`,
             `Carbs: [[${Math.round(fromMacros.carbG)}g -> ${Math.round(toMacros.carbG)}g]] (${lineCarbDelta}).`,
-            `Fat rule: use the higher of [[22% of calories]] or [[${Math.round(toMacros.fatSexMin || 50)}g baseline]] = [[${Math.round(toMacros.fatFloor || 0)}g/day]].`,
+            fatRuleLine,
+            carbRuleLine,
             '---',
             `**Potential downsides if you apply this downgrade**`,
             ...downsideBullets.map((line) => `- ${line}`)
-        ].join('\n');
+        ];
+        const blufSummary = (() => {
+            if (isCutGoal) {
+                if (pairKey === 'best->balanced') return 'Moderate downgrade: lower cost with a small drop in recovery margin.';
+                if (pairKey === 'balanced->budget') return 'Deeper downgrade: bigger cost savings with tougher adherence/recovery.';
+                return 'Largest downgrade for cut: biggest savings and biggest performance tradeoff.';
+            }
+            if (isRecompGoal) return 'Recomp will still work, but visual changes usually come slower after a downgrade.';
+            if (pairKey === 'best->balanced') return 'Middle-ground downgrade: slower gains but still solid progress.';
+            if (pairKey === 'balanced->budget') return 'Low-cost mode: gains continue, usually at a slower pace.';
+            return 'Largest downgrade: lowest cost and slowest expected gain pace.';
+        })();
+        const blufLines = [
+            '**BLUF**',
+            `- Switch: [[${fromTitle} -> ${toTitle}]].`,
+            `- ${blufSummary}`,
+            `- Macro shift: Protein [[${Math.round(fromMacros.proteinG)}g -> ${Math.round(toMacros.proteinG)}g]] (${lineProteinDelta}), Carbs [[${Math.round(fromMacros.carbG)}g -> ${Math.round(toMacros.carbG)}g]] (${lineCarbDelta}).`,
+            `- Biggest tradeoff: ${downsideBullets[0] || 'lower recovery/performance margin than your current tier.'}`
+        ];
+        const fallbackMessage = [...blufLines, '---', '**Details**', ...detailsLines].join('\n');
+        return { blufLines, detailsLines, fallbackMessage };
     };
     const confirmBudgetDowngradeIfNeeded = async (fromModeRaw, toModeRaw) => {
         const fromMode = normalizeBudgetModeKey(fromModeRaw);
@@ -13909,7 +15933,11 @@ async function setupGroceryPlanPage() {
             try {
                 return await odeConfirm({
                     title: `Switch to ${nextTitle}?`,
-                    message: msg,
+                    message: msg.fallbackMessage,
+                    tabs: [
+                        { id: 'bluf', label: 'BLUF', lines: msg.blufLines },
+                        { id: 'details', label: 'Details', lines: msg.detailsLines }
+                    ],
                     confirmText: 'Apply downgrade',
                     cancelText: 'Keep current plan',
                     size: 'wide'
@@ -13918,7 +15946,7 @@ async function setupGroceryPlanPage() {
                 return false;
             }
         }
-        return window.confirm(msg);
+        return window.confirm(msg.fallbackMessage);
     };
     const updatePlanBudgetForecastSummary = (monthlyTotalWithTax) => {
         if (!planBudgetForecastMainEl) return;
@@ -13948,6 +15976,15 @@ async function setupGroceryPlanPage() {
         if (Number.isFinite(fromState) && fromState > 0) return fromState;
         return 1.5;
     };
+    const getPlanCurrentGainRate = () => {
+        const fromPrefs = Number(prefs?.gainRateLbsPerWeek ?? prefs?.bulkGainRateLbsPerWeek ?? prefs?.lbsGainPerWeek);
+        const fromSession = Number(sessionData?.selections?.gainRateLbsPerWeek ?? sessionData?.selections?.bulkGainRateLbsPerWeek ?? sessionData?.selections?.lbsGainPerWeek);
+        const fromState = Number(nutritionState?.selections?.gainRateLbsPerWeek ?? nutritionState?.selections?.bulkGainRateLbsPerWeek ?? nutritionState?.selections?.lbsGainPerWeek);
+        if (Number.isFinite(fromPrefs) && fromPrefs > 0) return fromPrefs;
+        if (Number.isFinite(fromSession) && fromSession > 0) return fromSession;
+        if (Number.isFinite(fromState) && fromState > 0) return fromState;
+        return 0.5;
+    };
     const buildPlanCurrentFormState = (overrides = {}) => ({
         goal: prefs?.goal || prefs?.mode || sessionData?.selections?.goal || nutritionState?.selections?.goal || null,
         style: prefs?.style || sessionData?.selections?.style || nutritionState?.selections?.style || null,
@@ -13962,6 +15999,8 @@ async function setupGroceryPlanPage() {
         goalWeightLbs: prefs?.goalWeightLbs || sessionData?.selections?.goalWeightLbs || nutritionState?.selections?.goalWeightLbs || null,
         intensity: prefs?.intensity || sessionData?.selections?.intensity || nutritionState?.selections?.intensity || null,
         lossRateLbsPerWeek: getPlanCurrentLossRate(),
+        gainRateLbsPerWeek: getPlanCurrentGainRate(),
+        budgetMode: String(prefs?.budgetMode || getActiveBudgetModeFromSession() || 'best').toLowerCase(),
         ...overrides
     });
     const projectPlanCaloriesAndMacros = (formState) => {
@@ -13970,7 +16009,7 @@ async function setupGroceryPlanPage() {
             const errs = Array.isArray(normalized?.errors) ? normalized.errors : [];
             if (errs.length) return { errors: errs };
             const c = calcCalories(normalized);
-            const m = calcMacros(normalized, { target: c.target });
+            const m = calcMacros(normalized, { target: c.target }, { budgetMode: normalized.budgetMode });
             const caloriesTarget = Number.isFinite(m?.calories_target) ? Number(m.calories_target) : Number(c?.target || 0);
             return {
                 errors: [],
@@ -13987,7 +16026,7 @@ async function setupGroceryPlanPage() {
     };
     const getCurrentPlanBudgetMode = () => {
         const activeBtn = mealBudgetOptionEls.find((el) => el.classList.contains('active'));
-        return normalizeBudgetModeKey(activeBtn?.dataset?.budgetTier || prefs?.budgetMode || 'balanced');
+        return normalizeBudgetModeKey(activeBtn?.dataset?.budgetTier || prefs?.budgetMode || 'best');
     };
     const applyPlanProjectedState = ({ nextMacros, nextOverrides }) => {
         if (!nextMacros) return;
@@ -14027,9 +16066,14 @@ async function setupGroceryPlanPage() {
     const renderPlanBudgetForecastActions = () => {
         if (!planBudgetForecastActionsEl) return;
         const goalRaw = String(prefs?.goal || prefs?.mode || sessionData?.selections?.goal || nutritionState?.selections?.goal || '').trim();
-        const goalMode = normalizeGoal(goalRaw);
+        const goalMode = resolveGoalModeForMath(
+            goalRaw,
+            Number(prefs?.weightLbs || sessionData?.selections?.weightLbs || nutritionState?.selections?.weightLbs || 0),
+            Number(prefs?.goalWeightLbs || sessionData?.selections?.goalWeightLbs || nutritionState?.selections?.goalWeightLbs || 0)
+        );
         const freqNow = String(prefs?.frequency || sessionData?.selections?.frequency || nutritionState?.selections?.frequency || '').trim();
         const currentRate = getPlanCurrentLossRate();
+        const currentGainRate = getPlanCurrentGainRate();
         const actions = [];
         const canLowerFreq = freqNow && freqNow !== '1-2';
         actions.push({
@@ -14053,10 +16097,13 @@ async function setupGroceryPlanPage() {
                 disabled: !(canLowerFreq || canIncreaseCutSpeed)
             });
         } else if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
-            const canSlowerBulk = goalMode !== 'STRENGTH';
+            const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+            const canSlowerBulk = currentGainRate > 0.25;
             actions.push({
                 key: 'slower-bulk',
-                label: canSlowerBulk ? 'Bulk slower (smaller surplus)' : 'Bulk speed already reduced',
+                label: canSlowerBulk
+                    ? `Bulk slower (${Number(currentGainRate).toFixed(2)} -> ${Number(nextGainRate).toFixed(2)} lb/week)`
+                    : 'Bulk speed already reduced (0.25 lb/week)',
                 disabled: !canSlowerBulk
             });
             actions.push({
@@ -14087,10 +16134,16 @@ async function setupGroceryPlanPage() {
             const action = String(btn.getAttribute('data-plan-budget-action') || '').trim();
 
             const currentState = buildPlanCurrentFormState();
-            const currentMonthly = estimateMonthlyFromMacrosForPlan(macros);
+            const activePlanBudgetMode = normalizeBudgetModeKey(
+                document.querySelector('#meal-budget-options .meal-budget-option.active')?.dataset?.budgetTier
+                || prefs?.budgetMode
+                || 'best'
+            ) || 'best';
+            const currentMonthly = estimateMonthlyFromMacrosForPlan(macros, activePlanBudgetMode);
             const currentFreq = String(currentState.frequency || '').trim();
             const currentRate = Number(currentState.lossRateLbsPerWeek || 1.5);
-            const goalNorm = normalizeGoal(currentState.goal);
+            const currentGainRate = Number(currentState.gainRateLbsPerWeek || 0.5);
+            const goalNorm = resolveGoalModeForMath(currentState.goal, currentState.weightLbs, currentState.goalWeightLbs);
 
             let nextOverrides = null;
             let actionTitle = '';
@@ -14113,11 +16166,12 @@ async function setupGroceryPlanPage() {
                 actionTitle = 'Increase cut speed';
             } else if (action === 'slower-bulk') {
                 if (goalNorm !== 'BULK' && goalNorm !== 'STRENGTH') return;
-                if (goalNorm === 'STRENGTH') {
-                    alert('Bulk speed is already reduced.');
+                const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+                if (nextGainRate >= currentGainRate) {
+                    alert('Bulk speed is already at the lowest option (0.25 lb/week).');
                     return;
                 }
-                nextOverrides = { goal: 'STRENGTH', mode: 'STRENGTH' };
+                nextOverrides = { gainRateLbsPerWeek: nextGainRate };
                 actionTitle = 'Bulk slower';
             } else if (action === 'apply-both') {
                 const batchOverrides = {};
@@ -14128,10 +16182,8 @@ async function setupGroceryPlanPage() {
                     if (nextRate > currentRate) batchOverrides.lossRateLbsPerWeek = nextRate;
                     actionTitle = 'Apply both (cut cost levers)';
                 } else if (goalNorm === 'BULK' || goalNorm === 'STRENGTH') {
-                    if (goalNorm !== 'STRENGTH') {
-                        batchOverrides.goal = 'STRENGTH';
-                        batchOverrides.mode = 'STRENGTH';
-                    }
+                    const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
+                    if (nextGainRate < currentGainRate) batchOverrides.gainRateLbsPerWeek = nextGainRate;
                     actionTitle = 'Apply both (bulk cost levers)';
                 } else {
                     return;
@@ -14158,15 +16210,19 @@ async function setupGroceryPlanPage() {
                 carbG: Number(next.macros.carb_g || 0),
                 fatG: Number(next.macros.fat_g || 0)
             };
-            const nextMonthly = estimateMonthlyFromMacrosForPlan(nextMacros);
+            const nextMonthly = estimateMonthlyFromMacrosForPlan(nextMacros, activePlanBudgetMode);
             const deltaMonthly = nextMonthly - currentMonthly;
             const deltaCal = Number(nextMacros.calories || 0) - Number(macros?.calories || 0);
-            const projectedGoalNorm = normalizeGoal(projectedState.goal || currentState.goal);
+            const projectedGoalNorm = normalizeGoalInput(projectedState.goal || currentState.goal) === 'BUILD'
+                ? 'BULK'
+                : normalizeGoal(projectedState.goal || currentState.goal);
             const projectedFreq = String(projectedState.frequency || currentFreq || '').trim();
             const currentFreqText = formatPlanFrequencyLabel(currentFreq);
             const projectedFreqText = formatPlanFrequencyLabel(projectedFreq);
             const currentRateText = `${Number(currentRate || 0).toFixed(1)} lb/week`;
             const projectedRateText = `${Number(projectedState.lossRateLbsPerWeek || currentRate || 0).toFixed(1)} lb/week`;
+            const currentGainRateText = `${Number(currentGainRate || 0.5).toFixed(2)} lb/week`;
+            const projectedGainRateText = `${Number(projectedState.gainRateLbsPerWeek || currentGainRate || 0.5).toFixed(2)} lb/week`;
             const monthlyDeltaLabel = `${deltaMonthly >= 0 ? '+' : '-'}${formatCurrency(Math.abs(deltaMonthly))}`;
             const summaryLines = [
                 '**What changes if you apply this**',
@@ -14175,9 +16231,7 @@ async function setupGroceryPlanPage() {
             if (projectedGoalNorm === 'CUT') {
                 summaryLines.push(`- Fat-loss pace: [[${currentRateText} -> ${projectedRateText}]]`);
             } else if (projectedGoalNorm === 'BULK' || projectedGoalNorm === 'STRENGTH') {
-                const beforeMode = goalNorm === 'STRENGTH' ? 'Strength-priority' : 'Build';
-                const afterMode = projectedGoalNorm === 'STRENGTH' ? 'Strength-priority' : 'Build';
-                summaryLines.push(`- Gain mode: [[${beforeMode} -> ${afterMode}]]`);
+                summaryLines.push(`- Gain pace: [[${currentGainRateText} -> ${projectedGainRateText}]]`);
             }
             summaryLines.push(`- Calories target: [[${Math.round(Number(macros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]] (${deltaCal >= 0 ? '+' : ''}${Math.round(deltaCal)} kcal)`);
             summaryLines.push(`- Monthly groceries: [[${formatCurrency(currentMonthly)} -> ${formatCurrency(nextMonthly)}]] (${monthlyDeltaLabel})`);
@@ -14226,17 +16280,41 @@ async function setupGroceryPlanPage() {
                 }
             }
 
+            const actionTradeoffLine = (() => {
+                if (action === 'lower-frequency') return 'slower gym adaptation from reduced weekly volume.';
+                if (action === 'faster-cut') return 'higher hunger/cravings and flatter hard-day performance.';
+                if (action === 'slower-bulk') return 'slower size/strength gain pace.';
+                if (action === 'apply-both') {
+                    return projectedStateGoal === 'CUT'
+                        ? 'highest adherence pressure among cut cost options.'
+                        : 'slowest gain pace among build cost options.';
+                }
+                return 'lower performance margin versus your current setup.';
+            })();
+            const blufLines = [
+                '**BLUF**',
+                `- ${actionTitle}: monthly groceries [[${formatMoney(currentMonthly)} -> ${formatMoney(nextMonthly)}]] (${monthlyDeltaLabel}).`,
+                `- Calories target: [[${Math.round(Number(profileMacros?.calories || 0)).toLocaleString()} -> ${Math.round(Number(nextMacros.calories || 0)).toLocaleString()} kcal/day]].`,
+                `- Biggest tradeoff: ${actionTradeoffLine}`
+            ];
+            const detailsLines = [...summaryLines];
+            const fallbackMessage = [...blufLines, '---', '**Details**', ...detailsLines].join('\n');
+
             let confirmed = false;
             if (typeof odeConfirm === 'function') {
                 confirmed = await odeConfirm({
                     title: `${actionTitle} - Preview`,
-                    message: summaryLines.join('\n'),
+                    message: fallbackMessage,
+                    tabs: [
+                        { id: 'bluf', label: 'BLUF', lines: blufLines },
+                        { id: 'details', label: 'Details', lines: detailsLines }
+                    ],
                     confirmText: 'Apply change',
                     cancelText: 'Keep current plan',
                     size: 'wide'
                 });
             } else {
-                confirmed = window.confirm(summaryLines.join('\n'));
+                confirmed = window.confirm(fallbackMessage);
             }
             if (!confirmed) return;
 
@@ -14244,7 +16322,7 @@ async function setupGroceryPlanPage() {
             renderPlanBudgetForecastActions();
 
             const modeKey = getCurrentPlanBudgetMode();
-            const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('balanced') || null;
+        const selected = planBudgetTierByKey.get(modeKey) || planBudgetTierByKey.get('best') || null;
             if (typeof onPlanBudgetModeSwitch === 'function') {
                 onPlanBudgetModeSwitch(modeKey, selected);
             }
@@ -14272,7 +16350,7 @@ async function setupGroceryPlanPage() {
     if (storeEl && prefs?.store) {
         storeEl.textContent = prefs.store;
     }
-    const initialPlanBudgetMode = normalizeBudgetModeKey(prefs?.budgetMode || 'balanced');
+    const initialPlanBudgetMode = normalizeBudgetModeKey(prefs?.budgetMode || 'best');
     applyPlanBudgetBanner(initialPlanBudgetMode);
     updatePlanBudgetForecastSummary(Number(prefs?.budgetTotal || 0));
     if (mealBudgetOptionsWrap && mealBudgetOptionsWrap.dataset.bound !== '1') {
@@ -14280,12 +16358,12 @@ async function setupGroceryPlanPage() {
         mealBudgetOptionsWrap.addEventListener('click', async (e) => {
             const btn = e.target && e.target.closest ? e.target.closest('.meal-budget-option') : null;
             if (!btn) return;
-            const modeKey = normalizeBudgetModeKey(btn.dataset.budgetTier || 'balanced');
+            const modeKey = normalizeBudgetModeKey(btn.dataset.budgetTier || 'best');
             const activeBtn = mealBudgetOptionEls.find((el) => el.classList.contains('active'));
             const currentMode = normalizeBudgetModeKey(
                 activeBtn?.dataset?.budgetTier
                 || prefs?.budgetMode
-                || 'balanced'
+                || 'best'
             );
             const shouldProceed = await confirmBudgetDowngradeIfNeeded(currentMode, modeKey);
             if (!shouldProceed) return;
@@ -14426,6 +16504,42 @@ async function setupGroceryPlanPage() {
                 }
             };
         });
+        const baselineMicroBoosterIds = [
+            'mixed_vegetables_birds_eye',
+            'spinach_chopped_frozen',
+            'banana_fresh_each',
+            'russet_potatoes'
+        ];
+        const buildBaselineMicroBoosterFoods = (existingPlannerFoods = []) => {
+            const existingIds = new Set((Array.isArray(existingPlannerFoods) ? existingPlannerFoods : []).map((f) => String(f?.id || '')));
+            return baselineMicroBoosterIds
+                .map((id) => ALL_FOODS.find((f) => String(f?.id || '') === String(id)))
+                .filter(Boolean)
+                .filter((food) => !existingIds.has(String(food?.id || '')))
+                .map((food) => {
+                    const type = toPlannerType(food);
+                    const servingGrams = Number(food?.servingGrams) || Number(baselineServingGramsById[food.id]) || null;
+                    const servingsPerContainer = servingsPerContainerFromFood(food);
+                    const pricePerServing = Number.isFinite(food?.pricePerServing)
+                        ? Number(food.pricePerServing)
+                        : (Number.isFinite(food?.container?.price) && Number.isFinite(servingsPerContainer) && servingsPerContainer > 0)
+                            ? food.container.price / servingsPerContainer
+                            : null;
+                    return {
+                        ...food,
+                        type,
+                        qualityScore: Number.isFinite(food?.qualityScore) ? Number(food.qualityScore) : baselineQualityScore(food),
+                        servingGrams,
+                        pricePerServing,
+                        macros: {
+                            calories: Number(food?.macros?.calories) || 0,
+                            protein_g: Number(food?.macros?.protein) || Number(food?.macros?.protein_g) || 0,
+                            carbs_g: Number(food?.macros?.carbs) || Number(food?.macros?.carbs_g) || 0,
+                            fat_g: Number(food?.macros?.fat) || Number(food?.macros?.fat_g) || 0
+                        }
+                    };
+                });
+        };
 
         const baselineCheaperBtn = document.getElementById('make-cheaper-btn');
         const baselineCustomFoodsBtn = document.getElementById('custom-foods-btn');
@@ -14500,11 +16614,93 @@ async function setupGroceryPlanPage() {
             return (Number.isFinite(cw) && cw > 0) ? cw : 170;
         };
         const buildBudgetModeMacrosForPlan = (modeKeyRaw) => {
-            const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+            const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
             const caloriesFixed = Math.max(1200, Number(budgetModeMacroBaseline.calories) || 2000);
             const bestProtein = Math.max(0, Number(budgetModeMacroBaseline.proteinG) || 0);
             const bestFat = Math.max(0, Number(budgetModeMacroBaseline.fatG) || 0);
+            const rawGoal = String(
+                prefs?.goal
+                || prefs?.mode
+                || nutritionState.selections?.goal
+                || sessionData?.selections?.goal
+                || ''
+            ).trim();
+            const weightLbs = Number(
+                prefs?.weightLbs
+                || nutritionState.selections?.weightLbs
+                || sessionData?.selections?.weightLbs
+                || 0
+            );
+            const goalMode = resolveGoalModeForMath(rawGoal, weightLbs, resolveGoalWeightForPlanBudget());
+            const bodyFatPct = Number(
+                prefs?.bodyFatPct
+                || nutritionState.selections?.bodyFatPct
+                || sessionData?.selections?.bodyFatPct
+                || NaN
+            );
+            const basisLbs = (Number.isFinite(bodyFatPct) && bodyFatPct >= 5 && bodyFatPct <= 60)
+                ? Math.max(1, weightLbs * (1 - (bodyFatPct / 100)))
+                : Math.max(1, weightLbs || 170);
+            const bwKg = Math.max(1, (weightLbs || basisLbs) * 0.45359237);
             const sexRaw = String(prefs?.sex || nutritionState.selections?.sex || sessionData?.selections?.sex || '').trim().toUpperCase();
+            if (goalMode === 'RECOMP') {
+                const calories = Math.round(caloriesFixed);
+                const fatPct = 0.15;
+                const proteinShareOfRemaining = modeKey === 'budget' ? 0.50 : (modeKey === 'balanced' ? 0.60 : 0.70);
+                let fatKcal = Math.round(calories * fatPct);
+                let fatG = Math.max(0, Math.round(fatKcal / 9));
+                fatKcal = fatG * 9;
+                const remainingKcal = Math.max(0, calories - fatKcal);
+                let proteinKcal = Math.round(remainingKcal * proteinShareOfRemaining);
+                let proteinG = Math.max(0, Math.round(proteinKcal / 4));
+                proteinKcal = proteinG * 4;
+                let carbKcal = calories - (fatKcal + proteinKcal);
+                let carbG = Math.floor(carbKcal / 4);
+                let recompProteinShareUnreachableClamped = false;
+                if (carbKcal < 0) {
+                    recompProteinShareUnreachableClamped = true;
+                    proteinKcal = Math.max(0, calories - fatKcal);
+                    proteinG = Math.floor(proteinKcal / 4);
+                    proteinKcal = proteinG * 4;
+                    carbKcal = calories - (fatKcal + proteinKcal);
+                    carbG = Math.max(0, Math.floor(carbKcal / 4));
+                }
+                return {
+                    calories,
+                    proteinG,
+                    fatG,
+                    carbG: Math.max(0, carbG),
+                    recompFatPct: fatPct,
+                    recompProteinShareOfRemaining: proteinShareOfRemaining,
+                    recompProteinShareUnreachableClamped
+                };
+            }
+            if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
+                const tierProteinTargetFactor = modeKey === 'best' ? 1.15 : (modeKey === 'budget' ? 0.75 : 0.95);
+                const tierProteinMinFactor = modeKey === 'best' ? 1.05 : (modeKey === 'budget' ? 0.70 : 0.85);
+                const proteinFloor = Math.round(tierProteinMinFactor * basisLbs);
+                let proteinG = Math.round(tierProteinTargetFactor * basisLbs);
+                if (modeKey === 'best') proteinG = Math.min(proteinG, Math.round(1.2 * basisLbs));
+                proteinG = Math.max(proteinG, proteinFloor);
+
+                const fatTargetPct = modeKey === 'best' ? 0.30 : (modeKey === 'budget' ? 0.25 : 0.27);
+                const fatFloor = Math.max(20, Math.floor((caloriesFixed * 0.22) / 9));
+                const fatPctCap = Math.floor((caloriesFixed * 0.35) / 9);
+                const fatCap = Math.max(fatFloor, fatPctCap);
+                let fatG = clamp(Math.round((caloriesFixed * fatTargetPct) / 9), fatFloor, fatCap);
+
+                const carbFloor = Math.round(2.5 * bwKg);
+                let carbG = calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG);
+                if (carbG < carbFloor && fatG > fatFloor) {
+                    fatG = fatFloor;
+                    carbG = calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG);
+                }
+                while (carbG < carbFloor && proteinG > proteinFloor) {
+                    proteinG -= 1;
+                    carbG = calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG);
+                }
+                return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG };
+            }
             const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
             const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
             const goalWeightUsed = resolveGoalWeightForPlanBudget();
@@ -14524,6 +16720,131 @@ async function setupGroceryPlanPage() {
             const proteinG = Math.max(0, Math.round(bestProtein));
             const fatG = Math.max(0, Math.round(bestFat));
             return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForPlan(caloriesFixed, proteinG, fatG) };
+        };
+        const computeMonthlyTotalWithTaxFromMeals = ({ meals, plannerFoods }) => {
+            const builtMeals = Array.isArray(meals) ? meals : [];
+            const foods = Array.isArray(plannerFoods) ? plannerFoods : [];
+            if (!builtMeals.length || !foods.length) return null;
+            const dailyServingsById = {};
+            builtMeals.forEach((meal) => {
+                (meal?.foods || []).forEach((item) => {
+                    const id = String(item?.foodId || '').trim();
+                    const servings = Number(item?.servings) || 0;
+                    if (!id || servings <= 0) return;
+                    dailyServingsById[id] = (dailyServingsById[id] || 0) + servings;
+                });
+            });
+            const usedFoodIds = Object.keys(dailyServingsById);
+            if (!usedFoodIds.length) return null;
+            const priceAdjustment = getPriceAdjustment();
+            const groceryItems = foods
+                .filter((food) => (Number(dailyServingsById[String(food?.id || '')]) || 0) > 0)
+                .map((food) => {
+                    const dailyServings = Number(dailyServingsById[String(food.id)]) || 0;
+                    const servingsPerContainer = servingsPerContainerFromFood(food) || 1;
+                    const basePrice = Number(food?.container?.price) || 0;
+                    const adjustedPrice = applyPriceAdjustment(basePrice, priceAdjustment);
+                    return {
+                        ...food,
+                        daily: dailyServings,
+                        weekly: dailyServings * 7,
+                        monthly: dailyServings * 30,
+                        servingsPerContainer,
+                        container: { ...(food.container || {}), price: adjustedPrice }
+                    };
+                });
+            const inventoryCosts = calculateInventoryCosts(groceryItems, new Date());
+            const avgMonthly = Number(inventoryCosts?.avgMonthlyCost);
+            if (!Number.isFinite(avgMonthly) || avgMonthly <= 0) return null;
+            const taxRate = 0.08;
+            return avgMonthly * (1 + taxRate);
+        };
+        const simulatePlanTierMonthlyTotal = ({ modeKeyRaw, plannerFoods }) => {
+            const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+            const tierMacros = buildBudgetModeMacrosForPlan(modeKey);
+            const plannerTargets = {
+                calories: Math.round(Number(tierMacros?.calories) || 0),
+                protein_g: Math.round(Number(tierMacros?.proteinG) || 0),
+                carbs_g: Math.round(Number(tierMacros?.carbG) || 0),
+                fat_g: Math.round(Number(tierMacros?.fatG) || 0)
+            };
+            const simulatedPlan = buildAllMealsGuarded(
+                plannerFoods,
+                plannerTargets,
+                mealsPerDay,
+                goal,
+                bodyweightLbs,
+                discipline
+            );
+            if (simulatedPlan?.error || !Array.isArray(simulatedPlan?.meals) || !simulatedPlan.meals.length) {
+                return estimateMonthlyFromMacrosForPlan(tierMacros, modeKey);
+            }
+            const simulatedMonthly = computeMonthlyTotalWithTaxFromMeals({
+                meals: simulatedPlan.meals,
+                plannerFoods
+            });
+            if (!Number.isFinite(simulatedMonthly) || simulatedMonthly <= 0) {
+                return estimateMonthlyFromMacrosForPlan(tierMacros, modeKey);
+            }
+            return simulatedMonthly;
+        };
+        const refreshPlanBudgetTierOptionsBySimulation = (plannerFoods) => {
+            const foods = Array.isArray(plannerFoods) ? plannerFoods : [];
+            if (!foods.length) return;
+            const modes = ['budget', 'balanced', 'best'];
+            const macroSig = modes.map((modeKey) => {
+                const m = buildBudgetModeMacrosForPlan(modeKey);
+                return `${modeKey}:${Math.round(Number(m?.calories) || 0)}:${Math.round(Number(m?.proteinG) || 0)}:${Math.round(Number(m?.carbG) || 0)}:${Math.round(Number(m?.fatG) || 0)}`;
+            }).join('|');
+            const foodSig = foods
+                .map((food) => `${String(food?.id || '')}:${Number(food?.container?.price || 0).toFixed(2)}:${Number(food?.servingGrams || 0).toFixed(2)}`)
+                .sort()
+                .join('|');
+            const priceAdj = Number(getPriceAdjustment() || 0);
+            const cacheKey = `${macroSig}|foods:${foodSig}|priceAdj:${priceAdj}|meals:${mealsPerDay}|goal:${String(goal || '')}|weight:${Math.round(Number(bodyweightLbs) || 0)}`;
+            if (cacheKey === lastPlanTierSimulationKey) return;
+
+            const titleByKey = {
+                budget: 'Minimum Effective Plan',
+                balanced: 'Balanced Results',
+                best: 'Best Performance'
+            };
+            const simulatedTierOptions = modes.map((modeKey) => {
+                const simulatedValue = simulatePlanTierMonthlyTotal({ modeKeyRaw: modeKey, plannerFoods: foods });
+                const value = clampNum(roundTo10(simulatedValue), 90, 900);
+                return normalizeTierOption({
+                    key: modeKey,
+                    title: titleByKey[modeKey] || budgetModeTitle(modeKey),
+                    low: value,
+                    high: value,
+                    value
+                });
+            });
+
+            lastPlanTierSimulationKey = cacheKey;
+            planBudgetTierOptions = simulatedTierOptions;
+            syncPlanBudgetTierMap();
+            hasSimulatedPlanTierOptions = true;
+
+            prefs = prefs && typeof prefs === 'object' ? prefs : {};
+            prefs.budgetTierOptions = planBudgetTierOptions;
+            const selectedMode = getCurrentPlanBudgetMode();
+            const selectedTier = planBudgetTierByKey.get(selectedMode) || planBudgetTierByKey.get('best') || null;
+            if (selectedTier) {
+                prefs.budgetMode = selectedTier.key;
+                prefs.budgetTotal = Number(selectedTier.value || 0);
+            }
+            try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+            applyPlanBudgetBanner(selectedMode);
+            try {
+                console.info('[BUDGET_SIMULATION][PLAN_TIERS]', simulatedTierOptions.map((opt) => ({
+                    key: opt.key,
+                    title: opt.title,
+                    simulatedMonthlyPostTax: Number(opt.value || 0)
+                })));
+            } catch {
+                // ignore
+            }
         };
 
         let portionScale = 1;
@@ -14674,6 +16995,10 @@ async function setupGroceryPlanPage() {
             const plannerTargets = scaledTargetsForPlanner(macroTargets, portionScale);
 
             const plannerFoods = buildBaselinePlannerFoods();
+            refreshPlanBudgetTierOptionsBySimulation(plannerFoods);
+            const microBoosterFoods = buildBaselineMicroBoosterFoods(plannerFoods);
+            const plannerFoodsForMicroPass = [...plannerFoods, ...microBoosterFoods];
+            let plannerFoodsForOutputs = plannerFoods;
             const plan = buildAllMealsGuarded(plannerFoods, plannerTargets, mealsPerDay, goal, bodyweightLbs, discipline);
             let resolvedPlan = plan;
             if (plan?.error && /No valid meal candidates after grocery integration/i.test(String(plan?.reason || ''))) {
@@ -14730,9 +17055,9 @@ async function setupGroceryPlanPage() {
                 if (listEl) listEl.innerHTML = '';
                 return;
             }
-            const builtMeals = resolvedPlan?.meals || [];
-            const dailyTotalsFromMeals = computeTotalsFromBuiltMeals(builtMeals);
-            const dailyTotals = dailyTotalsFromMeals;
+            let builtMeals = resolvedPlan?.meals || [];
+            let dailyTotalsFromMeals = computeTotalsFromBuiltMeals(builtMeals);
+            let dailyTotals = dailyTotalsFromMeals;
             if (resolvedPlan?.dailyTotals) {
                 const drift = {
                     calories: Math.abs((Number(resolvedPlan.dailyTotals.calories) || 0) - (Number(dailyTotals.calories) || 0)),
@@ -14745,6 +17070,14 @@ async function setupGroceryPlanPage() {
                 }
             }
 
+            const microProfile = getMicronutrientTargets({
+                sex: nutritionState?.selections?.sex || prefs?.sex || null,
+                ageYears: nutritionState?.selections?.ageYears || prefs?.ageYears || null,
+                pregnant: nutritionState?.selections?.pregnant || prefs?.pregnant || null,
+                trimester: nutritionState?.selections?.trimester || prefs?.trimester || null,
+                lactating: nutritionState?.selections?.lactating || prefs?.lactating || null
+            }, { assumeAdult1930IfMissing: true });
+
             if (!builtMeals.length) {
                 if (mealGrid) {
                     mealGrid.innerHTML = `
@@ -14756,6 +17089,39 @@ async function setupGroceryPlanPage() {
                 }
                 if (listEl) listEl.innerHTML = '';
                 return;
+            }
+
+            const microAdjustedPlan = applyMicronutrientCorrectionWithGuardrails({
+                plan: {
+                    meals: builtMeals,
+                    dailyTotals
+                },
+                selectedFoods: plannerFoodsForMicroPass,
+                macroTargets: macroTargets,
+                microRefs: microProfile.rows || microProfile.refs,
+                options: {
+                    label: 'baseline_plan',
+                    priorityNutrients: ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium'],
+                    maxMovesTotal: 48,
+                    maxMovesPerNutrient: 10,
+                    addStepServings: 0.25
+                }
+            });
+            if (microAdjustedPlan?.applied && Array.isArray(microAdjustedPlan?.meals) && microAdjustedPlan.meals.length) {
+                builtMeals = microAdjustedPlan.meals;
+                dailyTotalsFromMeals = computeTotalsFromBuiltMeals(builtMeals);
+                dailyTotals = dailyTotalsFromMeals;
+                plannerFoodsForOutputs = plannerFoodsForMicroPass;
+                resolvedPlan = {
+                    ...resolvedPlan,
+                    meals: builtMeals,
+                    dailyTotals,
+                    meta: {
+                        ...(resolvedPlan?.meta || {}),
+                        microCorrectionApplied: true,
+                        microCorrectionMoves: Array.isArray(microAdjustedPlan?.moves) ? microAdjustedPlan.moves.length : 0
+                    }
+                };
             }
 
             saveMealPlanSnapshotForLogging({ meals: builtMeals, mealsPerDay, macroTargets });
@@ -14849,13 +17215,6 @@ async function setupGroceryPlanPage() {
                 omega_3: 'mg',
                 choline: 'mg'
             };
-            const microProfile = getMicronutrientTargets({
-                sex: nutritionState?.selections?.sex || prefs?.sex || null,
-                ageYears: nutritionState?.selections?.ageYears || prefs?.ageYears || null,
-                pregnant: nutritionState?.selections?.pregnant || prefs?.pregnant || null,
-                trimester: nutritionState?.selections?.trimester || prefs?.trimester || null,
-                lactating: nutritionState?.selections?.lactating || prefs?.lactating || null
-            }, { assumeAdult1930IfMissing: true });
             const microConfigs = {};
             Object.keys(microProfile.refs || {}).forEach((k) => {
                 microConfigs[k] = {
@@ -14892,7 +17251,8 @@ async function setupGroceryPlanPage() {
             const formatMicroProjected = (cfg) => {
                 if (!cfg) return 'â€”';
                 if (cfg.trackedOnly || String(cfg.goalType || '').toUpperCase() === 'TRACKED') {
-                    return `Tracked intake (${cfg.unit}) | No DRI goal`;
+                    const capText = Number.isFinite(cfg.ul) ? `Danger limit ${cfg.ul}${cfg.unit}` : 'Danger limit n/a';
+                    return `Tracked intake (${cfg.unit}) | ${capText}`;
                 }
                 const goalText = `${cfg.goal}${cfg.unit} (${cfg.goalType})`;
                 const ulText = Number.isFinite(cfg.ul) ? `UL ${cfg.ul}${cfg.unit}` : 'No UL set';
@@ -15021,7 +17381,18 @@ async function setupGroceryPlanPage() {
                 const rounded = Number(num.toFixed(digits));
                 return `${rounded.toLocaleString()}${unit}${isPartial ? '*' : ''}`;
             };
-            const writeMicroPanelActuals = (actualTotals, partialByKey, pendingByKey) => {
+            const shortMicroStatusLabel = (statusTag) => {
+                const normalized = String(statusTag || 'PENDING').toUpperCase();
+                if (normalized === 'OVER UL' || normalized === 'OVER_UL') return 'Over limit';
+                if (normalized === 'ABOVE_TARGET_NO_UL') return 'Above target';
+                if (normalized === 'INCOMPLETE_DATA') return 'Partial data';
+                if (normalized === 'TRACKED') return 'Tracked';
+                if (normalized === 'LOW') return 'Low';
+                if (normalized === 'HIGH') return 'High';
+                if (normalized === 'OK') return 'OK';
+                return 'Pending';
+            };
+            const writeMicroPanelActuals = (actualTotals, partialByKey, pendingByKey, statusByKey, qualityByKey) => {
                 document.querySelectorAll('.plan-micro-row').forEach((row) => {
                     const name = row.querySelector('.plan-micro-name')?.textContent || '';
                     const key = normalizeMicroKey(name);
@@ -15029,10 +17400,26 @@ async function setupGroceryPlanPage() {
                     const valueEl = row.querySelector('.plan-micro-value');
                     if (!valueEl) return;
                     if (Boolean(pendingByKey?.[key])) {
-                        valueEl.textContent = '—';
+                        valueEl.textContent = '— | Pending';
+                        valueEl.title = 'Micronutrient data pending for this plan.';
+                        applyMicroStatus(valueEl, 'PENDING');
                         return;
                     }
-                    valueEl.textContent = formatMicroActual(actualTotals[key], microConfigs[key].unit, Boolean(partialByKey?.[key]));
+                    const rawValue = formatMicroActual(actualTotals[key], microConfigs[key].unit, Boolean(partialByKey?.[key]));
+                    const statusRow = statusByKey?.[key] || {};
+                    const statusTag = String(statusRow.status || 'PENDING').toUpperCase();
+                    const pctGoalText = Number.isFinite(statusRow.pct_goal) ? `${Math.round(statusRow.pct_goal)}% goal` : 'Goal n/a';
+                    const pctUlText = Number.isFinite(statusRow.pct_ul) ? `${Math.round(statusRow.pct_ul)}% limit` : 'No UL';
+                    const qualityState = String(qualityByKey?.[key]?.state || 'UNKNOWN').toUpperCase();
+                    const coveragePct = Number(qualityByKey?.[key]?.coverage_pct);
+                    const coverageText = Number.isFinite(coveragePct) ? `${Math.round(coveragePct)}%` : 'n/a';
+                    if (statusTag === 'TRACKED') {
+                        valueEl.textContent = `${rawValue} | ${pctUlText} | Tracked`;
+                    } else {
+                        valueEl.textContent = `${rawValue} | ${pctGoalText} | ${shortMicroStatusLabel(statusTag)}`;
+                    }
+                    valueEl.title = `Status: ${shortMicroStatusLabel(statusTag)} | Data: ${qualityState} (${coverageText} coverage)`;
+                    applyMicroStatus(valueEl, statusTag);
                 });
             };
             const applyMicroStatus = (actualEl, status) => {
@@ -15043,10 +17430,10 @@ async function setupGroceryPlanPage() {
                 else if (status === 'LOW' || status === 'HIGH') actualEl.classList.add('caution');
                 else if (status === 'ABOVE_TARGET_NO_UL') actualEl.classList.add('on-target');
                 else if (status === 'INCOMPLETE_DATA') actualEl.classList.add('pending');
-                else if (status === 'TRACKED') actualEl.classList.add('pending');
+                else if (status === 'TRACKED') actualEl.classList.add('caution');
                 else actualEl.classList.add('pending');
             };
-            const microActualComputation = computeMicroActualsFromMeals(builtMeals, plannerFoods);
+            const microActualComputation = computeMicroActualsFromMeals(builtMeals, plannerFoodsForOutputs);
             const microActualTotals = microActualComputation.totals;
             const microActualQuality = microActualComputation.quality || {};
             const microActualPending = {};
@@ -15075,7 +17462,7 @@ async function setupGroceryPlanPage() {
                     microActuals[key] = formatMicroActual(microActualTotals[key], microConfigs[key].unit, Boolean(microActualPartial?.[key]));
                 }
             });
-            writeMicroPanelActuals(microActualTotals, microActualPartial, microActualPending);
+            writeMicroPanelActuals(microActualTotals, microActualPartial, microActualPending, microStatusByKey, microActualQuality);
             if (window && typeof window === 'object') window.currentPlanMicros = microActuals;
             if (window && typeof window === 'object') window.currentPlanMicrosDataQuality = microActualQuality;
             Object.keys(microConfigs).forEach((key) => {
@@ -15107,7 +17494,9 @@ async function setupGroceryPlanPage() {
                         ? Object.entries(qualityRow.value_source_counts).filter(([, count]) => Number(count) > 0).map(([source, count]) => `${source}:${count}`).join(', ')
                         : '';
                     if (statusTag === 'TRACKED') {
-                        microActualEls[key].textContent = `${raw} | Tracked only | No DRI goal`;
+                        const capText = Number.isFinite(statusRow.ul) ? `Limit ${statusRow.ul}${statusRow.unit || microConfigs[key].unit}` : 'Limit n/a';
+                        const pctCapText = Number.isFinite(statusRow.pct_ul) ? `${Math.round(statusRow.pct_ul)}% Limit` : 'Limit n/a';
+                        microActualEls[key].textContent = `${raw} | Tracked | ${pctCapText} | ${capText}`;
                     } else {
                         microActualEls[key].textContent = `${raw} | ${pctGoalText} | ${pctUlText} | ${statusLabel}`;
                     }
@@ -15385,7 +17774,7 @@ async function setupGroceryPlanPage() {
             });
 
             const priceAdjustment = getPriceAdjustment();
-            const groceryItems = plannerFoods
+            const groceryItems = plannerFoodsForOutputs
                 .filter(f => (Number(dailyServingsById[f.id]) || 0) > 0)
                 .map(food => {
                     const dailyServings = Number(dailyServingsById[food.id]) || 0;
@@ -15407,10 +17796,8 @@ async function setupGroceryPlanPage() {
 
             // Overview + plan page monthly cost toggle:
             // left = average 28-day month, right = rest of this month.
-            const avgWeeklyCost = (inventoryCosts.avgMonthlyCost * 7) / 30;
-            const avgMonthly28Cost = Number.isFinite(inventoryCosts.avgMonthlyCost)
-                ? (inventoryCosts.avgMonthlyCost * 28) / 30
-                : null;
+            const avgMonthly28Cost = Number(inventoryCosts.avgMonthly28Cost);
+            const avgWeeklyCost = Number.isFinite(avgMonthly28Cost) ? (avgMonthly28Cost / 4) : null;
             renderCostWindowSummary({
                 weeklyCost: avgWeeklyCost,
                 avgMonthly28: avgMonthly28Cost,
@@ -15423,7 +17810,7 @@ async function setupGroceryPlanPage() {
             const estimatedTax = inventoryCosts.avgMonthlyCost * taxRate;
             const monthlyTotalWithTax = inventoryCosts.avgMonthlyCost + estimatedTax;
             latestPlanMonthlyTotalWithTax = monthlyTotalWithTax;
-            maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax);
+            maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax, getCurrentPlanBudgetMode());
             const budget = Number(prefs?.budgetTotal || 0);
             const budgetDelta = budget ? budget - monthlyTotalWithTax : null;
 
@@ -15503,9 +17890,21 @@ async function setupGroceryPlanPage() {
                         const daysLabel = daysLasts === Infinity ? 'N/A' :
                             daysLasts >= 30 ? `${Math.round(daysLasts)} days (1+ month)` :
                                 `${Math.round(daysLasts)} days`;
+                        const buysAvg28 = Math.max(0, Math.round(Number(item.purchasesAvg28) || 0));
+                        const buysRest = Math.max(0, Math.round(Number(item.purchasesThisMonth) || 0));
+                        const costAvg28 = Number(item.avgMonthly28Cost);
+                        const costRest = Number(item.thisMonthCost);
                         const unit = 'servings';
                         return `
-                            <div class="grocery-card" data-query="${normalizeKey(item.name)}">
+                            <div class="grocery-card"
+                                 data-query="${normalizeKey(item.name)}"
+                                 data-buys-avg28="${buysAvg28}"
+                                 data-buys-rest="${buysRest}"
+                                 data-cost-avg28="${Number.isFinite(costAvg28) ? costAvg28.toFixed(2) : ''}"
+                                 data-cost-rest="${Number.isFinite(costRest) ? costRest.toFixed(2) : ''}"
+                                 data-daily-servings="${Number.isFinite(Number(item.daily)) ? Number(item.daily).toFixed(4) : ''}"
+                                 data-servings-per-container="${Number.isFinite(Number(item.servingsPerContainer)) ? Number(item.servingsPerContainer).toFixed(4) : ''}"
+                                 data-container-price="${Number.isFinite(Number(item.container?.price)) ? Number(item.container.price).toFixed(2) : ''}">
                                 <div class="grocery-card-image">
                                     <img src="${item.image || ''}" alt="${item.name}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
                                     <a href="${item.url}" target="_blank" class="grocery-card-link" title="View on Walmart">
@@ -15528,12 +17927,12 @@ async function setupGroceryPlanPage() {
                                             <span class="detail-value">$${(Number(item.container?.price) || 0).toFixed(2)}</span>
                                         </div>
                                         <div class="detail-row highlight">
-                                            <span class="detail-label">Buys this month</span>
-                                            <span class="detail-value">${item.purchasesThisMonth}&times;</span>
+                                            <span class="detail-label" data-buys-label>Buys avg 28d</span>
+                                            <span class="detail-value" data-buys-value>${buysAvg28}&times;</span>
                                         </div>
                                     </div>
                                     <div class="grocery-card-footer">
-                                        <span class="container-price">$${item.thisMonthCost.toFixed(2)} this month</span>
+                                        <span class="container-price" data-window-cost-value>${Number.isFinite(costAvg28) ? formatCurrency(costAvg28) : EM_DASH} avg 28d</span>
                                         <label class="grocery-check-modern">
                                             <input type="checkbox" class="grocery-check-input" data-query="${normalizeKey(item.name)}">
                                             <span class="checkmark"></span>
@@ -15547,6 +17946,7 @@ async function setupGroceryPlanPage() {
             `;
 
             if (listEl) listEl.innerHTML = groceryListHTML;
+            syncCostWindowCardUi(getCostWindowMode());
 
             stageLatestGroceryListDraft({
                 source: 'grocery_generator',
@@ -15574,7 +17974,7 @@ async function setupGroceryPlanPage() {
         renderBaselinePlan();
 
         onPlanBudgetModeSwitch = (modeKeyRaw, selectedTier) => {
-            const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'balanced');
+            const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'best');
             const nextMacros = buildBudgetModeMacrosForPlan(modeKey);
             macroTargetsBase.calories = nextMacros.calories;
             macroTargetsBase.protein_g = nextMacros.proteinG;
@@ -15753,6 +18153,10 @@ async function setupGroceryPlanPage() {
         const profile = discipline || inferDiscipline(nutritionState.selections || {});
         const scoreDirection = 'lower_is_better';
         const goal = normalizeGoal(goalRaw);
+        const isCutPhase = isCutGoalLike(goalRaw, goal);
+        const isBuildPhase = !isCutPhase && goal === 'BULK';
+        const isRecompPhase = !isCutPhase && !isBuildPhase && goal === 'RECOMP';
+        const mealMode = isCutPhase ? 'CUT' : (isBuildPhase ? 'BULK' : (isRecompPhase ? 'RECOMP' : 'MAINT'));
         const targets = normalizeMacroTargets(macroTargets);
         const budgetModeForPlanner = getActiveBudgetModeFromSession();
         const isBudgetModePlanner = budgetModeForPlanner === 'budget';
@@ -15775,7 +18179,7 @@ async function setupGroceryPlanPage() {
         }
 
         // Liquid calories are allowed only during bulks (and only if the discipline allows it).
-        const allowLiquid = goal === 'BULK' && !!profile.allowLiquid;
+        const allowLiquid = isBuildPhase && !!profile.allowLiquid;
 
         const normalizePlannerFood = (food) => {
             const raw = food || {};
@@ -15903,7 +18307,6 @@ async function setupGroceryPlanPage() {
         const proteins = foodsToUse.filter(f => f.type === 'protein');
         const carbs = foodsToUse.filter(f => f.type === 'carb');
         const fats = foodsToUse.filter(f => f.type === 'fat');
-        const isCutPhase = isCutGoalLike(goalRaw, goal);
         const isBestModePlanner = budgetModeForPlanner === 'best';
         const enforceStrictCutHardRejects = isCutPhase && isBestModePlanner;
         const cutDebug = Boolean(globalThis.__ODE_DEBUG_CUT);
@@ -15924,6 +18327,8 @@ async function setupGroceryPlanPage() {
 
         const strictOvershootConfig = getPlannerOvershootConfig({
             isCutPhase,
+            isBuildPhase,
+            isRecompPhase,
             budgetMode: budgetModeForPlanner,
             relaxed: false
         });
@@ -16169,8 +18574,10 @@ async function setupGroceryPlanPage() {
             inputs: {
                 goal,
                 goalRaw: String(goalRaw || ''),
+                mealMode,
                 budgetMode: budgetModeForPlanner,
                 isCutPhase,
+                isRecompPhase,
                 mealsPerDay,
                 targets,
                 mins,
@@ -17033,6 +19440,8 @@ async function setupGroceryPlanPage() {
             const relaxed = Boolean(options?.relaxed);
             const overshootConfig = getPlannerOvershootConfig({
                 isCutPhase,
+                isBuildPhase,
+                isRecompPhase,
                 budgetMode: budgetModeForPlanner,
                 relaxed
             });
@@ -17094,11 +19503,15 @@ async function setupGroceryPlanPage() {
                     };
                     const strictCfg = getPlannerOvershootConfig({
                         isCutPhase,
+                        isBuildPhase,
+                        isRecompPhase,
                         budgetMode: budgetModeForPlanner,
                         relaxed: false
                     });
                     const relaxedCfg = getPlannerOvershootConfig({
                         isCutPhase,
+                        isBuildPhase,
+                        isRecompPhase,
                         budgetMode: budgetModeForPlanner,
                         relaxed: true
                     });
@@ -17132,6 +19545,47 @@ async function setupGroceryPlanPage() {
                 });
             });
             return generated;
+        };
+
+        const candidatePassesBulkBuilderGate = (candidate) => {
+            if (!isBuildPhase) return true;
+            if (!hasCandidateShape(candidate)) return false;
+            const totals = candidate?.dailyTotals || {};
+            const meals = Array.isArray(candidate?.meals) ? candidate.meals : [];
+            if (!meals.length) return false;
+
+            const targetCalories = Number(targets?.calories) || 0;
+            const actualCalories = Number(totals?.calories) || 0;
+            if (targetCalories <= 0 || actualCalories <= 0) return false;
+
+            const calPct = actualCalories / targetCalories;
+            if (calPct < 0.94 || calPct > 1.06) return false;
+
+            const fatKcal = (Number(totals?.fat_g) || 0) * 9;
+            if (fatKcal > (actualCalories * 0.35)) return false;
+
+            const bwKgForGate = Math.max(1, (Number(weightLbs) || 170) * 0.45359237);
+            const minProteinPerMeal = (meals.length <= 2 ? 0.45 : 0.30) * bwKgForGate;
+            const proteinFeedings = meals.filter((meal) => (Number(meal?.totals?.protein_g) || 0) >= minProteinPerMeal).length;
+            if (meals.length <= 2) {
+                if (proteinFeedings < meals.length) return false;
+            } else if (proteinFeedings < 3) {
+                return false;
+            }
+
+            const totalCarbs = Math.max(0, Number(totals?.carbs_g) || 0);
+            if (totalCarbs > 0) {
+                let carbWindowIdx = [];
+                if (meals.length >= 5) carbWindowIdx = [1, 2];
+                else if (meals.length === 4) carbWindowIdx = [0, 1];
+                else if (meals.length === 3) carbWindowIdx = [0, 1];
+                if (carbWindowIdx.length) {
+                    const carbWindowTotal = carbWindowIdx.reduce((sum, idx) => sum + (Number(meals?.[idx]?.totals?.carbs_g) || 0), 0);
+                    if ((carbWindowTotal / totalCarbs) < 0.30) return false;
+                }
+            }
+
+            return true;
         };
 
         const evaluatePoolWithGates = (candidates, attemptKey) => {
@@ -17240,6 +19694,16 @@ async function setupGroceryPlanPage() {
                 candidatePool: finalBeforeAntiDeadlock.length,
                 antiDeadlockPool: antiDeadlockPool.length
             });
+
+            if (isBuildPhase) {
+                const bulkGatePool = final.filter(candidatePassesBulkBuilderGate);
+                addPlannerGate(`Bulk-only gate (${attemptKey})`, bulkGatePool.length > 0, {
+                    equation: '94-106% calories, fat <=35% kcal, >=3 protein feedings (or both meals if 2), >=30% carbs in early distribution window',
+                    candidatePool: final.length,
+                    bulkGatePool: bulkGatePool.length
+                });
+                final = bulkGatePool;
+            }
 
             return { selectedBranch: branch, selectionPool: pool, varietyPool, finalPool: final };
         };
@@ -17363,6 +19827,8 @@ async function setupGroceryPlanPage() {
             const branchRelaxed = String(selectedBranch || '').startsWith('relaxed');
             const rebalanceOvershootConfig = getPlannerOvershootConfig({
                 isCutPhase,
+                isBuildPhase,
+                isRecompPhase,
                 budgetMode: budgetModeForPlanner,
                 relaxed: branchRelaxed
             });
@@ -17771,6 +20237,7 @@ async function setupGroceryPlanPage() {
                 notes: note ? [note] : [],
                 carbTopUpApplied: topUpResult.applied,
                 branch: selectedBranch,
+                mealMode,
                 traceId: plannerTraceId,
                 softAttempt: String(usedSoftProfile?.key || 'strict')
             }
@@ -17986,11 +20453,49 @@ async function setupGroceryPlanPage() {
         if (GROCERY_INTEGRATION_ERROR) return GROCERY_INTEGRATION_ERROR;
         const guardBudgetMode = getActiveBudgetModeFromSession();
         const guardIsCutPhase = isCutGoalLike(goalRaw, normalizeGoal(goalRaw));
+        const guardGoalNorm = resolveGoalModeForMath(goalRaw, weightLbs, null);
+        const guardIsBuildPhase = !guardIsCutPhase && guardGoalNorm === 'BULK';
+        const guardIsRecompPhase = !guardIsCutPhase && !guardIsBuildPhase && guardGoalNorm === 'RECOMP';
+        const guardTargets = normalizeMacroTargets(macroTargets || {});
         const guardTraceId = `guard_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const guardLogEnabled = globalThis.__ODE_VERBOSE_PLAN_LOGS !== false;
         const guardSteps = [];
         const addGuardStep = (gate, passed, details = {}) => {
             guardSteps.push({ gate, passed: Boolean(passed), details });
+        };
+        const passesGuardBulkGate = (planCandidate) => {
+            if (!guardIsBuildPhase) return true;
+            if (!planCandidate || typeof planCandidate !== 'object') return false;
+            const totals = planCandidate.dailyTotals || {};
+            const meals = Array.isArray(planCandidate.meals) ? planCandidate.meals : [];
+            if (!meals.length) return false;
+            const targetCalories = Number(guardTargets?.calories) || 0;
+            const actualCalories = Number(totals?.calories) || 0;
+            if (targetCalories <= 0 || actualCalories <= 0) return false;
+            const calPct = actualCalories / targetCalories;
+            if (calPct < 0.94 || calPct > 1.06) return false;
+            const fatKcal = (Number(totals?.fat_g) || 0) * 9;
+            if (fatKcal > (actualCalories * 0.35)) return false;
+            const bwKgForGate = Math.max(1, (Number(weightLbs) || 170) * 0.45359237);
+            const minProteinPerMeal = (meals.length <= 2 ? 0.45 : 0.30) * bwKgForGate;
+            const proteinFeedings = meals.filter((meal) => (Number(meal?.totals?.protein_g) || 0) >= minProteinPerMeal).length;
+            if (meals.length <= 2) {
+                if (proteinFeedings < meals.length) return false;
+            } else if (proteinFeedings < 3) {
+                return false;
+            }
+            const totalCarbs = Math.max(0, Number(totals?.carbs_g) || 0);
+            if (totalCarbs > 0) {
+                let carbWindowIdx = [];
+                if (meals.length >= 5) carbWindowIdx = [1, 2];
+                else if (meals.length === 4) carbWindowIdx = [0, 1];
+                else if (meals.length === 3) carbWindowIdx = [0, 1];
+                if (carbWindowIdx.length) {
+                    const carbWindowTotal = carbWindowIdx.reduce((sum, idx) => sum + (Number(meals?.[idx]?.totals?.carbs_g) || 0), 0);
+                    if ((carbWindowTotal / totalCarbs) < 0.30) return false;
+                }
+            }
+            return true;
         };
         const emitGuardTrace = (decision = {}) => {
             if (!guardLogEnabled) return;
@@ -17999,6 +20504,8 @@ async function setupGroceryPlanPage() {
                 console.log('Inputs', {
                     guardBudgetMode,
                     guardIsCutPhase,
+                    guardIsBuildPhase,
+                    guardIsRecompPhase,
                     macroTargets,
                     mealsPerDay,
                     goalRaw,
@@ -18041,6 +20548,13 @@ async function setupGroceryPlanPage() {
             } catch {
                 // ignore
             }
+            const bulkGateAfterClosure = passesGuardBulkGate(closed);
+            addGuardStep('Macro closure bulk gate', bulkGateAfterClosure, {
+                label,
+                equation: 'build only: 94-106% calories, fat <=35% kcal, protein feedings + carb distribution gate',
+                after
+            });
+            if (!bulkGateAfterClosure) return plan;
             return closed;
         };
 
@@ -18100,6 +20614,8 @@ async function setupGroceryPlanPage() {
                 const fallbackRelaxed = true;
                 const fallbackOvershootConfig = getPlannerOvershootConfig({
                     isCutPhase: guardIsCutPhase,
+                    isBuildPhase: guardIsBuildPhase,
+                    isRecompPhase: guardIsRecompPhase,
                     budgetMode: guardBudgetMode,
                     relaxed: fallbackRelaxed
                 });
@@ -18113,6 +20629,7 @@ async function setupGroceryPlanPage() {
                     targets: macroTargets,
                     relaxed: fallbackRelaxed
                 });
+                const fallbackBulkGateOk = passesGuardBulkGate(fallback);
                 const fallbackBreakdown = buildPlannerOvershootBreakdown({
                     totals: fallbackTotals,
                     targets: macroTargets,
@@ -18130,7 +20647,12 @@ async function setupGroceryPlanPage() {
                     fallbackTotals,
                     macroTargets
                 });
-                if (fallbackOvershootOk && fallbackMinsOk) {
+                addGuardStep('Fallback bulk gate', fallbackBulkGateOk, {
+                    equation: 'build only: 94-106% calories, fat <=35% kcal, protein feedings + carb distribution gate',
+                    fallbackTotals,
+                    macroTargets
+                });
+                if (fallbackOvershootOk && fallbackMinsOk && fallbackBulkGateOk) {
                     fallback.meta = {
                         ...(fallback.meta || {}),
                         branch: 'legacy_fallback'
@@ -18142,7 +20664,7 @@ async function setupGroceryPlanPage() {
                     });
                     return applyGuardMacroClosure(fallback, 'legacy_fallback');
                 }
-                if (fallbackOvershootOk) {
+                if (fallbackOvershootOk && fallbackBulkGateOk) {
                     fallback.meta = {
                         ...(fallback.meta || {}),
                         branch: 'legacy_fallback_relaxed_mins',
@@ -18165,15 +20687,17 @@ async function setupGroceryPlanPage() {
                         targets: macroTargets,
                         overshootConfig: fallbackOvershootConfig
                     });
-                    addGuardStep('Fallback scale-to-cap rescue', scaledBreakdown.pass, {
+                    const scaledBulkGateOk = passesGuardBulkGate(scaledFallback);
+                    addGuardStep('Fallback scale-to-cap rescue', scaledBreakdown.pass && scaledBulkGateOk, {
                         equation: 'scale fallback servings so totals fit overshoot caps',
                         scaleApplied: scaledFallback.scaleApplied,
                         before: fallbackTotals,
                         after: scaledFallback.dailyTotals,
                         caps: fallbackBreakdown.caps,
-                        scaledBreakdown
+                        scaledBreakdown,
+                        scaledBulkGateOk
                     });
-                    if (scaledBreakdown.pass) {
+                    if (scaledBreakdown.pass && scaledBulkGateOk) {
                         fallback.meals = scaledFallback.meals;
                         fallback.dailyTotals = scaledFallback.dailyTotals;
                         fallback.meta = {
@@ -18202,6 +20726,7 @@ async function setupGroceryPlanPage() {
                         fallbackTotals,
                         fallbackOvershootOk,
                         fallbackMinsOk,
+                        fallbackBulkGateOk,
                         fallbackBreakdown
                     });
                 } catch {
@@ -18223,7 +20748,7 @@ async function setupGroceryPlanPage() {
                 return applyGuardMacroClosure(fallback, 'legacy_fallback_forced_render');
             }
             addGuardStep('Fallback available and passes gates', false, {
-                reason: 'No fallback candidate satisfied overshoot/min gates.'
+                reason: 'No fallback candidate satisfied overshoot/min/bulk gates.'
             });
             const recommendationTail = plannerRecommendations.length
                 ? ` Recommendations: ${plannerRecommendations.slice(0, 2).join(' ')}`
@@ -18258,6 +20783,11 @@ async function setupGroceryPlanPage() {
             };
         }
         addGuardStep('Finite totals gate', true, {
+            dailyTotals
+        });
+        const primaryBulkGateOk = passesGuardBulkGate(result);
+        addGuardStep('Primary bulk gate', primaryBulkGateOk, {
+            equation: 'build only: 94-106% calories, fat <=35% kcal, protein feedings + carb distribution gate',
             dailyTotals
         });
         if (Number.isFinite(result?.dailyCost) && result.dailyCost < 0) {
@@ -18371,10 +20901,15 @@ async function setupGroceryPlanPage() {
             const lastTrace = JSON.parse(sessionStorage.getItem('odeIntegrateLastTrace') || 'null');
             const selectedBranch = String(mealResult?.meta?.branch || 'unknown');
             const budgetMode = getActiveBudgetModeFromSession();
-            const cutPhase = isCutGoalLike(nutritionState.selections?.goal || 'RECOMP', normalizeGoal(nutritionState.selections?.goal || 'RECOMP'));
+            const goalRawForLog = nutritionState.selections?.goal || 'RECOMP';
+            const cutPhase = isCutGoalLike(goalRawForLog, normalizeGoal(goalRawForLog));
+            const buildPhase = !cutPhase && (normalizeGoalInput(goalRawForLog) === 'BUILD' || normalizeGoal(goalRawForLog) === 'BULK');
+            const recompPhase = !cutPhase && !buildPhase && resolveGoalModeForMath(goalRawForLog, Number(nutritionState?.selections?.weightLbs || 0), Number(nutritionState?.selections?.goalWeightLbs || 0)) === 'RECOMP';
             const relaxedBranch = selectedBranch === 'legacy_fallback' || selectedBranch.startsWith('relaxed');
             const overshootConfig = getPlannerOvershootConfig({
                 isCutPhase: cutPhase,
+                isBuildPhase: buildPhase,
+                isRecompPhase: recompPhase,
                 budgetMode,
                 relaxed: relaxedBranch
             });
@@ -18560,7 +21095,7 @@ async function setupGroceryPlanPage() {
         const estimatedTax = monthlyTotal * taxRate;
         const monthlyTotalWithTax = monthlyTotal + estimatedTax;
         latestPlanMonthlyTotalWithTax = monthlyTotalWithTax;
-        maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax);
+        maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax, getCurrentPlanBudgetMode());
         const budget = Number(prefs?.budgetTotal || 0);
         const budgetDelta = budget ? budget - monthlyTotalWithTax : null;
 
@@ -18836,11 +21371,93 @@ async function setupGroceryPlanPage() {
         return (Number.isFinite(currentWeight) && currentWeight > 0) ? currentWeight : 170;
     };
     const buildBudgetModeMacrosForNormalPlan = (modeKeyRaw) => {
-        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'balanced');
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
         const caloriesFixed = Math.max(1200, Number(budgetModeMacroBaselineForPlan.calories) || 2000);
         const bestProtein = Math.max(0, Number(budgetModeMacroBaselineForPlan.proteinG) || 0);
         const bestFat = Math.max(0, Number(budgetModeMacroBaselineForPlan.fatG) || 0);
+        const rawGoal = String(
+            prefs?.goal
+            || prefs?.mode
+            || nutritionState.selections?.goal
+            || sessionData?.selections?.goal
+            || ''
+        ).trim();
+        const weightLbs = Number(
+            prefs?.weightLbs
+            || nutritionState.selections?.weightLbs
+            || sessionData?.selections?.weightLbs
+            || 0
+        );
+        const goalMode = resolveGoalModeForMath(rawGoal, weightLbs, resolveGoalWeightForBudgetSwitch());
+        const bodyFatPct = Number(
+            prefs?.bodyFatPct
+            || nutritionState.selections?.bodyFatPct
+            || sessionData?.selections?.bodyFatPct
+            || NaN
+        );
+        const basisLbs = (Number.isFinite(bodyFatPct) && bodyFatPct >= 5 && bodyFatPct <= 60)
+            ? Math.max(1, weightLbs * (1 - (bodyFatPct / 100)))
+            : Math.max(1, weightLbs || 170);
+        const bwKg = Math.max(1, (weightLbs || basisLbs) * 0.45359237);
         const sexRaw = String(prefs?.sex || nutritionState.selections?.sex || sessionData?.selections?.sex || '').trim().toUpperCase();
+        if (goalMode === 'RECOMP') {
+            const calories = Math.round(caloriesFixed);
+            const fatPct = 0.15;
+            const proteinShareOfRemaining = modeKey === 'budget' ? 0.50 : (modeKey === 'balanced' ? 0.60 : 0.70);
+            let fatKcal = Math.round(calories * fatPct);
+            let fatG = Math.max(0, Math.round(fatKcal / 9));
+            fatKcal = fatG * 9;
+            const remainingKcal = Math.max(0, calories - fatKcal);
+            let proteinKcal = Math.round(remainingKcal * proteinShareOfRemaining);
+            let proteinG = Math.max(0, Math.round(proteinKcal / 4));
+            proteinKcal = proteinG * 4;
+            let carbKcal = calories - (fatKcal + proteinKcal);
+            let carbG = Math.floor(carbKcal / 4);
+            let recompProteinShareUnreachableClamped = false;
+            if (carbKcal < 0) {
+                recompProteinShareUnreachableClamped = true;
+                proteinKcal = Math.max(0, calories - fatKcal);
+                proteinG = Math.floor(proteinKcal / 4);
+                proteinKcal = proteinG * 4;
+                carbKcal = calories - (fatKcal + proteinKcal);
+                carbG = Math.max(0, Math.floor(carbKcal / 4));
+            }
+            return {
+                calories,
+                proteinG,
+                fatG,
+                carbG: Math.max(0, carbG),
+                recompFatPct: fatPct,
+                recompProteinShareOfRemaining: proteinShareOfRemaining,
+                recompProteinShareUnreachableClamped
+            };
+        }
+        if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
+            const tierProteinTargetFactor = modeKey === 'best' ? 1.15 : (modeKey === 'budget' ? 0.75 : 0.95);
+            const tierProteinMinFactor = modeKey === 'best' ? 1.05 : (modeKey === 'budget' ? 0.70 : 0.85);
+            const proteinFloor = Math.round(tierProteinMinFactor * basisLbs);
+            let proteinG = Math.round(tierProteinTargetFactor * basisLbs);
+            if (modeKey === 'best') proteinG = Math.min(proteinG, Math.round(1.2 * basisLbs));
+            proteinG = Math.max(proteinG, proteinFloor);
+
+            const fatTargetPct = modeKey === 'best' ? 0.30 : (modeKey === 'budget' ? 0.25 : 0.27);
+            const fatFloor = Math.max(20, Math.floor((caloriesFixed * 0.22) / 9));
+            const fatPctCap = Math.floor((caloriesFixed * 0.35) / 9);
+            const fatCap = Math.max(fatFloor, fatPctCap);
+            let fatG = clamp(Math.round((caloriesFixed * fatTargetPct) / 9), fatFloor, fatCap);
+
+            const carbFloor = Math.round(2.5 * bwKg);
+            let carbG = calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG);
+            if (carbG < carbFloor && fatG > fatFloor) {
+                fatG = fatFloor;
+                carbG = calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG);
+            }
+            while (carbG < carbFloor && proteinG > proteinFloor) {
+                proteinG -= 1;
+                carbG = calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG);
+            }
+            return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG };
+        }
         const fatSexMin = sexRaw === 'FEMALE' ? 40 : 50;
         const fatFloor = Math.max(Math.round((0.22 * caloriesFixed) / 9), fatSexMin);
         const proteinFloor = Math.round(0.75 * resolveGoalWeightForBudgetSwitch());
@@ -18861,7 +21478,7 @@ async function setupGroceryPlanPage() {
         return { calories: Math.round(caloriesFixed), proteinG, fatG, carbG: calcCarbRemainderForBudgetSwitch(caloriesFixed, proteinG, fatG) };
     };
     onPlanBudgetModeSwitch = (modeKeyRaw, selectedTier) => {
-        const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'balanced');
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw || 'best');
         const nextMacros = buildBudgetModeMacrosForNormalPlan(modeKey);
         macros.calories = nextMacros.calories;
         macros.proteinG = nextMacros.proteinG;

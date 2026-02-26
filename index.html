@@ -168,9 +168,9 @@
                         <div class="ns-group">
                             <p class="eyebrow">Primary goal</p>
                             <div class="ns-button-grid" data-group="goal">
-                                <button type="button" data-value="CUT" class="ns-pill">Cut fat</button>
-                                <button type="button" data-value="BULK" class="ns-pill">Build muscle</button>
-                                <button type="button" data-value="STRENGTH" class="ns-pill">Prioritize strength</button>
+                                <button type="button" data-value="CUT" class="ns-pill">Cut fat <span class="ns-goal-help" data-goal-help="CUT" role="button" tabindex="0" aria-label="What does Cut fat mean?">?</span></button>
+                                <button type="button" data-value="BULK" class="ns-pill">Gain Weight/ Build Muscle: <span class="ns-goal-help" data-goal-help="BULK" role="button" tabindex="0" aria-label="What does Gain Weight / Build Muscle mean?">?</span></button>
+                                <button type="button" data-value="RECOMP" class="ns-pill">Recomp <span class="ns-goal-help" data-goal-help="RECOMP" role="button" tabindex="0" aria-label="What does Recomp mean?">?</span></button>
                             </div>
                         </div>
                         <div class="ns-group">
@@ -327,7 +327,7 @@
                                 </div>
 
                                 <div class="ns-actions column" id="ns-unlock-block">
-                                    <button class="btn btn-primary" id="ns-unlock-btn">?? Unlock Full Macros & Download Plan</button>
+                                    <button class="btn btn-primary" id="ns-unlock-btn"><span class="ns-unlock-main">Enter your Email to Unlock Macros and Build Grocery Plan</span><span class="ns-unlock-sub">Still 100% Free</span></button>
                                     <p class="ns-muted tight">Macros = protein, carbs, fats tailored to your calories.</p>
                                     <div class="ns-email hidden" id="ns-email-form">
                                         <div class="ns-email-row">
@@ -361,7 +361,7 @@
                             <aside class="ns-side-col">
                                 <div class="ns-video-card ns-next-box">
                                     <div class="ns-next-top">
-                                        <p class="ns-next-kicker">What happens next · ~60 seconds</p>
+                                        <p class="ns-next-kicker">What happens next - ~60 seconds</p>
                                     </div>
 
                                     <div class="ns-next-mid">
@@ -560,6 +560,16 @@
         </div>
     </div>
 
+    <!-- UNLOCK EMAIL MODAL -->
+    <div class="ns-modal-overlay hidden" id="ns-unlock-email-modal">
+        <div class="ns-modal ns-modal-email" role="dialog" aria-modal="true" aria-labelledby="ns-unlock-email-title">
+            <button class="ns-modal-close" id="ns-unlock-email-close" aria-label="Close">&times;</button>
+            <h3 id="ns-unlock-email-title">Unlock Your Macros</h3>
+            <p class="ns-modal-subtitle">Enter your email to unlock full macros and build your grocery plan.</p>
+            <div id="ns-unlock-email-host"></div>
+            <p class="ns-modal-free">Still 100% free - No credit card</p>
+        </div>
+    </div>
     <!-- GROCERY GATE MODAL -->
     <div class="ns-modal-overlay hidden" id="ns-grocery-gate-modal">
         <div class="ns-modal">
@@ -591,8 +601,8 @@
                 </div>
             </div>
             <p class="ns-modal-info">We need your macros to calculate exact portions, costs, and build your personalized grocery list.</p>
-            <button class="btn btn-primary" id="ns-grocery-start-unlock">Got it, let's unlock ?</button>
-            <p class="ns-modal-free">100% free • No credit card</p>
+            <button class="btn btn-primary" id="ns-grocery-start-unlock">Got it, let's unlock</button>
+            <p class="ns-modal-free">100% free - No credit card</p>
         </div>
     </div>
 
@@ -601,6 +611,7 @@
     <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
 </body>
 </html>
+
 
 
 
