@@ -12428,6 +12428,156 @@
     "early_access_event": false,
     "walmart_plus_member": false
   },
+  "204535526": {
+    "us_item_id": "204535526",
+    "product_id": "4Q6R8Y7EPTB6",
+    "upc": "078742237473",
+    "title": "Great Value Fresh Frozen Broccoli Cuts, 32 oz Steamable Bag",
+    "short_description_html": "Make delicious meals with Great Value Fresh Frozen Broccoli Cuts. Whether you're looking to make homemade cheddar and broccoli soup, a chicken and broccoli Alfredo, or a fresh broccoli salad, these cuts are perfect for the task. Season them with salt and pepper for a healthy side to your pan-seared chicken or grilled steak. With no added total fat or cholesterol, these broccoli cuts fit perfectly into a health-conscious diet. Packaged in a convenient two-pound steamable bag, Great Value Fresh Frozen Broccoli Cuts are ideal for making a variety of dishes while saving time in the kitchen. Great Value provides high-quality, affordable grocery options, available online and in Walmart stores nationwide. Stock up to ensure your pantry always has these healthy staples ready for your family's needs.",
+    "detailed_description_html": "<ul>  <li>Great for a variety of dishes</li>  <li>Pair with chicken, pork, or beef for a hearty, healthy meal</li>  <li>Season with salt and pepper for a simple side dish</li>  <li>Great as a side or the star of the dish</li>  <li>Excellent as part of a healthy diet</li>  <li>Frozen Broccoli Cuts&nbsp;</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Frozen Foods",
+        "url": "https://www.walmart.com/cp/frozen-foods/976791"
+      },
+      {
+        "name": "Frozen Fruits & Vegetables",
+        "url": "https://www.walmart.com/cp/frozen-fruits-vegetables/5624760"
+      },
+      {
+        "name": "Frozen Vegetables",
+        "url": "https://www.walmart.com/cp/frozen-vegetables/1001424"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Net content statement",
+        "value": "32 oz",
+        "display_name": "Net content statement"
+      },
+      {
+        "key": "Vegetable type",
+        "value": "Broccoli",
+        "display_name": "Vegetable type"
+      },
+      {
+        "key": "Food condition",
+        "value": "Frozen",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Finely Chopped",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Shelf life",
+        "value": "729 days",
+        "display_name": "Shelf life"
+      },
+      {
+        "key": "Size",
+        "value": "32 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Brand",
+        "value": "Great Value",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Weight",
+        "value": "2.12 lb",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://i5.walmartimages.com/asr/9dfe386d-1543-48d6-beff-fa94a086f8dd_2.d8b66e464985f360c8061f215282a55b.jpeg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://i5.walmartimages.com/asr/435e2864-b59c-4aa2-94a1-7a7275460f8f.600a8e5e03ad5547b6f0b7c3e45d86ee.jpeg",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Food form",
+        "value": "Pieces",
+        "display_name": "Food form"
+      }
+    ],
+    "indications": [
+      {
+        "name": "Skin Care Concern",
+        "value": "Vegetarians-YES,Vegans-YES,Coeliacs-YES,"
+      }
+    ],
+    "directions": [
+      {
+        "name": "Instructions",
+        "value": "<p>N/A</p>"
+      }
+    ],
+    "ingredients": "Broccoli",
+    "manufacture_number": "007874223747",
+    "product_type_id": "frozen_vegetables",
+    "product_type": "Frozen Vegetables",
+    "manufacturer": "Great Value",
+    "product_page_url": "https://www.walmart.com/ip/Great-Value-Frozen-Broccoli-Cuts-32-oz-Steamable-Bag/204535526",
+    "price_map": {
+      "unit_price": 0.071,
+      "price": 2.28,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Great-Value-Frozen-Broccoli-Cuts-32-oz-Steamable-Bag_40058af1-50fb-45f4-8cf8-332fadec17db.a34834567d1181a1d5867a5e3ace1961.jpeg",
+      "https://i5.walmartimages.com/asr/25da0213-f4b7-4ba5-b50f-b894830c958e.bc4dd3b4a85ef111d8601eeed9d00890.jpeg",
+      "https://i5.walmartimages.com/asr/b95581ed-8a3a-4735-a8aa-1c02bd96fbbc.ca62edf680fc194ff68097a183bba375.jpeg",
+      "https://i5.walmartimages.com/asr/435e2864-b59c-4aa2-94a1-7a7275460f8f.600a8e5e03ad5547b6f0b7c3e45d86ee.jpeg",
+      "https://i5.walmartimages.com/asr/10c30658-e753-4a07-8ae1-5a51ab4944a3.71a5e3f94306e7489a83309358b48e6b.jpeg",
+      "https://i5.walmartimages.com/asr/940dd5ed-2f94-4217-8b3d-1f6d82a09191.982974707fe6fa8fbff5a4d6c674211b.jpeg",
+      "https://i5.walmartimages.com/asr/6f3c02f6-1b5a-482a-a089-d8e57253a1b5.b1c6e3b66811716494b9d6c16f856c61.jpeg",
+      "https://i5.walmartimages.com/asr/738261bd-57eb-4db1-8b12-2e86595a42fb.8a1248b8b4287c8529872d71335957f5.jpeg"
+    ],
+    "reviews": 723,
+    "rating": 4,
+    "offer_id": "7472D4BF288E401786B5E736D00727C5",
+    "offer_type": "STORE_ONLY",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 2.28
+      }
+    ],
+    "pickup_options": [
+      {
+        "availability": "AVAILABLE",
+        "pickup_method": "PICKUP_CURBSIDE"
+      }
+    ],
+    "badges": [
+      {
+        "id": "L1200",
+        "key": "CUSTOMER_PICK",
+        "name": "Overall pick",
+        "query": "broccoli cuts"
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
   "254301012": {
     "us_item_id": "254301012",
     "product_id": "44D66VAQDNZ9",

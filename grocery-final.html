@@ -38,10 +38,12 @@
                                 <div class="budget-forecast-actions" id="budget-forecast-actions"></div>
                                 <p class="budget-forecast-save" id="budget-forecast-save"></p>
                             </div>
-                            <div class="budget-options">
-                                <button type="button" class="budget-btn" data-budget="200"><span class="budget-btn-title">Minimum Effective Plan</span><span class="budget-btn-sub">Est. --/month</span><span class="budget-btn-help" aria-hidden="true"></span></button>
-                                <button type="button" class="budget-btn active" data-budget="300"><span class="budget-btn-title">Balanced Results</span><span class="budget-btn-sub">Est. --/month</span><span class="budget-btn-help" aria-hidden="true"></span></button>
-                                <button type="button" class="budget-btn" data-budget="400"><span class="budget-btn-title">Best Performance</span><span class="budget-btn-sub">Est. --/month</span><span class="budget-btn-help" aria-hidden="true"></span></button>
+                            <div class="budget-options void-space" id="budget-void-space">
+                                <div class="meal-budget-options" id="meal-budget-options" aria-label="Selected budget tier" data-bound="1">
+                                    <button type="button" class="meal-budget-option" data-budget-tier="budget"><span class="meal-budget-option-title">Minimum Effective Plan</span><span class="meal-budget-option-range">Lowest monthly grocery budget that still works.</span></button>
+                                    <button type="button" class="meal-budget-option" data-budget-tier="balanced"><span class="meal-budget-option-title">Balanced Results</span><span class="meal-budget-option-range">Mid-range monthly budget with steady results.</span></button>
+                                    <button type="button" class="meal-budget-option active" data-budget-tier="best"><span class="meal-budget-option-title">Best Performance</span><span class="meal-budget-option-range">Higher monthly budget for the strongest results.</span></button>
+                                </div>
                             </div>
                             <button type="button" class="budget-forecast-toggle" id="budget-forecast-toggle" aria-expanded="false">
                                 <span class="toggle-label">Make your options cheaper?</span>

@@ -1892,5 +1892,21 @@
       "serving_unit": "",
       "household_serving": ""
     }
+  },
+  "usda:upc:078742237473": {
+    "cachedAt": 1772244301273,
+    "data": {
+      "fdc_id": 2322735,
+      "gtin_upc": "078742237473",
+      "description": "BROCCOLI CUTS",
+      "data_type": "Branded",
+      "calories": 24,
+      "protein_g": 2.35,
+      "carbs_g": 4.71,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "1 cup"
+    }
   }
 }

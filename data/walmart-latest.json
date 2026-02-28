@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-26T03:12:56.426Z",
+  "generatedAt": "2026-02-28T14:36:26.054Z",
   "count": 42,
   "items": [
     {
@@ -1939,19 +1939,20 @@
           ],
           "quality_score": 3,
           "macros": {
-            "fdc_id": 2709643,
-            "gtin_upc": null,
-            "description": "Broccoli, raw",
-            "data_type": "Survey (FNDDS)",
-            "calories": 39,
-            "protein_g": 2.57,
-            "carbs_g": 6.27,
-            "fat_g": 0.34,
-            "serving_size": null,
-            "serving_unit": "",
-            "household_serving": ""
+            "fdc_id": 2322735,
+            "gtin_upc": "078742237473",
+            "description": "BROCCOLI CUTS",
+            "data_type": "Branded",
+            "calories": 24,
+            "protein_g": 2.35,
+            "carbs_g": 4.71,
+            "fat_g": 0,
+            "serving_size": 85,
+            "serving_unit": "g",
+            "household_serving": "1 cup"
           },
-          "macros_source": "usda_query"
+          "macros_source": "usda_upc",
+          "upc": "078742237473"
         },
         {
           "store": "walmart",
