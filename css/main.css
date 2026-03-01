@@ -3202,6 +3202,7 @@ body.training-page {
     border: 0;
 }
 
+
 .plan-page .meal-budget-option:hover {
     transform: translateY(-1px);
     border-color: rgba(196, 132, 55, 0.5);

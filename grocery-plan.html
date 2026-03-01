@@ -1,9 +1,9 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Grocery Plan Â· odeology_</title>
+    <title>Your Grocery Plan · odeology_</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,27 +26,27 @@
 <div class="plan-summary-bar" id="plan-macros">
                     <div class="summary-item">
                         <span class="label">Store</span>
-                        <span class="value" id="p-store">â€”</span>
+                        <span class="value" id="p-store">—</span>
                     </div>
                     <div class="summary-item">
                         <span class="label">Calories</span>
-                        <span class="value" id="p-cal">â€”</span>
+                        <span class="value" id="p-cal">—</span>
                     </div>
                     <div class="summary-item">
                         <span class="label">Protein</span>
-                        <span class="value" id="p-pro">â€”</span>
+                        <span class="value" id="p-pro">—</span>
                     </div>
                     <div class="summary-item">
                         <span class="label">Carbs</span>
-                        <span class="value" id="p-car">â€”</span>
+                        <span class="value" id="p-car">—</span>
                     </div>
                     <div class="summary-item">
                         <span class="label">Fats</span>
-                        <span class="value" id="p-fat">â€”</span>
+                        <span class="value" id="p-fat">—</span>
                     </div>
                     <div class="summary-item">
                         <span class="label" id="p-budget-label">Avg Budget (28d)</span>
-                        <span class="value" id="p-budget">â€”</span>
+                        <span class="value" id="p-budget">—</span>
                     </div>
                 </div>
                 <section class="plan-micros-card" id="plan-micros-card" aria-label="Micronutrients tracker">
@@ -104,11 +104,11 @@
                     <div class="grocery-cost-summary">
                         <div class="cost-item">
                             <span class="label">Avg Weekly</span>
-                            <span class="value" id="p-weekly-cost">â€”</span>
+                            <span class="value" id="p-weekly-cost">—</span>
                         </div>
                         <div class="cost-item">
                             <span class="label" id="p-monthly-cost-label">Avg month (28d)</span>
-                            <span class="value" id="p-monthly-cost">â€”</span>
+                            <span class="value" id="p-monthly-cost">—</span>
                         </div>
                     </div>
                     <div class="cost-window-toggle-row" aria-label="Monthly cost window toggle">
@@ -151,16 +151,16 @@
                             <h3>Budget</h3>
                         </div>
                         <div class="meal-budget-options" id="meal-budget-options" aria-label="Selected budget tier">
-                            <button type="button" class="meal-budget-option" data-budget-tier="under-200" disabled><span class="meal-budget-option-title">Minimum Effective Plan</span><span class="meal-budget-option-range">Est. --/month</span></button>
-                            <button type="button" class="meal-budget-option" data-budget-tier="200-400" disabled><span class="meal-budget-option-title">Balanced Results</span><span class="meal-budget-option-range">Est. --/month</span></button>
-                            <button type="button" class="meal-budget-option" data-budget-tier="400-plus" disabled><span class="meal-budget-option-title">Best Performance</span><span class="meal-budget-option-range">Est. --/month</span></button>
+                            <button type="button" class="meal-budget-option" data-budget-tier="under-200" disabled><span class="meal-budget-option-title">Minimum Effective Plan</span><span class="meal-budget-option-range">Click to run price simulation</span></button>
+                            <button type="button" class="meal-budget-option" data-budget-tier="200-400" disabled><span class="meal-budget-option-title">Balanced Results</span><span class="meal-budget-option-range">Click to run price simulation</span></button>
+                            <button type="button" class="meal-budget-option" data-budget-tier="400-plus" disabled><span class="meal-budget-option-title">Best Performance</span><span class="meal-budget-option-range">Click to run price simulation</span></button>
                         </div>
                         <button type="button" class="budget-forecast-toggle" id="plan-budget-forecast-toggle" aria-expanded="false">
                             <span class="toggle-label">Make your options cheaper?</span>
                             <span class="toggle-arrow" aria-hidden="true">&#9662;</span>
                         </button>
                         <div class="budget-forecast" id="plan-budget-forecast">
-                            <p class="budget-forecast-main" id="plan-budget-forecast-main">Current post-tax price: â€”/month.</p>
+                            <p class="budget-forecast-main" id="plan-budget-forecast-main">Current post-tax price: —/month.</p>
                             <p class="budget-forecast-sub">Make the cost cheaper:</p>
                             <div class="budget-forecast-actions" id="plan-budget-forecast-actions"></div>
                         </div>
@@ -170,30 +170,30 @@
                             <h3>Your daily meals (auto-generated)</h3>
                             <div class="pill-group">
                                 <span class="pill">Per day</span>
-                                <span class="pill macro-accuracy-pill" id="macro-accuracy-pill">â€”</span>
+                                <span class="pill macro-accuracy-pill" id="macro-accuracy-pill">—</span>
                             </div>
                         </div>
                         <div class="meal-grid" id="meal-grid"></div>
                         <div class="macro-summary-row">
                             <div class="macro-col">
                                 <span class="macro-label">Calories</span>
-                                <span class="macro-target" id="target-cal">â€”</span>
-                                <span class="macro-actual" id="actual-cal">â€”</span>
+                                <span class="macro-target" id="target-cal">—</span>
+                                <span class="macro-actual" id="actual-cal">—</span>
                             </div>
                             <div class="macro-col">
                                 <span class="macro-label">Protein</span>
-                                <span class="macro-target" id="target-pro">â€”</span>
-                                <span class="macro-actual" id="actual-pro">â€”</span>
+                                <span class="macro-target" id="target-pro">—</span>
+                                <span class="macro-actual" id="actual-pro">—</span>
                             </div>
                             <div class="macro-col">
                                 <span class="macro-label">Carbs</span>
-                                <span class="macro-target" id="target-carb">â€”</span>
-                                <span class="macro-actual" id="actual-carb">â€”</span>
+                                <span class="macro-target" id="target-carb">—</span>
+                                <span class="macro-actual" id="actual-carb">—</span>
                             </div>
                             <div class="macro-col">
                                 <span class="macro-label">Fat</span>
-                                <span class="macro-target" id="target-fat">â€”</span>
-                                <span class="macro-actual" id="actual-fat">â€”</span>
+                                <span class="macro-target" id="target-fat">—</span>
+                                <span class="macro-actual" id="actual-fat">—</span>
                             </div>
                         </div>
                         <div class="micro-summary-row" id="micro-summary-row" aria-label="Micronutrients projected versus actual">
@@ -215,73 +215,73 @@
                                 <div class="micro-summary-list">
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Fiber</span>
-                                    <span class="micro-summary-projected" id="target-micro-fiber">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-fiber">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-fiber">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-fiber">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Potassium</span>
-                                    <span class="micro-summary-projected" id="target-micro-potassium">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-potassium">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-potassium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-potassium">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Sodium</span>
-                                    <span class="micro-summary-projected" id="target-micro-sodium">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-sodium">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-sodium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-sodium">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Magnesium</span>
-                                    <span class="micro-summary-projected" id="target-micro-magnesium">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-magnesium">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-magnesium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-magnesium">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Calcium</span>
-                                    <span class="micro-summary-projected" id="target-micro-calcium">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-calcium">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-calcium">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-calcium">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Iron</span>
-                                    <span class="micro-summary-projected" id="target-micro-iron">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-iron">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-iron">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-iron">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Zinc</span>
-                                    <span class="micro-summary-projected" id="target-micro-zinc">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-zinc">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-zinc">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-zinc">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Vitamin D</span>
-                                    <span class="micro-summary-projected" id="target-micro-vitamin-d">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-d">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-d">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-d">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Vitamin C</span>
-                                    <span class="micro-summary-projected" id="target-micro-vitamin-c">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-c">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-c">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-c">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Vitamin A</span>
-                                    <span class="micro-summary-projected" id="target-micro-vitamin-a">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-a">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-vitamin-a">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-vitamin-a">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Folate</span>
-                                    <span class="micro-summary-projected" id="target-micro-folate">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-folate">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-folate">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-folate">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">B12</span>
-                                    <span class="micro-summary-projected" id="target-micro-b12">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-b12">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-b12">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-b12">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Omega-3 (EPA+DHA)</span>
-                                    <span class="micro-summary-projected" id="target-micro-omega-3">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-omega-3">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-omega-3">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-omega-3">—</span>
                                 </div>
                                 <div class="micro-summary-item">
                                     <span class="micro-summary-name">Choline</span>
-                                    <span class="micro-summary-projected" id="target-micro-choline">â€”</span>
-                                    <span class="micro-summary-actual micro-actual" id="actual-micro-choline">â€”</span>
+                                    <span class="micro-summary-projected" id="target-micro-choline">—</span>
+                                    <span class="micro-summary-actual micro-actual" id="actual-micro-choline">—</span>
                                 </div>
                             </div>
                             </div>
@@ -289,8 +289,8 @@
                         <div class="macro-note">
                             <p id="macro-note-text">
                                 <strong id="macro-note-headline">You're on track!</strong>
-                                <span id="macro-note-dynamic">We aim for tight targets: <strong>Protein Â±5%</strong> (most important for muscle), <strong>Calories Â±10â€“15%</strong>, and <strong>Carbs/Fat Â±10%</strong>. These ranges ensure real results without obsessing over grams.</span>
-                                Want a more precise match? <a href="#" id="customize-link">Join us on Fridays</a> and we'll customize it for you with your preferred foods â€” it's free! Or <a href="#" id="account-link">create an account</a> to input your own foods and let the system calculate exactly what you need to buy.
+                                <span id="macro-note-dynamic">We aim for tight targets: <strong>Protein ±5%</strong> (most important for muscle), <strong>Calories ±10–15%</strong>, and <strong>Carbs/Fat ±10%</strong>. These ranges ensure real results without obsessing over grams.</span>
+                                Want a more precise match? <a href="#" id="customize-link">Join us on Fridays</a> and we'll customize it for you with your preferred foods — it's free! Or <a href="#" id="account-link">create an account</a> to input your own foods and let the system calculate exactly what you need to buy.
                             </p>
                         </div>
                         <div class="macro-warnings hidden" id="macro-warnings"></div>
@@ -305,43 +305,7 @@
                             </div>
                         </div>
                         <div class="essentials-grid" id="supplement-shop-grid"></div>
-                    </section>
-
-                    <section class="plan-card budget-impact" id="budget-summary">
-                        <div class="card-head">
-                            <div class="card-head-group">
-                                <h3>Budget</h3>
-                                <div class="budget-button-group">
-                                    <button class="btn btn-ghost" id="custom-macro-btn" type="button" title="Manually revise your macro targets and re-generate the plan">Make custom macro plan</button>
-                                    <button class="btn btn-ghost" id="undo-btn" type="button" title="Undo changes and restore original plan">Undo</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="budget-breakdown">
-                            <div class="budget-row">
-                                <span class="label">Projected Budget</span>
-                                <span class="value" id="budget-allocated">â€”</span>
-                            </div>
-                            <div class="budget-row">
-                                <span class="label">Estimated spend</span>
-                                <span class="value" id="budget-estimated">â€”</span>
-                            </div>
-                            <div class="budget-row">
-                                <span class="label">Estimated taxes</span>
-                                <span class="value" id="budget-taxes">â€”</span>
-                            </div>
-                            <div class="budget-row">
-                                <span class="label">Total spend</span>
-                                <span class="value" id="budget-total">â€”</span>
-                            </div>
-                            <div class="budget-row status" id="budget-status">
-                                <span class="status-badge">â€”</span>
-                            </div>
-                        </div>
-                        <div class="grocery-list hidden" id="budget-summary-body"></div>
-                    </section>
-
-                    <!-- Macro Tracking Essentials Section -->
+                    </section><!-- Macro Tracking Essentials Section -->
                     <section class="plan-card essentials-section" id="macro-essentials">
                         <div class="card-head">
                             <h3>Essentials for Tracking Your Macros</h3>
@@ -561,9 +525,40 @@
     </div>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
+    <script src="js/main.js?v=2026-03-01-macro-calorie-trim-10"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

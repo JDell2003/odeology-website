@@ -299,6 +299,7 @@ function isLiquidFood(food) {
 function normalizeGoal(value) {
     const g = String(value || '').toUpperCase();
     if (g === 'CUT' || g === 'LOSE' || g === 'FAT-LOSS') return 'CUT';
+    if (g === 'LEAN_BULK' || g === 'LEAN BULK' || g === 'LEAN-BULK') return 'BULK';
     if (g === 'BULK' || g === 'BUILD' || g === 'GAIN' || g === 'MUSCLE-GAIN' || g === 'BUILD MUSCLE' || g === 'MUSCLE') return 'BULK';
     if (g === 'STRENGTH') return 'STRENGTH';
     return 'RECOMP';
@@ -413,14 +414,14 @@ function getPlannerOvershootConfig({ isCutPhase, isBuildPhase = false, isRecompP
     const cutCaloriesOver = mode === 'budget' ? 50 : (mode === 'balanced' ? 100 : 120);
     const strictCalOver = isCutPhase
         ? cutCaloriesOver
-        : (isBuildPhase ? 220 : (isRecompPhase ? 120 : 0));
+        : (isBuildPhase ? 65 : (isRecompPhase ? 120 : 0));
     const strictCarbOver = isCutPhase
         ? (mode === 'budget' ? 60 : (mode === 'balanced' ? 30 : 15))
-        : (isRecompPhase ? 40 : 0);
+        : (isBuildPhase ? 40 : (isRecompPhase ? 40 : 0));
     const strictProteinOverPct = isCutPhase
         ? (mode === 'budget' ? 1.20 : (mode === 'balanced' ? 1.10 : 1.05))
-        : (isBuildPhase ? 1.10 : (isRecompPhase ? 1.08 : 1.00));
-    const strictFatOver = isCutPhase ? (mode === 'budget' ? 2 : 0) : (isBuildPhase ? 6 : (isRecompPhase ? 5 : 0));
+        : (isBuildPhase ? 1.05 : (isRecompPhase ? 1.08 : 1.00));
+    const strictFatOver = isCutPhase ? (mode === 'budget' ? 2 : 0) : (isBuildPhase ? 2 : (isRecompPhase ? 5 : 0));
     if (!relaxed) {
         return {
             caloriesOver: strictCalOver,
@@ -430,10 +431,10 @@ function getPlannerOvershootConfig({ isCutPhase, isBuildPhase = false, isRecompP
         };
     }
     return {
-        caloriesOver: isCutPhase ? cutCaloriesOver : (isBuildPhase ? 260 : (isRecompPhase ? 180 : 220)),
-        carbsOver: isCutPhase ? (mode === 'budget' ? 90 : 60) : (isBuildPhase ? 120 : (isRecompPhase ? 70 : 80)),
-        proteinOverPct: isCutPhase ? (strictProteinOverPct + 0.05) : (isBuildPhase ? 1.15 : (isRecompPhase ? 1.12 : 1.08)),
-        fatOver: isCutPhase ? Math.max(strictFatOver, 4) : (isBuildPhase ? 8 : (isRecompPhase ? 8 : 6))
+        caloriesOver: isCutPhase ? cutCaloriesOver : (isBuildPhase ? 160 : (isRecompPhase ? 180 : 220)),
+        carbsOver: isCutPhase ? (mode === 'budget' ? 90 : 60) : (isBuildPhase ? 80 : (isRecompPhase ? 70 : 80)),
+        proteinOverPct: isCutPhase ? (strictProteinOverPct + 0.05) : (isBuildPhase ? 1.08 : (isRecompPhase ? 1.12 : 1.08)),
+        fatOver: isCutPhase ? Math.max(strictFatOver, 4) : (isBuildPhase ? 4 : (isRecompPhase ? 8 : 6))
     };
 }
 
@@ -543,6 +544,64 @@ function scalePlanToOvershootCaps(plan, caps) {
     };
 }
 
+function applyStrictPlanClamp({
+    meals,
+    dailyTotals,
+    macroTargets,
+    goalRaw,
+    weightLbs,
+    goalWeightLbs,
+    budgetMode,
+    buildCalOver = 65
+} = {}) {
+    if (!Array.isArray(meals) || !meals.length) {
+        return { meals, dailyTotals, applied: false, scaleApplied: null };
+    }
+    const totals = dailyTotals || computeTotalsFromBuiltMeals(meals);
+    const target = normalizeMacroTargets(macroTargets || {});
+    const goalText = String(goalRaw || '');
+    const goalNorm = normalizeGoal(goalText);
+    const cutPhase = isCutGoalLike(goalText, goalNorm);
+    const resolvedGoal = resolveGoalModeForMath(goalText, weightLbs, goalWeightLbs);
+    const buildPhase = !cutPhase && (resolvedGoal === 'BULK' || resolvedGoal === 'STRENGTH');
+    const recompPhase = !cutPhase && !buildPhase && resolvedGoal === 'RECOMP';
+    const overshootConfig = getPlannerOvershootConfig({
+        isCutPhase: cutPhase,
+        isBuildPhase: buildPhase,
+        isRecompPhase: recompPhase,
+        budgetMode,
+        relaxed: false
+    });
+    if (buildPhase) {
+        overshootConfig.caloriesOver = buildCalOver;
+    }
+    const caps = {
+        caloriesCap: (Number(target.calories) || 0) + (Number(overshootConfig?.caloriesOver) || 0),
+        proteinCap: Math.ceil((Number(target.protein_g) || 0) * (Number(overshootConfig?.proteinOverPct) || 1)),
+        carbsCap: (Number(target.carbs_g) || 0) + (Number(overshootConfig?.carbsOver) || 0),
+        fatCap: (Number(target.fat_g) || 0) + (Number(overshootConfig?.fatOver) || 0)
+    };
+    const exceedsCaps = (
+        (Number(totals?.calories) || 0) > caps.caloriesCap ||
+        (Number(totals?.protein_g) || 0) > caps.proteinCap ||
+        (Number(totals?.carbs_g) || 0) > caps.carbsCap ||
+        (Number(totals?.fat_g) || 0) > caps.fatCap
+    );
+    if (!exceedsCaps) {
+        return { meals, dailyTotals: totals, applied: false, scaleApplied: null };
+    }
+    const scaled = scalePlanToOvershootCaps({ meals, dailyTotals: totals }, caps);
+    if (scaled && Array.isArray(scaled.meals) && scaled.meals.length) {
+        return {
+            meals: scaled.meals,
+            dailyTotals: scaled.dailyTotals,
+            applied: true,
+            scaleApplied: scaled.scaleApplied
+        };
+    }
+    return { meals, dailyTotals: totals, applied: false, scaleApplied: null };
+}
+
 function passesPlannerMinimumGate({ totals, targets, relaxed = false, minFactorByMacro = null }) {
     const minUndershoot = relaxed ? (MAX_MACRO_UNDERSHOOT + 0.05) : MAX_MACRO_UNDERSHOOT;
     const minFactor = Math.max(0, 1 - minUndershoot);
@@ -595,6 +654,8 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
     const activeBudgetMode = String((typeof getActiveBudgetModeFromSession === 'function' ? getActiveBudgetModeFromSession() : 'best') || 'best').toLowerCase();
     const isBestMode = activeBudgetMode === 'best';
     const isBuildPhase = Boolean(options?.isBuildPhase);
+    const goalNorm = normalizeGoal(options?.goalRaw || '');
+    const isRecompPhase = goalNorm === 'RECOMP';
     const proteinCeiling = isBuildPhase ? targets.protein_g : (targets.protein_g + 5);
     const proteinCarbHeadroomCeiling = Math.min(proteinCeiling, targets.protein_g + 1);
     const meals = srcMeals.map((meal) => ({
@@ -618,6 +679,23 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
         if (calories <= 0) return Number.POSITIVE_INFINITY;
         return (protein * 100) / calories;
     };
+    const proteinFatRatio = (food) => {
+        const protein = Math.max(0, Number(food?.macros?.protein_g) || 0);
+        const fat = Math.max(0, Number(food?.macros?.fat_g) || 0);
+        if (protein <= 0) return Number.POSITIVE_INFINITY;
+        return fat / protein;
+    };
+    const proteinsByLean = foods
+        .filter((f) => classifyType(f) === 'protein' && safePer(f, 'protein_g') > 0)
+        .sort((a, b) => {
+            const aRatio = proteinFatRatio(a);
+            const bRatio = proteinFatRatio(b);
+            if (aRatio !== bRatio) return aRatio - bRatio;
+            const aDensity = proteinPer100Kcal(a);
+            const bDensity = proteinPer100Kcal(b);
+            if (aDensity !== bDensity) return bDensity - aDensity;
+            return String(a?.id || '').localeCompare(String(b?.id || ''));
+        });
     const carbsByLowProtein = foods
         .filter((f) => classifyType(f) === 'carb' && safePer(f, 'carbs_g') > 0)
         .sort((a, b) => {
@@ -820,6 +898,105 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
         return false;
     };
 
+    const tryAddProtein = () => {
+        if (!proteinsByLean.length) return false;
+        const proteinDef = (Number(targets?.protein_g) || 0) - (Number(totals?.protein_g) || 0);
+        if (proteinDef <= 0) return false;
+        const mealOrder = meals
+            .map((meal, idx) => ({ idx, protein: Number(meal?.totals?.protein_g) || 0 }))
+            .sort((a, b) => a.protein - b.protein)
+            .map((entry) => entry.idx);
+        const step = proteinDef > 20 ? 0.5 : 0.25;
+        const calCap = (Number(targets?.calories) || 0) + (isRecompPhase ? 40 : 120);
+        const fatCap = (Number(targets?.fat_g) || 0) + (isRecompPhase ? 4 : 10);
+        for (const mealIdx of mealOrder) {
+            for (const proteinFood of proteinsByLean) {
+                const beforeMeals = snapshotMeals();
+                const beforeTotals = { ...totals };
+                if (!setServingDelta(mealIdx, proteinFood, step, 0.25)) continue;
+                totals = recomputeAll();
+                const proteinOk = (Number(totals?.protein_g) || 0) <= proteinCeiling;
+                const fatOk = (Number(totals?.fat_g) || 0) <= fatCap;
+                const calOk = (Number(totals?.calories) || 0) <= calCap;
+                if (proteinOk && fatOk && calOk) return true;
+                restoreMeals(beforeMeals);
+                totals = beforeTotals;
+            }
+        }
+        return false;
+    };
+
+    const tryTrimFat = () => {
+        const fatOver = (Number(totals?.fat_g) || 0) - (Number(targets?.fat_g) || 0);
+        if (fatOver <= 2) return false;
+        const candidates = [];
+        meals.forEach((meal, mealIdx) => {
+            (meal?.foods || []).forEach((item) => {
+                const food = byId.get(String(item?.foodId || ''));
+                if (!food) return;
+                const type = classifyType(food);
+                const servings = Number(item?.servings) || 0;
+                if (servings <= 0.25) return;
+                const fat = Number(item?.fat_g) || 0;
+                const protein = Number(item?.protein_g) || 0;
+                const ratio = protein > 0 ? (fat / protein) : Number.POSITIVE_INFINITY;
+                const weight = type === 'fat' ? 3 : (ratio >= 0.6 ? 2 : 1);
+                candidates.push({ mealIdx, food, weight, fat });
+            });
+        });
+        candidates.sort((a, b) => (b.weight - a.weight) || (b.fat - a.fat));
+        for (const candidate of candidates) {
+            const beforeMeals = snapshotMeals();
+            const beforeTotals = { ...totals };
+            const step = classifyType(candidate.food) === 'fat' ? 0.5 : 0.25;
+            if (!setServingDelta(candidate.mealIdx, candidate.food, -step, step)) continue;
+            totals = recomputeAll();
+            if ((Number(totals?.fat_g) || 0) < (Number(beforeTotals?.fat_g) || 0)) return true;
+            restoreMeals(beforeMeals);
+            totals = beforeTotals;
+        }
+        return false;
+    };
+
+    const tryTrimCarb = (carbFloor = null) => {
+        const effectiveCarbTarget = Number.isFinite(carbFloor)
+            ? carbFloor
+            : (Number(targets?.carbs_g) || 0);
+        const carbOver = (Number(totals?.carbs_g) || 0) - effectiveCarbTarget;
+        if (carbOver <= 4) return false;
+        const candidates = [];
+        meals.forEach((meal, mealIdx) => {
+            (meal?.foods || []).forEach((item) => {
+                const food = byId.get(String(item?.foodId || ''));
+                if (!food || classifyType(food) !== 'carb') return;
+                const servings = Number(item?.servings) || 0;
+                if (servings <= 0.25) return;
+                const carbs = Number(item?.carbs_g) || 0;
+                candidates.push({ mealIdx, food, carbs });
+            });
+        });
+        candidates.sort((a, b) => b.carbs - a.carbs);
+        for (const candidate of candidates) {
+            if (Number.isFinite(carbFloor)) {
+                const projectedCarbs = (Number(totals?.carbs_g) || 0) - (candidate.carbs * 0.25);
+                if (projectedCarbs < carbFloor) continue;
+            }
+            const beforeMeals = snapshotMeals();
+            const beforeTotals = { ...totals };
+            if (!setServingDelta(candidate.mealIdx, candidate.food, -0.25, 0.25)) continue;
+            if (!mealHasCarb(meals[candidate.mealIdx])) {
+                restoreMeals(beforeMeals);
+                totals = beforeTotals;
+                continue;
+            }
+            totals = recomputeAll();
+            if ((Number(totals?.carbs_g) || 0) < (Number(beforeTotals?.carbs_g) || 0)) return true;
+            restoreMeals(beforeMeals);
+            totals = beforeTotals;
+        }
+        return false;
+    };
+
     const tryAddRice = () => {
         if (!riceFood) return false;
         const carbDef = (Number(targets?.carbs_g) || 0) - (Number(totals?.carbs_g) || 0);
@@ -945,13 +1122,45 @@ function enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, optio
             );
         if (done) break;
         let changed = false;
-        if (!changed && (dC > 12 || dCal > 100) && (Number(totals?.protein_g) || 0) > proteinCarbHeadroomCeiling) changed = ensureProteinHeadroomForCarbFill();
-        if (!changed && (Number(totals?.protein_g) || 0) > proteinCeiling) changed = tryTrimProtein(proteinCeiling);
-        if (!changed && dC < -6 && dF > 3) changed = trySwapCarbToFat();
-        if (!changed && (dC > 8 || dCal > 80)) changed = tryAddRice();
-        if (!changed && dF > 2) changed = tryAddOil();
-        if (!changed && dCal > 80) changed = tryAddRice();
-        if (!changed && dCal > 80) changed = tryAddOil();
+        if (isRecompPhase) {
+            if (!changed && dP > 4 && (dF < -2 || dCal < -20)) {
+                changed = tryTrimFat() || tryTrimCarb();
+            }
+            if (!changed && dP > 4) changed = tryAddProtein();
+            if (!changed && dP > 6) changed = tryTrimCarb();
+            if (!changed && dF < -2) changed = tryTrimFat();
+            if (!changed && dP <= 4 && dF > 2) changed = tryAddOil();
+            if (!changed && dP <= 4 && (dC > 6 || dCal > 70)) changed = tryAddRice();
+            if (!changed && dP <= 4 && dCal > 70 && dF > 1) changed = tryAddOil();
+            if (!changed && dP <= 4 && dCal > 70) changed = tryAddRice();
+        } else {
+            if (!changed && isBuildPhase) {
+                const dPBuild = (Number(targets?.protein_g) || 0) - (Number(totals?.protein_g) || 0);
+                if (dPBuild > 0 && dCal > 0) {
+                    changed = tryAddProtein();
+                }
+            }
+            const calOverNow = (Number(totals?.calories) || 0) - (Number(targets?.calories) || 0);
+            const proteinOverNow = (Number(totals?.protein_g) || 0) - (Number(targets?.protein_g) || 0);
+            const fatOverNow = (Number(totals?.fat_g) || 0) - (Number(targets?.fat_g) || 0);
+            const calorieTrimCarbFloor = isBuildPhase
+                ? Math.max(80, Math.round((Number(targets?.carbs_g) || 0) * 0.90))
+                : Math.max(70, Math.round((Number(targets?.carbs_g) || 0) * 0.85));
+            if (!changed && calOverNow > 60 && (proteinOverNow > 0 || fatOverNow > 0)) {
+                if (fatOverNow > 1) changed = tryTrimFat();
+                if (!changed && proteinOverNow > 1) changed = tryTrimProtein(proteinCeiling);
+            }
+            if (!changed && calOverNow > 60 && (Number(totals?.carbs_g) || 0) > (calorieTrimCarbFloor + 4)) {
+                changed = tryTrimCarb(calorieTrimCarbFloor);
+            }
+            if (!changed && (dC > 12 || dCal > 100) && (Number(totals?.protein_g) || 0) > proteinCarbHeadroomCeiling) changed = ensureProteinHeadroomForCarbFill();
+            if (!changed && (Number(totals?.protein_g) || 0) > proteinCeiling) changed = tryTrimProtein(proteinCeiling);
+            if (!changed && dC < -6 && dF > 3) changed = trySwapCarbToFat();
+            if (!changed && (!isBuildPhase || dP <= 0) && dF > 2) changed = tryAddOil();
+            if (!changed && (!isBuildPhase || dP <= 0) && (dC > 8 || dCal > 80)) changed = tryAddRice();
+            if (!changed && (!isBuildPhase || dP <= 0) && dCal > 80 && dF > 1) changed = tryAddOil();
+            if (!changed && (!isBuildPhase || dP <= 0) && dCal > 80) changed = tryAddRice();
+        }
         if (!changed) break;
     }
 
@@ -1000,10 +1209,14 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
             .filter(([key]) => Boolean(key))
     );
 
+    const prioritySource = options?.priorityNutrients;
+    const allPriorityKeys = Array.from(refByKey.keys());
     const priorityNutrients = (
-        Array.isArray(options?.priorityNutrients) && options.priorityNutrients.length
-            ? options.priorityNutrients
-            : ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium']
+        prioritySource === true || String(prioritySource || '').toLowerCase() === 'all'
+            ? allPriorityKeys
+            : (Array.isArray(prioritySource) && prioritySource.length
+                ? prioritySource
+                : ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium'])
     )
         .map((key) => String(key || '').trim().toLowerCase())
         .filter((key) => refByKey.has(key));
@@ -1013,12 +1226,23 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
     const maxMovesPerNutrient = Math.max(1, Number(options?.maxMovesPerNutrient) || 10);
     const logLabel = String(options?.label || 'baseline_micro_correction');
 
-    const baseMacroCaps = {
+    const defaultMacroCaps = {
         calories: (Number(targets.calories) || 0) + Math.max(80, Math.round((Number(targets.calories) || 0) * 0.03)),
         protein_g: (Number(targets.protein_g) || 0) + 5,
         carbs_g: (Number(targets.carbs_g) || 0) + 12,
         fat_g: (Number(targets.fat_g) || 0) + 6
     };
+    const macroCapsOverride = (options?.macroCapsOverride && typeof options.macroCapsOverride === 'object')
+        ? options.macroCapsOverride
+        : null;
+    const baseMacroCaps = macroCapsOverride
+        ? {
+            calories: Number.isFinite(Number(macroCapsOverride.calories)) ? Number(macroCapsOverride.calories) : defaultMacroCaps.calories,
+            protein_g: Number.isFinite(Number(macroCapsOverride.protein_g)) ? Number(macroCapsOverride.protein_g) : defaultMacroCaps.protein_g,
+            carbs_g: Number.isFinite(Number(macroCapsOverride.carbs_g)) ? Number(macroCapsOverride.carbs_g) : defaultMacroCaps.carbs_g,
+            fat_g: Number.isFinite(Number(macroCapsOverride.fat_g)) ? Number(macroCapsOverride.fat_g) : defaultMacroCaps.fat_g
+        }
+        : defaultMacroCaps;
 
     const meals = srcMeals.map((meal, idx) => ({
         ...(meal || {}),
@@ -1216,6 +1440,9 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
         if (inPlanIds.has(id)) inPlanFoods.push(food);
         else outPlanFoods.push(food);
     });
+    const macroPenaltyScale = Number(options?.macroPenaltyScale);
+    const candidatePenaltyScale = Number(options?.candidateMacroPenaltyScale);
+    const effectiveCandidatePenaltyScale = Number.isFinite(candidatePenaltyScale) ? candidatePenaltyScale : 1;
     const candidateFoodsForNutrient = (nutrientKey, phase = 'in_plan') => {
         const sourceFoods = phase === 'in_plan' ? inPlanFoods : outPlanFoods;
         return sourceFoods
@@ -1234,7 +1461,7 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
                     const pro = Number(safeMacroPerServing(food, 'protein_g')) || 0;
                     const fat = Number(safeMacroPerServing(food, 'fat_g')) || 0;
                     const inPlanBonus = inPlanIds.has(String(food?.id || '')) ? 0.03 : 0;
-                    return (micro / Math.max(1, cal + (pro * 8) + (fat * 6))) + inPlanBonus;
+                    return (micro / Math.max(1, cal + (pro * 8 * effectiveCandidatePenaltyScale) + (fat * 6 * effectiveCandidatePenaltyScale))) + inPlanBonus;
                 };
                 return score(b) - score(a);
             })
@@ -1394,6 +1621,9 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
     };
     runPotassiumReductionPass('pre_priority');
 
+    const goalSlackPct = Number.isFinite(Number(options?.goalSlackPct)) ? Number(options.goalSlackPct) : 0.03;
+    const allowMacroOverageWorsening = Boolean(options?.allowMacroOverageWorsening);
+    const effectivePenaltyScale = Number.isFinite(macroPenaltyScale) ? macroPenaltyScale : 1;
     for (const nutrientKey of priorityNutrients) {
         const ref = refByKey.get(nutrientKey);
         const goal = Number(ref?.goal_value);
@@ -1419,7 +1649,7 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
         while (moveCount < maxMovesTotal && movesForNutrient < maxMovesPerNutrient) {
             const current = Number(microTotals?.[nutrientKey]) || 0;
             const deficit = goal - current;
-            if (deficit <= Math.max(goal * 0.03, 0.1)) break;
+            if (deficit <= Math.max(goal * goalSlackPct, 0.1)) break;
 
             let bestMove = null;
             let selectedPhase = '';
@@ -1443,7 +1673,7 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
                             continue;
                         }
                         const nextTotals = recomputeAll();
-                        if (!withinMacroCaps(nextTotals, nutrientCaps, beforeTotals) || worsensExistingOverages(beforeTotals, nextTotals, nutrientCaps)) {
+                        if (!withinMacroCaps(nextTotals, nutrientCaps, beforeTotals) || (!allowMacroOverageWorsening && worsensExistingOverages(beforeTotals, nextTotals, nutrientCaps))) {
                             nutrientDiag.rejectedByMacroCaps += 1;
                             restoreMeals(beforeMeals);
                             totals = beforeTotals;
@@ -1471,7 +1701,11 @@ function applyMicronutrientCorrectionWithGuardrails({ plan, selectedFoods, macro
                         const fatPenalty = Math.max(0, (Number(nextTotals?.fat_g) || 0) - (Number(targets?.fat_g) || 0));
                         const carbPenalty = Math.max(0, (Number(nextTotals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0));
                         const caloriePenalty = Math.max(0, (Number(nextTotals?.calories) || 0) - (Number(targets?.calories) || 0));
-                        const score = (gain * 1000) - (proteinPenalty * 45) - (fatPenalty * 40) - (carbPenalty * 12) - (caloriePenalty * 0.75);
+                        const score = (gain * 1000)
+                            - (proteinPenalty * 45 * effectivePenaltyScale)
+                            - (fatPenalty * 40 * effectivePenaltyScale)
+                            - (carbPenalty * 12 * effectivePenaltyScale)
+                            - (caloriePenalty * 0.75 * effectivePenaltyScale);
 
                         if (!bestMove || score > bestMove.score) {
                             bestMove = {
@@ -5275,7 +5509,7 @@ function computeMacros({
     }
 
     const fatFactors = isBulk
-        ? { floor: 0.24, target: 0.27, cap: 0.32 }
+        ? { floor: 0.22, target: 0.25, cap: 0.30 }
         : { floor: 0.30, target: 0.33, cap: 0.40 };
     const fatFloorByBasis = Math.round(fatFactors.floor * basisLb);
     const fatTargetByBasis = Math.round(fatFactors.target * basisLb);
@@ -5323,6 +5557,19 @@ function computeMacros({
     let carbKcal = carbG * 4;
     let totalKcal = proteinKcal + fatKcal + carbKcal;
     let deltaKcal = caloriesTarget - totalKcal;
+    if (deltaKcal > 25) {
+        const proteinMaxAllowed = Math.min(260, Math.max(120, Math.round((proteinFactor + 0.10) * basisLb)));
+        const proteinRoom = Math.max(0, proteinMaxAllowed - proteinG);
+        if (proteinRoom > 0) {
+            const addProtein = Math.min(proteinRoom, Math.floor(deltaKcal / 4));
+            if (addProtein > 0) {
+                proteinG += addProtein;
+                proteinKcal = proteinG * 4;
+                totalKcal = proteinKcal + fatKcal + carbKcal;
+                deltaKcal = caloriesTarget - totalKcal;
+            }
+        }
+    }
     if (Math.abs(deltaKcal) > 25) {
         carbG = Math.max(60, Math.round((caloriesTarget - ((proteinG * 4) + (fatG * 9))) / 4));
         proteinKcal = proteinG * 4;
@@ -7279,6 +7526,7 @@ const formatCurrencyWholeUp = (value) => {
     const rounded = Math.ceil(Number(value));
     return `$${rounded.toLocaleString()}`;
 };
+const roundToDollarUp = (value) => Math.ceil(Number(value) || 0);
 
 const resolveServingGrams = (macros, queryKey) => {
     const size = Number(macros?.serving_size);
@@ -13822,7 +14070,7 @@ function setupGroceryFinalPage() {
         const high = Math.max(low, Number(opt?.high) || 0);
         const value = Number.isFinite(Number(opt?.value))
             ? Number(opt.value)
-            : roundTo10((low + high) / 2);
+            : roundToDollarUp((low + high) / 2);
         const title = String(
             opt?.title
             || (key === 'budget' ? 'Minimum Effective Plan' : (key === 'balanced' ? 'Balanced Results' : 'Best Performance'))
@@ -13912,6 +14160,24 @@ function setupGroceryFinalPage() {
         budgetMode: String(savedPrefs?.budgetMode || getActiveBudgetModeFromSession() || 'best').toLowerCase(),
         ...overrides
     });
+    const budgetForecastBaseline = (() => {
+        const base = buildCurrentFormState();
+        return {
+            frequency: String(base?.frequency || '').trim(),
+            lossRateLbsPerWeek: Number(base?.lossRateLbsPerWeek || 1.5),
+            gainRateLbsPerWeek: Number(base?.gainRateLbsPerWeek || 0.5)
+        };
+    })();
+    const budgetForecastHasUndoDelta = (state) => {
+        const freqNow = String(state?.frequency || '').trim();
+        const lossNow = Number(state?.lossRateLbsPerWeek || 1.5);
+        const gainNow = Number(state?.gainRateLbsPerWeek || 0.5);
+        return (
+            freqNow !== budgetForecastBaseline.frequency
+            || Math.abs(lossNow - budgetForecastBaseline.lossRateLbsPerWeek) >= 0.01
+            || Math.abs(gainNow - budgetForecastBaseline.gainRateLbsPerWeek) >= 0.01
+        );
+    };
     const projectCaloriesAndMacros = (formState) => {
         try {
             const normalized = normalizeInputs(formState, { strictMode: false, throwOnError: false });
@@ -14348,9 +14614,9 @@ function setupGroceryFinalPage() {
                     disabled: !canIncreaseCutSpeed
                 });
                 actions.push({
-                    key: 'apply-both',
-                    label: 'Apply both',
-                    disabled: !(canLowerFreq || canIncreaseCutSpeed)
+                    key: 'undo-all',
+                    label: 'Undo for everything',
+                    disabled: !budgetForecastHasUndoDelta(buildCurrentFormState())
                 });
             } else if (normalizedGoal === 'BUILD') {
                 const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
@@ -14361,9 +14627,9 @@ function setupGroceryFinalPage() {
                     disabled: !canSlowBulk
                 });
                 actions.push({
-                    key: 'apply-both',
-                    label: 'Apply both',
-                    disabled: !(canLowerFreq || canSlowBulk)
+                    key: 'undo-all',
+                    label: 'Undo for everything',
+                    disabled: !budgetForecastHasUndoDelta(buildCurrentFormState())
                 });
             }
             budgetForecastActionsEl.innerHTML = actions
@@ -14602,27 +14868,13 @@ function setupGroceryFinalPage() {
                 }
                 nextOverrides = { gainRateLbsPerWeek: nextGainRate };
                 actionTitle = 'Bulk slower';
-            } else if (action === 'apply-both') {
-                const goalNorm = normalizeGoalInput(currentState.goal);
-                const batchOverrides = {};
-                const nextFreq = currentFreq === '5-6' ? '3-4' : (currentFreq === '3-4' ? '1-2' : '');
-                if (nextFreq) batchOverrides.frequency = nextFreq;
-                if (goalNorm === 'CUT') {
-                    const nextRate = currentRate < 1.5 ? 1.5 : (currentRate < 2 ? 2 : 2);
-                    if (nextRate > currentRate) batchOverrides.lossRateLbsPerWeek = nextRate;
-                    actionTitle = 'Apply both (cut cost levers)';
-                } else if (goalNorm === 'BUILD') {
-                    const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
-                    if (nextGainRate < currentGainRate) batchOverrides.gainRateLbsPerWeek = nextGainRate;
-                    actionTitle = 'Apply both (bulk cost levers)';
-                } else {
-                    return;
-                }
-                if (!Object.keys(batchOverrides).length) {
-                    alert('No further cost reductions are available for this plan.');
-                    return;
-                }
-                nextOverrides = batchOverrides;
+            } else if (action === 'undo-all') {
+                actionTitle = 'Undo for everything';
+                nextOverrides = {
+                    frequency: budgetForecastBaseline.frequency || currentFreq,
+                    lossRateLbsPerWeek: budgetForecastBaseline.lossRateLbsPerWeek,
+                    gainRateLbsPerWeek: budgetForecastBaseline.gainRateLbsPerWeek
+                };
             } else {
                 return;
             }
@@ -14689,16 +14941,10 @@ function setupGroceryFinalPage() {
                 summaryLines.push('- [[Lower monthly cost]] from a smaller surplus.');
                 summaryLines.push('- [[Lower unnecessary fat-gain risk]] while still building.');
                 summaryLines.push('- Easier appetite control across the week.');
-            } else if (action === 'apply-both') {
-                if (projectedStateGoal === 'CUT') {
-                    summaryLines.push('- [[Largest immediate cost drop]] for your cut.');
-                    summaryLines.push('- Combines lower activity demand with faster fat-loss settings.');
-                    summaryLines.push('- Can keep progress moving when budget is tight.');
-                } else {
-                    summaryLines.push('- [[Largest cost reduction]] available for your build phase.');
-                    summaryLines.push('- Lower weekly food demand plus a smaller surplus.');
-                    summaryLines.push('- Better control of monthly spend without restarting setup.');
-                }
+            } else if (action === 'undo-all') {
+                summaryLines.push('- [[Restore your original frequency and pace]] from before the cost tweaks.');
+                summaryLines.push('- Monthly grocery estimate returns to your baseline settings.');
+                summaryLines.push('- Useful if the cheaper plan feels too aggressive.');
             }
             summaryLines.push('**Cons / Tradeoffs**');
             if (action === 'lower-frequency') {
@@ -14710,25 +14956,16 @@ function setupGroceryFinalPage() {
             } else if (action === 'slower-bulk') {
                 summaryLines.push('- [[Slower size and strength gain pace]].');
                 summaryLines.push('- You may need a longer timeline to hit the same scale target.');
-            } else if (action === 'apply-both') {
-                if (projectedStateGoal === 'CUT') {
-                    summaryLines.push('- [[Highest adherence pressure]] among cut cost options.');
-                    summaryLines.push('- Recovery and gym output can drop if sleep/stress are not managed.');
-                } else {
-                    summaryLines.push('- [[Slowest gain pace]] among build options.');
-                    summaryLines.push('- Lower weekly training frequency can reduce total growth stimulus.');
-                }
+            } else if (action === 'undo-all') {
+                summaryLines.push('- [[Higher monthly cost]] versus the cheaper plan settings.');
+                summaryLines.push('- Progress pace returns to baseline (no added cost-savings pressure).');
             }
 
             const actionTradeoffLine = (() => {
                 if (action === 'lower-frequency') return 'slower gym adaptation from reduced weekly volume.';
                 if (action === 'faster-cut') return 'higher hunger/cravings and flatter hard-day performance.';
                 if (action === 'slower-bulk') return 'slower size/strength gain pace.';
-                if (action === 'apply-both') {
-                    return projectedStateGoal === 'CUT'
-                        ? 'highest adherence pressure among cut cost options.'
-                        : 'slowest gain pace among build cost options.';
-                }
+                if (action === 'undo-all') return 'higher monthly cost than the cheaper settings.';
                 return 'lower performance margin versus your current setup.';
             })();
             const blufLines = [
@@ -15437,7 +15674,7 @@ function setupGroceryFinalPage() {
             || budgetButtons[2]
             || budgetButtons[1]
             || budgetButtons[0];
-        const selectedBudgetValue = Number(
+        let selectedBudgetValue = Number(
             activeBudgetBtn?.dataset?.budget
             || budgetInput?.value
             || NaN
@@ -15463,7 +15700,7 @@ function setupGroceryFinalPage() {
             carbG: Math.max(0, Math.round(Number(macros.carbG) || 0)),
             fatG: Math.max(0, Math.round(Number(macros.fatG) || 0))
         };
-        const budgetTierOptionsForPrefs = budgetButtons.map((btn, idx) => {
+        let budgetTierOptionsForPrefs = budgetButtons.map((btn, idx) => {
             const rawTier = String(btn?.dataset?.budgetTier || '').trim().toLowerCase();
             let key = '';
             if (rawTier === 'budget' || rawTier === 'under-200') key = 'budget';
@@ -15493,6 +15730,7 @@ function setupGroceryFinalPage() {
                 value: Number.isFinite(value) ? value : 0
             };
         }).filter((opt) => Boolean(opt.key));
+        let budgetTierSourceForPrefs = 'step3_projection';
         const sexRawForBudget = String(
             nutritionState.selections?.sex
             || sessionData?.selections?.sex
@@ -15654,7 +15892,7 @@ function setupGroceryFinalPage() {
             },
             budgetMode: selectedBudgetMode,
             budgetTierOptions: budgetTierOptionsForPrefs,
-            budgetTierSource: 'step3_projection',
+            budgetTierSource: budgetTierSourceForPrefs,
             macroBaseline: macroBaselineBeforeBudgetMode,
             macroLock: true
         };
@@ -15774,11 +16012,104 @@ function setupGroceryFinalPage() {
         traceLog('ADJUSTED_BASELINE_FOODS_CALCULATED', {
             adjustedFoods: Array.isArray(adjustedFoods) ? adjustedFoods.length : 0
         });
+
+        // Precompute tier prices from the same adjusted foods and lock calories to the current target.
+        try {
+            const canSimulateTierPrices = (
+                typeof simulateMonthlyFromServingsForTier === 'function'
+                && typeof buildTierOptionsFromModeCosts === 'function'
+                && typeof toPlannerFoodsForBudgetSimulation === 'function'
+                && Array.isArray(adjustedFoods)
+                && adjustedFoods.length > 0
+            );
+            if (canSimulateTierPrices) {
+                const plannerFoodsForTierSim = toPlannerFoodsForBudgetSimulation(adjustedFoods);
+                const caloriesLock = Math.max(1200, Math.round(Number(macros.calories) || 0));
+                const buildTierMacroBlock = (modeKey) => {
+                    const projected = projectCaloriesAndMacros(buildCurrentFormState({
+                        budgetMode: modeKey,
+                        bodyFatPct: bodyFatForBudgetMode,
+                        caloriesOverride: caloriesLock
+                    }));
+                    const hasErrors = Array.isArray(projected?.errors) && projected.errors.length > 0;
+                    if (hasErrors || !projected?.macros) {
+                        return {
+                            calories: caloriesLock,
+                            proteinG: Math.max(0, Math.round(Number(macros.proteinG) || 0)),
+                            carbG: Math.max(0, Math.round(Number(macros.carbG) || 0)),
+                            fatG: Math.max(0, Math.round(Number(macros.fatG) || 0))
+                        };
+                    }
+                    return {
+                        calories: Math.round(Number(projected?.calories?.target || caloriesLock)),
+                        proteinG: Math.round(Number(projected?.macros?.protein_g || 0)),
+                        carbG: Math.round(Number(projected?.macros?.carb_g || 0)),
+                        fatG: Math.round(Number(projected?.macros?.fat_g || 0))
+                    };
+                };
+                const formStateBase = buildCurrentFormState({ bodyFatPct: bodyFatForBudgetMode });
+                const budgetSim = simulateMonthlyFromServingsForTier({
+                    modeKeyRaw: 'budget',
+                    macrosBlock: buildTierMacroBlock('budget'),
+                    formStateOverride: { ...formStateBase, budgetMode: 'budget', caloriesOverride: caloriesLock },
+                    plannerFoodsOverride: plannerFoodsForTierSim
+                });
+                const balancedSim = simulateMonthlyFromServingsForTier({
+                    modeKeyRaw: 'balanced',
+                    macrosBlock: buildTierMacroBlock('balanced'),
+                    formStateOverride: { ...formStateBase, budgetMode: 'balanced', caloriesOverride: caloriesLock },
+                    plannerFoodsOverride: plannerFoodsForTierSim
+                });
+                const bestSim = simulateMonthlyFromServingsForTier({
+                    modeKeyRaw: 'best',
+                    macrosBlock: buildTierMacroBlock('best'),
+                    formStateOverride: { ...formStateBase, budgetMode: 'best', caloriesOverride: caloriesLock },
+                    plannerFoodsOverride: plannerFoodsForTierSim
+                });
+                if (budgetSim?.monthlyPostTax > 0 && balancedSim?.monthlyPostTax > 0 && bestSim?.monthlyPostTax > 0) {
+                    const simulatedTierOptions = buildTierOptionsFromModeCosts({
+                        budgetCostRaw: budgetSim.monthlyPostTax,
+                        balancedCostRaw: balancedSim.monthlyPostTax,
+                        bestCostRaw: bestSim.monthlyPostTax
+                    });
+                    budgetTierOptionsForPrefs = simulatedTierOptions;
+                    budgetTierSourceForPrefs = 'final_plan_simulation';
+                    prefs.budgetTierOptions = simulatedTierOptions;
+                    prefs.budgetTierSource = budgetTierSourceForPrefs;
+
+                    const selectedTierPrice = simulatedTierOptions.find((opt) => opt.key === selectedBudgetMode)?.value;
+                    if (Number.isFinite(selectedTierPrice) && selectedTierPrice > 0) {
+                        selectedBudgetValue = selectedTierPrice;
+                        prefs.budgetTotal = selectedTierPrice;
+                        if (budgetInput) budgetInput.value = String(selectedTierPrice);
+                    }
+                    traceLog('FINAL_TIER_SIM_SUCCESS', {
+                        budget: budgetSim.monthlyPostTax,
+                        balanced: balancedSim.monthlyPostTax,
+                        best: bestSim.monthlyPostTax
+                    });
+                } else {
+                    traceLog('FINAL_TIER_SIM_SKIPPED', {
+                        budgetOk: Boolean(budgetSim?.monthlyPostTax),
+                        balancedOk: Boolean(balancedSim?.monthlyPostTax),
+                        bestOk: Boolean(bestSim?.monthlyPostTax)
+                    });
+                }
+            }
+        } catch (err) {
+            traceError('FINAL_TIER_SIM_FAILED', err);
+        }
         
         // Keep grocerySession so planner can read original goal/style context.
         sessionStorage.removeItem('groceryPurchaseOverrides');
         sessionStorage.removeItem('groceryExpiredOverrides');
         
+        try {
+            sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs));
+        } catch {
+            // ignore
+        }
+
         sessionStorage.setItem('adjustedBaselineFoods', JSON.stringify(adjustedFoods));
         traceLog('ADJUSTED_BASELINE_FOODS_SAVED', {
             adjustedFoods: Array.isArray(adjustedFoods) ? adjustedFoods.length : 0
@@ -15795,6 +16126,11 @@ function setupGroceryFinalPage() {
                 macros: prefs.macros
             }
         }));
+        try {
+            sessionStorage.setItem('planTierAutoSimKey', String(selectedBudgetMode || '').trim().toLowerCase());
+        } catch {
+            // ignore
+        }
         traceLog('SUCCESS_REDIRECT', { to: 'grocery-plan.html' });
         
         window.location.href = 'grocery-plan.html';
@@ -16679,7 +17015,7 @@ async function setupGroceryPlanPage() {
         };
 
         let headlineText = `You're on track!`;
-        let bodyHtml = `We aim for tight targets: <strong>Protein Ã‚Â±5%</strong> (most important for muscle), <strong>Calories Ã‚Â±10Ã¢â‚¬â€œ15%</strong>, and <strong>Carbs/Fat Ã‚Â±10%</strong>.`;
+        let bodyHtml = `We aim for tight targets: <strong>Protein +/-5%</strong> (most important for muscle), <strong>Calories +/-10-15%</strong>, and <strong>Carbs/Fat +/-10%</strong>.`;
 
         if (deficits.length) {
             const top = deficits.slice(0, 2).map(p => `<strong>${p.label}</strong> by <strong>${formatDelta(p)}</strong> (${formatPctShort(p)})`);
@@ -16725,7 +17061,7 @@ async function setupGroceryPlanPage() {
             const note = document.createElement('div');
             note.className = 'ns-muted tiny';
             note.style.marginTop = '6px';
-            note.textContent = 'Tip: After adding your own foods, click ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œUpdate macros manuallyÃƒÂ¢Ã¢â€šÂ¬Ã‚Â to rebuild your plan.';
+            note.textContent = 'Tip: After adding your own foods, click "Update macros manually" to rebuild your plan.';
             updateMacrosBtn.parentElement?.appendChild(note);
         }
     };
@@ -16742,7 +17078,7 @@ async function setupGroceryPlanPage() {
         customMacroBtnGlobal.addEventListener('click', handleCustomMacroPlanCtaClick);
     }
     
-    console.group('%cÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ GROCERY PLAN - Macro Targets', 'font-size: 12px; font-weight: bold; color: #22c55e');
+    console.group('%cGROCERY PLAN - Macro Targets', 'font-size: 12px; font-weight: bold; color: #22c55e');
     console.log('Source:', prefs?.macros ? 'User calculated macros' : 'Default fallback values');
     console.log(`Calories: ${macros.calories} kcal`);
     console.log(`Protein: ${macros.proteinG}g`);
@@ -16794,7 +17130,7 @@ async function setupGroceryPlanPage() {
         const priceAdjRaw = Number(prefs?.priceAdjustment ?? 0);
         const priceAdjMult = Number.isFinite(priceAdjRaw) ? (1 + (priceAdjRaw / 100)) : 1.0;
         const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult * modeMult;
-        return clampNum(roundTo10(adjustedMonthly), 120, 620);
+        return clampNum(roundToDollarUp(adjustedMonthly), 120, 620);
     };
     const normalizeTierOption = (opt) => {
         const key = normalizeBudgetModeKey(opt?.key);
@@ -16802,7 +17138,7 @@ async function setupGroceryPlanPage() {
         const high = Math.max(low, Number(opt?.high) || 0);
         const value = Number.isFinite(Number(opt?.value))
             ? Number(opt.value)
-            : roundTo10((low + high) / 2);
+            : roundToDollarUp((low + high) / 2);
         return {
             key,
             title: String(opt?.title || (key === 'budget' ? 'Minimum Effective Plan' : (key === 'balanced' ? 'Balanced Results' : 'Best Performance'))),
@@ -16812,17 +17148,17 @@ async function setupGroceryPlanPage() {
         };
     };
     const buildPlanTierOptionsFromBestCost = (bestCostRaw) => {
-        const bestCost = clampNum(roundTo10(bestCostRaw), 120, 900);
-        const budgetLow = Math.max(90, roundTo10(bestCost * 0.62));
-        const budgetHigh = Math.max(budgetLow + 20, roundTo10(bestCost * 0.78));
-        const balancedLow = Math.max(budgetHigh, roundTo10(bestCost * 0.78));
-        const balancedHigh = Math.max(balancedLow + 20, roundTo10(bestCost * 0.92));
-        const bestLow = Math.max(balancedHigh, roundTo10(bestCost * 0.92));
-        const bestHigh = Math.max(bestLow + 20, roundTo10(bestCost * 1.08));
+        const bestCost = clampNum(roundToDollarUp(bestCostRaw), 120, 900);
+        const budgetLow = Math.max(90, roundToDollarUp(bestCost * 0.62));
+        const budgetHigh = Math.max(budgetLow + 20, roundToDollarUp(bestCost * 0.78));
+        const balancedLow = Math.max(budgetHigh, roundToDollarUp(bestCost * 0.78));
+        const balancedHigh = Math.max(balancedLow + 20, roundToDollarUp(bestCost * 0.92));
+        const bestLow = Math.max(balancedHigh, roundToDollarUp(bestCost * 0.92));
+        const bestHigh = Math.max(bestLow + 20, roundToDollarUp(bestCost * 1.08));
         return [
-            { key: 'budget', title: 'Minimum Effective Plan', low: budgetLow, high: budgetHigh, value: roundTo10((budgetLow + budgetHigh) / 2) },
-            { key: 'balanced', title: 'Balanced Results', low: balancedLow, high: balancedHigh, value: roundTo10((balancedLow + balancedHigh) / 2) },
-            { key: 'best', title: 'Best Performance', low: bestLow, high: bestHigh, value: roundTo10(bestCost) }
+            { key: 'budget', title: 'Minimum Effective Plan', low: budgetLow, high: budgetHigh, value: roundToDollarUp((budgetLow + budgetHigh) / 2) },
+            { key: 'balanced', title: 'Balanced Results', low: balancedLow, high: balancedHigh, value: roundToDollarUp((balancedLow + balancedHigh) / 2) },
+            { key: 'best', title: 'Best Performance', low: bestLow, high: bestHigh, value: roundToDollarUp(bestCost) }
         ];
     };
     const buildPlanTierPlaceholderOptions = () => ([
@@ -16876,10 +17212,47 @@ async function setupGroceryPlanPage() {
     let hasSimulatedPlanTierOptions = false;
     let lastPlanTierSimulationKey = '';
     let planBudgetAutoSyncDone = false;
+    let runPlanTierPriceSimulation = null;
+    let planTierSimulationReady = false;
+    const manualTierSimulationOnly = true;
+    const planTierSimulatedKeys = new Set();
+    const planTierLockedKeys = new Set();
+    let runSingleTierPriceSimulation = null;
+    let pendingTierAutoSimKey = null;
+    const requestPlanTierPriceSimulation = () => {
+        if (typeof runPlanTierPriceSimulation !== 'function') return false;
+        const ran = Boolean(runPlanTierPriceSimulation());
+        if (ran) planTierSimulationReady = true;
+        return ran;
+    };
+    const consumePendingTierAutoSim = () => {
+        if (!pendingTierAutoSimKey || typeof runSingleTierPriceSimulation !== 'function') return false;
+        const ran = runSingleTierPriceSimulation(pendingTierAutoSimKey);
+        if (ran) {
+            try { sessionStorage.removeItem('planTierAutoSimKey'); } catch {}
+            pendingTierAutoSimKey = null;
+            applyPlanBudgetBanner(getCurrentPlanBudgetMode());
+        }
+        return ran;
+    };
+    if (
+        hasCompletePricedPlanTierSet(planBudgetTierOptions)
+        && String(prefs?.budgetTierSource || '').trim().toLowerCase() === 'final_plan_simulation'
+    ) {
+        hasSimulatedPlanTierOptions = true;
+    }
     const isGroceryPlanPage = String(window.location?.pathname || '').toLowerCase().includes('grocery-plan.html');
+    try {
+        const autoKeyRaw = String(sessionStorage.getItem('planTierAutoSimKey') || '').trim().toLowerCase();
+        if (autoKeyRaw) pendingTierAutoSimKey = normalizeBudgetModeKey(autoKeyRaw);
+    } catch {
+        pendingTierAutoSimKey = null;
+    }
     if (isGroceryPlanPage && prefs && typeof prefs === 'object') {
-        // Remove any saved tier prices on grocery-plan page.
-        if (prefs.budgetTierOptions || prefs.budgetTierSource) {
+        const src = String(prefs.budgetTierSource || '').trim().toLowerCase();
+        const hasFinal = src === 'final_plan_simulation' && hasCompletePricedPlanTierSet(prefs.budgetTierOptions);
+        // Only clear non-final or incomplete tier data. Keep final simulation cache.
+        if (!hasFinal && (prefs.budgetTierOptions || prefs.budgetTierSource)) {
             delete prefs.budgetTierOptions;
             delete prefs.budgetTierSource;
             try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
@@ -16967,6 +17340,8 @@ async function setupGroceryPlanPage() {
     const applyPlanBudgetBanner = (modeKeyRaw) => {
         const modeKey = normalizeBudgetModeKey(modeKeyRaw);
         const suppressPrices = shouldSuppressPlanTierPrices();
+        const goalRaw = prefs?.goal || prefs?.mode || sessionData?.selections?.goal || nutritionState?.selections?.goal || '';
+        const isCutGoalForBanner = normalizeGoal(goalRaw) === 'CUT';
         const renderOptions = planBudgetTierOptions;
         const renderMap = new Map(renderOptions.map((opt) => [opt.key, opt]));
         const selected = renderMap.get(modeKey) || renderMap.get('best') || renderOptions[0] || null;
@@ -16975,13 +17350,15 @@ async function setupGroceryPlanPage() {
                 const opt = renderOptions[idx] || null;
                 if (!opt) return;
                 const value = Number(opt?.value || 0);
-                const hasValue = !suppressPrices && Number.isFinite(value) && value > 0;
-                el.disabled = suppressPrices ? false : !hasValue;
+                const isTierSimulated = planTierSimulatedKeys.has(opt.key);
+                const hasValue = isTierSimulated && Number.isFinite(value) && value > 0;
+                const showValue = isCutGoalForBanner ? (opt.key === modeKey && hasValue) : hasValue;
+                el.disabled = suppressPrices ? false : false;
                 el.dataset.budgetTier = opt.key;
-                const rangeText = suppressPrices
-                    ? ''
-                    : (hasValue ? `Est. ${formatCurrencyWholeUp(value)}/month` : 'Est. --/month');
-                el.innerHTML = `<span class="meal-budget-option-title">${escapeHtml(opt.title)}</span><span class="meal-budget-option-range${suppressPrices ? ' is-empty' : ''}">${escapeHtml(rangeText)}</span>`;
+                const rangeText = showValue
+                    ? `Est. ${formatCurrencyWholeUp(value)}/month`
+                    : 'Click to run price simulation';
+                el.innerHTML = `<span class="meal-budget-option-title">${escapeHtml(opt.title)}</span><span class="meal-budget-option-range">${escapeHtml(rangeText)}</span>`;
                 el.classList.toggle('active', opt.key === modeKey);
             });
         }
@@ -16998,6 +17375,7 @@ async function setupGroceryPlanPage() {
         const actual = Number(actualMonthlyWithTax);
         if (!Number.isFinite(actual) || actual <= 0) return;
         const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best');
+        if (planTierLockedKeys.has(modeKey)) return;
         const inferredBestCost = actual / modeMidpointFactor(modeKey);
         planBudgetTierOptions = buildPlanTierOptionsFromBestCost(inferredBestCost);
         syncPlanBudgetTierMap();
@@ -17027,7 +17405,7 @@ async function setupGroceryPlanPage() {
         prefs = prefs && typeof prefs === 'object' ? prefs : {};
         prefs.budgetMode = modeKey;
         const selectedValue = Number(selected?.value || 0);
-        if (hasSanePricedTierSet && Number.isFinite(selectedValue) && selectedValue > 0) {
+        if ((hasSanePricedTierSet || planTierSimulatedKeys.has(modeKey)) && Number.isFinite(selectedValue) && selectedValue > 0) {
             prefs.budgetTotal = selectedValue;
         }
         prefs.budgetTierOptions = orderedPlanTiers || planBudgetTierOptions;
@@ -17037,12 +17415,15 @@ async function setupGroceryPlanPage() {
         try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
         return selected;
     };
-    const syncActivePlanTierToGeneratedAvg28 = (avgMonthly28Raw) => {
+    const syncActivePlanTierToGeneratedAvg28 = (avgMonthly28Raw, options = {}) => {
         const actual = Number(avgMonthly28Raw);
         if (!Number.isFinite(actual) || actual <= 0) return;
         const actualRounded = Math.round(actual * 100) / 100;
         const modeKey = getCurrentPlanBudgetMode();
+        if (planTierLockedKeys.has(modeKey)) return;
         let changed = false;
+        const markSimulated = Boolean(options?.markSimulated);
+        const forceApply = Boolean(options?.forceApply);
         const hasTrustedFinalTierSet = hasSimulatedPlanTierOptions && hasSanePlanTierOrdering(planBudgetTierOptions);
         if (hasTrustedFinalTierSet) {
             planBudgetTierOptions = (Array.isArray(planBudgetTierOptions) ? planBudgetTierOptions : []).map((opt) => {
@@ -17063,7 +17444,11 @@ async function setupGroceryPlanPage() {
             planBudgetTierOptions = buildPlanTierOptionsFromBestCost(inferredBestCost);
             changed = true;
         }
-        if (!changed) return;
+        if (markSimulated) {
+            planTierSimulatedKeys.add(modeKey);
+            hasSimulatedPlanTierOptions = ['budget', 'balanced', 'best'].every((k) => planTierSimulatedKeys.has(k));
+        }
+        if (!changed && !forceApply) return;
         syncPlanBudgetTierMap();
         const orderedPlanTiers = getOrderedPlanTierSet(planBudgetTierOptions);
         const hasSanePricedTierSet = !!(orderedPlanTiers && hasSanePlanTierOrdering(orderedPlanTiers));
@@ -17430,6 +17815,24 @@ async function setupGroceryPlanPage() {
         budgetMode: String(prefs?.budgetMode || getActiveBudgetModeFromSession() || 'best').toLowerCase(),
         ...overrides
     });
+    const planBudgetForecastBaseline = (() => {
+        const base = buildPlanCurrentFormState();
+        return {
+            frequency: String(base?.frequency || '').trim(),
+            lossRateLbsPerWeek: Number(base?.lossRateLbsPerWeek || 1.5),
+            gainRateLbsPerWeek: Number(base?.gainRateLbsPerWeek || 0.5)
+        };
+    })();
+    const planBudgetForecastHasUndoDelta = (state) => {
+        const freqNow = String(state?.frequency || '').trim();
+        const lossNow = Number(state?.lossRateLbsPerWeek || 1.5);
+        const gainNow = Number(state?.gainRateLbsPerWeek || 0.5);
+        return (
+            freqNow !== planBudgetForecastBaseline.frequency
+            || Math.abs(lossNow - planBudgetForecastBaseline.lossRateLbsPerWeek) >= 0.01
+            || Math.abs(gainNow - planBudgetForecastBaseline.gainRateLbsPerWeek) >= 0.01
+        );
+    };
     const projectPlanCaloriesAndMacros = (formState) => {
         try {
             const normalized = normalizeInputs(formState, { strictMode: false, throwOnError: false });
@@ -17526,9 +17929,9 @@ async function setupGroceryPlanPage() {
                 disabled: !canIncreaseCutSpeed
             });
             actions.push({
-                key: 'apply-both',
-                label: 'Apply both',
-                disabled: !(canLowerFreq || canIncreaseCutSpeed)
+                key: 'undo-all',
+                label: 'Undo for everything',
+                disabled: !planBudgetForecastHasUndoDelta(buildPlanCurrentFormState())
             });
         } else if (goalMode === 'BULK' || goalMode === 'STRENGTH') {
             const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
@@ -17541,9 +17944,9 @@ async function setupGroceryPlanPage() {
                 disabled: !canSlowerBulk
             });
             actions.push({
-                key: 'apply-both',
-                label: 'Apply both',
-                disabled: !(canLowerFreq || canSlowerBulk)
+                key: 'undo-all',
+                label: 'Undo for everything',
+                disabled: !planBudgetForecastHasUndoDelta(buildPlanCurrentFormState())
             });
         }
         planBudgetForecastActionsEl.innerHTML = actions
@@ -17607,26 +18010,13 @@ async function setupGroceryPlanPage() {
                 }
                 nextOverrides = { gainRateLbsPerWeek: nextGainRate };
                 actionTitle = 'Bulk slower';
-            } else if (action === 'apply-both') {
-                const batchOverrides = {};
-                const nextFreq = currentFreq === '5-6' ? '3-4' : (currentFreq === '3-4' ? '1-2' : '');
-                if (nextFreq) batchOverrides.frequency = nextFreq;
-                if (goalNorm === 'CUT') {
-                    const nextRate = currentRate < 1.5 ? 1.5 : (currentRate < 2 ? 2 : 2);
-                    if (nextRate > currentRate) batchOverrides.lossRateLbsPerWeek = nextRate;
-                    actionTitle = 'Apply both (cut cost levers)';
-                } else if (goalNorm === 'BULK' || goalNorm === 'STRENGTH') {
-                    const nextGainRate = currentGainRate > 0.5 ? 0.5 : (currentGainRate > 0.25 ? 0.25 : 0.25);
-                    if (nextGainRate < currentGainRate) batchOverrides.gainRateLbsPerWeek = nextGainRate;
-                    actionTitle = 'Apply both (bulk cost levers)';
-                } else {
-                    return;
-                }
-                if (!Object.keys(batchOverrides).length) {
-                    alert('No further cost reductions are available for this plan.');
-                    return;
-                }
-                nextOverrides = batchOverrides;
+            } else if (action === 'undo-all') {
+                actionTitle = 'Undo for everything';
+                nextOverrides = {
+                    frequency: planBudgetForecastBaseline.frequency || currentFreq,
+                    lossRateLbsPerWeek: planBudgetForecastBaseline.lossRateLbsPerWeek,
+                    gainRateLbsPerWeek: planBudgetForecastBaseline.gainRateLbsPerWeek
+                };
             } else {
                 return;
             }
@@ -17683,16 +18073,10 @@ async function setupGroceryPlanPage() {
                 summaryLines.push('- [[Lower monthly cost]] from a smaller surplus.');
                 summaryLines.push('- [[Lower unnecessary fat-gain risk]] while still building.');
                 summaryLines.push('- Easier appetite control across the week.');
-            } else if (action === 'apply-both') {
-                if (projectedGoalNorm === 'CUT') {
-                    summaryLines.push('- [[Largest immediate cost drop]] for your cut.');
-                    summaryLines.push('- Combines lower activity demand with faster fat-loss settings.');
-                    summaryLines.push('- Can keep progress moving when budget is tight.');
-                } else {
-                    summaryLines.push('- [[Largest cost reduction]] available for your build phase.');
-                    summaryLines.push('- Lower weekly food demand plus a smaller surplus.');
-                    summaryLines.push('- Better control of monthly spend without restarting setup.');
-                }
+            } else if (action === 'undo-all') {
+                summaryLines.push('- [[Restore your original frequency and pace]] from before the cost tweaks.');
+                summaryLines.push('- Monthly grocery estimate returns to your baseline settings.');
+                summaryLines.push('- Useful if the cheaper plan feels too aggressive.');
             }
             summaryLines.push('**Cons / Tradeoffs**');
             if (action === 'lower-frequency') {
@@ -17704,25 +18088,16 @@ async function setupGroceryPlanPage() {
             } else if (action === 'slower-bulk') {
                 summaryLines.push('- [[Slower size and strength gain pace]].');
                 summaryLines.push('- You may need a longer timeline to hit the same scale target.');
-            } else if (action === 'apply-both') {
-                if (projectedGoalNorm === 'CUT') {
-                    summaryLines.push('- [[Highest adherence pressure]] among cut cost options.');
-                    summaryLines.push('- Recovery and gym output can drop if sleep/stress are not managed.');
-                } else {
-                    summaryLines.push('- [[Slowest gain pace]] among build options.');
-                    summaryLines.push('- Lower weekly training frequency can reduce total growth stimulus.');
-                }
+            } else if (action === 'undo-all') {
+                summaryLines.push('- [[Higher monthly cost]] versus the cheaper plan settings.');
+                summaryLines.push('- Progress pace returns to baseline (no added cost-savings pressure).');
             }
 
             const actionTradeoffLine = (() => {
                 if (action === 'lower-frequency') return 'slower gym adaptation from reduced weekly volume.';
                 if (action === 'faster-cut') return 'higher hunger/cravings and flatter hard-day performance.';
                 if (action === 'slower-bulk') return 'slower size/strength gain pace.';
-                if (action === 'apply-both') {
-                    return projectedGoalNorm === 'CUT'
-                        ? 'highest adherence pressure among cut cost options.'
-                        : 'slowest gain pace among build cost options.';
-                }
+                if (action === 'undo-all') return 'higher monthly cost than the cheaper settings.';
                 return 'lower performance margin versus your current setup.';
             })();
             const blufLines = [
@@ -17804,6 +18179,13 @@ async function setupGroceryPlanPage() {
                 || prefs?.budgetMode
                 || 'best'
             );
+            if (manualTierSimulationOnly && !planTierSimulatedKeys.has(modeKey)) {
+                if (typeof runSingleTierPriceSimulation === 'function') {
+                    runSingleTierPriceSimulation(modeKey);
+                    applyPlanBudgetBanner(getCurrentPlanBudgetMode());
+                }
+                if (!planTierSimulatedKeys.has(modeKey)) return;
+            }
             const shouldProceed = await confirmBudgetDowngradeIfNeeded(currentMode, modeKey);
             if (!shouldProceed) return;
             const selected = persistPlanBudgetSelection(modeKey);
@@ -17949,9 +18331,10 @@ async function setupGroceryPlanPage() {
             'banana_fresh_each',
             'russet_potatoes'
         ];
-        const buildBaselineMicroBoosterFoods = (existingPlannerFoods = []) => {
+        const buildBaselineMicroBoosterFoods = (existingPlannerFoods = [], extraIds = []) => {
             const existingIds = new Set((Array.isArray(existingPlannerFoods) ? existingPlannerFoods : []).map((f) => String(f?.id || '')));
-            return baselineMicroBoosterIds
+            const mergedIds = [...baselineMicroBoosterIds, ...(Array.isArray(extraIds) ? extraIds : [])];
+            return mergedIds
                 .map((id) => ALL_FOODS.find((f) => String(f?.id || '') === String(id)))
                 .filter(Boolean)
                 .filter((food) => !existingIds.has(String(food?.id || '')))
@@ -18001,7 +18384,7 @@ async function setupGroceryPlanPage() {
         const goal = normalizeGoal(resolvedGoalRaw);
         try {
             const lastTrace = JSON.parse(sessionStorage.getItem('odeIntegrateLastTrace') || 'null');
-            console.log('[PLAN_GENERATION][GOAL_RESOLVE]', {
+            const goalResolvePayload = {
                 traceId: lastTrace?.traceId || null,
                 resolvedGoalRaw,
                 goal,
@@ -18009,7 +18392,9 @@ async function setupGroceryPlanPage() {
                 prefsGoal: prefs?.goal || null,
                 weightLbs: Number(prefs?.weightLbs || 0),
                 goalWeightLbs: Number(prefs?.goalWeightLbs || 0)
-            });
+            };
+            window.__ODE_LAST_GOAL_RESOLVE = goalResolvePayload;
+            console.log('[PLAN_GENERATION][GOAL_RESOLVE]', goalResolvePayload);
         } catch {
             // ignore
         }
@@ -18148,14 +18533,20 @@ async function setupGroceryPlanPage() {
         };
         const simulatePlanTierMonthlyTotal = ({ modeKeyRaw, plannerFoods }) => {
             const modeKey = normalizeBudgetModeKey(modeKeyRaw);
-            const tierMacros = buildBudgetModeMacrosForPlan(modeKey);
+            const lockedCalories = resolveLockedCalories();
+            const tierMacros = buildBudgetModeMacrosForPlan(modeKey, {
+                forcedCalories: Number.isFinite(lockedCalories) ? lockedCalories : null
+            });
+            if (Number.isFinite(lockedCalories) && lockedCalories > 0) {
+                tierMacros.calories = lockedCalories;
+            }
             const plannerTargets = {
                 calories: Math.round(Number(tierMacros?.calories) || 0),
                 protein_g: Math.round(Number(tierMacros?.proteinG) || 0),
                 carbs_g: Math.round(Number(tierMacros?.carbG) || 0),
                 fat_g: Math.round(Number(tierMacros?.fatG) || 0)
             };
-            const simulatedPlan = buildAllMealsGuarded(
+            let simulatedPlan = buildAllMealsGuarded(
                 plannerFoods,
                 plannerTargets,
                 mealsPerDay,
@@ -18164,6 +18555,25 @@ async function setupGroceryPlanPage() {
                 discipline
             );
             if (simulatedPlan?.error || !Array.isArray(simulatedPlan?.meals) || !simulatedPlan.meals.length) {
+                simulatedPlan = buildAllMeals(
+                    plannerFoods,
+                    plannerTargets,
+                    mealsPerDay,
+                    goal,
+                    bodyweightLbs,
+                    discipline
+                );
+            }
+            if (simulatedPlan?.error || !Array.isArray(simulatedPlan?.meals) || !simulatedPlan.meals.length) {
+                try {
+                    console.warn('[BUDGET_SIMULATION][PLAN_TIER_FAILED]', {
+                        modeKey,
+                        reason: simulatedPlan?.reason || simulatedPlan?.error || 'no_plan',
+                        plannerTargets
+                    });
+                } catch {
+                    // ignore
+                }
                 return null;
             }
             const simulatedMonthly = computeMonthlyAvg28FromMeals({
@@ -18198,7 +18608,28 @@ async function setupGroceryPlanPage() {
             };
             const simulatedValues = modes.map((modeKey) => Number(simulatePlanTierMonthlyTotal({ modeKeyRaw: modeKey, plannerFoods: foods })));
             const hasAllSimulatedValues = simulatedValues.every((v) => Number.isFinite(v) && v > 0);
-            if (!hasAllSimulatedValues) return;
+            if (!hasAllSimulatedValues) {
+                try {
+                    console.warn('[BUDGET_SIMULATION][PLAN_TIERS_INCOMPLETE]', {
+                        values: simulatedValues,
+                        macros: modes.map((modeKey) => {
+                            const m = buildBudgetModeMacrosForPlan(modeKey, {
+                                forcedCalories: resolveLockedCalories()
+                            });
+                            return {
+                                modeKey,
+                                calories: Math.round(Number(m?.calories) || 0),
+                                proteinG: Math.round(Number(m?.proteinG) || 0),
+                                carbG: Math.round(Number(m?.carbG) || 0),
+                                fatG: Math.round(Number(m?.fatG) || 0)
+                            };
+                        })
+                    });
+                } catch {
+                    // ignore
+                }
+                return;
+            }
             const simulatedTierOptions = modes.map((modeKey, idx) => {
                 const value = Math.round(simulatedValues[idx] * 100) / 100;
                 return normalizeTierOption({
@@ -18209,15 +18640,20 @@ async function setupGroceryPlanPage() {
                     value
                 });
             });
+            const isRecompGoal = goal === 'RECOMP';
+            const needsRecompRebase = isRecompGoal && !hasSanePlanTierOrdering(simulatedTierOptions);
+            const finalTierOptions = needsRecompRebase
+                ? buildPlanTierOptionsFromBestCost(Math.max(...simulatedValues.filter((v) => Number.isFinite(v) && v > 0)))
+                : simulatedTierOptions;
 
             lastPlanTierSimulationKey = cacheKey;
-            planBudgetTierOptions = simulatedTierOptions;
+            planBudgetTierOptions = finalTierOptions;
             syncPlanBudgetTierMap();
             hasSimulatedPlanTierOptions = true;
 
             prefs = prefs && typeof prefs === 'object' ? prefs : {};
             prefs.budgetTierOptions = planBudgetTierOptions;
-            prefs.budgetTierSource = 'final_plan_simulation';
+            prefs.budgetTierSource = needsRecompRebase ? 'recomp_tier_rebase' : 'final_plan_simulation';
             const selectedMode = getCurrentPlanBudgetMode();
             const selectedTier = planBudgetTierByKey.get(selectedMode) || planBudgetTierByKey.get('best') || null;
             if (selectedTier) {
@@ -18227,15 +18663,61 @@ async function setupGroceryPlanPage() {
             try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
             applyPlanBudgetBanner(selectedMode);
             try {
-                console.info('[BUDGET_SIMULATION][PLAN_TIERS]', simulatedTierOptions.map((opt) => ({
+                console.info('[BUDGET_SIMULATION][PLAN_TIERS]', finalTierOptions.map((opt) => ({
                     key: opt.key,
                     title: opt.title,
                     simulatedMonthlyPostTax: Number(opt.value || 0)
                 })));
+                if (needsRecompRebase) {
+                    console.info('[BUDGET_SIMULATION][RECOMP_REBASE]', {
+                        reason: 'Recomp tiers must be monotonic by support level.',
+                        simulated: simulatedValues
+                    });
+                }
             } catch {
                 // ignore
             }
         };
+        const runPlanTierSimulationNow = () => {
+            const plannerFoods = buildBaselinePlannerFoods();
+            if (!plannerFoods.length) return false;
+            refreshPlanBudgetTierOptionsBySimulation(plannerFoods);
+            if (hasSimulatedPlanTierOptions) planTierSimulationReady = true;
+            return hasSimulatedPlanTierOptions;
+        };
+        runPlanTierPriceSimulation = runPlanTierSimulationNow;
+        const updateSingleTierOption = (modeKey, monthlyValue) => {
+            const value = Math.round(Number(monthlyValue || 0) * 100) / 100;
+            if (!Number.isFinite(value) || value <= 0) return false;
+            planBudgetTierOptions = (Array.isArray(planBudgetTierOptions) ? planBudgetTierOptions : []).map((opt) => {
+                if (!opt || opt.key !== modeKey) return opt;
+                return normalizeTierOption({
+                    key: modeKey,
+                    title: opt.title || budgetModeTitle(modeKey),
+                    low: value,
+                    high: value,
+                    value
+                });
+            });
+            syncPlanBudgetTierMap();
+        planTierSimulatedKeys.add(modeKey);
+        hasSimulatedPlanTierOptions = ['budget', 'balanced', 'best'].every((k) => planTierSimulatedKeys.has(k));
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        prefs.budgetTierSource = hasSimulatedPlanTierOptions ? 'final_plan_simulation' : 'partial_plan_simulation';
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        return true;
+    };
+    runSingleTierPriceSimulation = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const plannerFoods = buildBaselinePlannerFoods();
+        if (!plannerFoods.length) return false;
+        const monthly = simulatePlanTierMonthlyTotal({ modeKeyRaw: modeKey, plannerFoods });
+        const updated = updateSingleTierOption(modeKey, monthly);
+        if (updated) planTierLockedKeys.add(modeKey);
+        return updated;
+    };
+        consumePendingTierAutoSim();
 
         let portionScale = 1;
         const initialMacroTargetsBaseSnapshot = { ...macroTargetsBase };
@@ -18386,13 +18868,43 @@ async function setupGroceryPlanPage() {
 
             const plannerFoods = buildBaselinePlannerFoods();
             refreshPlanBudgetTierOptionsBySimulation(plannerFoods);
-            const microBoosterFoods = buildBaselineMicroBoosterFoods(plannerFoods);
+            const budgetModeForPlanner = getActiveBudgetModeFromSession();
+            const isBestMode = budgetModeForPlanner === 'best';
+            const isBulkGoal = goal === 'BULK' || goal === 'STRENGTH';
+            const isCutGoal = goal === 'CUT';
+            const isRecompGoal = goal === 'RECOMP';
+            const microPriorityMode = isBulkGoal || (isCutGoal && isBestMode) || (isRecompGoal && isBestMode);
+            const balancedMicroBoosters = [
+                'black_beans_dry_gv_4lb',
+                'mixed_vegetables_birds_eye',
+                'spinach_chopped_frozen',
+                'banana_fresh_each',
+                'russet_potatoes',
+                'instant_oats',
+                'chocolate_milk_lowfat',
+                'iodized_salt_gv_26oz'
+            ];
+            const bestMicroBoosters = [...balancedMicroBoosters];
+            const recompBestMicroBoosters = [
+                ...bestMicroBoosters,
+                'eggs_large',
+                'tilapia_fillet',
+                'ground_turkey_93_7',
+                'ground_turkey_festive_87_13',
+                'olive_oil',
+                'white_rice_dry'
+            ];
+            const tierMicroBoosters = microPriorityMode
+                ? (isBestMode ? (isRecompGoal ? recompBestMicroBoosters : bestMicroBoosters) : (budgetModeForPlanner === 'balanced' ? balancedMicroBoosters : baselineMicroBoosterIds))
+                : baselineMicroBoosterIds;
+            const microBoosterFoods = buildBaselineMicroBoosterFoods(plannerFoods, tierMicroBoosters);
             const plannerFoodsForMicroPass = [...plannerFoods, ...microBoosterFoods];
-            let plannerFoodsForOutputs = plannerFoods;
-            const plan = buildAllMealsGuarded(plannerFoods, plannerTargets, mealsPerDay, goal, bodyweightLbs, discipline);
+            let plannerFoodsForOutputs = microPriorityMode ? plannerFoodsForMicroPass : plannerFoods;
+            const plannerFoodsForBuild = microPriorityMode ? plannerFoodsForMicroPass : plannerFoods;
+            const plan = buildAllMealsGuarded(plannerFoodsForBuild, plannerTargets, mealsPerDay, goal, bodyweightLbs, discipline);
             let resolvedPlan = plan;
             if (plan?.error && /No valid meal candidates after grocery integration/i.test(String(plan?.reason || ''))) {
-                const emergencyFallback = buildLegacyFallbackMeals(plannerFoods, plannerTargets, mealsPerDay, goal);
+                const emergencyFallback = buildLegacyFallbackMeals(plannerFoodsForBuild, plannerTargets, mealsPerDay, goal);
                 if (emergencyFallback && Array.isArray(emergencyFallback.meals) && emergencyFallback.meals.length) {
                     emergencyFallback.meta = {
                         ...(emergencyFallback.meta || {}),
@@ -18481,35 +18993,1256 @@ async function setupGroceryPlanPage() {
                 return;
             }
 
-            const microAdjustedPlan = applyMicronutrientCorrectionWithGuardrails({
-                plan: {
-                    meals: builtMeals,
-                    dailyTotals
-                },
-                selectedFoods: plannerFoodsForMicroPass,
-                macroTargets: macroTargets,
-                microRefs: microProfile.rows || microProfile.refs,
-                options: {
-                    label: 'baseline_plan',
-                    priorityNutrients: ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium'],
-                    maxMovesTotal: 48,
-                    maxMovesPerNutrient: 10,
-                    addStepServings: 0.25
+            const bestMacroCaps = {
+                calories: (Number(macroTargets?.calories) || 0) + Math.max(320, Math.round((Number(macroTargets?.calories) || 0) * 0.14)),
+                protein_g: (Number(macroTargets?.protein_g) || 0) + 18,
+                carbs_g: (Number(macroTargets?.carbs_g) || 0) + 80,
+                fat_g: (Number(macroTargets?.fat_g) || 0) + 18
+            };
+            const balancedMacroCaps = {
+                calories: (Number(macroTargets?.calories) || 0) + Math.max(260, Math.round((Number(macroTargets?.calories) || 0) * 0.10)),
+                protein_g: (Number(macroTargets?.protein_g) || 0) + 14,
+                carbs_g: (Number(macroTargets?.carbs_g) || 0) + 60,
+                fat_g: (Number(macroTargets?.fat_g) || 0) + 14
+            };
+            const budgetMacroCaps = {
+                calories: (Number(macroTargets?.calories) || 0) + Math.max(220, Math.round((Number(macroTargets?.calories) || 0) * 0.08)),
+                protein_g: (Number(macroTargets?.protein_g) || 0) + 12,
+                carbs_g: (Number(macroTargets?.carbs_g) || 0) + 45,
+                fat_g: (Number(macroTargets?.fat_g) || 0) + 12
+            };
+            const recompBestMacroCaps = {
+                calories: (Number(macroTargets?.calories) || 0) + Math.max(520, Math.round((Number(macroTargets?.calories) || 0) * 0.22)),
+                protein_g: (Number(macroTargets?.protein_g) || 0) + 32,
+                carbs_g: (Number(macroTargets?.carbs_g) || 0) + 120,
+                fat_g: (Number(macroTargets?.fat_g) || 0) + 28
+            };
+            const tierMacroCaps = isBestMode
+                ? bestMacroCaps
+                : (budgetModeForPlanner === 'balanced' ? balancedMacroCaps : budgetMacroCaps);
+            if (!isBulkGoal) {
+                const cutBestMicros = isCutGoal && isBestMode;
+                const recompBestMicros = isRecompGoal && isBestMode;
+                const microAdjustedPlan = applyMicronutrientCorrectionWithGuardrails({
+                    plan: {
+                        meals: builtMeals,
+                        dailyTotals
+                    },
+                    selectedFoods: plannerFoodsForMicroPass,
+                    macroTargets: macroTargets,
+                    microRefs: microProfile.rows || microProfile.refs,
+                    options: cutBestMicros ? {
+                        label: 'cut_best_micros',
+                        priorityNutrients: 'all',
+                        maxMovesTotal: 90,
+                        maxMovesPerNutrient: 18,
+                        addStepServings: 0.5,
+                        macroCapsOverride: bestMacroCaps,
+                        goalSlackPct: 0.01,
+                        macroPenaltyScale: 0.7,
+                        candidateMacroPenaltyScale: 0.7,
+                        allowMacroOverageWorsening: true
+                    } : (recompBestMicros ? {
+                        label: 'recomp_best_micros',
+                        priorityNutrients: 'all',
+                        maxMovesTotal: 120,
+                        maxMovesPerNutrient: 24,
+                        addStepServings: 0.75,
+                        macroCapsOverride: recompBestMacroCaps,
+                        goalSlackPct: 0.05,
+                        macroPenaltyScale: 0.5,
+                        candidateMacroPenaltyScale: 0.5,
+                        allowMacroOverageWorsening: true
+                    } : {
+                        label: 'baseline_plan',
+                        priorityNutrients: ['fiber', 'vitamin_c', 'vitamin_a', 'folate', 'iron', 'calcium'],
+                        maxMovesTotal: 48,
+                        maxMovesPerNutrient: 10,
+                        addStepServings: 0.25,
+                        macroCapsOverride: null,
+                        goalSlackPct: 0.03,
+                        macroPenaltyScale: 1,
+                        candidateMacroPenaltyScale: 1,
+                        allowMacroOverageWorsening: false
+                    })
+                });
+                if (microAdjustedPlan?.applied && Array.isArray(microAdjustedPlan?.meals) && microAdjustedPlan.meals.length) {
+                    builtMeals = microAdjustedPlan.meals;
+                    dailyTotalsFromMeals = computeTotalsFromBuiltMeals(builtMeals);
+                    dailyTotals = dailyTotalsFromMeals;
+                    plannerFoodsForOutputs = plannerFoodsForMicroPass;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            microCorrectionApplied: true,
+                            microCorrectionMoves: Array.isArray(microAdjustedPlan?.moves) ? microAdjustedPlan.moves.length : 0
+                        }
+                    };
                 }
+            }
+
+            const trimCarbOvershootAfterMicro = ({ meals, targets, foods, protectedFoodIds = [] }) => {
+                if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                const totalsInitial = computeTotalsFromBuiltMeals(meals);
+                const carbOverInit = (Number(totalsInitial?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0);
+                const calOverInit = (Number(totalsInitial?.calories) || 0) - (Number(targets?.calories) || 0);
+                if (carbOverInit < 8 && calOverInit < 60) return { meals, totals: totalsInitial, applied: false };
+
+                const foodById = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
+                const protectedSet = new Set((Array.isArray(protectedFoodIds) ? protectedFoodIds : []).map((id) => String(id || '')));
+                const getPerServing = (item, food, key) => {
+                    const perFood = Number(food?.macros?.[key]) || 0;
+                    if (perFood > 0) return perFood;
+                    const servings = Number(item?.servings) || 0;
+                    if (servings <= 0) return 0;
+                    return (Number(item?.[key] || 0) / servings) || 0;
+                };
+                const rebuildItem = (food, servings) => {
+                    const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                    if (!food || s <= 0) return null;
+                    return {
+                        foodId: String(food?.id || ''),
+                        foodName: String(food?.query || food?.name || 'Food'),
+                        servings: s,
+                        measurementText: `${s} servings`,
+                        calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                        protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                        carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                        fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                    };
+                };
+                const recomputeMealTotals = (meal) => {
+                    const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                    meal.totals = {
+                        calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                        protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                        carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                        fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                    };
+                };
+
+                let totals = totalsInitial;
+                let applied = false;
+                for (let i = 0; i < 30; i += 1) {
+                    const carbOver = (Number(totals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0);
+                    const calOver = (Number(totals?.calories) || 0) - (Number(targets?.calories) || 0);
+                    if (carbOver <= 4 && calOver <= 40) break;
+
+                    const candidates = [];
+                    meals.forEach((meal, mealIdx) => {
+                        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                        const carbItems = items
+                            .map((item) => ({ item, food: foodById.get(String(item?.foodId || '')) }))
+                            .filter((entry) => String(entry?.food?.type || '').toLowerCase() === 'carb');
+                        items.forEach((item) => {
+                            const food = foodById.get(String(item?.foodId || ''));
+                            if (!food || String(food?.type || '').toLowerCase() !== 'carb') return;
+                            if (protectedSet.has(String(food?.id || ''))) return;
+                            const servings = Number(item?.servings) || 0;
+                            if (servings < 0.25) return;
+                            const carbsPer = getPerServing(item, food, 'carbs_g');
+                            const proteinPer = getPerServing(item, food, 'protein_g');
+                            const fatPer = getPerServing(item, food, 'fat_g');
+                            const score = carbsPer - (proteinPer * 1.5) - (fatPer * 2.0);
+                            candidates.push({
+                                mealIdx,
+                                item,
+                                food,
+                                carbsPer,
+                                score,
+                                carbItemsCount: carbItems.length
+                            });
+                        });
+                    });
+                    if (!candidates.length) break;
+                    candidates.sort((a, b) => (b.score - a.score) || (b.carbsPer - a.carbsPer));
+                    const step = (carbOver > 50 || calOver > 180) ? 0.5 : 0.25;
+                    let trimmed = false;
+                    for (const c of candidates) {
+                        const currentServings = Number(c.item?.servings) || 0;
+                        const nextServings = Math.round((currentServings - step) * 100) / 100;
+                        if (nextServings <= 0.01 && c.carbItemsCount <= 1) continue;
+                        const meal = meals[c.mealIdx];
+                        const idx = (meal?.foods || []).findIndex((it) => String(it?.foodId || '') === String(c.food?.id || ''));
+                        if (idx < 0) continue;
+                        if (nextServings <= 0.01) {
+                            meal.foods.splice(idx, 1);
+                        } else {
+                            const rebuilt = rebuildItem(c.food, nextServings);
+                            if (!rebuilt) continue;
+                            meal.foods[idx] = rebuilt;
+                        }
+                        recomputeMealTotals(meal);
+                        totals = computeTotalsFromBuiltMeals(meals);
+                        trimmed = true;
+                        applied = true;
+                        break;
+                    }
+                    if (!trimmed) break;
+                }
+                return { meals, totals, applied };
+            };
+
+            if (!isBulkGoal) {
+                const postMicroTrim = trimCarbOvershootAfterMicro({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForOutputs,
+                    protectedFoodIds: []
+                });
+                if (postMicroTrim?.applied) {
+                    builtMeals = postMicroTrim.meals;
+                    dailyTotals = postMicroTrim.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            microCarbTrimApplied: true
+                        }
+                    };
+                }
+            }
+
+            const topUpFatAfterMicro = ({ meals, targets, foods }) => {
+                if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                const totalsInitial = computeTotalsFromBuiltMeals(meals);
+                const fatDefInit = (Number(targets?.fat_g) || 0) - (Number(totalsInitial?.fat_g) || 0);
+                if (fatDefInit <= 3) return { meals, totals: totalsInitial, applied: false };
+
+                const foodsById = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
+                const fatFoods = (Array.isArray(foods) ? foods : []).filter((f) => String(f?.type || '').toLowerCase() === 'fat');
+                if (!fatFoods.length) return { meals, totals: totalsInitial, applied: false };
+                const preferredFatIds = new Set(['olive_oil']);
+                const sortedFatFoods = fatFoods
+                    .filter((f) => (Number(f?.macros?.fat_g) || 0) > 0)
+                    .sort((a, b) => {
+                        const aPref = preferredFatIds.has(String(a?.id || '')) ? 1 : 0;
+                        const bPref = preferredFatIds.has(String(b?.id || '')) ? 1 : 0;
+                        if (aPref !== bPref) return bPref - aPref;
+                        return (Number(b?.macros?.fat_g) || 0) - (Number(a?.macros?.fat_g) || 0);
+                    });
+                const rebuildItem = (food, servings) => {
+                    const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                    if (!food || s <= 0) return null;
+                    return {
+                        foodId: String(food?.id || ''),
+                        foodName: String(food?.query || food?.name || 'Food'),
+                        servings: s,
+                        measurementText: `${s} servings`,
+                        calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                        protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                        carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                        fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                    };
+                };
+                const recomputeMealTotals = (meal) => {
+                    const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                    meal.totals = {
+                        calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                        protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                        carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                        fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                    };
+                };
+
+                let totals = totalsInitial;
+                let applied = false;
+                for (let i = 0; i < 12; i += 1) {
+                    const fatDef = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
+                    if (fatDef <= 2) break;
+                    const step = fatDef > 10 ? 0.5 : 0.25;
+                    const mealOrder = meals
+                        .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                        .sort((a, b) => a.calories - b.calories)
+                        .map((entry) => entry.idx);
+                    let added = false;
+                    for (const mealIdx of mealOrder) {
+                        const meal = meals[mealIdx];
+                        for (const fatFood of sortedFatFoods) {
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const idx = items.findIndex((it) => String(it?.foodId || '') === String(fatFood?.id || ''));
+                            if (idx >= 0) {
+                                const currentServ = Number(items[idx]?.servings) || 0;
+                                const rebuilt = rebuildItem(fatFood, currentServ + step);
+                                if (!rebuilt) continue;
+                                items[idx] = rebuilt;
+                            } else {
+                                const rebuilt = rebuildItem(fatFood, step);
+                                if (!rebuilt) continue;
+                                items.push(rebuilt);
+                            }
+                            meal.foods = items;
+                            recomputeMealTotals(meal);
+                            totals = computeTotalsFromBuiltMeals(meals);
+                            applied = true;
+                            added = true;
+                            break;
+                        }
+                        if (added) break;
+                    }
+                    if (!added) break;
+                }
+                return { meals, totals, applied };
+            };
+
+            if (!isBulkGoal) {
+                const postMicroFatTopUp = topUpFatAfterMicro({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForOutputs
+                });
+                if (postMicroFatTopUp?.applied) {
+                    builtMeals = postMicroFatTopUp.meals;
+                    dailyTotals = postMicroFatTopUp.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            microFatTopUpApplied: true
+                        }
+                    };
+                }
+            }
+
+            const rebalanceBulkMacrosPostPlan = ({ meals, targets, foods }) => {
+                if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                const totalsInitial = computeTotalsFromBuiltMeals(meals);
+                const targetsSafe = {
+                    calories: Number(targets?.calories) || 0,
+                    protein_g: Number(targets?.protein_g) || 0,
+                    carbs_g: Number(targets?.carbs_g) || 0,
+                    fat_g: Number(targets?.fat_g) || 0
+                };
+                const foodById = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
+                const toType = (food) => String(food?.type || food?.category || '').toLowerCase();
+                const mealsHaveProtein = (meal) => (meal?.foods || []).some((item) => {
+                    const food = foodById.get(String(item?.foodId || ''));
+                    return toType(food).includes('protein');
+                });
+                const rebuildItem = (food, servings) => {
+                    const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                    if (!food || s <= 0) return null;
+                    return {
+                        foodId: String(food?.id || ''),
+                        foodName: String(food?.query || food?.name || 'Food'),
+                        servings: s,
+                        measurementText: `${s} servings`,
+                        calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                        protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                        carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                        fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                    };
+                };
+                const recomputeMealTotals = (meal) => {
+                    const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                    meal.totals = {
+                        calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                        protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                        carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                        fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                    };
+                };
+                const safePer = (food, key) => Math.max(0, Number(food?.macros?.[key]) || 0);
+                const carbFoods = (Array.isArray(foods) ? foods : [])
+                    .filter((f) => toType(f).includes('carb') && safePer(f, 'carbs_g') >= 8 && safePer(f, 'fat_g') <= 6)
+                    .sort((a, b) => {
+                        const aCarb = safePer(a, 'carbs_g');
+                        const bCarb = safePer(b, 'carbs_g');
+                        if (aCarb !== bCarb) return bCarb - aCarb;
+                        return safePer(a, 'fat_g') - safePer(b, 'fat_g');
+                    });
+                const fallbackCarbFoods = (Array.isArray(foods) ? foods : [])
+                    .filter((f) => safePer(f, 'carbs_g') >= 5 && safePer(f, 'fat_g') <= 10)
+                    .sort((a, b) => {
+                        const aCarb = safePer(a, 'carbs_g');
+                        const bCarb = safePer(b, 'carbs_g');
+                        if (aCarb !== bCarb) return bCarb - aCarb;
+                        return safePer(a, 'fat_g') - safePer(b, 'fat_g');
+                    });
+                const leanProteinFoods = (Array.isArray(foods) ? foods : [])
+                    .filter((f) => toType(f).includes('protein') && safePer(f, 'protein_g') >= 12 && safePer(f, 'fat_g') <= 6)
+                    .sort((a, b) => {
+                        const aPro = safePer(a, 'protein_g');
+                        const bPro = safePer(b, 'protein_g');
+                        if (aPro !== bPro) return bPro - aPro;
+                        return safePer(a, 'fat_g') - safePer(b, 'fat_g');
+                    });
+                const fatFoods = (Array.isArray(foods) ? foods : [])
+                    .filter((f) => toType(f).includes('fat') && safePer(f, 'fat_g') >= 4)
+                    .sort((a, b) => safePer(b, 'fat_g') - safePer(a, 'fat_g'));
+
+                let totals = totalsInitial;
+                let applied = false;
+                for (let guard = 0; guard < 50; guard += 1) {
+                    const dP = targetsSafe.protein_g - (Number(totals?.protein_g) || 0);
+                    const dF = targetsSafe.fat_g - (Number(totals?.fat_g) || 0);
+                    const dC = targetsSafe.carbs_g - (Number(totals?.carbs_g) || 0);
+                    const dCal = targetsSafe.calories - (Number(totals?.calories) || 0);
+                    if (Math.abs(dP) <= 6 && Math.abs(dF) <= 6 && dC <= 10) break;
+
+                    if (dF < -6) {
+                        let trimmed = false;
+                        meals.forEach((meal) => {
+                            if (trimmed) return;
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const candidates = items
+                                .map((item) => {
+                                    const food = foodById.get(String(item?.foodId || ''));
+                                    if (!food) return null;
+                                    const fatPer = safePer(food, 'fat_g');
+                                    const proPer = safePer(food, 'protein_g');
+                                    const carbPer = safePer(food, 'carbs_g');
+                                    if (fatPer <= 0) return null;
+                                    const type = toType(food);
+                                    const isProtein = type.includes('protein');
+                                    const score = (fatPer * 3) + (isProtein ? (fatPer / Math.max(1, proPer)) * 8 : 0) - (carbPer * 0.4);
+                                    return { item, food, fatPer, proPer, carbPer, score, isProtein };
+                                })
+                                .filter(Boolean)
+                                .sort((a, b) => b.score - a.score);
+                            for (const candidate of candidates) {
+                                const itemServ = Number(candidate.item?.servings) || 0;
+                                const step = dF < -20 ? 0.5 : 0.25;
+                                const nextServ = Math.round((itemServ - step) * 100) / 100;
+                                if (nextServ <= 0.01 && candidate.isProtein && mealsHaveProtein(meal) && items.length <= 1) continue;
+                                if (candidate.isProtein) {
+                                    const projectedProtein = (Number(totals?.protein_g) || 0) - (candidate.proPer * step);
+                                    if (projectedProtein < (targetsSafe.protein_g - 6)) continue;
+                                }
+                                if (nextServ <= 0.01) {
+                                    meal.foods = items.filter((it) => String(it?.foodId || '') !== String(candidate.food?.id || ''));
+                                } else {
+                                    const rebuilt = rebuildItem(candidate.food, nextServ);
+                                    if (!rebuilt) continue;
+                                    const idx = items.findIndex((it) => String(it?.foodId || '') === String(candidate.food?.id || ''));
+                                    if (idx >= 0) items[idx] = rebuilt;
+                                    meal.foods = items;
+                                }
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                trimmed = true;
+                                applied = true;
+                                break;
+                            }
+                        });
+                        if (trimmed) continue;
+                    }
+
+                    if (dP > 6) {
+                        if (leanProteinFoods.length && dCal >= -60) {
+                            const mealOrder = meals
+                                .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                                .sort((a, b) => a.calories - b.calories)
+                                .map((row) => row.idx);
+                            let added = false;
+                            for (const mealIdx of mealOrder) {
+                                const meal = meals[mealIdx];
+                                const proteinFood = leanProteinFoods[0];
+                                const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                                const idx = items.findIndex((it) => String(it?.foodId || '') === String(proteinFood?.id || ''));
+                                const step = dP > 20 ? 0.5 : 0.25;
+                                const nextServ = idx >= 0 ? (Number(items[idx]?.servings) || 0) + step : step;
+                                const rebuilt = rebuildItem(proteinFood, nextServ);
+                                if (!rebuilt) continue;
+                                if (idx >= 0) items[idx] = rebuilt;
+                                else items.push(rebuilt);
+                                meal.foods = items;
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                added = true;
+                                applied = true;
+                                break;
+                            }
+                            if (added) continue;
+                        }
+                    }
+
+                    if (dF > 6) {
+                        if (fatFoods.length && dCal >= -60) {
+                            const mealOrder = meals
+                                .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                                .sort((a, b) => a.calories - b.calories)
+                                .map((row) => row.idx);
+                            let added = false;
+                            for (const mealIdx of mealOrder) {
+                                const meal = meals[mealIdx];
+                                const fatFood = fatFoods[0];
+                                const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                                const idx = items.findIndex((it) => String(it?.foodId || '') === String(fatFood?.id || ''));
+                                const step = dF > 12 ? 0.5 : 0.25;
+                                const nextServ = idx >= 0 ? (Number(items[idx]?.servings) || 0) + step : step;
+                                const rebuilt = rebuildItem(fatFood, nextServ);
+                                if (!rebuilt) continue;
+                                if (idx >= 0) items[idx] = rebuilt;
+                                else items.push(rebuilt);
+                                meal.foods = items;
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                added = true;
+                                applied = true;
+                                break;
+                            }
+                            if (added) continue;
+                        }
+                    }
+
+                    if ((Number(totals?.protein_g) || 0) > (targetsSafe.protein_g + 6)) {
+                        let trimmed = false;
+                        meals.forEach((meal, mealIdx) => {
+                            if (trimmed) return;
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const candidates = items
+                                .map((item) => {
+                                    const food = foodById.get(String(item?.foodId || ''));
+                                    if (!food) return null;
+                                    const type = toType(food);
+                                    if (!type.includes('protein')) return null;
+                                    const fatPer = Number(food?.macros?.fat_g) || 0;
+                                    const proPer = Number(food?.macros?.protein_g) || 0;
+                                    const ratio = proPer > 0 ? (fatPer / proPer) : fatPer;
+                                    return { item, food, ratio, mealIdx };
+                                })
+                                .filter(Boolean)
+                                .sort((a, b) => b.ratio - a.ratio);
+                            for (const candidate of candidates) {
+                                const itemServ = Number(candidate.item?.servings) || 0;
+                                const nextServ = Math.round((itemServ - 0.25) * 100) / 100;
+                                if (nextServ <= 0.01 && mealsHaveProtein(meal) && items.length <= 1) continue;
+                                if (nextServ <= 0.01 && mealsHaveProtein(meal) && !items.some((it) => {
+                                    const food = foodById.get(String(it?.foodId || ''));
+                                    return food && toType(food).includes('protein') && String(it?.foodId || '') !== String(candidate.food?.id || '');
+                                })) continue;
+                                if (nextServ <= 0.01) {
+                                    meal.foods = items.filter((it) => String(it?.foodId || '') !== String(candidate.food?.id || ''));
+                                } else {
+                                    const rebuilt = rebuildItem(candidate.food, nextServ);
+                                    if (!rebuilt) continue;
+                                    const idx = items.findIndex((it) => String(it?.foodId || '') === String(candidate.food?.id || ''));
+                                    if (idx >= 0) items[idx] = rebuilt;
+                                    meal.foods = items;
+                                }
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                trimmed = true;
+                                applied = true;
+                                break;
+                            }
+                        });
+                        if (trimmed) continue;
+                    }
+
+                    if ((Number(totals?.fat_g) || 0) > (targetsSafe.fat_g + 6)) {
+                        let trimmed = false;
+                        meals.forEach((meal, mealIdx) => {
+                            if (trimmed) return;
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const candidates = items
+                                .map((item) => {
+                                    const food = foodById.get(String(item?.foodId || ''));
+                                    if (!food) return null;
+                                    const type = toType(food);
+                                    const fatPer = Number(food?.macros?.fat_g) || 0;
+                                    if (!type.includes('fat') && fatPer < 5) return null;
+                                    return { item, food, fatPer, mealIdx };
+                                })
+                                .filter(Boolean)
+                                .sort((a, b) => b.fatPer - a.fatPer);
+                            for (const candidate of candidates) {
+                                const itemServ = Number(candidate.item?.servings) || 0;
+                                const step = 0.5;
+                                const nextServ = Math.round((itemServ - step) * 100) / 100;
+                                if (nextServ <= 0.01) {
+                                    meal.foods = items.filter((it) => String(it?.foodId || '') !== String(candidate.food?.id || ''));
+                                } else {
+                                    const rebuilt = rebuildItem(candidate.food, nextServ);
+                                    if (!rebuilt) continue;
+                                    const idx = items.findIndex((it) => String(it?.foodId || '') === String(candidate.food?.id || ''));
+                                    if (idx >= 0) items[idx] = rebuilt;
+                                    meal.foods = items;
+                                }
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                trimmed = true;
+                                applied = true;
+                                break;
+                            }
+                        });
+                        if (trimmed) continue;
+                    }
+
+                    if ((Number(totals?.carbs_g) || 0) < (targetsSafe.carbs_g - 10)) {
+                        const carbPool = carbFoods.length ? carbFoods : fallbackCarbFoods;
+                        if (!carbPool.length) break;
+                        const maxCal = (Number(targetsSafe.calories) || 0) + 220;
+                        if ((Number(totals?.calories) || 0) >= maxCal) break;
+                        const mealOrder = meals
+                            .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                            .sort((a, b) => a.calories - b.calories)
+                            .map((row) => row.idx);
+                        let added = false;
+                        for (const mealIdx of mealOrder) {
+                            const meal = meals[mealIdx];
+                            const carbFood = carbPool[0];
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const idx = items.findIndex((it) => String(it?.foodId || '') === String(carbFood?.id || ''));
+                            const step = dC > 50 ? 0.5 : 0.25;
+                            const nextServ = idx >= 0 ? (Number(items[idx]?.servings) || 0) + step : step;
+                            const rebuilt = rebuildItem(carbFood, nextServ);
+                            if (!rebuilt) continue;
+                            if (idx >= 0) items[idx] = rebuilt;
+                            else items.push(rebuilt);
+                            meal.foods = items;
+                            recomputeMealTotals(meal);
+                            totals = computeTotalsFromBuiltMeals(meals);
+                            added = true;
+                            applied = true;
+                            break;
+                        }
+                        if (added) continue;
+                    }
+
+                    break;
+                }
+                return { meals, totals, applied };
+            };
+
+            if (goal === 'BULK' || goal === 'STRENGTH') {
+                const bulkRebalance = rebalanceBulkMacrosPostPlan({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForOutputs
+                });
+                if (bulkRebalance?.applied) {
+                    builtMeals = bulkRebalance.meals;
+                    dailyTotals = bulkRebalance.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            bulkRebalanceApplied: true
+                        }
+                    };
+                }
+                const topUpBulkCaloriesWithCarbs = ({ meals, targets, foods }) => {
+                    if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                    const totalsInitial = computeTotalsFromBuiltMeals(meals);
+                    const targetCalories = Number(targets?.calories) || 0;
+                    const targetCarbs = Number(targets?.carbs_g) || 0;
+                    if (targetCalories <= 0) return { meals, totals: totalsInitial, applied: false };
+                    const minCalories = Math.round(targetCalories * 0.92);
+                    const minCarbs = Math.max(0, targetCarbs - 10);
+                    if ((Number(totalsInitial?.calories) || 0) >= minCalories && (Number(totalsInitial?.carbs_g) || 0) >= minCarbs) {
+                        return { meals, totals: totalsInitial, applied: false };
+                    }
+
+                    const safePer = (food, key) => Math.max(0, Number(food?.macros?.[key]) || 0);
+                    const carbPool = (Array.isArray(foods) ? foods : [])
+                        .filter((f) => safePer(f, 'carbs_g') >= 5 && safePer(f, 'fat_g') <= 10 && safePer(f, 'calories') > 0)
+                        .sort((a, b) => {
+                            const aCarb = safePer(a, 'carbs_g');
+                            const bCarb = safePer(b, 'carbs_g');
+                            if (aCarb !== bCarb) return bCarb - aCarb;
+                            return safePer(a, 'fat_g') - safePer(b, 'fat_g');
+                        });
+                    if (!carbPool.length) return { meals, totals: totalsInitial, applied: false };
+
+                    const rebuildItem = (food, servings) => {
+                        const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                        if (!food || s <= 0) return null;
+                        return {
+                            foodId: String(food?.id || ''),
+                            foodName: String(food?.query || food?.name || 'Food'),
+                            servings: s,
+                            measurementText: `${s} servings`,
+                            calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                            protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                            carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                            fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                        };
+                    };
+                    const recomputeMealTotals = (meal) => {
+                        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                        meal.totals = {
+                            calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                            protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                            carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                            fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                        };
+                    };
+
+                    const mealsCopy = meals;
+                    let totals = totalsInitial;
+                    let applied = false;
+                    const maxCalories = targetCalories + 220;
+                    for (let i = 0; i < 60; i += 1) {
+                        const cal = Number(totals?.calories) || 0;
+                        const carbs = Number(totals?.carbs_g) || 0;
+                        if (cal >= minCalories && carbs >= minCarbs) break;
+                        if (cal >= maxCalories) break;
+                        const mealOrder = mealsCopy
+                            .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                            .sort((a, b) => a.calories - b.calories)
+                            .map((row) => row.idx);
+                        const carbFood = carbPool[0];
+                        const step = (minCarbs - carbs) > 60 ? 0.5 : 0.25;
+                        let added = false;
+                        for (const mealIdx of mealOrder) {
+                            const meal = mealsCopy[mealIdx];
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const idx = items.findIndex((it) => String(it?.foodId || '') === String(carbFood?.id || ''));
+                            const nextServ = idx >= 0 ? (Number(items[idx]?.servings) || 0) + step : step;
+                            const rebuilt = rebuildItem(carbFood, nextServ);
+                            if (!rebuilt) continue;
+                            if (idx >= 0) items[idx] = rebuilt;
+                            else items.push(rebuilt);
+                            meal.foods = items;
+                            recomputeMealTotals(meal);
+                            totals = computeTotalsFromBuiltMeals(mealsCopy);
+                            applied = true;
+                            added = true;
+                            break;
+                        }
+                        if (!added) break;
+                    }
+                    return { meals: mealsCopy, totals, applied };
+                };
+
+                const bulkTopUp = topUpBulkCaloriesWithCarbs({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForOutputs
+                });
+                if (bulkTopUp?.applied) {
+                    builtMeals = bulkTopUp.meals;
+                    dailyTotals = bulkTopUp.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            bulkCalorieCarbTopUpApplied: true
+                        }
+                    };
+                }
+
+                const trimBulkProteinOvershootAfterTopUp = ({ meals, targets, foods }) => {
+                    if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                    const totalsInitial = computeTotalsFromBuiltMeals(meals);
+                    const targetsSafe = {
+                        calories: Number(targets?.calories) || 0,
+                        protein_g: Number(targets?.protein_g) || 0,
+                        carbs_g: Number(targets?.carbs_g) || 0,
+                        fat_g: Number(targets?.fat_g) || 0
+                    };
+                    const proteinOverInit = (Number(totalsInitial?.protein_g) || 0) - targetsSafe.protein_g;
+                    if (proteinOverInit <= 6) return { meals, totals: totalsInitial, applied: false };
+
+                    const foodById = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
+                    const safePer = (food, key) => Math.max(0, Number(food?.macros?.[key]) || 0);
+                    const fatFoods = (Array.isArray(foods) ? foods : [])
+                        .filter((f) => safePer(f, 'fat_g') >= 4)
+                        .sort((a, b) => {
+                            const aFat = safePer(a, 'fat_g');
+                            const bFat = safePer(b, 'fat_g');
+                            if (aFat !== bFat) return bFat - aFat;
+                            return safePer(a, 'protein_g') - safePer(b, 'protein_g');
+                        });
+                    const mealsHaveProtein = (meal) => (meal?.foods || []).some((item) => {
+                        const food = foodById.get(String(item?.foodId || ''));
+                        return String(food?.type || food?.category || '').toLowerCase().includes('protein');
+                    });
+                    const rebuildItem = (food, servings) => {
+                        const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                        if (!food || s <= 0) return null;
+                        return {
+                            foodId: String(food?.id || ''),
+                            foodName: String(food?.query || food?.name || 'Food'),
+                            servings: s,
+                            measurementText: `${s} servings`,
+                            calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                            protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                            carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                            fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                        };
+                    };
+                    const recomputeMealTotals = (meal) => {
+                        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                        meal.totals = {
+                            calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                            protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                            carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                            fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                        };
+                    };
+
+                    const minCalories = Math.max(0, Math.round(targetsSafe.calories - 40));
+                    const minCarbs = Math.max(0, Math.round(targetsSafe.carbs_g - 10));
+                    const minFat = Math.max(0, Math.round(targetsSafe.fat_g - 4));
+
+                    let totals = totalsInitial;
+                    let applied = false;
+                    for (let guard = 0; guard < 40; guard += 1) {
+                        const proteinOver = (Number(totals?.protein_g) || 0) - targetsSafe.protein_g;
+                        const fatDef = targetsSafe.fat_g - (Number(totals?.fat_g) || 0);
+                        const calOver = (Number(totals?.calories) || 0) - targetsSafe.calories;
+                        if (proteinOver <= 6) break;
+                        if ((Number(totals?.calories) || 0) <= minCalories) break;
+
+                        if (fatDef > 2 && fatFoods.length && calOver < 80) {
+                            const mealOrder = meals
+                                .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                                .sort((a, b) => a.calories - b.calories)
+                                .map((row) => row.idx);
+                            const fatFood = fatFoods[0];
+                            const step = fatDef > 10 ? 0.5 : 0.25;
+                            let added = false;
+                            for (const mealIdx of mealOrder) {
+                                const meal = meals[mealIdx];
+                                const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                                const idx = items.findIndex((it) => String(it?.foodId || '') === String(fatFood?.id || ''));
+                                const nextServ = idx >= 0 ? (Number(items[idx]?.servings) || 0) + step : step;
+                                const rebuilt = rebuildItem(fatFood, nextServ);
+                                if (!rebuilt) continue;
+                                if (idx >= 0) items[idx] = rebuilt;
+                                else items.push(rebuilt);
+                                meal.foods = items;
+                                recomputeMealTotals(meal);
+                                totals = computeTotalsFromBuiltMeals(meals);
+                                applied = true;
+                                added = true;
+                                break;
+                            }
+                            if (added) continue;
+                        }
+
+                        if (fatDef > 2 && calOver <= 0) {
+                            // keep protein while fat is still below target and calories aren't over
+                            break;
+                        }
+
+                        const candidates = [];
+                        meals.forEach((meal, mealIdx) => {
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            items.forEach((item) => {
+                                const food = foodById.get(String(item?.foodId || ''));
+                                if (!food) return;
+                                const proPer = safePer(food, 'protein_g');
+                                if (proPer <= 0) return;
+                                const carbPer = safePer(food, 'carbs_g');
+                                const fatPer = safePer(food, 'fat_g');
+                                const score = (proPer * 3) - (carbPer * 1.2) - (fatPer * 1.2);
+                                candidates.push({ mealIdx, item, food, proPer, carbPer, fatPer, score });
+                            });
+                        });
+                        if (!candidates.length) break;
+                        candidates.sort((a, b) => b.score - a.score);
+                        const step = proteinOver > 20 ? 0.5 : 0.25;
+                        let trimmed = false;
+                        for (const c of candidates) {
+                            const meal = meals[c.mealIdx];
+                            const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                            const idx = items.findIndex((it) => String(it?.foodId || '') === String(c.food?.id || ''));
+                            if (idx < 0) continue;
+                            const currentServ = Number(items[idx]?.servings) || 0;
+                            const nextServ = Math.round((currentServ - step) * 100) / 100;
+                            if (nextServ <= 0.01 && mealsHaveProtein(meal) && items.length <= 1) continue;
+                            const beforeSnapshot = meal.foods.map((it) => ({ ...it }));
+                            const beforeTotals = { ...totals };
+                            if (nextServ <= 0.01) {
+                                meal.foods = items.filter((it) => String(it?.foodId || '') !== String(c.food?.id || ''));
+                            } else {
+                                const rebuilt = rebuildItem(c.food, nextServ);
+                                if (!rebuilt) continue;
+                                items[idx] = rebuilt;
+                                meal.foods = items;
+                            }
+                            recomputeMealTotals(meal);
+                            totals = computeTotalsFromBuiltMeals(meals);
+                            if ((Number(totals?.calories) || 0) < minCalories || (Number(totals?.carbs_g) || 0) < minCarbs || (Number(totals?.fat_g) || 0) < minFat) {
+                                meal.foods = beforeSnapshot;
+                                recomputeMealTotals(meal);
+                                totals = beforeTotals;
+                                continue;
+                            }
+                            trimmed = true;
+                            applied = true;
+                            break;
+                        }
+                        if (!trimmed) break;
+                    }
+                    return { meals, totals, applied };
+                };
+
+                const bulkProteinTrim = trimBulkProteinOvershootAfterTopUp({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForOutputs
+                });
+                if (bulkProteinTrim?.applied) {
+                    builtMeals = bulkProteinTrim.meals;
+                    dailyTotals = bulkProteinTrim.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            bulkProteinTrimApplied: true
+                        }
+                    };
+                }
+
+                const bulkMicroAdjustedPlan = applyMicronutrientCorrectionWithGuardrails({
+                    plan: {
+                        meals: builtMeals,
+                        dailyTotals
+                    },
+                    selectedFoods: plannerFoodsForMicroPass,
+                    macroTargets: macroTargets,
+                    microRefs: microProfile.rows || microProfile.refs,
+                    options: {
+                        label: 'bulk_post_macro',
+                        priorityNutrients: 'all',
+                        maxMovesTotal: isBestMode ? 120 : 72,
+                        maxMovesPerNutrient: isBestMode ? 24 : 14,
+                        addStepServings: isBestMode ? 0.75 : 0.25,
+                        macroCapsOverride: tierMacroCaps,
+                        goalSlackPct: 0.01,
+                        macroPenaltyScale: isBestMode ? 0.4 : 0.55,
+                        candidateMacroPenaltyScale: 0.5,
+                        allowMacroOverageWorsening: true
+                    }
+                });
+                if (bulkMicroAdjustedPlan?.applied && Array.isArray(bulkMicroAdjustedPlan?.meals) && bulkMicroAdjustedPlan.meals.length) {
+                    builtMeals = bulkMicroAdjustedPlan.meals;
+                    dailyTotals = computeTotalsFromBuiltMeals(builtMeals);
+                    plannerFoodsForOutputs = plannerFoodsForMicroPass;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            bulkMicroCorrectionApplied: true,
+                            bulkMicroCorrectionMoves: Array.isArray(bulkMicroAdjustedPlan?.moves) ? bulkMicroAdjustedPlan.moves.length : 0
+                        }
+                    };
+                }
+
+                const rebalanceBulkMicrosBySwaps = ({ meals, targets, foods, microRefs }) => {
+                    if (!Array.isArray(meals) || !meals.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                    const refsArray = Array.isArray(microRefs)
+                        ? microRefs
+                        : Object.values(microRefs && typeof microRefs === 'object' ? microRefs : {});
+                    if (!refsArray.length) return { meals, totals: computeTotalsFromBuiltMeals(meals), applied: false };
+                    const refByKey = new Map(
+                        refsArray
+                            .map((row) => [String(row?.nutrient_id || ''), row])
+                            .filter(([key]) => Boolean(key))
+                    );
+                    const byId = new Map((Array.isArray(foods) ? foods : []).map((f) => [String(f?.id || ''), f]));
+                    const resolveMicroPerServing = (food, key) => {
+                        const micros = (food && typeof food === 'object' && food.micros && typeof food.micros === 'object') ? food.micros : {};
+                        const toFinite = (raw) => {
+                            if (raw === null || raw === undefined || raw === '') return null;
+                            const n = Number(raw);
+                            return Number.isFinite(n) ? n : null;
+                        };
+                        const pick = (...names) => {
+                            for (const n of names) {
+                                const v = toFinite(micros?.[n]);
+                                if (v !== null) return v;
+                            }
+                            return null;
+                        };
+                        switch (key) {
+                            case 'fiber': return pick('fiber_g', 'fiber');
+                            case 'potassium': return pick('potassium_mg', 'potassium');
+                            case 'sodium': return pick('sodium_mg', 'sodium');
+                            case 'magnesium': return pick('magnesium_mg', 'magnesium');
+                            case 'calcium': return pick('calcium_mg', 'calcium');
+                            case 'iron': return pick('iron_mg', 'iron');
+                            case 'zinc': return pick('zinc_mg', 'zinc');
+                            case 'vitamin_d': return pick('vitamin_d_mcg', 'vitamin_d');
+                            case 'vitamin_c': return pick('vitamin_c_mg', 'vitamin_c');
+                            case 'vitamin_a': return pick('vitamin_a_mcg_rae', 'vitamin_a');
+                            case 'folate': return pick('folate_mcg', 'folate');
+                            case 'b12': return pick('b12_mcg', 'b12');
+                            case 'omega_3': return pick('omega3_epa_dha_mg', 'omega_3_mg', 'omega_3');
+                            case 'choline': return pick('choline_mg', 'choline');
+                            default: return null;
+                        }
+                    };
+                    const computeMicroTotals = () => {
+                        const totals = {};
+                        refByKey.forEach((_, key) => { totals[key] = 0; });
+                        meals.forEach((meal) => {
+                            (meal?.foods || []).forEach((item) => {
+                                const servings = Math.max(0, Number(item?.servings) || 0);
+                                if (servings <= 0) return;
+                                const food = byId.get(String(item?.foodId || ''));
+                                if (!food) return;
+                                refByKey.forEach((_, key) => {
+                                    const per = resolveMicroPerServing(food, key);
+                                    if (Number.isFinite(per)) totals[key] += per * servings;
+                                });
+                            });
+                        });
+                        return totals;
+                    };
+                    const buildItem = (food, servings) => {
+                        const s = Math.max(0, Math.round(Number(servings || 0) * 100) / 100);
+                        if (!food || s <= 0) return null;
+                        return {
+                            foodId: String(food?.id || ''),
+                            foodName: String(food?.query || food?.name || 'Food'),
+                            servings: s,
+                            measurementText: `${s} servings`,
+                            calories: Math.round((Number(food?.macros?.calories) || 0) * s),
+                            protein_g: Math.round((Number(food?.macros?.protein_g) || 0) * s),
+                            carbs_g: Math.round((Number(food?.macros?.carbs_g) || 0) * s),
+                            fat_g: Math.round((Number(food?.macros?.fat_g) || 0) * s)
+                        };
+                    };
+                    const recomputeMealTotals = (meal) => {
+                        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                        meal.totals = {
+                            calories: items.reduce((sum, item) => sum + (Number(item?.calories) || 0), 0),
+                            protein_g: items.reduce((sum, item) => sum + (Number(item?.protein_g) || 0), 0),
+                            carbs_g: items.reduce((sum, item) => sum + (Number(item?.carbs_g) || 0), 0),
+                            fat_g: items.reduce((sum, item) => sum + (Number(item?.fat_g) || 0), 0)
+                        };
+                    };
+                    const recomputeTotals = () => {
+                        meals.forEach(recomputeMealTotals);
+                        return computeTotalsFromBuiltMeals(meals);
+                    };
+                    const setServingDelta = (mealIdx, food, delta, step = 0.25) => {
+                        if (!food || !Number.isFinite(mealIdx) || mealIdx < 0 || mealIdx >= meals.length) return false;
+                        const meal = meals[mealIdx];
+                        const items = Array.isArray(meal?.foods) ? meal.foods : [];
+                        const idx = items.findIndex((it) => String(it?.foodId || '') === String(food?.id || ''));
+                        const current = idx >= 0 ? (Number(items[idx]?.servings) || 0) : 0;
+                        const next = Math.round((current + Number(delta || 0)) * 100) / 100;
+                        if (next <= 0.01) {
+                            if (idx < 0) return false;
+                            items.splice(idx, 1);
+                        } else {
+                            const rebuilt = buildItem(food, next);
+                            if (!rebuilt) return false;
+                            if (idx >= 0) items[idx] = rebuilt;
+                            else items.push(rebuilt);
+                        }
+                        meal.foods = items;
+                        recomputeMealTotals(meal);
+                        return true;
+                    };
+                    const pickMealByCalories = (lowest = true) => {
+                        const order = meals
+                            .map((meal, idx) => ({ idx, calories: Number(meal?.totals?.calories) || 0 }))
+                            .sort((a, b) => lowest ? (a.calories - b.calories) : (b.calories - a.calories))
+                            .map((row) => row.idx);
+                        return order.length ? order[0] : 0;
+                    };
+                    const targetsSafe = {
+                        calories: Number(targets?.calories) || 0,
+                        protein_g: Number(targets?.protein_g) || 0,
+                        carbs_g: Number(targets?.carbs_g) || 0,
+                        fat_g: Number(targets?.fat_g) || 0
+                    };
+                    const inPlanIds = new Set();
+                    meals.forEach((meal) => {
+                        (meal?.foods || []).forEach((item) => {
+                            const id = String(item?.foodId || '');
+                            if (id) inPlanIds.add(id);
+                        });
+                    });
+                    const donorCandidates = Array.from(inPlanIds)
+                        .map((id) => byId.get(String(id)))
+                        .filter(Boolean)
+                        .filter((food) => {
+                            const carbs = Number(food?.macros?.carbs_g) || 0;
+                            const fat = Number(food?.macros?.fat_g) || 0;
+                            const calories = Number(food?.macros?.calories) || 0;
+                            return calories > 0 && carbs >= 15 && fat <= 6;
+                        })
+                        .sort((a, b) => {
+                            const aCarb = Number(a?.macros?.carbs_g) || 0;
+                            const bCarb = Number(b?.macros?.carbs_g) || 0;
+                            if (aCarb !== bCarb) return bCarb - aCarb;
+                            return (Number(a?.macros?.calories) || 0) - (Number(b?.macros?.calories) || 0);
+                        });
+                    const pickDonorFood = () => (
+                        donorCandidates[0]
+                        || byId.get('white_rice_dry')
+                        || byId.get('russet_potatoes')
+                        || null
+                    );
+                    const receiverByKey = {
+                        fiber: [byId.get('black_beans_dry_gv_4lb'), byId.get('instant_oats'), byId.get('spinach_chopped_frozen'), byId.get('mixed_vegetables_birds_eye'), byId.get('russet_potatoes')].filter(Boolean),
+                        vitamin_a: [byId.get('spinach_chopped_frozen'), byId.get('mixed_vegetables_birds_eye')].filter(Boolean),
+                        vitamin_c: [byId.get('russet_potatoes'), byId.get('spinach_chopped_frozen'), byId.get('mixed_vegetables_birds_eye'), byId.get('banana_fresh_each')].filter(Boolean),
+                        calcium: [byId.get('chocolate_milk_lowfat'), byId.get('spinach_chopped_frozen')].filter(Boolean),
+                        vitamin_d: [byId.get('chocolate_milk_lowfat'), byId.get('tilapia_fillet'), byId.get('eggs_large')].filter(Boolean)
+                    };
+                    const salt = byId.get('iodized_salt_gv_26oz');
+
+                    let totals = recomputeTotals();
+                    let micros = computeMicroTotals();
+                    let applied = false;
+
+                    const addSaltForSodium = () => {
+                        if (!salt || !refByKey.has('sodium')) return false;
+                        const goal = Number(refByKey.get('sodium')?.goal_value) || 0;
+                        const ul = Number(refByKey.get('sodium')?.ul_value) || 2300;
+                        const current = Number(micros?.sodium) || 0;
+                        if (current >= goal) return false;
+                        const mealIdx = pickMealByCalories(true);
+                        for (let i = 0; i < 6; i += 1) {
+                            if ((Number(micros?.sodium) || 0) >= goal) break;
+                            if ((Number(micros?.sodium) || 0) > ul) break;
+                            const ok = setServingDelta(mealIdx, salt, 0.25, 0.25);
+                            if (!ok) break;
+                            totals = recomputeTotals();
+                            micros = computeMicroTotals();
+                            applied = true;
+                        }
+                        return applied;
+                    };
+
+                    addSaltForSodium();
+
+                    const pickMealIndicesWithFood = (foodId, highest = true) => {
+                        const id = String(foodId || '');
+                        if (!id) return [];
+                        return meals
+                            .map((meal, idx) => ({
+                                idx,
+                                calories: Number(meal?.totals?.calories) || 0,
+                                hasFood: (meal?.foods || []).some((item) => String(item?.foodId || '') === id)
+                            }))
+                            .filter((row) => row.hasFood)
+                            .sort((a, b) => highest ? (b.calories - a.calories) : (a.calories - b.calories))
+                            .map((row) => row.idx);
+                    };
+
+                    const swapStep = (receiver, addStep = 0.5) => {
+                        if (!receiver) return false;
+                        const donor = pickDonorFood();
+                        if (!donor) return false;
+                        const donorCal = Number(donor?.macros?.calories) || 0;
+                        const recvCal = Number(receiver?.macros?.calories) || 0;
+                        if (donorCal <= 0 || recvCal <= 0) return false;
+                        const donorServDelta = Math.max(0.25, Math.round((recvCal * addStep / donorCal) * 4) / 4);
+                        const addIdx = pickMealByCalories(true);
+                        const removeCandidates = pickMealIndicesWithFood(donor?.id, true);
+                        if (!removeCandidates.length) return false;
+                        for (const removeIdx of removeCandidates) {
+                            const beforeTotals = { ...totals };
+                            const beforeMicros = { ...micros };
+                            if (!setServingDelta(addIdx, receiver, addStep, addStep)) return false;
+                            if (!setServingDelta(removeIdx, donor, -donorServDelta, 0.25)) {
+                                setServingDelta(addIdx, receiver, -addStep, addStep);
+                                totals = beforeTotals;
+                                micros = beforeMicros;
+                                continue;
+                            }
+                            totals = recomputeTotals();
+                            if (
+                                (Number(totals?.calories) || 0) < (targetsSafe.calories - 120) ||
+                                (Number(totals?.carbs_g) || 0) < (targetsSafe.carbs_g - 35) ||
+                                (Number(totals?.fat_g) || 0) < (targetsSafe.fat_g - 10) ||
+                                (Number(totals?.protein_g) || 0) < (targetsSafe.protein_g - 15)
+                            ) {
+                                // revert
+                                setServingDelta(addIdx, receiver, -addStep, addStep);
+                                setServingDelta(removeIdx, donor, donorServDelta, 0.25);
+                                totals = beforeTotals;
+                                micros = beforeMicros;
+                                continue;
+                            }
+                            micros = computeMicroTotals();
+                            applied = true;
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    const keysToFix = ['fiber', 'calcium', 'vitamin_a', 'vitamin_d', 'vitamin_c'];
+                    for (let guard = 0; guard < 18; guard += 1) {
+                        let made = false;
+                        for (const key of keysToFix) {
+                            const goal = Number(refByKey.get(key)?.goal_value) || 0;
+                            if (!goal) continue;
+                            const current = Number(micros?.[key]) || 0;
+                            if (current >= (goal * 0.85)) continue;
+                            const receiverList = receiverByKey[key] || [];
+                            if (!receiverList.length) continue;
+                            const receiver = receiverList[0];
+                            const step = key === 'vitamin_d' ? 0.25 : 0.5;
+                            if (swapStep(receiver, step)) {
+                                made = true;
+                                break;
+                            }
+                        }
+                        if (!made) break;
+                    }
+
+                    return { meals, totals, applied };
+                };
+
+                const bulkMicroSwap = rebalanceBulkMicrosBySwaps({
+                    meals: builtMeals,
+                    targets: macroTargets,
+                    foods: plannerFoodsForMicroPass,
+                    microRefs: microProfile.rows || microProfile.refs
+                });
+                if (bulkMicroSwap?.applied) {
+                    builtMeals = bulkMicroSwap.meals;
+                    dailyTotals = bulkMicroSwap.totals;
+                    resolvedPlan = {
+                        ...resolvedPlan,
+                        meals: builtMeals,
+                        dailyTotals,
+                        meta: {
+                            ...(resolvedPlan?.meta || {}),
+                            bulkMicroSwapApplied: true
+                        }
+                    };
+                }
+            }
+
+            const clampApplied = applyStrictPlanClamp({
+                meals: builtMeals,
+                dailyTotals,
+                macroTargets,
+                goalRaw: resolvedGoalRaw || goal,
+                weightLbs: Number(nutritionState?.selections?.weightLbs || 0),
+                goalWeightLbs: Number(nutritionState?.selections?.goalWeightLbs || 0),
+                budgetMode: getActiveBudgetModeFromSession(),
+                buildCalOver: 65
             });
-            if (microAdjustedPlan?.applied && Array.isArray(microAdjustedPlan?.meals) && microAdjustedPlan.meals.length) {
-                builtMeals = microAdjustedPlan.meals;
-                dailyTotalsFromMeals = computeTotalsFromBuiltMeals(builtMeals);
-                dailyTotals = dailyTotalsFromMeals;
-                plannerFoodsForOutputs = plannerFoodsForMicroPass;
+            if (clampApplied?.applied) {
+                builtMeals = clampApplied.meals;
+                dailyTotals = clampApplied.dailyTotals || dailyTotals;
                 resolvedPlan = {
                     ...resolvedPlan,
                     meals: builtMeals,
                     dailyTotals,
                     meta: {
                         ...(resolvedPlan?.meta || {}),
-                        microCorrectionApplied: true,
-                        microCorrectionMoves: Array.isArray(microAdjustedPlan?.moves) ? microAdjustedPlan.moves.length : 0
+                        strictClampApplied: true,
+                        strictClampScaleApplied: Number(clampApplied.scaleApplied) || null
                     }
                 };
             }
@@ -18552,6 +20285,18 @@ async function setupGroceryPlanPage() {
             }
 
             // Macro summary row (targets vs actuals)
+            try {
+                window.__ODE_LAST_PLAN_MACROS = {
+                    goal,
+                    goalRaw: resolvedGoalRaw,
+                    budgetMode: getActiveBudgetModeFromSession(),
+                    targets: { ...macroTargets },
+                    totals: { ...dailyTotals },
+                    portionScale
+                };
+            } catch {
+                // ignore
+            }
             const targetCalEl = document.getElementById('target-cal');
             const targetProEl = document.getElementById('target-pro');
             const targetCarbEl = document.getElementById('target-carb');
@@ -19419,14 +21164,43 @@ async function setupGroceryPlanPage() {
                 restOfMonth: Number(inventoryCosts.thisMonthCost),
                 daysRemaining: Number(inventoryCosts.daysRemainingInMonth)
             });
-            syncActivePlanTierToGeneratedAvg28(avgMonthly28Cost);
-
             // Budget breakdown
             const taxRate = 0.08;
             const estimatedTax = inventoryCosts.avgMonthlyCost * taxRate;
             const monthlyTotalWithTax = inventoryCosts.avgMonthlyCost + estimatedTax;
             latestPlanMonthlyTotalWithTax = monthlyTotalWithTax;
             maybeRebasePlanBudgetTiersFromActual(monthlyTotalWithTax, getCurrentPlanBudgetMode());
+            if (isRecompGoal && Number.isFinite(avgMonthly28Cost) && avgMonthly28Cost > 0) {
+                const modeKeyForCosts = getCurrentPlanBudgetMode();
+                const inferredBestCost = avgMonthly28Cost / modeMidpointFactor(modeKeyForCosts);
+                planBudgetTierOptions = buildPlanTierOptionsFromBestCost(inferredBestCost);
+                syncPlanBudgetTierMap();
+                planTierLockedKeys.clear();
+                planTierSimulatedKeys.clear();
+                hasSimulatedPlanTierOptions = false;
+                prefs = prefs && typeof prefs === 'object' ? prefs : {};
+                prefs.budgetTierOptions = planBudgetTierOptions;
+                prefs.budgetTierSource = 'recomp_from_actual';
+                try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+            }
+            const modeKeyForCosts = getCurrentPlanBudgetMode();
+            const activeTierValue = Number(planBudgetTierByKey.get(modeKeyForCosts)?.value || 0);
+            const avg28ForReset = Number(avgMonthly28Cost || 0);
+            const resetThreshold = Math.max(12, avg28ForReset * 0.1);
+            if (
+                !isRecompGoal
+                &&
+                Number.isFinite(avg28ForReset)
+                && avg28ForReset > 0
+                && Number.isFinite(activeTierValue)
+                && activeTierValue > 0
+                && Math.abs(activeTierValue - avg28ForReset) > resetThreshold
+            ) {
+                planTierLockedKeys.clear();
+                planTierSimulatedKeys.clear();
+                hasSimulatedPlanTierOptions = false;
+            }
+            syncActivePlanTierToGeneratedAvg28(avgMonthly28Cost, { markSimulated: true, forceApply: true });
             const budget = Number(prefs?.budgetTotal || 0);
             const budgetDelta = budget ? budget - monthlyTotalWithTax : null;
 
@@ -20141,11 +21915,41 @@ async function setupGroceryPlanPage() {
             const text = `${String(food?.id || '').toLowerCase()} ${String(food?.name || '').toLowerCase()}`;
             return text.includes('olive_oil') || text.includes('olive oil');
         };
+        const isChickenBreastFood = (food) => {
+            const text = `${String(food?.id || '').toLowerCase()} ${String(food?.name || '').toLowerCase()}`;
+            return text.includes('chicken_breast') || text.includes('chicken breast');
+        };
+        const isPotatoFood = (food) => {
+            const text = `${String(food?.id || '').toLowerCase()} ${String(food?.name || '').toLowerCase()}`;
+            return text.includes('potato');
+        };
         const isFatOnlyFood = (food) => {
             const fat = Number(food?.macros?.fat_g) || 0;
             const protein = Number(food?.macros?.protein_g) || 0;
             const carbsVal = Number(food?.macros?.carbs_g) || 0;
             return fat >= 6 && protein < 5 && carbsVal < 5;
+        };
+        const eggCountForFood = (food, servings) => {
+            const s = Math.max(0, Number(servings) || 0);
+            if (s <= 0) return 0;
+            const unit = String(food?.serving?.unit || '').toLowerCase();
+            if (unit !== 'egg' && unit !== 'eggs') return 0;
+            const amount = Number(food?.serving?.amount);
+            if (!Number.isFinite(amount) || amount <= 0) return 0;
+            return s * amount;
+        };
+        const getMealRealismStats = (mealFoods) => {
+            const stats = { eggs: 0, chickenOz: 0, beansOz: 0, potatoOz: 0, oilTbsp: 0 };
+            (mealFoods || []).forEach((food) => {
+                const servings = Number(food?.servings) || 0;
+                if (servings <= 0) return;
+                if (isWholeEggFood(food)) stats.eggs += eggCountForFood(food, servings);
+                if (isChickenBreastFood(food)) stats.chickenOz += servingToOunces(food, servings);
+                if (isBeanFood(food)) stats.beansOz += servingToOunces(food, servings);
+                if (isPotatoFood(food)) stats.potatoOz += servingToOunces(food, servings);
+                if (isOliveOilFood(food) || isFatOnlyFood(food)) stats.oilTbsp += servingToTbsp(food, servings);
+            });
+            return stats;
         };
 
         const PLANNER_OIL_MAX_SERVINGS_PER_DAY = 1.5;
@@ -20330,6 +22134,27 @@ async function setupGroceryPlanPage() {
             let proteinCapPenaltyPoints = 0;
             let cutFiberSnapshot = null;
             const dailyFatCap = (Number(targets.fat_g) || 0) + cutFatOvershootG;
+            const flexibleRealismCaps = {
+                eggsPerMeal: 4,
+                eggsPerDay: 6,
+                chickenOzPerMeal: 6,
+                chickenOzPerDay: 10,
+                beansOzPerMeal: 2,
+                beansOzPerDay: 4,
+                potatoesOzPerMeal: 8,
+                potatoesOzPerDay: 16,
+                oilTbspPerMeal: 1,
+                oilTbspPerDay: 2,
+                singleFoodCalShare: 0.35
+            };
+            let eggsCountDay = 0;
+            let chickenOzDay = 0;
+            let beansOzDay = 0;
+            let potatoOzDay = 0;
+            let oilTbspDay = 0;
+            const isFourMealStructure = mealsPerDay === 4;
+            const mealCalMin = isFourMealStructure ? (Number(targets?.calories) || 0) * 0.20 : null;
+            const mealCalMax = isFourMealStructure ? (Number(targets?.calories) || 0) * 0.35 : null;
             const logCutCandidateRejection = (reason, details = {}) => {
                 noteCutReject(reason);
                 if (!cutDebug) return;
@@ -20669,6 +22494,45 @@ async function setupGroceryPlanPage() {
                     if (mealFoods.some(isOliveOilFood)) cutOliveOilMeals.add(mealIdx);
                 }
 
+                const realismStats = getMealRealismStats(mealFoods);
+                if (
+                    realismStats.eggs > flexibleRealismCaps.eggsPerMeal
+                    || realismStats.chickenOz > flexibleRealismCaps.chickenOzPerMeal
+                    || realismStats.beansOz > flexibleRealismCaps.beansOzPerMeal
+                    || realismStats.potatoOz > flexibleRealismCaps.potatoesOzPerMeal
+                    || realismStats.oilTbsp > flexibleRealismCaps.oilTbspPerMeal
+                ) {
+                    invalidCandidate = true;
+                    break;
+                }
+                if (isFourMealStructure) {
+                    if (
+                        (Number.isFinite(mealCalMin) && totals.calories < mealCalMin)
+                        || (Number.isFinite(mealCalMax) && totals.calories > mealCalMax)
+                        || totals.protein_g < 30
+                        || totals.fat_g > 25
+                    ) {
+                        invalidCandidate = true;
+                        break;
+                    }
+                }
+
+                eggsCountDay += realismStats.eggs;
+                chickenOzDay += realismStats.chickenOz;
+                beansOzDay += realismStats.beansOz;
+                potatoOzDay += realismStats.potatoOz;
+                oilTbspDay += realismStats.oilTbsp;
+                if (
+                    eggsCountDay > flexibleRealismCaps.eggsPerDay
+                    || chickenOzDay > flexibleRealismCaps.chickenOzPerDay
+                    || beansOzDay > flexibleRealismCaps.beansOzPerDay
+                    || potatoOzDay > flexibleRealismCaps.potatoesOzPerDay
+                    || oilTbspDay > flexibleRealismCaps.oilTbspPerDay
+                ) {
+                    invalidCandidate = true;
+                    break;
+                }
+
                 running.calories += totals.calories;
                 running.protein_g += totals.protein_g;
                 running.carbs_g += totals.carbs_g;
@@ -20920,6 +22784,26 @@ async function setupGroceryPlanPage() {
             }
 
             const dailyTotals = computeTotalsFromBuiltMeals(meals);
+            if (Number(dailyTotals?.calories) > 0) {
+                const foodCalById = {};
+                meals.forEach((meal) => {
+                    (meal?.foods || []).forEach((item) => {
+                        const foodId = String(item?.foodId || '');
+                        if (!foodId) return;
+                        const src = foodById.get(foodId) || foodsToUse.find((f) => String(f?.id || '') === foodId);
+                        if (!src) return;
+                        const calsPer = Number(src?.macros?.calories) || 0;
+                        if (calsPer <= 0) return;
+                        const servings = Number(item?.servings) || 0;
+                        if (servings <= 0) return;
+                        foodCalById[foodId] = (foodCalById[foodId] || 0) + (calsPer * servings);
+                    });
+                });
+                const maxShare = Object.values(foodCalById).reduce((maxVal, val) => Math.max(maxVal, Number(val) || 0), 0);
+                if (maxShare > (Number(dailyTotals.calories) * flexibleRealismCaps.singleFoodCalShare)) {
+                    return buildInvalidCandidate(isCutPhase, { reason: 'SINGLE_FOOD_CAL_SHARE' });
+                }
+            }
 
             const uniqueFoodCount = (() => {
                 const ids = new Set();
@@ -21666,8 +23550,10 @@ async function setupGroceryPlanPage() {
                 return true;
             };
 
+            const bulkCarbMin = isBuildPhase ? 10 : 15;
+            const bulkCarbMaxFat = isBuildPhase ? 5.0 : 2.5;
             const carbRecoveryFoods = carbs
-                .filter((f) => (Number(f?.macros?.carbs_g) || 0) >= 15 && (Number(f?.macros?.fat_g) || 0) <= 2.5)
+                .filter((f) => (Number(f?.macros?.carbs_g) || 0) >= bulkCarbMin && (Number(f?.macros?.fat_g) || 0) <= bulkCarbMaxFat)
                 .sort((a, b) => {
                     const aTxt = `${String(a?.id || '').toLowerCase()} ${String(a?.name || '').toLowerCase()}`;
                     const bTxt = `${String(b?.id || '').toLowerCase()} ${String(b?.name || '').toLowerCase()}`;
@@ -21808,7 +23694,10 @@ async function setupGroceryPlanPage() {
             };
 
             const tryTrimCarb = ({ minCarbOver = 8, minCalOver = 80, carbFloor = null } = {}) => {
-                const carbOver = (Number(totals?.carbs_g) || 0) - (Number(targets?.carbs_g) || 0);
+                const effectiveCarbTarget = Number.isFinite(carbFloor)
+                    ? carbFloor
+                    : (Number(targets?.carbs_g) || 0);
+                const carbOver = (Number(totals?.carbs_g) || 0) - effectiveCarbTarget;
                 const calOver = (Number(totals?.calories) || 0) - (Number(targets?.calories) || 0);
                 if (carbOver < minCarbOver && calOver < minCalOver) return false;
 
@@ -21889,7 +23778,7 @@ async function setupGroceryPlanPage() {
                 });
 
                 for (const candidate of candidates) {
-                    const step = candidate.type === 'fat' ? 0.5 : 0.25;
+                    const step = (candidate.type === 'fat' || candidate.fatRatio >= 0.6) ? 0.5 : 0.25;
                     if (tryApplyServingDelta({ mealIdx: candidate.mealIdx, food: candidate.src, deltaServings: -step })) return true;
                 }
                 return false;
@@ -22090,21 +23979,173 @@ async function setupGroceryPlanPage() {
                 if (!changed && dP < -8) changed = tryTrimProtein(dF > 0);
                 if (!changed && dP < -16) changed = tryTrimProtein(dF > 0);
                 if (!changed && dP < -8 && dCal > 120) changed = tryDeadlockRescueSwap();
-                if (!changed && isBuildPhase && dF < -3) changed = tryTrimFat();
+
+                if (isBuildPhase) {
+                    if (!changed && dP > 0 && dCal > 0) changed = tryAddProtein();
+                    if (!changed && dF < -3) changed = tryTrimFat();
+                    if (!changed && dP <= 0 && dF > 3 && dCal >= -20) changed = tryAddFat();
+                    if (!changed && dP <= 0 && dC > 10 && dCal >= -120) changed = tryAddCarb();
+                }
+
                 if (!changed && (dC < -10 || dCal < -80)) changed = tryTrimCarb();
-                if (!changed && dCal < -40 && dF > 1) {
+                if (!changed && isCutPhase && dCal < -40 && dF > 1) {
                     changed = tryTrimCarb({ minCarbOver: 2, minCalOver: 40, carbFloor: carbFloorForFatRoom });
                 }
-                if (!changed && dF > 3 && dC < -4) {
+                if (!changed && isCutPhase && dF > 3 && dC < -4) {
                     changed = tryTrimCarb({ minCarbOver: 3, minCalOver: 40, carbFloor: carbFloorForFatRoom });
                 }
-                if (!changed && dF > 3 && dCal >= -20 && (!isRecompPhase || dP <= (proteinDoneUpper + 8))) changed = tryAddFat();
-                if (!changed && (dC > 10 || dCal > 90) && (!isRecompPhase || dP <= proteinDoneUpper)) changed = tryAddCarb();
+                if (!changed && dF <= 0 && dC < -4 && dCal < -40) {
+                    // If fat is topped up but carbs + calories are over, trim carbs down toward target.
+                    changed = tryTrimCarb({
+                        minCarbOver: 2,
+                        minCalOver: 40,
+                        carbFloor: Math.max(0, Number(targets?.carbs_g) || 0)
+                    });
+                }
+                if (!changed && !isBuildPhase && dF > 3 && dCal >= -20 && (!isRecompPhase || dP <= (proteinDoneUpper + 8))) changed = tryAddFat();
+                if (!changed && !isBuildPhase && (dC > 10 || dCal > 90) && (!isRecompPhase || dP <= proteinDoneUpper)) changed = tryAddCarb();
                 if (!changed && dCal > 60 && dF > 1 && (!isRecompPhase || dP <= (proteinDoneUpper + 8))) changed = tryAddFat();
-                if (!changed && dCal > 60 && (!isRecompPhase || dP <= proteinDoneUpper)) changed = tryAddCarb();
+                if (!changed && dCal > 60 && dF <= 1 && (!isRecompPhase || dP <= proteinDoneUpper)) changed = tryAddCarb();
 
                 if (!changed) break;
                 applied = true;
+            }
+
+            if (isRecompPhase) {
+                let guard = 0;
+                while (guard < 80) {
+                    const dP = (Number(targets?.protein_g) || 0) - (Number(totals?.protein_g) || 0);
+                    const dF = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
+                    if (dP <= 4) break;
+
+                    let changed = false;
+                    if (!changed) changed = tryAddProtein();
+                    if (!changed && dF < -3) changed = tryTrimFat();
+                    if (!changed && dP > 6) changed = tryTrimCarbForProtein();
+                    if (!changed && dP > 6) changed = tryAddProtein();
+                    if (!changed) break;
+
+                    applied = true;
+                    guard += 1;
+                }
+
+                guard = 0;
+                while (guard < 40) {
+                    const dF = (Number(targets?.fat_g) || 0) - (Number(totals?.fat_g) || 0);
+                    if (dF <= 2) break;
+                    const added = tryAddFat();
+                    if (!added) break;
+                    applied = true;
+                    guard += 1;
+                }
+
+                guard = 0;
+                while (guard < 40) {
+                    const dC = (Number(targets?.carbs_g) || 0) - (Number(totals?.carbs_g) || 0);
+                    const dCal = (Number(targets?.calories) || 0) - (Number(totals?.calories) || 0);
+                    if (dC <= 6 && dCal <= 60) break;
+                    const added = tryAddCarb();
+                    if (!added) break;
+                    applied = true;
+                    guard += 1;
+                }
+
+                guard = 0;
+                while (guard < 40) {
+                    const fatOver = (Number(totals?.fat_g) || 0) - (Number(targets?.fat_g) || 0);
+                    if (fatOver <= 4) break;
+                    const trimmed = tryTrimFat();
+                    if (!trimmed) break;
+                    applied = true;
+                    guard += 1;
+                }
+            }
+
+            if (isBuildPhase) {
+                let tightenGuard = 0;
+                while (tightenGuard < 40) {
+                    const calOver = (Number(totals?.calories) || 0) - (Number(targets?.calories) || 0);
+                    if (calOver <= 40) break;
+                    let changed = false;
+                    if (!changed && (Number(totals?.protein_g) || 0) > (Number(targets?.protein_g) || 0)) {
+                        changed = tryTrimProtein(true);
+                    }
+                    if (!changed && (Number(totals?.fat_g) || 0) > (Number(targets?.fat_g) || 0)) {
+                        changed = tryTrimFat();
+                    }
+                    if (!changed) break;
+                    applied = true;
+                    tightenGuard += 1;
+                }
+
+                let guard = 0;
+                while (guard < 40) {
+                    const fatOver = (Number(totals?.fat_g) || 0) - (Number(targets?.fat_g) || 0);
+                    if (fatOver <= 6) break;
+                    const trimmed = tryTrimFat();
+                    if (!trimmed) break;
+                    applied = true;
+                    guard += 1;
+                }
+                guard = 0;
+                while (guard < 40) {
+                    const carbUnder = (Number(targets?.carbs_g) || 0) - (Number(totals?.carbs_g) || 0);
+                    if (carbUnder <= 10) break;
+                    const added = tryAddCarb();
+                    if (!added) break;
+                    applied = true;
+                    guard += 1;
+                }
+            }
+
+            const clampCaloriesByMacroTrim = () => {
+                const calorieTrimCarbFloor = isBuildPhase
+                    ? Math.max(80, Math.round((Number(targets?.carbs_g) || 0) * 0.90))
+                    : Math.max(70, Math.round((Number(targets?.carbs_g) || 0) * 0.85));
+                let guard = 0;
+                while (guard < 50) {
+                    const calOver = (Number(totals?.calories) || 0) - (Number(targets?.calories) || 0);
+                    if (calOver <= 40) break;
+                    const proteinOver = (Number(totals?.protein_g) || 0) - (Number(targets?.protein_g) || 0);
+                    const fatOver = (Number(totals?.fat_g) || 0) - (Number(targets?.fat_g) || 0);
+                    let changed = false;
+                    if (!changed && fatOver > 1) changed = tryTrimFat();
+                    if (!changed && proteinOver > 1) changed = tryTrimProtein(fatOver <= 0);
+                    if (!changed && (Number(totals?.carbs_g) || 0) > (calorieTrimCarbFloor + 4)) {
+                        changed = tryTrimCarb({ minCarbOver: 0, minCalOver: 20, carbFloor: calorieTrimCarbFloor });
+                    }
+                    if (!changed) break;
+                    applied = true;
+                    guard += 1;
+                }
+            };
+
+            clampCaloriesByMacroTrim();
+
+            if (isBuildPhase) {
+                const strictCaps = {
+                    caloriesCap: (Number(targets?.calories) || 0) + 65,
+                    proteinCap: Math.ceil((Number(targets?.protein_g) || 0) * 1.03),
+                    carbsCap: (Number(targets?.carbs_g) || 0) + 20,
+                    fatCap: (Number(targets?.fat_g) || 0) + 4
+                };
+                const overStrict = (
+                    (Number(totals?.calories) || 0) > strictCaps.caloriesCap ||
+                    (Number(totals?.protein_g) || 0) > strictCaps.proteinCap ||
+                    (Number(totals?.carbs_g) || 0) > strictCaps.carbsCap ||
+                    (Number(totals?.fat_g) || 0) > strictCaps.fatCap
+                );
+                if (overStrict) {
+                    const scaled = scalePlanToOvershootCaps({ meals, dailyTotals: totals }, strictCaps);
+                    if (scaled && Array.isArray(scaled.meals) && scaled.meals.length) {
+                        meals.splice(0, meals.length, ...scaled.meals.map((meal) => ({
+                            ...meal,
+                            foods: Array.isArray(meal?.foods) ? meal.foods.map((item) => ({ ...item })) : []
+                        })));
+                        totals = scaled.dailyTotals || totals;
+                        applied = true;
+                    }
+                }
             }
 
             return { meals, dailyTotals: totals, applied };
@@ -22460,7 +24501,11 @@ async function setupGroceryPlanPage() {
                 carbs_g: Number(plan?.dailyTotals?.carbs_g) || 0,
                 fat_g: Number(plan?.dailyTotals?.fat_g) || 0
             };
-            const closed = enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, { label, isBuildPhase: guardIsBuildPhase });
+            const closed = enforceMacroClosureWithStaples(plan, selectedFoods, macroTargets, {
+                label,
+                isBuildPhase: guardIsBuildPhase,
+                goalRaw
+            });
             const after = {
                 calories: Number(closed?.dailyTotals?.calories) || 0,
                 protein_g: Number(closed?.dailyTotals?.protein_g) || 0,
@@ -22469,7 +24514,9 @@ async function setupGroceryPlanPage() {
             };
             addGuardStep('Macro closure pass', true, {
                 label,
-                equation: 'trim protein to target+5g first, then fill fats/carbs/calories with oil/rice',
+                equation: guardIsRecompPhase
+                    ? 'recomp: top off protein first, then fat, then carbs'
+                    : 'trim protein to target+5g first, then fill fats/carbs/calories with oil/rice',
                 before,
                 after
             });
@@ -22516,6 +24563,20 @@ async function setupGroceryPlanPage() {
 
             const scaledAfterClosure = scalePlanToOvershootCaps(closed, strictBreakdown.caps);
             if (scaledAfterClosure && Array.isArray(scaledAfterClosure.meals) && scaledAfterClosure.meals.length) {
+                const scaledCalories = Number(scaledAfterClosure?.dailyTotals?.calories) || 0;
+                const targetCalories = Number(macroTargets?.calories) || 0;
+                const minScaledCalories = guardIsBuildPhase ? Math.round(targetCalories * 0.90) : 0;
+                if (guardIsBuildPhase && scaledCalories > 0 && targetCalories > 0 && scaledCalories < minScaledCalories) {
+                    addGuardStep('Macro closure scale-to-cap rescue', false, {
+                        label,
+                        reason: 'build-phase scale would undershoot calories too far',
+                        scaleApplied: scaledAfterClosure.scaleApplied,
+                        scaledCalories,
+                        targetCalories,
+                        minScaledCalories
+                    });
+                    // Keep the unscaled closed plan; bulk rebalance will handle fat/carb fixes.
+                } else {
                 const scaledBreakdown = buildPlannerOvershootBreakdown({
                     totals: scaledAfterClosure.dailyTotals,
                     targets: macroTargets,
@@ -22544,6 +24605,7 @@ async function setupGroceryPlanPage() {
                             macroClosureScaleApplied: Number(scaledAfterClosure.scaleApplied) || null
                         }
                     };
+                }
                 }
             }
 
@@ -22853,6 +24915,8 @@ async function setupGroceryPlanPage() {
      * Renders meal grid using optimization engine.
      */
     let lastMealPlan = null;
+    let lastPlannerFoodsForSimulation = null;
+    let lastPlannerMeta = { goalRaw: null, weightLbs: null, discipline: null };
     function renderMealGrid(scale = 1) {
         if (!mealGrid || !macros) return;
         
@@ -22872,6 +24936,12 @@ async function setupGroceryPlanPage() {
         }
 
         const allValidFoods = [...validProtein, ...validCarb, ...validFat];
+        lastPlannerFoodsForSimulation = allValidFoods;
+        lastPlannerMeta = {
+            goalRaw: nutritionState.selections?.goal || 'RECOMP',
+            weightLbs: nutritionState.selections?.weightLbs || 170,
+            discipline
+        };
         const macroTargets = {
             calories: Math.round(macros.calories || 2000),
             protein_g: Math.round(macros.proteinG || 150),
@@ -22913,11 +24983,28 @@ async function setupGroceryPlanPage() {
             mealGrid.innerHTML = `<div style="padding: 20px; text-align: center; color: #999;">${escapeHtml(mealResult.reason || 'Invalid grocery integration.')}</div>`;
             return;
         }
-        const { meals: builtMeals, dailyTotals: initialTotals } = mealResult;
+        let { meals: builtMeals, dailyTotals: initialTotals } = mealResult;
+        consumePendingTierAutoSim();
 
         // New system rules: no macro overshoot, <=15% undershoot allowed, quality before cost.
-        // `buildAllMeals` already enforces these constraints; do not rescale meals after this point.
-        const dailyTotalsFast = computeTotalsFromBuiltMeals(builtMeals || []);
+        // `buildAllMeals` enforces these constraints; add a final clamp for all goals to avoid drift.
+        let dailyTotalsFast = computeTotalsFromBuiltMeals(builtMeals || []);
+        if (builtMeals && builtMeals.length) {
+            const clampResult = applyStrictPlanClamp({
+                meals: builtMeals,
+                dailyTotals: dailyTotalsFast,
+                macroTargets: plannerTargets,
+                goalRaw: nutritionState.selections?.goal || 'RECOMP',
+                weightLbs: Number(nutritionState?.selections?.weightLbs || 0),
+                goalWeightLbs: Number(nutritionState?.selections?.goalWeightLbs || 0),
+                budgetMode: getActiveBudgetModeFromSession(),
+                buildCalOver: 65
+            });
+            if (clampResult?.applied) {
+                builtMeals = clampResult.meals;
+                dailyTotalsFast = clampResult.dailyTotals || dailyTotalsFast;
+            }
+        }
         if (initialTotals) {
             const drift = {
                 calories: Math.abs((Number(initialTotals.calories) || 0) - (Number(dailyTotalsFast.calories) || 0)),
@@ -23361,6 +25448,10 @@ async function setupGroceryPlanPage() {
             daysRemaining
         });
         syncActivePlanTierToGeneratedAvg28(avgMonthly28);
+        if (!hasSimulatedPlanTierOptions && Number.isFinite(monthlyTotalWithTax) && monthlyTotalWithTax > 0) {
+            rebasePlanBudgetTiersFromActual(monthlyTotalWithTax, getCurrentPlanBudgetMode());
+        }
+        applyPlanBudgetBanner(getCurrentPlanBudgetMode());
 
         return {
             weeklyTotal,
@@ -23371,9 +25462,187 @@ async function setupGroceryPlanPage() {
         };
     };
 
+    const computeMonthlyAvg28FromMealsForPlan = ({ meals, plannerFoods }) => {
+        const builtMeals = Array.isArray(meals) ? meals : [];
+        const foods = Array.isArray(plannerFoods) ? plannerFoods : [];
+        if (!builtMeals.length || !foods.length) return null;
+        const dailyServingsById = {};
+        builtMeals.forEach((meal) => {
+            (meal?.foods || []).forEach((item) => {
+                const id = String(item?.foodId || '').trim();
+                const servings = Number(item?.servings) || 0;
+                if (!id || servings <= 0) return;
+                dailyServingsById[id] = (dailyServingsById[id] || 0) + servings;
+            });
+        });
+        const usedFoodIds = Object.keys(dailyServingsById);
+        if (!usedFoodIds.length) return null;
+        const priceAdjustment = getPriceAdjustment();
+        const groceryItems = foods
+            .filter((food) => (Number(dailyServingsById[String(food?.id || '')]) || 0) > 0)
+            .map((food) => {
+                const dailyServings = Number(dailyServingsById[String(food.id)]) || 0;
+                const servingsPerContainer = servingsPerContainerFromFood(food) || 1;
+                const basePrice = Number(food?.container?.price) || 0;
+                const adjustedPrice = applyPriceAdjustment(basePrice, priceAdjustment);
+                return {
+                    ...food,
+                    daily: dailyServings,
+                    weekly: dailyServings * 7,
+                    monthly: dailyServings * 30,
+                    servingsPerContainer,
+                    container: { ...(food.container || {}), price: adjustedPrice }
+                };
+            });
+        const inventoryCosts = calculateInventoryCosts(groceryItems, new Date());
+        const avgMonthly28 = Number(inventoryCosts?.avgMonthly28Cost);
+        if (!Number.isFinite(avgMonthly28) || avgMonthly28 <= 0) return null;
+        return avgMonthly28;
+    };
+    const simulatePlanTierMonthlyTotalForNormalPlan = (modeKeyRaw) => {
+        const plannerFoods = lastPlannerFoodsForSimulation;
+        if (!Array.isArray(plannerFoods) || !plannerFoods.length) return null;
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const lockedCalories = resolveLockedCalories();
+        const tierMacros = buildBudgetModeMacrosForNormalPlan(modeKey, { forcedCalories: lockedCalories });
+        if (Number.isFinite(lockedCalories)) tierMacros.calories = lockedCalories;
+        const plannerTargets = {
+            calories: Math.round(Number(tierMacros?.calories) || 0),
+            protein_g: Math.round(Number(tierMacros?.proteinG) || 0),
+            carbs_g: Math.round(Number(tierMacros?.carbG) || 0),
+            fat_g: Math.round(Number(tierMacros?.fatG) || 0)
+        };
+        const goalRaw = lastPlannerMeta.goalRaw || nutritionState.selections?.goal || 'RECOMP';
+        const weightLbs = lastPlannerMeta.weightLbs || nutritionState.selections?.weightLbs || 170;
+        const discipline = lastPlannerMeta.discipline || inferDiscipline(nutritionState.selections || {});
+        let simulatedPlan = buildAllMealsGuarded(
+            plannerFoods,
+            plannerTargets,
+            mealsPerDay,
+            goalRaw,
+            weightLbs,
+            discipline
+        );
+        if (simulatedPlan?.error || !Array.isArray(simulatedPlan?.meals) || !simulatedPlan.meals.length) {
+            simulatedPlan = buildAllMeals(
+                plannerFoods,
+                plannerTargets,
+                mealsPerDay,
+                goalRaw,
+                weightLbs,
+                discipline
+            );
+        }
+        if (simulatedPlan?.error || !Array.isArray(simulatedPlan?.meals) || !simulatedPlan.meals.length) {
+            return null;
+        }
+        const simulatedMonthly = computeMonthlyAvg28FromMealsForPlan({
+            meals: simulatedPlan.meals,
+            plannerFoods
+        });
+        if (!Number.isFinite(simulatedMonthly) || simulatedMonthly <= 0) return null;
+        return simulatedMonthly;
+    };
+    const runPlanTierSimulationNowForNormalPlan = () => {
+        if (hasSimulatedPlanTierOptions) return true;
+        const foods = lastPlannerFoodsForSimulation;
+        if (!Array.isArray(foods) || !foods.length) return false;
+
+        const modes = ['budget', 'balanced', 'best'];
+        const lockedCalories = resolveLockedCalories();
+        const macroSig = modes.map((modeKey) => {
+            const m = buildBudgetModeMacrosForNormalPlan(modeKey, { forcedCalories: lockedCalories });
+            const cal = Math.round(Number(m?.calories) || 0);
+            const pro = Math.round(Number(m?.proteinG) || 0);
+            const car = Math.round(Number(m?.carbG) || 0);
+            const fat = Math.round(Number(m?.fatG) || 0);
+            return `${modeKey}:${cal}:${pro}:${car}:${fat}`;
+        }).join('|');
+        const foodSig = foods
+            .map((food) => `${String(food?.id || '')}:${Number(food?.container?.price || 0).toFixed(2)}:${Number(food?.servingGrams || 0).toFixed(2)}`)
+            .sort()
+            .join('|');
+        const priceAdj = Number(getPriceAdjustment() || 0);
+        const cacheKey = `${macroSig}|foods:${foodSig}|priceAdj:${priceAdj}|meals:${mealsPerDay}|goal:${String(lastPlannerMeta.goalRaw || '')}|weight:${Math.round(Number(lastPlannerMeta.weightLbs || 0))}`;
+        if (cacheKey === lastPlanTierSimulationKey) return hasSimulatedPlanTierOptions;
+
+        const simulatedValues = modes.map((modeKey) => Number(simulatePlanTierMonthlyTotalForNormalPlan(modeKey)));
+        const hasAllSimulatedValues = simulatedValues.every((v) => Number.isFinite(v) && v > 0);
+        if (!hasAllSimulatedValues) {
+            return false;
+        }
+        const titleByKey = {
+            budget: 'Minimum Effective Plan',
+            balanced: 'Balanced Results',
+            best: 'Best Performance'
+        };
+        const simulatedTierOptions = modes.map((modeKey, idx) => {
+            const value = Math.round(simulatedValues[idx] * 100) / 100;
+            return normalizeTierOption({
+                key: modeKey,
+                title: titleByKey[modeKey] || budgetModeTitle(modeKey),
+                low: value,
+                high: value,
+                value
+            });
+        });
+        lastPlanTierSimulationKey = cacheKey;
+        planBudgetTierOptions = simulatedTierOptions;
+        syncPlanBudgetTierMap();
+        hasSimulatedPlanTierOptions = true;
+
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        prefs.budgetTierSource = 'final_plan_simulation';
+        const selectedMode = getCurrentPlanBudgetMode();
+        const selectedTier = planBudgetTierByKey.get(selectedMode) || planBudgetTierByKey.get('best') || null;
+        if (selectedTier) {
+            prefs.budgetMode = selectedTier.key;
+            prefs.budgetTotal = Number(selectedTier.value || 0);
+        }
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        applyPlanBudgetBanner(selectedMode);
+        planTierSimulationReady = true;
+        return true;
+    };
+    runPlanTierPriceSimulation = runPlanTierSimulationNowForNormalPlan;
+    const updateSingleTierOptionForNormal = (modeKey, monthlyValue) => {
+        const value = Math.round(Number(monthlyValue || 0) * 100) / 100;
+        if (!Number.isFinite(value) || value <= 0) return false;
+        planBudgetTierOptions = (Array.isArray(planBudgetTierOptions) ? planBudgetTierOptions : []).map((opt) => {
+            if (!opt || opt.key !== modeKey) return opt;
+            return normalizeTierOption({
+                key: modeKey,
+                title: opt.title || budgetModeTitle(modeKey),
+                low: value,
+                high: value,
+                value
+            });
+        });
+        syncPlanBudgetTierMap();
+        planTierSimulatedKeys.add(modeKey);
+        hasSimulatedPlanTierOptions = ['budget', 'balanced', 'best'].every((k) => planTierSimulatedKeys.has(k));
+        prefs = prefs && typeof prefs === 'object' ? prefs : {};
+        prefs.budgetTierOptions = planBudgetTierOptions;
+        prefs.budgetTierSource = hasSimulatedPlanTierOptions ? 'final_plan_simulation' : 'partial_plan_simulation';
+        try { sessionStorage.setItem('groceryPrefs', JSON.stringify(prefs)); } catch {}
+        return true;
+    };
+    runSingleTierPriceSimulation = (modeKeyRaw) => {
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const monthly = simulatePlanTierMonthlyTotalForNormalPlan(modeKey);
+        return updateSingleTierOptionForNormal(modeKey, monthly);
+    };
+    const schedulePlanTierSimulation = () => {
+        window.setTimeout(() => {
+            runPlanTierSimulationNowForNormalPlan();
+        }, 60);
+    };
+
     // Lockdown pass: UI does not alter nutrition math (no macro scaling).
     renderMealGrid(1);
     let lastTotals = renderBudgetAndList();
+    if (!manualTierSimulationOnly) schedulePlanTierSimulation();
     const budgetModeMacroBaselineForPlan = (() => {
         const src = prefs?.macroBaseline || initialMacrosSnapshot || macros || {};
         return {
