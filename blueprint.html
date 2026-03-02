@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Blueprint · odeology_</title>
+    <title>Your Blueprint Â· odeology_</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,16 +23,16 @@
         <div class="navbar-container">
             <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
             <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-                <span class="theme-icon">☾</span>
+                <span class="theme-icon">â˜¾</span>
             </button>
         </div>
     </nav>
 
     <div class="modal active" id="blueprint-modal" aria-hidden="false" role="dialog" aria-modal="true" aria-label="Your Blueprint">
         <div class="modal-content blueprint-modal-content" role="document">
-            <button type="button" class="modal-close" id="blueprint-close" aria-label="Close">×</button>
-            <h2>Here’s your Blueprint</h2>
-            <p class="modal-subtitle">Click the button that interests you — it’ll take you to that part of the website.</p>
+            <button type="button" class="modal-close" id="blueprint-close" aria-label="Close">Ã—</button>
+            <h2>Hereâ€™s your Blueprint</h2>
+            <p class="modal-subtitle">Click the button that interests you â€” itâ€™ll take you to that part of the website.</p>
             <div id="blueprint-modal-body" aria-live="polite"></div>
         </div>
     </div>
@@ -170,7 +170,7 @@
                 const wrap = document.createElement('div');
 
                 if (!blueprint) {
-                    wrap.innerHTML = `<p class="blueprint-modal-note">No saved selections found. Go back and choose what you’re trying to do.</p>`;
+                    wrap.innerHTML = `<p class="blueprint-modal-note">No saved selections found. Go back and choose what youâ€™re trying to do.</p>`;
                     const actions = document.createElement('div');
                     actions.className = 'blueprint-modal-actions';
                     actions.appendChild(makePrimaryBtn({ label: 'Go to Blueprint', href: 'index.html#mission' }));
@@ -204,7 +204,7 @@
 
                 if (supportPrefs.includes('supplements_delivered')) {
                     actions.appendChild(makePrimaryBtn({
-                        label: 'Supplements → Store',
+                        label: 'Supplements â†’ Store',
                         onClick: () => {
                             trackEvent({ event: 'blueprint_click', props: { action: 'supplements_store' } });
                             go('store.html');
@@ -265,17 +265,17 @@
 
                 const form = document.createElement('form');
                 form.innerHTML = `
-                    <label class="auth-label">Email</label>
-                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                    <label class="auth-label" for="bp-meals-email">Email</label>
+                    <input class="auth-input" id="bp-meals-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
 
-                    <label class="auth-label">Phone</label>
-                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
+                    <label class="auth-label" for="bp-meals-phone">Phone</label>
+                    <input class="auth-input" id="bp-meals-phone" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
 
-                    <label class="auth-label">Times NOT to call</label>
-                    <input class="auth-input" name="do_not_call" placeholder="e.g. Mon?Fri 9am?5pm, after 9pm">
+                    <label class="auth-label" for="bp-meals-no-call">Times NOT to call</label>
+                    <input class="auth-input" id="bp-meals-no-call" name="do_not_call" placeholder="e.g. Mon?Fri 9am?5pm, after 9pm">
 
-                    <label class="auth-label">Extra notes</label>
-                    <input class="auth-input" name="extra_notes" placeholder="Anything we should know? (address notes, dietary, schedule, etc.)">
+                    <label class="auth-label" for="bp-meals-notes">Extra notes</label>
+                    <input class="auth-input" id="bp-meals-notes" name="extra_notes" placeholder="Anything we should know? (address notes, dietary, schedule, etc.)">
 
                     <button type="submit" class="btn btn-primary auth-submit">Submit my request</button>
                     <p class="blueprint-modal-note" id="meals-status" role="status" aria-live="polite"></p>
@@ -306,7 +306,7 @@
                         }
                     });
 
-                    if (status) status.textContent = 'Got it — we\'ll call you within 24 hours.';
+                    if (status) status.textContent = 'Got it â€” we\'ll call you within 24 hours.';
                 });
 
                 wrap.appendChild(form);
@@ -322,15 +322,15 @@
                 const wrap = document.createElement('div');
                 wrap.innerHTML = `
                     <h3>Custom One-on-One Coaching</h3>
-                    <p class="blueprint-modal-note">Enter your email and phone. Next, you’ll go to Training to create an account (if you don’t have one yet). If you already have one, sign in and stand by for a call within 24 hours.</p>
+                    <p class="blueprint-modal-note">Enter your email and phone. Next, youâ€™ll go to Training to create an account (if you donâ€™t have one yet). If you already have one, sign in and stand by for a call within 24 hours.</p>
                 `;
 
                 const form = document.createElement('form');
                 form.innerHTML = `
-                    <label class="auth-label">Email</label>
-                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-                    <label class="auth-label">Phone</label>
-                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
+                    <label class="auth-label" for="bp-1on1-email">Email</label>
+                    <input class="auth-input" id="bp-1on1-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                    <label class="auth-label" for="bp-1on1-phone">Phone</label>
+                    <input class="auth-input" id="bp-1on1-phone" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" required>
                     <button type="submit" class="btn btn-primary auth-submit">Next</button>
                     <p class="blueprint-modal-note" id="coach-status" role="status" aria-live="polite"></p>
                 `;
@@ -370,14 +370,14 @@
                 const wrap = document.createElement('div');
                 wrap.innerHTML = `
                     <h3>Self-Paced Coaching</h3>
-                    <p class="blueprint-modal-note">Create an account, add your constraints, and we’ll generate a plan. You can link your grocery plan to your account.</p>
+                    <p class="blueprint-modal-note">Create an account, add your constraints, and weâ€™ll generate a plan. You can link your grocery plan to your account.</p>
                 `;
 
                 const actions = document.createElement('div');
                 actions.className = 'blueprint-modal-actions';
 
                 const authBtn = makePrimaryBtn({
-                    label: currentUser ? 'You’re signed in' : 'Create an account',
+                    label: currentUser ? 'Youâ€™re signed in' : 'Create an account',
                     onClick: () => openAuth('signup'),
                 });
                 if (currentUser) authBtn.setAttribute('disabled', 'true');
@@ -386,25 +386,25 @@
 
                 const form = document.createElement('form');
                 form.innerHTML = `
-                    <label class="auth-label">Email (optional)</label>
-                    <input class="auth-input" name="email" type="email" autocomplete="email" placeholder="you@example.com">
-                    <label class="auth-label">Phone (optional)</label>
-                    <input class="auth-input" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555">
-                    <label class="auth-label">Goal</label>
-                    <input class="auth-input" name="goal" placeholder="e.g. strength, hypertrophy" required>
-                    <label class="auth-label">Days per week</label>
-                    <input class="auth-input" name="days" placeholder="e.g. 4" required>
-                    <label class="auth-label">Equipment</label>
-                    <input class="auth-input" name="equipment" placeholder="e.g. full gym, home" required>
-                    <label class="auth-label">Constraints (optional)</label>
-                    <input class="auth-input" name="constraints" placeholder="Schedule, injuries, preferences…">
+                    <label class="auth-label" for="bp-self-email">Email (optional)</label>
+                    <input class="auth-input" id="bp-self-email" name="email" type="email" autocomplete="email" placeholder="you@example.com">
+                    <label class="auth-label" for="bp-self-phone">Phone (optional)</label>
+                    <input class="auth-input" id="bp-self-phone" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555">
+                    <label class="auth-label" for="bp-self-goal">Goal</label>
+                    <input class="auth-input" id="bp-self-goal" name="goal" placeholder="e.g. strength, hypertrophy" required>
+                    <label class="auth-label" for="bp-self-days">Days per week</label>
+                    <input class="auth-input" id="bp-self-days" name="days" placeholder="e.g. 4" required>
+                    <label class="auth-label" for="bp-self-equipment">Equipment</label>
+                    <input class="auth-input" id="bp-self-equipment" name="equipment" placeholder="e.g. full gym, home" required>
+                    <label class="auth-label" for="bp-self-constraints">Constraints (optional)</label>
+                    <input class="auth-input" id="bp-self-constraints" name="constraints" placeholder="Schedule, injuries, preferencesâ€¦">
                     <button type="submit" class="btn btn-primary auth-submit">Generate my plan</button>
                     <p class="blueprint-modal-note" id="sp-status" role="status" aria-live="polite"></p>
                 `;
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const status = form.querySelector('#sp-status');
-                    if (status) status.textContent = 'Saving…';
+                    if (status) status.textContent = 'Savingâ€¦';
                     const fd = new FormData(form);
 
                     const constraintsPayload = {
@@ -434,7 +434,7 @@
                         phone,
                         snapshot: constraintsPayload
                     });
-                    if (status) status.textContent = 'Done. Opening the plan generator…';
+                    if (status) status.textContent = 'Done. Opening the plan generatorâ€¦';
                     window.setTimeout(() => go('index.html?open=builder#resources'), 500);
                 });
                 wrap.appendChild(form);
@@ -476,4 +476,5 @@
     </script>
 </body>
 </html>
+
 

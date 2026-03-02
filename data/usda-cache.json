@@ -1908,5 +1908,21 @@
       "serving_unit": "g",
       "household_serving": "1 cup"
     }
+  },
+  "usda:upc:070332001754": {
+    "cachedAt": 1772356827340,
+    "data": {
+      "fdc_id": 2383847,
+      "gtin_upc": "070332001754",
+      "description": "PEPPER STRIPS",
+      "data_type": "Branded",
+      "calories": 29,
+      "protein_g": 1.18,
+      "carbs_g": 5.88,
+      "fat_g": 0,
+      "serving_size": 85,
+      "serving_unit": "g",
+      "household_serving": "3/4 cup"
+    }
   }
 }

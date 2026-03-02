@@ -2745,6 +2745,156 @@
     "early_access_event": false,
     "walmart_plus_member": false
   },
+  "10791044": {
+    "us_item_id": "10791044",
+    "product_id": "3INUVH63KZ44",
+    "upc": "070332001754",
+    "title": "Birds Eye C&W Premium Quality Bell Pepper Strips, Frozen Vegetable, 14 oz (Frozen)",
+    "short_description_html": "From tasty stir fry to sizzling fajitas, Birds Eye C&W Premium Quality Frozen Bell Pepper Strips are the perfect addition to any recipe. This tasty blend of sliced red, yellow and green bell peppers has a flavor that complements any meal. They make a great addition to rice, pasta, soups, stews, stir fry, casseroles, salads, fajitas and so much more. These frozen bell peppers have 0 grams of fat and 25 calories per serving. Preparation is quick and easy in your microwave or on your stovetop.\nBirds Eye C&W vegetables ripen in the field and are picked at their peak, then flash frozen to lock in their flavor and nutrients, providing you with delicious premium quality frozen vegetables that are quick and convenient to prepare. Make mealtime complete with Birds Eye C&W frozen vegetables.",
+    "detailed_description_html": "<ul>  <li>One 14 oz. bag Birds Eye C&amp;W Premium Quality Bell Pepper Strips, Frozen</li>  <li>Enjoy these sliced red, yellow and green bell peppers as a flavorful addition to any meal</li>  <li>With 0 grams of fat and 25 calories per serving, pair them with lean protein for a wholesome meal</li>  <li>Add to your favorite recipes, from casseroles and fajitas to stir fry and pasta</li>  <li>Keep these tasty frozen vegetables in your freezer for quick veggies anytime</li>  <li>SNAP &amp; EBT eligible food item</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Frozen Foods",
+        "url": "https://www.walmart.com/cp/frozen-foods/976791"
+      },
+      {
+        "name": "Frozen Fruits & Vegetables",
+        "url": "https://www.walmart.com/cp/frozen-fruits-vegetables/5624760"
+      },
+      {
+        "name": "Frozen Vegetables",
+        "url": "https://www.walmart.com/cp/frozen-vegetables/1001424"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Vegetable type",
+        "value": "PEPPER",
+        "display_name": "Vegetable type"
+      },
+      {
+        "key": "Food form",
+        "value": "Chopped",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Net content statement",
+        "value": "NET WT 14 OZ (396g)",
+        "display_name": "Net content statement"
+      },
+      {
+        "key": "Shelf life",
+        "value": "365 days",
+        "display_name": "Shelf life"
+      },
+      {
+        "key": "Food condition",
+        "value": "Frozen",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Container type",
+        "value": "Bag",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Size",
+        "value": "14 Ounce",
+        "display_name": "Size"
+      },
+      {
+        "key": "Brand",
+        "value": "Birds Eye C&W",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "http://images.salsify.com/image/upload/s--mc8XYTcv--/c_fit,w_3000,h_3000/b9bc57c06416b94e8ce6cfcef041da0e2429e02d.jpeg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Manufacturer",
+        "value": "Conagra Brands",
+        "display_name": "Manufacturer"
+      }
+    ],
+    "directions": [
+      {
+        "name": "Instructions",
+        "value": "Keep frozen. Cook thoroughly.Microwave Instructions:1. Empty frozen contents of bag into a 2-quart microwave safe dish. Add 2 tablespoons water (1 tablespoon water for half package).2. Cover and Microwave on High; Stir Halfway through cooking.3. Let stand for 1 Minute after cooking.4. Drain and Serve.Microwave ovens vary - Adjust cooking times as needed to reach 165°F as measured by a food thermometer taken in several spots.Microwave Cook Time:For a full pack cook at one thousand and two hundred watts for seven minutes.For a full pack cook at one thousand watts for eight minutes.For a full pack cook at eight hundred watts for nine minutes.For a half pack&nbsp;cook at one thousand and two hundred watts for three and a half minutes.For a half pack&nbsp;cook at one thousand watts for four and a half minutes.For a half pack&nbsp;cook at eight hundred watts for five minutes.For microwave ovens less than 800 watts, please use stovetop instructions.Stove Top Instructions1. Empty frozen contents of bag into a 2-quart nonstick saucepan. Add ½ cup water (¼ cup water for half package).2. Bring water to a full boil over High Heat; reduce heat to Medium-High.3. Cover and Cook 5 to 6 minutes (3 to 4 minutes for half package), stirring occasionally.4. Drain and Serve."
+      },
+      {
+        "name": "Safe Handling Instructions",
+        "value": "Cook thoroughly."
+      }
+    ],
+    "ingredients": "Green Bell Peppers, Red Bell Peppers, Yellow Bell Peppers.",
+    "warnings": [
+      {
+        "name": "State Chemical Disclosure",
+        "value": "None"
+      }
+    ],
+    "manufacture_number": "claveria",
+    "product_type_id": "frozen_vegetables",
+    "product_type": "Frozen Vegetables",
+    "manufacturer": "Birds Eye C&W",
+    "product_page_url": "https://www.walmart.com/ip/Birds-Eye-C-W-Premium-Quality-Bell-Pepper-Strips-Frozen-Vegetable-14-oz-Frozen/10791044",
+    "price_map": {
+      "unit_price": 0.177,
+      "price": 2.48,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Birds-Eye-C-W-Premium-Quality-Bell-Pepper-Strips-Frozen-Vegetable-14-oz-Frozen_d31a559f-b5c9-4763-a4d4-796c35964d00.b474c9eb693f4a5dbc97d6394d99e66a.jpeg",
+      "https://i5.walmartimages.com/asr/1abfe801-75ca-4f7f-a0b1-6bb4620940f7.ca08534436c602a7260ae75794d554a1.jpeg",
+      "https://i5.walmartimages.com/asr/07929356-8a81-443b-a580-db04888d6f53.cd368a6440c7fda6a13decc1678b2ba1.jpeg",
+      "https://i5.walmartimages.com/asr/ed132842-5ac0-4002-861d-07a6d8d5e56d.d3df0873465bc9d7da77cfae3b9a7b1a.jpeg",
+      "https://i5.walmartimages.com/asr/fb458025-b696-44fd-8740-95e7da1718a0.b9d15932c8a26a2869801e22da123026.jpeg"
+    ],
+    "reviews": 166,
+    "rating": 4.6,
+    "offer_id": "F6E875989A264D2584D1CE802E991ACE",
+    "offer_type": "ONLINE_AND_STORE",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 2.48
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772377200000,
+      "display_arrival_date": "2026-03-01T15:00:00.000Z"
+    },
+    "pickup_options": [
+      {
+        "availability": "AVAILABLE",
+        "pickup_method": "PICKUP_CURBSIDE"
+      }
+    ],
+    "badges": [
+      {
+        "id": "L1200",
+        "key": "CUSTOMER_PICK",
+        "name": "Overall pick",
+        "query": "frozen bell peppers"
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
   "10898817": {
     "us_item_id": "10898817",
     "product_id": "63RMPMVZ4DBP",
@@ -16685,6 +16835,141 @@
     "early_access_event": false,
     "walmart_plus_member": false
   },
+  "905928964": {
+    "us_item_id": "905928964",
+    "product_id": "4NGQ8ZBB618J",
+    "upc": "363935953897",
+    "title": "Premium Chunk Chicken Breast Packed in Water, 12.5 Ounce, 12 count",
+    "short_description_html": "<p><strong> Premium Chunk Chicken Breast Packed in Water, 12.5 Ounce, 12 count</strong></p><p><strong> Signature</strong></p><p><strong><strong>Color: </strong>2 Packages (6 x 12.5 oz cans)</strong></p><p><strong><strong>Size: </strong>2 Packages (6 x 12.5 oz cans)</strong></p><p><strong><strong>- </strong>Use it tacos and pasta</strong></p><p><strong><strong>- </strong>Use it burgers, soups</strong></p><p><strong><strong>- </strong>Great taste</strong></p><p><strong><br></strong></p><p><strong><strong> chicken breast, packed in water, premium chunk</strong></strong></p><p></p>",
+    "detailed_description_html": "<li>Signature</li> <li>Color: 2 Packages (6 x 12.5 oz cans)</li> <li>Size: 2 Packages (6 x 12.5 oz cans)</li> <li>- Use it tacos and pasta</li> <li>- Use it burgers, soups</li> <li>- Great taste</li> <li><br></li> <li>chicken breast, packed in water, premium chunk</li> <li></li>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Canned goods",
+        "url": "https://www.walmart.com/cp/canned-goods/7433209"
+      },
+      {
+        "name": "Canned chili & meat",
+        "url": "https://www.walmart.com/cp/canned-chili-meat/5637428"
+      }
+    ],
+    "seller_id": "85B0AC10B9EE47C0BCFAFD8FA296368C",
+    "seller_name": "J & J",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Universal",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Food form",
+        "value": "Chunks",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Flavor",
+        "value": "chicken breast",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Size",
+        "value": "12.5 Ounce, 12 count",
+        "display_name": "Size"
+      },
+      {
+        "key": "Container type",
+        "value": "Can",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Poultry cut",
+        "value": "Breasts",
+        "display_name": "Poultry cut"
+      },
+      {
+        "key": "Count ",
+        "value": "12",
+        "display_name": "Count "
+      },
+      {
+        "key": "Total protein per serving",
+        "value": "26g",
+        "display_name": "Total protein per serving"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "In Water",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Material",
+        "value": "Can",
+        "display_name": "Material"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Retail packaging",
+        "value": "Multipack",
+        "display_name": "Retail packaging"
+      },
+      {
+        "key": "Weight",
+        "value": "11.29 lbs",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Fresh & frozen poultry type",
+        "value": "Chicken",
+        "display_name": "Fresh & frozen poultry type"
+      }
+    ],
+    "ingredients": "Chicken breast, seasoning (salt, modified food starch, phosphate, chicken broth and starch)",
+    "product_type_id": "94732",
+    "product_type": "Canned & Jarred Poultry",
+    "manufacturer": "Universal",
+    "product_page_url": "https://www.walmart.com/ip/Premium-Chunk-Chicken-Breast-Packed-in-Water-12-5-Ounce-12-count/905928964",
+    "price_map": {
+      "price": 46.95,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Premium-Chunk-Chicken-Breast-Packed-in-Water-12-5-Ounce-12-count_0da3da70-a679-442f-8ceb-d01f2613e734.fde45363897e5d46f0b47a966a9f8741.jpeg"
+    ],
+    "reviews": 3,
+    "rating": 5,
+    "offer_id": "FFCE7C1B8EE14F7E8F179964F773964D",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "85B0AC10B9EE47C0BCFAFD8FA296368C",
+        "catalog_seller_id": 2013,
+        "seller_name": "TREND I",
+        "seller_display_name": "J & J",
+        "price": 46.95
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772751540000,
+      "display_arrival_date": "2026-03-05T22:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
   "927645419": {
     "us_item_id": "927645419",
     "product_id": "3EL6SVOX58PJ",
@@ -17264,6 +17549,172 @@
     "early_access_event": false,
     "walmart_plus_member": false
   },
+  "1232547325": {
+    "us_item_id": "1232547325",
+    "product_id": "6QCSAE73LRIC",
+    "title": "Pedersons Farms, All Natural Boneless Thick Cut Pork Chops, (4 Packages, with 2 x 8 Ounce Chops in Each)",
+    "short_description_html": "These Boneless Thick Cut Pork Chops are a product of the United States. Pederson's Farms fresh pork is beautifully pink in color and perfectly marbled! These pork chops are from Duroc-sired hogs, which makes this protein some of the juiciest, most tender pork you can find. This package includes 8- 8 oz. chops total with 24 grams of protein per serving. Product comes in multipack quantities so you can stock up your freezer with GAP1 Certified meat.",
+    "detailed_description_html": "<ul>  <li>Duroc sired pork</li>  <li>Keto, Whole30 and Paleo diet friendly</li>  <li>Allergen free</li>  <li>GAP1 Certified (Vegetarian Fed, Humanely Raised)</li>  <li>Ships frozen so it can be stored frozen prior to use</li>  <li>1 inch thick, 2-8 oz. chops per pack</li>  <li>24 grams of protein per serving</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Meat & Seafood",
+        "url": "https://www.walmart.com/cp/meat-seafood/9569500"
+      },
+      {
+        "name": "Meat and Seafood Ship to Home",
+        "url": "https://www.walmart.com/cp/meat-seafood-ship-to-home/2907173"
+      },
+      {
+        "name": "Ship to Home",
+        "url": "https://www.walmart.com/cp/ship-to-home/5876622"
+      }
+    ],
+    "seller_id": "C93E457439A84F5F9D49A1BAFAF52A2B",
+    "seller_name": "PEDERSONS FARMS",
+    "specification_highlights": [
+      {
+        "key": "Pork cut",
+        "value": "Rib Chops",
+        "display_name": "Pork cut"
+      },
+      {
+        "key": "Brand",
+        "value": "Pederson's Natural Farms",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Flavor",
+        "value": "Pork Chops",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Food condition",
+        "value": "Frozen",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Boneless",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Pieces",
+        "value": "4",
+        "display_name": "Pieces"
+      },
+      {
+        "key": "Piece count",
+        "value": "8",
+        "display_name": "Piece count"
+      },
+      {
+        "key": "Container type",
+        "value": "Vacuum Pack",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Manufacturer",
+        "value": "Pedersons Natural Farms",
+        "display_name": "Manufacturer"
+      },
+      {
+        "key": "Sales unit",
+        "value": "Each_Weight",
+        "display_name": "Sales unit"
+      },
+      {
+        "key": "Multipack quantity",
+        "value": "4",
+        "display_name": "Multipack quantity"
+      },
+      {
+        "key": "Weight",
+        "value": "1 lbs",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Size",
+        "value": "16 OZ",
+        "display_name": "Size"
+      },
+      {
+        "key": "Cuisine",
+        "value": "Non-Asian",
+        "display_name": "Cuisine"
+      },
+      {
+        "key": "Occasion",
+        "value": "All Occasion",
+        "display_name": "Occasion"
+      },
+      {
+        "key": "Container material",
+        "value": "Vacuum Seal",
+        "display_name": "Container material"
+      }
+    ],
+    "directions": [
+      {
+        "name": "Instructions",
+        "value": "Keep frozen or below 40 degrees. Prepare until internal temperature is 140 or higher (measured with food thermometer) for best results."
+      },
+      {
+        "name": "Safe Handling Instructions",
+        "value": "This product was prepared from meat that passed inspection for quality standards. Some food products may contain bacteria that could cause illness if the product is mishandled or cooked improperly. For your protection follow these safe handling instructions. \nKeep at or below 40 degrees. Cook thoroughly to a minimum internal temperature of 145 (degrees F) as measured with a food thermometer. Allow meat to rest for 5 minutes. Keep hot food hot. Refrigerate leftovers immediately or discard."
+      }
+    ],
+    "ingredients": "PORK",
+    "manufacture_number": "924557",
+    "product_type_id": "ib_pork",
+    "product_type": "Pork",
+    "manufacturer": "Pederson's Natural Farms",
+    "product_page_url": "https://www.walmart.com/ip/Pedersons-Farms-All-Natural-Boneless-Thick-Cut-Pork-Chops-4-Packages-with-2-x-8-Ounce-Chops-in-Each/1232547325",
+    "price_map": {
+      "price": 55.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Pedersons-Farms-All-Natural-Boneless-Thick-Cut-Pork-Chops-4-Packages-with-2-x-8-Ounce-Chops-in-Each_9a76e130-ebdd-4c7b-ad43-45514d7ace2c.f575b134a3fd173bf8bc2e3336251382.png",
+      "https://i5.walmartimages.com/asr/a0d2a3f4-8748-44b1-8506-5a8382bac6aa.0b69b141df1e0565f0dd934d5609652f.png",
+      "https://i5.walmartimages.com/asr/a23d2dec-fbcd-4d96-88e9-846e034033e1.a4da86921965551a9f629d0a143d7967.jpeg",
+      "https://i5.walmartimages.com/asr/a47389fe-b877-46b1-89a1-20aab09baa93.9a1350edf5c12b0ffc4653b28c24f5d8.jpeg",
+      "https://i5.walmartimages.com/asr/e00a02b7-4142-4fd9-8565-e2b2d7a887be.2231b1342eeb400f518acaefb651429f.jpeg",
+      "https://i5.walmartimages.com/asr/9d8b6b82-eba5-4e32-99d6-ac43b5b43140.231fc2e8be6bf38a7abbbb1f70bac120.jpeg",
+      "https://i5.walmartimages.com/asr/a9ebc058-2395-4fe8-a000-740a5feefcce.630d5b62ddd026dab512bab2b956eac1.jpeg"
+    ],
+    "reviews": 6,
+    "rating": 3.2,
+    "offer_id": "D3AE2D61ABA648D89D29E474FC87D19E",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "C93E457439A84F5F9D49A1BAFAF52A2B",
+        "catalog_seller_id": 101120016,
+        "seller_name": "Pederson\\\\'s Natural Farms",
+        "seller_display_name": "PEDERSONS FARMS",
+        "price": 55.99
+      }
+    ],
+    "shipping_price": 19.99,
+    "delivery_option": {
+      "arrival_date": 1772751540000,
+      "display_arrival_date": "2026-03-05T22:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
   "1697048820": {
     "us_item_id": "1697048820",
     "product_id": "69DVK5ICUFI8",
@@ -17605,6 +18056,113 @@
         ]
       }
     ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "1901335790": {
+    "us_item_id": "1901335790",
+    "product_id": "56WUKUX0FA68",
+    "upc": "020241963223",
+    "title": "Wellsley Farms Premium Chunk Chicken Breast in Water, 6 ct./12.5 oz.",
+    "short_description_html": "Made in USA An excellent source of protein, the Wellsley Farms Premium Chunk Chicken Breast in Water is a convenient solution to making meals. Made of white-meat, this fully-cooked chicken is great for salads or sandwich wraps.\n\nProduct Features:\n\n6 servings per containerGluten-freeMade in the USAIncludes six 12.5-oz. cans of chicken breast\n(Model 11454)",
+    "detailed_description_html": "Wellsley Farms Premium Chunk Chicken Breast in Water, 6 ct./12.5 oz.",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry Basics",
+        "url": "https://www.walmart.com/cp/pantry-basics/4252947"
+      }
+    ],
+    "seller_id": "1273BC007312497DAAE7DDEFC5A24403",
+    "seller_name": "Fischer Brand LLC",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Wellsley Farms",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Food form",
+        "value": "Chunks",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Size",
+        "value": "12.5 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Container type",
+        "value": "Can",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Poultry cut",
+        "value": "Breasts",
+        "display_name": "Poultry cut"
+      },
+      {
+        "key": "Count ",
+        "value": "6",
+        "display_name": "Count "
+      },
+      {
+        "key": "Food preparation method",
+        "value": "In Water",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Weight",
+        "value": "12.5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Fresh & frozen poultry type",
+        "value": "Chicken",
+        "display_name": "Fresh & frozen poultry type"
+      }
+    ],
+    "product_type_id": "94732",
+    "product_type": "Canned & Jarred Poultry",
+    "manufacturer": "Wellsley Farms",
+    "product_page_url": "https://www.walmart.com/ip/Wellsley-Farms-Premium-Chunk-Chicken-Breast-in-Water-6-ct-12-5-oz/1901335790",
+    "price_map": {
+      "price": 29.95,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Wellsley-Farms-Premium-Chunk-Chicken-Breast-in-Water-6-ct-12-5-oz_1e8a42f7-eb85-4a93-bd31-e98b4157639c.2b8d561f11d30f8c5299b47b28509283.jpeg",
+      "https://i5.walmartimages.com/asr/6a61d325-9836-45f1-afa7-cd8e1edb4517.368a7e639a3ecaef1f5266c5a0dcabf0.jpeg",
+      "https://i5.walmartimages.com/asr/f4c08e69-857c-4630-be87-6004e2bf039f.7267517f924c17ba9ece65f1501033bd.jpeg"
+    ],
+    "reviews": 1,
+    "rating": 5,
+    "offer_id": "0AA32FFB29603303B0F791256823C290",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "1273BC007312497DAAE7DDEFC5A24403",
+        "catalog_seller_id": 102525888,
+        "seller_name": "Fischer Brand LLC",
+        "seller_display_name": "Fischer Brand LLC",
+        "price": 29.95
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772924340000,
+      "display_arrival_date": "2026-03-07T22:59:00.000Z"
+    },
     "early_access_event": false,
     "walmart_plus_member": false
   },
@@ -22780,6 +23338,2853 @@
         "price": 3.98
       }
     ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "8647161511": {
+    "us_item_id": "8647161511",
+    "product_id": "7L032FJNFBUV",
+    "upc": "100144818339",
+    "title": "2X-KR Premium Chicken Breast Chunk in Water - 5 oz",
+    "short_description_html": "<p>IngredientsChicken Breast Meat, Water, 2% or Less of the Following: Salt, Modified Corn Starch, Sodium Phosphates.</p><p></p><p>Allergen InfoFree from Does Not Contain Declaration Obligatory Allergens.</p><p></p><p>DisclaimerActual product packaging and materials may contain additional and/or different ingredient,   nutritional, or proper usage information than the information . ... </p><p></p>",
+    "detailed_description_html": "<ul>  <li>   <ul>    <li>Nutrition Facts</li>    <li>servings per container</li>    <li>Serving size2oz (56 g)</li>    <li>Amount per serving</li>    <li>Calories70</li>    <li>% Daily value*</li>    <li></li>    <li>*The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.</li>   </ul></li>  <li>[[Nutrition Facts]][[ servings per container]][[Serving size2oz (56 g)]][[Amount per serving]][[Calories70]][[% Daily value*]][[]][[*The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.]]</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry Basics",
+        "url": "https://www.walmart.com/cp/pantry-basics/4252947"
+      }
+    ],
+    "seller_id": "B3F20137F1E94CF8BE332DFEB1B7194E",
+    "seller_name": "Z & M Distributors LLC",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "2X-KR",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Food form",
+        "value": "Chunks",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Size",
+        "value": "5 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Container type",
+        "value": "Can",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Poultry cut",
+        "value": "Breasts",
+        "display_name": "Poultry cut"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "In Water",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Weight",
+        "value": "5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "Nutrition Fact Panel",
+        "display_name": "Food & drug fact label type"
+      },
+      {
+        "key": "Fresh & frozen poultry type",
+        "value": "Chicken",
+        "display_name": "Fresh & frozen poultry type"
+      }
+    ],
+    "warnings": [
+      {
+        "name": "WARNING - California Proposition 65",
+        "value": "This product can expose you to chemicals including arsenic, which is known to the State of California to cause cancer. For more information, go to www.p65warnings.ca.gov."
+      }
+    ],
+    "product_type_id": "94732",
+    "product_type": "Canned & Jarred Poultry",
+    "manufacturer": "2X-KR",
+    "product_page_url": "https://www.walmart.com/ip/2X-KR-Premium-Chicken-Breast-Chunk-in-Water-5-oz/8647161511",
+    "price_map": {
+      "price": 14.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 5,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/2X-KR-Premium-Chicken-Breast-Chunk-in-Water-5-oz_6559bb20-86c6-4a63-947a-3506edb56923.3469f93a0f66ea29adb8289f5c3bd593.jpeg",
+      "https://i5.walmartimages.com/asr/b0349568-aeb3-4a38-be5a-d4c86c2d5c09.0fde32ba1f8ac053fc3997b72ba6bbc1.jpeg",
+      "https://i5.walmartimages.com/asr/c7cace85-7d66-4d0f-9fa6-62e84b149116.c411feec4e1ab7121cce0651ae1edd43.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "AB726C8B0BD335A3B46B8F8813CC9A37",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "B3F20137F1E94CF8BE332DFEB1B7194E",
+        "catalog_seller_id": 101381500,
+        "seller_name": "Z&M Distributors LLC",
+        "seller_display_name": "Z & M Distributors LLC",
+        "price": 14.99
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "5123820454": {
+    "us_item_id": "5123820454",
+    "product_id": "6ZP9DPZK5DZ4",
+    "upc": "601957848013",
+    "title": "Swanson Premium White Chunk Chicken Breast (Pack of 14)",
+    "short_description_html": "Enjoy a shortcut to your favorite chicken dishes with Swanson 35% Less Sodium White Premium Chunk Canned Chicken Breast in Water. Our ready-to-eat, fully cooked chicken chunks contain no antibiotics, added MSG or artificial flavors. With 250 mg of sodium per serving, this convenient white meat chicken in a can has 35% less sodium than a 12.5-ounce can of our regular white meat, which contains 390 mg of sodium per serving. It’s also 98% fat free, gluten free and has 15 grams in each 3-ounce serving. Eat it on crackers, add it to salads, or use it in any recipe that calls for diced chicken.",
+    "detailed_description_html": "Swanson 25% Less Sodium Premium White Chunk Canned Chicken Breast in Water, 12.5 oz (Pack of 14)",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry Basics",
+        "url": "https://www.walmart.com/cp/pantry-basics/4252947"
+      }
+    ],
+    "seller_id": "7389F6C52928400EBA153C00DD4D149C",
+    "seller_name": "Overstock Drugstore",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Swanson",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Food form",
+        "value": "Chunks",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Size",
+        "value": "12.5 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Container type",
+        "value": "Can",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Poultry cut",
+        "value": "Breasts",
+        "display_name": "Poultry cut"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "In Water",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Weight",
+        "value": "12.5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Fresh & frozen poultry type",
+        "value": "Chicken",
+        "display_name": "Fresh & frozen poultry type"
+      }
+    ],
+    "product_type_id": "94732",
+    "product_type": "Canned & Jarred Poultry",
+    "manufacturer": "Swanson",
+    "product_page_url": "https://www.walmart.com/ip/Swanson-Premium-White-Chunk-Chicken-Breast-Pack-of-14/5123820454",
+    "price_map": {
+      "price": 109.74,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 0,
+    "in_stock": false,
+    "images": [
+      "https://i5.walmartimages.com/seo/Swanson-Premium-White-Chunk-Chicken-Breast-Pack-of-14_e2afb8f6-2dfa-4e6d-865d-3ce9babbe5a9.915000f0391dc35dc52e03ddfec95c94.jpeg",
+      "https://i5.walmartimages.com/asr/2afa5e40-5261-48e4-a003-1fe26a444584.27dd23c447030c8120245e13cf0d9753.jpeg",
+      "https://i5.walmartimages.com/asr/868407b6-00d2-486a-970a-bd7929820f33.2f3ab673bd273311ab5fb736a7443ae0.jpeg",
+      "https://i5.walmartimages.com/asr/66805aac-d8fa-4a97-b58a-7748fde4ef62.8bdee01c0aa8e32cf6124148234a687b.jpeg",
+      "https://i5.walmartimages.com/asr/f6cbcac2-7633-4e41-80d8-b18499cb173a.77768e362f99846c4fa7e435dcfbe161.jpeg"
+    ],
+    "reviews": 1,
+    "rating": 1,
+    "offer_id": "568DC6B18E3139D8A37B0C78D5FE2A5F",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "7389F6C52928400EBA153C00DD4D149C",
+        "catalog_seller_id": 11059,
+        "seller_name": "Overstockdrugstore",
+        "seller_display_name": "Overstock Drugstore",
+        "price": 109.74
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "15318959484": {
+    "us_item_id": "15318959484",
+    "product_id": "7549TIZTRISK",
+    "variants": [
+      "flavor-parmesan,romanoandherbcrusted"
+    ],
+    "upc": "460259441984",
+    "title": "Today Gourmet Parmesan, Romano and Herb Crusted Tilapia - 6/7oz Fillets (5lbs.)",
+    "short_description_html": "Tilapia Fillets with breading infused with parmesan and Romano cheeses for a delicious touch of Italy in every bite. Each oven-ready fillet cooks from frozen to flavor-packed crunchy, mildly sweet, flaky fish perfection. These irresistible fillets represent the gold standard in handmade appearance and authentic ingredients no menu should be without.",
+    "detailed_description_html": "<ul>  <li>Flash Frozen</li>  <li>Ships in a cooler with dry ice.</li>  <li>THE FLASH FREEZING DIFFERENCE. Flash freezing uses extremely cold temperatures to rapidly freeze foods. The process is much faster than traditional freezing and locks in freshness, taste, and quality by minimizing ice crystal formation. (Fast forward through the cellular-level science.) Thanks to the smaller ice crystals, the food — when thawed — maintains its structure, moisture content, and texture. ABOUT TODAY GOURMET. We are a small, family-owned business with 30+ years of experience in the food industry. We know and love food. We only source the best products we can find and put an emphasis on working with family-owned businesses across the U.S. If we won't put it on our table, we won't put it on yours!</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Frozen Foods",
+        "url": "https://www.walmart.com/cp/frozen-foods/976791"
+      },
+      {
+        "name": "Frozen Meat, Seafood, & Vegetarian",
+        "url": "https://www.walmart.com/cp/frozen-meat-seafood-vegetarian/5295075"
+      },
+      {
+        "name": "Frozen Seafood",
+        "url": "https://www.walmart.com/cp/frozen-seafood/1001782"
+      }
+    ],
+    "seller_id": "4D1028DAB8BA4C5BA5A3D730D8FC3A43",
+    "seller_name": "Today Gourmet",
+    "specification_highlights": [
+      {
+        "key": "Food condition",
+        "value": "Frozen",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Brand",
+        "value": "Today Gourmet",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Size",
+        "value": "5lb. Package",
+        "display_name": "Size"
+      },
+      {
+        "key": "Shelf life",
+        "value": "365 days",
+        "display_name": "Shelf life"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Baked",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Flavor",
+        "value": "Parmesan, Romano and Herb Crusted",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Flavor notes",
+        "value": "Mildly Sweet",
+        "display_name": "Flavor notes"
+      },
+      {
+        "key": "Texture",
+        "value": "Flaky",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Cuisine",
+        "value": "Italian",
+        "display_name": "Cuisine"
+      },
+      {
+        "key": "Piece count",
+        "value": "6",
+        "display_name": "Piece count"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://i.ibb.co/kHwHGzK/tortilla-crusted-tilapia-nutrition.jpg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "Nutrition Fact Panel",
+        "display_name": "Food & drug fact label type"
+      },
+      {
+        "key": "Container type",
+        "value": "Box",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "5 Pound",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Pound",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://i.ibb.co/1R7zByv/tortilla-crusted-tilapia-ingredients.jpg",
+        "display_name": "Ingredient list image"
+      }
+    ],
+    "ingredients": "Tilapia, Water, Enriched Bleached Wheat Flour (Flour, Niacin, Reduced Iron, Thiamine Mononitrate, Riboflavin, Folic Acid), Tortilla Chips (Tortilla Meal (Corn, Corn Oil, Soybean and/or Partially Hydrogenated Soybean Oil), Salt), Red & Green Bell Pepper Flavored Bits (Corn Syrup, Enriched Bleached Wheat Flour (Flour, Niacin, Reduced Iron, Thiamine Mononitrate, Riboflavin, Folic Acid), Corn Cereal, Partially Hydrogenated Cottonseed and/or Soybean Oil, Artificial Flavor, Caramel Color, Red #40, Yellow #5, Yellow #6, Blue #1), Modified Corn Starch, Enriched Wheat Flour (Flour, Niacin, Reduced Iron, Thiamine Mononitrate, Riboflavin, Folic Acid), Seasoning (Whey, Salt, Dextrose, Natural Flavor, Onion Powder, Silicone Dioxide, Maltodextrin, Partially Hydrogenated Soybean Oil, Paprika, Modified Food Starch), Cilantro, Salt, Red Chili and Jalapeno Flavored Bits (Corn Syrup, Enriched Bleached Wheat Flour (Flour, Niacin, Reduced Iron, Thiamine Mononitrate, Riboflavin, Folic Acid), Corn Cereal, Partially Hydrogenated Cottonseed Oil and/or Soybean Oil, Jalapeno Powder, Natural and Artificial Flavors, Caramel Color, Red #40, Yellow #5, Blue #1), Disodium Inosinate & Guanylate, Spices, Soybean Oil, Yellow Corn Flour, White Corn Flour, Leavening (Sodium Bicarbonate, Sodium Acid Pyrophosphate, Sodium Aluminum Phosphate, Monocalcium Phosphate), Sugar, Egg White, Dextrose, Soy Flour, Lime Oil, Vinegar, Flavor (Contains Autolyzed Yeast Extract, Thiamine Hydrochloride, Corn Syrup Solids), Monoglycerides, Torula Yeast, Onion Powder, Sodium Stearoyl Lactylate, Garlic Powder, Yeast, Lactic Acid, Natural Flavor, Caramel Color, Yeast Nutrients (Ammonium Chloride, Calcium Sulfate, Extractive of Paprika (cColor), Dough Conditioners (L-Cysteine Monohydrochloride, Ascorbic Acid, Azodicarbonamide). Prefried in Cottonseed, Canola and/or Soybean Oil. Contains: Fish (Tilapia), Wheat, Soybean, Egg and Milk.",
+    "warnings": [
+      {
+        "name": "WARNING - California Proposition 65",
+        "value": "Nearly all fish and seafood contain some amount of mercury and related compounds, chemicals known to the State of California to cause cancer, and birth defects or other reproductive harm.&nbsp;"
+      }
+    ],
+    "product_type_id": "385",
+    "product_type": "Fresh & Frozen Seafood",
+    "manufacturer": "Today Gourmet",
+    "product_page_url": "https://www.walmart.com/ip/Today-Gourmet-Parmesan-Romano-and-Herb-Crusted-Tilapia-6-7oz-Fillets-5lbs/15318959484",
+    "price_map": {
+      "price": 179.97,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Today-Gourmet-Parmesan-Romano-and-Herb-Crusted-Tilapia-6-7oz-Fillets-5lbs_15e72ad2-bf3e-442a-8846-f717efb01ea1.3bca256bb2c98ea5d96c10bbb224b749.jpeg",
+      "https://i5.walmartimages.com/asr/adcf01eb-f48b-468a-9539-b4bd9875f6d5.bf6a8abf38478d8bb58e98db4649b010.jpeg",
+      "https://i5.walmartimages.com/asr/9bf77ce7-c333-4d47-a73a-4e136ce485ca.312e473a32eff14deb03b29e19f1528c.jpeg",
+      "https://i5.walmartimages.com/asr/94196fea-1ee7-4f9a-a99f-6445cad3670d.94bd31cca3d842936492387d963a5d8b.jpeg",
+      "https://i5.walmartimages.com/asr/2f256d96-438e-4d02-af1f-637e285b4c6a.8164b2394bcb0eb1ed25fde69e51aa22.jpeg",
+      "https://i5.walmartimages.com/asr/06e2c45c-acd8-4839-9217-a8cf9325897d.18589313eef9a0f41f6559a14cfc61ed.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "03587C72530A3722BCEBD46D38DE3582",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "4D1028DAB8BA4C5BA5A3D730D8FC3A43",
+        "catalog_seller_id": 102618213,
+        "seller_name": "Today Gourmet LLC",
+        "seller_display_name": "Today Gourmet",
+        "price": 179.97
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772751540000,
+      "display_arrival_date": "2026-03-05T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Flavor",
+        "available_selections": [
+          {
+            "id": "flavor-coconut,mangoandpapayacrustedtilapia",
+            "name": "Coconut, Mango and Papaya Crusted Tilapia",
+            "products": [
+              {
+                "product_id": "3QUX3ZBI5LB4",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3QUX3ZBI5LB4",
+                "variants": [
+                  "flavor-coconut,mangoandpapayacrustedtilapia"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 179.97,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "flavor-parmesan,romanoandherbcrusted",
+            "name": "Parmesan, Romano and Herb Crusted",
+            "products": [
+              {
+                "product_id": "7549TIZTRISK",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=7549TIZTRISK",
+                "variants": [
+                  "flavor-parmesan,romanoandherbcrusted"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 179.97,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "flavor-tortillacrustedtilapia",
+            "name": "Tortilla Crusted Tilapia",
+            "products": [
+              {
+                "product_id": "576991Y6VZIS",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=576991Y6VZIS",
+                "variants": [
+                  "flavor-tortillacrustedtilapia"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 179.97,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "6058272068": {
+    "us_item_id": "6058272068",
+    "product_id": "2A7E0LBQV7G0",
+    "variants": [
+      "flavor-tilapia"
+    ],
+    "upc": "633486714484",
+    "title": "Kedem Tilapia Gefilte Fish 24 oz (Pack Of 12)",
+    "short_description_html": "Enjoy the traditional flavor of Kedem Tilapia Gefilte Fish. This pack of 12, 24 oz jars features a classic Jewish dish made from ground fish, onions, and spices, perfect for serving as an appetizer or side dish. With its homemade taste and convenient packaging, it's a delicious addition to your Passover or everyday meals. Experience the nostalgia and flavor of Kedem Tilapia Gefilte Fish.",
+    "detailed_description_html": "<ul>  <li>Traditional taste with a modern twist, perfect for any meal.</li>  <li>Crafted with quality fish for a delightful, savory experience.</li>  <li>Convenient pack of 12 ensures deliciousness is always at hand.</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry meal essentials",
+        "url": "https://www.walmart.com/cp/pantry-meal-essentials/2807108"
+      }
+    ],
+    "seller_id": "70D2C11CEED247E6A3D0657D092006AF",
+    "seller_name": "Atmada Nutrition",
+    "specification_highlights": [
+      {
+        "key": "Canned & jarred seafood type",
+        "value": "Gefilte Fish",
+        "display_name": "Canned & jarred seafood type"
+      },
+      {
+        "key": "Brand",
+        "value": "Kedem",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Size",
+        "value": "24 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Flavor",
+        "value": "Tilapia",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Container type",
+        "value": "Jar",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Material",
+        "value": "Glass",
+        "display_name": "Material"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://imagehosting.azureedge.net/imagehosting/00073490132285_front.jpg",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Ounce",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "288 Ounces",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "Nutrition Fact Panel",
+        "display_name": "Food & drug fact label type"
+      }
+    ],
+    "product_type_id": "172",
+    "product_type": "Canned & Jarred Seafood",
+    "manufacturer": "Kedem",
+    "product_page_url": "https://www.walmart.com/ip/Kedem-Gefilte-Fish-Tilapia-Case-of-12-24-oz/6058272068",
+    "price_map": {
+      "price": 181.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Kedem-Gefilte-Fish-Tilapia-Case-of-12-24-oz_aeabeb27-ee41-4ae0-8e83-9eaf08377aa7.7f6b7d0c10d660006277a467edab8099.jpeg",
+      "https://i5.walmartimages.com/asr/0703cbe4-60a1-4c69-97e1-eb0aa0626beb.d7e7f1f74edcb03ed111763bde4a4a29.jpeg",
+      "https://i5.walmartimages.com/asr/4543707b-5138-4819-9b0f-732e40cdf5b9.9d40efbeb7c60f615f6d2dd2f272358a.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "E4B7DBBD4A2C3F8B9B90BB2695EDDE1E",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "70D2C11CEED247E6A3D0657D092006AF",
+        "catalog_seller_id": 102939107,
+        "seller_name": "ATMADA LLC",
+        "seller_display_name": "Atmada Nutrition",
+        "price": 181.99
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772837940000,
+      "display_arrival_date": "2026-03-06T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Flavor",
+        "available_selections": [
+          {
+            "id": "flavor-tilapia",
+            "name": "Tilapia",
+            "products": [
+              {
+                "product_id": "2A7E0LBQV7G0",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2A7E0LBQV7G0",
+                "variants": [
+                  "flavor-tilapia"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 181.99,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "19168465981": {
+    "us_item_id": "19168465981",
+    "product_id": "4CTHVI0CAOLG",
+    "upc": "199874817347",
+    "title": "Mori-Nu Silken Extra Soft Tofu, Shelf-Stable Plant Protein, Non-GMO, Vegan & Gluten-Free, 10.8 oz (Pack of 2) with Measuring Spoon",
+    "short_description_html": "Mori-Nu Silken Extra Soft Tofu delivers an exceptionally smooth and creamy texture, making it the perfect plant-based ingredient for blended and dairy-free recipes. Whether you’re preparing smoothies, sauces, dips, desserts, or soups, this extra soft silken tofu blends effortlessly without altering flavor.\nCrafted from non-GMO soybeans, Mori-Nu Tofu is a clean, complete plant protein that is low in fat and free from saturated fat, gluten, and dairy. Its award-winning aseptic packaging protects the tofu from light, air, and bacteria, allowing it to remain shelf-stable with no refrigeration required until opened.\nThis 2-pack with a measuring spoon included offers both convenience and versatility for health-conscious and plant-based kitchens",
+    "detailed_description_html": "<ul>  <li>‌Silken Extra Soft Texture – Ultra-smooth, creamy tofu ideal for smoothies, sauces, dips, desserts, and thickening soups</li>  <li>Measuring Spoon Included – Convenient spoon included inside the package for easy portioning and recipe prep</li>  <li>Shelf-Stable Convenience – Long shelf life with no refrigeration required until opened; no preservatives</li>  <li>Complete Plant Protein – Made from non-GMO soybeans and a good source of complete plant protein</li>  <li>Clean &amp; Diet-Friendly – Low fat, gluten-free, dairy-free, vegan, and KSA Kosher Parve certified</li>  <li>Value 2-Pack – Includes two 10.8 oz packs, perfect for pantry stocking and everyday use</li> </ul>",
+    "categories": [
+      {
+        "name": "Home",
+        "url": "https://www.walmart.com/cp/home/4044"
+      },
+      {
+        "name": "Kitchen & Dining",
+        "url": "https://www.walmart.com/cp/kitchen-dining/623679"
+      },
+      {
+        "name": "Bakeware",
+        "url": "https://www.walmart.com/cp/bakeware/8455465"
+      },
+      {
+        "name": "Shop Bakeware",
+        "url": "https://www.walmart.com/cp/shop-bakeware/4081038"
+      }
+    ],
+    "seller_id": "9122FEC138A74311961740A9F63A20F8",
+    "seller_name": "CLICKS & BRICKS-CP",
+    "specification_highlights": [
+      {
+        "key": "Pieces",
+        "value": "2",
+        "display_name": "Pieces"
+      },
+      {
+        "key": "Brand",
+        "value": "MORI-NU",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Height",
+        "value": "2 in",
+        "display_name": "Height"
+      },
+      {
+        "key": "Weight",
+        "value": "0.3 lb",
+        "display_name": "Weight"
+      }
+    ],
+    "ingredients": "Water, Soybeans, Soy Protein Isolate, Glucono-Delta-Lactone, Calcium Chloride.",
+    "manufacture_number": "Mori Nu ExFirm",
+    "product_type_id": "1832",
+    "product_type": "Measuring Spoons",
+    "manufacturer": "MORI-NU",
+    "product_page_url": "https://www.walmart.com/ip/Mori-Nu-Silken-Extra-Soft-Tofu-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-8-oz-Pack-of-2-with-Measuring-Spoon/19168465981",
+    "price_map": {
+      "price": 13.49,
+      "was_price": {
+        "price": 14.99,
+        "priceString": "$14.99",
+        "currencyUnit": "USD"
+      },
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Mori-Nu-Silken-Extra-Soft-Tofu-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-8-oz-Pack-of-2-with-Measuring-Spoon_2dbb00d4-d398-4276-a89b-517ffd9f01cc.aa7c053a950fa60bbab62a020d4b5ee7.jpeg",
+      "https://i5.walmartimages.com/asr/8064e678-c7ac-4438-8714-358567957e54.820c34d60d7a0b221dfcf7773788629c.png",
+      "https://i5.walmartimages.com/asr/0a4b91f9-9e07-4ad5-a994-99b7b7bfdf3d.6eba1546957a9ebd8eab3f9350ec9bfe.png",
+      "https://i5.walmartimages.com/asr/f43e1444-b052-4ca6-9c78-deb0815b41ab.9be02a73de24f89d9fade0a070d37a40.jpeg",
+      "https://i5.walmartimages.com/asr/7664af97-c319-4e71-ab54-ca294d69cca5.e8f001f92d93408ae2307bc39231a136.jpeg",
+      "https://i5.walmartimages.com/asr/0290888e-3b8e-4c8e-b2ff-6c28d00b6088.9316aa2a3f9842fb6bf2dcfa0be61484.jpeg",
+      "https://i5.walmartimages.com/asr/6bf81738-129c-4ef4-8b18-91722ff90341.b2455e1817cb390e8702d4b9239ce42f.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "B0C5738F1F0131749FD43B0149EE21C4",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "9122FEC138A74311961740A9F63A20F8",
+        "catalog_seller_id": 102511462,
+        "seller_name": "Color Panther LLC",
+        "seller_display_name": "CLICKS & BRICKS-CP",
+        "price": 13.49
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772492340000,
+      "display_arrival_date": "2026-03-02T22:59:00.000Z"
+    },
+    "badges": [
+      {
+        "id": "L1700",
+        "key": "REDUCED_PRICE",
+        "name": "Reduced price"
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "19163553149": {
+    "us_item_id": "19163553149",
+    "product_id": "50VAQZ4RN3DV",
+    "upc": "199874807140",
+    "title": "Mori-Nu Silken Tofu Variety Pack, Extra Firm & Soft, Shelf-Stable Plant Protein, Non-GMO, Vegan & Gluten-Free, 10.9 oz & 10.8 oz (2-Pack)",
+    "short_description_html": "The Mori-Nu Silken Tofu Variety Pack gives you the best of both worlds with one Extra Firm tofu and one Soft tofu in a convenient, shelf-stable bundle. Designed for versatility, this pack lets you grill, stir-fry, or sauté with Extra Firm tofu while using the Soft tofu for smoothies, soups, sauces, dips, and desserts.\nMade from non-GMO soybeans, Mori-Nu Silken Tofu is a complete plant protein that is low in fat and free from dairy, gluten, preservatives, and saturated fat. Its innovative aseptic packaging keeps the tofu protected from light, air, and bacteria, allowing for long pantry storage with no refrigeration required until opened.\nThis variety pack is ideal for home cooks, plant-based diets, and anyone who wants flexibility without compromise.",
+    "detailed_description_html": "<ul>  <li>‌Two Textures, One Pack – Includes 1 Extra Firm tofu for grilling and sautéing, and 1 Soft tofu for blending, soups, sauces, and dips</li>  <li>Shelf-Stable Convenience – Long shelf life with no refrigeration required until opened; no preservatives</li>  <li>Complete Plant Protein – Made from premium non-GMO soybeans, naturally providing all 9 essential amino acids</li>  <li>Clean &amp; Diet-Friendly – Low fat, gluten-free, dairy-free, vegan, and free from saturated fat</li>  <li>Trusted Quality – KSA Kosher Parve certified and proudly made in the USA</li>  <li>Perfect for Everyday Cooking – A versatile variety pack that covers both firm cooking and creamy recipes</li> </ul>",
+    "seller_id": "9122FEC138A74311961740A9F63A20F8",
+    "seller_name": "CLICKS & BRICKS-CP",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "MORI-NU",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Texture",
+        "value": "Silken Firm and Soft",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Flavor",
+        "value": "Extra Firm and Soft",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "2 Count",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Size",
+        "value": "10.8 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Food form",
+        "value": "Cubes",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Container type",
+        "value": "Box",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Spice level",
+        "value": "No Spice",
+        "display_name": "Spice level"
+      },
+      {
+        "key": "Net content statement",
+        "value": "2 Packs",
+        "display_name": "Net content statement"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://static.wixstatic.com/media/fbd977_fc4a13da33354f57a737bba1a8aa99ae~mv2.png/v1/fill/w_214,h_123,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mori-Nu%20Extra%20Firm%20Back.png",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://static.wixstatic.com/media/fbd977_fc4a13da33354f57a737bba1a8aa99ae~mv2.png/v1/fill/w_214,h_123,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mori-Nu%20Extra%20Firm%20Back.png",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Material",
+        "value": "BOX",
+        "display_name": "Material"
+      },
+      {
+        "key": "Piece count",
+        "value": "2",
+        "display_name": "Piece count"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Count",
+        "display_name": "Product net content uom"
+      }
+    ],
+    "ingredients": "Water, Soybeans, Soy Protein Isolate, Glucono-Delta-Lactone, Calcium Chloride.",
+    "manufacture_number": "MORI NU VARIETY PACK",
+    "product_type_id": "301",
+    "product_type": "Tofu",
+    "manufacturer": "MORI-NU",
+    "product_page_url": "https://www.walmart.com/ip/Mori-Nu-Silken-Tofu-Variety-Pack-Extra-Firm-Soft-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-9-oz-10-8-oz-2-Pack/19163553149",
+    "price_map": {
+      "price": 14.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Mori-Nu-Silken-Tofu-Variety-Pack-Extra-Firm-Soft-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-9-oz-10-8-oz-2-Pack_0304ba94-0338-493f-9896-424612088709.28b9a4b700610c15f05d5babc3cab3aa.jpeg",
+      "https://i5.walmartimages.com/asr/0a4b91f9-9e07-4ad5-a994-99b7b7bfdf3d.6eba1546957a9ebd8eab3f9350ec9bfe.png",
+      "https://i5.walmartimages.com/asr/d2def863-5840-419c-84fc-17e2eca39c7b.0b4462312458785b7594b2831f16c1a7.jpeg",
+      "https://i5.walmartimages.com/asr/7664af97-c319-4e71-ab54-ca294d69cca5.e8f001f92d93408ae2307bc39231a136.jpeg",
+      "https://i5.walmartimages.com/asr/c887d2de-6afb-4fb3-88c5-bde044013f9d.a4dfd8f988afcdb10fbc2e637dea9497.jpeg",
+      "https://i5.walmartimages.com/asr/0290888e-3b8e-4c8e-b2ff-6c28d00b6088.9316aa2a3f9842fb6bf2dcfa0be61484.jpeg",
+      "https://i5.walmartimages.com/asr/34627f17-2810-4ac9-9405-e4d82083fdf4.c8c76d000fc406b6b287ba629371bc98.jpeg",
+      "https://i5.walmartimages.com/asr/f43e1444-b052-4ca6-9c78-deb0815b41ab.9be02a73de24f89d9fade0a070d37a40.jpeg",
+      "https://i5.walmartimages.com/asr/eb1c0a27-305a-4ada-9fc4-f0159aa9b983.b4c016be9e459120d85141a5fec5f463.jpeg"
+    ],
+    "reviews": 1,
+    "rating": 5,
+    "offer_id": "70A70418DA813ED5A01FA9F680FCA99C",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "9122FEC138A74311961740A9F63A20F8",
+        "catalog_seller_id": 102511462,
+        "seller_name": "Color Panther LLC",
+        "seller_display_name": "CLICKS & BRICKS-CP",
+        "price": 14.99
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772492340000,
+      "display_arrival_date": "2026-03-02T22:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false,
+    "seller_options": {
+      "number_of_additional_sellers": 1,
+      "serpapi_product_sellers_link": "https://serpapi.com/search.json?engine=walmart_product_sellers&product_id=19163553149"
+    }
+  },
+  "10286871968": {
+    "us_item_id": "10286871968",
+    "product_id": "5ORU4S4VDGGZ",
+    "upc": "085696000282",
+    "title": "Mori-Nu Silken Lite Firm Tofu, Shelf-Stable Plant Protein, Non-GMO, Vegan & Gluten-Free, 10.8 oz (Pack of 3)",
+    "short_description_html": "Mori-Nu Silken Lite Firm Tofu offers a smooth, creamy texture with just the right amount of firmness for lighter recipes. Ideal for appetizers, soups, and gentle cooking, this tofu blends easily while still holding shape better than soft silken varieties.\nMade from non-GMO soybeans, Mori-Nu Tofu is a good source of complete plant protein and is naturally low in fat. Its innovative shelf-stable packaging keeps the tofu protected and fresh without sitting in water and requires no refrigeration until opened. With no preservatives and clean ingredients, this 3-pack is a convenient and versatile choice for plant-based and health-conscious kitchens.",
+    "detailed_description_html": "<ul>  <li>‌Silken Lite Firm Texture – Velvety smooth and creamy with light firmness; perfect for appetizers, soups, light sautéing, and gentle cooking</li>  <li>Shelf-Stable Convenience – Long shelf life with no refrigeration required until opened; contains no preservatives</li>  <li>Protected Freshness – Unlike traditional tofu packed in water, Mori-Nu remains sealed and protected until opened</li>  <li>Complete Plant Protein – Made from non-GMO soybeans and provides all 9 essential amino acids</li>  <li>Clean &amp; Diet-Friendly – Low fat, gluten-free, dairy-free, vegan, and KSA Kosher Parve certified</li>  <li>Value Pack of 3 – Includes three 10.8 oz shelf-stable tofu packs for pantry stocking and everyday meals</li> </ul>",
+    "seller_id": "9122FEC138A74311961740A9F63A20F8",
+    "seller_name": "CLICKS & BRICKS-CP",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "MORI-NU",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Texture",
+        "value": "Velvety smooth with light firmness",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Flavor",
+        "value": "Lite Firm",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "3 Count",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Size",
+        "value": "10.8 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Food form",
+        "value": "Cubes",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Container type",
+        "value": "Box",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Spice level",
+        "value": "No Spice",
+        "display_name": "Spice level"
+      },
+      {
+        "key": "Net content statement",
+        "value": "3 Packs 10.8 Oz Each",
+        "display_name": "Net content statement"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://static.wixstatic.com/media/fbd977_2c00db80ee8549f1a67b5e67a6f86bd8~mv2.png/v1/fill/w_214,h_123,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mori-Nu%20Firm%20Back.png",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Material",
+        "value": "BOX",
+        "display_name": "Material"
+      },
+      {
+        "key": "Piece count",
+        "value": "3",
+        "display_name": "Piece count"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Count",
+        "display_name": "Product net content uom"
+      }
+    ],
+    "ingredients": "Water, Soybeans, Soy Protein Isolate, Glucono-Delta-Lactone, Calcium Chloride",
+    "manufacture_number": "MorinuLitefirm",
+    "product_type_id": "301",
+    "product_type": "Tofu",
+    "manufacturer": "MORI-NU",
+    "product_page_url": "https://www.walmart.com/ip/Mori-Nu-Silken-Lite-Firm-Tofu-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-8-oz-Pack-of-3/10286871968",
+    "price_map": {
+      "price": 14.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Mori-Nu-Silken-Lite-Firm-Tofu-Shelf-Stable-Plant-Protein-Non-GMO-Vegan-Gluten-Free-10-8-oz-Pack-of-3_b40f3a4a-e56f-4607-91cc-8f3bec319384.6a0c324daf85298245d360b8e5141c0c.jpeg",
+      "https://i5.walmartimages.com/asr/ed2dc20f-f57b-46e2-bea9-5bc1a993993d.2d825860007a005e6986a7306e0a36ba.jpeg",
+      "https://i5.walmartimages.com/asr/0b9fe474-d3f1-4427-9106-a23ffdade53f.7a8487ac9742d07ea48bd2a976428f74.jpeg",
+      "https://i5.walmartimages.com/asr/789db941-a836-4da3-83a4-7021ccf9a5c5.0a25301897b36935c27e2e53db191329.jpeg",
+      "https://i5.walmartimages.com/asr/fb0c1cc2-e12a-4803-b1e8-428261632677.54d80c21456ab3313dc5bb78aab6a247.jpeg",
+      "https://i5.walmartimages.com/asr/ebb98e67-d2ac-4d28-9cc3-bb471a67dc5e.ba954123affd9b48b22a29db8c5f7ef0.jpeg",
+      "https://i5.walmartimages.com/asr/79ee2eff-6dbf-4470-a2ed-e5b17a0cd988.837e451eff83be8d384872f7886f36c7.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "0EE202E85F6238CF8918340765063CA2",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "9122FEC138A74311961740A9F63A20F8",
+        "catalog_seller_id": 102511462,
+        "seller_name": "Color Panther LLC",
+        "seller_display_name": "CLICKS & BRICKS-CP",
+        "price": 14.99
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772492340000,
+      "display_arrival_date": "2026-03-02T22:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "12834416099": {
+    "us_item_id": "12834416099",
+    "product_id": "4ADYSWS09QDX",
+    "upc": "100143125575",
+    "title": "KR 3 Minute Jasmine Rice",
+    "short_description_html": "<h2>Product Details</h2>Heart Healthy<ul><li>A low fat food</li><li>A cholesterol free food</li><li>No preservatives</li><li><h2>Ingredients</h2><p>WATER, COOKED JASMINE RICE, CITRIC ACID, REFINED SUNFLOWER OIL</p><h2>Allergen Info</h2><p>May contain Soybean and its Derivatives,Milk and its derivates,Tree Nuts and Their Derivatives,Peanuts and their derivates.</p><h2>Disclaimer</h2><p>Actual product packaging and materials may contain additional and/or different ingredient,   nutritional, or proper usage information than the information displayed on our website</p></li></ul>",
+    "detailed_description_html": "<ul>  <li>Nutrition Facts</li>  <li>4.0 Approximately servings per container</li>  <li>Serving size 124 gram</li>  <li>Amount per serving</li>  <li>Calories 230</li>  <li>% Daily value*</li>  <li>Total Fat1.5g Total Fat</li>  <li>Saturated Fat0g Saturated Fat</li>  <li>Trans Fat0g Trans Fat</li>  <li>Cholesterol0mg Cholesterol</li>  <li>Sodium0mg Sodium</li>  <li>Total Carbohydrate49g Total Carbohydrate</li>  <li>Dietary Fiber1g Dietary Fiber</li>  <li>Sugar0g Sugar</li>  <li>Protein4g Protein</li>  <li>Calcium80mg Calcium</li>  <li>Iron0.4mg Iron</li>  <li>Potassium10mg Potassium</li>  <li>Vitamin D0mcg Vitamin D</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry meal essentials",
+        "url": "https://www.walmart.com/cp/pantry-meal-essentials/2807108"
+      }
+    ],
+    "seller_id": "0E5510D33F81468AAA22602C9D1F3CEA",
+    "seller_name": "TruPoint Retailers",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Unbranded",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Rice type",
+        "value": "Jasmine Rice",
+        "display_name": "Rice type"
+      },
+      {
+        "key": "Flavor",
+        "value": "Jasmine",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "Nutrition Fact Panel",
+        "display_name": "Food & drug fact label type"
+      }
+    ],
+    "warnings": [
+      {
+        "name": "WARNING - California Proposition 65",
+        "value": "This product can expose you to chemicals including arsenic, which is known to the State of California to cause cancer. For more information, go to www.p65warnings.ca.gov."
+      }
+    ],
+    "product_type_id": "274",
+    "product_type": "Rice",
+    "manufacturer": "Unbranded",
+    "product_page_url": "https://www.walmart.com/ip/KR-3-Minute-Jasmine-Rice/12834416099",
+    "price_map": {
+      "price": 9.97,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 5,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/KR-3-Minute-Jasmine-Rice_f182cdce-1c0f-4e36-b0f0-c26ed46d65c1.6c03f813ebeb6d4f596552271bb66af1.jpeg",
+      "https://i5.walmartimages.com/asr/f318bb4c-bada-44ea-a4d0-47d7225228d2.1a63fb0c38346ed3c0ddda6f504c369c.jpeg",
+      "https://i5.walmartimages.com/asr/0dbf2b71-bc23-4174-8646-e924938317fd.845e7043264002345111bc1535239f0c.jpeg",
+      "https://i5.walmartimages.com/asr/b37c650d-8528-4c2e-bd9c-167e7145ffb4.d4b776c3925f46db04269c11c09193b4.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "CF5851E3AA4938A7ADA5484D535BC0F6",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "0E5510D33F81468AAA22602C9D1F3CEA",
+        "catalog_seller_id": 102683035,
+        "seller_name": "Faque Holdings LTD",
+        "seller_display_name": "TruPoint Retailers",
+        "price": 9.97
+      }
+    ],
+    "shipping_price": 4.98,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false,
+    "seller_options": {
+      "number_of_additional_sellers": 1,
+      "serpapi_product_sellers_link": "https://serpapi.com/search.json?engine=walmart_product_sellers&product_id=12834416099"
+    }
+  },
+  "16174616068": {
+    "us_item_id": "16174616068",
+    "product_id": "0ZKJG09IB12X",
+    "upc": "854254007618",
+    "title": "Jasmine Rice (5 lb)",
+    "short_description_html": "Madame Sarah Jasmine Rice is a premium, aromatic rice that brings the rich flavors of traditional Thai cuisine straight to your kitchen. Known for its delicate fragrance and soft, fluffy texture, it's the perfect companion to a variety of dishes. \n\nHealth Benefits of Jasmine Rice\nEnergy Boosting: Rich in essential carbohydrates\nNutrient-Rich: A good source of B vitamins, including niacin and thiamine\nHeart-Friendly: Low in fat and cholesterol-free\nEasy to Digest: Gluten-free and gentle on the stomach\n\nWays to Enjoy Jasmine Rice\nThis long-grain rice is incredibly versatile and can be used in a variety of dishes. Whether you’re cooking a fragrant curry, a stir-fry, or a side dish, it pairs wonderfully with both savory and sweet ingredients. You can use it as a base for fried rice, or even in desserts like coconut rice pudding. Its delicate flavor and fluffy texture make it ideal for any meal.",
+    "detailed_description_html": "<ul>  <li>Naturally Grown: No harmful chemicals or additives</li>  <li>Ethically Sourced: From trusted farmers committed to quality</li>  <li>Rich in Flavor: A richer taste and aroma with every grain</li>  <li>100% Premium Quality: Only the finest jasmine white rice</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pantry meal essentials",
+        "url": "https://www.walmart.com/cp/pantry-meal-essentials/2807108"
+      }
+    ],
+    "seller_id": "5ABA7967810F4D22A17CEE76E7B23677",
+    "seller_name": "Horizon Vert Pure, LLC",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Madame Sarah",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Rice type",
+        "value": "Jasmine Rice",
+        "display_name": "Rice type"
+      },
+      {
+        "key": "Size",
+        "value": "5 lbs",
+        "display_name": "Size"
+      },
+      {
+        "key": "Flavor",
+        "value": "Jasmine",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Texture",
+        "value": "fluffy",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Pound",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "5 Pound",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://horizonvertfoods.com/collections/rice/products/jasmine-rice?variant=44561937072290",
+        "display_name": "Ingredient list image"
+      }
+    ],
+    "product_type_id": "274",
+    "product_type": "Rice",
+    "manufacturer": "Madame Sarah",
+    "product_page_url": "https://www.walmart.com/ip/Madame-Sarah-Jasmine-Rice-5LB/16174616068",
+    "price_map": {
+      "price": 18.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Madame-Sarah-Jasmine-Rice-5LB_6ed0b988-2f54-498f-81fd-cb2117785671.1a9e28cb136198f19a5505c18736b0e8.jpeg",
+      "https://i5.walmartimages.com/asr/98bb609e-011a-45f1-9eed-c23348f16eac.501eb4c62f6801a3c3604df2c6969b82.png",
+      "https://i5.walmartimages.com/asr/b80365a2-ac88-43d8-9f37-abbb0447a0d8.6c1f653b47c84f0f5c6d917335f12f07.jpeg",
+      "https://i5.walmartimages.com/asr/80c802db-ee91-475b-9502-90b19b94f2c5.2f14ab41d91045d08d8fdc54ae252ca0.jpeg",
+      "https://i5.walmartimages.com/asr/e1ab0c3a-d9a2-47fa-a987-71cd8ab4f357.a962b175826b4119bd569f2fc75ed644.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "2B2BEAC904473206ACDEB7B5076A169B",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "5ABA7967810F4D22A17CEE76E7B23677",
+        "catalog_seller_id": 102774507,
+        "seller_name": "Horizon Vert Pure, LLC",
+        "seller_display_name": "Horizon Vert Pure, LLC",
+        "price": 18.99
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772920740000,
+      "display_arrival_date": "2026-03-07T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "17873024955": {
+    "us_item_id": "17873024955",
+    "product_id": "3AJIG9M4UJHZ",
+    "variants": [
+      "flavor-cookiebutter",
+      "size-2.47",
+      "multipack_quantity-1"
+    ],
+    "upc": "705599020810",
+    "title": "Kodiak Protein-Packed Cookie Butter Overnight Oats, 2.47 oz",
+    "short_description_html": "<p>Got a morning you need to hurry out the door? Grab Kodiak Overnight Oats, packed with the real good stuff that fuels your adventures. Each hearty serving has 20 grams of protein, is a good source of fiber, and is made with premium ingredients like oats, chia seeds, flax seeds, and quinoa. It's perfect for anyone looking for high protein oats for big mornings.</p>\n<p>The prep is simple for a quick, high protein breakfast. The night before, shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge. The next morning, dig into a delicious, ready to eat oatmeal cup that brings benefits and texture. Kodiak's high protein oatmeal is great for instant oats lovers or those simply wanting a healthy breakfast that travels well. Wildly delicious, wildly fueling.</p>",
+    "detailed_description_html": "<ul>  <li>Cookie butter overnight oats pouch</li>  <li>Crafted with 100% whole grain rolled oats, chia, flax, and quinoa for wildly delicious flavor and texture</li>  <li>Fuel your day with 20 grams of protein per serving</li>  <li>Enjoy as an easy breakfast at home, a high protein snack, or a protein meal on the go</li>  <li>Good source of fiber for a smart start to your morning*</li>  <li>Includes less than 10 grams of sugar while still tasting like a treat</li>  <li>Simply shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge</li>  <li>Explore all the Kodiak Overnight Oats flavors: Cookie Butter, Dark Chocolate Sea Salt, Maple Pecan, and Peach</li>  <li>*Contains&nbsp;4.5 grams of total fat per serving</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Breakfast & Cereal",
+        "url": "https://www.walmart.com/cp/breakfast-cereal/976783"
+      },
+      {
+        "name": "Oatmeal & Grits",
+        "url": "https://www.walmart.com/cp/oatmeal-grits/7830606"
+      },
+      {
+        "name": "Hot Cereal & Grits",
+        "url": "https://www.walmart.com/cp/hot-cereal-grits/3816998"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Kodiak",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Oatmeal type",
+        "value": "Overnight Oatmeal",
+        "display_name": "Oatmeal type"
+      },
+      {
+        "key": "Flavor",
+        "value": "Cookie Butter",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Texture",
+        "value": "Soft",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Size",
+        "value": "2.47",
+        "display_name": "Size"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Container type",
+        "value": "Pouch",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "UNSPECIFIED",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Food form",
+        "value": "Granules",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Grain type",
+        "value": "Oats, Quinoa",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Edible seed type",
+        "value": "Chia Seeds, Flax Seeds",
+        "display_name": "Edible seed type"
+      },
+      {
+        "key": "Nut type",
+        "value": "Almonds",
+        "display_name": "Nut type"
+      },
+      {
+        "key": "Size descriptor",
+        "value": "Regular",
+        "display_name": "Size descriptor"
+      },
+      {
+        "key": "Weight",
+        "value": "2.5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Theme",
+        "value": "None",
+        "display_name": "Theme"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Each",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "1 Each",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Ingredient list image"
+      }
+    ],
+    "ingredients": "100% Whole Grain Rolled Oats, Pea Protein Concentrate with Tapioca Starch, Milk Protein Concentrate, Brown Sugar, Date Powder, Quinoa, Natural Flavors, Chia Seeds, Flaxseed, Almond Butter Powder (Roasted Almonds, Sugar, Salt), Milk Protein Isolate, Sea Salt, Cinnamon, Allspice, Nutmeg.",
+    "warnings": [
+      {
+        "name": "Warning Text",
+        "value": "Contains almonds and milk. Due to processing on shared equipment, may contain soy and wheat."
+      }
+    ],
+    "product_type_id": "ib_oatmeal",
+    "product_type": "Oatmeal",
+    "manufacturer": "Kodiak",
+    "product_page_url": "https://www.walmart.com/ip/Kodiak-Cookie-Butter-Overnight-Oats/17873024955",
+    "price_map": {
+      "price": 3.42,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Kodiak-Cookie-Butter-Overnight-Oats_6be5e3ef-eeae-46cc-aa24-6912ee2b2a76.c2a4d79135f6b337b75e745f0434ebbc.jpeg",
+      "https://i5.walmartimages.com/asr/9c534a2b-f995-463b-9ce3-f2ddbcaaf13b.e33c05bf25c85265eae73b9c3d143113.jpeg",
+      "https://i5.walmartimages.com/asr/cfdb0f03-9560-488f-9ee0-6a061176d563.5a2da2acaa5a82390bb42a1f71f2e99b.jpeg",
+      "https://i5.walmartimages.com/asr/2ecd4155-c10a-47a0-a0d4-4b1ba8dce927.8160a150339043c2e725d64a9e4cfba6.jpeg",
+      "https://i5.walmartimages.com/asr/fba07962-3484-42c0-86eb-69ba1ee8e497.65c4cce6f52a7f834ca3b94706f2bffa.jpeg",
+      "https://i5.walmartimages.com/asr/bf848dd6-79e8-4c4d-b180-35940e4b3388.ced39ca7a5b2bc8dcc2a587bc8ea1d21.jpeg",
+      "https://i5.walmartimages.com/asr/64c40e8b-041a-443e-a707-c9966b8b3ee9.ea2d9c18168091934fb31fc964bf9a54.jpeg"
+    ],
+    "reviews": 9,
+    "rating": 2.9,
+    "offer_id": "169C8A4D7F8530D1B773A63D658017F8",
+    "offer_type": "ONLINE_AND_STORE",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 3.42
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772405940000,
+      "display_arrival_date": "2026-03-01T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Flavor",
+        "available_selections": [
+          {
+            "id": "flavor-cookiebutter",
+            "name": "Cookie Butter",
+            "products": [
+              {
+                "product_id": "2ZESJ0SY7KS7",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2ZESJ0SY7KS7",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              },
+              {
+                "product_id": "3AJIG9M4UJHZ",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3AJIG9M4UJHZ",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Size",
+        "available_selections": [
+          {
+            "id": "size-2.47",
+            "name": "2.47",
+            "products": [
+              {
+                "product_id": "2ZESJ0SY7KS7",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2ZESJ0SY7KS7",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              },
+              {
+                "product_id": "3AJIG9M4UJHZ",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3AJIG9M4UJHZ",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Pack Size",
+        "available_selections": [
+          {
+            "id": "multipack_quantity-1",
+            "name": "Single",
+            "products": [
+              {
+                "product_id": "3AJIG9M4UJHZ",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3AJIG9M4UJHZ",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "multipack_quantity-2",
+            "name": "2 Pack",
+            "products": [
+              {
+                "product_id": "2ZESJ0SY7KS7",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2ZESJ0SY7KS7",
+                "variants": [
+                  "flavor-cookiebutter",
+                  "size-2.47",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "17932756661": {
+    "us_item_id": "17932756661",
+    "product_id": "1SXMAB5KJUH9",
+    "variants": [
+      "flavor-maplepecan",
+      "multipack_quantity-1"
+    ],
+    "upc": "705599020797",
+    "title": "Kodiak Protein-Packed Maple Pecan Overnight Oats, 2.47 oz",
+    "short_description_html": "<p>Got a morning you need to hurry out the door? Grab Kodiak Overnight Oats, packed with the real good stuff that fuels your adventures. Each hearty serving has 20 grams of protein, is a good source of fiber, and is made with premium ingredients like oats, chia seeds, flax seeds, and quinoa. It's perfect for anyone looking for high protein oats for big mornings.</p>\n<p>The prep is simple for a quick, high protein breakfast. The night before, shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge. The next morning, dig into a delicious, ready to eat oatmeal cup that brings benefits and texture. Kodiak's high protein oatmeal is great for instant oats lovers or those simply wanting a healthy breakfast that travels well. Wildly delicious, wildly fueling.</p>",
+    "detailed_description_html": "<ul>  <li>Maple pecan overnight oats pouch</li>  <li>Crafted with 100% whole grain rolled oats, chia, flax, quinoa, maple syrup, and pecans for wildly delicious flavor and texture</li>  <li>Fuel your day with 20 grams of protein per serving</li>  <li>Enjoy as an easy breakfast at home, a high protein snack, or a protein meal on the go</li>  <li>Good source of fiber for a smart start to your morning*</li>  <li>Includes less than 10 grams of sugar while still tasting like a treat</li>  <li>Simply shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge</li>  <li>Explore all the Kodiak Overnight Oats flavors: Cookie Butter, Dark Chocolate Sea Salt, Maple Pecan, and Peach</li>  <li>*Contains&nbsp;6 grams of total fat per serving</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Breakfast & Cereal",
+        "url": "https://www.walmart.com/cp/breakfast-cereal/976783"
+      },
+      {
+        "name": "Oatmeal & Grits",
+        "url": "https://www.walmart.com/cp/oatmeal-grits/7830606"
+      },
+      {
+        "name": "Hot Cereal & Grits",
+        "url": "https://www.walmart.com/cp/hot-cereal-grits/3816998"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Kodiak",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Oatmeal type",
+        "value": "Overnight Oatmeal",
+        "display_name": "Oatmeal type"
+      },
+      {
+        "key": "Flavor",
+        "value": "Maple Pecan",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Texture",
+        "value": "Soft",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Size",
+        "value": "2.5",
+        "display_name": "Size"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Container type",
+        "value": "Pouch",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Instant",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Food form",
+        "value": "Granules",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Grain type",
+        "value": "Quinoa, Oats",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Edible seed type",
+        "value": "Chia Seeds, Flax Seeds",
+        "display_name": "Edible seed type"
+      },
+      {
+        "key": "Nut type",
+        "value": "Pecans",
+        "display_name": "Nut type"
+      },
+      {
+        "key": "Size descriptor",
+        "value": "Regular",
+        "display_name": "Size descriptor"
+      },
+      {
+        "key": "Weight",
+        "value": "2.5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Each",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "2.5 Each",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Ingredient list image"
+      }
+    ],
+    "product_type_id": "ib_oatmeal",
+    "product_type": "Oatmeal",
+    "manufacturer": "Kodiak",
+    "product_page_url": "https://www.walmart.com/ip/Kodiak-Maple-Pecan-Overnight-Oats/17932756661",
+    "price_map": {
+      "unit_price": 1.37,
+      "price": 3.42,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Kodiak-Maple-Pecan-Overnight-Oats_d792acf2-3cd5-4df6-88f2-afbeb91f1ac0.40c3ec82ea307596b2070bac778e1494.jpeg",
+      "https://i5.walmartimages.com/asr/d6317437-d53b-44da-9be1-20752f35ca08.92b9c0553324ba739e49d8a868661be9.jpeg",
+      "https://i5.walmartimages.com/asr/562ff2ed-b1c4-41f0-a526-67d060d58cf7.592db2d6b067f86b02586aee25462f0d.jpeg",
+      "https://i5.walmartimages.com/asr/380bfcd8-35f3-4ce3-b1fe-e177be46d38f.fca5d803949b5b62c403d72f84ce1d6f.jpeg",
+      "https://i5.walmartimages.com/asr/5ba9c42a-3428-455d-9303-b5c62f962d34.fa144daea9b53682040f70a447448b03.jpeg",
+      "https://i5.walmartimages.com/asr/61420a59-d9a8-4084-a958-e2b6698300a0.c64fa9aaa3966d118796e00f0368ad75.jpeg"
+    ],
+    "reviews": 12,
+    "rating": 3.8,
+    "offer_id": "D6DEC9C2D46F3671B4F5767C3D6729C1",
+    "offer_type": "ONLINE_AND_STORE",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 3.42
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772405940000,
+      "display_arrival_date": "2026-03-01T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Flavor",
+        "available_selections": [
+          {
+            "id": "flavor-maplepecan",
+            "name": "Maple Pecan",
+            "products": [
+              {
+                "product_id": "3FL9XS8FMP78",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3FL9XS8FMP78",
+                "variants": [
+                  "flavor-maplepecan",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              },
+              {
+                "product_id": "1SXMAB5KJUH9",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=1SXMAB5KJUH9",
+                "variants": [
+                  "flavor-maplepecan",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Pack Size",
+        "available_selections": [
+          {
+            "id": "multipack_quantity-1",
+            "name": "Single",
+            "products": [
+              {
+                "product_id": "1SXMAB5KJUH9",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=1SXMAB5KJUH9",
+                "variants": [
+                  "flavor-maplepecan",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "multipack_quantity-2",
+            "name": "2 Pack",
+            "products": [
+              {
+                "product_id": "3FL9XS8FMP78",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=3FL9XS8FMP78",
+                "variants": [
+                  "flavor-maplepecan",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false,
+    "seller_options": {
+      "number_of_additional_sellers": 1,
+      "serpapi_product_sellers_link": "https://serpapi.com/search.json?engine=walmart_product_sellers&product_id=17932756661"
+    }
+  },
+  "17873224756": {
+    "us_item_id": "17873224756",
+    "product_id": "6GN5LWRK10O1",
+    "variants": [
+      "flavor-peach",
+      "multipack_quantity-1"
+    ],
+    "upc": "705599020858",
+    "title": "Kodiak Protein-Packed Peach Overnight Oats, 2.47 oz",
+    "short_description_html": "<p>Got a morning you need to hurry out the door? Grab Kodiak Overnight Oats, packed with the real good stuff that fuels your adventures. Each hearty serving has 20 grams of protein, is a good source of fiber, and is made with premium ingredients like oats, chia seeds, flax seeds, and quinoa. It's perfect for anyone looking for high protein oats for big mornings.</p>\n<p>The prep is simple for a quick, high protein breakfast. The night before, shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge. The next morning, dig into a delicious, ready to eat oatmeal cup that brings benefits and texture. Kodiak's high protein oatmeal is great for instant oats lovers or those simply wanting a healthy breakfast that travels well. Wildly delicious, wildly fueling.</p>",
+    "detailed_description_html": "<ul>  <li>Peach overnight oats pouch</li>  <li>Crafted with 100% whole grain rolled oats, chia, flax, quinoa, and peach pieces for wildly delicious flavor and texture</li>  <li>Fuel your day with 20 grams of protein per serving</li>  <li>Enjoy as an easy breakfast at home, a high protein snack, or a protein meal on the go</li>  <li>Good source of fiber for a smart start to your morning*</li>  <li>Includes less than 10 grams of sugar while still tasting like a treat</li>  <li>Simply shake or stir oats and 3/4 cup of milk into a resealable container and chill overnight in the fridge</li>  <li>Explore all the Kodiak Overnight Oats flavors: Cookie Butter, Dark Chocolate Sea Salt, Maple Pecan, and Peach</li>  <li>*Contains&nbsp;4.5 grams of total fat per serving</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Breakfast & Cereal",
+        "url": "https://www.walmart.com/cp/breakfast-cereal/976783"
+      },
+      {
+        "name": "Oatmeal & Grits",
+        "url": "https://www.walmart.com/cp/oatmeal-grits/7830606"
+      },
+      {
+        "name": "Hot Cereal & Grits",
+        "url": "https://www.walmart.com/cp/hot-cereal-grits/3816998"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Kodiak",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Oatmeal type",
+        "value": "Overnight Oatmeal",
+        "display_name": "Oatmeal type"
+      },
+      {
+        "key": "Flavor",
+        "value": "Peach",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Fruit type",
+        "value": "Peach",
+        "display_name": "Fruit type"
+      },
+      {
+        "key": "Texture",
+        "value": "Soft",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Size",
+        "value": "2.47",
+        "display_name": "Size"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Container type",
+        "value": "Pouch",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Instant",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Food form",
+        "value": "Granules",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Grain type",
+        "value": "Oats, Quinoa",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Edible seed type",
+        "value": "Chia Seeds, Flax Seeds",
+        "display_name": "Edible seed type"
+      },
+      {
+        "key": "Size descriptor",
+        "value": "Regular",
+        "display_name": "Size descriptor"
+      },
+      {
+        "key": "Weight",
+        "value": "2.5 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Theme",
+        "value": "None",
+        "display_name": "Theme"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Each",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "1 Each",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://i5.walmartimages.com/asr/24893ec1-4563-41fa-9efb-42ba1d0d5e98.f417a4c35f49d4ecd5c479905aa827b3.jpeg",
+        "display_name": "Ingredient list image"
+      }
+    ],
+    "ingredients": "100% WHOLE GRAIN ROLLED OATS, PEA PROTEIN CONCENTRATE WITH TAPIOCA STARCH, MILK PROTEIN CONCENTRATE, BROWN SUGAR, DRIED PEACHES, NATURAL FLAVORS, QUINOA, PEACH POWDER (PEACHES, RICE FLOUR), CHIA SEEDS, FLAXSEED, MILK PROTEIN ISOLATE, SEA SALT, CINNAMON.",
+    "warnings": [
+      {
+        "name": "Warning Text",
+        "value": "CONTAINS MILK. DUE TO PROCESSING ON SHARED EQUIPMENT MAY CONTAIN SOY AND WHEAT."
+      }
+    ],
+    "product_type_id": "ib_oatmeal",
+    "product_type": "Oatmeal",
+    "manufacturer": "Kodiak",
+    "product_page_url": "https://www.walmart.com/ip/Kodiak-Peach-Overnight-Oats/17873224756",
+    "price_map": {
+      "price": 3.42,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Kodiak-Peach-Overnight-Oats_8979c0c1-df5a-42bc-abb4-10b9a44c2778.f32c908b199823532d75e5d5b59503c1.jpeg",
+      "https://i5.walmartimages.com/asr/4a11575c-4ce4-4183-8312-bda5d5ffd77f.b6646257c89bf135461b28d7d9e900e4.jpeg",
+      "https://i5.walmartimages.com/asr/bfa181a5-f12b-4483-8c1b-c88754200800.38fd5b26681764381ca3bc090397c05a.jpeg",
+      "https://i5.walmartimages.com/asr/576ff848-2dc2-4265-a90d-d86b7ed583b3.a99b394bec08fe024671eefcebfacb72.jpeg",
+      "https://i5.walmartimages.com/asr/a741c733-bd12-4799-944e-636ae3a8d4c1.5a7f7e8e37f8e94c174f8aee3e40064a.jpeg",
+      "https://i5.walmartimages.com/asr/f8376fc5-2146-453d-b4a3-0c4bf6d41216.dce08a922a9528a5ec2bb84184bf4955.jpeg",
+      "https://i5.walmartimages.com/asr/d330d608-8fd4-44e6-b84a-ee0f94f49fc2.93ed50b79907878bffef578ace606678.jpeg"
+    ],
+    "reviews": 2,
+    "rating": 4,
+    "offer_id": "6602080319E93B6C8148C639F93E6B57",
+    "offer_type": "ONLINE_AND_STORE",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 3.42
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772405940000,
+      "display_arrival_date": "2026-03-01T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Flavor",
+        "available_selections": [
+          {
+            "id": "flavor-peach",
+            "name": "Peach",
+            "products": [
+              {
+                "product_id": "6GN5LWRK10O1",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=6GN5LWRK10O1",
+                "variants": [
+                  "flavor-peach",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              },
+              {
+                "product_id": "2UUXOFG97R9Y",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2UUXOFG97R9Y",
+                "variants": [
+                  "flavor-peach",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Pack Size",
+        "available_selections": [
+          {
+            "id": "multipack_quantity-1",
+            "name": "Single",
+            "products": [
+              {
+                "product_id": "6GN5LWRK10O1",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=6GN5LWRK10O1",
+                "variants": [
+                  "flavor-peach",
+                  "multipack_quantity-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.42,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "multipack_quantity-2",
+            "name": "2 Pack",
+            "products": [
+              {
+                "product_id": "2UUXOFG97R9Y",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2UUXOFG97R9Y",
+                "variants": [
+                  "flavor-peach",
+                  "multipack_quantity-2"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 39.99,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "5409923413": {
+    "us_item_id": "5409923413",
+    "product_id": "2ETDNA71FUMX",
+    "variants": [
+      "count_per_pack-1"
+    ],
+    "upc": "030000578971",
+    "title": "Quaker Instant Oats Hot Cereal, Protein Variety, 12.76 oz 6 Count",
+    "short_description_html": "Enjoy the goodness of 100% whole grains of Quaker® Instant Oatmeal. No artificial preservatives or flavors, there’s no better way to start your day than by waking up to this delicious breakfast choice. Great mornings inspire great days bustling with new possibilities, unknown adventures, and amazing friends. Prepare for all that lies ahead by filling your bowls, bellies, and hearts with the love of a nourishing breakfast from Quaker Oats.",
+    "detailed_description_html": "<ul>  <li>Quaker Variety pack includes 2 Apple &amp; Cinnamon, 2 Maple &amp; Brown sugar and 2 Banana Nut</li>  <li>No Artificial Preservatives or Flavors</li>  <li>100% Whole Grains</li>  <li>Good Source Of Fiber – Contains 5g Of Total Fat Per Serving.</li>  <li>12 G Protein Per Serving</li>  <li>Heart Healthy Diets Rich In Whole Grain Foods And Other Plant Foods And Low In Saturated Fat And Cholesterol May Help Reduce The Risk Of Heat Disease.</li>  <li>OU Kosher Dairy</li>  <li>Whole Grain Council Stamp</li>  <li>Whole Grain - 36g or more per serving, Eat 48g or more of whole grain daily</li>  <li>Shelf-stable product</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Breakfast & Cereal",
+        "url": "https://www.walmart.com/cp/breakfast-cereal/976783"
+      },
+      {
+        "name": "Oatmeal & Grits",
+        "url": "https://www.walmart.com/cp/oatmeal-grits/7830606"
+      },
+      {
+        "name": "Hot Cereal & Grits",
+        "url": "https://www.walmart.com/cp/hot-cereal-grits/3816998"
+      }
+    ],
+    "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+    "seller_name": "Walmart.com",
+    "specification_highlights": [
+      {
+        "key": "Brand",
+        "value": "Quaker",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Flavor",
+        "value": "Protein Variety Pack",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Instant",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Grain type",
+        "value": "Oats",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Nut type",
+        "value": "Walnuts",
+        "display_name": "Nut type"
+      },
+      {
+        "key": "Fruit type",
+        "value": "Apple",
+        "display_name": "Fruit type"
+      },
+      {
+        "key": "Texture",
+        "value": "Creamy",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Shelf life",
+        "value": "270 days",
+        "display_name": "Shelf life"
+      },
+      {
+        "key": "Material",
+        "value": "CARTON",
+        "display_name": "Material"
+      },
+      {
+        "key": "Food form",
+        "value": "Powders",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Size",
+        "value": "12.76",
+        "display_name": "Size"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://res.cloudinary.com/dxfe8qzpk/image/upload/v1748005924/00030000578971_L2_awppvt.jpg",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://res.cloudinary.com/dxfe8qzpk/image/upload/v1748005924/00030000578971_L4_qmaubo.jpg",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Pieces",
+        "value": "1",
+        "display_name": "Pieces"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Ounce",
+        "display_name": "Product net content uom"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "12.7 Ounces",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Weight",
+        "value": "12.76 oz",
+        "display_name": "Weight"
+      },
+      {
+        "key": "Size descriptor",
+        "value": "Regular",
+        "display_name": "Size descriptor"
+      },
+      {
+        "key": "Retail packaging",
+        "value": "Variety Pack",
+        "display_name": "Retail packaging"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "No Fact Panel",
+        "display_name": "Food & drug fact label type"
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      }
+    ],
+    "ingredients": "Apples & Cinnamon Ingredients: Whole Grain Oats, Sugar, Whey Protein Concentrate, Dried Apples, Whey Protein Isolate, Natural Flavor, Cinnamon, Salt, Soy Lectin. CONTAINS MILK AND SOY INGREDIENTS. Maple & Brown Sugar Ingredients: Whole Grain Oats, Sugar, Whey Protein Isolate, Whey Protein Concentrate, Natural Flavor, Salt, Potassium Salt, Soy Lecithin. CONTAINS MILK AND SOY INGREDIENTS. Banana Nut Ingredients: Whole Grain Oats, Sugar, Whey Protein Concentrate, Walnuts Coated With Rosemary Extract (To Help Protect Flavor), Whey Protein Isolate, Dried Bananas, Salt, Banana Flakes, Soy Lecithin, Natural Flavor. CONTAINS MILK, SOY AND WALNUT INGREDIENTS.",
+    "product_type_id": "ib_hot_cereal",
+    "product_type": "Hot Cereal",
+    "manufacturer": "Quaker",
+    "product_page_url": "https://www.walmart.com/ip/Quaker-Instant-Oats-Hot-Cereal-Variety-12-76-Oz/5409923413",
+    "price_map": {
+      "unit_price": 0.313,
+      "price": 3.97,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Quaker-Instant-Oats-Hot-Cereal-Variety-12-76-Oz_710d3426-c9eb-419c-b102-4b385bbdf588.ceb239a852b627a84d2849ed02515712.jpeg",
+      "https://i5.walmartimages.com/asr/09088762-a9de-4e23-9607-62791c197080.1f4e78721d6a30469e95fa7c4360e3f1.jpeg",
+      "https://i5.walmartimages.com/asr/ae7f7d94-7a77-4330-928c-c50da340c370.97de0177d937c7b10db796e73ce0ad08.jpeg",
+      "https://i5.walmartimages.com/asr/05569dd7-36df-435c-bfcf-d4e595b71a30.7e72f0c0360563e93c0d560b5f5273ca.jpeg",
+      "https://i5.walmartimages.com/asr/7994d947-158c-46b4-a803-c9f40e6c4e80.651f28761cb3959539d1201a12df6711.jpeg",
+      "https://i5.walmartimages.com/asr/812147bb-18ee-4406-bb86-b46ca157e117.7d773feded53c07da2bdb8b4abf45af5.jpeg",
+      "https://i5.walmartimages.com/asr/14f29afa-181f-4579-b4e1-fc4ccd3ac43b.7dbffff086f13d81db88ef413de551b0.jpeg"
+    ],
+    "reviews": 74,
+    "rating": 4.3,
+    "offer_id": "639BBF5FAFC234BAB31F0CF26526975C",
+    "offer_type": "ONLINE_AND_STORE",
+    "offers": [
+      {
+        "seller_id": "F55CDC31AB754BB68FE0B39041159D63",
+        "catalog_seller_id": 0,
+        "seller_name": "Walmart.com",
+        "seller_display_name": "Walmart.com",
+        "price": 3.97
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772405940000,
+      "display_arrival_date": "2026-03-01T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Count Per Pack",
+        "available_selections": [
+          {
+            "id": "count_per_pack-1",
+            "name": "1",
+            "products": [
+              {
+                "product_id": "2ETDNA71FUMX",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=2ETDNA71FUMX",
+                "variants": [
+                  "count_per_pack-1"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 3.97,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false,
+    "seller_options": {
+      "number_of_additional_sellers": 1,
+      "serpapi_product_sellers_link": "https://serpapi.com/search.json?engine=walmart_product_sellers&product_id=5409923413"
+    }
+  },
+  "16821873878": {
+    "us_item_id": "16821873878",
+    "product_id": "6JJ25BSERH35",
+    "upc": "693054419876",
+    "title": "( 2 Pack) BARILLA Whole Grain Penne Pasta, 16 oz. Box",
+    "short_description_html": "WHOLE GRAIN: 2x the fiber of traditional Barilla pasta (3g of fiber per serving)\nPENNE PASTA: The ridges of penne make it ideal for retaining sauces on the entire surface, inside and out\nBARILLA PASTA: Made with durum wheat to deliver great taste and perfect \"al dente\" texture every time",
+    "detailed_description_html": "( 2 Pack) BARILLA Whole Grain Penne Pasta, 16 oz. Box",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pasta & pizza",
+        "url": "https://www.walmart.com/cp/pasta-pizza/5403011"
+      },
+      {
+        "name": "Dry pasta",
+        "url": "https://www.walmart.com/cp/dry-pasta/9712965"
+      }
+    ],
+    "seller_id": "1BCF71E926B44497BE819E1A1252565E",
+    "seller_name": "Riley Lifestyle Brands LLC",
+    "specification_highlights": [
+      {
+        "key": "Pasta & noodle type",
+        "value": "Penne",
+        "display_name": "Pasta & noodle type"
+      },
+      {
+        "key": "Brand",
+        "value": "Barilla",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Grain type",
+        "value": "Durum Wheat",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Container type",
+        "value": "Box",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Texture",
+        "value": "Al Dente",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Size",
+        "value": "16 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Assembled product weight",
+        "value": "16 oz",
+        "display_name": "Assembled product weight"
+      }
+    ],
+    "product_type_id": "ib_pasta",
+    "product_type": "Pasta",
+    "manufacturer": "Barilla",
+    "product_page_url": "https://www.walmart.com/ip/2-Pack-BARILLA-Whole-Grain-Penne-Pasta-16-oz-Box/16821873878",
+    "price_map": {
+      "price": 7.89,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 3,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/2-Pack-BARILLA-Whole-Grain-Penne-Pasta-16-oz-Box_f052aad3-3ced-43f7-8e94-22570a1c539a.f763131c57b7409ccc9dd6821bccb3ba.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "D9B74A2778F431F1A7A2040144BE802B",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "1BCF71E926B44497BE819E1A1252565E",
+        "catalog_seller_id": 101302225,
+        "seller_name": "Riley Lifestyle Brands LLC",
+        "seller_display_name": "Riley Lifestyle Brands LLC",
+        "price": 7.89
+      }
+    ],
+    "shipping_price": 6.98,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "17436269225": {
+    "us_item_id": "17436269225",
+    "product_id": "1ATTIA9LLTZW",
+    "variants": [
+      "size-1.1lb(packof1)"
+    ],
+    "upc": "840374827489",
+    "title": "Organic Pennette Whole Wheat Pasta 1.1 lb (Pack of 1) – Made in Italy. Pasta Integrale Bio. High Fiber, Non-GMO, Vegan, Bulk - by Food to Live",
+    "short_description_html": "Organic Pennette Whole Wheat Pasta offers a hearty texture and mild nutty flavor, making it a satisfying base for a variety of meals. Made from whole wheat flour, this pasta is shaped into short, ridged tubes that hold sauces well, whether you’re preparing a rich tomato dish or a light vegetable sauté. It’s an excellent choice for those who enjoy incorporating traditional pasta into balanced, plant-based recipes.\n\nTexture, Flavor, and Versatility\nThis penne-style pasta has a firm bite and rustic feel, with a subtle wheat taste that complements both bold and delicate sauces. Its tube-like shape helps trap flavors, making it well-suited for baked casseroles, pasta salads, and everyday main courses. The pasta cooks to al dente in minutes and works well in both cold and hot dishes.\n\nSimple to Prepare and Serve\nBoil in salted water and pair with your choice of sauce, from creamy pesto to classic marinara. Add sautéed vegetables, legumes, or cheese for a quick weeknight dinner. It can also be used as a base for grain bowls or served with roasted ingredients for a satisfying one-dish meal. Store in a dry, cool place to maintain freshness between uses.",
+    "detailed_description_html": "<ul>  <li>✔️WHOLE WHEAT FORMULA – Made with 100% organic whole wheat flour for hearty, traditional pasta dishes.</li>  <li>✔️FIRM YET TENDER TEXTURE – Holds its shape and bite when cooked, ideal for robust sauces.</li>  <li>✔️VERSATILE MEAL BASE – Perfect for pasta salads, casseroles, or paired with vegetables and protein.</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pasta & pizza",
+        "url": "https://www.walmart.com/cp/pasta-pizza/5403011"
+      },
+      {
+        "name": "Dry pasta",
+        "url": "https://www.walmart.com/cp/dry-pasta/9712965"
+      }
+    ],
+    "seller_id": "7380ECB973A14504AF45E656CFD3FBDF",
+    "seller_name": "Food To Live",
+    "specification_highlights": [
+      {
+        "key": "Pasta & noodle type",
+        "value": "Penne",
+        "display_name": "Pasta & noodle type"
+      },
+      {
+        "key": "Brand",
+        "value": "Food to Live",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Product net content parent",
+        "value": "1.1 Pound",
+        "display_name": "Product net content parent"
+      },
+      {
+        "key": "Grain type",
+        "value": "Whole Wheat",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Flavor",
+        "value": "Organic Whole Wheat",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Count ",
+        "value": "1",
+        "display_name": "Count "
+      },
+      {
+        "key": "Food condition",
+        "value": "Shelf-Stable",
+        "display_name": "Food condition"
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Shelf life",
+        "value": "2 years",
+        "display_name": "Shelf life"
+      },
+      {
+        "key": "Container type",
+        "value": "Pouch",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Food preparation method",
+        "value": "Roasted",
+        "display_name": "Food preparation method"
+      },
+      {
+        "key": "Texture",
+        "value": "Firm",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Food preparation tips",
+        "value": "Boil in salted water and pair with your choice of sauce, from creamy pesto to classic marinara. Add sauted vegetables, legumes, or cheese for a quick weeknight dinner. It can also be used as a base for grain bowls or served with roasted ingredients for a satisfying one-dish meal.",
+        "display_name": "Food preparation tips"
+      },
+      {
+        "key": "Nutrition facts label image",
+        "value": "https://food2live.com/cdn/shop/files/256bfd42-4986-5147-b7a7-5a10e4c7e931_600x.jpg?v=1754324848",
+        "display_name": "Nutrition facts label image"
+      },
+      {
+        "key": "Ingredient list image",
+        "value": "https://food2live.com/cdn/shop/files/690c95fc-25d7-5499-9c0f-7300294b2e96_600x.jpg?v=1754324846",
+        "display_name": "Ingredient list image"
+      },
+      {
+        "key": "Food & drug fact label type",
+        "value": "Nutrition Fact Panel",
+        "display_name": "Food & drug fact label type"
+      },
+      {
+        "key": "Size",
+        "value": "1.1 lb (Pack of 1)",
+        "display_name": "Size"
+      },
+      {
+        "key": "Assembled product weight",
+        "value": "1.1 lbs",
+        "display_name": "Assembled product weight"
+      },
+      {
+        "key": "Product net content uom",
+        "value": "Pound",
+        "display_name": "Product net content uom"
+      }
+    ],
+    "warnings": [
+      {
+        "name": "WARNING - California Proposition 65",
+        "value": "Consuming this product can expose you to chemicals including Lead which is known to the State of California to cause cancer and birth defects or other reproductive harm. For more information go to www.P65Warnings.ca.gov/food"
+      }
+    ],
+    "product_type_id": "ib_pasta",
+    "product_type": "Pasta",
+    "manufacturer": "Food to Live",
+    "product_page_url": "https://www.walmart.com/ip/Organic-Pennette-Whole-Wheat-Pasta-1-1-lb-Pack-of-1-Made-in-Italy-Pasta-Integrale-Bio-High-Fiber-Non-GMO-Vegan-Bulk-by-Food-to-Live/17436269225",
+    "price_map": {
+      "price": 10.64,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Organic-Pennette-Whole-Wheat-Pasta-1-1-lb-Pack-of-1-Made-in-Italy-Pasta-Integrale-Bio-High-Fiber-Non-GMO-Vegan-Bulk-by-Food-to-Live_d79b60d6-85dc-4619-b75a-c109bd956d77.4595733910fc8290d0ebb6e8f9e215ed.jpeg",
+      "https://i5.walmartimages.com/asr/1c7428e7-c51e-4b8a-ad0b-f24547c8e6d7.e8c5afe4e70d8513d90a7f5d3e06e20a.jpeg",
+      "https://i5.walmartimages.com/asr/3d7f382e-4a49-4fc1-bdab-f9ef9f93bece.808e8b74c4776994aa0ed944c030ee97.jpeg",
+      "https://i5.walmartimages.com/asr/59ac1e44-6953-4733-910a-01ccf50e6140.479a1f408d9a490b0da842314cad0246.jpeg",
+      "https://i5.walmartimages.com/asr/f1fe853c-16ad-42b3-b957-68dd18b90ec5.3b58beb5e9339bf6f32ba262af18c659.jpeg",
+      "https://i5.walmartimages.com/asr/381564f5-7ecd-4940-bc0e-6c450ce5c324.4198a5529a9a59704313cba91990f346.jpeg",
+      "https://i5.walmartimages.com/asr/11fd1c86-e0e7-42a9-9207-8186e875a72d.22ab835e530a710530ad503c7bebc5a6.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "8D0B7444E59F3D1EAE3B3716D1A9698C",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "7380ECB973A14504AF45E656CFD3FBDF",
+        "catalog_seller_id": 927,
+        "seller_name": "Food To Live",
+        "seller_display_name": "Food To Live",
+        "price": 10.64
+      }
+    ],
+    "delivery_option": {
+      "arrival_date": 1772492340000,
+      "display_arrival_date": "2026-03-02T22:59:00.000Z"
+    },
+    "variant_swatches": [
+      {
+        "name": "Size",
+        "available_selections": [
+          {
+            "id": "size-1.1lb(packof1)",
+            "name": "1.1 lb (Pack of 1)",
+            "products": [
+              {
+                "product_id": "1ATTIA9LLTZW",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=1ATTIA9LLTZW",
+                "variants": [
+                  "size-1.1lb(packof1)"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 10.64,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "size-1.1lb(packof12)",
+            "name": "1.1 lb (Pack of 12)",
+            "products": [
+              {
+                "product_id": "27J4CCQW7A43",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=27J4CCQW7A43",
+                "variants": [
+                  "size-1.1lb(packof12)"
+                ],
+                "in_stock": false,
+                "price_map": {
+                  "price": 79.29,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "size-1.1lb(packof2)",
+            "name": "1.1 lb (Pack of 2)",
+            "products": [
+              {
+                "product_id": "284PEMN9MEFK",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=284PEMN9MEFK",
+                "variants": [
+                  "size-1.1lb(packof2)"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 18.13,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "size-1.1lb(packof3)",
+            "name": "1.1 lb (Pack of 3)",
+            "products": [
+              {
+                "product_id": "4EJJ7UA3E312",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=4EJJ7UA3E312",
+                "variants": [
+                  "size-1.1lb(packof3)"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 25.15,
+                  "currency": "USD"
+                }
+              }
+            ]
+          },
+          {
+            "id": "size-1.1lb(packof6)",
+            "name": "1.1 lb (Pack of 6)",
+            "products": [
+              {
+                "product_id": "5BOP7W67IWPT",
+                "serpapi_link": "https://serpapi.com/search.json?device=desktop&engine=walmart_product&product_id=5BOP7W67IWPT",
+                "variants": [
+                  "size-1.1lb(packof6)"
+                ],
+                "in_stock": true,
+                "price_map": {
+                  "price": 41.54,
+                  "currency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "17118655489": {
+    "us_item_id": "17118655489",
+    "product_id": "3YVVZSXU9E7O",
+    "upc": "610260222496",
+    "title": "Barilla Whole Grain Spaghetti, 16 oz. Box - Non-GMO Pasta Made With 100% Whole Grain Durum Wheat - Great Source of Fiber (Pack of 3)",
+    "short_description_html": "WHOLE GRAIN: 2x the fiber of traditional Barilla pasta (3g of fiber per serving)\nSPAGHETTI PASTA: The most popular (and fun to eat) pasta shape\nBARILLA PASTA: Made with durum wheat to deliver great taste and perfect \"al dente\" texture every time\nCREATE DELICIOUS PASTA MEALS: Commonly used with tomato sauces, fresh vegetables, or fish\nCOOKS TO PERFECTION EVERY TIME: Enjoy perfect pasta in 7-8 minutes\nNON-GMO & KOSHER: Crafted with the highest quality non-GMO, kosher-certified, vegan-friendly whole wheat",
+    "detailed_description_html": "Barilla Whole Grain Spaghetti, 16 oz. Box - Non-GMO Pasta Made With 100% Whole Grain Durum Wheat - Great Source of Fiber (Pack of 3)",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Pasta & pizza",
+        "url": "https://www.walmart.com/cp/pasta-pizza/5403011"
+      },
+      {
+        "name": "Dry pasta",
+        "url": "https://www.walmart.com/cp/dry-pasta/9712965"
+      }
+    ],
+    "seller_id": "3C6DC802DA9C41D0ABBAB65C6B57D972",
+    "seller_name": "Wise Advice 24/7",
+    "specification_highlights": [
+      {
+        "key": "Pasta & noodle type",
+        "value": "Spaghetti",
+        "display_name": "Pasta & noodle type"
+      },
+      {
+        "key": "Brand",
+        "value": "Barilla",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Grain type",
+        "value": "Durum Wheat",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Food form",
+        "value": "Whole",
+        "display_name": "Food form"
+      },
+      {
+        "key": "Container type",
+        "value": "Box",
+        "display_name": "Container type"
+      },
+      {
+        "key": "Texture",
+        "value": "Al Dente",
+        "display_name": "Texture"
+      },
+      {
+        "key": "Retail packaging",
+        "value": "Box Set",
+        "display_name": "Retail packaging"
+      },
+      {
+        "key": "Size",
+        "value": "16 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Assembled product weight",
+        "value": "16 oz",
+        "display_name": "Assembled product weight"
+      }
+    ],
+    "product_type_id": "ib_pasta",
+    "product_type": "Pasta",
+    "manufacturer": "Barilla",
+    "product_page_url": "https://www.walmart.com/ip/Barilla-Whole-Grain-Spaghetti-16-oz-Box-Non-GMO-Pasta-Made-With-100-Whole-Grain-Durum-Wheat-Great-Source-of-Fiber-Pack-of-3/17118655489",
+    "price_map": {
+      "price": 10.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 4,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Barilla-Whole-Grain-Spaghetti-16-oz-Box-Non-GMO-Pasta-Made-With-100-Whole-Grain-Durum-Wheat-Great-Source-of-Fiber-Pack-of-3_04cba043-ddaf-4e36-a1a2-3489398180b8.c0c46471cfc2e0b1db1db1a05ec99ee6.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "A68EF08DB04435838F544421FADAEACA",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "3C6DC802DA9C41D0ABBAB65C6B57D972",
+        "catalog_seller_id": 102521934,
+        "seller_name": "WISE ADVICE 24/7 LLC",
+        "seller_display_name": "Wise Advice 24/7",
+        "price": 10.99
+      }
+    ],
+    "shipping_price": 6.99,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "13583002591": {
+    "us_item_id": "13583002591",
+    "product_id": "4HMR6WCE7G89",
+    "upc": "100143051706",
+    "title": "SPT Organic Tricolor Quinoa 16 oz",
+    "short_description_html": "<p>Organic quinoa tricolor. USDA organic. Non-GMO verified.</p>",
+    "detailed_description_html": "<ul>  <li>   <ul>    <li>Organic White Quinoa</li>    <li>Organic Red Quinoa</li>    <li>Organic Black Quinoa.</li>   </ul></li>  <li>[[Nutrition Facts]][[Servings Per Container ABOUT 10 ]][[Serving Size 1/4 CUP DRY (45G) ]][[Amount per serving]][[Calories 170]][[% Daily Value]][[Total FatSaturated Fat 0 g 0]][[Total FatTrans Fat 0 g]][[Cholesterol 0 mg 0]][[Sodium 0 mg 0]][[Total CarbohydrateDietary Fiber 5 g 18]][[Total SugarsIncludes 0 g Added Sugars 0]][[Protein 6 g]][[Vitamin D 0 IU 0]][[Calcium 0 mg 0]][[Iron 2 mg 10]][[Potassium 300 mg 6]]</li> </ul>",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Rice, grains & dried beans",
+        "url": "https://www.walmart.com/cp/rice-grains-dried-beans/4879140"
+      },
+      {
+        "name": "Grains",
+        "url": "https://www.walmart.com/cp/grains/8475929"
+      },
+      {
+        "name": "Grains",
+        "url": "https://www.walmart.com/cp/grains/7953903"
+      }
+    ],
+    "seller_id": "ED553A1679CB4BF3A25D9C6B9E060D01",
+    "seller_name": "TS Trading LLC",
+    "specification_highlights": [
+      {
+        "key": "Grain type",
+        "value": "Quinoa",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Brand",
+        "value": "SPT",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Size",
+        "value": "16 oz",
+        "display_name": "Size"
+      },
+      {
+        "key": "Texture",
+        "value": "light, fluffy",
+        "display_name": "Texture"
+      }
+    ],
+    "warnings": [
+      {
+        "name": "WARNING - California Proposition 65",
+        "value": "This product can expose you to chemicals including arsenic, which is known to the State of California to cause cancer. For more information, go to www.p65warnings.ca.gov."
+      }
+    ],
+    "product_type_id": "376",
+    "product_type": "Grains",
+    "manufacturer": "SPT",
+    "product_page_url": "https://www.walmart.com/ip/SPT-Organic-Tricolor-Quinoa-16-oz/13583002591",
+    "price_map": {
+      "price": 17.99,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 7,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/SPT-Organic-Tricolor-Quinoa-16-oz_3b51f8af-922b-4152-a691-c7da0048ff9f.304df7e7fb149c11b9878d9d0de45628.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "FB4FDCFE337D33589B0EB38860DD8D45",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "ED553A1679CB4BF3A25D9C6B9E060D01",
+        "catalog_seller_id": 101625004,
+        "seller_name": "TS Trading LLC",
+        "seller_display_name": "TS Trading LLC",
+        "price": 17.99
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
+    "early_access_event": false,
+    "walmart_plus_member": false
+  },
+  "5293992534": {
+    "us_item_id": "5293992534",
+    "product_id": "0W989AD2GON6",
+    "upc": "692991710817",
+    "title": "Jiva Org. Quinoa White 2lb",
+    "short_description_html": "Discover the wholesome goodness of Jiva Organic Quinoa White in this 2lb pack, a nutritional powerhouse that embodies purity and quality. Sourced from certified organic farms, this quinoa is a testament to Jiva's commitment to providing premium, unadulterated products. Each delicate grain of quinoa is meticulously cultivated and carefully packaged to preserve its natural essence.\n\nPacked with essential nutrients, including protein, fiber, and a range of vitamins and minerals, Jiva Organic Quinoa White is a versatile and nutritious addition to your culinary repertoire. Its light and fluffy texture, combined with a mild, nutty flavor, make it a perfect canvas for a variety of dishes.\n\nWhether you're crafting a hearty salad, wholesome side dish, or a protein-rich main course, this 2lb pack ensures you have an ample supply of Jiva's pristine organic quinoa, elevating your meals with every bite. Embark on a journey of wholesome living with Jiva Organic Quinoa White, where purity meets nutrition in every grain.",
+    "detailed_description_html": "Jiva Org. Quinoa White 2lb",
+    "categories": [
+      {
+        "name": "Food",
+        "url": "https://www.walmart.com/cp/food/976759"
+      },
+      {
+        "name": "Pantry",
+        "url": "https://www.walmart.com/cp/pantry/976794"
+      },
+      {
+        "name": "Rice, grains & dried beans",
+        "url": "https://www.walmart.com/cp/rice-grains-dried-beans/4879140"
+      },
+      {
+        "name": "Grains",
+        "url": "https://www.walmart.com/cp/grains/8475929"
+      },
+      {
+        "name": "Grains",
+        "url": "https://www.walmart.com/cp/grains/7953903"
+      }
+    ],
+    "seller_id": "2C68CA86BC904F77A7568918BE6EDAEE",
+    "seller_name": "VEEVAA",
+    "specification_highlights": [
+      {
+        "key": "Grain type",
+        "value": "Quinoa",
+        "display_name": "Grain type"
+      },
+      {
+        "key": "Brand",
+        "value": "Jiva Org.",
+        "display_name": "Brand"
+      },
+      {
+        "key": "Size",
+        "value": "2 lbs",
+        "display_name": "Size"
+      },
+      {
+        "key": "Flavor",
+        "value": "nutty",
+        "display_name": "Flavor"
+      },
+      {
+        "key": "Texture",
+        "value": "light and fluffy",
+        "display_name": "Texture"
+      }
+    ],
+    "product_type_id": "376",
+    "product_type": "Grains",
+    "manufacturer": "Jiva Org.",
+    "product_page_url": "https://www.walmart.com/ip/Jiva-Org-Quinoa-White-2lb/5293992534",
+    "price_map": {
+      "price": 19.98,
+      "currency": "USD"
+    },
+    "min_quantity": 1,
+    "max_quantity": 12,
+    "in_stock": true,
+    "images": [
+      "https://i5.walmartimages.com/seo/Jiva-Org-Quinoa-White-2lb_aedf623c-0900-451e-9a3c-491b86c6012b.0313ed6a2fd33d0b72e4f4ad81227ac9.jpeg"
+    ],
+    "reviews": 0,
+    "offer_id": "57BDC787802435B1BF4E7308BD3E4415",
+    "offer_type": "ONLINE_ONLY",
+    "offers": [
+      {
+        "seller_id": "2C68CA86BC904F77A7568918BE6EDAEE",
+        "catalog_seller_id": 102691503,
+        "seller_name": "VEEVAA LLC",
+        "seller_display_name": "VEEVAA",
+        "price": 19.98
+      }
+    ],
+    "shipping_price": 0,
+    "delivery_option": {
+      "arrival_date": 1772834340000,
+      "display_arrival_date": "2026-03-06T21:59:00.000Z"
+    },
     "early_access_event": false,
     "walmart_plus_member": false
   }

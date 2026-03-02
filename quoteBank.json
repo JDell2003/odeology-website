@@ -26,7 +26,7 @@
     {
         "id":  "volume_sweet_spot",
         "sourceName":  "Volume Sweet Spot",
-        "principleSummary":  "Volume has a sweet spot for growth; most lifters do well around roughly 10–20 hard sets per muscle per week, adjusted for recovery and time.",
+        "principleSummary":  "Volume has a sweet spot for growth; most lifters do well around roughly 10-20 hard sets per muscle per week, adjusted for recovery and time.",
         "tags":  [
                      "volume",
                      "all"
@@ -96,3 +96,4 @@
                         ]
     }
 ]
+

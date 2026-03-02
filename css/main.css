@@ -5484,6 +5484,429 @@ body.auth-gated .auth-backdrop {
     color: var(--accent);
 }
 
+.auth-friends-btn {
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-friends-btn svg {
+    width: 26px;
+    height: 26px;
+    stroke: currentColor;
+    fill: none;
+}
+
+.auth-mobile-friends {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.auth-mobile-friends .auth-mobile-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+}
+
+.friends-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 220;
+    pointer-events: none;
+}
+
+.friends-card {
+    position: fixed;
+    width: min(420px, calc(100% - 24px));
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    background: rgba(12, 10, 8, 0.96);
+    backdrop-filter: blur(12px);
+    padding: 1.25rem 1.25rem 1.1rem;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    transform-origin: top left;
+    animation: friendsPop 140ms ease-out;
+}
+
+:root[data-theme="light"] .friends-card {
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.friends-card::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: var(--friends-arrow-left, 28px);
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    transform: translateX(-50%) rotate(45deg);
+}
+
+@keyframes friendsPop {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.friends-title {
+    margin: 0 0 0.85rem;
+    font-size: 1.4rem;
+}
+
+.friends-main {
+    padding: 6rem 0 4rem;
+}
+
+.friends-header {
+    margin-bottom: 1.6rem;
+}
+
+.friends-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink);
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    transition: var(--transition);
+}
+
+.friends-close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.friends-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.friends-tab {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.friends-tab.warn {
+    color: #f5cf66;
+    border-color: rgba(245, 200, 75, 0.5);
+    background: rgba(245, 200, 75, 0.12);
+}
+
+.friends-tab.active {
+    color: #0c0a08;
+    background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(197, 141, 79, 0.35);
+}
+
+.friends-tab.warn.active {
+    color: #2b1b00;
+    background: linear-gradient(120deg, #f7c84b, #ffe29b);
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(245, 200, 75, 0.35);
+}
+
+.friends-body {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.friends-panel {
+    display: none;
+}
+
+.friends-panel.active {
+    display: block;
+}
+
+.friends-muted {
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+}
+
+.friends-search {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.friends-input {
+    width: 100%;
+}
+
+.friends-empty {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    border: 1px dashed var(--line);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.friends-list {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+
+.friends-list.accounts-scroll {
+    max-height: 330px;
+    overflow: auto;
+    padding-right: 0.25rem;
+}
+
+.friends-section-title {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.friends-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.friends-item.friends-warning {
+    border-color: rgba(245, 200, 75, 0.55);
+    background: rgba(245, 200, 75, 0.12);
+}
+
+.friends-warning-message {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #f8e3b0;
+}
+
+.friends-warning-tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #2b1b00;
+    background: #f7c84b;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid rgba(245, 200, 75, 0.8);
+}
+
+.friends-request-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.friends-request-actions {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.friends-request-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--ink);
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.friends-request-btn.accept {
+    border-color: rgba(76, 175, 80, 0.55);
+    color: #88e28a;
+}
+
+.friends-request-btn.reject {
+    border-color: rgba(244, 67, 54, 0.55);
+    color: #ff9b9b;
+}
+
+.friends-request-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+}
+
+.friends-messages {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.friends-thread-list {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.friends-thread {
+    width: 100%;
+    text-align: left;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.6rem 0.7rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.friends-thread.active {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.friends-thread-name {
+    font-weight: 700;
+}
+
+.friends-thread-meta {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+}
+
+.friends-chat {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    padding: 0.7rem;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+}
+
+.friends-chat-header {
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--ink);
+}
+
+.friends-chat-messages {
+    display: grid;
+    gap: 0.45rem;
+    max-height: 240px;
+    overflow: auto;
+    padding: 0.6rem;
+    padding-right: 0.4rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(6, 12, 20, 0.45);
+}
+
+.friends-bubble {
+    max-width: 85%;
+    padding: 0.45rem 0.65rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink);
+    font-size: 0.9rem;
+    box-shadow: 0 10px 16px rgba(0, 0, 0, 0.12);
+}
+
+.friends-bubble.me {
+    margin-left: auto;
+    background: linear-gradient(130deg, rgba(197, 141, 79, 0.35), rgba(197, 141, 79, 0.18));
+    border: 1px solid rgba(197, 141, 79, 0.45);
+}
+
+.friends-chat-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    align-items: center;
+}
+
+.friends-chat-input .friends-input {
+    border-radius: 999px;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(10, 18, 28, 0.55);
+    color: var(--ink);
+}
+
+.friends-chat-send {
+    padding-inline: 1rem;
+    border-radius: 999px;
+    box-shadow: 0 8px 18px rgba(197, 141, 79, 0.3);
+}
+
+.friends-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(197, 141, 79, 0.18);
+    color: var(--ink);
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+    overflow: hidden;
+}
+
+.friends-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.friends-meta {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.friends-name {
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.friends-handle {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
 .auth-title {
     margin: 0 0 0.75rem;
     font-size: 1.35rem;
@@ -9651,6 +10074,34 @@ body.ns-modal-open {
     }
 }
 
+/* Dashboard page load fade */
+@keyframes dashFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+body.overview-page main.overview-main,
+body.dashboard-page main.overview-main,
+body.training-page #training,
+body.training-status-page main.ts-main,
+body.grocery-calendar-page main.gc-main,
+body.leaderboard-page main.lb-main,
+body.friends-page main.friends-main {
+    animation: dashFadeIn 260ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+body.overview-page main.overview-main,
+body.dashboard-page main.overview-main,
+body.training-page #training,
+body.training-status-page main.ts-main,
+body.grocery-calendar-page main.gc-main,
+body.leaderboard-page main.lb-main,
+body.friends-page main.friends-main {
+        animation: none;
+    }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .hero-split {
@@ -12696,7 +13147,8 @@ html:not([data-theme="light"]) .ode-confirm-separator {
     margin-bottom: 1rem;
 }
 
-.price-adjustment-slider label {
+.price-adjustment-slider label,
+.price-adjustment-slider .price-adjustment-label {
     font-size: 0.875rem;
     color: var(--muted);
     white-space: nowrap;
@@ -16642,6 +17094,201 @@ html[data-theme="light"] .ode-tour-btn.primary {
 
 .training-page .plan-topbar-actions .btn {
     white-space: nowrap;
+}
+
+.training-page .plan-topbar-share {
+    margin-left: auto;
+    align-self: flex-start;
+    position: relative;
+    z-index: 2102;
+}
+
+.training-page .btn-share-workout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 12px;
+    font-weight: 750;
+    border: 1px solid var(--training-border);
+    background: color-mix(in srgb, var(--training-surface-2) 85%, transparent);
+    color: var(--training-ink);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.training-page .btn-share-workout:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--training-accent) 35%, var(--training-border));
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+}
+
+.training-page .btn-share-workout.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.share-workout-popover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.65rem);
+    width: min(340px, 90vw);
+    border-radius: 16px;
+    border: 1px solid var(--training-border);
+    background: #ffffff;
+    color: #0f1a26;
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+    padding: 0.9rem 0.95rem 0.85rem;
+    z-index: 2105;
+}
+
+.share-workout-popover::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 18px;
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    border-left: 1px solid var(--training-border);
+    border-top: 1px solid var(--training-border);
+    transform: rotate(45deg);
+}
+
+.share-workout-title {
+    font-weight: 800;
+    margin-bottom: 0.55rem;
+}
+
+.share-workout-search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.45rem;
+}
+
+.share-workout-input {
+    flex: 1 1 auto;
+}
+
+.share-workout-search-btn {
+    padding: 0.45rem 0.75rem;
+}
+
+.share-workout-status {
+    font-size: 0.82rem;
+    color: var(--training-muted);
+    margin-bottom: 0.45rem;
+}
+
+.share-workout-list {
+    display: grid;
+    gap: 0.45rem;
+    max-height: 220px;
+    overflow: auto;
+    padding-right: 0.15rem;
+}
+
+.share-workout-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--training-border);
+    background: color-mix(in srgb, var(--training-surface-2) 86%, transparent);
+    padding: 0.45rem 0.55rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.share-workout-item:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--training-accent) 35%, var(--training-border));
+}
+
+.share-workout-item.selected {
+    border-color: color-mix(in srgb, var(--training-accent) 55%, var(--training-border));
+    background: color-mix(in srgb, var(--training-accent-weak) 45%, var(--training-surface-2));
+}
+
+.share-workout-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--training-surface-2) 85%, #000);
+    border: 1px solid var(--training-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--training-ink);
+}
+
+.share-workout-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.share-workout-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.share-workout-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.share-workout-handle {
+    font-size: 0.78rem;
+    color: var(--training-muted);
+}
+
+.share-workout-add {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--training-accent);
+}
+
+.share-workout-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.share-workout-empty {
+    font-size: 0.85rem;
+    color: var(--training-muted);
+    padding: 0.35rem 0;
+}
+
+@media (max-width: 900px) {
+    .training-page .plan-topbar-share {
+        width: 100%;
+    }
+
+    .training-page .btn-share-workout {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .share-workout-popover {
+        width: min(100%, 360px);
+        left: 0;
+        right: auto;
+    }
+
+    .share-workout-popover::before {
+        left: 26px;
+        right: auto;
+    }
 }
 
 .training-page .plan-rules {

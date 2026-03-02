@@ -141,6 +141,84 @@ function sendDbUnavailable(res) {
   });
 }
 
+async function handleAccountsList(req, res, url) {
+  const user = await getUserFromRequest(req);
+  if (!user) {
+    sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    return true;
+  }
+
+  const q = String(url.searchParams.get('q') || '').trim();
+  const limitParam = Number(url.searchParams.get('limit') || 0);
+  const searchLimit = Math.min(250, Math.max(1, limitParam || 50));
+  let rows = [];
+  if (q) {
+    const pattern = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+    const result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_users u
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE username ILIKE $1
+           OR display_name ILIKE $1
+        ORDER BY display_name ASC, username ASC
+        LIMIT $2;
+      `,
+      [pattern, searchLimit]
+    );
+    rows = result.rows || [];
+  } else {
+    const countResult = await db.query('SELECT COUNT(*)::int AS count FROM app_users;');
+    const totalCount = Number(countResult.rows?.[0]?.count || 0);
+    const cap = 5000;
+    const listLimit = totalCount >= cap ? 250 : Math.min(totalCount || 0, cap);
+    const result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_users u
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        ORDER BY u.created_at DESC
+        LIMIT $1;
+      `,
+      [listLimit]
+    );
+    rows = result.rows || [];
+    sendJson(res, 200, {
+      ok: true,
+      count: rows.length,
+      total: totalCount,
+      capped: totalCount >= cap,
+      accounts: rows.map((row) => ({
+        id: row.id,
+        username: row.username,
+        displayName: row.display_name,
+        photoDataUrl: row.photo || null
+      }))
+    });
+    return true;
+  }
+
+  sendJson(res, 200, {
+    ok: true,
+    count: rows.length,
+    total: rows.length,
+    capped: false,
+    accounts: rows.map((row) => ({
+      id: row.id,
+      username: row.username,
+      displayName: row.display_name,
+      photoDataUrl: row.photo || null
+    }))
+  });
+  return true;
+}
+
 async function ensureSchema() {
   if (schemaEnsured) return;
   if (!db.isConfigured()) return;
@@ -198,6 +276,15 @@ async function ensureSchema() {
     );
   `,
     'CREATE INDEX IF NOT EXISTS idx_app_oauth_states_expires_at ON app_oauth_states(expires_at);'
+    ,
+    `
+    CREATE TABLE IF NOT EXISTS app_user_profiles (
+      user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      profile jsonb NOT NULL DEFAULT '{}'::jsonb
+    );
+  `
   ];
 
   for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
@@ -595,6 +682,10 @@ module.exports = async function authRoutes(req, res, url) {
       const user = await getUserFromRequest(req);
       sendJson(res, 200, { user });
       return true;
+    }
+
+    if (url.pathname === '/api/auth/accounts' && req.method === 'GET') {
+      return await handleAccountsList(req, res, url);
     }
 
     if (url.pathname === '/api/auth/signup' && req.method === 'POST') {

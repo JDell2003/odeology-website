@@ -342,6 +342,19 @@
     }
   };
 
+  const shareUi = {
+    open: false,
+    loading: false,
+    loaded: false,
+    accounts: [],
+    status: '',
+    selected: new Set(),
+    query: ''
+  };
+
+  let shareCloseBound = false;
+
+
   function normalizeDiscipline(raw) {
     const v = String(raw || '').trim().toLowerCase();
     if (v === 'powerlifting') return 'powerlifting';
@@ -1004,6 +1017,52 @@ function matchLocalExerciseFolder(name) {
     if (/(tricep|pushdown|dip)/.test(n)) return 'arms';
     if (/(core|abs|plank|crunch|hanging)/.test(n)) return 'core';
     return 'full';
+  }
+
+  function inferDaySplitLabel(day) {
+    const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+    if (!exercises.length) return '';
+
+    const counts = { legs: 0, chest: 0, back: 0, shoulders: 0, arms: 0, core: 0, full: 0, pushArms: 0, pullArms: 0 };
+    exercises.forEach((ex) => {
+      const name = String(ex?.displayName || ex?.name || ex?.exerciseName || '').toLowerCase();
+      const group = guessMuscleGroup(ex);
+      if (group === 'legs') counts.legs += 1;
+      else if (group === 'chest') counts.chest += 1;
+      else if (group === 'back') counts.back += 1;
+      else if (group === 'shoulders') counts.shoulders += 1;
+      else if (group === 'core') counts.core += 1;
+      else if (group === 'arms') {
+        counts.arms += 1;
+        if (/(tricep|pushdown|dip|extension|press)/.test(name)) counts.pushArms += 1;
+        if (/(curl|bicep)/.test(name)) counts.pullArms += 1;
+      } else {
+        counts.full += 1;
+      }
+    });
+
+    const pushScore = counts.chest + counts.shoulders + counts.pushArms;
+    const pullScore = counts.back + counts.pullArms;
+    const legsScore = counts.legs;
+    const total = exercises.length || 1;
+
+    if (legsScore >= Math.max(pushScore, pullScore) && legsScore / total >= 0.35) return 'Legs';
+    if (pushScore >= pullScore * 1.35 && pushScore >= legsScore * 1.2) return 'Push';
+    if (pullScore >= pushScore * 1.35 && pullScore >= legsScore * 1.2) return 'Pull';
+
+    if (legsScore > 0 && (pushScore + pullScore) > 0) {
+      return legsScore >= (pushScore + pullScore) ? 'Lower' : 'Upper';
+    }
+
+    if (counts.full / total >= 0.4) return 'Full Body';
+    if (pushScore && pullScore) return 'Upper';
+    if (legsScore) return 'Lower';
+    return 'Workout';
+  }
+
+  function getDayTitle(day) {
+    const raw = String(day?.name || day?.focus || '').trim();
+    return raw || inferDaySplitLabel(day) || 'Workout';
   }
 
   function muscleIconSvg(muscle) {
@@ -1737,6 +1796,84 @@ function matchLocalExerciseFolder(name) {
       json = null;
     }
     return { ok: resp.ok, status: resp.status, json };
+  }
+
+  function bindShareClose() {
+    if (shareCloseBound) return;
+    shareCloseBound = true;
+
+    document.addEventListener('click', (e) => {
+      if (!shareUi.open) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const popover = document.getElementById('share-workout-popover');
+      const anchor = document.querySelector('[data-share-workout="1"]');
+      if (popover && popover.contains(target)) return;
+      if (anchor && anchor.contains(target)) return;
+      shareUi.open = false;
+      render();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && shareUi.open) {
+        shareUi.open = false;
+        render();
+      }
+    });
+  }
+
+  async function loadShareAccounts(query = '') {
+    if (shareUi.loading) return;
+    shareUi.loading = true;
+    shareUi.status = 'Loading friends...';
+    render();
+
+    try {
+      const resp = await api('/api/friends/list', { method: 'GET' });
+      if (resp.status === 401) {
+        shareUi.accounts = [];
+        shareUi.status = 'Sign in to view friends.';
+        shareUi.loading = false;
+        render();
+        return;
+      }
+      if (!resp.ok || !resp.json?.ok) {
+        shareUi.accounts = [];
+        shareUi.status = 'Could not load friends.';
+        shareUi.loading = false;
+        render();
+        return;
+      }
+      const list = Array.isArray(resp.json?.friends) ? resp.json.friends : [];
+      const q = String(query || '').trim().toLowerCase();
+      const filtered = q
+        ? list.filter((item) => {
+            const name = String(item?.displayName || '').toLowerCase();
+            const username = String(item?.username || '').toLowerCase();
+            return name.includes(q) || username.includes(q);
+          })
+        : list;
+      shareUi.accounts = filtered;
+      const count = filtered.length;
+      shareUi.status = q
+        ? `Results for "${query}" (${count})`
+        : (count ? `Showing ${count} friends` : 'No friends yet.');
+      shareUi.loaded = true;
+    } catch {
+      shareUi.accounts = [];
+      shareUi.status = 'Could not load friends.';
+    }
+
+    shareUi.loading = false;
+    render();
+  }
+function toggleSharePopover(force) {
+    const next = typeof force === 'boolean' ? force : !shareUi.open;
+    shareUi.open = next;
+    if (shareUi.open && !shareUi.loaded) {
+      loadShareAccounts(shareUi.query || '');
+    }
+    render();
   }
 
   function wireAuthSync() {
@@ -4232,6 +4369,127 @@ function matchLocalExerciseFolder(name) {
       }, 250);
     };
 
+    const canShare = !isPreview && Boolean(state.auth.user);
+    const shareListItems = shareUi.loading
+      ? []
+      : (shareUi.accounts && shareUi.accounts.length
+        ? shareUi.accounts.map((acct) => {
+            const name = String(acct?.displayName || acct?.username || 'Account');
+            const username = acct?.username ? `@${acct.username}` : '';
+            const initials = name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part.charAt(0))
+              .join('')
+              .toUpperCase();
+            const isSelected = shareUi.selected.has(String(acct?.id));
+            return el('button', {
+              type: 'button',
+              class: `share-workout-item${isSelected ? ' selected' : ''}`,
+              onclick: (e) => {
+                e.preventDefault();
+                const key = String(acct?.id || '');
+                if (!key) return;
+                if (shareUi.selected.has(key)) shareUi.selected.delete(key);
+                else shareUi.selected.add(key);
+                render();
+              }
+            },
+              el('div', { class: 'share-workout-avatar' },
+                acct?.photoDataUrl
+                  ? el('img', { src: acct.photoDataUrl, alt: name })
+                  : (initials || 'O')
+              ),
+              el('div', { class: 'share-workout-meta' },
+                el('div', { class: 'share-workout-name' }, name),
+                el('div', { class: 'share-workout-handle' }, username || ' ')
+              ),
+              el('span', { class: 'share-workout-add' }, isSelected ? 'Added' : 'Add')
+            );
+          })
+        : [el('div', { class: 'share-workout-empty' }, 'No friends found.')]);
+
+    const shareBox = el('div', { class: 'plan-topbar-share' },
+      el('button', {
+        type: 'button',
+        class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
+        dataset: { shareWorkout: '1' },
+        'aria-disabled': canShare ? 'false' : 'true',
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!canShare) {
+            openAuthModal('login');
+            return;
+          }
+          toggleSharePopover();
+        }
+      }, 'Share Workout'),
+      el('div', {
+        class: `share-workout-popover${shareUi.open ? '' : ' hidden'}`,
+        id: 'share-workout-popover'
+      },
+        el('div', { class: 'share-workout-title' }, 'Share workout'),
+        el('div', { class: 'share-workout-search' },
+          el('input', {
+            type: 'text',
+            class: 'auth-input share-workout-input',
+            value: shareUi.query || '',
+            placeholder: 'Search friends',
+            oninput: (e) => {
+              shareUi.query = e.target.value;
+            },
+            onkeydown: (e) => {
+              if (e.key === 'Enter') loadShareAccounts(shareUi.query || '');
+            }
+          }),
+          el('button', { type: 'button', class: 'btn btn-ghost share-workout-search-btn', onclick: () => loadShareAccounts(shareUi.query || '') }, 'Search')
+        ),
+        el('div', { class: 'share-workout-status' }, shareUi.status || ''),
+        el('div', { class: 'share-workout-list' }, shareListItems),
+        el('div', { class: 'share-workout-actions' },
+          el('button', {
+            type: 'button',
+            class: 'btn btn-ghost btn-mini',
+            onclick: () => {
+              shareUi.selected.clear();
+              shareUi.status = 'Selection cleared.';
+              render();
+            }
+          }, 'Clear'),
+          el('button', {
+            type: 'button',
+            class: 'btn btn-primary btn-mini',
+            onclick: async () => {
+              const ids = Array.from(shareUi.selected);
+              if (!ids.length) {
+                shareUi.status = 'Select at least 1 friend.';
+                render();
+                return;
+              }
+              shareUi.status = 'Sending invites...';
+              render();
+              const resp = await api('/api/training/share', {
+                method: 'POST',
+                body: JSON.stringify({ targetUserIds: ids })
+              });
+              if (!resp.ok || !resp.json?.ok) {
+                shareUi.status = resp.json?.error || 'Could not share workout.';
+                render();
+                return;
+              }
+              const sent = Number(resp.json?.invited || 0);
+              shareUi.selected.clear();
+              shareUi.status = sent
+                ? `Invite sent to ${sent} friend${sent === 1 ? '' : 's'}.`
+                : 'No valid recipients.';
+              render();
+            }
+          }, 'Share')
+        )
+      )
+    );
     const header = el('div', { class: 'training-card plan-topbar' },
       el('div', { class: 'plan-topbar-main' },
         el('h3', { style: 'margin:0 0 0.25rem' }, 'Your training plan'),
@@ -4241,6 +4499,7 @@ function matchLocalExerciseFolder(name) {
         isDeloadWeek ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, 'Deload week: load and sets are reduced; no progression.') : null,
         pendingLabel ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, pendingLabel) : null
       ),
+      shareBox,
       el('div', { class: 'plan-topbar-actions' },
         el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
         el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
@@ -4431,8 +4690,9 @@ function matchLocalExerciseFolder(name) {
       const canGoPrev = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() - 1)) >= minDate;
       const canGoNext = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() + 1)) <= maxDate;
 
+      const todayTitle = getDayTitle(day);
       const todayBar = el('div', { class: 'workout-today-bar' },
-        el('div', { class: 'workout-today-title' }, '~ Workout day ~'),
+        el('div', { class: 'workout-today-title' }, todayTitle),
         el('div', { class: 'workout-today-sub' }, `${dispCur.title} • Week ${activeWeek}`),
         el('div', { class: 'workout-today-nav' },
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
@@ -4725,7 +4985,7 @@ function matchLocalExerciseFolder(name) {
           })(),
           el('div', { class: 'day-head' },
             el('div', null,
-              el('div', { class: 'day-title' }, `${dispCur.title} — ${day.focus || ''}`.trim()),
+              el('div', { class: 'day-title' }, `${dispCur.title} — ${getDayTitle(day)}`),
               el('div', { class: 'training-muted' }, `Week ${activeWeek} • Day ${dayIndex} • ${day.exercises?.length || 0} exercises`)
             ),
             el('div', { class: 'training-actions', style: 'gap:0.45rem' },
@@ -4757,7 +5017,7 @@ function matchLocalExerciseFolder(name) {
       const canGoPrev = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() - 1)) >= minDate;
       const canGoNext = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() + 1)) <= maxDate;
       const todayBar = el('div', { class: 'workout-today-bar' },
-        el('div', { class: 'workout-today-title' }, '~ Workout day ~'),
+        el('div', { class: 'workout-today-title' }, 'Rest day'),
         el('div', { class: 'workout-today-sub' }, `${WEEKDAYS[activeWeekday]} • Week ${activeWeek}`),
         el('div', { class: 'workout-today-nav' },
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
@@ -5207,6 +5467,7 @@ function matchLocalExerciseFolder(name) {
     }
   }
 
+  bindShareClose();
   wireAuthSync();
   loadAuthAndState({ silent: true }).catch(() => setView('wizard'));
 })();

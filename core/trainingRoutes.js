@@ -13,6 +13,27 @@ const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYT
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
+const INVITE_CACHE_TTL_MS = 20000;
+const trainingInviteCache = new Map();
+
+function getInviteCache(userId) {
+  const cached = trainingInviteCache.get(userId);
+  if (!cached) return null;
+  if (Date.now() - cached.at > INVITE_CACHE_TTL_MS) {
+    trainingInviteCache.delete(userId);
+    return null;
+  }
+  return cached.value;
+}
+
+function setInviteCache(userId, value) {
+  trainingInviteCache.set(userId, { at: Date.now(), value });
+}
+
+function clearInviteCache(userId) {
+  if (!userId) return;
+  trainingInviteCache.delete(userId);
+}
 
 const mediaEnrichInFlight = new Set();
 const QUOTE_BANK_PATH = path.join(__dirname, 'quoteBank.json');
@@ -103,6 +124,10 @@ function clampInt(value, min, max, fallback) {
   const n = Number.parseInt(String(value ?? ''), 10);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min, Math.min(max, n));
+}
+
+function isUuid(input) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(input || '').trim());
 }
 
 function safeText(raw, maxLen) {
@@ -259,6 +284,15 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at);');
 
     await safeQuery(`
+      CREATE TABLE IF NOT EXISTS app_user_profiles (
+        user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        profile jsonb NOT NULL DEFAULT '{}'::jsonb
+      );
+    `);
+
+    await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_profiles (
         user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
         created_at timestamptz NOT NULL DEFAULT now(),
@@ -303,6 +337,23 @@ async function ensureSchema() {
     `);
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_plans_user_id ON app_training_plans(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_plans_active ON app_training_plans(user_id, active);');
+
+    await safeQuery(`
+      CREATE TABLE IF NOT EXISTS app_training_share_invites (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        from_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        to_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        plan_id uuid REFERENCES app_training_plans(id) ON DELETE SET NULL,
+        plan_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+        status text NOT NULL DEFAULT 'pending',
+        responded_at timestamptz
+      );
+    `);
+    await safeQuery('CREATE INDEX IF NOT EXISTS idx_training_share_invites_to_status ON app_training_share_invites(to_user_id, status, created_at);');
+    await safeQuery('CREATE INDEX IF NOT EXISTS idx_training_share_invites_from_status ON app_training_share_invites(from_user_id, status, created_at);');
+    await safeQuery("CREATE UNIQUE INDEX IF NOT EXISTS uq_training_share_invites_pending ON app_training_share_invites(from_user_id, to_user_id) WHERE status = 'pending';");
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_workouts (
@@ -1119,6 +1170,173 @@ async function trainingRoutes(req, res, url) {
       // ignore
     }
     return sendJson(res, 200, { user, profile, plan });
+  }
+
+  if (pathname === '/api/training/share' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+    const rawIds = Array.isArray(payload?.targetUserIds) ? payload.targetUserIds : [];
+    const targetIds = Array.from(new Set(rawIds.map((id) => String(id || '').trim()).filter(isUuid))).slice(0, 20);
+    if (!targetIds.length) return sendJson(res, 400, { ok: false, error: 'Select at least one account.' });
+
+    const planRow = await getActivePlan(user.id);
+    if (!planRow?.plan) return sendJson(res, 400, { ok: false, error: 'No active plan to share.' });
+    let planSnapshot = planRow.plan;
+    if (typeof planSnapshot === 'string') {
+      try {
+        planSnapshot = JSON.parse(planSnapshot);
+      } catch {
+        planSnapshot = {};
+      }
+    }
+
+    const recipientRows = await db.query(
+      'SELECT id FROM app_users WHERE id = ANY($1::uuid[]) AND id <> $2;',
+      [targetIds, user.id]
+    );
+    const recipients = (recipientRows.rows || []).map((row) => row.id).filter(Boolean);
+    if (!recipients.length) return sendJson(res, 400, { ok: false, error: 'No valid recipients.' });
+
+    const snapshotJson = JSON.stringify(planSnapshot || {});
+    for (const targetId of recipients) {
+      await db.query(
+        `
+          INSERT INTO app_training_share_invites (from_user_id, to_user_id, plan_id, plan_snapshot, status)
+          VALUES ($1, $2, $3, $4::jsonb, 'pending')
+          ON CONFLICT ON CONSTRAINT uq_training_share_invites_pending
+          DO UPDATE SET updated_at = now(), plan_id = $3, plan_snapshot = $4::jsonb, status = 'pending', responded_at = null;
+        `,
+        [user.id, targetId, planRow.id, snapshotJson]
+      );
+      clearInviteCache(targetId);
+    }
+
+    return sendJson(res, 200, {
+      ok: true,
+      invited: recipients.length,
+      skipped: targetIds.length - recipients.length
+    });
+  }
+
+  if (pathname === '/api/training/share/requests' && req.method === 'GET') {
+    const cached = getInviteCache(user.id);
+    if (cached) return sendJson(res, 200, cached);
+    const result = await db.query(
+      `
+        SELECT i.id,
+               i.created_at,
+               i.plan_snapshot,
+               u.id AS from_user_id,
+               u.username,
+               u.display_name,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_training_share_invites i
+        JOIN app_users u ON u.id = i.from_user_id
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE i.to_user_id = $1
+          AND i.status = 'pending'
+        ORDER BY i.created_at DESC
+        LIMIT 200;
+      `,
+      [user.id]
+    );
+
+    const invites = (result.rows || []).map((row) => {
+      let snapshot = row.plan_snapshot || {};
+      if (typeof snapshot === 'string') {
+        try {
+          snapshot = JSON.parse(snapshot);
+        } catch {
+          snapshot = {};
+        }
+      }
+      const disciplineRaw = snapshot?.meta?.discipline || snapshot?.discipline || '';
+      const daysPerWeek = Number(snapshot?.meta?.daysPerWeek || snapshot?.daysPerWeek || 0) || null;
+      return {
+        id: row.id,
+        createdAt: row.created_at,
+        fromUserId: row.from_user_id,
+        username: row.username || null,
+        displayName: row.display_name || row.username || 'Account',
+        photoDataUrl: row.photo || null,
+        discipline: String(disciplineRaw || '').toLowerCase() || null,
+        daysPerWeek
+      };
+    });
+
+    const payload = { ok: true, invites };
+    setInviteCache(user.id, payload);
+    return sendJson(res, 200, payload);
+  }
+
+  if (pathname === '/api/training/share/respond' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+    const inviteId = String(payload?.inviteId || '').trim();
+    const action = String(payload?.action || '').trim().toLowerCase();
+    if (!isUuid(inviteId)) return sendJson(res, 400, { ok: false, error: 'Invalid invite.' });
+    if (!['accept', 'reject'].includes(action)) return sendJson(res, 400, { ok: false, error: 'Invalid action.' });
+
+    const inviteResult = await db.query(
+      `
+        SELECT id, plan_snapshot
+        FROM app_training_share_invites
+        WHERE id = $1 AND to_user_id = $2 AND status = 'pending'
+        LIMIT 1;
+      `,
+      [inviteId, user.id]
+    );
+    const invite = inviteResult.rows?.[0];
+    if (!invite) return sendJson(res, 404, { ok: false, error: 'Invite not found.' });
+
+    if (action === 'reject') {
+      await db.query(
+        'UPDATE app_training_share_invites SET status = $1, responded_at = now(), updated_at = now() WHERE id = $2;',
+        ['rejected', inviteId]
+      );
+      clearInviteCache(user.id);
+      return sendJson(res, 200, { ok: true, action: 'rejected' });
+    }
+
+    let snapshot = invite.plan_snapshot || {};
+    if (typeof snapshot === 'string') {
+      try {
+        snapshot = JSON.parse(snapshot);
+      } catch {
+        snapshot = {};
+      }
+    }
+    const discipline = normalizeDiscipline(snapshot?.meta?.discipline || snapshot?.discipline || '');
+    const daysPerWeek = clampInt(snapshot?.meta?.daysPerWeek || snapshot?.daysPerWeek, 2, 6, null);
+    if (!discipline || !daysPerWeek) {
+      return sendJson(res, 400, { ok: false, error: 'Shared plan is missing key details.' });
+    }
+
+    await db.query('UPDATE app_training_plans SET active = false, updated_at = now() WHERE user_id = $1 AND active = true;', [user.id]);
+    const inserted = await db.query(
+      `
+        INSERT INTO app_training_plans (user_id, active, version, discipline, days_per_week, plan)
+        VALUES ($1, true, 1, $2, $3, $4::jsonb)
+        RETURNING id;
+      `,
+      [user.id, discipline, daysPerWeek, JSON.stringify(snapshot)]
+    );
+
+    await db.query(
+      'UPDATE app_training_share_invites SET status = $1, responded_at = now(), updated_at = now() WHERE id = $2;',
+      ['accepted', inviteId]
+    );
+    clearInviteCache(user.id);
+
+    return sendJson(res, 200, { ok: true, action: 'accepted', planId: inserted.rows?.[0]?.id || null });
   }
 
   if (pathname === '/api/training/reset' && req.method === 'POST') {
