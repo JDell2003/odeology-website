@@ -11559,8 +11559,16 @@ function initAuthUi() {
 
     const redirectToTrainingAfterAuth = () => {
         try {
-            if (document.body?.classList?.contains('training-page')) return;
-            window.location.href = 'training.html';
+            const skipRedirect = sessionStorage.getItem('ode_auth_no_redirect') === '1';
+            if (skipRedirect) {
+                sessionStorage.removeItem('ode_auth_no_redirect');
+                return;
+            }
+            const returnTo = sessionStorage.getItem('ode_auth_return_to');
+            if (returnTo) {
+                sessionStorage.removeItem('ode_auth_return_to');
+                window.location.href = returnTo;
+            }
         } catch {
             // ignore
         }

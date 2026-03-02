@@ -29,96 +29,242 @@
       .replaceAll("'", '&#39;');
   }
 
-  function renderTrainingGate({ user, intakeDone }) {
-    const name = user?.displayName || user?.username || 'athlete';
-    const signedIn = Boolean(user);
+  const INTAKE_DAY_MAP = new Map([
+    [0, 'Su'], [1, 'Mo'], [2, 'Tu'], [3, 'We'], [4, 'Th'], [5, 'Fr'], [6, 'Sa']
+  ]);
+  const INTAKE_AREA_MAP = {
+    shoulder: 'Shoulder',
+    elbow: 'Elbow',
+    wrist: 'Wrist',
+    back: 'Back',
+    hip: 'Hip',
+    knee: 'Knee'
+  };
+  const INTAKE_FOCUS_MAP = {
+    chest: 'Chest',
+    back: 'Back',
+    shoulders: 'Shoulders',
+    arms: 'Arms',
+    legs: 'Legs',
+    glutes: 'Glutes',
+    abs: 'Core',
+    core: 'Core'
+  };
 
-    if (!signedIn) {
-      root.innerHTML = `
-        <section class="plan-card">
-          <div class="card-head"><h4>Training</h4></div>
-          <div class="overview-card-summary">
-            <div class="overview-summary-list">
-              <div class="overview-summary-item">
-                <div class="overview-summary-left">
-                  <div class="overview-summary-title">Create your account</div>
-                  <div class="overview-summary-sub ns-muted">Make an account and you will get your training plan here.</div>
-                </div>
-              </div>
-            </div>
-            <a class="btn btn-primary" href="training-coming-soon.html">Go to Training Intake</a>
-          </div>
-        </section>
-      `.trim();
-      return;
-    }
+  let autoOnboardInFlight = false;
 
-    if (!intakeDone) {
-      root.innerHTML = `
-        <section class="plan-card">
-          <div class="card-head"><h4>Training</h4></div>
-          <div class="overview-card-summary">
-            <div class="overview-summary-list">
-              <div class="overview-summary-item">
-                <div class="overview-summary-left">
-                  <div class="overview-summary-title">Training not made yet</div>
-                  <div class="overview-summary-sub ns-muted">Answer Training Coming Soon questions first, then your workouts will appear here.</div>
-                </div>
-              </div>
-            </div>
-            <a class="btn btn-primary" href="training-coming-soon.html">Answer Training Questions</a>
-          </div>
-        </section>
-      `.trim();
-      return;
-    }
+  const lower = (value) => String(value || '').trim().toLowerCase();
+  const uniq = (list) => Array.from(new Set(list));
 
-    root.innerHTML = `
-      <section class="plan-card">
-        <div class="card-head"><h4>Training</h4></div>
-        <div class="overview-card-summary">
-          <div class="overview-summary-list">
-            <div class="overview-summary-item">
-              <div class="overview-summary-left">
-                <div class="overview-summary-title">Training intake complete</div>
-                <div class="overview-summary-sub ns-muted">Welcome ${escapeHtml(name)}. Workout generation will populate here once the engine is wired.</div>
-              </div>
-            </div>
-          </div>
-          <a class="btn btn-ghost" href="training-coming-soon.html">Review Intake Answers</a>
-        </div>
-      </section>
-    `.trim();
+  function mapExperience(raw) {
+    const v = lower(raw);
+    if (v === '<6m' || v === '< 6m' || v === '<6 months') return '<6m';
+    if (v === '6-24m' || v === '6–24m' || v === '6-24 months') return '6–24m';
+    if (v === '2-5y' || v === '2–5y' || v === '2-5 years') return '2–5y';
+    if (v === '5y+' || v === '5+ years' || v === '5+ yrs') return '5y+';
+    return '6–24m';
   }
 
-  async function initTrainingPlaceholder() {
-    let user = null;
-    let intakeDone = isIntakeComplete(readLocalIntake());
+  function mapTrainingFeel(raw, focusLabel) {
+    const v = lower(raw);
+    if (v.includes('power')) return 'Powerbuilding';
+    if (v.includes('aesthetic') || v.includes('bodybuilding')) return 'Aesthetic bodybuilding';
+    return focusLabel === 'Strength' ? 'Powerbuilding' : 'Aesthetic bodybuilding';
+  }
 
-    try {
-      const meResp = await fetch('/api/auth/me', { credentials: 'include' });
-      const meData = await meResp.json().catch(() => ({}));
-      user = meData?.user || null;
-    } catch {
-      user = null;
-    }
+  function mapTrainingStyle(raw) {
+    const v = lower(raw);
+    if (v.includes('machine')) return 'Mostly machines/cables';
+    if (v.includes('free')) return 'Mostly free weights';
+    if (v.includes('mix')) return 'Balanced mix';
+    return 'Balanced mix';
+  }
 
-    if (user && !intakeDone) {
-      try {
-        const pResp = await fetch('/api/profile', { credentials: 'include' });
-        const pData = await pResp.json().catch(() => ({}));
-        const remoteIntake = pData?.profile?.profile?.training_intake || null;
-        intakeDone = isIntakeComplete(remoteIntake);
-      } catch {
-        // ignore
+  function mapOutputStyle(raw) {
+    const v = lower(raw);
+    if (v.includes('rpe') || v.includes('rir')) return 'RPE/RIR cues';
+    if (v.includes('sets')) return 'Simple sets x reps';
+    return 'RPE/RIR cues';
+  }
+
+  function mapLocation(raw) {
+    const v = lower(raw);
+    if (v.includes('home')) return 'Home';
+    if (v.includes('commercial')) return 'Commercial gym';
+    return 'Commercial gym';
+  }
+
+  function mapActivityLevel(raw) {
+    const v = lower(raw);
+    if (v.includes('sedentary')) return 'Sedentary';
+    if (v.includes('very')) return 'Very active';
+    if (v.includes('active')) return 'Active';
+    return 'Active';
+  }
+
+  function mapStress(raw) {
+    const v = lower(raw);
+    if (v === 'low') return 'Low';
+    if (v === 'high') return 'High';
+    return 'Medium';
+  }
+
+  function mapPreferredDays(raw) {
+    const list = Array.isArray(raw) ? raw : [];
+    const out = [];
+    list.forEach((entry) => {
+      if (Number.isFinite(Number(entry))) {
+        const code = INTAKE_DAY_MAP.get(Number(entry));
+        if (code) out.push(code);
+        return;
       }
-    }
-
-    renderTrainingGate({ user, intakeDone });
+      const text = lower(entry);
+      if (!text) return;
+      if (text.startsWith('su')) out.push('Su');
+      else if (text.startsWith('mo')) out.push('Mo');
+      else if (text.startsWith('tu')) out.push('Tu');
+      else if (text.startsWith('we')) out.push('We');
+      else if (text.startsWith('th')) out.push('Th');
+      else if (text.startsWith('fr')) out.push('Fr');
+      else if (text.startsWith('sa')) out.push('Sa');
+    });
+    return uniq(out);
   }
 
-  initTrainingPlaceholder();
-  return;
+  function mapPriorityGroups(raw) {
+    const list = Array.isArray(raw) ? raw : [];
+    const out = [];
+    list.forEach((entry) => {
+      const key = lower(entry);
+      const mapped = INTAKE_FOCUS_MAP[key];
+      if (mapped) out.push(mapped);
+    });
+    return uniq(out);
+  }
+
+  function mapPainAreas(raw) {
+    const list = Array.isArray(raw) ? raw : [];
+    const out = [];
+    list.forEach((entry) => {
+      const mapped = INTAKE_AREA_MAP[lower(entry)];
+      if (mapped) out.push(mapped);
+    });
+    return uniq(out);
+  }
+
+  function mapRecency(raw) {
+    const v = lower(raw);
+    if (!v) return '';
+    if (v.includes('week') || v.includes('<')) return 'Recent';
+    if (v.includes('12') || v.includes('year')) return 'Old';
+    return '';
+  }
+
+  function mapPainProfiles(raw) {
+    if (!raw || typeof raw !== 'object') return {};
+    const out = {};
+    Object.entries(raw).forEach(([key, value]) => {
+      const area = INTAKE_AREA_MAP[lower(key)];
+      if (!area) return;
+      const severity = Number(value?.severity);
+      if (!Number.isFinite(severity)) return;
+      out[area] = {
+        severity,
+        recency: mapRecency(value?.recency)
+      };
+    });
+    return out;
+  }
+
+  function mapIntakeToOblueprintPayload(intake) {
+    if (!intake || typeof intake !== 'object') return null;
+
+    const goalRaw = lower(intake.goal);
+    const primaryGoal = goalRaw === 'cut fat' ? 'Cut fat' : goalRaw === 'recomp' ? 'Recomp' : 'Build size';
+
+    const focusRaw = lower(intake.priority);
+    const focus = focusRaw === 'strength' ? 'Strength' : focusRaw === 'aesthetic' ? 'Aesthetic' : 'Size';
+
+    const timeline = ['4 weeks', '8 weeks', '12+ weeks'].includes(String(intake.timeline || ''))
+      ? String(intake.timeline)
+      : '8 weeks';
+
+    const experience = mapExperience(intake.experience);
+    const location = mapLocation(intake.location);
+    const trainingStyle = mapTrainingStyle(intake.loadStyle);
+    const outputStyle = mapOutputStyle(intake.outputStyle);
+    const closeToFailure = lower(intake.trainToFailure) === 'yes' ? 'Yes' : 'No';
+    const trainingFeel = mapTrainingFeel(intake.modality, focus);
+
+    const daysPerWeek = Math.max(2, Math.min(6, Math.round(Number(intake.daysPerWeek) || 4)));
+    const sessionLengthMin = ['30', '45', '60', '75+'].includes(String(intake.sessionLength))
+      ? String(intake.sessionLength)
+      : '60';
+
+    const priorityGroups = mapPriorityGroups(intake.focus);
+    const movementsToAvoid = Array.isArray(intake.avoidMoves) ? intake.avoidMoves.map((v) => String(v)) : [];
+    const preferredDays = mapPreferredDays(intake.preferredDays);
+    const equipmentAccess = Array.isArray(intake.equipment) ? intake.equipment.map((v) => String(v)) : [];
+    const painAreas = mapPainAreas(intake.injuries);
+    const painProfilesByArea = mapPainProfiles(intake.injuryDetails);
+
+    return {
+      trainingFeel,
+      primaryGoal,
+      timeline,
+      focus,
+      experience,
+      location,
+      trainingStyle,
+      outputStyle,
+      closeToFailure,
+      daysPerWeek,
+      sessionLengthMin,
+      priorityGroups,
+      movementsToAvoid,
+      preferredDays,
+      equipmentAccess,
+      painAreas,
+      painProfilesByArea,
+      sleepHours: Math.max(4, Math.min(10, Number(intake.sleepHours) || 7)),
+      activityLevel: mapActivityLevel(intake.activityLevel),
+      stress: mapStress(intake.stress)
+    };
+  }
+
+  async function readRemoteIntake() {
+    if (!state?.auth?.user) return null;
+    try {
+      const resp = await api('/api/profile', { method: 'GET' });
+      if (!resp.ok) return null;
+      return resp.json?.profile?.profile?.training_intake || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadSavedIntake() {
+    const local = readLocalIntake();
+    if (isIntakeComplete(local)) return local;
+    const remote = await readRemoteIntake();
+    if (isIntakeComplete(remote)) return remote;
+    return local || remote || null;
+  }
+
+  async function tryAutoOnboardFromIntake() {
+    if (autoOnboardInFlight) return false;
+    const intake = await loadSavedIntake();
+    if (!isIntakeComplete(intake)) return false;
+    const payload = mapIntakeToOblueprintPayload(intake);
+    if (!payload) return false;
+    autoOnboardInFlight = true;
+    try {
+      await submitOnboarding(payload);
+    } finally {
+      autoOnboardInFlight = false;
+    }
+    return true;
+  }
 
   function lockControlPanelOpen() {
     try {
@@ -1709,7 +1855,24 @@ function matchLocalExerciseFolder(name) {
     state.generating.raf = requestAnimationFrame(tick);
   }
 
+  const DISABLE_WIZARD_FLOW = true;
+  const redirectToIntake = () => {
+    try {
+      window.location.href = 'training-coming-soon.html';
+    } catch {
+      // ignore
+    }
+  };
+
   function setView(next) {
+    if (next === 'upsell') next = 'plan';
+    if (DISABLE_WIZARD_FLOW && next === 'wizard') {
+      Promise.resolve().then(async () => {
+        const autoOnboarded = await tryAutoOnboardFromIntake();
+        if (!autoOnboarded) redirectToIntake();
+      });
+      return;
+    }
     const prev = state.view;
     state.view = next;
     render();
@@ -1801,6 +1964,8 @@ function matchLocalExerciseFolder(name) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      const autoOnboarded = await tryAutoOnboardFromIntake();
+      if (autoOnboarded) return;
       setView('wizard');
       return;
     }
@@ -1811,6 +1976,8 @@ function matchLocalExerciseFolder(name) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      const autoOnboarded = await tryAutoOnboardFromIntake();
+      if (autoOnboarded) return;
       setView('wizard');
       return;
     }
@@ -1846,6 +2013,8 @@ function matchLocalExerciseFolder(name) {
       setView(dismissed ? 'plan' : 'upsell');
       return;
     }
+    const autoOnboarded = await tryAutoOnboardFromIntake();
+    if (autoOnboarded) return;
     setView('wizard');
     applyPendingResumeStepIfPossible();
   }
@@ -3696,6 +3865,9 @@ function matchLocalExerciseFolder(name) {
     function clearTrainingClientStorage() {
       try {
         localStorage.removeItem(UNAVAIL_DAYS_KEY);
+        localStorage.removeItem(TRAINING_INTAKE_KEY);
+        localStorage.removeItem(`${TRAINING_INTAKE_KEY}_history`);
+        localStorage.removeItem('ode_training_intake_history_v2');
         for (let i = localStorage.length - 1; i >= 0; i -= 1) {
           const key = localStorage.key(i);
           if (key && key.startsWith('ode_training_upsell_dismissed_')) localStorage.removeItem(key);
@@ -3725,7 +3897,7 @@ function matchLocalExerciseFolder(name) {
         state.logs = [];
         state.planError = null;
         state.wizard = makeDefaultWizard();
-        setView('wizard');
+        window.location.href = 'training-coming-soon.html';
         return;
       }
 
@@ -3738,7 +3910,6 @@ function matchLocalExerciseFolder(name) {
       });
       if (!ok) return;
 
-      setView('loading');
       const resp = await api('/api/training/reset', { method: 'POST', body: JSON.stringify({}) });
       if (!resp.ok) {
         state.planError = resp.json?.error || 'Could not reset training data.';
@@ -3752,7 +3923,7 @@ function matchLocalExerciseFolder(name) {
       state.logs = [];
       state.planError = null;
       state.wizard = makeDefaultWizard();
-      await loadAuthAndState();
+      window.location.href = 'training-coming-soon.html';
     }
 
     const logsMap = buildLogsMap(state.logs);
