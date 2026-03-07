@@ -11699,6 +11699,12 @@ function initAuthUi() {
         const delta = total - lastKnownRequestTotal;
         lastKnownRequestTotal = total;
         if (delta <= 0) return;
+        const requestsTabActive = Boolean(friendsModal?.querySelector?.('.friends-tab.active[data-friends-tab="requests"]'));
+        const requestsPanelOpen = Boolean(friendsModal && !friendsModal.classList.contains('hidden') && requestsTabActive);
+        if (requestsPanelOpen) {
+            try { loadRequests(); } catch { /* ignore */ }
+            return;
+        }
         if (document.hidden) return;
         showIncomingRequestToast(delta, total);
     };
@@ -11709,7 +11715,7 @@ function initAuthUi() {
         pollIncomingRequestNotifications({ bootstrap: true });
         requestsNotifyTimer = window.setInterval(() => {
             pollIncomingRequestNotifications();
-        }, 30000);
+        }, 10000);
     };
 
     const stopIncomingRequestPolling = () => {

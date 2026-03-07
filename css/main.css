@@ -17657,6 +17657,26 @@ html[data-theme="light"] .ode-tour-btn.primary {
     background: color-mix(in srgb, var(--training-accent-weak) 45%, var(--training-surface-2));
 }
 
+.share-workout-item.requesting,
+.share-workout-item.requested {
+    cursor: default;
+}
+
+.share-workout-item.requesting {
+    border-color: color-mix(in srgb, #f39c12 45%, var(--training-border));
+    background: color-mix(in srgb, #f39c12 12%, var(--training-surface-2));
+}
+
+.share-workout-item.requested {
+    border-color: color-mix(in srgb, #2d9f58 45%, var(--training-border));
+    background: color-mix(in srgb, #2d9f58 12%, var(--training-surface-2));
+}
+
+.share-workout-item.requesting:hover,
+.share-workout-item.requested:hover {
+    transform: none;
+}
+
 .share-workout-avatar {
     width: 36px;
     height: 36px;
@@ -17696,6 +17716,14 @@ html[data-theme="light"] .ode-tour-btn.primary {
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--training-accent);
+}
+
+.share-workout-item.requesting .share-workout-add {
+    color: #b36d00;
+}
+
+.share-workout-item.requested .share-workout-add {
+    color: #1f7a42;
 }
 
 .share-workout-actions {

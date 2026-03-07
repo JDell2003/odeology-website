@@ -680,9 +680,96 @@
     loaded: false,
     accounts: [],
     status: '',
-    selected: new Set(),
+    requesting: new Set(),
+    requested: new Set(),
+    confirmToastTimer: 0,
     query: ''
   };
+
+  const SHARE_REQUESTED_STORAGE_PREFIX = 'ode_training_share_requested_v1';
+  const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
+
+  function getShareRequestedStorageKey(userId) {
+    const uid = String(userId || state?.auth?.user?.id || '').trim();
+    if (!uid) return '';
+    return `${SHARE_REQUESTED_STORAGE_PREFIX}:${uid}`;
+  }
+
+  function readShareRequestedIds(userId) {
+    const key = getShareRequestedStorageKey(userId);
+    if (!key) return [];
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      const ids = Array.isArray(parsed)
+        ? parsed
+        : (parsed && typeof parsed === 'object' && Array.isArray(parsed.ids) ? parsed.ids : []);
+      return ids.map((id) => String(id || '').trim()).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  function writeShareRequestedIds(ids, userId) {
+    const key = getShareRequestedStorageKey(userId);
+    if (!key) return;
+    try {
+      const clean = Array.from(new Set((Array.isArray(ids) ? ids : []).map((id) => String(id || '').trim()).filter(Boolean)));
+      localStorage.setItem(key, JSON.stringify({ ids: clean, updatedAt: new Date().toISOString() }));
+    } catch {
+      // ignore
+    }
+  }
+
+  function hydrateShareRequestedIds(userId) {
+    shareUi.requested.clear();
+    const ids = readShareRequestedIds(userId);
+    ids.forEach((id) => shareUi.requested.add(id));
+  }
+
+  function persistShareRequestedIds() {
+    writeShareRequestedIds(Array.from(shareUi.requested), state?.auth?.user?.id || null);
+  }
+
+  function clearShareConfirmToastTimer() {
+    if (!shareUi.confirmToastTimer) return;
+    window.clearTimeout(shareUi.confirmToastTimer);
+    shareUi.confirmToastTimer = 0;
+  }
+
+  function showShareRequestSentToast(sentCount = 1) {
+    const existing = document.getElementById('workout-share-request-toast');
+    if (existing) existing.remove();
+    const count = Math.max(1, Number(sentCount || 1));
+    const plural = count === 1 ? '' : 's';
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-share-request-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, 'OK'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, `Request sent${plural}`),
+        el('div', { class: 'workout-saved-sub' }, count === 1
+          ? 'Request went to their account inbox.'
+          : 'Requests went to friend account inboxes.')
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1700);
+    });
+  }
+
+  function scheduleShareRequestSentToast(sentCount = 1) {
+    clearShareConfirmToastTimer();
+    const count = Math.max(1, Number(sentCount || 1));
+    shareUi.confirmToastTimer = window.setTimeout(() => {
+      shareUi.confirmToastTimer = 0;
+      showShareRequestSentToast(count);
+    }, SHARE_CONFIRM_TOAST_DELAY_MS);
+  }
 
   const workoutTimer = {
     running: false,
@@ -2833,6 +2920,42 @@ function toFreeExerciseDbRemotePath(src) {
     shareUi.loading = false;
     render();
   }
+
+  async function sendShareRequestToAccount(account) {
+    const key = String(account?.id || '').trim();
+    if (!key) return;
+    if (shareUi.requesting.has(key) || shareUi.requested.has(key)) return;
+    const displayName = String(account?.displayName || account?.username || 'friend').trim();
+
+    shareUi.requesting.add(key);
+    shareUi.status = `Requesting ${displayName}...`;
+    render();
+
+    const resp = await api('/api/training/share', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserIds: [key] })
+    });
+
+    if (!resp.ok || !resp.json?.ok) {
+      shareUi.requesting.delete(key);
+      shareUi.status = resp.json?.error || 'Could not send request.';
+      render();
+      return;
+    }
+
+    const sent = Math.max(0, Number(resp.json?.invited || 0));
+    shareUi.requesting.delete(key);
+    if (sent > 0) {
+      shareUi.requested.add(key);
+      persistShareRequestedIds();
+      scheduleShareRequestSentToast(sent);
+      shareUi.status = `Requested ${displayName}.`;
+    } else {
+      shareUi.status = 'No valid recipient.';
+    }
+    render();
+  }
+
 function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
@@ -3088,6 +3211,13 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      shareUi.open = false;
+      shareUi.loaded = false;
+      shareUi.accounts = [];
+      shareUi.status = '';
+      shareUi.requesting.clear();
+      shareUi.requested.clear();
+      clearShareConfirmToastTimer();
       const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
       setView('wizard');
@@ -3100,12 +3230,26 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      shareUi.open = false;
+      shareUi.loaded = false;
+      shareUi.accounts = [];
+      shareUi.status = '';
+      shareUi.requesting.clear();
+      shareUi.requested.clear();
+      clearShareConfirmToastTimer();
       const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
       setView('wizard');
       return;
     }
     state.auth.user = meUser;
+    shareUi.open = false;
+    shareUi.loaded = false;
+    shareUi.accounts = [];
+    shareUi.status = '';
+    shareUi.requesting.clear();
+    hydrateShareRequestedIds(meUser.id);
+    clearShareConfirmToastTimer();
 
     let s;
     try {
@@ -3122,6 +3266,13 @@ function toggleSharePopover(force) {
         state.profile = null;
         state.planRow = null;
         state.logs = [];
+        shareUi.open = false;
+        shareUi.loaded = false;
+        shareUi.accounts = [];
+        shareUi.status = '';
+        shareUi.requesting.clear();
+        shareUi.requested.clear();
+        clearShareConfirmToastTimer();
         setView('wizard');
         return;
       }
@@ -5528,17 +5679,24 @@ function toggleSharePopover(force) {
               .map((part) => part.charAt(0))
               .join('')
               .toUpperCase();
-            const isSelected = shareUi.selected.has(String(acct?.id));
+            const key = String(acct?.id || '').trim();
+            const isRequesting = Boolean(key) && shareUi.requesting.has(key);
+            const isRequested = Boolean(key) && shareUi.requested.has(key);
+            const isLocked = isRequesting || isRequested;
+            const addLabel = isRequested
+              ? 'Requested'
+              : isRequesting
+                ? 'Requesting...'
+                : 'Add';
             return el('button', {
               type: 'button',
-              class: `share-workout-item${isSelected ? ' selected' : ''}`,
-              onclick: (e) => {
+              class: `share-workout-item${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}`,
+              'aria-disabled': isLocked ? 'true' : 'false',
+              onclick: async (e) => {
                 e.preventDefault();
-                const key = String(acct?.id || '');
                 if (!key) return;
-                if (shareUi.selected.has(key)) shareUi.selected.delete(key);
-                else shareUi.selected.add(key);
-                render();
+                if (isLocked) return;
+                await sendShareRequestToAccount(acct);
               }
             },
               el('div', { class: 'share-workout-avatar' },
@@ -5550,7 +5708,7 @@ function toggleSharePopover(force) {
                 el('div', { class: 'share-workout-name' }, name),
                 el('div', { class: 'share-workout-handle' }, username || ' ')
               ),
-              el('span', { class: 'share-workout-add' }, isSelected ? 'Added' : 'Add')
+              el('span', { class: 'share-workout-add' }, addLabel)
             );
           })
         : [el('div', { class: 'share-workout-empty' }, 'No friends found.')]);
@@ -5658,47 +5816,7 @@ function toggleSharePopover(force) {
           el('button', { type: 'button', class: 'btn btn-ghost share-workout-search-btn', onclick: () => loadShareAccounts(shareUi.query || '') }, 'Search')
         ),
         el('div', { class: 'share-workout-status' }, shareUi.status || ''),
-        el('div', { class: 'share-workout-list' }, shareListItems),
-        el('div', { class: 'share-workout-actions' },
-          el('button', {
-            type: 'button',
-            class: 'btn btn-ghost btn-mini',
-            onclick: () => {
-              shareUi.selected.clear();
-              shareUi.status = 'Selection cleared.';
-              render();
-            }
-          }, 'Clear'),
-          el('button', {
-            type: 'button',
-            class: 'btn btn-primary btn-mini',
-            onclick: async () => {
-              const ids = Array.from(shareUi.selected);
-              if (!ids.length) {
-                shareUi.status = 'Select at least 1 friend.';
-                render();
-                return;
-              }
-              shareUi.status = 'Sending invites...';
-              render();
-              const resp = await api('/api/training/share', {
-                method: 'POST',
-                body: JSON.stringify({ targetUserIds: ids })
-              });
-              if (!resp.ok || !resp.json?.ok) {
-                shareUi.status = resp.json?.error || 'Could not share workout.';
-                render();
-                return;
-              }
-              const sent = Number(resp.json?.invited || 0);
-              shareUi.selected.clear();
-              shareUi.status = sent
-                ? `Invite sent to ${sent} friend${sent === 1 ? '' : 's'}.`
-                : 'No valid recipients.';
-              render();
-            }
-          }, 'Share')
-        )
+        el('div', { class: 'share-workout-list' }, shareListItems)
       )
     );
     const header = el('div', { class: 'training-card plan-topbar' },
