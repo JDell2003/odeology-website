@@ -1510,6 +1510,17 @@ function rewriteLegacyLocalMediaPath(src) {
   return out;
 }
 
+function toFreeExerciseDbRemotePath(src) {
+  const raw = String(src || '').trim().replace(/\\/g, '/');
+  if (!raw) return '';
+  const noOrigin = raw.replace(/^https?:\/\/[^/]+/i, '');
+  const idx = noOrigin.toLowerCase().indexOf('/free-exercise-db/');
+  if (idx < 0) return '';
+  const rel = noOrigin.slice(idx + '/free-exercise-db/'.length).replace(/^\/+/, '');
+  if (!rel) return '';
+  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/${rel}`;
+}
+
   function persistExerciseMediaCacheSoon() {
     try { window.clearTimeout(exerciseMediaPersistTimer); } catch { /* ignore */ }
     exerciseMediaPersistTimer = window.setTimeout(() => {
@@ -1768,13 +1779,34 @@ function rewriteLegacyLocalMediaPath(src) {
       });
     }
     if (media?.type === 'image' && media?.src) {
-      return el('img', { class: 'exercise-media-img', src: media.src, alt: ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
+      const img = el('img', { class: 'exercise-media-img', src: media.src, alt: ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
+      const remote = toFreeExerciseDbRemotePath(media.src);
+      if (remote && remote !== media.src) {
+        img.addEventListener('error', () => {
+          if (img.dataset.remoteTried === '1') return;
+          img.dataset.remoteTried = '1';
+          img.src = remote;
+        }, { once: true });
+      }
+      return img;
     }
     if (media?.type === 'local-pair' && media?.src0 && media?.src1) {
       const wrap = el('div', { class: 'exercise-media-pair' });
       const imgA = el('img', { class: 'exercise-media-img exercise-media-img-a', src: media.src0, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
       const imgB = el('img', { class: 'exercise-media-img exercise-media-img-b', src: media.src1, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
+      const remote0 = toFreeExerciseDbRemotePath(media.src0);
+      const remote1 = toFreeExerciseDbRemotePath(media.src1);
+      let remoteAttempted = false;
+      const tryRemotePair = () => {
+        if (remoteAttempted) return false;
+        if (!remote0 || !remote1) return false;
+        remoteAttempted = true;
+        imgA.src = remote0;
+        imgB.src = remote1;
+        return true;
+      };
       const onError = () => {
+        if (tryRemotePair()) return;
         try { wrap.replaceWith(muscleIconSvg(ex?.bodyPart || ex?.muscle_group || ex?.muscleGroup || 'exercise')); } catch {}
       };
       imgA.addEventListener('error', onError, { once: true });
@@ -5836,7 +5868,8 @@ function toggleSharePopover(force) {
           onclick: () => {
             if (!media) return;
             const type = media.type === 'video' ? 'video' : 'image';
-            const src = media.type === 'local-pair' ? media.src0 : media.src;
+            const srcRaw = media.type === 'local-pair' ? media.src0 : media.src;
+            const src = toFreeExerciseDbRemotePath(srcRaw) || srcRaw;
             if (!src) return;
             openExerciseMediaModal({ type, src: String(src), alt: String(ex?.name || 'Exercise') });
           }
