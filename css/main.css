@@ -18786,6 +18786,26 @@ html[data-theme="light"] .ode-tour-btn.primary {
     transform: translateY(0);
 }
 
+.site-request-toast {
+    pointer-events: auto;
+}
+
+.site-request-toast-link {
+    border: 1px solid rgba(231, 163, 77, 0.55);
+    border-radius: 10px;
+    background: rgba(231, 163, 77, 0.16);
+    color: #f8e8d9;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.site-request-toast-link:hover {
+    background: rgba(231, 163, 77, 0.3);
+}
+
 .workout-saved-icon {
     width: 32px;
     height: 32px;

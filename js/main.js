@@ -11585,6 +11585,10 @@ function initAuthUi() {
     let loadThreads = () => {};
     let loadRequests = () => {};
     let loadWarnings = () => {};
+    let requestsNotifyTimer = 0;
+    let requestCountBaselineReady = false;
+    let lastKnownRequestTotal = 0;
+    let requestToastHideTimer = 0;
     const FRIENDS_CACHE_KEY = 'ode_friends_cache_v1';
     const FRIENDS_CACHE_TTL = 1000 * 60 * 10;
     const readFriendsCache = () => {
@@ -11613,6 +11617,112 @@ function initAuthUi() {
         } catch {
             // ignore
         }
+    };
+
+    const clearRequestToast = () => {
+        const existing = document.getElementById('site-request-toast');
+        if (!existing) return;
+        existing.classList.remove('show');
+        window.setTimeout(() => {
+            try { existing.remove(); } catch { /* ignore */ }
+        }, 180);
+    };
+
+    const openRequestsCenter = () => {
+        clearRequestToast();
+        openFriendsModal(friendsBtn || mobileFriendsBtn);
+        const reqTab = friendsModal?.querySelector('.friends-tab[data-friends-tab="requests"]');
+        reqTab?.click();
+    };
+
+    const showIncomingRequestToast = (delta = 1, total = 0) => {
+        const existing = document.getElementById('site-request-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'workout-saved-toast site-request-toast';
+        toast.id = 'site-request-toast';
+        toast.setAttribute('role', 'status');
+        const plural = delta === 1 ? '' : 's';
+        const totalText = total > 0 ? `${total} total` : '';
+        toast.innerHTML = `
+            <div class="workout-saved-icon" aria-hidden="true">!</div>
+            <div class="workout-saved-text">
+                <div class="workout-saved-title">New request${plural}</div>
+                <div class="workout-saved-sub">${totalText || 'You have pending requests.'}</div>
+            </div>
+            <button type="button" class="site-request-toast-link">Click to view</button>
+        `.trim();
+        const openBtn = toast.querySelector('.site-request-toast-link');
+        openBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openRequestsCenter();
+        });
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        if (requestToastHideTimer) window.clearTimeout(requestToastHideTimer);
+        requestToastHideTimer = window.setTimeout(() => {
+            clearRequestToast();
+            requestToastHideTimer = 0;
+        }, 4300);
+    };
+
+    const fetchIncomingRequestCounts = async () => {
+        if (!currentUser) return { friend: 0, workout: 0, total: 0, ok: false };
+        try {
+            const [friendResp, workoutResp] = await Promise.all([
+                fetch('/api/friends/requests', { credentials: 'include' }),
+                fetch('/api/training/share/requests', { credentials: 'include' })
+            ]);
+            if (friendResp.status === 401 || workoutResp.status === 401) {
+                return { friend: 0, workout: 0, total: 0, ok: false };
+            }
+            const friendJson = await friendResp.json().catch(() => ({}));
+            const workoutJson = await workoutResp.json().catch(() => ({}));
+            const friend = friendResp.ok && Array.isArray(friendJson?.requests) ? friendJson.requests.length : 0;
+            const workout = workoutResp.ok && Array.isArray(workoutJson?.invites) ? workoutJson.invites.length : 0;
+            return { friend, workout, total: friend + workout, ok: true };
+        } catch {
+            return { friend: 0, workout: 0, total: 0, ok: false };
+        }
+    };
+
+    const pollIncomingRequestNotifications = async ({ bootstrap = false } = {}) => {
+        if (!currentUser) return;
+        const counts = await fetchIncomingRequestCounts();
+        if (!counts.ok) return;
+        const total = Math.max(0, Number(counts.total || 0));
+        if (!requestCountBaselineReady || bootstrap) {
+            requestCountBaselineReady = true;
+            lastKnownRequestTotal = total;
+            return;
+        }
+        const delta = total - lastKnownRequestTotal;
+        lastKnownRequestTotal = total;
+        if (delta <= 0) return;
+        if (document.hidden) return;
+        showIncomingRequestToast(delta, total);
+    };
+
+    const startIncomingRequestPolling = () => {
+        if (requestsNotifyTimer) return;
+        requestCountBaselineReady = false;
+        pollIncomingRequestNotifications({ bootstrap: true });
+        requestsNotifyTimer = window.setInterval(() => {
+            pollIncomingRequestNotifications();
+        }, 30000);
+    };
+
+    const stopIncomingRequestPolling = () => {
+        if (!requestsNotifyTimer) return;
+        window.clearInterval(requestsNotifyTimer);
+        requestsNotifyTimer = 0;
+        requestCountBaselineReady = false;
+        lastKnownRequestTotal = 0;
+        if (requestToastHideTimer) {
+            window.clearTimeout(requestToastHideTimer);
+            requestToastHideTimer = 0;
+        }
+        clearRequestToast();
     };
 
 
@@ -11743,6 +11853,7 @@ function initAuthUi() {
         syncControlPanelLabel(null);
         syncOwnerWorkoutDbLink(null);
         setImpersonationUi(null, null);
+        stopIncomingRequestPolling();
         emitAuthChanged(null);
     };
 
@@ -11789,6 +11900,7 @@ function initAuthUi() {
         });
 
         emitAuthChanged(user);
+        startIncomingRequestPolling();
         queueFriendsPrefetch();
     };
 
@@ -12725,6 +12837,16 @@ function initAuthUi() {
     userBtn.addEventListener('click', (e) => {
         e.preventDefault();
         toggleMenu();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!currentUser) return;
+        if (!document.hidden) pollIncomingRequestNotifications();
+    });
+
+    window.addEventListener('focus', () => {
+        if (!currentUser) return;
+        pollIncomingRequestNotifications();
     });
 
     const controlBtn = document.getElementById('control-signin');
