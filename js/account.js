@@ -102,6 +102,10 @@
       } else {
         avatar.innerHTML = `<div class="account-fallback">${initialsFromName(name)}</div>`;
       }
+      const dot = document.createElement('span');
+      dot.className = `presence-dot ${warn?.isOnline === true ? 'online' : 'offline'}`;
+      dot.setAttribute('aria-hidden', 'true');
+      avatar.appendChild(dot);
 
       const meta = document.createElement('div');
       meta.className = 'account-warning-meta';
