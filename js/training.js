@@ -696,6 +696,8 @@
 
   let shareCloseBound = false;
   let workoutInputBound = false;
+  let workoutInputGateBound = false;
+  let workoutInputGateToastAt = 0;
 
   function formatWorkoutElapsed(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
@@ -757,6 +759,51 @@
       }
       recordWorkoutEvent('input', detail);
     }, true);
+  }
+
+  function showWorkoutInputGateToast() {
+    const now = Date.now();
+    if (now - workoutInputGateToastAt < 900) return;
+    workoutInputGateToastAt = now;
+    const existing = document.getElementById('workout-input-gate-toast');
+    if (existing) existing.remove();
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-input-gate-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '!'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, 'Start timer to input'),
+        el('div', { class: 'workout-saved-sub' }, 'Start workout to log weight, reps, and notes.')
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1100);
+    });
+  }
+
+  function bindWorkoutInputGate() {
+    if (workoutInputGateBound) return;
+    workoutInputGateBound = true;
+    const lockedSelector = '.exercise-set-row input[data-field]';
+    const handleGateAttempt = (e) => {
+      if (workoutTimer.running) return;
+      if (!document.body.classList.contains('training-page')) return;
+      const t = e.target;
+      const target = t && t.closest ? t.closest(lockedSelector) : null;
+      if (!target) return;
+      showWorkoutInputGateToast();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof target.blur === 'function') {
+        window.setTimeout(() => {
+          try { target.blur(); } catch { /* ignore */ }
+        }, 0);
+      }
+    };
+    document.addEventListener('pointerdown', handleGateAttempt, true);
+    document.addEventListener('focusin', handleGateAttempt, true);
   }
 
   function startWorkoutTimer() {
@@ -909,23 +956,35 @@
   }
 
   function syncWorkoutInputLock() {
-    const locked = !!workoutTimer.paused;
+    const locked = !workoutTimer.running;
     const rootNode = document.querySelector('.plan-shell');
     if (!rootNode) return;
-    const controls = rootNode.querySelectorAll(
-      '#workout-readiness, .exercise-set-row input[data-field], .exercise-set-add, .exercise-set-remove, .exercise-action-row button'
-    );
-    controls.forEach((node) => {
+    const setInputs = rootNode.querySelectorAll('.exercise-set-row input[data-field]');
+    setInputs.forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
-      const alreadyDisabled = node.hasAttribute('disabled');
       if (locked) {
-        if (!alreadyDisabled) node.dataset.pausedLock = '1';
+        if (node.dataset.timerLock !== '1') node.dataset.timerLock = '1';
+        node.setAttribute('readonly', 'true');
+        node.setAttribute('aria-disabled', 'true');
+        return;
+      }
+      if (node.dataset.timerLock === '1') {
+        node.removeAttribute('readonly');
+        node.removeAttribute('aria-disabled');
+        delete node.dataset.timerLock;
+      }
+    });
+    const setButtons = rootNode.querySelectorAll('.exercise-set-add, .exercise-set-remove');
+    setButtons.forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      if (locked) {
+        if (!node.hasAttribute('disabled')) node.dataset.timerDisabled = '1';
         node.setAttribute('disabled', 'true');
         return;
       }
-      if (node.dataset.pausedLock === '1') {
+      if (node.dataset.timerDisabled === '1') {
         node.removeAttribute('disabled');
-        delete node.dataset.pausedLock;
+        delete node.dataset.timerDisabled;
       }
     });
   }
@@ -6559,6 +6618,7 @@ function toggleSharePopover(force) {
   bindShareClose();
   wireAuthSync();
   bindWorkoutInputTracking();
+  bindWorkoutInputGate();
   const navLoading = (() => {
     try {
       const flag = sessionStorage.getItem('ode_training_nav_loading') === '1';
