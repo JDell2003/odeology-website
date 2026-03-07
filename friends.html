@@ -1,18 +1,341 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friends · odeology_</title>
+    <title>Messages · odeology_</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body.friends-page {
+            overflow: auto !important;
+        }
+
+        .user-msg-wrap {
+            max-width: 1200px;
+            margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+            padding: 0 16px 24px;
+            display: grid;
+            grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+            gap: 12px;
+            align-items: start;
+        }
+
+        .user-msg-head {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 2px;
+        }
+
+        .user-msg-head-right {
+            display: grid;
+            justify-items: end;
+            gap: 8px;
+        }
+
+        .user-msg-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 999px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .user-msg-switch-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #4f4a45;
+            background: transparent;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-msg-switch-btn.active {
+            color: #1f1b17;
+            background: rgba(197, 141, 79, 0.22);
+        }
+
+        .user-msg-request-badge {
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #fff;
+            background: #cc2f2b;
+            line-height: 1;
+        }
+
+        .user-msg-request-badge.hidden {
+            display: none;
+        }
+
+        .user-msg-card {
+            background: rgba(255, 255, 255, 0.93);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .user-msg-muted {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .user-msg-list {
+            margin-top: 10px;
+            display: grid;
+            gap: 8px;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 230px);
+            overflow: auto;
+            padding-right: 2px;
+        }
+
+        .user-msg-account {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        .user-msg-account:hover {
+            transform: translateY(-1px);
+            border-color: rgba(197, 141, 79, 0.45);
+        }
+
+        .user-msg-account.active {
+            border-color: rgba(197, 141, 79, 0.9);
+            box-shadow: inset 0 0 0 1px rgba(197, 141, 79, 0.3);
+            background: linear-gradient(160deg, rgba(197, 141, 79, 0.08), rgba(197, 141, 79, 0.02));
+        }
+
+        .user-msg-account-name {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .user-msg-account-meta {
+            margin-top: 4px;
+            color: #666;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .user-msg-thread {
+            display: grid;
+            gap: 10px;
+        }
+
+        .user-msg-thread-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .user-msg-thread-list {
+            min-height: 220px;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 380px);
+            overflow: auto;
+            display: grid;
+            gap: 8px;
+            padding-right: 2px;
+        }
+
+        .user-msg-bubble {
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: #fff;
+            padding: 8px 10px;
+            font-size: 13px;
+            max-width: 86%;
+        }
+
+        .user-msg-bubble.me {
+            margin-left: auto;
+            border-color: rgba(197, 141, 79, 0.45);
+            background: rgba(197, 141, 79, 0.08);
+        }
+
+        .user-msg-bubble-meta {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .user-msg-image {
+            margin-top: 8px;
+            max-width: 220px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            display: block;
+            background: #f3f3f3;
+        }
+
+        .user-msg-compose {
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .user-msg-status {
+            min-height: 18px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .user-msg-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 2px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .user-msg-spinner {
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            border: 2px solid rgba(197, 141, 79, 0.25);
+            border-top-color: rgba(197, 141, 79, 0.95);
+            animation: userMsgSpin 0.8s linear infinite;
+        }
+
+        @keyframes userMsgSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .user-msg-error {
+            color: #8f1d1d;
+        }
+
+        .user-msg-ok {
+            color: #1f6c2f;
+        }
+
+        .user-msg-hidden {
+            display: none !important;
+        }
+
+        .user-msg-requests {
+            grid-column: 1 / -1;
+            display: grid;
+            gap: 14px;
+        }
+
+        .user-msg-requests-title {
+            margin: 0;
+            font-size: 0.86rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #403a35;
+        }
+
+        .user-msg-request-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .user-msg-request-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            background: #fff;
+            padding: 10px;
+        }
+
+        .user-msg-request-meta {
+            display: grid;
+            gap: 3px;
+        }
+
+        .user-msg-request-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #201b16;
+        }
+
+        .user-msg-request-sub {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .user-msg-request-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-msg-request-btn {
+            border: 1px solid rgba(0, 0, 0, 0.14);
+            border-radius: 8px;
+            background: #fff;
+            color: #28231e;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .user-msg-request-btn.accept {
+            border-color: rgba(36, 135, 74, 0.5);
+            color: #1f6e40;
+            background: rgba(36, 135, 74, 0.08);
+        }
+
+        .user-msg-request-btn.reject {
+            border-color: rgba(183, 54, 50, 0.45);
+            color: #9a2a26;
+            background: rgba(183, 54, 50, 0.08);
+        }
+
+        @media (max-width: 980px) {
+            .user-msg-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .user-msg-list,
+            .user-msg-thread-list {
+                max-height: none;
+            }
+        }
+    </style>
 </head>
 <body class="friends-page" data-require-auth="1">
     <div class="grain"></div>
 
-    <!-- SVG Icon Sprite -->
     <svg aria-hidden="true" class="icon-sprite">
         <symbol id="icon-account" viewBox="0 0 24 24">
             <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
@@ -29,10 +352,6 @@
         <symbol id="icon-calendar-check" viewBox="0 0 24 24">
             <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
             <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
-        </symbol>
-        <symbol id="icon-trend" viewBox="0 0 24 24">
-            <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
-            <path d="M15 8h3v3"></path>
         </symbol>
         <symbol id="icon-book" viewBox="0 0 24 24">
             <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
@@ -51,16 +370,9 @@
             <ul class="nav-menu" id="nav-menu">
                 <li><a href="index.html#resources">Home</a></li>
                 <li><a href="overview.html">Overview</a></li>
-                <li>
-                    <a class="nav-training" href="training.html">
-                        <span class="nav-training-main">Training</span>
-                        <span class="nav-training-sub">30 days free</span>
-                    </a>
-                </li>
+                <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
             </ul>
-            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-                <span class="theme-icon">☾</span>
-            </button>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
         </div>
     </nav>
 
@@ -90,63 +402,69 @@
         <div class="control-section">
             <p class="section-label">COMMUNITY</p>
             <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
-            <a class="control-link active" href="friends.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Friends</span></a>
+            <a class="control-link active" href="friends.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
         </div>
     </aside>
 
-    <main class="friends-main" id="friends-page">
-        <div class="container">
-            <header class="friends-header">
-                <p class="eyebrow">Community</p>
-                <h1>Friends</h1>
-                <p class="ns-muted">Find people, manage requests, and build your training circle.</p>
-            </header>
+    <main class="user-msg-wrap" id="friends-page">
+        <header class="user-msg-head">
+            <div>
+                <h1 style="margin: 0;">Messages</h1>
+                <div class="user-msg-muted">Your private conversations with mutual friends.</div>
+            </div>
+            <div class="user-msg-head-right">
+                <div class="user-msg-switch" role="tablist" aria-label="Messages view">
+                    <button type="button" class="user-msg-switch-btn active" data-user-tab-btn="messages" role="tab" aria-selected="true">Messages</button>
+                    <button type="button" class="user-msg-switch-btn" data-user-tab-btn="requests" role="tab" aria-selected="false">Requests <span class="user-msg-request-badge hidden" id="user-msg-request-badge">0</span></button>
+                </div>
+                <div class="user-msg-muted" id="user-msg-count">Loading friends...</div>
+            </div>
+        </header>
 
-            <section class="plan-card">
-                <div class="friends-tabs friends-page-tabs" role="tablist" aria-label="Friends navigation">
-                    <button type="button" class="friends-tab warn active" data-friends-tab="warnings" role="tab" aria-selected="true">⚠️ Warnings</button>
-                    <button type="button" class="friends-tab" data-friends-tab="friends" role="tab" aria-selected="false">Friends</button>
-                    <button type="button" class="friends-tab" data-friends-tab="requests" role="tab" aria-selected="false">Requests</button>
-                    <button type="button" class="friends-tab" data-friends-tab="accounts" role="tab" aria-selected="false">Accounts</button>
-                    <button type="button" class="friends-tab" data-friends-tab="groups" role="tab" aria-selected="false">Groups</button>
+        <section class="user-msg-card" id="user-msg-pane-messages-left">
+            <input id="user-msg-search" class="auth-input" placeholder="Search friends" />
+            <div id="user-msg-accounts" class="user-msg-list"></div>
+        </section>
+
+        <section class="user-msg-card user-msg-thread" id="user-msg-pane-messages-right">
+            <div class="user-msg-thread-head">
+                <div>
+                    <div id="user-msg-thread-name" style="font-weight:700;">Select a friend</div>
+                    <div id="user-msg-thread-sub" class="user-msg-muted">No conversation selected.</div>
                 </div>
-                <div class="friends-body">
-                    <div class="friends-panel active" data-friends-panel="warnings">
-                        <p class="friends-muted" id="friends-page-warnings-status">Warnings will appear here.</p>
-                        <div class="friends-list" id="friends-page-warnings-list"></div>
-                    </div>
-                    <div class="friends-panel" data-friends-panel="friends">
-                        <p class="friends-muted" id="friends-page-list-status">Friends will appear here.</p>
-                        <div class="friends-list" id="friends-page-list"></div>
-                    </div>
-                    <div class="friends-panel" data-friends-panel="requests">
-                        <div class="friends-section-title">Workout invites</div>
-                        <p class="friends-muted" id="friends-page-requests-status">Share invites will appear here.</p>
-                        <div class="friends-list" id="friends-page-requests-list"></div>
-                        <div class="friends-section-title">Friend requests</div>
-                        <p class="friends-muted" id="friends-page-friend-requests-status">Friend requests will appear here.</p>
-                        <div class="friends-list" id="friends-page-friend-requests-list"></div>
-                    </div>
-                    <div class="friends-panel" data-friends-panel="accounts">
-                        <div class="friends-search">
-                            <input class="auth-input friends-input" id="friends-page-accounts-search" type="text" placeholder="Search accounts">
-                            <button type="button" class="btn btn-primary friends-search-btn" id="friends-page-accounts-search-btn">Search</button>
-                        </div>
-                        <p class="friends-muted" id="friends-page-accounts-status">Showing all accounts</p>
-                        <div class="friends-list" id="friends-page-accounts-list"></div>
-                    </div>
-                    <div class="friends-panel" data-friends-panel="groups">
-                        <p class="friends-muted">Groups you are part of will show here.</p>
-                        <div class="friends-empty">No groups yet.</div>
-                    </div>
+            </div>
+            <div id="user-msg-thread-list" class="user-msg-thread-list">
+                <div class="user-msg-muted">Select a friend to load messages.</div>
+            </div>
+            <form id="user-msg-send-form" class="user-msg-compose">
+                <textarea id="user-msg-body" class="auth-input" rows="4" maxlength="2000" placeholder="Write a message..."></textarea>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input id="user-msg-image" class="auth-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:320px;" />
+                    <span id="user-msg-image-meta" class="user-msg-muted">Optional image (max 900KB)</span>
                 </div>
-            </section>
-        </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <button type="submit" id="user-msg-send" class="btn btn-primary">Send</button>
+                    <span id="user-msg-status" class="user-msg-status"></span>
+                </div>
+            </form>
+        </section>
+
+        <section class="user-msg-card user-msg-requests user-msg-hidden" id="user-msg-pane-requests">
+            <div>
+                <h2 class="user-msg-requests-title">Workout Invites</h2>
+                <div class="user-msg-muted" id="user-msg-workout-requests-status">Loading workout invites...</div>
+                <div class="user-msg-request-list" id="user-msg-workout-requests-list"></div>
+            </div>
+            <div>
+                <h2 class="user-msg-requests-title">Friend Requests</h2>
+                <div class="user-msg-muted" id="user-msg-friend-requests-status">Loading friend requests...</div>
+                <div class="user-msg-request-list" id="user-msg-friend-requests-list"></div>
+            </div>
+        </section>
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
+    <script src="js/main.js?v=2026-03-05-owner-20"></script>
 </body>
 </html>
-

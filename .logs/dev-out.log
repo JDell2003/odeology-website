@@ -1,0 +1,909 @@
+
+> jasons-web@1.0.0 dev
+> node --env-file .env server.js
+
+Server running on http://localhost:3000
+[asset] main.js resolved path: D:\Jasons Web\js\main.js
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}
+[asset] /js/main.js {
+  filePath: 'D:\\Jasons Web\\js\\main.js',
+  headers: {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'no-store'
+  }
+}

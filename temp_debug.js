@@ -1,0 +1,20 @@
+console.log('start');
+const fs=require('fs');
+const path=require('path');
+const Module=require('module');
+const file=path.resolve('core/trainingRoutes.js');
+const code=fs.readFileSync(file,'utf8')+'\nmodule.exports.__debug={repairOblueprintBodybuildingPlan,assertOblueprintBodybuildingIntegrity};';
+const m=new Module(file,module);
+m.filename=file;
+m.paths=Module._nodeModulePaths(path.dirname(file));
+m._compile(code,file);
+console.log('compiled');
+const {repairOblueprintBodybuildingPlan,assertOblueprintBodybuildingIntegrity}=m.exports.__debug;
+const {buildOblueprintPlan}=require('./generator/trainingEngine.oblueprint');
+console.log('before build');
+const payload={trainingFeel:'Aesthetic bodybuilding',primaryGoal:'Build size',timeline:'8 weeks',focus:'Aesthetic',experience:'6-24m',location:'Commercial gym',trainingStyle:'Balanced mix',outputStyle:'RPE/RIR cues',closeToFailure:'No',daysPerWeek:6,sessionLengthMin:'60',priorityGroups:['glutes'],movementsToAvoid:[],preferredDays:[],equipmentAccess:['barbell','dumbbell','machine','cable'],painAreas:[],painProfilesByArea:{},sleepHours:7,activityLevel:'Active',stress:'Medium',planSeed:Date.now()};
+const b=buildOblueprintPlan(payload);
+console.log('after build');
+const r=repairOblueprintBodybuildingPlan(b);
+console.log('after repair');
+try{assertOblueprintBodybuildingIntegrity(r);console.log('assert ok');}catch(e){console.log('assert fail',e.message);} 

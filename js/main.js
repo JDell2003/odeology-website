@@ -5305,7 +5305,7 @@ function normalizeTierForTargetEngine(tierRaw) {
     return 'BEST';
 }
 
-function computeGoalCalories({ goal, maintenance, bmr, bodyFatPct, sex, warningsRef }) {
+function computeGoalCalories({ goal, maintenance, bmr, bodyFatPct, sex, warningsRef, lossRateLbsPerWeek, gainRateLbsPerWeek }) {
     const roundTo10 = (n) => Math.round((Number(n) || 0) / 10) * 10;
     const pushWarning = (key) => {
         if (Array.isArray(warningsRef)) warningsRef.push(key);
@@ -5326,24 +5326,51 @@ function computeGoalCalories({ goal, maintenance, bmr, bodyFatPct, sex, warnings
 
     let cutCalories = null;
     let cutPctApplied = null;
+    const lossRate = Number(lossRateLbsPerWeek);
+    const gainRate = Number(gainRateLbsPerWeek);
+    const rateDeficitPerDay = Number.isFinite(lossRate) && lossRate > 0
+        ? (lossRate * 3500) / 7
+        : null;
+    const rateSurplusPerDay = Number.isFinite(gainRate) && gainRate > 0
+        ? (gainRate * 3500) / 7
+        : null;
+
     if (g === 'CUT') {
-        const cutBase = maint * 0.80;
-        const cutMin = maint * 0.75;
-        const cutMax = maint * 0.85;
         const cutFloor = bmrVal * 1.10;
-        caloriesRaw = clamp(cutBase, cutMin, cutMax);
-        if (caloriesRaw < cutFloor) {
-            caloriesRaw = cutFloor;
-            cutFloorApplied = true;
+        if (Number.isFinite(rateDeficitPerDay)) {
+            caloriesRaw = maint - rateDeficitPerDay;
+            if (caloriesRaw > maint) caloriesRaw = maint;
+            if (caloriesRaw < cutFloor) {
+                caloriesRaw = cutFloor;
+                cutFloorApplied = true;
+            }
+            clampMin = cutFloor;
+            clampMax = maint;
+        } else {
+            const cutBase = maint * 0.80;
+            const cutMin = maint * 0.75;
+            const cutMax = maint * 0.85;
+            caloriesRaw = clamp(cutBase, cutMin, cutMax);
+            if (caloriesRaw < cutFloor) {
+                caloriesRaw = cutFloor;
+                cutFloorApplied = true;
+            }
+            clampMin = Math.max(cutMin, cutFloor);
+            clampMax = cutMax;
         }
-        clampMin = Math.max(cutMin, cutFloor);
-        clampMax = cutMax;
         cutFloorValue = cutFloor;
     } else if (g === 'LEAN_BULK') {
-        const bulkBase = maint * 1.08;
-        caloriesRaw = clamp(bulkBase, maint * 1.05, maint * 1.12);
-        clampMin = maint * 1.05;
-        clampMax = maint * 1.12;
+        if (Number.isFinite(rateSurplusPerDay)) {
+            const bulkBase = maint + rateSurplusPerDay;
+            caloriesRaw = clamp(bulkBase, maint * 1.05, maint * 1.12);
+            clampMin = maint * 1.05;
+            clampMax = maint * 1.12;
+        } else {
+            const bulkBase = maint * 1.08;
+            caloriesRaw = clamp(bulkBase, maint * 1.05, maint * 1.12);
+            clampMin = maint * 1.05;
+            clampMax = maint * 1.12;
+        }
     } else if (g === 'RECOMP') {
         if (hasBf) {
             const highBf = (sexNorm === 'female') ? 30 : 20;
@@ -5658,6 +5685,13 @@ function computeNutritionTargets(input = {}) {
     const trainingDaysChoice = normalizeFrequencyInput(input.trainingDaysChoice || input.frequency || '3-4') || '3-4';
     const minutesPerSession = clamp(Math.round(Number(input.minutesPerSession) || 50), 20, 180);
     const bodyFatPct = Number(input.bodyFatPct);
+    const lossRateLbsPerWeek = Number(input.lossRateLbsPerWeek ?? input.lbsPerWeek);
+    const gainRateLbsPerWeek = Number(
+        input.gainRateLbsPerWeek
+        ?? input.bulkGainRateLbsPerWeek
+        ?? input.lbsGainPerWeek
+        ?? input.gainRate
+    );
 
     const sexConst = sexNorm === 'female' ? -161 : 5;
     const bmr = Math.round((10 * weightKg) + (6.25 * heightCm) - (5 * ageYears) + sexConst);
@@ -5679,7 +5713,9 @@ function computeNutritionTargets(input = {}) {
         bmr,
         bodyFatPct,
         sex: sexNorm,
-        warningsRef: warnings
+        warningsRef: warnings,
+        lossRateLbsPerWeek,
+        gainRateLbsPerWeek
     });
     let calories = Number(goalMeta.calories) || maintenance;
     const caloriesOverrideRaw = Number(input.caloriesOverride);
@@ -8793,29 +8829,9 @@ function setupTrainingNavRouting() {
     ));
     if (!links.length) return;
 
-    const routeToTraining = async () => {
-        let user = null;
-        try {
-            const meResp = await fetch('/api/auth/me', { credentials: 'include' });
-            const meData = await meResp.json().catch(() => ({}));
-            user = meData?.user || null;
-        } catch {
-            user = null;
-        }
-
-        if (!user) {
-            window.location.href = 'training-coming-soon.html';
-            return;
-        }
-
-        try {
-            const stateResp = await fetch('/api/training/state', { credentials: 'include' });
-            const stateData = await stateResp.json().catch(() => ({}));
-            const hasPlan = Boolean(stateData?.plan?.id);
-            window.location.href = hasPlan ? 'training.html' : 'training-coming-soon.html';
-        } catch {
-            window.location.href = 'training-coming-soon.html';
-        }
+    const routeToTraining = () => {
+        try { sessionStorage.setItem('ode_training_nav_loading', '1'); } catch { /* ignore */ }
+        window.location.href = 'training.html';
     };
 
     links.forEach((link) => {
@@ -11277,6 +11293,7 @@ function enablePlanCtaForSignedIn(user) {
                 showAlert?.('Could not save your grocery list.');
                 return;
             }
+            markGroceryPurchaseToday();
             window.location.href = 'overview.html#grocery-list';
         } finally {
             saveBtn.disabled = false;
@@ -11500,6 +11517,7 @@ async function enableGroceryAccountSaveButton() {
                     showAlert?.('Could not save your grocery list.');
                     return;
                 }
+                markGroceryPurchaseToday();
                 window.location.href = 'overview.html';
             } finally {
                 btn.disabled = false;
@@ -11597,6 +11615,117 @@ function initAuthUi() {
         }
     };
 
+
+    const isOwnerClientUser = (user) => {
+        const uname = String(user?.username || '').trim().toLowerCase();
+        const dname = String(user?.displayName || '').trim().toLowerCase();
+        if (user?.isOwner) return true;
+        return ['odeology_', 'odeology', 'odeology_owner', 'jason'].includes(uname)
+            || ['odeology_', 'odeology'].includes(dname);
+    };
+
+    const getImpersonation = (meta) => {
+        if (!meta || typeof meta !== 'object') return null;
+        const imp = meta.impersonation;
+        if (!imp || imp.active !== true) return null;
+        return imp;
+    };
+
+    const ensureOwnerViewNote = () => {
+        let note = wrapper.querySelector('#auth-owner-view-note');
+        if (!note) {
+            note = document.createElement('div');
+            note.id = 'auth-owner-view-note';
+            note.className = 'auth-owner-view-note hidden';
+            wrapper.appendChild(note);
+        }
+        return note;
+    };
+
+    const setImpersonationUi = (user, meta) => {
+        const note = ensureOwnerViewNote();
+        const imp = getImpersonation(meta);
+        const viewedLabel = user?.displayName || user?.username || 'account';
+        const returnHref = '/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html';
+
+        note.innerHTML = '';
+        if (!imp) {
+            note.classList.add('hidden');
+            if (mobileAuth?.ownerViewWrap) mobileAuth.ownerViewWrap.classList.add('hidden');
+            if (mobileAuth?.ownerViewText) mobileAuth.ownerViewText.textContent = '';
+            return;
+        }
+
+        const text = document.createElement('span');
+        text.textContent = `Viewing ${viewedLabel} account. `;
+        const link = document.createElement('a');
+        link.href = returnHref;
+        link.textContent = 'Return to owner account';
+        note.appendChild(text);
+        note.appendChild(link);
+        note.classList.remove('hidden');
+
+        if (mobileAuth?.ownerViewWrap) {
+            mobileAuth.ownerViewWrap.classList.remove('hidden');
+        }
+        if (mobileAuth?.ownerViewText) {
+            mobileAuth.ownerViewText.textContent = `Viewing ${viewedLabel} account.`;
+        }
+        if (mobileAuth?.ownerReturnLink) {
+            mobileAuth.ownerReturnLink.href = returnHref;
+        }
+    };
+
+    const syncOwnerWorkoutDbLink = (user) => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        let ownerSection = panel.querySelector('#control-owner-section');
+        let link = panel.querySelector('#control-workout-db-link');
+        let msgLink = panel.querySelector('#control-owner-messaging-link');
+        let accountsLink = panel.querySelector('#control-owner-accounts-link');
+        if (!ownerSection) {
+            ownerSection = document.createElement('div');
+            ownerSection.className = 'control-section hidden';
+            ownerSection.id = 'control-owner-section';
+            ownerSection.innerHTML = '<p class="section-label">OWNER</p>';
+            const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+                const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+                return label === 'community';
+            });
+            if (communitySection && communitySection.parentElement) {
+                communitySection.insertAdjacentElement('afterend', ownerSection);
+            } else {
+                panel.appendChild(ownerSection);
+            }
+        }
+        if (!link) {
+            link = document.createElement('a');
+            link.className = 'control-link';
+            link.id = 'control-workout-db-link';
+            link.href = 'workout-database.html';
+            link.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span>';
+            ownerSection.appendChild(link);
+        }
+        if (!msgLink) {
+            msgLink = document.createElement('a');
+            msgLink.className = 'control-link';
+            msgLink.id = 'control-owner-messaging-link';
+            msgLink.href = 'owner-messaging.html';
+            msgLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span>';
+            ownerSection.appendChild(msgLink);
+        }
+        if (!accountsLink) {
+            accountsLink = document.createElement('a');
+            accountsLink.className = 'control-link';
+            accountsLink.id = 'control-owner-accounts-link';
+            accountsLink.href = 'owner-accounts.html';
+            accountsLink.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span>';
+            ownerSection.appendChild(accountsLink);
+        }
+        const isOwner = isOwnerClientUser(user);
+        ownerSection.classList.toggle('hidden', !isOwner);
+    };
+
     const setSignedOutUi = () => {
         currentUser = null;
         window.__odeCurrentUser = null;
@@ -11612,13 +11741,16 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.remove('hidden');
         syncControlPanelLabel(null);
+        syncOwnerWorkoutDbLink(null);
+        setImpersonationUi(null, null);
         emitAuthChanged(null);
     };
 
-    const setSignedInUi = (user) => {
+    const setSignedInUi = (user, meta = null) => {
         currentUser = user;
         window.__odeCurrentUser = user;
         const label = user?.displayName || user?.username || 'Account';
+        const imp = getImpersonation(meta);
         signInBtn.classList.add('hidden');
         signUpBtn.classList.add('hidden');
         if (sep) sep.classList.add('hidden');
@@ -11634,8 +11766,11 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.add('hidden');
         syncControlPanelLabel(user);
+        syncOwnerWorkoutDbLink(user);
+        setImpersonationUi(user, meta);
 
         menu.innerHTML = `
+            ${imp ? '<a class="auth-menu-item" id="auth-menu-return-owner" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Return to Owner Account</a>' : ''}
             <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
             <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="overview.html#control-panel">Dashboard</a>
         `;
@@ -11647,6 +11782,10 @@ function initAuthUi() {
         logoutBtn?.addEventListener('click', async () => {
             await authLogout();
             setSignedOutUi();
+        });
+        const returnOwnerLink = menu.querySelector('#auth-menu-return-owner');
+        returnOwnerLink?.addEventListener('click', () => {
+            menu.classList.add('hidden');
         });
 
         emitAuthChanged(user);
@@ -11688,7 +11827,7 @@ function initAuthUi() {
 
     wireAuthModal(modal, {
         onSignedIn: (user) => {
-            setSignedInUi(user);
+            setSignedInUi(user, null);
             redirectToTrainingAfterAuth();
         }
     });
@@ -11731,6 +11870,7 @@ function initAuthUi() {
         }, 0);
         positionFriendsModal();
         const activeTab = friendsModal.querySelector('.friends-tab.active')?.dataset?.friendsTab || 'friends';
+        loadFriendRequests();
         if (activeTab === 'warnings') loadWarnings();
         if (activeTab === 'friends' && !isFriendsLoaded()) loadFriends();
         if (activeTab === 'requests') {
@@ -11792,6 +11932,12 @@ function initAuthUi() {
         const friendRequestsList = friendsModal.querySelector('#friends-friend-requests-list');
         const friendRequestsStatus = friendsModal.querySelector('#friends-friend-requests-status');
         let friendRequestsLoading = false;
+        const setModalRequestsTabLabel = (pendingCount = 0) => {
+            const tab = friendsModal.querySelector('.friends-tab[data-friends-tab="requests"]');
+            if (!tab) return;
+            const count = Math.max(0, Number(pendingCount) || 0);
+            tab.textContent = count > 0 ? `Requests (${count})` : 'Requests';
+        };
         const friendsList = friendsModal.querySelector('#friends-list');
         const friendsStatus = friendsModal.querySelector('#friends-list-status');
         let friendsLoading = false;
@@ -12184,12 +12330,21 @@ function initAuthUi() {
                 }
                 const data = await resp.json().catch(() => ({}));
                 if (!data?.ok) {
+                    setModalRequestsTabLabel(0);
                     renderFriendRequests([], 'Could not load friend requests.');
                     friendRequestsLoading = false;
                     return;
                 }
-                renderFriendRequests(data.requests || [], data.requests?.length ? 'Pending friend requests' : 'No friend requests.');
+                const pendingCount = Array.isArray(data.requests) ? data.requests.length : 0;
+                setModalRequestsTabLabel(pendingCount);
+                renderFriendRequests(data.requests || [], pendingCount ? 'Pending friend requests' : 'No friend requests.');
+                const activeKey = friendsModal.querySelector('.friends-tab.active')?.dataset?.friendsTab || '';
+                if (!friendsModal.classList.contains('hidden') && pendingCount > 0 && activeKey !== 'requests') {
+                    const reqTab = friendsModal.querySelector('.friends-tab[data-friends-tab="requests"]');
+                    reqTab?.click();
+                }
             } catch {
+                setModalRequestsTabLabel(0);
                 renderFriendRequests([], 'Could not load friend requests.');
             }
             friendRequestsLoading = false;
@@ -12513,8 +12668,11 @@ function initAuthUi() {
         try {
             const resp = await fetch('/api/auth/me', { credentials: 'include' });
             const data = await resp.json();
-            if (data?.user) setSignedInUi(data.user);
-            else setSignedOutUi();
+            if (data?.user) {
+                setSignedInUi(data.user, data);
+            } else {
+                setSignedOutUi();
+            }
         } catch {
             setSignedOutUi();
         }
@@ -12570,13 +12728,16 @@ function initAuthUi() {
     });
 
     const controlBtn = document.getElementById('control-signin');
-    controlBtn?.addEventListener('click', (e) => {
+    controlBtn?.addEventListener('click', async (e) => {
         e.preventDefault();
-        const panel = document.getElementById('control-panel');
-        panel?.classList.remove('open');
         if (currentUser) {
-            menu.classList.remove('hidden');
+            const panel = document.getElementById('control-panel');
+            panel?.classList.remove('open');
+            if (String(window.location.pathname || '').toLowerCase().endsWith('/account.html')) return;
+            window.location.href = 'account.html';
         } else {
+            const panel = document.getElementById('control-panel');
+            panel?.classList.remove('open');
             openModal('login');
         }
     });
@@ -12591,6 +12752,26 @@ function initAuthUi() {
     refreshMe();
 }
 
+function markGroceryPurchaseToday() {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    try {
+        sessionStorage.setItem('groceryStartDate', todayIso);
+    } catch {
+        // ignore
+    }
+    try {
+        const raw = localStorage.getItem('ode_grocery_calendar_items_v1');
+        const parsed = raw ? JSON.parse(raw) : {};
+        localStorage.setItem('ode_grocery_calendar_items_v1', JSON.stringify({
+            ...parsed,
+            startDate: todayIso,
+            savedAt: new Date().toISOString()
+        }));
+    } catch {
+        // ignore
+    }
+}
+
 /* ============================================
    FRIENDS PAGE
    ============================================ */
@@ -12599,761 +12780,562 @@ function initFriendsPage() {
     const root = document.getElementById('friends-page');
     if (!root) return;
 
-    const tabs = Array.from(root.querySelectorAll('.friends-tab'));
-    const panels = Array.from(root.querySelectorAll('.friends-panel'));
-    const warningsList = root.querySelector('#friends-page-warnings-list');
-    const warningsStatus = root.querySelector('#friends-page-warnings-status');
-    let warningsLoading = false;
-    const accountsList = root.querySelector('#friends-page-accounts-list');
-    const accountsStatus = root.querySelector('#friends-page-accounts-status');
-    const accountsSearchInput = root.querySelector('#friends-page-accounts-search');
-    const accountsSearchBtn = root.querySelector('#friends-page-accounts-search-btn');
-    let accountsLoading = false;
-    let accountsLoaded = false;
-    const requestsList = root.querySelector('#friends-page-requests-list');
-    const requestsStatus = root.querySelector('#friends-page-requests-status');
-    let requestsLoading = false;
-    const friendRequestsList = root.querySelector('#friends-page-friend-requests-list');
-    const friendRequestsStatus = root.querySelector('#friends-page-friend-requests-status');
-    let friendRequestsLoading = false;
-    const friendsList = root.querySelector('#friends-page-list');
-    const friendsStatus = root.querySelector('#friends-page-list-status');
-    let friendsLoading = false;
-    let friendsLoaded = false;
-    const FRIENDS_CACHE_KEY = 'ode_friends_cache_v1';
-    const FRIENDS_CACHE_TTL = 1000 * 60 * 10;
-    const readFriendsCache = () => {
-        try {
-            const raw = localStorage.getItem(FRIENDS_CACHE_KEY);
-            if (!raw) return null;
-            const data = JSON.parse(raw);
-            if (!data || !Array.isArray(data.friends)) return null;
-            if (Number.isFinite(data.ts) && Date.now() - data.ts > FRIENDS_CACHE_TTL) return data;
-            return data;
-        } catch {
-            return null;
-        }
+    const MAX_IMAGE_BYTES = 900000;
+    const state = {
+        friends: [],
+        isFriendsLoading: false,
+        selectedFriendId: null,
+        selectedFriend: null,
+        messages: [],
+        isThreadLoading: false,
+        activeTab: 'messages',
+        pendingFriendRequests: 0,
+        pendingWorkoutInvites: 0,
+        search: '',
+        summaries: new Map()
     };
-    const writeFriendsCache = (friends) => {
-        try {
-            localStorage.setItem(FRIENDS_CACHE_KEY, JSON.stringify({ friends: Array.isArray(friends) ? friends : [], ts: Date.now() }));
-        } catch {
-            // ignore
-        }
-    };
-    const threadsList = root.querySelector('#friends-page-threads-list');
-    const chatHeader = root.querySelector('#friends-page-chat-header');
-    const chatMessages = root.querySelector('#friends-page-chat-messages');
-    const chatInput = root.querySelector('#friends-page-chat-input');
-    const chatSend = root.querySelector('#friends-page-chat-send');
-    let threadsLoading = false;
-    let activeThreadUserId = null;
 
-    const renderWarnings = (items, statusText) => {
-        if (!warningsList) return;
-        warningsList.innerHTML = '';
-        if (warningsStatus) warningsStatus.textContent = statusText || '';
-        if (!items || !items.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = statusText || 'No warnings right now.';
-            warningsList.appendChild(empty);
+    const searchEl = root.querySelector('#user-msg-search');
+    const accountsEl = root.querySelector('#user-msg-accounts');
+    const countEl = root.querySelector('#user-msg-count');
+
+    const threadNameEl = root.querySelector('#user-msg-thread-name');
+    const threadSubEl = root.querySelector('#user-msg-thread-sub');
+    const threadListEl = root.querySelector('#user-msg-thread-list');
+
+    const sendForm = root.querySelector('#user-msg-send-form');
+    const bodyEl = root.querySelector('#user-msg-body');
+    const imageEl = root.querySelector('#user-msg-image');
+    const imageMetaEl = root.querySelector('#user-msg-image-meta');
+    const sendBtn = root.querySelector('#user-msg-send');
+    const statusEl = root.querySelector('#user-msg-status');
+    const tabButtons = Array.from(root.querySelectorAll('[data-user-tab-btn]'));
+    const requestBadgeEl = root.querySelector('#user-msg-request-badge');
+    const messagesPaneLeftEl = root.querySelector('#user-msg-pane-messages-left');
+    const messagesPaneRightEl = root.querySelector('#user-msg-pane-messages-right');
+    const requestsPaneEl = root.querySelector('#user-msg-pane-requests');
+    const workoutReqStatusEl = root.querySelector('#user-msg-workout-requests-status');
+    const workoutReqListEl = root.querySelector('#user-msg-workout-requests-list');
+    const friendReqStatusEl = root.querySelector('#user-msg-friend-requests-status');
+    const friendReqListEl = root.querySelector('#user-msg-friend-requests-list');
+
+    const myId = String(window.__odeCurrentUser?.id || '');
+
+    const escapeHtml = (raw) => String(raw || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const initials = (raw) => String(raw || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0))
+        .join('')
+        .toUpperCase() || 'O';
+
+    const formatDate = (raw) => {
+        if (!raw) return '';
+        const d = new Date(raw);
+        if (!Number.isFinite(d.getTime())) return '';
+        return d.toLocaleString();
+    };
+
+    const bytesToKb = (n) => `${Math.max(1, Math.round((Number(n) || 0) / 1000))}KB`;
+
+    const setStatus = (text, kind = '') => {
+        if (!statusEl) return;
+        statusEl.textContent = String(text || '');
+        statusEl.classList.remove('user-msg-error', 'user-msg-ok');
+        if (kind === 'error') statusEl.classList.add('user-msg-error');
+        if (kind === 'ok') statusEl.classList.add('user-msg-ok');
+    };
+
+    const setCount = (text) => {
+        if (countEl) countEl.textContent = String(text || '');
+    };
+
+    const updateRequestBadge = () => {
+        if (!requestBadgeEl) return;
+        const total = Math.max(0, Number(state.pendingFriendRequests || 0)) + Math.max(0, Number(state.pendingWorkoutInvites || 0));
+        requestBadgeEl.textContent = String(total);
+        requestBadgeEl.classList.toggle('hidden', total <= 0);
+    };
+
+    const setActiveTab = (tabKey) => {
+        const key = tabKey === 'requests' ? 'requests' : 'messages';
+        state.activeTab = key;
+        tabButtons.forEach((btn) => {
+            const active = String(btn.dataset.userTabBtn || '') === key;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        const showRequests = key === 'requests';
+        messagesPaneLeftEl?.classList.toggle('user-msg-hidden', showRequests);
+        messagesPaneRightEl?.classList.toggle('user-msg-hidden', showRequests);
+        requestsPaneEl?.classList.toggle('user-msg-hidden', !showRequests);
+
+        if (showRequests) {
+            loadIncomingRequests();
+        }
+    };
+
+    const updateImageMeta = () => {
+        if (!imageMetaEl) return;
+        const file = imageEl?.files?.[0] || null;
+        if (!file) {
+            imageMetaEl.textContent = `Optional image (max ${bytesToKb(MAX_IMAGE_BYTES)})`;
             return;
         }
-        items.forEach((warn) => {
-            const item = document.createElement('div');
-            item.className = 'friends-item friends-warning';
-            const name = String(warn?.displayName || warn?.username || 'Account');
-            const username = warn?.username ? `@${warn.username}` : '';
-            const initials = name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join('')
-                .toUpperCase();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'friends-avatar';
-            if (warn?.photoDataUrl) {
-                const img = document.createElement('img');
-                img.src = warn.photoDataUrl;
-                img.alt = name;
-                avatar.appendChild(img);
-            } else {
-                avatar.textContent = initials || 'O';
-            }
-
-            const meta = document.createElement('div');
-            meta.className = 'friends-meta';
-            const nameEl = document.createElement('div');
-            nameEl.className = 'friends-name';
-            nameEl.textContent = name;
-            const handleEl = document.createElement('div');
-            handleEl.className = 'friends-handle';
-            handleEl.textContent = username || ' ';
-            const msgEl = document.createElement('div');
-            msgEl.className = 'friends-warning-message';
-            msgEl.textContent = String(warn?.message || '');
-            meta.appendChild(nameEl);
-            meta.appendChild(handleEl);
-            meta.appendChild(msgEl);
-
-            const tag = document.createElement('div');
-            tag.className = 'friends-warning-tag';
-            tag.textContent = warn?.severity === 'high' ? 'High' : 'Heads up';
-
-            item.appendChild(avatar);
-            item.appendChild(meta);
-            item.appendChild(tag);
-            warningsList.appendChild(item);
-        });
+        imageMetaEl.textContent = `${file.name} - ${bytesToKb(file.size)}`;
     };
 
-    const loadWarnings = async () => {
-        if (warningsLoading) return;
-        warningsLoading = true;
-        if (warningsStatus) warningsStatus.textContent = 'Checking friend compliance...';
-        try {
-            const resp = await fetch('/api/friends/warnings', { credentials: 'include' });
-            if (resp.status === 401) {
-                renderWarnings([], 'Sign in to view warnings.');
-                warningsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderWarnings([], data?.error || 'Could not load warnings.');
-                warningsLoading = false;
-                return;
-            }
-            renderWarnings(data.warnings || [], data.status || '');
-        } catch {
-            renderWarnings([], 'Could not load warnings.');
-        }
-        warningsLoading = false;
-    };
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error(`Could not read image: ${file?.name || 'file'}`));
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(file);
+    });
 
-    const showPanel = (key) => {
-        tabs.forEach((tab) => {
-            const active = tab.dataset.friendsTab === key;
-            tab.classList.toggle('active', active);
-            tab.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-        panels.forEach((panel) => {
-            panel.classList.toggle('active', panel.dataset.friendsPanel === key);
-        });
-    };
-
-    const renderAccounts = (accounts, statusText) => {
-        if (!accountsList) return;
-        accountsList.innerHTML = '';
-        if (accountsStatus) accountsStatus.textContent = statusText || '';
-        if (!accounts || !accounts.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = 'No accounts found.';
-            accountsList.appendChild(empty);
-            return;
-        }
-        accounts.forEach((acct) => {
-            const item = document.createElement('div');
-            item.className = 'friends-item';
-            const name = String(acct?.displayName || acct?.username || 'Account');
-            const username = acct?.username ? `@${acct.username}` : '';
-            const initials = name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join('')
-                .toUpperCase();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'friends-avatar';
-            if (acct?.photoDataUrl) {
-                const img = document.createElement('img');
-                img.src = acct.photoDataUrl;
-                img.alt = name;
-                avatar.appendChild(img);
-            } else {
-                avatar.textContent = initials || 'O';
-            }
-
-            const meta = document.createElement('div');
-            meta.className = 'friends-meta';
-            const nameEl = document.createElement('div');
-            nameEl.className = 'friends-name';
-            nameEl.textContent = name;
-            const handleEl = document.createElement('div');
-            handleEl.className = 'friends-handle';
-            handleEl.textContent = username || ' ';
-            meta.appendChild(nameEl);
-            meta.appendChild(handleEl);
-
-            const addBtn = document.createElement('button');
-            addBtn.type = 'button';
-            addBtn.className = 'btn btn-ghost btn-mini';
-            addBtn.textContent = 'Add';
-            addBtn.addEventListener('click', () => sendFriendRequest(acct?.id, addBtn));
-
-            item.appendChild(avatar);
-            item.appendChild(meta);
-            item.appendChild(addBtn);
-            accountsList.appendChild(item);
-        });
-    };
-
-    const loadAccounts = async (query = '') => {
-        if (accountsLoading) return;
-        accountsLoading = true;
-        if (accountsStatus) accountsStatus.textContent = 'Loading accounts...';
-        try {
-            const params = new URLSearchParams();
-            if (query) params.set('q', query);
-            const url = `/api/auth/accounts${params.toString() ? `?${params.toString()}` : ''}`;
-            const resp = await fetch(url, { credentials: 'include' });
-            if (resp.status === 401) {
-                renderAccounts([], 'Sign in to view accounts.');
-                accountsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderAccounts([], 'Could not load accounts.');
-                accountsLoading = false;
-                return;
-            }
-            const count = Number(data?.count || 0);
-            const total = Number(data?.total || count);
-            const capped = Boolean(data?.capped);
-            const label = query
-                ? `Results for "${query}" (${count})`
-                : (capped
-                    ? `Showing ${count} of ${total} accounts. Use search to find someone.`
-                    : `Showing ${count} accounts`);
-            renderAccounts(data.accounts || [], label);
-            accountsLoaded = true;
-        } catch {
-            renderAccounts([], 'Could not load accounts.');
-        }
-        accountsLoading = false;
-    };
-
-    const sendFriendRequest = async (targetUserId, buttonEl) => {
-        if (!targetUserId) return;
-        if (buttonEl) {
-            buttonEl.disabled = true;
-            buttonEl.textContent = 'Sending...';
+    const collectImageDataUrl = async () => {
+        const file = imageEl?.files?.[0] || null;
+        if (!file) return { ok: true, dataUrl: null };
+        const mime = String(file.type || '').toLowerCase();
+        if (!mime.startsWith('image/')) return { ok: false, error: 'Selected file is not an image.' };
+        if (Number(file.size || 0) > MAX_IMAGE_BYTES) {
+            return { ok: false, error: `Image too large (${bytesToKb(file.size)} > ${bytesToKb(MAX_IMAGE_BYTES)}).` };
         }
         try {
-            const resp = await fetch('/api/friends/request', {
-                method: 'POST',
+            const dataUrl = await readFileAsDataUrl(file);
+            return { ok: true, dataUrl };
+        } catch (err) {
+            return { ok: false, error: err?.message || 'Could not read image.' };
+        }
+    };
+
+    async function api(path, options = {}) {
+        try {
+            const resp = await fetch(path, {
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetUserId })
-            });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) {
-                if (buttonEl) {
-                    buttonEl.disabled = false;
-                    buttonEl.textContent = 'Add';
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
                 }
-                if (accountsStatus) accountsStatus.textContent = data?.error || 'Could not send request.';
-                return;
-            }
-            if (buttonEl) {
-                buttonEl.disabled = true;
-                buttonEl.textContent = data?.alreadyFriends ? 'Friends' : 'Requested';
-            }
-            if (accountsStatus) accountsStatus.textContent = 'Request sent.';
-        } catch {
-            if (buttonEl) {
-                buttonEl.disabled = false;
-                buttonEl.textContent = 'Add';
-            }
-            if (accountsStatus) accountsStatus.textContent = 'Could not send request.';
-        }
-    };
-
-    const renderFriends = (friends, statusText) => {
-        if (!friendsList) return;
-        friendsList.innerHTML = '';
-        if (friendsStatus) friendsStatus.textContent = statusText || '';
-        if (!friends || !friends.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = '0 friends added yet.';
-            friendsList.appendChild(empty);
-            return;
-        }
-        friends.forEach((friend) => {
-            const item = document.createElement('div');
-            item.className = 'friends-item';
-            const name = String(friend?.displayName || friend?.username || 'Account');
-            const username = friend?.username ? `@${friend.username}` : '';
-            const initials = name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join('')
-                .toUpperCase();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'friends-avatar';
-            if (friend?.photoDataUrl) {
-                const img = document.createElement('img');
-                img.src = friend.photoDataUrl;
-                img.alt = name;
-                avatar.appendChild(img);
-            } else {
-                avatar.textContent = initials || 'O';
-            }
-
-            const meta = document.createElement('div');
-            meta.className = 'friends-meta';
-            const nameEl = document.createElement('div');
-            nameEl.className = 'friends-name';
-            nameEl.textContent = name;
-            const handleEl = document.createElement('div');
-            handleEl.className = 'friends-handle';
-            handleEl.textContent = username || ' ';
-            meta.appendChild(nameEl);
-            meta.appendChild(handleEl);
-
-            item.appendChild(avatar);
-            item.appendChild(meta);
-            friendsList.appendChild(item);
-        });
-    };
-
-    const loadFriends = async () => {
-        if (friendsLoading) return;
-        friendsLoading = true;
-        const cached = readFriendsCache();
-        if (cached && Array.isArray(cached.friends)) {
-            renderFriends(cached.friends, cached.friends.length ? 'Your friends' : 'No friends yet.');
-        } else if (friendsStatus) {
-            friendsStatus.textContent = 'Checking friends...';
-        }
-        try {
-            const resp = await fetch('/api/friends/list', { credentials: 'include' });
-            if (resp.status === 401) {
-                renderFriends([], 'Sign in to view friends.');
-                friendsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderFriends([], 'Could not load friends.');
-                friendsLoading = false;
-                return;
-            }
-            renderFriends(data.friends || [], data.friends?.length ? 'Your friends' : 'No friends yet.');
-            writeFriendsCache(data.friends || []);
-            friendsLoaded = true;
-        } catch {
-            renderFriends([], 'Could not load friends.');
-        }
-        friendsLoading = false;
-    };
-
-    const renderFriendRequests = (reqs, statusText) => {
-        if (!friendRequestsList) return;
-        friendRequestsList.innerHTML = '';
-        if (friendRequestsStatus) friendRequestsStatus.textContent = statusText || '';
-        if (!reqs || !reqs.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = 'No friend requests.';
-            friendRequestsList.appendChild(empty);
-            return;
-        }
-        reqs.forEach((req) => {
-            const item = document.createElement('div');
-            item.className = 'friends-request-item';
-            const name = String(req?.displayName || req?.username || 'Account');
-            const username = req?.username ? `@${req.username}` : '';
-            const initials = name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join('')
-                .toUpperCase();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'friends-avatar';
-            if (req?.photoDataUrl) {
-                const img = document.createElement('img');
-                img.src = req.photoDataUrl;
-                img.alt = name;
-                avatar.appendChild(img);
-            } else {
-                avatar.textContent = initials || 'O';
-            }
-
-            const meta = document.createElement('div');
-            meta.className = 'friends-meta';
-            const nameEl = document.createElement('div');
-            nameEl.className = 'friends-name';
-            nameEl.textContent = name;
-            const handleEl = document.createElement('div');
-            handleEl.className = 'friends-handle';
-            handleEl.textContent = username || ' ';
-            meta.appendChild(nameEl);
-            meta.appendChild(handleEl);
-
-            const actions = document.createElement('div');
-            actions.className = 'friends-request-actions';
-            const acceptBtn = document.createElement('button');
-            acceptBtn.type = 'button';
-            acceptBtn.className = 'friends-request-btn accept';
-            acceptBtn.textContent = '✓';
-            acceptBtn.setAttribute('aria-label', 'Accept friend request');
-            acceptBtn.addEventListener('click', () => respondFriendRequest(req.id, 'accept'));
-            const rejectBtn = document.createElement('button');
-            rejectBtn.type = 'button';
-            rejectBtn.className = 'friends-request-btn reject';
-            rejectBtn.textContent = '×';
-            rejectBtn.setAttribute('aria-label', 'Reject friend request');
-            rejectBtn.addEventListener('click', () => respondFriendRequest(req.id, 'reject'));
-            actions.appendChild(acceptBtn);
-            actions.appendChild(rejectBtn);
-
-            item.appendChild(avatar);
-            item.appendChild(meta);
-            item.appendChild(actions);
-            friendRequestsList.appendChild(item);
-        });
-    };
-
-    const loadFriendRequests = async () => {
-        if (friendRequestsLoading) return;
-        friendRequestsLoading = true;
-        if (friendRequestsStatus) friendRequestsStatus.textContent = 'Loading friend requests...';
-        try {
-            const resp = await fetch('/api/friends/requests', { credentials: 'include' });
-            if (resp.status === 401) {
-                renderFriendRequests([], 'Sign in to view friend requests.');
-                friendRequestsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderFriendRequests([], 'Could not load friend requests.');
-                friendRequestsLoading = false;
-                return;
-            }
-            renderFriendRequests(data.requests || [], data.requests?.length ? 'Pending friend requests' : 'No friend requests.');
-        } catch {
-            renderFriendRequests([], 'Could not load friend requests.');
-        }
-        friendRequestsLoading = false;
-    };
-
-    const respondFriendRequest = async (requestId, action) => {
-        if (!requestId) return;
-        if (friendRequestsStatus) friendRequestsStatus.textContent = 'Updating request...';
-        try {
-            const resp = await fetch('/api/friends/respond', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestId, action })
             });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) {
-                renderFriendRequests([], data?.error || 'Could not update request.');
-                return;
-            }
-            loadFriendRequests();
-            friendsLoaded = false;
+            const json = await resp.json().catch(() => ({}));
+            return { ok: resp.ok, status: resp.status, json };
         } catch {
-            renderFriendRequests([], 'Could not update request.');
+            return { ok: false, status: 0, json: { error: 'Network error' } };
         }
-    };
+    }
 
-    const renderWorkoutInvites = (invites, statusText) => {
-        if (!requestsList) return;
-        requestsList.innerHTML = '';
-        if (requestsStatus) requestsStatus.textContent = statusText || '';
-        if (!invites || !invites.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = 'No workout invites.';
-            requestsList.appendChild(empty);
-            return;
-        }
-        invites.forEach((invite) => {
-            const item = document.createElement('div');
-            item.className = 'friends-request-item';
-            const name = String(invite?.displayName || invite?.username || 'Account');
-            const username = invite?.username ? `@${invite.username}` : '';
-            const initials = name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join('')
-                .toUpperCase();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'friends-avatar';
-            if (invite?.photoDataUrl) {
-                const img = document.createElement('img');
-                img.src = invite.photoDataUrl;
-                img.alt = name;
-                avatar.appendChild(img);
-            } else {
-                avatar.textContent = initials || 'O';
-            }
-
-            const meta = document.createElement('div');
-            meta.className = 'friends-meta';
-            const nameEl = document.createElement('div');
-            nameEl.className = 'friends-name';
-            nameEl.textContent = name;
-            const handleEl = document.createElement('div');
-            handleEl.className = 'friends-handle';
-            handleEl.textContent = username || ' ';
-            const detailEl = document.createElement('div');
-            detailEl.className = 'friends-handle';
-            const discipline = invite?.discipline ? String(invite.discipline).toUpperCase() : 'TRAINING';
-            const days = Number(invite?.daysPerWeek || 0);
-            detailEl.textContent = days ? `${discipline} • ${days} days/week` : discipline;
-            meta.appendChild(nameEl);
-            meta.appendChild(handleEl);
-            meta.appendChild(detailEl);
-
-            const actions = document.createElement('div');
-            actions.className = 'friends-request-actions';
-            const acceptBtn = document.createElement('button');
-            acceptBtn.type = 'button';
-            acceptBtn.className = 'friends-request-btn accept';
-            acceptBtn.textContent = '✓';
-            acceptBtn.setAttribute('aria-label', 'Accept workout invite');
-            acceptBtn.addEventListener('click', () => {
-                const ok = window.confirm('Joining this plan will replace your current training plan. Continue?');
-                if (!ok) return;
-                respondWorkoutInvite(invite.id, 'accept');
+    function mergeThreadSummaries(rows) {
+        state.summaries = new Map();
+        (rows || []).forEach((row) => {
+            const friendId = String(row?.friendId || '');
+            if (!friendId) return;
+            state.summaries.set(friendId, {
+                lastMessage: String(row?.lastMessage || ''),
+                lastMessageAt: row?.lastMessageAt || null
             });
-            const rejectBtn = document.createElement('button');
-            rejectBtn.type = 'button';
-            rejectBtn.className = 'friends-request-btn reject';
-            rejectBtn.textContent = '×';
-            rejectBtn.setAttribute('aria-label', 'Reject workout invite');
-            rejectBtn.addEventListener('click', () => respondWorkoutInvite(invite.id, 'reject'));
-            actions.appendChild(acceptBtn);
-            actions.appendChild(rejectBtn);
-
-            item.appendChild(avatar);
-            item.appendChild(meta);
-            item.appendChild(actions);
-            requestsList.appendChild(item);
         });
-    };
+    }
 
-    const loadWorkoutInvites = async () => {
-        if (requestsLoading) return;
-        requestsLoading = true;
-        if (requestsStatus) requestsStatus.textContent = 'Loading invites...';
-        try {
-            const resp = await fetch('/api/training/share/requests', { credentials: 'include' });
-            if (resp.status === 401) {
-                renderWorkoutInvites([], 'Sign in to view invites.');
-                requestsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderWorkoutInvites([], 'Could not load invites.');
-                requestsLoading = false;
-                return;
-            }
-            renderWorkoutInvites(data.invites || [], data.invites?.length ? 'Pending workout invites' : 'No workout invites.');
-        } catch {
-            renderWorkoutInvites([], 'Could not load invites.');
-        }
-        requestsLoading = false;
-    };
+    function getSummary(friendId) {
+        return state.summaries.get(String(friendId || '')) || { lastMessage: '', lastMessageAt: null };
+    }
 
-    const respondWorkoutInvite = async (inviteId, action) => {
-        if (!inviteId) return;
-        if (requestsStatus) requestsStatus.textContent = 'Updating invite...';
-        try {
-            const resp = await fetch('/api/training/share/respond', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ inviteId, action })
-            });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) {
-                renderWorkoutInvites([], data?.error || 'Could not update invite.');
-                return;
-            }
-            loadWorkoutInvites();
-        } catch {
-            renderWorkoutInvites([], 'Could not update invite.');
-        }
-    };
+    function renderAccounts() {
+        if (!accountsEl) return;
 
-    const renderThreads = (threads) => {
-        if (!threadsList) return;
-        threadsList.innerHTML = '';
-        if (!threads || !threads.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = '0 friends added yet.';
-            threadsList.appendChild(empty);
+        if (state.isFriendsLoading) {
+            setCount('Loading friends...');
+            accountsEl.innerHTML = '<div class="user-msg-loading"><span class="user-msg-spinner" aria-hidden="true"></span><span>Loading friends...</span></div>';
             return;
         }
-        threads.forEach((thread) => {
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = `friends-thread${String(thread?.friendId) === String(activeThreadUserId) ? ' active' : ''}`;
-            const name = String(thread?.displayName || thread?.username || 'Account');
-            const username = thread?.username ? `@${thread.username}` : '';
-            const metaText = thread?.lastMessage || username || '—';
-            item.innerHTML = `
-                <div class="friends-thread-name">${name}</div>
-                <div class="friends-thread-meta">${metaText}</div>
+
+        const q = String(state.search || '').trim().toLowerCase();
+        const filtered = state.friends.filter((f) => {
+            if (!q) return true;
+            const name = String(f.displayName || '').toLowerCase();
+            const handle = String(f.username || '').toLowerCase();
+            return name.includes(q) || handle.includes(q);
+        }).sort((a, b) => {
+            const sa = getSummary(a.id);
+            const sb = getSummary(b.id);
+            const ta = sa.lastMessageAt ? new Date(sa.lastMessageAt).getTime() : 0;
+            const tb = sb.lastMessageAt ? new Date(sb.lastMessageAt).getTime() : 0;
+            if (tb !== ta) return tb - ta;
+            return String(a.displayName || '').localeCompare(String(b.displayName || ''));
+        });
+
+        const total = state.friends.length;
+        const shown = filtered.length;
+        setCount(`Friends: ${shown}${shown !== total ? ` of ${total}` : ''}`);
+
+        if (!filtered.length) {
+            accountsEl.innerHTML = `<div class="user-msg-muted">${q ? 'No friends match your search.' : 'No mutual friends yet.'}</div>`;
+            return;
+        }
+
+        accountsEl.innerHTML = filtered.map((friend) => {
+            const summary = getSummary(friend.id);
+            const active = String(friend.id) === String(state.selectedFriendId) ? ' active' : '';
+            const display = escapeHtml(friend.displayName || friend.username || 'Friend');
+            const handle = escapeHtml(friend.username ? `@${friend.username}` : '(no username)');
+            const preview = escapeHtml(summary.lastMessage ? String(summary.lastMessage).slice(0, 70) : 'No messages yet');
+            const stamp = escapeHtml(formatDate(summary.lastMessageAt) || '');
+            return `
+                <button type="button" class="user-msg-account${active}" data-friend-id="${escapeHtml(friend.id)}">
+                    <div class="user-msg-account-name">${display}</div>
+                    <div class="user-msg-account-meta"><span>${handle}</span><span>${stamp}</span></div>
+                    <div class="user-msg-account-meta"><span>${preview}</span></div>
+                </button>
             `;
-            item.addEventListener('click', () => {
-                activeThreadUserId = String(thread?.friendId || '');
-                loadMessages(activeThreadUserId);
-            });
-            threadsList.appendChild(item);
-        });
-    };
+        }).join('');
+    }
 
-    const loadThreads = async () => {
-        if (threadsLoading) return;
-        threadsLoading = true;
-        try {
-            const resp = await fetch('/api/messages/threads', { credentials: 'include' });
-            if (resp.status === 401) {
-                renderThreads([]);
-                threadsLoading = false;
-                return;
-            }
-            const data = await resp.json().catch(() => ({}));
-            if (!data?.ok) {
-                renderThreads([]);
-                threadsLoading = false;
-                return;
-            }
-            renderThreads(data.threads || []);
-        } catch {
-            renderThreads([]);
-        }
-        threadsLoading = false;
-    };
+    function renderThread() {
+        if (!threadNameEl || !threadSubEl || !threadListEl) return;
 
-    const renderMessages = (messages) => {
-        if (!chatMessages) return;
-        chatMessages.innerHTML = '';
-        if (!messages || !messages.length) {
-            const empty = document.createElement('div');
-            empty.className = 'friends-empty';
-            empty.textContent = 'No messages yet.';
-            chatMessages.appendChild(empty);
+        if (!state.selectedFriend) {
+            threadNameEl.textContent = 'Select a friend';
+            threadSubEl.textContent = 'No conversation selected.';
+            threadListEl.innerHTML = '<div class="user-msg-muted">Select a friend to load messages.</div>';
             return;
         }
-        messages.forEach((msg) => {
-            const bubble = document.createElement('div');
-            bubble.className = `friends-bubble${String(msg.senderId) === String(window.__odeCurrentUser?.id) ? ' me' : ''}`;
-            bubble.textContent = String(msg.body || '');
-            chatMessages.appendChild(bubble);
+
+        const name = state.selectedFriend.displayName || state.selectedFriend.username || 'Friend';
+        threadNameEl.textContent = name;
+        threadSubEl.textContent = state.selectedFriend.username ? `@${state.selectedFriend.username}` : '';
+
+        if (state.isThreadLoading) {
+            threadListEl.innerHTML = '<div class="user-msg-muted">Loading messages...</div>';
+            return;
+        }
+
+        if (!state.messages.length) {
+            threadListEl.innerHTML = '<div class="user-msg-muted">No messages yet. Send the first one.</div>';
+            return;
+        }
+
+        threadListEl.innerHTML = state.messages.map((msg) => {
+            const senderId = String(msg?.senderId || '');
+            const friendId = String(state.selectedFriendId || '');
+            const mine = senderId
+                ? (friendId ? senderId !== friendId : senderId === myId)
+                : false;
+            const bodyHtml = msg?.body ? `<div>${escapeHtml(String(msg.body)).replace(/\n/g, '<br>')}</div>` : '';
+            const imageHtml = msg?.imageDataUrl
+                ? `<img class="user-msg-image" src="${escapeHtml(msg.imageDataUrl)}" alt="Message image">`
+                : '';
+            const stamp = escapeHtml(formatDate(msg?.createdAt) || '');
+            return `
+                <article class="user-msg-bubble${mine ? ' me' : ''}">
+                    ${bodyHtml}
+                    ${imageHtml}
+                    <div class="user-msg-bubble-meta">${mine ? 'You' : 'Friend'} · ${stamp}</div>
+                </article>
+            `;
+        }).join('');
+
+        threadListEl.scrollTop = threadListEl.scrollHeight;
+    }
+
+    function renderFriendRequests(items, statusText) {
+        if (!friendReqListEl) return;
+        if (friendReqStatusEl) friendReqStatusEl.textContent = String(statusText || '');
+        friendReqListEl.innerHTML = '';
+        if (!items || !items.length) {
+            friendReqListEl.innerHTML = '<div class="user-msg-muted">No friend requests.</div>';
+            return;
+        }
+
+        friendReqListEl.innerHTML = items.map((req) => {
+            const name = escapeHtml(req?.displayName || req?.username || 'Account');
+            const handle = escapeHtml(req?.username ? `@${req.username}` : '');
+            return `
+                <article class="user-msg-request-item">
+                    <div class="user-msg-request-meta">
+                        <div class="user-msg-request-name">${name}</div>
+                        <div class="user-msg-request-sub">${handle || 'Friend request'}</div>
+                    </div>
+                    <div class="user-msg-request-actions">
+                        <button type="button" class="user-msg-request-btn accept" data-friend-request-id="${escapeHtml(req.id)}" data-friend-request-action="accept">Accept</button>
+                        <button type="button" class="user-msg-request-btn reject" data-friend-request-id="${escapeHtml(req.id)}" data-friend-request-action="reject">Decline</button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    function renderWorkoutInvites(items, statusText) {
+        if (!workoutReqListEl) return;
+        if (workoutReqStatusEl) workoutReqStatusEl.textContent = String(statusText || '');
+        workoutReqListEl.innerHTML = '';
+        if (!items || !items.length) {
+            workoutReqListEl.innerHTML = '<div class="user-msg-muted">No workout invites.</div>';
+            return;
+        }
+
+        workoutReqListEl.innerHTML = items.map((invite) => {
+            const name = escapeHtml(invite?.displayName || invite?.username || 'Account');
+            const handle = escapeHtml(invite?.username ? `@${invite.username}` : '');
+            const discipline = escapeHtml((invite?.discipline ? String(invite.discipline).toUpperCase() : 'TRAINING'));
+            const days = Number(invite?.daysPerWeek || 0);
+            const detail = days ? `${discipline} • ${days} days/week` : discipline;
+            return `
+                <article class="user-msg-request-item">
+                    <div class="user-msg-request-meta">
+                        <div class="user-msg-request-name">${name}</div>
+                        <div class="user-msg-request-sub">${handle || ''}</div>
+                        <div class="user-msg-request-sub">${escapeHtml(detail)}</div>
+                    </div>
+                    <div class="user-msg-request-actions">
+                        <button type="button" class="user-msg-request-btn accept" data-workout-invite-id="${escapeHtml(invite.id)}" data-workout-invite-action="accept">Accept</button>
+                        <button type="button" class="user-msg-request-btn reject" data-workout-invite-id="${escapeHtml(invite.id)}" data-workout-invite-action="reject">Decline</button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    async function loadThreadSummaries() {
+        const resp = await api('/api/messages/threads');
+        if (!resp.ok) {
+            mergeThreadSummaries([]);
+            return;
+        }
+        mergeThreadSummaries(Array.isArray(resp.json?.threads) ? resp.json.threads : []);
+    }
+
+    async function loadFriendRequests() {
+        if (friendReqStatusEl) friendReqStatusEl.textContent = 'Loading friend requests...';
+        const resp = await api('/api/friends/requests');
+        if (!resp.ok) {
+            state.pendingFriendRequests = 0;
+            updateRequestBadge();
+            renderFriendRequests([], resp.status === 401 ? 'Sign in to view friend requests.' : 'Could not load friend requests.');
+            return;
+        }
+        const requests = Array.isArray(resp.json?.requests) ? resp.json.requests : [];
+        state.pendingFriendRequests = requests.length;
+        updateRequestBadge();
+        renderFriendRequests(requests, requests.length ? `Incoming: ${requests.length}` : 'No friend requests.');
+    }
+
+    async function loadWorkoutInvites() {
+        if (workoutReqStatusEl) workoutReqStatusEl.textContent = 'Loading workout invites...';
+        const resp = await api('/api/training/share/requests');
+        if (!resp.ok) {
+            state.pendingWorkoutInvites = 0;
+            updateRequestBadge();
+            renderWorkoutInvites([], resp.status === 401 ? 'Sign in to view workout invites.' : 'Could not load workout invites.');
+            return;
+        }
+        const invites = Array.isArray(resp.json?.invites) ? resp.json.invites : [];
+        state.pendingWorkoutInvites = invites.length;
+        updateRequestBadge();
+        renderWorkoutInvites(invites, invites.length ? `Incoming: ${invites.length}` : 'No workout invites.');
+    }
+
+    async function loadIncomingRequests() {
+        await Promise.all([loadWorkoutInvites(), loadFriendRequests()]);
+    }
+
+    async function respondFriendRequest(requestId, action) {
+        if (!requestId) return;
+        const resp = await api('/api/friends/respond', {
+            method: 'POST',
+            body: JSON.stringify({ requestId, action })
         });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-
-    const loadMessages = async (friendId) => {
-        if (!friendId) return;
-        if (chatHeader) chatHeader.textContent = 'Loading...';
-        try {
-            const resp = await fetch(`/api/messages/thread?friendId=${encodeURIComponent(friendId)}`, { credentials: 'include' });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) {
-                if (chatHeader) chatHeader.textContent = data?.error || 'Could not load messages.';
-                renderMessages([]);
-                return;
-            }
-            if (chatHeader) chatHeader.textContent = data?.friendName || 'Conversation';
-            renderMessages(data.messages || []);
-        } catch {
-            if (chatHeader) chatHeader.textContent = 'Could not load messages.';
-            renderMessages([]);
+        if (!resp.ok) {
+            renderFriendRequests([], resp.json?.error || 'Could not update friend request.');
+            return;
         }
-    };
+        await loadFriendRequests();
+        await loadFriends();
+    }
 
-    const sendMessage = async () => {
-        const body = String(chatInput?.value || '').trim();
-        if (!body || !activeThreadUserId) return;
-        if (chatInput) chatInput.value = '';
-        try {
-            const resp = await fetch('/api/messages/send', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toUserId: activeThreadUserId, body })
-            });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) {
-                if (chatHeader) chatHeader.textContent = data?.error || 'Could not send message.';
-                return;
-            }
-            loadMessages(activeThreadUserId);
-            loadThreads();
-        } catch {
-            if (chatHeader) chatHeader.textContent = 'Could not send message.';
+    async function respondWorkoutInvite(inviteId, action) {
+        if (!inviteId) return;
+        if (action === 'accept') {
+            const ok = window.confirm('Joining this plan will replace your current training plan. Continue?');
+            if (!ok) return;
         }
-    };
+        const resp = await api('/api/training/share/respond', {
+            method: 'POST',
+            body: JSON.stringify({ inviteId, action })
+        });
+        if (!resp.ok) {
+            renderWorkoutInvites([], resp.json?.error || 'Could not update workout invite.');
+            return;
+        }
+        await loadWorkoutInvites();
+    }
 
-    const showMessagesTab = () => {
-        const tab = root.querySelector('.friends-tab[data-friends-tab="messages"]');
-        if (tab) tab.click();
-    };
+    async function loadFriends() {
+        state.isFriendsLoading = true;
+        renderAccounts();
 
-    tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-            const key = tab.dataset.friendsTab;
-            showPanel(key);
-            if (key === 'warnings') loadWarnings();
-            if (key === 'friends' && !friendsLoaded) loadFriends();
-            if (key === 'requests') {
-                loadWorkoutInvites();
-                loadFriendRequests();
+        const resp = await api('/api/friends/list');
+        if (!resp.ok) {
+            state.isFriendsLoading = false;
+            setCount(resp.status === 401 ? 'Sign in required.' : 'Could not load friends.');
+            if (accountsEl) accountsEl.innerHTML = '<div class="user-msg-muted">Could not load friends.</div>';
+            return;
+        }
+
+        state.friends = (Array.isArray(resp.json?.friends) ? resp.json.friends : []).map((row) => ({
+            id: String(row?.id || ''),
+            username: String(row?.username || ''),
+            displayName: String(row?.displayName || row?.username || 'Friend'),
+            photoDataUrl: String(row?.photoDataUrl || '') || null
+        })).filter((row) => row.id);
+
+        await loadThreadSummaries();
+        state.isFriendsLoading = false;
+
+        if (state.selectedFriendId) {
+            state.selectedFriend = state.friends.find((f) => String(f.id) === String(state.selectedFriendId)) || null;
+            if (!state.selectedFriend) {
+                state.selectedFriendId = null;
+                state.messages = [];
+                state.isThreadLoading = false;
             }
-            if (key === 'accounts' && !accountsLoaded) loadAccounts('');
+        }
+
+        renderAccounts();
+        renderThread();
+    }
+
+    async function loadThread(friendId) {
+        const id = String(friendId || '');
+        if (!id) return;
+
+        state.selectedFriendId = id;
+        state.selectedFriend = state.friends.find((f) => String(f.id) === id) || null;
+        state.messages = [];
+        state.isThreadLoading = true;
+        renderAccounts();
+        renderThread();
+        setStatus('Loading conversation...');
+
+        const resp = await api(`/api/messages/thread?friendId=${encodeURIComponent(id)}`);
+        if (!resp.ok) {
+            state.isThreadLoading = false;
+            renderThread();
+            setStatus(resp.json?.error || 'Could not load conversation.', 'error');
+            return;
+        }
+
+        state.messages = Array.isArray(resp.json?.messages) ? resp.json.messages : [];
+        state.isThreadLoading = false;
+        renderThread();
+        setStatus('');
+    }
+
+    async function sendDirectMessage(e) {
+        e.preventDefault();
+
+        if (!state.selectedFriendId) {
+            setStatus('Select a friend first.', 'error');
+            return;
+        }
+
+        const body = String(bodyEl?.value || '').trim();
+        const image = await collectImageDataUrl();
+        if (!image.ok) {
+            setStatus(image.error || 'Invalid image.', 'error');
+            return;
+        }
+
+        if (!body && !image.dataUrl) {
+            setStatus('Message is empty.', 'error');
+            return;
+        }
+
+        if (sendBtn) sendBtn.disabled = true;
+        setStatus('Sending...');
+
+        const resp = await api('/api/messages/send', {
+            method: 'POST',
+            body: JSON.stringify({
+                toUserId: state.selectedFriendId,
+                body,
+                imageDataUrl: image.dataUrl
+            })
+        });
+
+        if (sendBtn) sendBtn.disabled = false;
+
+        if (!resp.ok) {
+            setStatus(resp.json?.error || 'Could not send message.', 'error');
+            return;
+        }
+
+        if (bodyEl) bodyEl.value = '';
+        if (imageEl) imageEl.value = '';
+        updateImageMeta();
+        setStatus('Sent.', 'ok');
+        await loadThread(state.selectedFriendId);
+        await loadThreadSummaries();
+        renderAccounts();
+    }
+
+    searchEl?.addEventListener('input', () => {
+        state.search = String(searchEl.value || '');
+        renderAccounts();
+    });
+
+    accountsEl?.addEventListener('click', (e) => {
+        const button = e.target?.closest?.('[data-friend-id]');
+        if (!button) return;
+        const id = String(button.getAttribute('data-friend-id') || '');
+        if (!id) return;
+        loadThread(id);
+    });
+
+    requestsPaneEl?.addEventListener('click', (e) => {
+        const friendBtn = e.target?.closest?.('[data-friend-request-id]');
+        if (friendBtn) {
+            const requestId = String(friendBtn.getAttribute('data-friend-request-id') || '');
+            const action = String(friendBtn.getAttribute('data-friend-request-action') || '').toLowerCase();
+            if (requestId && (action === 'accept' || action === 'reject')) {
+                respondFriendRequest(requestId, action);
+            }
+            return;
+        }
+
+        const inviteBtn = e.target?.closest?.('[data-workout-invite-id]');
+        if (inviteBtn) {
+            const inviteId = String(inviteBtn.getAttribute('data-workout-invite-id') || '');
+            const action = String(inviteBtn.getAttribute('data-workout-invite-action') || '').toLowerCase();
+            if (inviteId && (action === 'accept' || action === 'reject')) {
+                respondWorkoutInvite(inviteId, action);
+            }
+        }
+    });
+
+    tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const key = String(btn.dataset.userTabBtn || '');
+            setActiveTab(key);
         });
     });
 
-    const runSearch = () => {
-        if (!accountsSearchInput) return;
-        const query = String(accountsSearchInput.value || '').trim();
-        loadAccounts(query);
-    };
-    if (accountsSearchBtn) accountsSearchBtn.addEventListener('click', runSearch);
-    if (accountsSearchInput) {
-        accountsSearchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') runSearch();
-        });
-    }
-    if (chatSend) chatSend.addEventListener('click', sendMessage);
-    if (chatInput) {
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-    }
+    imageEl?.addEventListener('change', updateImageMeta);
+    sendForm?.addEventListener('submit', sendDirectMessage);
 
-    showPanel('warnings');
-    loadWarnings();
+    updateImageMeta();
+    setActiveTab('messages');
+    loadFriends();
+    loadIncomingRequests();
 }
-
 function initAuthGate() {
     const requiresAuth = document.body?.dataset?.requireAuth === '1';
     if (!requiresAuth) return;
@@ -13451,6 +13433,10 @@ function ensureMobileAuthUi(navMenu) {
             <button type="button" class="auth-mobile-btn auth-mobile-btn-ghost" id="auth-mobile-login">Log in</button>
             <div class="auth-mobile-user-row hidden" id="auth-mobile-user-row">
                 <p class="auth-mobile-username" id="auth-mobile-username">Account</p>
+                <div class="auth-mobile-owner-view hidden" id="auth-mobile-owner-view">
+                    <span id="auth-mobile-owner-view-text"></span>
+                    <a href="/api/auth/owner/impersonation/exit?returnTo=/friends.html" id="auth-mobile-owner-return">Return to owner account</a>
+                </div>
                 <button type="button" class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-logout">Sign out</button>
                 <a class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-dashboard" href="overview.html#control-panel">Dashboard</a>
             </div>
@@ -13464,6 +13450,9 @@ function ensureMobileAuthUi(navMenu) {
         loginBtn: wrap.querySelector('#auth-mobile-login'),
         userRow: wrap.querySelector('#auth-mobile-user-row'),
         userName: wrap.querySelector('#auth-mobile-username'),
+        ownerViewWrap: wrap.querySelector('#auth-mobile-owner-view'),
+        ownerViewText: wrap.querySelector('#auth-mobile-owner-view-text'),
+        ownerReturnLink: wrap.querySelector('#auth-mobile-owner-return'),
         logoutBtn: wrap.querySelector('#auth-mobile-logout'),
         dashboardLink: wrap.querySelector('#auth-mobile-dashboard')
     };
@@ -13477,7 +13466,7 @@ function ensureFriendsButton(wrapper) {
         btn.type = 'button';
         btn.id = 'auth-friends-btn';
         btn.className = 'auth-nav-btn auth-friends-btn';
-        btn.setAttribute('aria-label', 'Friends');
+        btn.setAttribute('aria-label', 'Messages');
         btn.innerHTML = '<svg aria-hidden="true"><use href="#icon-users"></use></svg>';
         const signInBtn = wrapper.querySelector('#auth-signin-btn');
         if (signInBtn) wrapper.insertBefore(btn, signInBtn);
@@ -13494,8 +13483,8 @@ function ensureMobileFriendsButton(wrap) {
         btn.type = 'button';
         btn.id = 'auth-mobile-friends';
         btn.className = 'auth-mobile-btn auth-mobile-btn-ghost auth-mobile-friends';
-        btn.setAttribute('aria-label', 'Friends');
-        btn.innerHTML = '<span class="auth-mobile-icon"><svg aria-hidden="true"><use href="#icon-users"></use></svg></span><span>Friends</span>';
+        btn.setAttribute('aria-label', 'Messages');
+        btn.innerHTML = '<span class="auth-mobile-icon"><svg aria-hidden="true"><use href="#icon-users"></use></svg></span><span>Messages</span>';
         const signupBtn = wrap.querySelector('#auth-mobile-signup');
         if (signupBtn) wrap.insertBefore(btn, signupBtn);
         else wrap.insertBefore(btn, wrap.firstChild);
@@ -13516,9 +13505,9 @@ function ensureFriendsModal() {
         <div class="friends-card" role="document">
             <button type="button" class="friends-close" data-friends-close aria-label="Close">×</button>
             <h3 class="friends-title">Connections</h3>
-            <div class="friends-tabs" role="tablist" aria-label="Friends navigation">
+            <div class="friends-tabs" role="tablist" aria-label="Messages navigation">
                 <button type="button" class="friends-tab warn active" data-friends-tab="warnings" role="tab" aria-selected="true">⚠️ Warnings</button>
-                <button type="button" class="friends-tab" data-friends-tab="friends" role="tab" aria-selected="false">Friends</button>
+                <button type="button" class="friends-tab" data-friends-tab="friends" role="tab" aria-selected="false">Messages</button>
                 <button type="button" class="friends-tab" data-friends-tab="requests" role="tab" aria-selected="false">Requests</button>
                 <button type="button" class="friends-tab" data-friends-tab="accounts" role="tab" aria-selected="false">Accounts</button>
                 <button type="button" class="friends-tab" data-friends-tab="groups" role="tab" aria-selected="false">Groups</button>
@@ -13529,7 +13518,7 @@ function ensureFriendsModal() {
                     <div class="friends-list" id="friends-warnings-list"></div>
                 </div>
                 <div class="friends-panel" data-friends-panel="friends">
-                    <p class="friends-muted" id="friends-list-status">Friends will appear here.</p>
+                    <p class="friends-muted" id="friends-list-status">Messages will appear here.</p>
                     <div class="friends-list" id="friends-list"></div>
                 </div>
                 <div class="friends-panel" data-friends-panel="requests">
@@ -13952,11 +13941,11 @@ function setupControlPanel() {
             closeBtn.className = 'control-close';
             closeBtn.id = 'control-close';
             closeBtn.setAttribute('aria-label', 'Collapse panel');
-            closeBtn.textContent = 'Ãƒâ€”';
+            closeBtn.textContent = '×';
             header.appendChild(closeBtn);
         }
         closeBtn.setAttribute('aria-label', 'Close control panel');
-        closeBtn.textContent = 'Ãƒâ€”';
+        closeBtn.textContent = '×';
         closeBtn.addEventListener('click', toggleControlPanel);
 
         let fab = document.getElementById('control-mobile-fab');
@@ -13988,6 +13977,18 @@ function setupControlPanel() {
         openControlPanel();
         if (controlCloseBtn) controlCloseBtn.remove();
         document.getElementById('control-mobile-fab')?.remove();
+    }
+
+    if (isMobileControl) {
+        controlPanel.querySelectorAll('.control-link').forEach((controlLink) => {
+            if (!controlLink.querySelector('.control-link-close')) {
+                const closeIcon = document.createElement('span');
+                closeIcon.className = 'control-link-close';
+                closeIcon.setAttribute('aria-hidden', 'true');
+                closeIcon.textContent = '×';
+                controlLink.appendChild(closeIcon);
+            }
+        });
     }
 
     controlPanel.querySelectorAll('.control-link').forEach((controlLink) => {
@@ -28436,6 +28437,11 @@ function openControlPanel() {
     controlPanel.classList.remove('collapsed');
     document.body.classList.add('control-open');
     document.body.classList.remove('control-collapsed');
+    const fab = document.getElementById('control-mobile-fab');
+    if (fab) {
+        fab.classList.add('hidden');
+        fab.setAttribute('aria-expanded', 'true');
+    }
     setTimeout(() => {
         const first = controlPanel.querySelector('a,button,input');
         first?.focus();
@@ -28448,6 +28454,11 @@ function collapseControlPanel() {
     controlPanel?.classList.add('collapsed');
     document.body.classList.add('control-collapsed');
     document.body.classList.remove('control-open');
+    const fab = document.getElementById('control-mobile-fab');
+    if (fab) {
+        fab.classList.remove('hidden');
+        fab.setAttribute('aria-expanded', 'false');
+    }
 }
 
 document.addEventListener('keydown', (e) => {

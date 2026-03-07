@@ -40,6 +40,8 @@ const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
 const IS_DEV = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
+const DEV_SERVER_ID = 'jasons-web-dev-server';
+const SERVER_STARTED_AT = new Date().toISOString();
 
 const mime = {
     '.html': 'text/html',
@@ -1635,6 +1637,16 @@ const serveStatic = (req, res, pathname) => {
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
+    if (url.pathname === '/__dev/status' && req.method === 'GET') {
+        return sendJson(res, 200, {
+            id: DEV_SERVER_ID,
+            app: 'jasons-web',
+            pid: process.pid,
+            port: listenPort,
+            startedAt: SERVER_STARTED_AT
+        });
+    }
+
     // Avoid auth/session “randomly signed out” issues caused by switching between
     // `localhost` and `127.0.0.1` (cookies are host-scoped).
     // Default canonical host is `localhost` for local development; override with CANONICAL_HOST.
@@ -2223,20 +2235,11 @@ const server = http.createServer(async (req, res) => {
 const REQUESTED_PORT = process.env.PORT;
 let listenPort = Number(PORT);
 if (!Number.isFinite(listenPort) || listenPort <= 0) listenPort = 3000;
-let autoPortAttempts = 0;
 
 server.on('error', (err) => {
     if (err && err.code === 'EADDRINUSE') {
-        if (!REQUESTED_PORT && autoPortAttempts < 12) {
-            autoPortAttempts += 1;
-            listenPort += 1;
-            console.warn(`[server] Port in use. Retrying on ${listenPort}...`);
-            setTimeout(() => server.listen(listenPort), 200);
-            return;
-        }
-
         console.error(`[server] Port ${listenPort} is already in use.`);
-        console.error('[server] Close the other dev server or set PORT in your .env (e.g. PORT=3001).');
+        console.error('[server] Close the other dev server, then restart this server.');
         process.exit(1);
         return;
     }
@@ -2246,7 +2249,7 @@ server.on('error', (err) => {
 });
 
 server.listen(listenPort, () => {
-    console.log(`Server running on http://localhost:${listenPort}`);
+    console.log(`Server running on http://localhost:${listenPort} (pid ${process.pid})`);
     console.log('[asset] main.js resolved path:', path.resolve(PUBLIC_DIR, 'js', 'main.js'));
 });
 

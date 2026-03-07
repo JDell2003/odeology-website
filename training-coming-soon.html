@@ -172,7 +172,7 @@
     .progress-top{display:flex;justify-content:space-between;color:var(--muted);font-size:.84rem;margin-bottom:.4rem}
     .bar{height:9px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.fill{height:100%;width:10%;background:linear-gradient(90deg,var(--blue),var(--blue2));transition:.28s}
     .step-card{padding:1.2rem;animation:up .25s ease}.step-card h3{font-size:1.4rem}.step-card .d{color:var(--muted);margin:.2rem 0 .8rem;font-size:.98rem}
-    .step-card.step-7{min-height:620px}
+    .step-card.step-7{min-height:0}
     .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
     .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
     .fg{margin-bottom:.85rem}.fg .t{font-size:.82rem;color:#bdd6ee;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap}
@@ -291,6 +291,7 @@
     .opts.inline{display:flex;flex-wrap:nowrap;gap:.55rem}
     .opts.inline .opt{flex:1;white-space:nowrap}
     .opt{
+      position:relative;
       border:1px solid rgba(145,189,232,.35);
       border-radius:14px;
       background:rgba(8,29,48,.9);
@@ -300,6 +301,55 @@
       cursor:pointer;
       transition:.2s;
       box-shadow:0 8px 18px rgba(7,18,30,.2);
+    }
+    .opt-label{display:block}
+    .opt.has-soon{padding-top:.88rem}
+    .opt .opt-soon-tag{
+      position:absolute;
+      top:0;
+      left:.66rem;
+      transform:translateY(-54%);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:.16rem .52rem .15rem;
+      border:1px solid rgba(202,126,34,.6);
+      border-radius:999px;
+      background:linear-gradient(180deg,rgba(248,196,109,.98) 0%,rgba(228,154,57,.98) 100%);
+      color:#4b2c0b;
+      font-weight:900;
+      font-size:.55rem;
+      line-height:1;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      text-shadow:0 1px 0 rgba(255,255,255,.48);
+      box-shadow:0 1px 0 rgba(255,255,255,.38) inset,0 6px 12px rgba(214,139,47,.22);
+      pointer-events:none;
+      z-index:3;
+    }
+    .opt .opt-soon-tag::after{
+      content:'';
+      position:absolute;
+      left:18%;
+      right:18%;
+      bottom:-7px;
+      height:8px;
+      background:radial-gradient(ellipse at center,rgba(228,154,57,.36) 0%,rgba(228,154,57,0) 72%);
+      pointer-events:none;
+    }
+    .opt.is-disabled{
+      border-style:dashed;
+      border-color:rgba(95,118,136,.45);
+      background:rgba(244,247,250,.96);
+      color:#5f7485;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .intake.overlay .opt.is-disabled{
+      border-color:rgba(95,118,136,.45);
+      background:rgba(244,247,250,.96);
+      color:#5f7485;
     }
     .offbrand-highlight{
       display:inline-flex;
@@ -368,6 +418,7 @@
     .crop-controls label{font-size:.78rem;color:#3b4d61}
     .crop-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:.9rem;flex-wrap:wrap}
     .opt:hover{transform:translateY(-1px);border-color:rgba(137,201,255,.9)}
+    .opt.is-disabled:hover{transform:none;border-color:rgba(95,118,136,.45)}
     .opt.a{
       background:linear-gradient(135deg,rgba(44,140,230,.25),rgba(120,196,255,.3));
       border-color:rgba(90,180,255,.95);
@@ -550,7 +601,7 @@
       .injury-row .opts.inline{grid-template-columns:repeat(2,minmax(0,1fr))}
       #trainingWhy{min-height:96px}
       .step-card.step-7{
-        min-height:78vh;
+        min-height:0;
         display:flex;
         flex-direction:column;
       }
@@ -600,11 +651,11 @@
     </section>
 
     <section class="wrap intake hidden" id="intake">
-      <button class="intake-close" id="intake-close" type="button" aria-label="Close intake">?</button>
+      <button class="intake-close" id="intake-close" type="button" aria-label="Close intake">×</button>
       <div class="intake-shell">
         <div>
           <div class="progress">
-            <div class="progress-top"><span id="pStep">Step 1 of 10</span><span id="pTitle">Goal + timeline</span></div>
+            <div class="progress-top"><span id="pStep">Step 1 of 10</span><span id="pTitle">Timeline + focus</span></div>
             <div class="bar"><div class="fill" id="pFill"></div></div>
           </div>
           <div class="step-card" id="stepCard"></div>
@@ -868,8 +919,11 @@
       window.addEventListener('odeauth',()=>loadMealData(true));
       window.addEventListener('focus',()=>{if(S.step===9&&S.mealStatus!=='ready')loadMealData(true)});
 
-      const D={step:1,goal:'',timeline:'8 weeks',priority:'',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'powerbuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
+      const D={step:1,goal:'build size',timeline:'8 weeks',priority:'aesthetic',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'aesthetic bodybuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
       let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem(K)||'{}'))}catch{S=Object.assign({},D)}
+      if(!String(S.goal||'').trim())S.goal='build size';
+      if(!['aesthetic'].includes(String(S.priority||'').trim().toLowerCase()))S.priority='aesthetic';
+      if(String(S.priority||'').trim().toLowerCase()==='aesthetic')S.modality='aesthetic bodybuilding';
       if(typeof S.mealOptionTouched!=='boolean'){
         S.mealOptionTouched=!!(S.phaseRate||S.keepPlanSame||S.mealAdjustmentApplied||S.mealPreviewActive||S.mealPreviewTarget);
       }
@@ -886,11 +940,11 @@
         btns.forEach(b=>{b.classList.remove('auth-attn');b.getBoundingClientRect();b.classList.add('auth-attn');});
         setTimeout(()=>btns.forEach(b=>b.classList.remove('auth-attn')),1800);
       };
-      const btns=(arr,v,y,inline)=>'<div class="opts'+(inline?' inline':'')+'">'+arr.map(o=>'<button type="button" class="opt'+(String(v)===String(o.v)?' a':'')+(y?' y':'')+'" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
+      const btns=(arr,v,y,inline)=>'<div class="opts'+(inline?' inline':'')+'">'+arr.map(o=>{const dis=!!o.soon;const active=!dis&&String(v)===String(o.v);return '<button type="button" class="opt'+(active?' a':'')+(y?' y':'')+(dis?' is-disabled has-soon':'')+'" data-v="'+o.v+'"'+(dis?' data-disabled="true" aria-disabled="true"':'')+'>'+(dis?'<span class="opt-soon-tag">Coming soon</span>':'')+'<span class="opt-label">'+o.l+'</span></button>'}).join('')+'</div>';
       const mb=(arr,vals,g,y)=>{const set=new Set(vals||[]);return '<div class="opts" data-g="'+g+'">'+arr.map(o=>'<button type="button" class="opt'+(set.has(o.v)?' a':'')+(y?' y':'')+'" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>'};
       const db=()=>{const l=['Su','M','Tu','W','Th','F','Sa'];return '<div class="opts" data-g="days">'+l.map((d,i)=>'<button type="button" class="opt'+(S.preferredDays.includes(i)?' a':'')+'" data-v="'+i+'">'+d+'</button>').join('')+'</div>'};
       const M=[
-        {t:'Goal + timeline',h:'Clarifying your objective',x:'Size = build muscle mass. Strength = improve max loads and force output. Aesthetic = improve visual symmetry/lean look. Pick what matters most now.'},
+        {t:'Timeline + focus',h:'Clarifying your objective',x:'Size = build muscle mass. Strength = improve max loads and force output. Aesthetic = improve visual symmetry/lean look. Pick what matters most now.'},
         {t:'Stats',h:'Setting realistic expectations',x:'Age, size, and body-fat context drive recovery assumptions and expected rate of progress.'},
         {t:'Experience + performance',h:'Starting difficulty',x:'Your lift levels and experience set the first block intensity so it is challenging but sustainable.'},
         {t:'Schedule + time',h:'Split builder inputs',x:'Days/week and session length determine how much volume can fit without rushed sessions.'},
@@ -1400,6 +1454,20 @@
         if(s.startsWith('m'))return 'male';
         return '';
       };
+      const normalizeTrainingGoalFromMacro=(raw)=>{
+        const g=String(raw||'').trim().toLowerCase();
+        if(!g) return '';
+        if(g.includes('cut')||g.includes('lose')) return 'cut fat';
+        if(g.includes('recomp')||g.includes('maintain')) return 'recomp';
+        if(g.includes('bulk')||g.includes('build')||g.includes('gain')||g.includes('strength')) return 'build size';
+        return '';
+      };
+      const trainingGoalLabel=(goalRaw)=>{
+        const g=String(goalRaw||'').trim().toLowerCase();
+        if(g==='cut fat') return 'Cut fat (lean down)';
+        if(g==='recomp') return 'Recomp (lean + muscle)';
+        return 'Build size (more muscle)';
+      };
       const shouldFillField=(key)=>{
         if(key==='sex') return !S.sex;
         const cur=Number(S[key]);
@@ -1475,6 +1543,10 @@
         if(selections && typeof selections==='object'){
           macroSelectionsCache=selections;
           let changed=false;
+          const macroGoal=normalizeTrainingGoalFromMacro(
+            selections.goal||selections.mode||selections.goalMode||selections.primaryGoal
+          );
+          if(macroGoal && S.goal!==macroGoal){S.goal=macroGoal;changed=true;}
           const sex=normalizeMacroSex(selections.sex);
           if(sex && shouldFillField('sex')){S.sex=sex;changed=true;}
           const age=clampNum(selections.ageYears,16,70);
@@ -1493,7 +1565,7 @@
         macroPrefillDone=true;
         macroPrefillInFlight=false;
       };
-      function bindSingle(group,setter){el.c.querySelectorAll('[data-g="'+group+'"] .opt').forEach(b=>b.addEventListener('click',()=>{setter(b.dataset.v);render()}));}
+      function bindSingle(group,setter){el.c.querySelectorAll('[data-g="'+group+'"] .opt').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.disabled==='true'||b.classList.contains('is-disabled'))return;setter(b.dataset.v);render()}));}
       function nav(){
         const b=el.c.querySelector('[data-a="b"]'),n=el.c.querySelector('[data-a="n"]');
         const advance=()=>{
@@ -1508,7 +1580,12 @@
           if(S.profilePhotoData&&window.__odeologyUploadProfilePhoto){try{window.__odeologyUploadProfilePhoto(S.profilePhotoData)}catch{}}
           done();
           syncProfile();
-          window.location.href='training.html';
+          try{
+            const handoff=Object.assign({},S,{completedAt:new Date().toISOString()});
+            sessionStorage.setItem('ode_training_intake_handoff',JSON.stringify(handoff));
+            sessionStorage.setItem('ode_training_force_autostart','1');
+          }catch{}
+          window.location.href='training.html?from=intake#training';
         };
         if(b)b.addEventListener('click',()=>{S.step=Math.max(1,S.step-1);save();render()});
         if(n)n.addEventListener('click',()=>{
@@ -1571,9 +1648,9 @@
       function render(){
         const s=S.step,m=M[s-1];el.s.textContent='Step '+s+' of 10';el.t.textContent=m.t;el.f.style.width=(s*10)+'%';
         let h='';
-        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Pick your phase objective and timeline so your workload matches your real goal.</p><div class="fg" data-g="goal"><div class="t">Primary goal</div>'+btns([{l:'Build size (more muscle)',v:'build size'},{l:'Cut fat (lean down)',v:'cut fat'},{l:'Recomp (lean + muscle)',v:'recomp'}],S.goal,false,false)+'</div><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Size = visual muscle growth',v:'size'},{l:'Strength = heavier lifts',v:'strength'},{l:'Aesthetic = shape and proportion',v:'aesthetic'}],S.priority,false,false)+'</div>';
+        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Strength = heavier lifts',v:'strength',soon:true},{l:'Powerbuilding',v:'size',soon:true}],S.priority,false,false)+'</div>';
         if(s===2)h='<h3>Body stats snapshot</h3><p class="d">No perfect numbers needed. We just need a realistic baseline.</p><div class="fg" data-g="sex"><div class="t">Sex</div>'+btns([{l:'Male',v:'male'},{l:'Female',v:'female'}],S.sex,false,true)+'</div><div class="g2"><div><div class="t">Age: <strong id="ageO">'+S.age+'</strong></div><input id="age" type="range" min="16" max="70" value="'+S.age+'"/></div><div><div class="t">Height: <strong id="hO">'+S.heightIn+' in</strong></div><input id="heightIn" type="range" min="55" max="82" value="'+S.heightIn+'"/></div></div><div class="g2"><div><div class="t">Current weight: <strong id="wO">'+S.weightLb+' lb</strong></div><input id="weightLb" type="range" min="90" max="360" value="'+S.weightLb+'"/></div><div><div class="t" id="bfLabel">Estimated body fat <span class="hint">see image</span>: <strong id="bfO">'+S.bodyFatPct+'%</strong></div><input id="bodyFatPct" type="range" min="5" max="45" value="'+S.bodyFatPct+'"/></div></div><div class="sex-visual '+(S.sex?'show':'hidden')+'" id="sexVisual"><img id="sexImage" src="'+(S.sex==='female'?'assets/bodyfat-female-cropped.jpg':'assets/bodyfat-male.png')+'" alt="Body fat reference chart"/></div>';
-        if(s===3)h='<h3>Training background and strength level</h3><p class="d">Rough values are enough. We use them to set the right first-block intensity.</p><div class="fg" data-g="experience"><div class="t">Training experience</div>'+btns([{l:'< 6 months',v:'<6m'},{l:'6-24 months',v:'6-24m'},{l:'2-5 years',v:'2-5y'},{l:'5+ years',v:'5y+'}],S.experience,false,false)+'</div><div class="g3"><div><div class="t">Bench (lb): <strong id="bO">'+S.bench+'</strong></div><input id="bench" type="range" min="45" max="405" value="'+S.bench+'"/></div><div><div class="t">Squat (lb): <strong id="sqO">'+S.squat+'</strong></div><input id="squat" type="range" min="45" max="585" value="'+S.squat+'"/></div><div><div class="t">Deadlift (lb): <strong id="dO">'+S.deadlift+'</strong></div><input id="deadlift" type="range" min="65" max="675" value="'+S.deadlift+'"/></div></div><div class="fg" data-g="trainToFailure"><div class="t">Can you safely train close to failure?</div>'+btns([{l:'Yes',v:'yes'},{l:'No',v:'no'}],S.trainToFailure,false,true)+'</div>';
+        if(s===3)h='<h3>Training background and strength level</h3><p class="d">Rough values are enough. We use them to set the right first-block intensity.</p><div class="fg" data-g="experience"><div class="t">Training experience</div>'+btns([{l:'< 6 months',v:'<6m'},{l:'6-24 months',v:'6-24m'},{l:'2-5 years',v:'2-5y'},{l:'5+ years',v:'5y+'}],S.experience,false,false)+'</div><div class="g3"><div><div class="t">Bench (lb): <strong id="bO">'+S.bench+'</strong></div><input id="bench" type="range" min="45" max="405" step="2.5" value="'+S.bench+'"/></div><div><div class="t">Squat (lb): <strong id="sqO">'+S.squat+'</strong></div><input id="squat" type="range" min="45" max="585" step="2.5" value="'+S.squat+'"/></div><div><div class="t">Deadlift (lb): <strong id="dO">'+S.deadlift+'</strong></div><input id="deadlift" type="range" min="65" max="675" step="2.5" value="'+S.deadlift+'"/></div></div><div class="fg" data-g="trainToFailure"><div class="t">Can you safely train close to failure?</div>'+btns([{l:'Yes',v:'yes'},{l:'No',v:'no'}],S.trainToFailure,false,true)+'</div>';
         if(s===4)h='<h3>Schedule and session time</h3><p class="d">This sets your split and exercise count so the plan fits your week.</p><div class="fg"><div class="t">What days do you prefer to train on <span class="hint" id="dyO">'+S.daysPerWeek+' days</span></div>'+db()+'</div><div class="fg" data-g="sessionLength"><div class="t">Session length</div>'+btns([{l:'30 min',v:'30'},{l:'45 min',v:'45'},{l:'60 min',v:'60'},{l:'75+ min',v:'75+'}],S.sessionLength,false,true)+'</div>';
         if(s===5)h='<h3>Where and how you train</h3><p class="d">We filter movements to what you can actually run.</p><div class="fg" data-g="location"><div class="t">Location</div>'+btns([{l:'Home',v:'home'},{l:'Commercial gym',v:'commercial gym'}],S.location,false,true)+'</div><div class="fg"><div class="t">Equipment access (multi-select)</div>'+mb([{l:'Barbell',v:'barbell'},{l:'Dumbbells',v:'dumbbells'},{l:'Cables',v:'cables'},{l:'Machines',v:'machines'},{l:'Smith',v:'smith'},{l:'Bands',v:'bands'},{l:'Pull-up bar',v:'pull-up bar'}],S.equipment,'equipment')+'</div>';
         if(s===6)h='<h3>Bodybuilding emphasis</h3><p class="d">Pick up to 3 priority groups so we can bias volume and rotation.</p><div class="fg"><div class="t">Priority groups (pick 1-3) <button type="button" class="info" data-tip="We bias these muscle groups for 8?12 weeks, then rotate focus so every group gets a full growth phase without overuse. This keeps progress individualized and sustainable.">!</button></div>'+mb([{l:'Chest',v:'chest'},{l:'Back',v:'back'},{l:'Shoulders',v:'shoulders'},{l:'Arms',v:'arms'},{l:'Legs',v:'legs'},{l:'Glutes',v:'glutes'},{l:'Abs',v:'abs'}],S.focus,'focus')+'</div><div class="fg" data-g="loadStyle"><div class="t">Training style <button type="button" class="info" data-tip="Choose the feel you prefer: machines/cables (stable, joint-friendly), free weights (skill + stability), or balanced mix.">!</button></div>'+btns([{l:'Mostly machines/cables',v:'machines/cables'},{l:'Mostly free weights',v:'free weights'},{l:'Balanced mix',v:'mixed'}],S.loadStyle,false,false)+'</div>';
@@ -1723,7 +1800,7 @@
         h+='<div class="acts"><div class="row"><button type="button" class="btnx g" data-a="r">Restart</button>'+undoBtn+(s>1?'<button type="button" class="btnx g" data-a="b">Back</button>':'')+'</div><button type="button" class="btnx p'+(lockNext?' is-disabled':'')+'" data-a="n" aria-disabled="'+(lockNext?'true':'false')+'">'+(s===10?'Save + Enter Engine':'Next')+'</button></div>';
         el.c.innerHTML=h;
 
-        if(s===1){bindSingle('goal',v=>S.goal=v);bindSingle('timeline',v=>S.timeline=v);bindSingle('priority',v=>S.priority=v)}
+        if(s===1){bindSingle('timeline',v=>S.timeline=v);bindSingle('priority',v=>{S.priority=v;if(v==='aesthetic')S.modality='aesthetic bodybuilding'})}
         if(s===2){
           bindSingle('sex',v=>S.sex=v);
           ['age','heightIn','weightLb','bodyFatPct'].forEach(id=>{const i=el.c.querySelector('#'+id);i.addEventListener('input',()=>{S[id]=Number(i.value);const o=id==='heightIn'?'hO':id==='weightLb'?'wO':id==='bodyFatPct'?'bfO':'ageO';el.c.querySelector('#'+o).textContent=id==='heightIn'?S.heightIn+' in':id==='weightLb'?S.weightLb+' lb':id==='bodyFatPct'?S.bodyFatPct+'%':S.age;save()})});

@@ -1,0 +1,23 @@
+[process] unhandledRejection error: constraint "uq_friend_requests_pending" for table "app_friend_requests" does not exist
+    at D:\Jasons Web\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async socialRoutes (D:\Jasons Web\core\socialRoutes.js:521:5)
+    at async Server.<anonymous> (D:\Jasons Web\server.js:1676:9) {
+  length: 169,
+  severity: 'ERROR',
+  code: '42704',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'pg_constraint.c',
+  line: '1024',
+  routine: 'get_relation_constraint_attnos'
+}

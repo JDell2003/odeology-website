@@ -4,11 +4,18 @@ const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
+const OWNER_BACKUP_COOKIE_NAME = process.env.OWNER_BACKUP_COOKIE_NAME || `${COOKIE_NAME}_owner_backup`;
 const SESSION_TTL_DAYS = Math.max(1, Number(process.env.SESSION_TTL_DAYS || 30));
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.AUTH_MAX_BODY_BYTES || 200_000));
 
 let schemaEnsured = false;
+let schemaEnsurePromise = null;
+let schemaTransientBackoffUntil = 0;
+let lastSchemaTransientError = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
+const AUTH_SCHEMA_BACKOFF_MS = Math.max(1000, Number(process.env.AUTH_SCHEMA_BACKOFF_MS || 15_000));
+const AUTH_TRANSIENT_LOG_THROTTLE_MS = Math.max(1000, Number(process.env.AUTH_TRANSIENT_LOG_THROTTLE_MS || 10_000));
+const authTransientLogByContext = new Map();
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -31,6 +38,38 @@ function normalizePhone(raw) {
   const digits = value.replace(/[^\d]/g, '');
   if (digits.length < 10) return null;
   return value;
+}
+
+function csvToSet(raw) {
+  const out = new Set();
+  String(raw || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .forEach((s) => out.add(s));
+  return out;
+}
+
+const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'odeology,odeology_,odeology_owner,jason');
+const OWNER_EMAILS = csvToSet(process.env.OWNER_EMAILS || '');
+const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'odeology.com').trim().toLowerCase();
+const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'odeology,odeology_');
+const OWNER_USER_IDS = csvToSet(process.env.OWNER_USER_IDS || '');
+
+function isOwnerUser(userLike) {
+  const userId = String(userLike?.id || '').trim().toLowerCase();
+  const username = String(userLike?.username || '').trim().toLowerCase();
+  const email = String(userLike?.email || '').trim().toLowerCase();
+  const displayName = String(userLike?.display_name || userLike?.displayName || '').trim().toLowerCase();
+  const adminNotes = String(userLike?.admin_notes || userLike?.adminNotes || '').trim().toLowerCase();
+  if (userId && OWNER_USER_IDS.has(userId)) return true;
+  if (adminNotes.includes('owner')) return true;
+  if (username && OWNER_USERNAMES.has(username)) return true;
+  if (email && OWNER_EMAILS.has(email)) return true;
+  if (displayName && OWNER_DISPLAY_NAMES.has(displayName)) return true;
+  if (email && OWNER_EMAIL_DOMAIN && email.endsWith(`@${OWNER_EMAIL_DOMAIN}`)) return true;
+  if (username.includes('odeology') || displayName.includes('odeology')) return true;
+  return false;
 }
 
 function safeReturnTo(raw) {
@@ -85,6 +124,37 @@ function clearCookieHeader(req) {
   return parts.join('; ');
 }
 
+function setNamedCookieHeader(name, value, req, maxAgeSeconds) {
+  const cookieName = String(name || '').trim();
+  if (!cookieName) return '';
+  const maxAge = Number.isFinite(Number(maxAgeSeconds))
+    ? Math.max(0, Math.floor(Number(maxAgeSeconds)))
+    : SESSION_TTL_DAYS * 24 * 60 * 60;
+  const parts = [
+    `${cookieName}=${encodeURIComponent(String(value || ''))}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${maxAge}`
+  ];
+  if (isSecureRequest(req)) parts.push('Secure');
+  return parts.join('; ');
+}
+
+function clearNamedCookieHeader(name, req) {
+  const cookieName = String(name || '').trim();
+  if (!cookieName) return '';
+  const parts = [
+    `${cookieName}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=0'
+  ];
+  if (isSecureRequest(req)) parts.push('Secure');
+  return parts.join('; ');
+}
+
 function sendJson(res, status, payload, extraHeaders = {}) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
@@ -121,9 +191,14 @@ function sleep(ms) {
 
 function logTransientDbError(err, context) {
   if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') return;
+  const key = String(context || 'unknown');
+  const now = Date.now();
+  const last = Number(authTransientLogByContext.get(key) || 0);
+  if (now - last < AUTH_TRANSIENT_LOG_THROTTLE_MS) return;
+  authTransientLogByContext.set(key, now);
   const d = db.getDiagnostics ? db.getDiagnostics() : {};
   console.warn('[auth][db-transient]', {
-    context: context || 'unknown',
+    context: key,
     code: err?.code || null,
     message: err?.message || String(err),
     sslEnabled: Boolean(d?.sslEnabled),
@@ -162,17 +237,21 @@ async function handleAccountsList(req, res, url) {
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
-        WHERE username ILIKE $1
-           OR display_name ILIKE $1
+        WHERE u.id <> $2
+          AND (
+            username ILIKE $1
+            OR display_name ILIKE $1
+          )
         ORDER BY display_name ASC, username ASC
-        LIMIT $2;
+        LIMIT $3;
       `,
-      [pattern, searchLimit]
+      [pattern, user.id, searchLimit]
     );
     rows = result.rows || [];
   } else {
     const countResult = await db.query('SELECT COUNT(*)::int AS count FROM app_users;');
-    const totalCount = Number(countResult.rows?.[0]?.count || 0);
+    const totalCountRaw = Number(countResult.rows?.[0]?.count || 0);
+    const totalCount = Math.max(0, totalCountRaw - 1);
     const cap = 5000;
     const listLimit = totalCount >= cap ? 250 : Math.min(totalCount || 0, cap);
     const result = await db.query(
@@ -183,10 +262,11 @@ async function handleAccountsList(req, res, url) {
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE u.id <> $1
         ORDER BY u.created_at DESC
-        LIMIT $1;
+        LIMIT $2;
       `,
-      [listLimit]
+      [user.id, listLimit]
     );
     rows = result.rows || [];
     sendJson(res, 200, {
@@ -219,9 +299,454 @@ async function handleAccountsList(req, res, url) {
   return true;
 }
 
-async function ensureSchema() {
+async function requireOwnerActor(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) {
+    sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    return null;
+  }
+  if (!actor.isOwner) {
+    sendJson(res, 403, { ok: false, error: 'OWNER_REQUIRED' });
+    return null;
+  }
+  return actor;
+}
+
+async function handleOwnerAccountsList(req, res, url) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  const q = String(url.searchParams.get('q') || '').trim();
+  const limitParam = Number(url.searchParams.get('limit') || 0);
+  const limit = Math.max(1, Math.min(10000, limitParam || 2000));
+  const values = [actor.id];
+  let whereSql = '';
+  if (q) {
+    const qIndex = values.push(`%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`);
+    whereSql = `WHERE (u.username ILIKE $${qIndex} OR u.display_name ILIKE $${qIndex} OR u.email ILIKE $${qIndex})`;
+  }
+  values.push(limit);
+  const limitIndex = values.length;
+
+  let result;
+  try {
+    result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.email,
+               u.display_name,
+               u.created_at,
+               u.last_seen,
+               u.last_login,
+               p.profile->'profile'->>'photoDataUrl' AS photo,
+               tp.onboarding_complete,
+               tp.discipline,
+               tp.days_per_week,
+               tp.updated_at AS training_updated_at,
+               plan.id AS active_plan_id,
+               plan.updated_at AS active_plan_updated_at,
+               (
+                 SELECT MAX(m.created_at)
+                 FROM app_messages m
+                 WHERE m.sender_id = $1
+                   AND m.receiver_id = u.id
+               ) AS last_owner_message_at,
+               (
+                 SELECT COUNT(*)::int
+                 FROM app_messages m
+                 WHERE m.sender_id = $1
+                   AND m.receiver_id = u.id
+               ) AS owner_message_count
+        FROM app_users u
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT id, updated_at
+          FROM app_training_plans t
+          WHERE t.user_id = u.id
+            AND t.active = true
+          ORDER BY t.updated_at DESC
+          LIMIT 1
+        ) AS plan ON true
+        ${whereSql}
+        ORDER BY u.created_at DESC
+        LIMIT $${limitIndex};
+      `,
+      values
+    );
+  } catch (err) {
+    const code = String(err?.code || '');
+    if (code !== '42P01') throw err;
+    result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.email,
+               u.display_name,
+               u.created_at,
+               u.last_seen,
+               u.last_login,
+               p.profile->'profile'->>'photoDataUrl' AS photo,
+               NULL::boolean AS onboarding_complete,
+               NULL::text AS discipline,
+               NULL::int AS days_per_week,
+               NULL::timestamptz AS training_updated_at,
+               NULL::uuid AS active_plan_id,
+               NULL::timestamptz AS active_plan_updated_at,
+               (
+                 SELECT MAX(m.created_at)
+                 FROM app_messages m
+                 WHERE m.sender_id = $1
+                   AND m.receiver_id = u.id
+               ) AS last_owner_message_at,
+               (
+                 SELECT COUNT(*)::int
+                 FROM app_messages m
+                 WHERE m.sender_id = $1
+                   AND m.receiver_id = u.id
+               ) AS owner_message_count
+        FROM app_users u
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        ${whereSql}
+        ORDER BY u.created_at DESC
+        LIMIT $${limitIndex};
+      `,
+      values
+    );
+  }
+
+  const accounts = (result.rows || []).map((row) => ({
+    id: row.id,
+    username: row.username || null,
+    email: row.email || null,
+    displayName: row.display_name || row.username || 'Account',
+    photoDataUrl: row.photo || null,
+    createdAt: row.created_at || null,
+    lastSeen: row.last_seen || null,
+    lastLogin: row.last_login || null,
+    onboardingComplete: Boolean(row.onboarding_complete),
+    discipline: row.discipline || null,
+    daysPerWeek: Number.isFinite(Number(row.days_per_week)) ? Number(row.days_per_week) : null,
+    trainingUpdatedAt: row.training_updated_at || null,
+    hasActivePlan: Boolean(row.active_plan_id),
+    activePlanUpdatedAt: row.active_plan_updated_at || null,
+    ownerMessageCount: Number(row.owner_message_count || 0),
+    lastOwnerMessageAt: row.last_owner_message_at || null
+  }));
+
+  return sendJson(res, 200, { ok: true, count: accounts.length, accounts });
+}
+
+async function getUserFromSessionToken(token) {
+  const sessionToken = String(token || '').trim();
+  if (!sessionToken) return null;
+  const tokenHash = sha256Hex(sessionToken);
+  const result = await db.query(
+    `
+      SELECT u.id, u.username, u.email, u.display_name, COALESCE(u.admin_notes, '') AS admin_notes
+      FROM app_sessions s
+      JOIN app_users u ON u.id = s.user_id
+      WHERE s.session_token_hash = $1
+        AND s.expires_at > now()
+      LIMIT 1;
+    `,
+    [tokenHash]
+  );
+  const row = result.rows?.[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    username: row.username || null,
+    email: row.email || null,
+    displayName: row.display_name || row.username || 'User',
+    isOwner: isOwnerUser(row)
+  };
+}
+
+async function getOwnerImpersonationContext(req, activeUser) {
+  const user = activeUser && typeof activeUser === 'object' ? activeUser : null;
+  if (!user?.id) return null;
+  const cookies = parseCookies(req.headers.cookie);
+  const backupToken = String(cookies[OWNER_BACKUP_COOKIE_NAME] || '').trim();
+  if (!backupToken) return null;
+
+  const ownerUser = await getUserFromSessionToken(backupToken);
+  if (!ownerUser?.isOwner) return null;
+  if (String(ownerUser.id) === String(user.id)) return null;
+
+  return {
+    active: true,
+    owner: {
+      id: ownerUser.id,
+      username: ownerUser.username || null,
+      displayName: ownerUser.displayName || ownerUser.username || 'Owner'
+    },
+    viewing: {
+      id: user.id,
+      username: user.username || null,
+      displayName: user.displayName || user.username || 'Account'
+    }
+  };
+}
+
+async function handleOwnerImpersonateStart(req, res, url, targetUserId) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+  if (userId === actor.id) return sendJson(res, 400, { ok: false, error: 'Choose a different account to view' });
+
+  const target = await db.query('SELECT id FROM app_users WHERE id = $1 LIMIT 1;', [userId]);
+  if (!target.rows?.[0]?.id) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+
+  const cookies = parseCookies(req.headers.cookie);
+  const ownerToken = String(cookies[COOKIE_NAME] || '').trim();
+  if (!ownerToken) return sendJson(res, 401, { ok: false, error: 'No active owner session' });
+
+  const targetToken = await createSession(userId, { updateLogin: false });
+  const returnTo = safeReturnTo(url.searchParams.get('returnTo') || '/overview.html');
+  const cookieHeaders = [
+    setCookieHeader(targetToken, req),
+    setNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, ownerToken, req)
+  ].filter(Boolean);
+
+  res.writeHead(302, {
+    Location: returnTo,
+    'Set-Cookie': cookieHeaders
+  });
+  res.end();
+  return true;
+}
+
+async function handleOwnerImpersonateExit(req, res, url) {
+  const cookies = parseCookies(req.headers.cookie);
+  const backupToken = String(cookies[OWNER_BACKUP_COOKIE_NAME] || '').trim();
+  const returnTo = safeReturnTo(url.searchParams.get('returnTo') || '/owner-accounts.html');
+  if (!backupToken) {
+    res.writeHead(302, {
+      Location: returnTo,
+      'Set-Cookie': clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req)
+    });
+    res.end();
+    return true;
+  }
+
+  const backupUser = await getUserFromSessionToken(backupToken);
+  if (!backupUser || !backupUser.isOwner) {
+    return sendJson(
+      res,
+      403,
+      { ok: false, error: 'Owner backup session is invalid' },
+      { 'Set-Cookie': clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req) }
+    );
+  }
+
+  const currentToken = String(cookies[COOKIE_NAME] || '').trim();
+  if (currentToken && currentToken !== backupToken) {
+    try {
+      await deleteSessionByToken(currentToken);
+    } catch {
+      // ignore cleanup failure
+    }
+  }
+
+  res.writeHead(302, {
+    Location: returnTo,
+    'Set-Cookie': [
+      setCookieHeader(backupToken, req),
+      clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req)
+    ]
+  });
+  res.end();
+  return true;
+}
+
+async function handleOwnerAccountDetail(req, res, targetUserId) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+
+  const userResult = await db.query(
+    `
+      SELECT u.id, u.username, u.email, u.display_name, u.created_at, u.last_seen, u.last_login,
+             p.profile AS profile_json
+      FROM app_users u
+      LEFT JOIN app_user_profiles p ON p.user_id = u.id
+      WHERE u.id = $1
+      LIMIT 1;
+    `,
+    [userId]
+  );
+  const userRow = userResult.rows?.[0];
+  if (!userRow) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+
+  let trainingProfile = null;
+  try {
+    const trainingProfileResult = await db.query(
+      `
+        SELECT onboarding_complete, discipline, experience, days_per_week, goals, injuries, updated_at
+        FROM app_training_profiles
+        WHERE user_id = $1
+        LIMIT 1;
+      `,
+      [userId]
+    );
+    trainingProfile = trainingProfileResult.rows?.[0] || null;
+  } catch (err) {
+    if (String(err?.code || '') !== '42P01') throw err;
+  }
+
+  let activePlan = null;
+  try {
+    const activePlanResult = await db.query(
+      `
+        SELECT id, discipline, days_per_week, updated_at
+        FROM app_training_plans
+        WHERE user_id = $1
+          AND active = true
+        ORDER BY updated_at DESC
+        LIMIT 1;
+      `,
+      [userId]
+    );
+    activePlan = activePlanResult.rows?.[0] || null;
+  } catch (err) {
+    if (String(err?.code || '') !== '42P01') throw err;
+  }
+
+  let workoutStats = { totalLoggedWorkouts: 0, lastWorkoutAt: null };
+  if (activePlan?.id) {
+    try {
+      const logsResult = await db.query(
+        `
+          SELECT COUNT(*)::int AS total_logged_workouts, MAX(updated_at) AS last_workout_at
+          FROM app_training_workouts
+          WHERE user_id = $1
+            AND plan_id = $2;
+        `,
+        [userId, activePlan.id]
+      );
+      workoutStats = {
+        totalLoggedWorkouts: Number(logsResult.rows?.[0]?.total_logged_workouts || 0),
+        lastWorkoutAt: logsResult.rows?.[0]?.last_workout_at || null
+      };
+    } catch (err) {
+      if (String(err?.code || '') !== '42P01') throw err;
+    }
+  }
+
+  const ownerMessageStatsResult = await db.query(
+    `
+      SELECT COUNT(*)::int AS owner_message_count, MAX(created_at) AS last_owner_message_at
+      FROM app_messages
+      WHERE sender_id = $1
+        AND receiver_id = $2;
+    `,
+    [actor.id, userId]
+  );
+
+  return sendJson(res, 200, {
+    ok: true,
+    account: {
+      id: userRow.id,
+      username: userRow.username || null,
+      email: userRow.email || null,
+      displayName: userRow.display_name || userRow.username || 'Account',
+      createdAt: userRow.created_at || null,
+      lastSeen: userRow.last_seen || null,
+      lastLogin: userRow.last_login || null,
+      profile: userRow.profile_json && typeof userRow.profile_json === 'object' ? userRow.profile_json : {},
+      trainingProfile: trainingProfile ? {
+        onboardingComplete: Boolean(trainingProfile.onboarding_complete),
+        discipline: trainingProfile.discipline || null,
+        experience: trainingProfile.experience || null,
+        daysPerWeek: Number.isFinite(Number(trainingProfile.days_per_week)) ? Number(trainingProfile.days_per_week) : null,
+        goals: trainingProfile.goals || null,
+        injuries: trainingProfile.injuries || null,
+        updatedAt: trainingProfile.updated_at || null
+      } : null,
+      activePlan: activePlan ? {
+        id: activePlan.id,
+        discipline: activePlan.discipline || null,
+        daysPerWeek: Number.isFinite(Number(activePlan.days_per_week)) ? Number(activePlan.days_per_week) : null,
+        updatedAt: activePlan.updated_at || null
+      } : null,
+      workoutStats,
+      ownerMessageStats: {
+        count: Number(ownerMessageStatsResult.rows?.[0]?.owner_message_count || 0),
+        lastAt: ownerMessageStatsResult.rows?.[0]?.last_owner_message_at || null
+      }
+    }
+  });
+}
+
+async function handleOwnerAccountPasswordUpdate(req, res, targetUserId) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const nextPassword = String(payload?.password || '');
+  if (!nextPassword || nextPassword.length < 8) return sendJson(res, 400, { ok: false, error: 'Password must be at least 8 characters' });
+  if (nextPassword.length > 128) return sendJson(res, 400, { ok: false, error: 'Password is too long' });
+
+  const passwordHash = await bcrypt.hash(nextPassword, 12);
+  const updated = await db.query(
+    `
+      UPDATE app_users
+      SET password_hash = $2, auth_provider = 'local'
+      WHERE id = $1
+      RETURNING id;
+    `,
+    [userId, passwordHash]
+  );
+  if (!updated.rows?.[0]?.id) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+
+  // Invalidate all sessions so new password takes effect immediately.
+  await db.query('DELETE FROM app_sessions WHERE user_id = $1;', [userId]);
+  return sendJson(res, 200, { ok: true });
+}
+
+async function handleOwnerAccountDelete(req, res, targetUserId) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+  if (userId === actor.id) return sendJson(res, 400, { ok: false, error: 'Cannot delete your own owner account' });
+
+  const deleted = await db.query(
+    `
+      DELETE FROM app_users
+      WHERE id = $1
+      RETURNING id;
+    `,
+    [userId]
+  );
+  if (!deleted.rows?.[0]?.id) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+  return sendJson(res, 200, { ok: true });
+}
+
+async function ensureSchema(options = {}) {
   if (schemaEnsured) return;
   if (!db.isConfigured()) return;
+  const fastFail = options?.fastFail === true;
+  if (schemaEnsurePromise) {
+    if (!fastFail) return await schemaEnsurePromise;
+    throw new DbUnavailableError('Database unavailable while ensuring auth schema', lastSchemaTransientError || null);
+  }
+  const retryDelays = fastFail ? [] : SCHEMA_RETRY_DELAYS_MS;
+  if (schemaTransientBackoffUntil > Date.now()) {
+    throw new DbUnavailableError('Database unavailable while ensuring auth schema', lastSchemaTransientError || null);
+  }
   const schemaStatements = [
     'CREATE EXTENSION IF NOT EXISTS pgcrypto;',
     `
@@ -287,27 +812,37 @@ async function ensureSchema() {
   `
   ];
 
-  for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
-    try {
-      for (const sql of schemaStatements) {
-        await db.query(sql);
+  schemaEnsurePromise = (async () => {
+    for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+      try {
+        for (const sql of schemaStatements) {
+          await db.query(sql);
+        }
+        schemaEnsured = true;
+        schemaTransientBackoffUntil = 0;
+        lastSchemaTransientError = null;
+        return;
+      } catch (err) {
+        if (!isTransientPgError(err)) throw err;
+        logTransientDbError(err, `ensureSchema:attempt_${attempt + 1}${fastFail ? ':fast' : ''}`);
+        if (attempt >= retryDelays.length) {
+          lastSchemaTransientError = err;
+          schemaTransientBackoffUntil = Date.now() + AUTH_SCHEMA_BACKOFF_MS;
+          throw new DbUnavailableError('Database unavailable while ensuring auth schema', err);
+        }
+        await sleep(retryDelays[attempt]);
       }
-      schemaEnsured = true;
-      return;
-    } catch (err) {
-      if (!isTransientPgError(err)) throw err;
-      logTransientDbError(err, `ensureSchema:attempt_${attempt + 1}`);
-      if (attempt >= SCHEMA_RETRY_DELAYS_MS.length) {
-        throw new DbUnavailableError('Database unavailable while ensuring auth schema', err);
-      }
-      await sleep(SCHEMA_RETRY_DELAYS_MS[attempt]);
     }
-  }
+  })().finally(() => {
+    schemaEnsurePromise = null;
+  });
+
+  return await schemaEnsurePromise;
 }
 
 async function getUserFromRequest(req) {
   if (!db.isConfigured()) return null;
-  await ensureSchema();
+  await ensureSchema({ fastFail: true });
 
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies[COOKIE_NAME];
@@ -317,6 +852,7 @@ async function getUserFromRequest(req) {
   const result = await db.query(
     `
       SELECT u.id, u.username, u.email, u.display_name
+           , COALESCE(u.admin_notes, '') AS admin_notes
       FROM app_sessions s
       JOIN app_users u ON u.id = s.user_id
       WHERE s.session_token_hash = $1
@@ -337,11 +873,12 @@ async function getUserFromRequest(req) {
     id: row.id,
     username: row.username,
     email: row.email,
-    displayName: row.display_name
+    displayName: row.display_name,
+    isOwner: isOwnerUser(row)
   };
 }
 
-async function createSession(userId) {
+async function createSession(userId, options = {}) {
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = sha256Hex(token);
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -354,7 +891,9 @@ async function createSession(userId) {
     [tokenHash, userId, expiresAt]
   );
 
-  await db.query('UPDATE app_users SET last_login = now(), last_seen = now() WHERE id = $1;', [userId]);
+  if (options.updateLogin !== false) {
+    await db.query('UPDATE app_users SET last_login = now(), last_seen = now() WHERE id = $1;', [userId]);
+  }
 
   return token;
 }
@@ -406,7 +945,7 @@ async function handleLocalSignup(req, res) {
     return sendJson(
       res,
       200,
-      { user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name } },
+      { user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name, isOwner: isOwnerUser(user) } },
       { 'Set-Cookie': setCookieHeader(token, req) }
     );
   } catch (err) {
@@ -440,6 +979,7 @@ async function handleLocalLogin(req, res) {
   const result = await db.query(
     `
       SELECT id, username, email, display_name, password_hash
+           , COALESCE(admin_notes, '') AS admin_notes
       FROM app_users
       WHERE username = $1
          OR email = $2
@@ -458,14 +998,19 @@ async function handleLocalLogin(req, res) {
   return sendJson(
     res,
     200,
-    { user: { id: row.id, username: row.username, email: row.email, displayName: row.display_name } },
+    { user: { id: row.id, username: row.username, email: row.email, displayName: row.display_name, isOwner: isOwnerUser(row) } },
     { 'Set-Cookie': setCookieHeader(token, req) }
   );
 }
 
 async function handleLogout(req, res) {
   if (!db.isConfigured()) {
-    return sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearCookieHeader(req) });
+    return sendJson(
+      res,
+      200,
+      { ok: true },
+      { 'Set-Cookie': [clearCookieHeader(req), clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req)] }
+    );
   }
   await ensureSchema();
   const cookies = parseCookies(req.headers.cookie);
@@ -475,7 +1020,12 @@ async function handleLogout(req, res) {
   } catch {
     // ignore
   }
-  return sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearCookieHeader(req) });
+  return sendJson(
+    res,
+    200,
+    { ok: true },
+    { 'Set-Cookie': [clearCookieHeader(req), clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req)] }
+  );
 }
 
 async function handleGoogleStart(req, res, url) {
@@ -668,7 +1218,10 @@ async function maybeCleanup() {
 module.exports = async function authRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/auth/')) return false;
   try {
-    await maybeCleanup();
+    maybeCleanup().catch(() => {});
+    const ownerAccountMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})$/);
+    const ownerAccountPasswordMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})\/password$/);
+    const ownerImpersonateMatch = url.pathname.match(/^\/api\/auth\/owner\/impersonate\/([0-9a-fA-F-]{36})$/);
 
     if (url.pathname === '/api/auth/google/ready' && req.method === 'GET') {
       const missing = [];
@@ -679,13 +1232,47 @@ module.exports = async function authRoutes(req, res, url) {
     }
 
     if (url.pathname === '/api/auth/me' && req.method === 'GET') {
-      const user = await getUserFromRequest(req);
-      sendJson(res, 200, { user });
+      try {
+        const user = await getUserFromRequest(req);
+        const impersonation = user ? await getOwnerImpersonationContext(req, user) : null;
+        sendJson(res, 200, { user, impersonation });
+      } catch (err) {
+        if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+          logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
+          sendJson(res, 200, { user: null, impersonation: null, dbUnavailable: true });
+          return true;
+        }
+        throw err;
+      }
       return true;
     }
 
     if (url.pathname === '/api/auth/accounts' && req.method === 'GET') {
       return await handleAccountsList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/owner/accounts' && req.method === 'GET') {
+      return await handleOwnerAccountsList(req, res, url);
+    }
+
+    if (ownerAccountMatch && req.method === 'GET') {
+      return await handleOwnerAccountDetail(req, res, ownerAccountMatch[1]);
+    }
+
+    if (ownerAccountPasswordMatch && req.method === 'PATCH') {
+      return await handleOwnerAccountPasswordUpdate(req, res, ownerAccountPasswordMatch[1]);
+    }
+
+    if (ownerAccountMatch && req.method === 'DELETE') {
+      return await handleOwnerAccountDelete(req, res, ownerAccountMatch[1]);
+    }
+
+    if (ownerImpersonateMatch && req.method === 'GET') {
+      return await handleOwnerImpersonateStart(req, res, url, ownerImpersonateMatch[1]);
+    }
+
+    if (url.pathname === '/api/auth/owner/impersonation/exit' && req.method === 'GET') {
+      return await handleOwnerImpersonateExit(req, res, url);
     }
 
     if (url.pathname === '/api/auth/signup' && req.method === 'POST') {

@@ -7,7 +7,10 @@ const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES 
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
+let schemaTransientBackoffUntil = 0;
+let lastSchemaTransientError = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
+const TRACK_SCHEMA_BACKOFF_MS = Math.max(1000, Number(process.env.TRACK_SCHEMA_BACKOFF_MS || 15_000));
 let lastTransientTrackLogAt = 0;
 
 function sha256Hex(input) {
@@ -131,10 +134,18 @@ function normalizeLeadSource(raw) {
   return src;
 }
 
-async function ensureSchema() {
+async function ensureSchema(options = {}) {
   if (schemaEnsured) return;
-  if (schemaEnsurePromise) return await schemaEnsurePromise;
   if (!db.isConfigured()) return;
+  const fastFail = options?.fastFail === true;
+  if (schemaEnsurePromise) {
+    if (!fastFail) return await schemaEnsurePromise;
+    throw (lastSchemaTransientError || new Error('Database unavailable while ensuring tracking schema'));
+  }
+  const retryDelays = fastFail ? [] : SCHEMA_RETRY_DELAYS_MS;
+  if (schemaTransientBackoffUntil > Date.now()) {
+    throw (lastSchemaTransientError || new Error('Database unavailable while ensuring tracking schema'));
+  }
 
   const safeQuery = async (sql) => {
     try {
@@ -148,7 +159,7 @@ async function ensureSchema() {
   };
 
   schemaEnsurePromise = (async () => {
-    for (let attempt = 0; attempt <= SCHEMA_RETRY_DELAYS_MS.length; attempt += 1) {
+    for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
       try {
         await safeQuery('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
 
@@ -232,12 +243,18 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_messages_guest_id ON app_messages(guest_id);');
 
         schemaEnsured = true;
+        schemaTransientBackoffUntil = 0;
+        lastSchemaTransientError = null;
         return;
       } catch (err) {
         if (!isTransientPgError(err)) throw err;
-        logTransientTrackError(err, `ensureSchema:attempt_${attempt + 1}`);
-        if (attempt >= SCHEMA_RETRY_DELAYS_MS.length) throw err;
-        await sleep(SCHEMA_RETRY_DELAYS_MS[attempt]);
+        logTransientTrackError(err, `ensureSchema:attempt_${attempt + 1}${fastFail ? ':fast' : ''}`);
+        if (attempt >= retryDelays.length) {
+          lastSchemaTransientError = err;
+          schemaTransientBackoffUntil = Date.now() + TRACK_SCHEMA_BACKOFF_MS;
+          throw err;
+        }
+        await sleep(retryDelays[attempt]);
       }
     }
   })().finally(() => {
@@ -472,9 +489,20 @@ module.exports = async function trackRoutes(req, res, url) {
     || (url.pathname === '/api/track/event' && req.method === 'POST')
   );
 
-  if (!db.isConfigured()) return sendJson(res, 501, { error: 'Database not configured' });
+  if (!db.isConfigured()) {
+    if (isNonCriticalTrackRoute) return sendNoContent(res);
+    return sendJson(res, 501, { error: 'Database not configured' });
+  }
+
+  if (isNonCriticalTrackRoute && !schemaEnsured) {
+    ensureSchema({ fastFail: true }).catch((err) => {
+      if (isTransientPgError(err)) logTransientTrackError(err, 'trackRoutes:backgroundEnsureSchema');
+    });
+    return sendNoContent(res);
+  }
+
   try {
-    await ensureSchema();
+    await ensureSchema({ fastFail: isNonCriticalTrackRoute });
   } catch (err) {
     if (isTransientPgError(err) && isNonCriticalTrackRoute) {
       logTransientTrackError(err, 'trackRoutes:ensureSchema');

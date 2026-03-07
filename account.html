@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account · odeology_</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    body.account-page {
+      overflow: auto !important;
+    }
+    .account-main {
+      max-width: 920px;
+      margin: calc(var(--navbar-height, 72px) + 26px) auto 40px;
+      padding: 0 16px 20px;
+    }
+    .account-card {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .account-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .account-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: rgba(0, 0, 0, 0.06);
+      display: grid;
+      place-items: center;
+      flex: 0 0 64px;
+    }
+    .account-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .account-fallback {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #333;
+    }
+    .account-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #111;
+    }
+    .account-friends {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .account-status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+    }
+    .account-grid {
+      display: grid;
+      gap: 14px;
+    }
+    .account-warnings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .account-warnings-head h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #222;
+    }
+    .account-warnings-status {
+      font-size: 12px;
+      color: #666;
+    }
+    .account-warnings-list {
+      display: grid;
+      gap: 8px;
+    }
+    .account-warning-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border-radius: 12px;
+      border: 1px solid rgba(197, 141, 79, 0.35);
+      background: rgba(197, 141, 79, 0.1);
+      padding: 10px;
+    }
+    .account-warning-meta {
+      display: grid;
+      gap: 2px;
+    }
+    .account-warning-name {
+      font-weight: 800;
+      color: #1f1a16;
+      font-size: 0.92rem;
+    }
+    .account-warning-text {
+      color: #4a3c2f;
+      font-size: 0.85rem;
+    }
+    .account-warning-severity {
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #2f2214;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .account-warnings-empty {
+      border: 1px dashed rgba(0, 0, 0, 0.18);
+      border-radius: 12px;
+      color: #666;
+      padding: 10px;
+      font-size: 13px;
+      background: rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+<body class="account-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section" data-auth-section="1">
+      <p class="section-label">ACCOUNT</p>
+      <button class="control-link active" id="control-signin" type="button" aria-current="true">
+        <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+        <span class="text">Account</span>
+      </button>
+      <button class="control-link hidden" id="control-signup" type="button">
+        <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+        <span class="text">Sign up</span>
+      </button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">HELP</p>
+      <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">DASH</p>
+      <div class="control-pill-row">
+        <button class="control-link control-checkin-pill coming-soon-item is-locked coming-soon-link" id="control-checkin" type="button" aria-disabled="true">
+          <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+          <span class="text">Dash<span class="control-sub">Coming soon</span></span>
+        </button>
+      </div>
+    </div>
+    <div class="control-section">
+      <p class="section-label">TRAINING PORTAL</p>
+      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+    </div>
+    <div class="control-section">
+      <p class="section-label">COMMUNITY</p>
+      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+    </div>
+  </aside>
+
+  <main class="account-main">
+    <div class="account-grid">
+      <section class="account-card">
+        <div class="account-row">
+          <div class="account-avatar" id="account-avatar"></div>
+          <div>
+            <div class="account-name" id="account-name">Account</div>
+            <div class="account-friends" id="account-friends">0 friends</div>
+          </div>
+        </div>
+        <div class="account-status" id="account-status"></div>
+      </section>
+
+      <section class="account-card">
+        <div class="account-warnings-head">
+          <h2>Warnings</h2>
+          <div class="account-warnings-status" id="account-warnings-status">Checking warnings...</div>
+        </div>
+        <div class="account-warnings-list" id="account-warnings-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/main.js?v=2026-03-05-owner-16"></script>
+  <script src="js/account.js?v=2026-03-05-3"></script>
+</body>
+</html>

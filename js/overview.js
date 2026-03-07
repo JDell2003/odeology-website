@@ -499,6 +499,14 @@
         const mql = window.matchMedia('(max-width: 700px)');
         const isMobile = () => !!mql.matches;
 
+        const setCollapsible = (headId, contentId, expanded) => {
+            const headEl = document.getElementById(headId);
+            const contentEl = document.getElementById(contentId);
+            if (!headEl || !contentEl) return;
+            headEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            contentEl.classList.toggle('hidden', !expanded);
+        };
+
         const applyFilter = (filter) => {
             const active = filter || 'all';
             items.forEach((el) => {
@@ -522,7 +530,45 @@
                     groceryHead.setAttribute('aria-expanded', 'true');
                     groceryCard.classList.add('is-expanded');
                 }
+                setCollapsible('overview-meals-head', 'overview-meals-details', false);
+                setCollapsible('overview-tracker-head', 'overview-tracker-details', false);
+                setCollapsible('overview-training-head', 'overview-training-details', false);
+                const main = document.querySelector('main.overview-main');
+                if (main) main.scrollTop = 0;
+                window.scrollTo(0, 0);
+                return;
             }
+
+            if (active === 'meals') {
+                setCollapsible('overview-meals-head', 'overview-meals-details', true);
+                setCollapsible('overview-tracker-head', 'overview-tracker-details', false);
+                setCollapsible('overview-training-head', 'overview-training-details', false);
+                return;
+            }
+
+            if (active === 'restock') {
+                setCollapsible('overview-tracker-head', 'overview-tracker-details', true);
+                setCollapsible('overview-meals-head', 'overview-meals-details', false);
+                setCollapsible('overview-training-head', 'overview-training-details', false);
+                return;
+            }
+
+            if (active === 'training') {
+                setCollapsible('overview-training-head', 'overview-training-details', true);
+                setCollapsible('overview-meals-head', 'overview-meals-details', false);
+                setCollapsible('overview-tracker-head', 'overview-tracker-details', false);
+                return;
+            }
+
+            if (active === 'photos') {
+                setCollapsible('overview-meals-head', 'overview-meals-details', false);
+                setCollapsible('overview-tracker-head', 'overview-tracker-details', false);
+                setCollapsible('overview-training-head', 'overview-training-details', false);
+            }
+
+            const main = document.querySelector('main.overview-main');
+            if (main) main.scrollTop = 0;
+            window.scrollTo(0, 0);
         };
 
         buttons.forEach((btn) => {
@@ -1488,6 +1534,7 @@
         }
 
         const buttons = Array.from(toolbar.querySelectorAll('[data-grocery-view]'));
+        const availableViews = new Set(buttons.map((b) => b.getAttribute('data-grocery-view')).filter(Boolean));
         const key = 'ode_overview_grocery_view_v1';
         const saved = (() => {
             try { return localStorage.getItem(key); } catch { return null; }
@@ -1518,15 +1565,16 @@
 
         const setView = (view) => {
             const v = view === 'list' || view === 'weekly' || view === 'cards' ? view : 'cards';
-            const next = isPhone() ? 'cards' : v;
+            const nextView = availableViews.has(v) ? v : 'cards';
+            const next = isPhone() ? 'cards' : nextView;
             activeView = next;
-            try { localStorage.setItem(key, v); } catch {}
+            try { localStorage.setItem(key, nextView); } catch {}
 
             buttons.forEach((b) => {
-                const on = b.getAttribute('data-grocery-view') === next;
-                b.classList.toggle('active', on);
-                b.setAttribute('aria-selected', on ? 'true' : 'false');
-            });
+            const on = b.getAttribute('data-grocery-view') === next;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
 
             cardsView.classList.toggle('hidden', next !== 'cards');
             listView.classList.toggle('hidden', next !== 'list');
@@ -1593,7 +1641,7 @@
             try { printWeeklySchedule({ schedule }); } catch {}
         });
 
-        setView(saved || 'cards');
+        setView(availableViews.has(saved) ? saved : 'cards');
         if (isPhone()) forceCardsForPhone();
 
         mql.addEventListener('change', () => {
@@ -2087,7 +2135,31 @@
         );
     };
 
+    const syncOwnerWorkoutDbLink = async () => {
+        const section = $('#control-owner-section');
+        const link = $('#control-workout-db-link');
+        if (!link) return;
+        const isOwnerClientUser = (user) => {
+            const uname = String(user?.username || '').trim().toLowerCase();
+            const dname = String(user?.displayName || '').trim().toLowerCase();
+            if (user?.isOwner) return true;
+            return ['odeology_', 'odeology', 'odeology_owner', 'jason'].includes(uname)
+                || ['odeology_', 'odeology'].includes(dname);
+        };
+        try {
+            const resp = await fetch('/api/auth/me', { credentials: 'include' });
+            const json = await resp.json().catch(() => ({}));
+            const isOwner = Boolean(resp.ok && isOwnerClientUser(json?.user));
+            if (section) section.classList.toggle('hidden', !isOwner);
+            else link.classList.toggle('hidden', !isOwner);
+        } catch {
+            if (section) section.classList.add('hidden');
+            else link.classList.add('hidden');
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', async () => {
+        syncOwnerWorkoutDbLink();
         initGroceryExpand();
         initCollapsible($('#overview-meals-head'), $('#overview-meals-details'), { expanded: false });
         initCollapsible($('#overview-tracker-head'), $('#overview-tracker-details'), { expanded: false });
@@ -2599,11 +2671,180 @@
             }
         };
 
+    const dayStart = (d) => {
+        const out = new Date(d);
+        out.setHours(0, 0, 0, 0);
+        return out;
+    };
+
+    const toISODateLocal = (d) => {
+        const date = dayStart(d);
+        const yy = String(date.getFullYear());
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
+    };
+
+    const parseISODateLocal = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return null;
+        const parts = raw.split('-').map((n) => Number(n));
+        if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+        const [yy, mm, dd] = parts;
+        const out = new Date(yy, (mm || 1) - 1, dd || 1);
+        return Number.isNaN(out.getTime()) ? null : out;
+    };
+
+    const normalizeWeekdayIndexList = (input) => {
+        const raw = Array.isArray(input) ? input : [];
+        const out = [];
+        for (const x of raw) {
+            const n = Number(x);
+            if (!Number.isFinite(n)) continue;
+            const i = Math.max(0, Math.min(6, Math.floor(n)));
+            if (!out.includes(i)) out.push(i);
+        }
+        return out;
+    };
+
+    const preferredWeekdayPattern = (daysPerWeek) => {
+        const n = Number(daysPerWeek) || 0;
+        if (n <= 0) return [];
+        if (n === 1) return [1];
+        if (n === 2) return [1, 4];
+        if (n === 3) return [1, 3, 5];
+        if (n === 4) return [1, 2, 4, 5];
+        if (n === 5) return [1, 2, 3, 4, 5];
+        if (n === 6) return [1, 2, 3, 4, 5, 6];
+        return [0, 1, 2, 3, 4, 5, 6];
+    };
+
+    const buildTrainingSchedule = (daysPerWeek, unavailableDays) => {
+        const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
+        const unavailable = new Set(normalizeWeekdayIndexList(unavailableDays));
+        const available = [1, 2, 3, 4, 5, 6, 0].filter((d) => !unavailable.has(d));
+        if (!n) return [];
+        if (available.length < n) return [];
+
+        const pattern = preferredWeekdayPattern(n);
+        const chosen = [];
+        for (const d of pattern) {
+            if (chosen.length >= n) break;
+            if (!unavailable.has(d) && !chosen.includes(d)) chosen.push(d);
+        }
+        for (const d of available) {
+            if (chosen.length >= n) break;
+            if (!chosen.includes(d)) chosen.push(d);
+        }
+        const weekdayOrder = new Map([[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [0, 6]]);
+        chosen.sort((a, b) => (weekdayOrder.get(a) ?? 99) - (weekdayOrder.get(b) ?? 99));
+        return chosen.slice(0, n);
+    };
+
+    const resolveUnavailableDays = (plan, profile, refDate = new Date()) => {
+        const schedule = plan?.meta?.schedule && typeof plan.meta.schedule === 'object' ? plan.meta.schedule : null;
+        const planUnavailable = schedule?.unavailableDays ?? plan?.meta?.unavailableDays ?? null;
+        const profileUnavailable = profile?.strength?.unavailableDays ?? null;
+        let base = normalizeWeekdayIndexList(
+            planUnavailable != null ? planUnavailable
+                : profileUnavailable != null ? profileUnavailable
+                    : []
+        );
+        const pending = schedule?.pendingChange && typeof schedule.pendingChange === 'object' ? schedule.pendingChange : null;
+        if (pending?.effectiveDate) {
+            const eff = parseISODateLocal(pending.effectiveDate);
+            if (eff && dayStart(refDate).getTime() >= eff.getTime()) {
+                base = normalizeWeekdayIndexList(pending.unavailableDays);
+            }
+        }
+        return base;
+    };
+
+    const planStartDate = (plan) => {
+        const raw = plan?.meta?.createdAt;
+        const parsed = raw ? new Date(raw) : null;
+        if (!parsed || Number.isNaN(parsed.getTime())) return dayStart(new Date());
+        return dayStart(parsed);
+    };
+
+    const weekIndexForDate = (date, plan) => {
+        const start = planStartDate(plan);
+        const target = dayStart(date);
+        const diffDays = Math.floor((target.getTime() - start.getTime()) / 86400000);
+        const idx = Math.floor(Math.max(0, diffDays) / 7) + 1;
+        const maxWeeks = Array.isArray(plan?.weeks) ? plan.weeks.length : 1;
+        return Math.max(1, Math.min(maxWeeks, idx));
+    };
+
+    const formatRepsRange = (ex) => {
+        const reps = String(ex?.reps || '').trim();
+        if (reps) return reps;
+        const min = Number(ex?.repsMin);
+        const max = Number(ex?.repsMax);
+        if (Number.isFinite(min) && Number.isFinite(max)) return `${min}-${max}`;
+        if (Number.isFinite(min)) return `${min}+`;
+        if (Number.isFinite(max)) return String(max);
+        return '';
+    };
+
+    const formatRestShort = (value) => {
+        const n = Number(value);
+        if (!Number.isFinite(n) || n <= 0) return '';
+        if (n >= 60) return `${Math.max(1, Math.round(n / 60))}m`;
+        return `${Math.round(n)}s`;
+    };
+
+    const folderFromName = (name) => {
+        const folder = String(name || '')
+            .replace(/\//g, '_')
+            .replace(/[()]/g, '')
+            .replace(/\s+/g, '_')
+            .replace(/['",]/g, '')
+            .replace(/__+/g, '_')
+            .trim();
+        return folder || null;
+    };
+
+    const buildExercisePreviewMedia = (ex, name) => {
+        const displayName = String(name || 'Exercise');
+        const mediaPath = String(ex?.mediaPath || ex?.media?.src0 || ex?.media?.src || ex?.mediaUrl || '').trim();
+        const mediaPathAlt = String(ex?.mediaPathAlt || ex?.media?.src1 || '').trim();
+        let src0 = mediaPath;
+        let src1 = mediaPathAlt;
+        if (src0 && !src1) {
+            src1 = src0.includes('/0.') ? src0.replace('/0.', '/1.') : src0;
+        }
+        if (!src0) {
+            const folder = folderFromName(ex?.movementName || displayName);
+            if (folder) {
+                const safe = encodeURIComponent(folder);
+                src0 = `/free-exercise-db/exercises/${safe}/0.jpg`;
+                src1 = `/free-exercise-db/exercises/${safe}/1.jpg`;
+            }
+        }
+        if (!src0) {
+            return `<div class="overview-training-media-fallback">No image</div>`;
+        }
+        const safeAlt = escapeHtml(displayName);
+        return `
+            <div class="exercise-media-frame" aria-hidden="true">
+                <div class="exercise-media-pair overview-training-media">
+                    <img class="exercise-media-img exercise-media-img-a" src="${escapeHtml(src0)}" alt="${safeAlt}" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.style.display='none';">
+                    <img class="exercise-media-img exercise-media-img-b" src="${escapeHtml(src1)}" alt="${safeAlt}" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.style.display='none';">
+                </div>
+            </div>
+        `;
+    };
 
     const renderTraining = async () => {
             const me = await api('/api/auth/me');
             const user = me.ok ? (me.json?.user || null) : null;
             const cta = $('#overview-training-cta');
+            const todayBtn = $('#overview-training-today-btn');
+            if (todayBtn) {
+                todayBtn.classList.add('hidden');
+                todayBtn.onclick = null;
+            }
             if (!user) {
                 setPill(trainingLastPill, 'Last: —');
                 setPill(trainingWeekPill, '7d: —');
@@ -2625,6 +2866,7 @@
                 setPill(trainingLastPill, 'Last: —');
                 setPill(trainingWeekPill, '7d: —');
                 if (cta) cta.classList.remove('hidden');
+                if (todayBtn) todayBtn.classList.add('hidden');
                 const rows = [{
                     title: 'No training plan yet',
                     sub: 'Click “Get your free training plan” to generate one.',
@@ -2638,7 +2880,8 @@
             if (cta) cta.classList.add('hidden');
             const profile = state.json?.profile || null;
             const planId = planRow?.id || null;
-            const daysPerWeek = Number(profile?.days_per_week || planRow?.days_per_week || planRow?.plan?.meta?.daysPerWeek || 0) || 0;
+            const planObj = planRow?.plan || null;
+            const daysPerWeek = Number(profile?.days_per_week || planRow?.days_per_week || planObj?.meta?.daysPerWeek || 0) || 0;
 
             let logs = [];
             if (planId) {
@@ -2662,7 +2905,7 @@
             const lost = weightLost(goals);
             const d2g = daysToGoal({ current: goals.current, goal: goals.goal, pace: goals.pace });
 
-            const meta = planRow?.plan?.meta || {};
+            const meta = planObj?.meta || {};
             const discipline = String(meta?.discipline || planRow?.discipline || '').trim() || 'Training';
             const equip = profile?.equipment_access && typeof profile.equipment_access === 'object' ? profile.equipment_access : {};
             const equipLabels = [
@@ -2706,9 +2949,84 @@
                     : null);
 
             const rows = warningRow ? [warningRow, ...topRows] : topRows;
-            renderSummaryList(trainingSummaryEl, rows);
-
+            const today = new Date();
+            const weekIdx = weekIndexForDate(today, planObj || {});
+            const week = Array.isArray(planObj?.weeks)
+                ? (planObj.weeks.find((w) => Number(w.index) === weekIdx) || planObj.weeks[0])
+                : null;
+            const days = Array.isArray(week?.days) ? week.days : [];
+            const schedule = buildTrainingSchedule(daysPerWeek, resolveUnavailableDays(planObj, profile, today));
+            const weekdayMap = new Map(schedule.map((wd, idx) => [wd, idx + 1]));
+            const todayIndex = weekdayMap.get(today.getDay()) || null;
+            const todayDay = todayIndex ? days[todayIndex - 1] : null;
+            const todayExercises = Array.isArray(todayDay?.exercises) ? todayDay.exercises : [];
+            if (trainingSummaryEl) {
+                if (!todayDay) {
+                    trainingSummaryEl.innerHTML = `
+                        <div class="overview-summary-item">
+                            <div class="overview-summary-left">
+                                <div class="overview-summary-title">Today: Rest day</div>
+                                <div class="overview-summary-sub">No workout scheduled for today. Check your plan for the next session.</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const focusLabel = todayDay?.focus ? String(todayDay.focus) : `Day ${todayIndex}`;
+                    const previewRows = todayExercises.slice(0, 4).map((ex) => {
+                        const name = String(ex?.displayName || ex?.name || 'Exercise');
+                        const sets = Number(ex?.sets);
+                        const reps = formatRepsRange(ex);
+                        const rest = formatRestShort(ex?.restSec || ex?.rest);
+                        const parts = [];
+                        if (Number.isFinite(sets)) parts.push(`${sets} sets`);
+                        if (reps) parts.push(`${reps} reps`);
+                        if (rest) parts.push(`rest ${rest}`);
+                        const prescription = parts.length ? parts.join(' x ') : '';
+                        return `
+                            <div class="exercise-row has-media overview-training-row">
+                                <div class="exercise-media-cell overview-training-media-cell" aria-hidden="true">
+                                    ${buildExercisePreviewMedia(ex, name)}
+                                </div>
+                                <div class="exercise-meta">
+                                    <div class="exercise-name">${escapeHtml(name)}</div>
+                                    ${prescription ? `<div class="exercise-prescription">${escapeHtml(prescription)}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    trainingSummaryEl.innerHTML = `
+                        <div class="overview-training-preview">
+                            <div class="overview-training-preview-head">
+                                <div class="overview-training-preview-title">Today's workout: ${escapeHtml(focusLabel)}</div>
+                                <div class="overview-training-preview-count">${todayExercises.length} exercise${todayExercises.length === 1 ? '' : 's'}</div>
+                            </div>
+                            <div class="overview-training-preview-list">
+                                ${previewRows || `<div class="overview-training-preview-empty">Exercises will appear after the plan loads.</div>`}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
             renderSummaryList(trainingDetailsEl, rows);
+
+            if (todayBtn && todayDay) {
+                todayBtn.classList.remove('hidden');
+                todayBtn.onclick = (e) => {
+                    e.preventDefault();
+                    try {
+                        sessionStorage.setItem('ode_training_active_date', toISODateLocal(today));
+                        sessionStorage.setItem('ode_training_week', String(weekIdx));
+                        sessionStorage.setItem(`ode_training_day_${weekIdx}`, `wd:${today.getDay()}`);
+                        sessionStorage.setItem('ode_training_nav_loading', '1');
+                    } catch {
+                        // ignore
+                    }
+                    window.location.href = todayBtn.getAttribute('href') || 'training.html';
+                };
+            } else if (todayBtn) {
+                todayBtn.classList.add('hidden');
+                todayBtn.onclick = null;
+            }
         };
 
         renderLeaderboard();

@@ -44,19 +44,20 @@
             const items = Array.isArray(parsed?.items) ? parsed.items : [];
             const unit = parsed?.unit || null;
             const startDate = parsed?.startDate ? new Date(parsed.startDate) : null;
-            return { items, unit, startDate };
+            const savedAt = parsed?.savedAt ? new Date(parsed.savedAt) : null;
+            return { items, unit, startDate, savedAt };
         } catch {
-            return { items: [], unit: null, startDate: null };
+            return { items: [], unit: null, startDate: null, savedAt: null };
         }
     };
 
-    const defaultPrefs = () => ({ mode: 'smart', lowDaysThreshold: 2 });
+    const defaultPrefs = () => ({ mode: 'daily', lowDaysThreshold: 2 });
 
     const loadPrefs = () => {
         try {
             const raw = localStorage.getItem(STORAGE_PREFS);
             const parsed = raw ? JSON.parse(raw) : null;
-            const mode = parsed?.mode === 'daily' || parsed?.mode === 'sunday' || parsed?.mode === 'smart' ? parsed.mode : 'smart';
+            const mode = parsed?.mode === 'daily' || parsed?.mode === 'sunday' ? parsed.mode : 'daily';
             const lowDaysThreshold = Number(parsed?.lowDaysThreshold);
             return {
                 mode,
@@ -102,20 +103,30 @@
     const buildActionIndex = (actions) => {
         const skipped = new Map(); // dateKey -> Set(itemNameLower)
         const expired = new Map();
+        const bought = new Map();
+        const noBuy = new Map();
         (actions || []).forEach((a) => {
             const dateKey = String(a?.dateKey || '').trim();
             const type = String(a?.type || '').trim();
             const itemName = normalizeItemName(a?.itemName);
             if (!dateKey || !itemName) return;
 
-            const bucket = type === 'expired' ? expired : type === 'skip' ? skipped : null;
+            const bucket = type === 'expired'
+                ? expired
+                : type === 'skip'
+                    ? skipped
+                    : type === 'buy'
+                        ? bought
+                        : type === 'no-buy'
+                            ? noBuy
+                            : null;
             if (!bucket) return;
 
             const lower = itemName.toLowerCase();
             if (!bucket.has(dateKey)) bucket.set(dateKey, new Set());
             bucket.get(dateKey).add(lower);
         });
-        return { skipped, expired };
+        return { skipped, expired, bought, noBuy };
     };
 
     const actionApplies = (index, { type, dateKey, itemName }) => {
@@ -123,11 +134,14 @@
         if (!lower || !dateKey) return false;
         if (type === 'skip') return index.skipped.get(dateKey)?.has(lower) || false;
         if (type === 'expired') return index.expired.get(dateKey)?.has(lower) || false;
+        if (type === 'buy') return index.bought.get(dateKey)?.has(lower) || false;
+        if (type === 'no-buy') return index.noBuy.get(dateKey)?.has(lower) || false;
         return false;
     };
 
     const buildEventsSmart = ({ items, startDate, horizonDays, lowDaysThreshold, index }) => {
         const events = {};
+        const startKey = formatDateKey(startDate);
         const days = Array.from({ length: horizonDays }, (_, i) => {
             const d = new Date(startDate);
             d.setDate(d.getDate() + i);
@@ -150,6 +164,8 @@
 
                 const isExpired = actionApplies(index, { type: 'expired', dateKey: key, itemName: name });
                 const isSkip = actionApplies(index, { type: 'skip', dateKey: key, itemName: name });
+                const isBuy = actionApplies(index, { type: 'buy', dateKey: key, itemName: name });
+                const isNoBuy = actionApplies(index, { type: 'no-buy', dateKey: key, itemName: name });
 
                 if (isExpired) {
                     events[key].push({
@@ -161,7 +177,9 @@
                         meta: 'Expired'
                     });
                     remaining = daysPerContainer;
-                } else if (remaining <= lowDaysThreshold) {
+                } else if (isBuy) {
+                    remaining = daysPerContainer;
+                } else if (remaining <= lowDaysThreshold && !isNoBuy) {
                     const runout = new Date(dayDate);
                     runout.setDate(runout.getDate() + Math.max(0, Math.round(remaining)));
                     const runoutKey = formatDateKey(runout);
@@ -176,7 +194,7 @@
                     remaining = daysPerContainer;
                 }
 
-                if (!isSkip) remaining = Math.max(0, remaining - 1);
+                if (!isSkip && key !== startKey && !isBuy) remaining = Math.max(0, remaining - 1);
             }
         });
 
@@ -187,6 +205,7 @@
         const runouts = [];
         const base = new Date(startDate);
         base.setHours(0, 0, 0, 0);
+        const startKey = formatDateKey(base);
 
         items.forEach((item) => {
             const name = normalizeItemName(item?.name);
@@ -203,6 +222,7 @@
 
                 const isExpired = actionApplies(index, { type: 'expired', dateKey: key, itemName: name });
                 const isSkip = actionApplies(index, { type: 'skip', dateKey: key, itemName: name });
+                const isBuy = actionApplies(index, { type: 'buy', dateKey: key, itemName: name });
 
                 if (isExpired) {
                     runouts.push({
@@ -215,7 +235,12 @@
                     continue;
                 }
 
-                if (!isSkip) remaining = Math.max(0, remaining - 1);
+                if (isBuy) {
+                    remaining = Math.round(daysPerContainer);
+                    continue;
+                }
+
+                if (!isSkip && key !== startKey) remaining = Math.max(0, remaining - 1);
                 if (remaining > 0) continue;
 
                 const runout = new Date(day);
@@ -329,7 +354,7 @@
                         runoutDate: formatDateKey(coverEnd),
                         qty: agg.qty,
                         price: agg.price || null,
-                        meta: `Covers ${formatDateKey(coverStart)} → ${formatDateKey(coverEnd)}`
+                        meta: `Covers ${formatDateKey(coverStart)} -> ${formatDateKey(coverEnd)}`
                     });
                 });
         }
@@ -337,16 +362,73 @@
         return events;
     };
 
+    const applyInitialPurchase = ({ events: baseEvents, items: itemList, startDate }) => {
+        if (!startDate || Number.isNaN(new Date(startDate).getTime())) return baseEvents;
+        const key = formatDateKey(new Date(startDate));
+        if (!key) return baseEvents;
+        if (!baseEvents[key]) baseEvents[key] = [];
+        const existing = new Set(baseEvents[key].map((ev) => normalizeItemName(ev?.name).toLowerCase()));
+        (itemList || []).forEach((item) => {
+            const name = normalizeItemName(item?.name);
+            if (!name) return;
+            const lower = name.toLowerCase();
+            if (existing.has(lower)) return;
+            const priceNum = Number(item?.price);
+            baseEvents[key].push({
+                name,
+                status: 'buy',
+                runoutDate: key,
+                qty: 1,
+                price: Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}` : null,
+                meta: 'Initial purchase'
+            });
+            existing.add(lower);
+        });
+        return baseEvents;
+    };
+
     const buildEvents = ({ items, startDate, horizonDays, prefs, history }) => {
         const index = buildActionIndex(history.past);
         const mode = prefs.mode;
+        let built = null;
         if (mode === 'daily') {
-            return buildEventsDaily({ items, startDate, horizonDays, index });
+            built = buildEventsDaily({ items, startDate, horizonDays, index });
+        } else if (mode === 'sunday') {
+            built = buildEventsSunday({ items, startDate, horizonDays, index });
+        } else {
+            built = buildEventsSmart({ items, startDate, horizonDays, lowDaysThreshold: prefs.lowDaysThreshold, index });
         }
-        if (mode === 'sunday') {
-            return buildEventsSunday({ items, startDate, horizonDays, index });
-        }
-        return buildEventsSmart({ items, startDate, horizonDays, lowDaysThreshold: prefs.lowDaysThreshold, index });
+        const itemIndex = new Map();
+        (items || []).forEach((it) => {
+            const name = normalizeItemName(it?.name);
+            if (!name) return;
+            itemIndex.set(name.toLowerCase(), { name, price: it?.price });
+        });
+        (history?.past || []).forEach((a) => {
+            const type = String(a?.type || '').trim();
+            if (type !== 'buy' && type !== 'no-buy') return;
+            const dateKey = String(a?.dateKey || '').trim();
+            const itemName = normalizeItemName(a?.itemName);
+            if (!dateKey || !itemName) return;
+            if (!built[dateKey]) built[dateKey] = [];
+            const lower = itemName.toLowerCase();
+            const meta = type === 'buy' ? 'Bought' : "Didn't buy";
+            const status = type === 'buy' ? 'bought' : 'no-buy';
+            const itemInfo = itemIndex.get(lower);
+            const displayName = itemInfo?.name || itemName;
+            const price = type === 'buy' && itemInfo?.price ? `$${Number(itemInfo.price).toFixed(2)}` : null;
+            const exists = built[dateKey].some((ev) => String(ev.name).toLowerCase() === lower && ev.status === status);
+            if (exists) return;
+            built[dateKey].push({
+                name: displayName,
+                status,
+                runoutDate: dateKey,
+                qty: 1,
+                price,
+                meta
+            });
+        });
+        return applyInitialPurchase({ events: built, items, startDate });
     };
 
     const modal = (() => {
@@ -396,14 +478,22 @@
 
         const modeTitle = type === 'expired'
             ? 'Mark expired'
-            : 'Didn’t eat today';
+            : type === 'buy'
+                ? 'Mark bought'
+                : type === 'no-buy'
+                    ? "Didn't buy"
+                    : "Didn't eat today";
 
         if (titleEl) titleEl.textContent = `${modeTitle}`;
-        if (subEl) subEl.textContent = `For ${prettyDate} — pick the food item.`;
+        if (subEl) subEl.textContent = `For ${prettyDate} - pick the food item (or apply to all).`;
 
         const names = (items || []).map((it) => normalizeItemName(it?.name)).filter(Boolean);
         names.sort((a, b) => a.localeCompare(b));
-        selectEl.innerHTML = names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        const options = [
+            `<option value="__all__">All groceries</option>`,
+            ...names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`)
+        ];
+        selectEl.innerHTML = options.join('');
 
         let active = true;
         const close = () => {
@@ -415,7 +505,14 @@
         };
 
         const saveNow = () => {
-            const itemName = normalizeItemName(selectEl.value);
+            const raw = String(selectEl.value || '').trim();
+            if (!raw) return;
+            if (raw === '__all__') {
+                try { onSave?.({ dateKey, type, itemName: '__all__', applyAll: true }); } catch { /* ignore */ }
+                close();
+                return;
+            }
+            const itemName = normalizeItemName(raw);
             if (!itemName) return;
             try { onSave?.({ dateKey, type, itemName }); } catch { /* ignore */ }
             close();
@@ -444,13 +541,29 @@
     const maxOffset = 10;
     let selectedKey = null;
 
-    const { items: rawItems, startDate: storedStartDate } = loadCalendarData();
-    const startDate = storedStartDate || loadStartDate();
+    const { items: rawItems, startDate: storedStartDate, savedAt } = loadCalendarData();
+    let startDate = storedStartDate || savedAt || loadStartDate();
     const items = Array.isArray(rawItems) ? rawItems : [];
 
     let prefs = loadPrefs();
     let history = loadHistory();
     let events = buildEvents({ items, startDate, horizonDays: 240, prefs, history });
+
+    const persistStartDate = (dateObj) => {
+        if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
+        const iso = dateObj.toISOString().slice(0, 10);
+        try {
+            const raw = localStorage.getItem('ode_grocery_calendar_items_v1');
+            const parsed = raw ? JSON.parse(raw) : {};
+            localStorage.setItem('ode_grocery_calendar_items_v1', JSON.stringify({
+                ...parsed,
+                startDate: iso
+            }));
+        } catch {
+            // ignore
+        }
+        try { sessionStorage.setItem('groceryStartDate', iso); } catch { /* ignore */ }
+    };
 
     const updateUndoRedoUi = (root) => {
         const undoBtn = root.querySelector('[data-gc-action="undo"]');
@@ -489,20 +602,41 @@
             return;
         }
 
-        detailBody.innerHTML = dayEvents
+        const rows = [];
+        let totalCost = 0;
+        const toPrice = (value) => {
+            const num = Number(String(value || '').replace(/[^0-9.]/g, ''));
+            return Number.isFinite(num) ? num : null;
+        };
+        dayEvents
             .slice()
             .sort((a, b) => String(a.name).localeCompare(String(b.name)))
-            .map((ev) => {
-                const qtyText = Number(ev.qty || 1) > 1 ? ` ×${Number(ev.qty || 1)}` : '';
-                const priceText = ev.price ? ` · ${escapeHtml(ev.price)}` : '';
+            .forEach((ev) => {
+                const qty = Math.max(1, Number(ev.qty || 1));
+                const qtyText = prefs.mode === 'sunday' ? ` x${qty}` : (qty > 1 ? ` x${qty}` : '');
                 const metaText = ev.meta
                     ? escapeHtml(ev.meta)
                     : (ev.runoutDate ? `Runs out ~ ${escapeHtml(ev.runoutDate)}` : 'Restock');
+                const priceValue = toPrice(ev.price);
+                if (priceValue != null) totalCost += priceValue * qty;
+                const priceText = ev.price ? ` - ${escapeHtml(ev.price)}${qty > 1 ? ` x${qty}` : ''}` : '';
 
-                const badgeClass = ev.status === 'expired' ? 'buy' : 'buy';
-                const badgeLabel = ev.status === 'expired' ? 'Expired' : 'Buy';
+                const badgeClass = ev.status === 'no-buy'
+                    ? 'no-buy'
+                    : ev.status === 'bought'
+                        ? 'bought'
+                        : ev.status === 'expired'
+                            ? 'expired'
+                            : 'buy';
+                const badgeLabel = ev.status === 'no-buy'
+                    ? 'No buy'
+                    : ev.status === 'bought'
+                        ? 'Bought'
+                        : ev.status === 'expired'
+                            ? 'Expired'
+                            : 'Buy';
 
-                return `
+                rows.push(`
                     <div class="calendar-detail-item">
                         <div class="calendar-detail-name">${escapeHtml(ev.name)}${qtyText}</div>
                         <div class="calendar-detail-meta">
@@ -510,9 +644,19 @@
                             <div class="calendar-detail-badge ${badgeClass}">${badgeLabel}</div>
                         </div>
                     </div>
-                `;
-            })
-            .join('');
+                `);
+            });
+        if (totalCost > 0) {
+            rows.push(`
+                <div class="calendar-detail-item calendar-detail-total">
+                    <div class="calendar-detail-name">Total</div>
+                    <div class="calendar-detail-meta">
+                        $${totalCost.toFixed(2)}
+                    </div>
+                </div>
+            `);
+        }
+        detailBody.innerHTML = rows.join('');
     };
 
     const renderMonth = ({ targetEl, year, monthIndex, startDateKey, todayKey }) => {
@@ -540,21 +684,46 @@
             if (key === startDateKey) classes.push('is-start');
             if (key === todayKey) classes.push('is-today');
             if (key === selectedKey) classes.push('is-selected');
-            if (dayEvents.length) classes.push('has-buy');
+            const hasExpired = dayEvents.some((ev) => ev.status === 'expired');
+            const hasBuy = dayEvents.some((ev) => ev.status === 'buy');
+            const hasLow = dayEvents.some((ev) => ev.status === 'low');
+            const hasNoBuy = dayEvents.some((ev) => ev.status === 'no-buy');
+            const hasBought = dayEvents.some((ev) => ev.status === 'bought');
+            if (hasExpired) classes.push('has-expired');
+            if (hasBuy) classes.push('has-buy');
+            if (!hasBuy && !hasExpired && hasLow) classes.push('has-low');
+            if (hasNoBuy) classes.push('has-no-buy');
+            if (hasBought) classes.push('has-bought');
 
             const itemsPreview = dayEvents
                 .slice(0, 2)
                 .map((ev) => {
-                    const qtyText = Number(ev.qty || 1) > 1 ? ` ×${Number(ev.qty || 1)}` : '';
-                    const meta = ev.status === 'expired' ? 'Expired' : 'Buy';
+                    const qtyText = Number(ev.qty || 1) > 1 ? ` &times;${Number(ev.qty || 1)}` : '';
+                    const meta = ev.status === 'expired'
+                        ? 'Expired'
+                        : ev.status === 'no-buy'
+                            ? 'No buy'
+                            : ev.status === 'bought'
+                                ? 'Bought'
+                                : 'Buy';
                     return `<div class="calendar-item">${escapeHtml(ev.name)}${qtyText}: ${escapeHtml(meta)}</div>`;
                 })
                 .join('');
             const more = dayEvents.length > 2 ? `<div class="calendar-item calendar-more">+${dayEvents.length - 2} more</div>` : '';
 
+            const statusLabel = hasExpired
+                ? 'Expired'
+                : hasNoBuy
+                    ? 'No buy'
+                    : hasBought
+                        ? 'Bought'
+                        : hasBuy
+                            ? 'Buy'
+                            : (hasLow ? 'Low' : '');
             cells.push(`
                 <div class="${classes.join(' ')}" data-key="${escapeHtml(key)}">
                     <div class="calendar-day">${day}</div>
+                    ${statusLabel ? `<div class="calendar-status">${statusLabel}</div>` : ''}
                     <div class="calendar-items">
                         ${itemsPreview}
                         ${more}
@@ -577,9 +746,10 @@
             <div class="calendar-month-head">
                 <div class="calendar-month-title">${escapeHtml(monthTitle)}</div>
                 <div class="calendar-month-tools">
-                    ${modePill('smart', 'Smart')}
                     ${modePill('daily', 'Daily')}
                     ${modePill('sunday', 'Sundays')}
+                    <span class="calendar-pill calendar-action" draggable="true" data-gc-pill="buy" title="Drag onto a day you bought groceries.">Bought</span>
+                    <span class="calendar-pill calendar-action" draggable="true" data-gc-pill="no-buy" title="Drag onto a day you did not buy groceries.">Didn't buy</span>
                     <span class="calendar-pill skip" draggable="true" data-gc-pill="skip" title="Drag onto a day you didn’t eat this item.">Didn't eat</span>
                     <span class="calendar-pill expired" draggable="true" data-gc-pill="expired" title="Drag onto a day this item expired.">Expired</span>
                     <button class="calendar-pill calendar-action" type="button" data-gc-action="undo">Undo</button>
@@ -592,25 +762,48 @@
         updateUndoRedoUi(targetEl);
     };
 
-    const applyAction = ({ dateKey, type, itemName }) => {
-        const next = {
-            id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-            type: type === 'expired' ? 'expired' : 'skip',
-            dateKey: String(dateKey || '').trim(),
-            itemName: normalizeItemName(itemName),
-            createdAt: new Date().toISOString()
-        };
-        if (!next.dateKey || !next.itemName) return;
+    const applyAction = ({ dateKey, type, itemName, applyAll }) => {
+        const date = String(dateKey || '').trim();
+        const actionType = type === 'expired'
+            ? 'expired'
+            : type === 'skip'
+                ? 'skip'
+                : type === 'buy'
+                    ? 'buy'
+                    : type === 'no-buy'
+                        ? 'no-buy'
+                        : 'skip';
+        if (!date) return;
+
+        const names = applyAll
+            ? (items || []).map((it) => normalizeItemName(it?.name)).filter(Boolean)
+            : [normalizeItemName(itemName)];
+
+        if (!names.length) return;
 
         const existingKeys = new Set(history.past.map(keyForAction));
-        if (existingKeys.has(keyForAction(next))) return;
+        const additions = [];
+        for (const name of names) {
+            if (!name) continue;
+            const next = {
+                id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                type: actionType,
+                dateKey: date,
+                itemName: name,
+                createdAt: new Date().toISOString()
+            };
+            const key = keyForAction(next);
+            if (existingKeys.has(key)) continue;
+            existingKeys.add(key);
+            additions.push(next);
+        }
 
+        if (!additions.length) return;
         history = {
-            past: [...history.past, next],
+            past: [...history.past, ...additions],
             future: []
         };
         saveHistory(history);
-
         events = buildEvents({ items, startDate, horizonDays: 240, prefs, history });
     };
 
@@ -681,7 +874,13 @@
                 cell.classList.remove('is-drop');
                 const dateKey = cell.getAttribute('data-key');
                 const type = event.dataTransfer?.getData('text/plain') || '';
-                const actionType = type === 'gc-expired' ? 'expired' : 'skip';
+                const actionType = type === 'gc-expired'
+                    ? 'expired'
+                    : type === 'gc-buy'
+                        ? 'buy'
+                        : type === 'gc-no-buy'
+                            ? 'no-buy'
+                            : 'skip';
                 openAdjustModal({
                     dateKey,
                     type: actionType,
@@ -721,7 +920,13 @@
         monthEl.querySelectorAll('[data-gc-pill]').forEach((pill) => {
             pill.addEventListener('dragstart', (event) => {
                 const kind = pill.getAttribute('data-gc-pill');
-                const tag = kind === 'expired' ? 'gc-expired' : 'gc-skip';
+                const tag = kind === 'expired'
+                    ? 'gc-expired'
+                    : kind === 'buy'
+                        ? 'gc-buy'
+                        : kind === 'no-buy'
+                            ? 'gc-no-buy'
+                            : 'gc-skip';
                 event.dataTransfer?.setData('text/plain', tag);
                 event.dataTransfer && (event.dataTransfer.effectAllowed = 'copy');
             });
@@ -741,4 +946,6 @@
 
     render();
 })();
+
+
 

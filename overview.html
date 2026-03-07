@@ -118,8 +118,14 @@
         <div class="control-section">
             <p class="section-label">COMMUNITY</p>
             <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
-            <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Friends</span></a>
+            <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+        </div>
+        <div class="control-section hidden" id="control-owner-section">
+            <p class="section-label">OWNER</p>
+            <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+            <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+            <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
         </div>
     </aside>
 
@@ -132,7 +138,6 @@
             </div>
             <div class="overview-header-right" id="overview-actions">
                 <button class="btn btn-ghost" type="button" id="overview-tour-btn" aria-label="Start quick tour">Tour</button>
-                <a class="btn btn-ghost" href="index.html?ns=start#ns-entry">New macro plan</a>
             </div>
         </header>
         <div class="overview-mini-nav" id="overview-mini-nav" aria-label="Overview sections">
@@ -179,14 +184,12 @@
                                  <div class="overview-grocery-toggle" role="tablist" aria-label="Grocery list views">
                                      <button type="button" class="overview-grocery-toggle-btn overview-grocery-pdf-btn" id="overview-grocery-pdf-phone">Full Grocery PDF</button>
                                      <button type="button" class="overview-grocery-toggle-btn active" data-grocery-view="cards" role="tab" aria-selected="true">Grocery Cards</button>
-                                     <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="list" role="tab" aria-selected="false" title="For those who buy groceries when they run out">Daily Buy List</button>
-                                     <button type="button" class="overview-grocery-toggle-btn" data-grocery-view="weekly" role="tab" aria-selected="false" title="For those who buy groceries once per week">Weekly Buy List</button>
-                                     <a class="overview-grocery-toggle-btn overview-grocery-fullplan-btn" href="grocery-plan.html">Full Plan</a>
+                                     <a class="overview-grocery-toggle-btn overview-grocery-fullplan-btn" href="grocery-plan.html">Full View</a>
                                  </div>
                                  <button type="button" class="btn btn-ghost overview-grocery-print hidden" id="overview-grocery-print">Full Grocery PDF</button>
                              </div>
                             <div class="overview-grocery-toggle-hint ns-muted" id="overview-grocery-toggle-hint">
-                                Daily Buy List: For those who buy groceries when they run out.
+                                Grocery Cards: Quick view of items and restock timing.
                             </div>
 
                             <div class="overview-empty hidden" id="overview-empty">
@@ -246,18 +249,29 @@
 
                 <div class="overview-col">
                     <section class="plan-card overview-training" id="overview-training-card" data-overview-section="training">
-                        <div class="card-head">
+                        <div class="card-head collapsible-header" id="overview-training-head" aria-expanded="false">
                             <h4>Training</h4>
+                            <div class="pill-group">
+                                <span class="pill" id="overview-training-last">Last: &mdash;</span>
+                                <span class="pill" id="overview-training-week">7d: &mdash;</span>
+                            </div>
+                            <button class="collapse-toggle" type="button" aria-label="Expand training overview">&#9660;</button>
                         </div>
                         <div class="overview-card-summary">
-                            <div class="overview-summary-list">
-                                <div class="overview-summary-item">
-                                    <div class="overview-summary-left">
-                                        <div class="overview-summary-title">Coming soon</div>
-                                        <div class="overview-summary-sub ns-muted">Training features are being rebuilt for mobile.</div>
-                                    </div>
-                                </div>
+                            <div class="overview-summary-list" id="overview-training-summary"></div>
+                        </div>
+                        <div class="overview-training-action" id="overview-training-action">
+                            <a class="btn btn-primary hidden" id="overview-training-today-btn" href="training.html">Go to today's workout</a>
+                        </div>
+                        <div class="overview-training-cta hidden" id="overview-training-cta">
+                            <div>
+                                <div class="overview-training-cta-title">Get your free training plan</div>
+                                <div class="overview-training-cta-sub">Build your plan in a couple minutes.</div>
                             </div>
+                            <a class="btn btn-primary" href="training-coming-soon.html?start=1">Build plan</a>
+                        </div>
+                        <div class="collapsible-content hidden" id="overview-training-details">
+                            <div class="overview-summary-list" id="overview-training-details-list"></div>
                         </div>
                     </section>
 
@@ -385,7 +399,7 @@
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-02-20-cut-vegcaps-1"></script>
+    <script src="js/main.js?v=2026-03-05-owner-15"></script>
     <script src="js/overview.js?v=2026-02-16-17"></script>
 </body>
 </html>

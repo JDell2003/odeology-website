@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Database � odeology_</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    body.workout-db-page {
+      overflow: auto !important;
+    }
+
+    body.workout-db-page main.workout-db-wrap {
+      max-width: 1180px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      overflow: visible;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .workout-db-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      grid-column: 1 / -1;
+    }
+
+    .workout-db-head-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .workout-db-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    #workout-db-auth-warning {
+      grid-column: 1 / -1;
+      margin-bottom: 0;
+    }
+
+    #workout-db-list-wrap {
+      grid-column: 1 / 2;
+      margin-bottom: 0;
+    }
+
+    #workout-db-editor {
+      grid-column: 2 / 3;
+      margin-bottom: 0;
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 12px);
+      max-height: calc(100vh - var(--navbar-height, 72px) - 24px);
+      overflow: auto;
+    }
+
+    .workout-db-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .workout-db-grid-full {
+      grid-column: 1 / -1;
+    }
+
+    .workout-db-muted {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .workout-db-groups {
+      margin-top: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .workout-db-group {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.96);
+      overflow: hidden;
+    }
+
+    .workout-db-group-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.04);
+      font-weight: 800;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .workout-db-group-count {
+      font-size: 12px;
+      color: #4f4f4f;
+      font-weight: 700;
+      text-transform: none;
+    }
+
+    .workout-db-subgroup {
+      padding: 8px 10px 10px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .workout-db-subgroup:first-child {
+      border-top: 0;
+    }
+
+    .workout-db-subgroup-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #575757;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .workout-db-subgroup-count {
+      font-size: 11px;
+      color: #6f6f6f;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .workout-db-item {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+
+    .workout-db-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .workout-db-item-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .workout-db-item-title {
+      font-weight: 700;
+    }
+
+    .workout-db-item-sub {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .workout-db-item-chevron {
+      font-size: 16px;
+      color: #666;
+      transition: transform 0.2s ease;
+    }
+
+    .workout-db-item.open .workout-db-item-chevron {
+      transform: rotate(90deg);
+    }
+
+    .workout-db-item-body {
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .workout-db-kv {
+      font-size: 13px;
+    }
+
+    .workout-db-kv b {
+      color: #333;
+      margin-right: 6px;
+    }
+
+    .workout-db-image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .workout-db-image-item {
+      margin: 0;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .workout-db-image {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #f3f3f3;
+      display: block;
+    }
+
+    .workout-db-image.is-broken {
+      display: none;
+    }
+
+    .workout-db-image-path {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.2;
+      color: #666;
+      word-break: break-word;
+    }
+
+    .workout-db-image-item.is-broken .workout-db-image-path::before {
+      content: "Image not found - ";
+      color: #8f1d1d;
+      font-weight: 700;
+    }
+
+    .workout-db-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .workout-db-upload-meta {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .workout-db-upload-meta strong {
+      color: #333;
+    }
+
+    .workout-db-auth {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff7f7;
+      color: #7a1c1c;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 860px) {
+      body.workout-db-page main.workout-db-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .workout-db-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .workout-db-head {
+        align-items: flex-start;
+      }
+
+      body.workout-db-page main.workout-db-wrap {
+        margin-top: calc(var(--navbar-height, 72px) + 16px);
+      }
+
+      #workout-db-list-wrap,
+      #workout-db-editor {
+        grid-column: 1 / -1;
+      }
+
+      #workout-db-editor {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+    }
+  </style>
+</head>
+<body class="workout-db-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li>
+          <a class="nav-training" href="training.html">
+            <span class="nav-training-main">Training</span>
+            <span class="nav-training-sub">30 days free</span>
+          </a>
+        </li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">&#x1F319;</span>
+      </button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section">
+      <p class="section-label">HELP</p>
+      <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">DASH</p>
+      <div class="control-pill-row">
+        <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+          <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+          <span class="text">Dash</span>
+        </button>
+      </div>
+    </div>
+    <div class="control-section">
+      <p class="section-label">TRAINING PORTAL</p>
+      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+    </div>
+    <div class="control-section">
+      <p class="section-label">COMMUNITY</p>
+      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+    </div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link active" id="control-workout-db-link" href="workout-database.html" aria-current="true"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+    </div>
+  </aside>
+
+  <main class="workout-db-wrap">
+    <div class="workout-db-head">
+      <div>
+        <h1 style="margin: 0;">Workout Database</h1>
+        <div class="workout-db-muted">Grouped by body region and sub-muscle. Owner edits update workout generation for all users.</div>
+      </div>
+      <div class="workout-db-head-actions">
+        <button type="button" class="btn btn-primary" id="workout-db-open-add">Custom Workout</button>
+        <button type="button" class="btn btn-ghost" id="workout-db-export-pdf">PDF</button>
+        <a class="btn btn-ghost" href="overview.html">Back to Dashboard</a>
+      </div>
+    </div>
+
+    <section class="workout-db-card" id="workout-db-auth-warning" style="display: none;"></section>
+
+    <section class="workout-db-card hidden" id="workout-db-editor">
+      <div style="display: flex; justify-content: space-between; gap: 8px; align-items: center;">
+        <h3 style="margin: 0;" id="workout-db-form-title">Add Workout</h3>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-ghost" id="workout-db-form-reset">Reset</button>
+          <button type="button" class="btn btn-ghost" id="workout-db-close-editor">Close</button>
+        </div>
+      </div>
+      <form id="workout-db-form" style="margin-top: 10px;">
+        <div class="workout-db-grid">
+          <label>Exercise Name<input class="auth-input" id="wdb-name" required></label>
+          <label>ID (optional)<input class="auth-input" id="wdb-id" placeholder="Auto from name"></label>
+          <label>Category
+            <select class="auth-input" id="wdb-category">
+              <option value="strength">strength</option>
+              <option value="stretching">stretching</option>
+              <option value="warmup">warmup</option>
+              <option value="cardio">cardio</option>
+              <option value="plyometrics">plyometrics</option>
+              <option value="olympic_weightlifting">olympic_weightlifting</option>
+              <option value="powerlifting">powerlifting</option>
+              <option value="strongman">strongman</option>
+              <option value="rehabilitation">rehabilitation</option>
+              <option value="mobility">mobility</option>
+              <option value="sports">sports</option>
+              <option value="other">other</option>
+            </select>
+          </label>
+          <label>Equipment<input class="auth-input" id="wdb-equipment" value="machine"></label>
+          <label>Mechanic
+            <select class="auth-input" id="wdb-mechanic">
+              <option value="">-</option>
+              <option value="compound">compound</option>
+              <option value="isolation">isolation</option>
+            </select>
+          </label>
+          <label>Force
+            <select class="auth-input" id="wdb-force">
+              <option value="">-</option>
+              <option value="push">push</option>
+              <option value="pull">pull</option>
+              <option value="static">static</option>
+            </select>
+          </label>
+          <label>Level
+            <select class="auth-input" id="wdb-level">
+              <option value="beginner">beginner</option>
+              <option value="intermediate">intermediate</option>
+              <option value="expert">expert</option>
+            </select>
+          </label>
+          <label>Is this a stretch?
+            <select class="auth-input" id="wdb-is-stretch">
+              <option value="">-</option>
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
+          <label>Is this isometric?
+            <select class="auth-input" id="wdb-is-isometric">
+              <option value="">-</option>
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
+          <label>Target Region
+            <select class="auth-input" id="wdb-target-region">
+              <option value="">-</option>
+              <optgroup label="Chest">
+                <option value="chest_upper">Upper Chest (clavicular)</option>
+                <option value="chest_mid">Mid Chest (sternal)</option>
+                <option value="chest_lower">Lower Chest (costal)</option>
+              </optgroup>
+              <optgroup label="Shoulders">
+                <option value="delts_front">Front Delts</option>
+                <option value="delts_side">Side Delts</option>
+                <option value="delts_rear">Rear Delts</option>
+              </optgroup>
+              <optgroup label="Abs / Core">
+                <option value="abs_upper">Upper Abs</option>
+                <option value="abs_lower">Lower Abs</option>
+                <option value="abs_obliques">Obliques</option>
+              </optgroup>
+              <optgroup label="Back">
+                <option value="back_lats_width">Lats Width</option>
+                <option value="back_upper_thickness">Upper Back Thickness</option>
+                <option value="back_lower">Lower Back</option>
+              </optgroup>
+              <optgroup label="Arms">
+                <option value="biceps_long_head">Biceps Long Head</option>
+                <option value="biceps_short_head">Biceps Short Head</option>
+                <option value="triceps_long_head">Triceps Long Head</option>
+                <option value="triceps_lateral_head">Triceps Lateral Head</option>
+                <option value="triceps_medial_head">Triceps Medial Head</option>
+              </optgroup>
+              <optgroup label="Legs / Glutes">
+                <option value="quads_vastus_lateralis">Quads Vastus Lateralis</option>
+                <option value="quads_vastus_medialis">Quads Vastus Medialis</option>
+                <option value="hamstrings_lateral">Hamstrings Lateral</option>
+                <option value="hamstrings_medial">Hamstrings Medial</option>
+                <option value="glutes_max">Glute Max</option>
+                <option value="glutes_med">Glute Med</option>
+                <option value="calves_gastrocnemius">Calves Gastrocnemius</option>
+                <option value="calves_soleus">Calves Soleus</option>
+                <option value="adductors">Adductors</option>
+                <option value="abductors">Abductors</option>
+                <option value="hip_flexors">Hip Flexors</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="forearms_brachioradialis">Forearms Brachioradialis</option>
+                <option value="neck_cervical">Neck</option>
+                <option value="full_body">Full Body</option>
+                <option value="other">Other</option>
+              </optgroup>
+            </select>
+          </label>
+          <label>Primary Muscles (comma)<input class="auth-input" id="wdb-primary" placeholder="chest,triceps"></label>
+          <label>Secondary Muscles (comma)<input class="auth-input" id="wdb-secondary" placeholder="deltsFront"></label>
+          <label class="workout-db-grid-full">Sub Muscle Groups (comma)<input class="auth-input" id="wdb-submuscles" placeholder="upper chest, side delts, lower abs"></label>
+          <label class="workout-db-grid-full">
+            Upload Images (from your computer)
+            <input class="auth-input" id="wdb-images-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            <div class="workout-db-upload-meta" id="wdb-images-meta">Up to 2 images, max 900KB each.</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <input id="wdb-images-replace" type="checkbox">
+              <span>Replace existing images on save</span>
+            </div>
+          </label>
+          <label class="workout-db-grid-full">Instructions (one per line)<textarea class="auth-input" id="wdb-instructions" rows="5" placeholder="Step 1&#10;Step 2"></textarea></label>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button type="submit" class="btn btn-primary" id="workout-db-save-btn">Save Workout</button>
+          <button type="button" class="btn btn-ghost" id="workout-db-cancel-edit" style="display: none;">Cancel Edit</button>
+          <span class="workout-db-muted" id="workout-db-status"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="workout-db-card" id="workout-db-list-wrap">
+      <div style="display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <h3 style="margin: 0;">Exercises</h3>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div class="workout-db-muted" id="workout-db-count"></div>
+          <input class="auth-input" id="workout-db-search" placeholder="Search by name, group, or muscle" style="max-width: 320px;">
+        </div>
+      </div>
+      <div id="workout-db-rows" class="workout-db-groups"></div>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-03-05-owner-15"></script>
+  <script src="js/workoutDatabase.js?v=2026-03-06-owner-12"></script>
+</body>
+</html>

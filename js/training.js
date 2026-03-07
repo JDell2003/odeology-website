@@ -6,10 +6,54 @@
 
   function readLocalIntake() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(TRAINING_INTAKE_KEY) || 'null');
-      return parsed && typeof parsed === 'object' ? parsed : null;
+      const handoff = JSON.parse(sessionStorage.getItem('ode_training_intake_handoff') || 'null');
+      if (handoff && typeof handoff === 'object') return handoff;
     } catch {
-      return null;
+      // ignore
+    }
+    let parsed = null;
+    try {
+      parsed = JSON.parse(localStorage.getItem(TRAINING_INTAKE_KEY) || 'null');
+    } catch {
+      parsed = null;
+    }
+    if (parsed && typeof parsed === 'object') return parsed;
+    return null;
+  }
+
+  let forceAutostartConsumed = false;
+
+  function shouldForceAutostart() {
+    if (forceAutostartConsumed) return false;
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('from') === 'intake') return true;
+    } catch {
+      // ignore
+    }
+    try {
+      return sessionStorage.getItem('ode_training_force_autostart') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function clearForceAutostart() {
+    forceAutostartConsumed = true;
+    try {
+      sessionStorage.removeItem('ode_training_force_autostart');
+    } catch {
+      // ignore
+    }
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('from') === 'intake') {
+        url.searchParams.delete('from');
+        const next = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState({}, '', next);
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -52,24 +96,257 @@
   };
 
   let autoOnboardInFlight = false;
+  let engineRetryInFlight = false;
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function fetchTrainingStateWithRetry({ tries = 3, delayMs = 1200 } = {}) {
+    let last = null;
+    for (let i = 0; i < tries; i += 1) {
+      try {
+        const resp = await api('/api/training/state', { method: 'GET' });
+        last = resp;
+        if (resp.ok && resp.json?.plan?.id) return resp;
+      } catch {
+        // ignore
+      }
+      await delay(delayMs);
+    }
+    return last;
+  }
+
+  async function pollForPlanReady({ maxMs = 60000, intervalMs = 2000 } = {}) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < maxMs) {
+      const resp = await fetchTrainingStateWithRetry({ tries: 1, delayMs: 0 });
+      if (resp?.ok && resp.json?.plan?.id) {
+        state.profile = resp.json?.profile || state.profile;
+        state.planRow = resp.json?.plan || null;
+        const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
+        state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+        const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
+        const dismissed = localStorage.getItem(dismissedKey) === '1';
+        setView(dismissed ? 'plan' : 'upsell');
+        return true;
+      }
+      await delay(intervalMs);
+    }
+    return false;
+  }
+
+  const CLIENT_BB_SET_CAP = 4;
+  const CLIENT_BANNED_EXERCISE_PATTERNS = [
+    /\bchains?\b/i,
+    /\bkneeling\s*squat\b/i,
+    /\bone[-\s]?arm\s*floor\s*press\b/i,
+    /\bgood\s*morning\b/i,
+    /\boverhead\s*squat\b/i,
+    /\bpistol\s*squat\b/i,
+    /\brear\s*delt\s*row\b/i,
+    /\bgironda\b/i,
+    /\bsternum\s*chin\b/i,
+    /\bboard\s*press\b/i,
+    /\banti-?\s*gravity\b/i,
+    /\btechnique\b/i,
+    /\bspeed\b/i,
+    /\bdynamic\s*effort\b/i,
+    /\btempo\b/i,
+    /\bpaused?\b/i,
+    /\bneck\s*press\b/i,
+    /\bone[-\s]*arm\b.*\blat\b.*\bpull[\s-]*down\b/i,
+    /\bsingle[-\s]*arm\b.*\blat\b.*\bpull[\s-]*down\b/i,
+    /\bone[-\s]*leg\b.*\bbarbell\b.*\bsquat\b/i,
+    /\bsingle[-\s]*leg\b.*\bbarbell\b.*\bsquat\b/i,
+    /\bsquat\s*with\s*plate\s*movers\b/i,
+    /\bcalf\s*raise\s*on\s*a\s*dumbbell\b/i,
+    /\bmini\s*band\b/i,
+    /\bresistance\s*band\b/i,
+    /\bbanded\b/i
+  ];
+
+  function isBannedExerciseName(rawName) {
+    const name = String(rawName || '').trim();
+    if (!name) return false;
+    return CLIENT_BANNED_EXERCISE_PATTERNS.some((rx) => rx.test(name));
+  }
+
+  function normalizeBodybuildingExerciseName(rawName) {
+    const raw = String(rawName || '').trim();
+    if (!raw) return raw;
+    if ((/\bhamstring\s*curls?\b/i.test(raw) || /\bleg\s*curls?\b/i.test(raw)) && !/\b(lying|seated)\b/i.test(raw)) {
+      return 'Seated Hamstring Curl';
+    }
+    if (/^neck\s*press$/i.test(raw)) return 'Bench Press';
+    if (/one[-\s]*leg\b.*\bbarbell\b.*\bsquat/i.test(raw) || /single[-\s]*leg\b.*\bbarbell\b.*\bsquat/i.test(raw)) return 'Hack Squat';
+    if (/^bench press\s*\(technique\)$/i.test(raw)) return 'Bench Press';
+    if (/^speed\s+box\s+squat$/i.test(raw) || /^speed\s+squat$/i.test(raw)) return 'Box Squat';
+    if (/^one[-\s]*arm\s+lat\s+pull[\s-]*down$/i.test(raw) || /^single[-\s]*arm\s+lat\s+pull[\s-]*down$/i.test(raw)) return 'Lat Pulldown';
+    if (/^bench press\s*\(competition\)$/i.test(raw)) return 'Bench Press';
+    if (/deadlift\s*\(single\)/i.test(raw)) return 'Barbell Deadlift';
+    return raw
+      .replace(/\s*\(competition\)\s*/ig, ' ')
+      .replace(/\s*\(technique\)\s*/ig, ' ')
+      .replace(/\bspeed\b/ig, ' ')
+      .replace(/\bdynamic\s*effort\b/ig, ' ')
+      .replace(/\btempo\b/ig, ' ')
+      .replace(/\bpaused?\b/ig, ' ')
+      .replace(/\s*\(single\)\s*/ig, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function disciplineFromPlanRow(planRow) {
+    return String(
+      planRow?.discipline
+      || planRow?.plan?.meta?.discipline
+      || planRow?.plan?.discipline
+      || ''
+    ).trim().toLowerCase();
+  }
+
+  function sanitizeBodybuildingPlanInPlace(planRow) {
+    if (!planRow?.plan || disciplineFromPlanRow(planRow) !== 'bodybuilding') {
+      return { removed: 0, capped: 0 };
+    }
+    let removed = 0;
+    let capped = 0;
+    for (const week of planRow.plan.weeks || []) {
+      for (const day of week?.days || []) {
+        const src = Array.isArray(day?.exercises) ? day.exercises : [];
+        const next = [];
+        for (const ex of src) {
+          const displayName = normalizeBodybuildingExerciseName(ex?.displayName || ex?.name || '');
+          const name = String(displayName || '');
+          if (isBannedExerciseName(name)) {
+            removed += 1;
+            continue;
+          }
+          if (displayName) {
+            ex.name = displayName;
+            if (Object.prototype.hasOwnProperty.call(ex, 'displayName')) ex.displayName = displayName;
+          }
+          const sets = Number(ex?.sets);
+          if (Number.isFinite(sets) && sets > CLIENT_BB_SET_CAP) {
+            ex.sets = CLIENT_BB_SET_CAP;
+            capped += 1;
+          }
+          next.push(ex);
+        }
+        day.exercises = next;
+      }
+    }
+    return { removed, capped };
+  }
+
+  function isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt) {
+    const nextId = String(nextPlan?.id || '').trim();
+    const prevId = String(prevPlanId || '').trim();
+    if (!nextId) return false;
+    if (prevId && nextId !== prevId) return true;
+    if (!prevId) {
+      const createdAtRaw = nextPlan?.plan?.meta?.createdAt || nextPlan?.updated_at || nextPlan?.updatedAt || '';
+      const createdAtMs = Date.parse(createdAtRaw);
+      return Number.isFinite(createdAtMs) && createdAtMs >= (Number(requestStartedAt) - 5000);
+    }
+    return false;
+  }
 
   const lower = (value) => String(value || '').trim().toLowerCase();
   const uniq = (list) => Array.from(new Set(list));
 
+  function safeParseJson(raw) {
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizeMacroGoalMode(raw) {
+    const goal = String(raw || '').trim().toLowerCase();
+    if (!goal) return '';
+    if (goal.includes('cut') || goal.includes('lose')) return 'cut';
+    if (goal.includes('recomp') || goal.includes('maintain')) return 'recomp';
+    if (goal.includes('bulk') || goal.includes('build') || goal.includes('gain') || goal.includes('strength')) return 'bulk';
+    return '';
+  }
+
+  function extractMacroSelections(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    return payload?.nutrition?.selections
+      || payload?.nutrition?.profile
+      || payload?.nutrition?.bodyStats
+      || payload?.grocerySession?.selections
+      || payload?.groceryPrefs?.selections
+      || payload?.macroCalculator?.selections
+      || payload?.macro_calculator?.selections
+      || payload?.macroSelections
+      || null;
+  }
+
+  function readLatestMacroGoalMode() {
+    const readItem = (storage, key) => {
+      try {
+        return storage?.getItem?.(key) || null;
+      } catch {
+        return null;
+      }
+    };
+    const fromSelections = (selections) => normalizeMacroGoalMode(
+      selections?.goal
+      || selections?.mode
+      || selections?.goalMode
+      || selections?.primaryGoal
+    );
+    const payloads = [
+      safeParseJson(readItem(sessionStorage, 'grocerySession')),
+      safeParseJson(readItem(sessionStorage, 'groceryPrefs')),
+      safeParseJson(readItem(localStorage, 'grocerySession')),
+      safeParseJson(readItem(localStorage, 'ode_saved_results_snapshot')),
+      safeParseJson(readItem(localStorage, 'groceryPrefs'))
+    ];
+    for (const payload of payloads) {
+      const selections = extractMacroSelections(payload) || payload?.selections || null;
+      const mode = fromSelections(selections);
+      if (mode) return mode;
+    }
+    return '';
+  }
+
+  function goalModeToPrimaryGoal(goalModeRaw) {
+    const goalMode = normalizeMacroGoalMode(goalModeRaw);
+    if (goalMode === 'cut') return 'Cut fat';
+    if (goalMode === 'recomp') return 'Recomp';
+    return 'Build size';
+  }
+
+  function goalModeToTrainingPhase(goalModeRaw, fallbackPhase = 'bulk') {
+    const goalMode = normalizeMacroGoalMode(goalModeRaw);
+    if (goalMode === 'cut') return 'cut';
+    if (goalMode === 'recomp') return 'maintain';
+    if (goalMode === 'bulk') return 'bulk';
+    const fallback = String(fallbackPhase || '').trim().toLowerCase();
+    return ['bulk', 'cut', 'maintain'].includes(fallback) ? fallback : 'bulk';
+  }
+
   function mapExperience(raw) {
-    const v = lower(raw);
-    if (v === '<6m' || v === '< 6m' || v === '<6 months') return '<6m';
-    if (v === '6-24m' || v === '6–24m' || v === '6-24 months') return '6–24m';
-    if (v === '2-5y' || v === '2–5y' || v === '2-5 years') return '2–5y';
-    if (v === '5y+' || v === '5+ years' || v === '5+ yrs') return '5y+';
-    return '6–24m';
+    const v = lower(raw)
+      .replace(/[–—−]/g, '-')
+      .replace(/â€“|â€”|âˆ’/g, '-')
+      .replace(/\s+/g, '');
+    if (v === '<6m' || v === '<6months') return '<6m';
+    if (v === '6-24m' || v === '6-24months') return '6-24m';
+    if (v === '2-5y' || v === '2-5years' || v === '2-5yrs') return '2-5y';
+    if (v === '5y+' || v === '5+years' || v === '5+yrs') return '5y+';
+    return '6-24m';
   }
 
   function mapTrainingFeel(raw, focusLabel) {
+    if (focusLabel === 'Aesthetic') return 'Aesthetic bodybuilding';
+    if (focusLabel === 'Strength') return 'Powerbuilding';
     const v = lower(raw);
     if (v.includes('power')) return 'Powerbuilding';
     if (v.includes('aesthetic') || v.includes('bodybuilding')) return 'Aesthetic bodybuilding';
-    return focusLabel === 'Strength' ? 'Powerbuilding' : 'Aesthetic bodybuilding';
+    return 'Aesthetic bodybuilding';
   }
 
   function mapTrainingStyle(raw) {
@@ -179,11 +456,14 @@
   function mapIntakeToOblueprintPayload(intake) {
     if (!intake || typeof intake !== 'object') return null;
 
-    const goalRaw = lower(intake.goal);
-    const primaryGoal = goalRaw === 'cut fat' ? 'Cut fat' : goalRaw === 'recomp' ? 'Recomp' : 'Build size';
+    const intakeGoalRaw = lower(intake.goal);
+    const macroGoalMode = readLatestMacroGoalMode();
+    const primaryGoal = intakeGoalRaw
+      ? (intakeGoalRaw === 'cut fat' ? 'Cut fat' : intakeGoalRaw === 'recomp' ? 'Recomp' : 'Build size')
+      : goalModeToPrimaryGoal(macroGoalMode);
 
     const focusRaw = lower(intake.priority);
-    const focus = focusRaw === 'strength' ? 'Strength' : focusRaw === 'aesthetic' ? 'Aesthetic' : 'Size';
+    const focus = focusRaw === 'strength' ? 'Strength' : focusRaw === 'size' ? 'Size' : 'Aesthetic';
 
     const timeline = ['4 weeks', '8 weeks', '12+ weeks'].includes(String(intake.timeline || ''))
       ? String(intake.timeline)
@@ -232,6 +512,56 @@
     };
   }
 
+  function describeRoutingSelection(payload) {
+    const src = payload && typeof payload === 'object' ? payload : {};
+    const one = (v) => String(v || '').trim();
+    const lowerOne = (v) => one(v).toLowerCase();
+
+    const focusRaw = one(src.focus);
+    const focusLabel = focusRaw === 'Aesthetic'
+      ? 'Aesthetic = shape and proportion'
+      : focusRaw === 'Strength'
+        ? 'Strength = heavier lifts'
+        : focusRaw === 'Size'
+          ? 'Powerbuilding'
+          : '';
+
+    const trainingFeelRaw = one(src.trainingFeel);
+    const disciplineRaw = lowerOne(src.discipline);
+    const isOblueprint = Boolean(focusRaw || trainingFeelRaw || one(src.primaryGoal));
+
+    let engineLabel = '';
+    if (isOblueprint) {
+      if (focusRaw === 'Aesthetic' || lowerOne(trainingFeelRaw).includes('aesthetic')) {
+        engineLabel = 'Aesthetic bodybuilding engine';
+      } else if (focusRaw === 'Strength' || lowerOne(trainingFeelRaw).includes('power')) {
+        engineLabel = 'Powerbuilding engine';
+      } else {
+        engineLabel = 'Bodybuilding engine';
+      }
+    } else {
+      if (disciplineRaw === 'powerlifting') engineLabel = 'Powerlifting engine';
+      else if (disciplineRaw === 'calisthenics') engineLabel = 'Calisthenics engine';
+      else if (disciplineRaw === 'powerbuilding') engineLabel = 'Powerbuilding engine';
+      else if (disciplineRaw === 'bodybuilding') engineLabel = 'Bodybuilding engine';
+      else engineLabel = 'Training engine';
+    }
+
+    const pickedLabel = focusLabel || one(src.primaryGoal) || one(src.phase) || one(src.discipline) || 'default logic';
+    return {
+      pickedLabel,
+      engineLabel,
+      details: {
+        focus: focusRaw || null,
+        trainingFeel: trainingFeelRaw || null,
+        primaryGoal: one(src.primaryGoal) || null,
+        timeline: one(src.timeline) || null,
+        discipline: one(src.discipline) || null,
+        phase: one(src.phase) || null
+      }
+    };
+  }
+
   async function readRemoteIntake() {
     if (!state?.auth?.user) return null;
     try {
@@ -251,10 +581,12 @@
     return local || remote || null;
   }
 
-  async function tryAutoOnboardFromIntake() {
+  async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
     const intake = await loadSavedIntake();
-    if (!isIntakeComplete(intake)) return false;
+    if (!intake) return false;
+    const forceStart = force || shouldForceAutostart();
+    if (!forceStart && !isIntakeComplete(intake)) return false;
     const payload = mapIntakeToOblueprintPayload(intake);
     if (!payload) return false;
     autoOnboardInFlight = true;
@@ -352,7 +684,175 @@
     query: ''
   };
 
+  const workoutTimer = {
+    running: false,
+    startedAt: 0,
+    elapsedMs: 0,
+    intervalId: 0,
+    events: [],
+    context: {}
+  };
+
   let shareCloseBound = false;
+  let workoutInputBound = false;
+
+  function formatWorkoutElapsed(ms) {
+    const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function getWorkoutElapsedMs() {
+    if (workoutTimer.running) return Date.now() - workoutTimer.startedAt;
+    return workoutTimer.elapsedMs || 0;
+  }
+
+  function updateWorkoutTimerDisplay() {
+    const node = document.getElementById('workout-timer-display');
+    if (!node) return;
+    if (!workoutTimer.running) {
+      node.classList.add('hidden');
+      return;
+    }
+    node.classList.remove('hidden');
+    node.textContent = `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+  }
+
+  function ensureWorkoutTimerTick() {
+    if (!workoutTimer.running) return;
+    if (workoutTimer.intervalId) return;
+    workoutTimer.intervalId = window.setInterval(() => {
+      updateWorkoutTimerDisplay();
+    }, 1000);
+    updateWorkoutTimerDisplay();
+  }
+
+  function bindWorkoutInputTracking() {
+    if (workoutInputBound) return;
+    workoutInputBound = true;
+    document.addEventListener('input', (e) => {
+      if (!workoutTimer.running) return;
+      if (!document.body.classList.contains('training-page')) return;
+      const target = e.target;
+      if (!target || !target.dataset) return;
+      const field = target.dataset.field;
+      if (!field) return;
+      const exId = target.dataset.exId || null;
+      const setIdx = target.dataset.setIdx != null ? Number(target.dataset.setIdx) : null;
+      const raw = String(target.value || '').trim();
+      const detail = { field, exId, setIdx };
+      if (field === 'setNote') {
+        detail.note = raw.slice(0, 120);
+      } else {
+        const num = Number(raw);
+        if (Number.isFinite(num)) detail.value = num;
+      }
+      recordWorkoutEvent('input', detail);
+    }, true);
+  }
+
+  function startWorkoutTimer() {
+    if (workoutTimer.running) return;
+    workoutTimer.running = true;
+    workoutTimer.startedAt = Date.now();
+    workoutTimer.elapsedMs = 0;
+    workoutTimer.events = [];
+    ensureWorkoutTimerTick();
+    render();
+  }
+
+  function recordWorkoutEvent(type, details) {
+    if (!workoutTimer.running || !workoutTimer.startedAt) return;
+    const now = Date.now();
+    workoutTimer.events.push({
+      type: String(type || 'event'),
+      at: new Date(now).toISOString(),
+      offsetSec: Math.max(0, Math.round((now - workoutTimer.startedAt) / 1000)),
+      details: details || {}
+    });
+  }
+
+  function showWorkoutSavedToast() {
+    const existing = document.getElementById('workout-saved-toast');
+    if (existing) existing.remove();
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-saved-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '✓'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, 'Workout saved'),
+        el('div', { class: 'workout-saved-sub' }, 'Session data stored in your profile.')
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1400);
+    });
+  }
+
+  async function confirmEndWorkout() {
+    if (!workoutTimer.running) return;
+    const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
+    let ok = false;
+    if (confirmFn) {
+      ok = await confirmFn({
+        title: 'Finish workout?',
+        message: 'Are you sure you want to finish your workout?\nYour workout timer and input events will be saved to your profile.',
+        confirmText: 'Finish workout',
+        cancelText: 'Not yet',
+        danger: false
+      });
+    } else {
+      ok = window.confirm('Finish workout?\nYour workout timer and input events will be saved to your profile.');
+    }
+    if (!ok) return;
+    endWorkoutTimer({ reason: 'confirmed', showToast: true });
+  }
+
+  function endWorkoutTimer({ reason = 'manual', showToast = false } = {}) {
+    if (!workoutTimer.running) return;
+    const endedAt = Date.now();
+    const durationMs = Math.max(0, endedAt - workoutTimer.startedAt);
+    if (durationMs > 0) {
+      logTrainingEvent('workout_duration', {
+        planId: state.planRow?.id || null,
+        weekIndex: Number.isFinite(workoutTimer.context?.weekIndex) ? workoutTimer.context.weekIndex : null,
+        dayIndex: Number.isFinite(workoutTimer.context?.dayIndex) ? workoutTimer.context.dayIndex : null,
+        activeDate: workoutTimer.context?.activeDate || null,
+        durationMs,
+        durationSec: Math.round(durationMs / 1000),
+        startedAt: workoutTimer.startedAt ? new Date(workoutTimer.startedAt).toISOString() : null,
+        endedAt: new Date(endedAt).toISOString()
+      });
+      logTrainingEvent('workout_finish', {
+        planId: workoutTimer.context?.planId || state.planRow?.id || null,
+        weekIndex: Number.isFinite(workoutTimer.context?.weekIndex) ? workoutTimer.context.weekIndex : null,
+        dayIndex: Number.isFinite(workoutTimer.context?.dayIndex) ? workoutTimer.context.dayIndex : null,
+        activeDate: workoutTimer.context?.activeDate || null,
+        startedAt: workoutTimer.startedAt ? new Date(workoutTimer.startedAt).toISOString() : null,
+        endedAt: new Date(endedAt).toISOString(),
+        durationMs,
+        durationSec: Math.round(durationMs / 1000),
+        reason,
+        events: workoutTimer.events.slice(0, 300)
+      });
+    }
+    workoutTimer.running = false;
+    workoutTimer.elapsedMs = 0;
+    workoutTimer.events = [];
+    if (workoutTimer.intervalId) {
+      clearInterval(workoutTimer.intervalId);
+      workoutTimer.intervalId = 0;
+    }
+    updateWorkoutTimerDisplay();
+    render();
+    if (showToast) showWorkoutSavedToast();
+  }
 
 
   function normalizeDiscipline(raw) {
@@ -753,6 +1253,118 @@
     return '—';
   }
 
+  function roundTo(value, inc) {
+    const n = Number(value);
+    const step = Number(inc) || 1;
+    if (!Number.isFinite(n) || !Number.isFinite(step) || step <= 0) return null;
+    return Math.round(n / step) * step;
+  }
+
+  function fallbackBaselinesFromBodyweight(exp, bodyweight) {
+    const bw = Number(bodyweight);
+    if (!Number.isFinite(bw) || bw <= 0) return null;
+    const tier = String(exp || '').toLowerCase();
+    const ratios = tier === 'advanced'
+      ? { press: 0.8, leg: 1.3, hinge: 1.6, pull: 0.75 }
+      : tier === 'intermediate'
+        ? { press: 0.65, leg: 1.05, hinge: 1.25, pull: 0.6 }
+        : { press: 0.5, leg: 0.85, hinge: 1.0, pull: 0.5 };
+    return {
+      press1rm: roundTo(bw * ratios.press, 5),
+      leg1rm: roundTo(bw * ratios.leg, 5),
+      hinge1rm: roundTo(bw * ratios.hinge, 5),
+      pull1rm: roundTo(bw * ratios.pull, 5)
+    };
+  }
+
+  function safeDefaultProjected(ex) {
+    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
+    if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
+    const stimulus = String(ex?.stimulusType || '').toLowerCase();
+    const movement = String(ex?.movementPattern || '').toLowerCase();
+    const name = String(ex?.displayName || ex?.name || '').toLowerCase();
+    const isLower = movement === 'squat'
+      || movement === 'hinge'
+      || /(squat|lunge|split squat|deadlift|rdl|hip thrust|leg press)/.test(name);
+    const isPress = movement === 'press'
+      || movement === 'ohp'
+      || /(press|bench|incline|overhead)/.test(name);
+    const isPull = movement === 'row'
+      || movement === 'vertical_pull'
+      || /(row|pull|pulldown|lat)/.test(name);
+    const isIso = stimulus === 'isolation';
+
+    let base = null;
+    if (eqClass === 'barbell') base = isLower ? 95 : isPress ? 65 : isPull ? 85 : isIso ? 35 : 75;
+    else if (eqClass === 'dumbbell') base = isLower ? 50 : isPress ? 30 : isPull ? 35 : isIso ? 15 : 25;
+    else if (eqClass === 'machine') base = isLower ? 80 : isPress ? 60 : isPull ? 70 : isIso ? 40 : 50;
+    else if (eqClass === 'cable') base = isLower ? 60 : isPress ? 40 : isPull ? 55 : isIso ? 30 : 40;
+    else base = isLower ? 70 : isPress ? 45 : isPull ? 55 : isIso ? 25 : 40;
+
+    const inc = isLower ? 5 : 2.5;
+    const value = roundTo(base, inc);
+    return { value: Number.isFinite(value) ? value : null, unit: 'lb' };
+  }
+
+  function resolveProjectedForExercise(ex, plan) {
+    if (ex?.projected && typeof ex.projected === 'object') {
+      if (ex.projected.unit === 'bw') return ex.projected;
+      if (Number.isFinite(ex.projected.value)) return ex.projected;
+    }
+    if (Number.isFinite(ex?.projectedWeight)) return { value: ex.projectedWeight, unit: 'lb' };
+    const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
+    const exp = plan?.meta?.experience || '';
+    const fallback = fallbackBaselinesFromBodyweight(exp, baselines?.bodyweight);
+    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
+    if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
+    const tm = baselines?.trainingMax || {};
+    const baseId = String(ex?.baseId || '');
+    if (baseId) {
+      const tmVal = baseId.includes('squat') ? tm.squat
+        : baseId.includes('dead') ? tm.deadlift
+          : baseId.includes('bench') ? tm.bench
+            : null;
+      if (Number.isFinite(tmVal)) {
+        const est = roundTo(tmVal * 0.7, baseId.includes('bench') ? 2.5 : 5);
+        return { value: est, unit: 'lb' };
+      }
+    }
+    const ww = baselines?.workingWeights || {};
+    const movement = String(ex?.movementPattern || '').toLowerCase();
+    const stimulus = String(ex?.stimulusType || '').toLowerCase();
+    const muscleKeys = Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : [];
+    let base = null;
+    let inc = 2.5;
+    if (movement === 'squat') { base = ww.lower; inc = 5; }
+    else if (movement === 'hinge') { base = ww.hinge; inc = 5; }
+    else if (movement === 'row' || movement === 'vertical_pull') { base = ww.pull; }
+    else if (muscleKeys.some((m) => ['quads', 'hamstrings', 'glutes', 'calves'].includes(m))) { base = ww.lower || ww.hinge; inc = 5; }
+    else { base = ww.press || ww.pull; }
+
+    if (!Number.isFinite(base) && Number.isFinite(baselines.press1rm)) base = baselines.press1rm * 0.7;
+    if (!Number.isFinite(base) && Number.isFinite(baselines.pull1rm)) base = baselines.pull1rm * 0.7;
+    if (!Number.isFinite(base) && Number.isFinite(baselines.leg1rm)) { base = baselines.leg1rm * 0.7; inc = 5; }
+    if (!Number.isFinite(base) && Number.isFinite(baselines.hinge1rm)) { base = baselines.hinge1rm * 0.7; inc = 5; }
+    if (!Number.isFinite(base) && fallback) {
+      if (movement === 'squat' || muscleKeys.some((m) => ['quads', 'hamstrings', 'glutes', 'calves'].includes(m))) {
+        base = fallback.leg1rm * 0.7;
+        inc = 5;
+      } else if (movement === 'hinge') {
+        base = fallback.hinge1rm * 0.7;
+        inc = 5;
+      } else if (movement === 'row' || movement === 'vertical_pull') {
+        base = fallback.pull1rm * 0.7;
+      } else {
+        base = fallback.press1rm * 0.7;
+      }
+    }
+
+    if (!Number.isFinite(base)) return safeDefaultProjected(ex);
+    const ratio = stimulus === 'isolation' ? 0.5 : 0.6;
+    const est = roundTo(base * ratio, inc);
+    return { value: Number.isFinite(est) ? est : null, unit: 'lb' };
+  }
+
   function parseRepsTarget(reps) {
     const s = String(reps || '').trim();
     const range = s.match(/(\\d+)\\s*-\\s*(\\d+)/);
@@ -867,6 +1479,20 @@ function matchLocalExerciseFolder(name) {
   if (!best) return null;
   const minScore = tokens.length === 1 ? 1 : Math.min(2, tokens.length);
   return bestScore >= minScore ? best.folder : null;
+}
+
+function rewriteLegacyLocalMediaPath(src) {
+  let out = String(src || '').trim();
+  if (!out) return out;
+  out = out.replace(
+    /\/free-exercise-db\/exercises\/Close-Grip_Bench_Press\/([^/?#]+)$/i,
+    '/free-exercise-db/exercises/Smith_Machine_Close-Grip_Bench_Press/$1'
+  );
+  out = out.replace(
+    /\/free-exercise-db\/exercises\/Overhead_Press\/([^/?#]+)$/i,
+    '/free-exercise-db/exercises/Barbell_Shoulder_Press/$1'
+  );
+  return out;
 }
 
   function persistExerciseMediaCacheSoon() {
@@ -1087,8 +1713,8 @@ function matchLocalExerciseFolder(name) {
       const mediaPath = String(ex?.mediaPath || '').trim();
       const mediaPathAlt = String(ex?.mediaPathAlt || '').trim();
       if (mediaPath) {
-        const src0 = mediaPath;
-        const src1 = mediaPathAlt || (mediaPath.includes('/0.') ? mediaPath.replace('/0.', '/1.') : mediaPath);
+        const src0 = rewriteLegacyLocalMediaPath(mediaPath);
+        const src1 = rewriteLegacyLocalMediaPath(mediaPathAlt || (mediaPath.includes('/0.') ? mediaPath.replace('/0.', '/1.') : mediaPath));
         return {
           type: 'local-pair',
           src0,
@@ -1127,12 +1753,12 @@ function matchLocalExerciseFolder(name) {
       });
     }
     if (media?.type === 'image' && media?.src) {
-      return el('img', { class: 'exercise-media-img', src: media.src, alt: ex?.name || 'Exercise', loading: 'lazy' });
+      return el('img', { class: 'exercise-media-img', src: media.src, alt: ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
     }
     if (media?.type === 'local-pair' && media?.src0 && media?.src1) {
       const wrap = el('div', { class: 'exercise-media-pair' });
-      const imgA = el('img', { class: 'exercise-media-img exercise-media-img-a', src: media.src0, alt: media.alt || ex?.name || 'Exercise', loading: 'lazy' });
-      const imgB = el('img', { class: 'exercise-media-img exercise-media-img-b', src: media.src1, alt: media.alt || ex?.name || 'Exercise', loading: 'lazy' });
+      const imgA = el('img', { class: 'exercise-media-img exercise-media-img-a', src: media.src0, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
+      const imgB = el('img', { class: 'exercise-media-img exercise-media-img-b', src: media.src1, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
       const onError = () => {
         try { wrap.replaceWith(muscleIconSvg(ex?.bodyPart || ex?.muscle_group || ex?.muscleGroup || 'exercise')); } catch {}
       };
@@ -1242,10 +1868,33 @@ function matchLocalExerciseFolder(name) {
     }
   }
 
+  function swapOverrideKeyPermanent(planId, slotId) {
+    return `ode_swap_perm:${planId || 'local'}:${slotId}`;
+  }
+
+  function getPermanentSwapOverride(planId, slotId) {
+    if (!slotId) return null;
+    try {
+      return localStorage.getItem(swapOverrideKeyPermanent(planId, slotId));
+    } catch {
+      return null;
+    }
+  }
+
+  function setPermanentSwapOverride(planId, slotId, exerciseId) {
+    if (!slotId || !exerciseId) return;
+    try {
+      localStorage.setItem(swapOverrideKeyPermanent(planId, slotId), String(exerciseId));
+    } catch {
+      // ignore
+    }
+  }
+
   function applySwapOverridesToDay({ day, planId, weekIndex, dayIndex }) {
     if (!day || !Array.isArray(day.exercises)) return;
     for (const ex of day.exercises) {
-      const override = getSwapOverride(planId, weekIndex, dayIndex, ex?.slotId);
+      const permanent = getPermanentSwapOverride(planId, ex?.slotId);
+      const override = getSwapOverride(planId, weekIndex, dayIndex, ex?.slotId) || permanent;
       if (!override) continue;
       if (String(ex.exerciseId) !== String(override)) {
         ex.exerciseId = String(override);
@@ -1376,6 +2025,86 @@ function matchLocalExerciseFolder(name) {
     return scored.slice(0, 6).map((c) => c.id);
   }
 
+  function applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope }) {
+    const prevId = ex.exerciseId;
+    ex.exerciseId = newExerciseId;
+    const media = exerciseMediaFromId(newExerciseId);
+    if (media.displayName) ex.displayName = media.displayName;
+    ex.mediaPath = media.mediaPath;
+    ex.mediaPathAlt = media.mediaPathAlt;
+    if (scope === 'permanent') {
+      setPermanentSwapOverride(state.planRow?.id, ex.slotId, newExerciseId);
+    } else {
+      setSwapOverride(state.planRow?.id, weekIndex, dayIndex, ex.slotId, newExerciseId);
+    }
+    logTrainingEvent('swap_exercise', {
+      weekIndex,
+      dayIndex,
+      slotId: ex.slotId,
+      intentKey: ex.intentKey,
+      oldExerciseId: prevId,
+      newExerciseId,
+      scope,
+      at: new Date().toISOString()
+    });
+    try {
+      api('/api/training/override', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekIndex,
+          dayIndex,
+          slotId: ex.slotId,
+          oldExerciseId: prevId,
+          newExerciseId,
+          scope
+        })
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  function openSwapScopeModal({ ex, dayIndex, weekIndex, newExerciseId, onDone }) {
+    const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
+      el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close swap options' }),
+      el('div', { class: 'schedule-modal-card' },
+        el('div', { class: 'schedule-modal-head' },
+          el('div', { class: 'schedule-modal-title' }, 'Apply swap'),
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close swap options' }, '×')
+        ),
+        el('div', { class: 'schedule-modal-body' },
+          el('div', { class: 'training-muted', style: 'margin-bottom:0.75rem' },
+            'Do you want to swap this exercise permanently, or just for today?'
+          )
+        ),
+        el('div', { class: 'schedule-modal-actions', style: 'justify-content:flex-start; gap:0.6rem' },
+          el('button', {
+            type: 'button',
+            class: 'btn btn-primary',
+            onclick: () => {
+              applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'single' });
+              overlay.remove();
+              onDone?.();
+            }
+          }, 'Just this exercise'),
+          el('button', {
+            type: 'button',
+            class: 'btn btn-ghost',
+            onclick: () => {
+              applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'permanent' });
+              overlay.remove();
+              onDone?.();
+            }
+          }, 'Swap permanently'),
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Cancel')
+        )
+      )
+    );
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+  }
+
   async function openSwapModal({ ex, dayIndex, weekIndex }) {
     await ensureExerciseCatalogLoaded();
     let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
@@ -1388,7 +2117,7 @@ function matchLocalExerciseFolder(name) {
       el('div', { class: 'schedule-modal-card' },
         el('div', { class: 'schedule-modal-head' },
           el('div', { class: 'schedule-modal-title' }, 'Swap exercise'),
-          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close swap' }, '�')
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close swap' }, '×')
         ),
         el('div', { class: 'schedule-modal-body' },
           candidates.length
@@ -1398,38 +2127,14 @@ function matchLocalExerciseFolder(name) {
                   type: 'button',
                   class: 'btn btn-ghost',
                   onclick: () => {
-                    const prevId = ex.exerciseId;
-                    ex.exerciseId = id;
-                    const media = exerciseMediaFromId(id);
-                    if (media.displayName) ex.displayName = media.displayName;
-                    ex.mediaPath = media.mediaPath;
-                    ex.mediaPathAlt = media.mediaPathAlt;
-                    setSwapOverride(state.planRow?.id, weekIndex, dayIndex, ex.slotId, id);
-                    logTrainingEvent('swap_exercise', {
-                      weekIndex,
-                      dayIndex,
-                      slotId: ex.slotId,
-                      intentKey: ex.intentKey,
-                      oldExerciseId: prevId,
-                      newExerciseId: id,
-                      at: new Date().toISOString()
-                    });
-                    try {
-                      api('/api/training/override', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                          weekIndex,
-                          dayIndex,
-                          slotId: ex.slotId,
-                          oldExerciseId: prevId,
-                          newExerciseId: id
-                        })
-                      });
-                    } catch {
-                      // ignore
-                    }
                     overlay.remove();
-                    render();
+                    openSwapScopeModal({
+                      ex,
+                      dayIndex,
+                      weekIndex,
+                      newExerciseId: id,
+                      onDone: () => render()
+                    });
                   }
                 }, getExerciseNameById(id) || id)
               )
@@ -1556,7 +2261,7 @@ function matchLocalExerciseFolder(name) {
       el('div', { class: 'schedule-modal-card' },
         el('div', { class: 'schedule-modal-head' },
           el('div', { class: 'schedule-modal-title' }, 'Explain the lifts'),
-          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close explanation' }, '�')
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close explanation' }, '×')
         ),
         el('div', { class: 'schedule-modal-body', id: 'explain-body' },
           el('div', { class: 'training-muted' }, quoteBankLoadingPromise ? 'Loading...' : 'Preparing explanation...')
@@ -1691,7 +2396,8 @@ function matchLocalExerciseFolder(name) {
         frame.replaceChildren(el('img', {
           class: 'exercise-media-img',
           alt: btn.dataset.alt || 'Exercise image',
-          loading: 'lazy'
+          loading: 'eager',
+          decoding: 'async'
         }));
         const img = frame.querySelector('img');
         if (!img) return tryNext();
@@ -1783,19 +2489,63 @@ function matchLocalExerciseFolder(name) {
     const headers = hasBody || method !== 'GET'
       ? { 'Content-Type': 'application/json', ...baseHeaders }
       : baseHeaders;
+    const {
+      timeoutMs: rawTimeoutMs,
+      signal: externalSignal,
+      ...restOpts
+    } = (opts || {});
+    const timeoutMs = Number(rawTimeoutMs);
+    const shouldUseInternalTimeout = !externalSignal;
+    const timeoutToUse = Number.isFinite(timeoutMs) && timeoutMs > 0
+      ? timeoutMs
+      : (shouldUseInternalTimeout ? 12_000 : 0);
 
-    const resp = await fetch(path, {
-      credentials: 'include',
-      headers,
-      ...opts
-    });
-    let json = null;
-    try {
-      json = await resp.json();
-    } catch {
-      json = null;
+    const controller = new AbortController();
+    let timeoutId = 0;
+    let detachExternalAbort = null;
+    if (externalSignal) {
+      const onAbort = () => {
+        try { controller.abort(); } catch { /* ignore */ }
+      };
+      if (externalSignal.aborted) onAbort();
+      else externalSignal.addEventListener('abort', onAbort, { once: true });
+      detachExternalAbort = () => {
+        try { externalSignal.removeEventListener('abort', onAbort); } catch { /* ignore */ }
+      };
     }
-    return { ok: resp.ok, status: resp.status, json };
+    if (timeoutToUse > 0) {
+      timeoutId = window.setTimeout(() => {
+        try { controller.abort(); } catch { /* ignore */ }
+      }, timeoutToUse);
+    }
+
+    try {
+      const resp = await fetch(path, {
+        credentials: 'include',
+        headers,
+        signal: controller.signal,
+        ...restOpts
+      });
+      let json = null;
+      try {
+        json = await resp.json();
+      } catch {
+        json = null;
+      }
+      return { ok: resp.ok, status: resp.status, json };
+    } catch (err) {
+      return {
+        ok: false,
+        status: 0,
+        json: null,
+        error: err
+      };
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (detachExternalAbort) detachExternalAbort();
+    }
   }
 
   function bindShareClose() {
@@ -1892,7 +2642,8 @@ function toggleSharePopover(force) {
       try {
         await loadAuthAndState({ silent });
       } catch {
-        setView('wizard');
+        state.planError = 'Failed to refresh training state. Please reload.';
+        setView('plan');
       } finally {
         refreshInFlight = false;
         if (refreshQueued) {
@@ -1993,21 +2744,40 @@ function toggleSharePopover(force) {
   }
 
   const DISABLE_WIZARD_FLOW = true;
-  const redirectToIntake = () => {
-    try {
-      window.location.href = 'training-coming-soon.html';
-    } catch {
-      // ignore
-    }
+  const keepOnEngineAndRetry = ({ forceAutostart = false } = {}) => {
+    if (engineRetryInFlight) return;
+    engineRetryInFlight = true;
+    setView('generating');
+    Promise.resolve().then(async () => {
+      try {
+        const force = Boolean(forceAutostart || shouldForceAutostart());
+        if (force) clearForceAutostart();
+        const autoOnboarded = await tryAutoOnboardFromIntake(force);
+        if (autoOnboarded) return;
+        const ready = await pollForPlanReady({ maxMs: 25000, intervalMs: 1800 });
+        if (ready) return;
+        const hasIntake = !!readLocalIntake();
+        state.planError = hasIntake
+          ? 'Could not generate your workout yet. Tap "Generate workout" below.'
+          : 'No saved setup found. Complete setup, then tap Enter Engine.';
+        setView('plan');
+      } finally {
+        engineRetryInFlight = false;
+      }
+    });
   };
 
   function setView(next) {
     if (next === 'upsell') next = 'plan';
     if (DISABLE_WIZARD_FLOW && next === 'wizard') {
-      Promise.resolve().then(async () => {
-        const autoOnboarded = await tryAutoOnboardFromIntake();
-        if (!autoOnboarded) redirectToIntake();
-      });
+      const hasIntake = !!readLocalIntake();
+      if (hasIntake || shouldForceAutostart()) {
+        keepOnEngineAndRetry({ forceAutostart: shouldForceAutostart() });
+      } else {
+        state.planError = state.planError || 'No saved setup found. Complete setup to generate a workout.';
+        state.view = 'plan';
+        render();
+      }
       return;
     }
     const prev = state.view;
@@ -2092,6 +2862,7 @@ function toggleSharePopover(force) {
 
   async function loadAuthAndState({ silent = false } = {}) {
     if (!silent) setView('loading');
+    const forceAutostart = shouldForceAutostart();
 
     let me;
     try {
@@ -2101,7 +2872,7 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
-      const autoOnboarded = await tryAutoOnboardFromIntake();
+      const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
       setView('wizard');
       return;
@@ -2113,7 +2884,7 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
-      const autoOnboarded = await tryAutoOnboardFromIntake();
+      const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
       setView('wizard');
       return;
@@ -2124,7 +2895,8 @@ function toggleSharePopover(force) {
     try {
       s = await api('/api/training/state', { method: 'GET' });
     } catch {
-      setView('wizard');
+      state.planError = 'Failed to load training state. Please refresh.';
+      setView('plan');
       return;
     }
 
@@ -2137,11 +2909,16 @@ function toggleSharePopover(force) {
         setView('wizard');
         return;
       }
-      setView('wizard');
+      state.planError = s.json?.error || 'Failed to load training state.';
+      setView('plan');
       return;
     }
     state.profile = s.json?.profile || null;
     state.planRow = s.json?.plan || null;
+    if (forceAutostart) {
+      const autoOnboarded = await tryAutoOnboardFromIntake(true);
+      if (autoOnboarded) return;
+    }
     if (state.planRow?.id) {
       const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
       state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
@@ -2150,7 +2927,7 @@ function toggleSharePopover(force) {
       setView(dismissed ? 'plan' : 'upsell');
       return;
     }
-    const autoOnboarded = await tryAutoOnboardFromIntake();
+    const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
     if (autoOnboarded) return;
     setView('wizard');
     applyPendingResumeStepIfPossible();
@@ -2821,7 +3598,7 @@ function toggleSharePopover(force) {
             ),
             el('div', { class: 'training-divider' }),
             el('div', null,
-              el('div', { class: 'auth-label' }, 'What do you want to grow most right now? (pick up to 2)'),
+              el('div', { class: 'auth-label' }, 'What do you want to grow most right now? (pick up to 3)'),
               el('div', { class: 'training-row', style: 'justify-content:flex-start; flex-wrap:wrap' },
                 [
                   { key: 'chest', label: 'Chest' },
@@ -2842,7 +3619,7 @@ function toggleSharePopover(force) {
                         if (e.target.checked) next.add(opt.key);
                         else next.delete(opt.key);
                         const out = Array.from(next);
-                        if (out.length > 2) out.pop();
+                        if (out.length > 3) out.pop();
                         setWizardSilent({ emphasis: out });
                       }
                     }),
@@ -3500,7 +4277,9 @@ function toggleSharePopover(force) {
     const strength = { ...(state.wizard.strength || {}) };
     delete strength.trainingAgeYears;
     const experience = state.wizard.experience || 'beginner';
-    const goalMode = state.wizard.goalMode || 'muscle_gain';
+    const macroGoalMode = readLatestMacroGoalMode();
+    const goalMode = macroGoalMode || normalizeMacroGoalMode(state.wizard.goalMode) || 'bulk';
+    const resolvedPhase = goalModeToTrainingPhase(goalMode, state.wizard.phase || 'bulk');
     const injury = state.wizard.injury && typeof state.wizard.injury === 'object' ? state.wizard.injury : { has: false, joints: [], note: '' };
     const profile = { ...(state.wizard.profile || {}) };
     const equipmentAccess = state.wizard.equipmentAccess && typeof state.wizard.equipmentAccess === 'object'
@@ -3530,7 +4309,7 @@ function toggleSharePopover(force) {
       strength.pullWeight = Number(strength.pullWeight);
       strength.pullReps = Number(strength.pullReps);
       strength.goalMode = goalMode;
-      strength.phase = String(state.wizard.phase || 'bulk').trim().toLowerCase();
+      strength.phase = resolvedPhase;
       strength.targetWeightLb = Number(state.wizard.targetWeightLb);
       strength.timePerSession = String(state.wizard.timePerSession || '').trim().toLowerCase();
       strength.trainingAgeBucket = String(state.wizard.trainingAgeBucket || '').trim().toLowerCase();
@@ -3589,7 +4368,7 @@ function toggleSharePopover(force) {
       discipline,
       experience,
       daysPerWeek,
-      phase: state.wizard.phase,
+      phase: resolvedPhase,
       targetWeightLb: state.wizard.targetWeightLb,
       timePerSession: state.wizard.timePerSession,
       trainingAgeBucket: state.wizard.trainingAgeBucket,
@@ -3604,8 +4383,8 @@ function toggleSharePopover(force) {
         locationCity: String(profile.locationCity || '').trim(),
         locationState: String(profile.locationState || '').trim(),
         goals: String(profile.goals || '').trim()
-          || (state.wizard.phase === 'cut' ? 'Goal: cut (definition)'
-            : state.wizard.phase === 'maintain' ? 'Goal: maintain'
+          || (resolvedPhase === 'cut' ? 'Goal: cut (definition)'
+            : resolvedPhase === 'maintain' ? 'Goal: maintain'
               : 'Goal: bulk'),
         injuries: String(profile.injuries || '').trim()
       },
@@ -3614,6 +4393,16 @@ function toggleSharePopover(force) {
   }
 
   async function submitOnboarding(payload) {
+    const routeInfo = describeRoutingSelection(payload);
+    try {
+      console.info(
+        `[training][routing] You picked ${routeInfo.pickedLabel} with ${routeInfo.engineLabel}.`,
+        routeInfo.details
+      );
+    } catch {
+      // ignore console errors
+    }
+
     setView('generating');
     try {
       localStorage.setItem(GUEST_PAYLOAD_KEY, JSON.stringify(payload || {}));
@@ -3621,31 +4410,100 @@ function toggleSharePopover(force) {
       // ignore
     }
 
+    const forceAutostart = shouldForceAutostart();
+    if (forceAutostart) clearForceAutostart();
+    const prevPlanId = state.planRow?.id || null;
+    const requestStartedAt = Date.now();
     const isAuthed = Boolean(state.auth.user);
     const minMs = isAuthed ? (Number(state.generating?.minMs) || 38_000) : 1400;
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
-    const req = api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
-    const [resp] = await Promise.all([req, minDelay]);
+    const totalTimeoutMs = isAuthed ? (minMs + 7000) : (minMs + 3000);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), totalTimeoutMs);
+    let resp;
+    try {
+      const req = api(endpoint, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal })
+        .catch((err) => ({ ok: false, status: err?.name === 'AbortError' ? 408 : 0, json: null, error: err }));
+      await minDelay;
+      const remainingMs = Math.max(0, totalTimeoutMs - minMs);
+      if (remainingMs > 0) {
+        resp = await Promise.race([
+          req,
+          new Promise((r) => setTimeout(() => r({ ok: false, status: 408, json: null }), remainingMs))
+        ]);
+      } else {
+        resp = await req;
+      }
+    } catch (err) {
+      resp = { ok: false, status: err?.name === 'AbortError' ? 408 : 0, json: null, error: err };
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!resp.ok) {
+      if (!forceAutostart) clearForceAutostart();
       if (resp.status === 401) {
         state.auth.user = null;
         state.profile = null;
         setView('wizard');
         return;
       }
-      setView('wizard');
-      const err = qs('#training-wizard-error');
-      if (err) {
-        err.textContent = resp.json?.error || 'Failed to build plan.';
-        err.classList.remove('hidden');
+      if (isAuthed) {
+        const fallback = await fetchTrainingStateWithRetry({ tries: 3, delayMs: 1400 });
+        if (fallback.ok && fallback.json?.plan?.id) {
+          const nextPlan = fallback.json?.plan || null;
+          if (isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt)) {
+            state.profile = fallback.json?.profile || null;
+            state.planRow = nextPlan;
+            sanitizeBodybuildingPlanInPlace(state.planRow);
+            const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
+            state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+            setView('upsell');
+            return;
+          }
+        }
       }
+      state.planRow = null;
+      state.logs = [];
+      const errObj = resp?.json && typeof resp.json === 'object' ? resp.json : {};
+      const detail = (() => {
+        if (errObj?.error === 'INVALID_INPUT') {
+          const field = errObj.field ? ` (${errObj.field})` : '';
+          const reason = errObj.reason ? `: ${errObj.reason}` : '';
+          return `INVALID_INPUT${field}${reason}`;
+        }
+        if (errObj?.error === 'NO_ELIGIBLE_EXERCISE') {
+          const slot = errObj.slotId ? ` (${errObj.slotId})` : '';
+          return `NO_ELIGIBLE_EXERCISE${slot}`;
+        }
+        return errObj?.error || errObj?.reason || '';
+      })();
+      state.planError = resp.status === 408
+        ? 'Plan build timed out. Please try again.'
+        : (detail || 'Failed to build plan.');
+      setView('plan');
       return;
     }
 
     state.planRow = resp.json?.plan || null;
+    sanitizeBodybuildingPlanInPlace(state.planRow);
     state.logs = resp.json?.logs || [];
+    if (isAuthed && !state.planRow?.id) {
+      const fallback = await fetchTrainingStateWithRetry({ tries: 3, delayMs: 1400 });
+      if (fallback?.ok && fallback.json?.plan?.id) {
+        const nextPlan = fallback.json?.plan || null;
+        if (isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt)) {
+          state.profile = fallback.json?.profile || state.profile;
+          state.planRow = nextPlan;
+          sanitizeBodybuildingPlanInPlace(state.planRow);
+          const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
+          state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+        }
+      }
+    }
+    clearForceAutostart();
+    try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
     if (state.planRow?.id) {
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       localStorage.removeItem(dismissedKey);
@@ -3882,42 +4740,54 @@ function toggleSharePopover(force) {
     }
     state.planError = null;
 
+    const readinessEl = qs('#workout-readiness');
+    const readinessRaw = readinessEl ? Number(readinessEl.value) : null;
+    const readiness = Number.isFinite(readinessRaw) ? Math.max(1, Math.min(10, readinessRaw)) : null;
+    if (!Number.isFinite(readiness)) {
+      state.planError = 'Add readiness (1â€“10) before saving.';
+      render();
+      return;
+    }
+
+    const planRef = state.planRow?.plan || null;
     const entries = (exercises || []).map((ex) => {
       const exId = String(ex.id);
       const findField = (field) => qsa(`[data-field="${field}"]`).find((n) => n?.dataset?.exId === exId) || null;
       const notes = '';
+      const resolvedProjected = resolveProjectedForExercise(ex, planRef);
+      const resolvedProjectedValue = Number.isFinite(resolvedProjected?.value) ? resolvedProjected.value : null;
+      const resolvedProjectedUnit = resolvedProjected?.unit || null;
 
-      const setInputs = qsa('[data-field]').filter((n) => n?.dataset?.exId === exId && n?.dataset?.setIdx != null);
-      const setMap = new Map();
-      for (const input of setInputs) {
-        const idx = Number(input?.dataset?.setIdx);
-        if (!Number.isFinite(idx) || idx < 0) continue;
+        const setInputs = qsa('[data-field]').filter((n) => n?.dataset?.exId === exId && n?.dataset?.setIdx != null);
+        const setMap = new Map();
+        for (const input of setInputs) {
+          const idx = Number(input?.dataset?.setIdx);
+          if (!Number.isFinite(idx) || idx < 0) continue;
         const entry = setMap.get(idx) || {};
         const raw = String(input.value || '').trim();
-        if (raw !== '') {
-          if (input.dataset.field === 'setNote') {
-            entry.note = raw.slice(0, 140);
-          } else {
-            const num = Number(raw);
-            if (Number.isFinite(num)) {
-              if (input.dataset.field === 'setWeight') entry.weight = num;
-              if (input.dataset.field === 'setReps') entry.reps = num;
+          if (raw !== '') {
+            if (input.dataset.field === 'setNote') {
+              entry.note = raw.slice(0, 140);
+            } else {
+              const num = Number(raw);
+              if (Number.isFinite(num)) {
+                if (input.dataset.field === 'setWeight') entry.weight = num;
+                if (input.dataset.field === 'setReps') entry.reps = num;
+              }
             }
           }
+          setMap.set(idx, entry);
         }
-        setMap.set(idx, entry);
-      }
-      const sets = Array.from(setMap.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([, val]) => ({
-          weight: Number.isFinite(val.weight) ? val.weight : null,
-          reps: Number.isFinite(val.reps) ? val.reps : null,
-          note: typeof val.note === 'string' ? val.note : null
-        }));
-      const lastSet = [...sets].reverse().find((s) => Number.isFinite(s.weight) || Number.isFinite(s.reps)) || null;
-      const summaryWeight = lastSet?.weight ?? null;
-      const summaryReps = lastSet?.reps ?? null;
-      const summaryRpe = null;
+        const sets = Array.from(setMap.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([, val]) => ({
+            weight: Number.isFinite(val.weight) ? val.weight : null,
+            reps: Number.isFinite(val.reps) ? val.reps : null,
+            note: typeof val.note === 'string' ? val.note : null
+          }));
+        const lastSet = [...sets].reverse().find((s) => Number.isFinite(s.weight) || Number.isFinite(s.reps)) || null;
+        const summaryWeight = lastSet?.weight ?? null;
+        const summaryReps = lastSet?.reps ?? null;
 
       return {
         exerciseId: ex.id,
@@ -3927,14 +4797,15 @@ function toggleSharePopover(force) {
           reps: ex.reps,
           repsTarget: Number.isFinite(ex?.progression?.repsTarget) ? ex.progression.repsTarget : parseRepsTarget(ex.reps),
           restSec: ex.restSec,
-          projectedWeight: Number.isFinite(ex.projected?.value) ? ex.projected.value : null,
-          projectedUnit: ex.projected?.unit || null
+          projectedWeight: resolvedProjectedValue,
+          projectedUnit: resolvedProjectedUnit,
+          rirTarget: Number.isFinite(ex?.rirTarget) ? ex.rirTarget : null
         },
         target: { weight: null },
         actual: {
           weight: Number.isFinite(summaryWeight) ? summaryWeight : null,
           reps: Number.isFinite(summaryReps) ? summaryReps : null,
-          rpe: Number.isFinite(summaryRpe) ? summaryRpe : null
+          rpe: null
         },
         sets,
         notes
@@ -3949,7 +4820,8 @@ function toggleSharePopover(force) {
         dayIndex,
         performedAt,
         entries,
-        notes: dayNotes
+        notes: dayNotes,
+        readiness
       })
     });
 
@@ -3967,9 +4839,26 @@ function toggleSharePopover(force) {
 
   function renderPlan() {
     const planRow = state.planRow;
+    const sanitizeSummary = sanitizeBodybuildingPlanInPlace(planRow);
+    if ((sanitizeSummary.removed > 0 || sanitizeSummary.capped > 0) && !state.planError) {
+      state.planError = 'Invalid exercises/sets were removed from display. Regenerate plan for a clean rebuild.';
+    }
     const plan = planRow?.plan;
     if (!plan || !Array.isArray(plan.weeks)) {
-      return el('div', { class: 'training-card training-center' }, el('div', { class: 'training-muted' }, 'No plan found.'));
+      const msg = state.planError || 'No plan found.';
+      const hasIntake = !!readLocalIntake();
+      return el('div', { class: 'training-card training-center' },
+        el('div', { class: 'training-muted' }, msg),
+        hasIntake
+          ? el('div', { class: 'training-actions', style: 'margin-top:0.75rem' },
+            el('button', {
+              type: 'button',
+              class: 'btn btn-primary',
+              onclick: () => keepOnEngineAndRetry({ forceAutostart: true })
+            }, 'Generate workout')
+          )
+          : null
+      );
     }
 
     applyPendingScheduleIfDue(new Date());
@@ -3999,12 +4888,14 @@ function toggleSharePopover(force) {
       };
     }
 
-    function clearTrainingClientStorage() {
+    function clearTrainingClientStorage({ keepIntake = false } = {}) {
       try {
         localStorage.removeItem(UNAVAIL_DAYS_KEY);
-        localStorage.removeItem(TRAINING_INTAKE_KEY);
-        localStorage.removeItem(`${TRAINING_INTAKE_KEY}_history`);
-        localStorage.removeItem('ode_training_intake_history_v2');
+        if (!keepIntake) {
+          localStorage.removeItem(TRAINING_INTAKE_KEY);
+          localStorage.removeItem(`${TRAINING_INTAKE_KEY}_history`);
+          localStorage.removeItem('ode_training_intake_history_v2');
+        }
         for (let i = localStorage.length - 1; i >= 0; i -= 1) {
           const key = localStorage.key(i);
           if (key && key.startsWith('ode_training_upsell_dismissed_')) localStorage.removeItem(key);
@@ -4023,12 +4914,49 @@ function toggleSharePopover(force) {
       }
     }
 
+    function stashIntakeForRestart() {
+      const key = TRAINING_INTAKE_KEY;
+      let intake = null;
+      try {
+        intake = JSON.parse(localStorage.getItem(key) || 'null');
+      } catch {
+        intake = null;
+      }
+      const planMeta = planRow?.plan?.meta || {};
+      const fallback = {};
+
+      const exp = String(planMeta.experience || '').toLowerCase();
+      if (exp === 'advanced') fallback.experience = '5y+';
+      else if (exp === 'intermediate') fallback.experience = '2-5y';
+      else if (exp === 'beginner') fallback.experience = '6-24m';
+
+      if (planMeta.daysPerWeek) fallback.daysPerWeek = Number(planMeta.daysPerWeek) || null;
+      if (planMeta.timePerSession) fallback.sessionLength = String(planMeta.timePerSession);
+      if (Array.isArray(planMeta.emphasis) && planMeta.emphasis.length) {
+        fallback.focus = planMeta.emphasis.map((v) => String(v));
+      }
+      if (planMeta.equipmentStylePref) fallback.loadStyle = planMeta.equipmentStylePref;
+
+      const nextIntake = {
+        ...(intake && typeof intake === 'object' ? intake : {}),
+        ...fallback
+      };
+      nextIntake.step = 1;
+      if (nextIntake.completedAt) delete nextIntake.completedAt;
+      try {
+        localStorage.setItem(key, JSON.stringify({ ...nextIntake, updatedAt: new Date().toISOString() }));
+      } catch {
+        // ignore
+      }
+    }
+
     async function resetTrainingPlanAndRestart() {
       const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
       if (!confirmFn) return;
 
       if (isPreview || !state.auth.user) {
-        clearTrainingClientStorage();
+        stashIntakeForRestart();
+        clearTrainingClientStorage({ keepIntake: true });
         state.profile = null;
         state.planRow = null;
         state.logs = [];
@@ -4040,7 +4968,7 @@ function toggleSharePopover(force) {
 
       const ok = await confirmFn({
         title: 'Make a new workout?',
-        message: 'This will overwrite your current training plan and workout logs.\nYou will go through Setup again.',
+        message: 'This will archive your current training plan so it no longer shows.\nYour logged workouts and weights stay saved, but you will run Setup again.',
         confirmText: 'Continue',
         cancelText: 'Cancel',
         danger: true
@@ -4054,7 +4982,8 @@ function toggleSharePopover(force) {
         return;
       }
 
-      clearTrainingClientStorage();
+      stashIntakeForRestart();
+      clearTrainingClientStorage({ keepIntake: true });
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -4410,22 +5339,88 @@ function toggleSharePopover(force) {
           })
         : [el('div', { class: 'share-workout-empty' }, 'No friends found.')]);
 
-    const shareBox = el('div', { class: 'plan-topbar-share' },
-      el('button', {
-        type: 'button',
-        class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
-        dataset: { shareWorkout: '1' },
-        'aria-disabled': canShare ? 'false' : 'true',
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!canShare) {
-            openAuthModal('login');
-            return;
+      const daysPerWeek = Number(plan?.meta?.daysPerWeek) || (Array.isArray(plan?.weeks?.[0]?.days) ? plan.weeks[0].days.length : 1);
+
+      const minDate = planStartDate(plan);
+      const maxDate = (() => {
+        const d = new Date(today);
+        d.setDate(d.getDate() + 30);
+        const t = dayStart(d);
+        return t < minDate ? minDate : t;
+      })();
+
+      const clampDate = (d) => {
+        const t = dayStart(d);
+        if (t < minDate) return minDate;
+        if (t > maxDate) return maxDate;
+        return t;
+      };
+
+      const storedDateIso = sessionStorage.getItem('ode_training_active_date');
+      let activeDate = parseISODateLocal(storedDateIso);
+      if (!activeDate || Number.isNaN(activeDate.getTime())) {
+        activeDate = today;
+      }
+      activeDate = clampDate(activeDate) || clampDate(today) || minDate;
+
+      applyPendingScheduleIfDue(activeDate);
+
+      activeWeek = weekIndexForDate(activeDate, plan);
+      const week = plan.weeks.find((w) => Number(w.index) === activeWeek) || plan.weeks[0];
+      const days = Array.isArray(week?.days) ? week.days : [];
+
+      const schedule = scheduleWeekdays(daysPerWeek, activeDate);
+      const weekdayToDayIndex = new Map();
+      schedule.forEach((wd, idx) => {
+        weekdayToDayIndex.set(wd, idx + 1);
+      });
+
+    const activeWeekday = activeDate.getDay();
+    sessionStorage.setItem('ode_training_week', String(activeWeek));
+    sessionStorage.setItem(`ode_training_day_${activeWeek}`, `wd:${activeWeekday}`);
+    sessionStorage.setItem('ode_training_active_date', toISODateLocal(activeDate));
+
+    const activeDayIndex = weekdayToDayIndex.get(activeWeekday) || null;
+    const activeDay = activeDayIndex || -1;
+    workoutTimer.context = {
+      planId: state.planRow?.id || null,
+      weekIndex: activeWeek,
+      dayIndex: activeDayIndex,
+      activeDate: toISODateLocal(activeDate)
+    };
+
+      const todayStart = dayStart(today);
+      const isToday = dayStart(activeDate).getTime() === todayStart.getTime();
+
+      const shareBox = el('div', { class: 'plan-topbar-share' },
+      el('div', { class: 'plan-topbar-share-row' },
+        isToday
+          ? el('button', {
+            type: 'button',
+            class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : ''}`,
+            onclick: () => {
+              if (workoutTimer.running) confirmEndWorkout();
+              else startWorkoutTimer();
+            }
+          }, workoutTimer.running ? 'End workout' : 'Start workout')
+          : null,
+        isToday ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null,
+        el('button', {
+          type: 'button',
+          class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
+          dataset: { shareWorkout: '1' },
+          'aria-disabled': canShare ? 'false' : 'true',
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!canShare) {
+              openAuthModal('login');
+              return;
+            }
+            toggleSharePopover();
           }
-          toggleSharePopover();
-        }
-      }, 'Share Workout'),
+        }, 'Share Workout')
+      ),
       el('div', {
         class: `share-workout-popover${shareUi.open ? '' : ' hidden'}`,
         id: 'share-workout-popover'
@@ -4527,50 +5522,6 @@ function toggleSharePopover(force) {
     if (state.planError) {
       shell.appendChild(el('div', { class: 'auth-error' }, state.planError));
     }
-
-    const daysPerWeek = Number(plan?.meta?.daysPerWeek) || (Array.isArray(plan?.weeks?.[0]?.days) ? plan.weeks[0].days.length : 1);
-
-    const minDate = planStartDate(plan);
-    const maxDate = (() => {
-      const d = new Date(today);
-      d.setDate(d.getDate() + 30);
-      const t = dayStart(d);
-      return t < minDate ? minDate : t;
-    })();
-
-    const clampDate = (d) => {
-      const t = dayStart(d);
-      if (t < minDate) return minDate;
-      if (t > maxDate) return maxDate;
-      return t;
-    };
-
-    const storedDateIso = sessionStorage.getItem('ode_training_active_date');
-    let activeDate = parseISODateLocal(storedDateIso);
-    if (!activeDate || Number.isNaN(activeDate.getTime())) {
-      activeDate = today;
-    }
-    activeDate = clampDate(activeDate) || clampDate(today) || minDate;
-
-    applyPendingScheduleIfDue(activeDate);
-
-    activeWeek = weekIndexForDate(activeDate, plan);
-    const week = plan.weeks.find((w) => Number(w.index) === activeWeek) || plan.weeks[0];
-    const days = Array.isArray(week?.days) ? week.days : [];
-
-    const schedule = scheduleWeekdays(daysPerWeek, activeDate);
-    const weekdayToDayIndex = new Map();
-    schedule.forEach((wd, idx) => {
-      weekdayToDayIndex.set(wd, idx + 1);
-    });
-
-    const activeWeekday = activeDate.getDay();
-    sessionStorage.setItem('ode_training_week', String(activeWeek));
-    sessionStorage.setItem(`ode_training_day_${activeWeek}`, `wd:${activeWeekday}`);
-    sessionStorage.setItem('ode_training_active_date', toISODateLocal(activeDate));
-
-    const activeDayIndex = weekdayToDayIndex.get(activeWeekday) || null;
-    const activeDay = activeDayIndex || -1;
 
     const DAY_TABS_COLLAPSE_KEY = 'ode_training_day_tabs_collapsed_v1';
     let dayTabsCollapsed = sessionStorage.getItem(DAY_TABS_COLLAPSE_KEY) === '1';
@@ -4708,6 +5659,20 @@ function toggleSharePopover(force) {
 
       const performedAtValue = log?.performed_at ? String(log.performed_at).slice(0, 10) : new Date().toISOString().slice(0, 10);
       const dayNotesValue = log?.notes || '';
+      const readinessValue = Number.isFinite(Number(log?.readiness)) ? Number(log.readiness) : '';
+      const readinessInput = el('div', { class: 'training-row', style: 'align-items:center; gap:0.6rem; margin:0.6rem 0 0; flex-wrap:wrap' },
+        el('label', { class: 'training-muted', for: 'workout-readiness' }, 'Rest/Readiness (1â€“10)'),
+        el('input', {
+          id: 'workout-readiness',
+          class: 'auth-input',
+          inputmode: 'numeric',
+          min: '1',
+          max: '10',
+          value: readinessValue,
+          placeholder: '1â€“10',
+          style: 'max-width:110px'
+        })
+      );
 
       ensureExerciseCatalogLoaded();
       applySwapOverridesToDay({
@@ -4776,13 +5741,15 @@ function toggleSharePopover(force) {
                     class: 'auth-input',
                     inputmode: 'decimal',
                     value: wVal,
-                    dataset: { exId: ex.id, field: 'setWeight', setIdx: String(idx) }
+                    dataset: { exId: ex.id, field: 'setWeight', setIdx: String(idx) },
+                    placeholder: 'Weight'
                   }),
                   el('input', {
                     class: 'auth-input',
                     inputmode: 'numeric',
                     value: rVal,
-                    dataset: { exId: ex.id, field: 'setReps', setIdx: String(idx) }
+                    dataset: { exId: ex.id, field: 'setReps', setIdx: String(idx) },
+                    placeholder: 'Reps'
                   }),
                   el('input', {
                     class: 'auth-input',
@@ -4817,7 +5784,7 @@ function toggleSharePopover(force) {
               )
             )
             : null;
-        const projected = fmtProjected(ex.projected);
+        const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
         const lastPerf = lastPerfMap.get(String(ex.baseId || '')) || null;
         const lastWeekCompact = (() => {
           if (!lastPerf) return '—';
@@ -4894,45 +5861,6 @@ function toggleSharePopover(force) {
         );
       });
 
-        const canEditDate = (() => {
-          const todayStart = dayStart(today);
-          const diffDays = Math.floor((todayStart.getTime() - dayStart(activeDate).getTime()) / 86400000);
-          return diffDays <= 3;
-        })();
-
-        const saveBtn = el('button', {
-          type: 'button',
-          class: `btn ${isPreview ? 'btn-ghost' : 'btn-primary'} training-save-btn`,
-          disabled: (!isPreview && !canEditDate) ? 'true' : null,
-          title: (!isPreview && !canEditDate) ? 'Edits are allowed for the last 3 days only.' : null,
-          onclick: async () => {
-            if (isPreview) {
-              state.planError = 'Sign in to save workouts.';
-              openAuthModal('login');
-              render();
-              return;
-            }
-            if (!canEditDate) return;
-            saveBtn.disabled = true;
-          const prev = saveBtn.textContent;
-          saveBtn.textContent = 'Saving...';
-          try {
-            await saveWorkout({
-              weekIndex: activeWeek,
-              dayIndex,
-              exercises: day.exercises || [],
-              dayNotes: String(dayNotesValue || '').trim(),
-              performedAt: performedAtValue || null
-            });
-          } finally {
-            if (saveBtn.isConnected) {
-              saveBtn.disabled = false;
-              saveBtn.textContent = prev;
-            }
-          }
-        }
-      }, isPreview ? 'Sign in to save' : 'Save workout');
-
       dayDetail = shell.appendChild(
         el('div', { class: 'day-card' },
           todayBar,
@@ -5000,10 +5928,7 @@ function toggleSharePopover(force) {
           el('div', { class: 'workout-goal' }, goalLine),
           el('div', { class: 'training-section-line' }),
           list,
-          el('div', { class: 'training-section-line' }),
-          el('div', { class: 'training-subcard training-save-card' },
-            el('div', { class: 'training-actions' }, saveBtn)
-          )
+          el('div', { class: 'training-section-line' })
         )
        );
     });
@@ -5026,9 +5951,9 @@ function toggleSharePopover(force) {
         )
       );
 
-      dayDetail = el('div', { class: 'day-card' },
-        todayBar,
-        el('div', { class: 'training-section-line' }),
+        dayDetail = el('div', { class: 'day-card' },
+          todayBar,
+          el('div', { class: 'training-section-line' }),
         el('div', { class: 'day-head' },
           el('div', null,
             el('div', { class: 'day-title' }, `${WEEKDAYS[activeWeekday]} • Rest day`),
@@ -5240,17 +6165,7 @@ function toggleSharePopover(force) {
   }
 
   function renderShell(contentNode) {
-    const panelBg = el('div', { class: 'training-panel-bg', id: 'training-panel-bg' });
-    const photo = getActivePhotoDataUrl();
-    if (photo && state.view === 'plan') {
-      panelBg.classList.add('has-photo', 'photo-blur');
-      panelBg.style.backgroundImage = `url(${photo})`;
-    }
-
-    panelBg.appendChild(renderBackgroundDashboard());
-
     return el('div', { class: 'training-panel' },
-      panelBg,
       el('div', { class: 'training-panel-inner' },
         el('div', { class: 'training-stage' },
           el(
@@ -5327,6 +6242,8 @@ function toggleSharePopover(force) {
       renderQueued = false;
       try {
         renderApp();
+        updateWorkoutTimerDisplay();
+        ensureWorkoutTimerTick();
       } catch (err) {
         console.error('Training render failed:', err);
       }
@@ -5412,17 +6329,6 @@ function toggleSharePopover(force) {
       exerciseList.appendChild(row);
     });
 
-    // Save button
-    const saveBtn = root.querySelector('.training-save-btn');
-    saveBtn.onclick = () => {
-      saveBtn.disabled = true;
-      setTimeout(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '✓ Saved!';
-        setTimeout(() => saveBtn.textContent = 'Save workout', 1200);
-      }, 900);
-    };
-
     // Deload modal logic
     if (deload && !state.deloadModalShown) {
       state.deloadModalShown = true;
@@ -5469,8 +6375,23 @@ function toggleSharePopover(force) {
 
   bindShareClose();
   wireAuthSync();
-  loadAuthAndState({ silent: true }).catch(() => setView('wizard'));
+  bindWorkoutInputTracking();
+  const navLoading = (() => {
+    try {
+      const flag = sessionStorage.getItem('ode_training_nav_loading') === '1';
+      if (flag) sessionStorage.removeItem('ode_training_nav_loading');
+      return flag;
+    } catch {
+      return false;
+    }
+  })();
+  loadAuthAndState({ silent: !navLoading }).catch(() => setView('wizard'));
 })();
+
+
+
+
+
 
 
 

@@ -11,6 +11,38 @@ const friendsCache = new Map();
 const friendRequestsCache = new Map();
 const warningsCache = new Map();
 
+function csvToSet(raw) {
+  const out = new Set();
+  String(raw || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .forEach((s) => out.add(s));
+  return out;
+}
+
+const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'odeology,odeology_,odeology_owner,jason');
+const OWNER_EMAILS = csvToSet(process.env.OWNER_EMAILS || '');
+const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'odeology.com').trim().toLowerCase();
+const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'odeology,odeology_');
+const OWNER_USER_IDS = csvToSet(process.env.OWNER_USER_IDS || '');
+
+function isOwnerUser(userLike) {
+  const userId = String(userLike?.id || '').trim().toLowerCase();
+  const username = String(userLike?.username || '').trim().toLowerCase();
+  const email = String(userLike?.email || '').trim().toLowerCase();
+  const displayName = String(userLike?.display_name || userLike?.displayName || '').trim().toLowerCase();
+  const adminNotes = String(userLike?.admin_notes || userLike?.adminNotes || '').trim().toLowerCase();
+  if (userId && OWNER_USER_IDS.has(userId)) return true;
+  if (adminNotes.includes('owner')) return true;
+  if (username && OWNER_USERNAMES.has(username)) return true;
+  if (email && OWNER_EMAILS.has(email)) return true;
+  if (displayName && OWNER_DISPLAY_NAMES.has(displayName)) return true;
+  if (email && OWNER_EMAIL_DOMAIN && email.endsWith(`@${OWNER_EMAIL_DOMAIN}`)) return true;
+  if (username.includes('odeology') || displayName.includes('odeology')) return true;
+  return false;
+}
+
 function getCache(map, key) {
   const cached = map.get(key);
   if (!cached) return null;
@@ -59,6 +91,21 @@ function sendJson(res, status, payload) {
   return true;
 }
 
+async function readJsonBody(req) {
+  return await new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', () => reject(new Error('Invalid request body')));
+  });
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
 }
@@ -71,6 +118,20 @@ function normalizeBody(input, maxLen) {
   const s = String(input || '').trim();
   if (!s) return null;
   return s.slice(0, maxLen);
+}
+
+function normalizeDataUrlImage(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  if (!s.startsWith('data:image/')) return null;
+  if (s.length > 1_000_000) return null;
+  return s;
+}
+
+function normalizeGroupName(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  return s.slice(0, 80);
 }
 
 function daysBetweenIso(aIso, bIso) {
@@ -205,7 +266,44 @@ async function ensureSchema() {
             created_at timestamptz NOT NULL DEFAULT now()
           );
         `);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS thread_id uuid;`);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS sender_id uuid;`);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS receiver_id uuid;`);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS body text NOT NULL DEFAULT '';`);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS image_data_url text NOT NULL DEFAULT '';`);
+        await db.query(`
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_thread') THEN
+              ALTER TABLE app_messages
+                ADD CONSTRAINT fk_messages_thread FOREIGN KEY (thread_id) REFERENCES app_message_threads(id) ON DELETE CASCADE;
+            END IF;
+          END $$;
+        `);
         await db.query('CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON app_messages(thread_id, created_at);');
+
+        await db.query(`
+          CREATE TABLE IF NOT EXISTS app_message_groups (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now(),
+            leader_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+            name text NOT NULL,
+            archived boolean NOT NULL DEFAULT false
+          );
+        `);
+        await db.query('CREATE INDEX IF NOT EXISTS idx_message_groups_leader ON app_message_groups(leader_user_id, created_at DESC);');
+
+        await db.query(`
+          CREATE TABLE IF NOT EXISTS app_message_group_members (
+            group_id uuid NOT NULL REFERENCES app_message_groups(id) ON DELETE CASCADE,
+            user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+            role text NOT NULL DEFAULT 'member',
+            joined_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (group_id, user_id)
+          );
+        `);
+        await db.query('CREATE INDEX IF NOT EXISTS idx_message_group_members_user ON app_message_group_members(user_id, joined_at DESC);');
 
         schemaEnsured = true;
         return;
@@ -235,6 +333,8 @@ async function resolveUserFromSession(req) {
   const result = await db.query(
     `
       SELECT u.id, u.username, u.display_name
+           , u.email
+           , COALESCE(u.admin_notes, '') AS admin_notes
       FROM app_sessions s
       JOIN app_users u ON u.id = s.user_id
       WHERE s.session_token_hash = $1
@@ -245,7 +345,94 @@ async function resolveUserFromSession(req) {
   );
   const row = result.rows?.[0];
   if (!row) return null;
-  return { id: row.id, username: row.username, displayName: row.display_name };
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    email: row.email || null,
+    isOwner: isOwnerUser(row)
+  };
+}
+
+async function createMessageGroupForLeader(leaderUserId, groupName, memberIds) {
+  const leaderId = String(leaderUserId || '').trim();
+  const name = normalizeGroupName(groupName);
+  if (!isUuid(leaderId)) return { ok: false, status: 400, error: 'Invalid leader account.' };
+  if (!name) return { ok: false, status: 400, error: 'Group name is required.' };
+
+  const uniqueMembers = Array.from(new Set(
+    (Array.isArray(memberIds) ? memberIds : [])
+      .map((id) => String(id || '').trim())
+      .filter((id) => isUuid(id) && id !== leaderId)
+  ));
+  if (!uniqueMembers.length) return { ok: false, status: 400, error: 'Select at least one friend.' };
+
+  const validFriends = await db.query(
+    `
+      SELECT friend_id
+      FROM app_friends
+      WHERE user_id = $1
+        AND friend_id = ANY($2::uuid[]);
+    `,
+    [leaderId, uniqueMembers]
+  );
+  const allowed = new Set((validFriends.rows || []).map((row) => String(row.friend_id || '')));
+  const invalid = uniqueMembers.find((id) => !allowed.has(id));
+  if (invalid) return { ok: false, status: 400, error: 'Group members must be current friends of the group leader.' };
+
+  let groupId = null;
+  try {
+    await db.query('BEGIN');
+    const inserted = await db.query(
+      `
+        INSERT INTO app_message_groups (leader_user_id, name)
+        VALUES ($1, $2)
+        RETURNING id;
+      `,
+      [leaderId, name]
+    );
+    groupId = String(inserted.rows?.[0]?.id || '').trim();
+    if (!isUuid(groupId)) {
+      await db.query('ROLLBACK');
+      return { ok: false, status: 500, error: 'Failed to create group.' };
+    }
+
+    await db.query(
+      `
+        INSERT INTO app_message_group_members (group_id, user_id, role)
+        VALUES ($1, $2, 'leader')
+        ON CONFLICT (group_id, user_id) DO UPDATE SET role = EXCLUDED.role;
+      `,
+      [groupId, leaderId]
+    );
+
+    if (uniqueMembers.length) {
+      await db.query(
+        `
+          INSERT INTO app_message_group_members (group_id, user_id, role)
+          SELECT $1, x::uuid, 'member'
+          FROM unnest($2::text[]) AS x
+          ON CONFLICT (group_id, user_id) DO NOTHING;
+        `,
+        [groupId, uniqueMembers]
+      );
+    }
+
+    await db.query('COMMIT');
+  } catch (err) {
+    try { await db.query('ROLLBACK'); } catch {}
+    return { ok: false, status: 500, error: 'Failed to create group.' };
+  }
+
+  return {
+    ok: true,
+    group: {
+      id: groupId,
+      name,
+      leaderUserId: leaderId,
+      memberCount: uniqueMembers.length + 1
+    }
+  };
 }
 
 async function socialRoutes(req, res, url) {
@@ -509,7 +696,7 @@ async function socialRoutes(req, res, url) {
       `
         INSERT INTO app_friend_requests (from_user_id, to_user_id, status)
         VALUES ($1, $2, 'pending')
-        ON CONFLICT ON CONSTRAINT uq_friend_requests_pending
+        ON CONFLICT (from_user_id, to_user_id) WHERE (status = 'pending')
         DO UPDATE SET updated_at = now(), status = 'pending', responded_at = null;
       `,
       [user.id, targetUserId]
@@ -667,7 +854,7 @@ async function socialRoutes(req, res, url) {
     if (threadId) {
       const msgRows = await db.query(
         `
-          SELECT id, sender_id, receiver_id, body, created_at
+          SELECT id, sender_id, receiver_id, body, image_data_url, created_at
           FROM app_messages
           WHERE thread_id = $1
           ORDER BY created_at ASC
@@ -680,6 +867,7 @@ async function socialRoutes(req, res, url) {
         senderId: row.sender_id,
         receiverId: row.receiver_id,
         body: row.body,
+        imageDataUrl: String(row.image_data_url || ''),
         createdAt: row.created_at
       }));
     }
@@ -696,24 +884,15 @@ async function socialRoutes(req, res, url) {
   if (url.pathname === '/api/messages/send' && req.method === 'POST') {
     let payload;
     try {
-      payload = await new Promise((resolve, reject) => {
-        let body = '';
-        req.on('data', (chunk) => { body += chunk; });
-        req.on('end', () => {
-          try {
-            resolve(body ? JSON.parse(body) : {});
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    } catch {
-      return sendJson(res, 400, { ok: false, error: 'Invalid JSON' });
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
     }
     const toUserId = String(payload?.toUserId || '').trim();
     const body = normalizeBody(payload?.body, 2000);
+    const imageDataUrl = normalizeDataUrlImage(payload?.imageDataUrl);
     if (!isUuid(toUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid recipient.' });
-    if (!body) return sendJson(res, 400, { ok: false, error: 'Message is empty.' });
+    if (!body && !imageDataUrl) return sendJson(res, 400, { ok: false, error: 'Message is empty.' });
     if (toUserId === user.id) return sendJson(res, 400, { ok: false, error: 'Cannot message yourself.' });
 
     const friendCheck = await db.query(
@@ -746,17 +925,417 @@ async function socialRoutes(req, res, url) {
 
     await db.query(
       `
-        INSERT INTO app_messages (thread_id, sender_id, receiver_id, body)
-        VALUES ($1, $2, $3, $4);
+        INSERT INTO app_messages (thread_id, sender_id, receiver_id, body, image_data_url)
+        VALUES ($1, $2, $3, $4, $5);
       `,
-      [threadId, user.id, toUserId, body]
+      [threadId, user.id, toUserId, body || '', imageDataUrl || '']
     );
+    const previewText = body || '[Image]';
     await db.query(
       'UPDATE app_message_threads SET last_message_at = now(), last_message_text = $1 WHERE id = $2;',
-      [body, threadId]
+      [previewText, threadId]
     );
 
     return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === '/api/messages/groups/friends' && req.method === 'GET') {
+    const result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_friends f
+        JOIN app_users u ON u.id = f.friend_id
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE f.user_id = $1
+        ORDER BY u.display_name ASC, u.username ASC
+        LIMIT 300;
+      `,
+      [user.id]
+    );
+    return sendJson(res, 200, {
+      ok: true,
+      friends: (result.rows || []).map((row) => ({
+        id: row.id,
+        username: row.username || null,
+        displayName: row.display_name || row.username || 'Account',
+        photoDataUrl: row.photo || null
+      }))
+    });
+  }
+
+  if (url.pathname === '/api/messages/groups/create' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
+    }
+    const created = await createMessageGroupForLeader(
+      user.id,
+      payload?.name,
+      payload?.memberIds
+    );
+    if (!created.ok) return sendJson(res, created.status || 400, { ok: false, error: created.error || 'Failed to create group.' });
+    return sendJson(res, 200, { ok: true, group: created.group });
+  }
+
+  if (url.pathname === '/api/messages/owner/accounts' && req.method === 'GET') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    const q = normalizeBody(url.searchParams.get('q'), 120);
+    const limit = Math.max(1, Math.min(2000, Number(url.searchParams.get('limit') || 500)));
+    const values = [user.id];
+    let whereSql = 'WHERE u.id <> $1';
+    if (q) {
+      values.push(`%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`);
+      whereSql += ' AND (u.username ILIKE $2 OR u.display_name ILIKE $2 OR u.email ILIKE $2)';
+    }
+    values.push(limit);
+    const limitIdx = values.length;
+
+    const result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               u.email,
+               u.created_at,
+               p.profile->'profile'->>'photoDataUrl' AS photo,
+               t.last_message_at,
+               t.last_message_text,
+               (
+                 SELECT COUNT(*)::int
+                 FROM app_messages m
+                 WHERE (m.sender_id = $1 AND m.receiver_id = u.id)
+                    OR (m.sender_id = u.id AND m.receiver_id = $1)
+               ) AS message_count
+        FROM app_users u
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT last_message_at, last_message_text
+          FROM app_message_threads mt
+          WHERE (mt.user_a = $1 AND mt.user_b = u.id)
+             OR (mt.user_a = u.id AND mt.user_b = $1)
+          LIMIT 1
+        ) t ON true
+        ${whereSql}
+        ORDER BY COALESCE(t.last_message_at, u.created_at) DESC
+        LIMIT $${limitIdx};
+      `,
+      values
+    );
+
+    return sendJson(res, 200, {
+      ok: true,
+      count: Number(result.rows?.length || 0),
+      accounts: (result.rows || []).map((row) => ({
+        id: row.id,
+        username: row.username || null,
+        displayName: row.display_name || row.username || 'Account',
+        email: row.email || null,
+        photoDataUrl: row.photo || null,
+        createdAt: row.created_at || null,
+        lastMessageAt: row.last_message_at || null,
+        lastMessageText: row.last_message_text || null,
+        messageCount: Number(row.message_count || 0)
+      }))
+    });
+  }
+
+  if (url.pathname === '/api/messages/owner/friends' && req.method === 'GET') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    const leaderUserId = String(url.searchParams.get('userId') || '').trim();
+    if (!isUuid(leaderUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid account.' });
+    const result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_friends f
+        JOIN app_users u ON u.id = f.friend_id
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE f.user_id = $1
+        ORDER BY u.display_name ASC, u.username ASC
+        LIMIT 300;
+      `,
+      [leaderUserId]
+    );
+    return sendJson(res, 200, {
+      ok: true,
+      friends: (result.rows || []).map((row) => ({
+        id: row.id,
+        username: row.username || null,
+        displayName: row.display_name || row.username || 'Account',
+        photoDataUrl: row.photo || null
+      }))
+    });
+  }
+
+  if (url.pathname === '/api/messages/owner/groups/create' && req.method === 'POST') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
+    }
+    const leaderUserId = String(payload?.userId || '').trim();
+    const created = await createMessageGroupForLeader(
+      leaderUserId,
+      payload?.name,
+      payload?.memberIds
+    );
+    if (!created.ok) return sendJson(res, created.status || 400, { ok: false, error: created.error || 'Failed to create group.' });
+    return sendJson(res, 200, { ok: true, group: created.group });
+  }
+
+  if (url.pathname === '/api/messages/owner/thread' && req.method === 'GET') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    const targetUserId = String(url.searchParams.get('userId') || '').trim();
+    if (!isUuid(targetUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid recipient.' });
+    if (targetUserId === user.id) return sendJson(res, 400, { ok: false, error: 'Cannot open self thread.' });
+
+    const [a, b] = orderPair(user.id, targetUserId);
+    const threadRow = await db.query(
+      'SELECT id FROM app_message_threads WHERE user_a = $1 AND user_b = $2 LIMIT 1;',
+      [a, b]
+    );
+    const threadId = threadRow.rows?.[0]?.id || null;
+
+    const userRow = await db.query(
+      'SELECT display_name, username, email FROM app_users WHERE id = $1 LIMIT 1;',
+      [targetUserId]
+    );
+    if (!userRow.rows?.[0]) return sendJson(res, 404, { ok: false, error: 'Recipient not found.' });
+
+    let messages = [];
+    if (threadId) {
+      const msgRows = await db.query(
+        `
+          SELECT id, sender_id, receiver_id, body, image_data_url, created_at
+          FROM app_messages
+          WHERE thread_id = $1
+          ORDER BY created_at ASC
+          LIMIT 400;
+        `,
+        [threadId]
+      );
+      messages = (msgRows.rows || []).map((row) => ({
+        id: row.id,
+        senderId: row.sender_id,
+        receiverId: row.receiver_id,
+        body: row.body || '',
+        imageDataUrl: String(row.image_data_url || ''),
+        createdAt: row.created_at
+      }));
+    }
+
+    return sendJson(res, 200, {
+      ok: true,
+      account: {
+        id: targetUserId,
+        username: userRow.rows[0].username || null,
+        displayName: userRow.rows[0].display_name || userRow.rows[0].username || 'Account',
+        email: userRow.rows[0].email || null
+      },
+      messages
+    });
+  }
+
+  if ((url.pathname === '/api/messages/owner/message/delete' || url.pathname === '/api/messages/owner/delete-message') && req.method === 'POST') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
+    }
+
+    const targetUserId = String(payload?.userId || '').trim();
+    const messageId = String(payload?.messageId || '').trim();
+    if (!isUuid(targetUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid recipient.' });
+    if (!isUuid(messageId)) return sendJson(res, 400, { ok: false, error: 'Invalid message id.' });
+    if (targetUserId === user.id) return sendJson(res, 400, { ok: false, error: 'Invalid thread.' });
+
+    const [a, b] = orderPair(user.id, targetUserId);
+    const threadRow = await db.query(
+      'SELECT id FROM app_message_threads WHERE user_a = $1 AND user_b = $2 LIMIT 1;',
+      [a, b]
+    );
+    const threadId = String(threadRow.rows?.[0]?.id || '').trim();
+    if (!isUuid(threadId)) return sendJson(res, 200, { ok: true, deleted: false, deletedMessageId: messageId });
+
+    const deleted = await db.query(
+      `
+        DELETE FROM app_messages
+        WHERE id = $1 AND thread_id = $2
+        RETURNING id;
+      `,
+      [messageId, threadId]
+    );
+    if (!deleted.rows?.length) return sendJson(res, 200, { ok: true, deleted: false, deletedMessageId: messageId });
+
+    const latestRow = await db.query(
+      `
+        SELECT body, image_data_url, created_at
+        FROM app_messages
+        WHERE thread_id = $1
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1;
+      `,
+      [threadId]
+    );
+
+    if (latestRow.rows?.[0]) {
+      const row = latestRow.rows[0];
+      const body = String(row.body || '').trim();
+      const hasImage = String(row.image_data_url || '').trim().length > 0;
+      const previewText = body || (hasImage ? '[Image]' : '');
+      await db.query(
+        `
+          UPDATE app_message_threads
+          SET last_message_at = $2,
+              last_message_text = $3
+          WHERE id = $1;
+        `,
+        [threadId, row.created_at, previewText]
+      );
+    } else {
+      await db.query(
+        `
+          UPDATE app_message_threads
+          SET last_message_at = NULL,
+              last_message_text = ''
+          WHERE id = $1;
+        `,
+        [threadId]
+      );
+    }
+
+    return sendJson(res, 200, { ok: true, deleted: true, deletedMessageId: messageId });
+  }
+
+  if (url.pathname === '/api/messages/owner/send' && req.method === 'POST') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
+    }
+    const toUserId = String(payload?.toUserId || '').trim();
+    const subject = normalizeBody(payload?.subject, 140);
+    const body = normalizeBody(payload?.body, 4000);
+    const imageDataUrl = normalizeDataUrlImage(payload?.imageDataUrl);
+    if (!isUuid(toUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid recipient.' });
+    if (toUserId === user.id) return sendJson(res, 400, { ok: false, error: 'Cannot message yourself.' });
+    if (!body && !imageDataUrl) return sendJson(res, 400, { ok: false, error: 'Message is empty.' });
+
+    const userCheck = await db.query('SELECT 1 FROM app_users WHERE id = $1 LIMIT 1;', [toUserId]);
+    if (!userCheck.rows?.length) return sendJson(res, 404, { ok: false, error: 'Recipient not found.' });
+
+    const finalBody = subject ? `[${subject}]\n\n${body || ''}`.trim() : (body || '');
+    const previewText = finalBody || '[Image]';
+    const [a, b] = orderPair(user.id, toUserId);
+    const threadUpsert = await db.query(
+      `
+        INSERT INTO app_message_threads (user_a, user_b, last_message_at, last_message_text)
+        VALUES ($1, $2, now(), $3)
+        ON CONFLICT (user_a, user_b)
+        DO UPDATE SET last_message_at = now(), last_message_text = EXCLUDED.last_message_text
+        RETURNING id;
+      `,
+      [a, b, previewText]
+    );
+    const threadId = String(threadUpsert.rows?.[0]?.id || '').trim();
+    if (!isUuid(threadId)) return sendJson(res, 500, { ok: false, error: 'Could not create thread.' });
+
+    await db.query(
+      `
+        INSERT INTO app_messages (thread_id, sender_id, receiver_id, body, image_data_url)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, created_at;
+      `,
+      [threadId, user.id, toUserId, finalBody, imageDataUrl || '']
+    );
+
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === '/api/messages/owner/stats' && req.method === 'GET') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    const recipientsRow = await db.query(
+      'SELECT COUNT(*)::int AS count FROM app_users WHERE id <> $1;',
+      [user.id]
+    );
+    const count = Number(recipientsRow.rows?.[0]?.count || 0);
+    return sendJson(res, 200, { ok: true, recipients: count });
+  }
+
+  if (url.pathname === '/api/messages/owner/broadcast' && req.method === 'POST') {
+    if (!user.isOwner) return sendJson(res, 403, { ok: false, error: 'Owner access required.' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid JSON' });
+    }
+
+    const subject = normalizeBody(payload?.subject, 140);
+    const messageBody = normalizeBody(payload?.body, 4000);
+    const imageDataUrl = normalizeDataUrlImage(payload?.imageDataUrl);
+    if (!messageBody && !imageDataUrl) return sendJson(res, 400, { ok: false, error: 'Message is empty.' });
+    const finalBody = subject ? `[${subject}]\n\n${messageBody || ''}`.trim() : (messageBody || '');
+    const previewText = finalBody || '[Image]';
+
+    const recipientsResult = await db.query(
+      `
+        SELECT id
+        FROM app_users
+        WHERE id <> $1
+        ORDER BY created_at ASC;
+      `,
+      [user.id]
+    );
+    const recipients = (recipientsResult.rows || []).map((r) => String(r.id || '')).filter(Boolean);
+    if (!recipients.length) return sendJson(res, 200, { ok: true, sent: 0, recipients: 0 });
+
+    let sent = 0;
+    try {
+      await db.query('BEGIN');
+      for (const toUserId of recipients) {
+        const [a, b] = orderPair(user.id, toUserId);
+        const threadUpsert = await db.query(
+          `
+            INSERT INTO app_message_threads (user_a, user_b, last_message_at, last_message_text)
+            VALUES ($1, $2, now(), $3)
+            ON CONFLICT (user_a, user_b)
+            DO UPDATE SET last_message_at = now(), last_message_text = EXCLUDED.last_message_text
+            RETURNING id;
+          `,
+          [a, b, previewText]
+        );
+        const threadId = String(threadUpsert.rows?.[0]?.id || '').trim();
+        if (!isUuid(threadId)) continue;
+        await db.query(
+          `
+            INSERT INTO app_messages (thread_id, sender_id, receiver_id, body, image_data_url)
+            VALUES ($1, $2, $3, $4, $5);
+          `,
+          [threadId, user.id, toUserId, finalBody, imageDataUrl || '']
+        );
+        sent += 1;
+      }
+      await db.query('COMMIT');
+    } catch (err) {
+      try { await db.query('ROLLBACK'); } catch {}
+      return sendJson(res, 500, { ok: false, error: 'Failed to send mass message.' });
+    }
+
+    return sendJson(res, 200, { ok: true, sent, recipients: recipients.length });
   }
 
   return sendJson(res, 404, { ok: false, error: 'Not found' });
