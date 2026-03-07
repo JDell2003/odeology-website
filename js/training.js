@@ -1556,37 +1556,69 @@ function toFreeExerciseDbRemotePath(src) {
     }
   };
 
+  const LOCAL_EXERCISE_CATALOG_PATH = '/free-exercise-db/dist/exercises.json';
+  const REMOTE_EXERCISE_CATALOG_PATH = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
+  const isLikelyLocalHost = (() => {
+    try {
+      const h = String(window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.endsWith('.local');
+    } catch {
+      return false;
+    }
+  })();
+  let useRemoteExerciseMedia = !isLikelyLocalHost;
+
   let exerciseCatalog = [];
   let exerciseIndexById = new Map();
   let catalogLoading = false;
   let catalogLoadingPromise = null;
+  let catalogLoadAttempted = false;
+
+  function setExerciseCatalog(list) {
+    const opts = Array.isArray(list) ? list : [];
+    exerciseCatalog = opts;
+    exerciseIndexById = new Map();
+    for (const ex of opts) {
+      const id = String(ex?.id || '').trim();
+      if (!id) continue;
+      exerciseIndexById.set(id, ex);
+    }
+  }
+
+  function fetchExerciseCatalog(url) {
+    return fetch(url)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => (Array.isArray(list) ? list : []))
+      .catch(() => []);
+  }
+
   function ensureExerciseCatalogLoaded() {
     if (exerciseCatalog.length) return Promise.resolve(exerciseCatalog);
+    if (catalogLoadAttempted && !catalogLoadingPromise) return Promise.resolve(exerciseCatalog);
     if (catalogLoadingPromise) return catalogLoadingPromise;
+
     catalogLoading = true;
-    catalogLoadingPromise = fetch('/free-exercise-db/dist/exercises.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => {
-        const opts = Array.isArray(list) ? list : [];
-        exerciseCatalog = opts;
-        exerciseIndexById = new Map();
-        for (const ex of opts) {
-          const id = String(ex?.id || '').trim();
-          if (!id) continue;
-          exerciseIndexById.set(id, ex);
-        }
+    catalogLoadAttempted = true;
+    const catalogSources = isLikelyLocalHost
+      ? [LOCAL_EXERCISE_CATALOG_PATH, REMOTE_EXERCISE_CATALOG_PATH]
+      : [REMOTE_EXERCISE_CATALOG_PATH, LOCAL_EXERCISE_CATALOG_PATH];
+
+    catalogLoadingPromise = (async () => {
+      for (const source of catalogSources) {
+        const list = await fetchExerciseCatalog(source);
+        if (!list.length) continue;
+        setExerciseCatalog(list);
+        useRemoteExerciseMedia = source === REMOTE_EXERCISE_CATALOG_PATH;
         return exerciseCatalog;
-      })
-      .catch(() => {
-        exerciseCatalog = [];
-        exerciseIndexById = new Map();
-        return exerciseCatalog;
-      })
-      .finally(() => {
-        catalogLoading = false;
-        catalogLoadingPromise = null;
-        render();
-      });
+      }
+      setExerciseCatalog([]);
+      useRemoteExerciseMedia = true;
+      return exerciseCatalog;
+    })().finally(() => {
+      catalogLoading = false;
+      catalogLoadingPromise = null;
+      if (state.view === 'plan' && exerciseCatalog.length) render();
+    });
     return catalogLoadingPromise;
   }
 
@@ -1735,8 +1767,10 @@ function toFreeExerciseDbRemotePath(src) {
       const mediaPath = String(ex?.mediaPath || '').trim();
       const mediaPathAlt = String(ex?.mediaPathAlt || '').trim();
       if (mediaPath) {
-        const src0 = rewriteLegacyLocalMediaPath(mediaPath);
-        const src1 = rewriteLegacyLocalMediaPath(mediaPathAlt || (mediaPath.includes('/0.') ? mediaPath.replace('/0.', '/1.') : mediaPath));
+        const localSrc0 = rewriteLegacyLocalMediaPath(mediaPath);
+        const localSrc1 = rewriteLegacyLocalMediaPath(mediaPathAlt || (mediaPath.includes('/0.') ? mediaPath.replace('/0.', '/1.') : mediaPath));
+        const src0 = useRemoteExerciseMedia ? (toFreeExerciseDbRemotePath(localSrc0) || localSrc0) : localSrc0;
+        const src1 = useRemoteExerciseMedia ? (toFreeExerciseDbRemotePath(localSrc1) || localSrc1) : localSrc1;
         return {
           type: 'local-pair',
           src0,
@@ -1749,10 +1783,14 @@ function toFreeExerciseDbRemotePath(src) {
       const folder = name ? (matchLocalExerciseFolder(name) || guessFolderFromName(name)) : null;
       if (folder) {
         const safeFolder = encodeURIComponent(folder);
+        const localSrc0 = '/free-exercise-db/exercises/' + safeFolder + '/0.jpg';
+        const localSrc1 = '/free-exercise-db/exercises/' + safeFolder + '/1.jpg';
+        const src0 = useRemoteExerciseMedia ? (toFreeExerciseDbRemotePath(localSrc0) || localSrc0) : localSrc0;
+        const src1 = useRemoteExerciseMedia ? (toFreeExerciseDbRemotePath(localSrc1) || localSrc1) : localSrc1;
         return {
           type: 'local-pair',
-          src0: '/free-exercise-db/exercises/' + safeFolder + '/0.jpg',
-          src1: '/free-exercise-db/exercises/' + safeFolder + '/1.jpg',
+          src0,
+          src1,
           alt: displayName || name
         };
       }
