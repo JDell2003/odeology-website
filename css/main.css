@@ -17193,6 +17193,10 @@ body.store-page .store-add-btn-gnc:hover {
         border-bottom: 0;
     }
 
+    .training-page .day-title {
+        font-size: 0.98rem;
+    }
+
     .training-page .day-tabs {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
