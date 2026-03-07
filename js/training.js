@@ -5620,6 +5620,25 @@ function toggleSharePopover(force) {
         render();
       };
 
+    const jumpToTodayWorkout = () => {
+      setActiveDate(dayStart(new Date()));
+    };
+
+    const buildJumpToTodayLabel = (labelText) => el('div', {
+      class: 'workout-rel-label',
+      role: 'button',
+      tabindex: '0',
+      title: "Go to today's workout",
+      'aria-label': "Go to today's workout",
+      onclick: () => jumpToTodayWorkout(),
+      onkeydown: (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          jumpToTodayWorkout();
+        }
+      }
+    }, labelText);
+
     const dayTabs = el('div', { class: 'day-tabs' },
         WEEKDAY_ORDER.map((weekday) => {
           const dayIndex = weekdayToDayIndex.get(weekday) || null;
@@ -5733,7 +5752,7 @@ function toggleSharePopover(force) {
         el('div', { class: 'workout-today-sub' }, `${dispCur.title} • Week ${activeWeek}`),
         el('div', { class: 'workout-today-nav' },
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
-          el('div', { class: 'workout-rel-label', role: 'status', 'aria-live': 'polite' }, relativeWorkoutLabel()),
+          buildJumpToTodayLabel(relativeWorkoutLabel()),
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoNext ? null : 'true', onclick: () => shiftDay(1), 'aria-label': 'Next day' }, '›')
         )
       );
@@ -6033,7 +6052,7 @@ function toggleSharePopover(force) {
         el('div', { class: 'workout-today-sub' }, `${WEEKDAYS[activeWeekday]} • Week ${activeWeek}`),
         el('div', { class: 'workout-today-nav' },
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
-          el('div', { class: 'workout-rel-label', role: 'status', 'aria-live': 'polite' }, formatDateDMY(activeDate)),
+          buildJumpToTodayLabel(formatDateDMY(activeDate)),
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoNext ? null : 'true', onclick: () => shiftDay(1), 'aria-label': 'Next day' }, '›')
         )
       );
