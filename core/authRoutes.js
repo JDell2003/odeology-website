@@ -7,6 +7,7 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const OWNER_BACKUP_COOKIE_NAME = process.env.OWNER_BACKUP_COOKIE_NAME || `${COOKIE_NAME}_owner_backup`;
 const SESSION_TTL_DAYS = Math.max(1, Number(process.env.SESSION_TTL_DAYS || 30));
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.AUTH_MAX_BODY_BYTES || 200_000));
+const ONLINE_WINDOW_MS = Math.max(30_000, Number(process.env.ONLINE_WINDOW_MS || 180_000));
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
@@ -16,6 +17,19 @@ const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 const AUTH_SCHEMA_BACKOFF_MS = Math.max(1000, Number(process.env.AUTH_SCHEMA_BACKOFF_MS || 15_000));
 const AUTH_TRANSIENT_LOG_THROTTLE_MS = Math.max(1000, Number(process.env.AUTH_TRANSIENT_LOG_THROTTLE_MS || 10_000));
 const authTransientLogByContext = new Map();
+
+function toEpochMs(raw) {
+  if (!raw) return NaN;
+  if (typeof raw === 'number') return raw;
+  const parsed = Date.parse(String(raw));
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function isLastSeenOnline(lastSeenRaw) {
+  const ts = toEpochMs(lastSeenRaw);
+  if (!Number.isFinite(ts)) return false;
+  return (Date.now() - ts) <= ONLINE_WINDOW_MS;
+}
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -234,6 +248,7 @@ async function handleAccountsList(req, res, url) {
         SELECT u.id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
@@ -259,6 +274,7 @@ async function handleAccountsList(req, res, url) {
         SELECT u.id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
@@ -278,7 +294,9 @@ async function handleAccountsList(req, res, url) {
         id: row.id,
         username: row.username,
         displayName: row.display_name,
-        photoDataUrl: row.photo || null
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
       }))
     });
     return true;
@@ -293,7 +311,9 @@ async function handleAccountsList(req, res, url) {
       id: row.id,
       username: row.username,
       displayName: row.display_name,
-      photoDataUrl: row.photo || null
+      photoDataUrl: row.photo || null,
+      lastSeen: row.last_seen || null,
+      isOnline: isLastSeenOnline(row.last_seen)
     }))
   });
   return true;
@@ -424,6 +444,7 @@ async function handleOwnerAccountsList(req, res, url) {
     photoDataUrl: row.photo || null,
     createdAt: row.created_at || null,
     lastSeen: row.last_seen || null,
+    isOnline: isLastSeenOnline(row.last_seen),
     lastLogin: row.last_login || null,
     onboardingComplete: Boolean(row.onboarding_complete),
     discipline: row.discipline || null,

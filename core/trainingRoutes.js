@@ -16,6 +16,7 @@ let schemaEnsurePromise = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 const INVITE_CACHE_TTL_MS = 20000;
 const trainingInviteCache = new Map();
+const ONLINE_WINDOW_MS = Math.max(30_000, Number(process.env.ONLINE_WINDOW_MS || 180_000));
 
 function getInviteCache(userId) {
   const cached = trainingInviteCache.get(userId);
@@ -34,6 +35,37 @@ function setInviteCache(userId, value) {
 function clearInviteCache(userId) {
   if (!userId) return;
   trainingInviteCache.delete(userId);
+}
+
+function toEpochMs(raw) {
+  if (!raw) return NaN;
+  if (typeof raw === 'number') return raw;
+  const parsed = Date.parse(String(raw));
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function isLastSeenOnline(lastSeenRaw) {
+  const ts = toEpochMs(lastSeenRaw);
+  if (!Number.isFinite(ts)) return false;
+  return (Date.now() - ts) <= ONLINE_WINDOW_MS;
+}
+
+async function touchUserLastSeen(userId) {
+  const id = String(userId || '').trim();
+  if (!id) return;
+  try {
+    await db.query(
+      `
+        UPDATE app_users
+        SET last_seen = now()
+        WHERE id = $1
+          AND (last_seen IS NULL OR last_seen < now() - interval '30 seconds');
+      `,
+      [id]
+    );
+  } catch {
+    // ignore best-effort presence update
+  }
 }
 
 const mediaEnrichInFlight = new Set();
@@ -2734,6 +2766,7 @@ async function resolveUserFromSession(req) {
   );
   const row = result.rows?.[0];
   if (!row) return null;
+  await touchUserLastSeen(row.id);
   return {
     id: row.id,
     displayName: row.display_name,
@@ -3743,6 +3776,7 @@ async function trainingRoutes(req, res, url) {
                u.id AS from_user_id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_training_share_invites i
         JOIN app_users u ON u.id = i.from_user_id
@@ -3773,6 +3807,8 @@ async function trainingRoutes(req, res, url) {
         username: row.username || null,
         displayName: row.display_name || row.username || 'Account',
         photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen),
         discipline: String(disciplineRaw || '').toLowerCase() || null,
         daysPerWeek
       };

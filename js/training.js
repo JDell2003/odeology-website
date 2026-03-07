@@ -5702,7 +5702,11 @@ function toggleSharePopover(force) {
               el('div', { class: 'share-workout-avatar' },
                 acct?.photoDataUrl
                   ? el('img', { src: acct.photoDataUrl, alt: name })
-                  : (initials || 'O')
+                  : (initials || 'O'),
+                el('span', {
+                  class: `presence-dot ${acct?.isOnline === true ? 'online' : 'offline'}`,
+                  'aria-hidden': 'true'
+                })
               ),
               el('div', { class: 'share-workout-meta' },
                 el('div', { class: 'share-workout-name' }, name),

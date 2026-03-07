@@ -12066,6 +12066,30 @@ function initAuthUi() {
         const chatSend = friendsModal.querySelector('#friends-chat-send');
         let threadsLoading = false;
         let activeThreadUserId = null;
+        const initialsFromName = (raw) => String(raw || '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part.charAt(0))
+            .join('')
+            .toUpperCase() || 'O';
+        const buildFriendAvatar = ({ name, photoDataUrl, isOnline }) => {
+            const avatar = document.createElement('div');
+            avatar.className = 'friends-avatar';
+            if (photoDataUrl) {
+                const img = document.createElement('img');
+                img.src = photoDataUrl;
+                img.alt = name;
+                avatar.appendChild(img);
+            } else {
+                avatar.textContent = initialsFromName(name);
+            }
+            const dot = document.createElement('span');
+            dot.className = `presence-dot ${isOnline ? 'online' : 'offline'}`;
+            dot.setAttribute('aria-hidden', 'true');
+            avatar.appendChild(dot);
+            return avatar;
+        };
 
         const renderWarnings = (items, statusText) => {
             if (!warningsList) return;
@@ -12083,24 +12107,11 @@ function initAuthUi() {
                 item.className = 'friends-item friends-warning';
                 const name = String(warn?.displayName || warn?.username || 'Account');
                 const username = warn?.username ? `@${warn.username}` : '';
-                const initials = name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part.charAt(0))
-                    .join('')
-                    .toUpperCase();
-
-                const avatar = document.createElement('div');
-                avatar.className = 'friends-avatar';
-                if (warn?.photoDataUrl) {
-                    const img = document.createElement('img');
-                    img.src = warn.photoDataUrl;
-                    img.alt = name;
-                    avatar.appendChild(img);
-                } else {
-                    avatar.textContent = initials || 'O';
-                }
+                const avatar = buildFriendAvatar({
+                    name,
+                    photoDataUrl: warn?.photoDataUrl,
+                    isOnline: warn?.isOnline === true
+                });
 
                 const meta = document.createElement('div');
                 meta.className = 'friends-meta';
@@ -12168,24 +12179,11 @@ function initAuthUi() {
                 item.className = 'friends-item';
                 const name = String(acct?.displayName || acct?.username || 'Account');
                 const username = acct?.username ? `@${acct.username}` : '';
-                const initials = name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part.charAt(0))
-                    .join('')
-                    .toUpperCase();
-
-                const avatar = document.createElement('div');
-                avatar.className = 'friends-avatar';
-                if (acct?.photoDataUrl) {
-                    const img = document.createElement('img');
-                    img.src = acct.photoDataUrl;
-                    img.alt = name;
-                    avatar.appendChild(img);
-                } else {
-                    avatar.textContent = initials || 'O';
-                }
+                const avatar = buildFriendAvatar({
+                    name,
+                    photoDataUrl: acct?.photoDataUrl,
+                    isOnline: acct?.isOnline === true
+                });
 
                 const meta = document.createElement('div');
                 meta.className = 'friends-meta';
@@ -12298,24 +12296,11 @@ function initAuthUi() {
                 item.className = 'friends-item';
                 const name = String(friend?.displayName || friend?.username || 'Account');
                 const username = friend?.username ? `@${friend.username}` : '';
-                const initials = name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part.charAt(0))
-                    .join('')
-                    .toUpperCase();
-
-                const avatar = document.createElement('div');
-                avatar.className = 'friends-avatar';
-                if (friend?.photoDataUrl) {
-                    const img = document.createElement('img');
-                    img.src = friend.photoDataUrl;
-                    img.alt = name;
-                    avatar.appendChild(img);
-                } else {
-                    avatar.textContent = initials || 'O';
-                }
+                const avatar = buildFriendAvatar({
+                    name,
+                    photoDataUrl: friend?.photoDataUrl,
+                    isOnline: friend?.isOnline === true
+                });
 
                 const meta = document.createElement('div');
                 meta.className = 'friends-meta';
@@ -12381,24 +12366,11 @@ function initAuthUi() {
                 item.className = 'friends-request-item';
                 const name = String(req?.displayName || req?.username || 'Account');
                 const username = req?.username ? `@${req.username}` : '';
-                const initials = name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part.charAt(0))
-                    .join('')
-                    .toUpperCase();
-
-                const avatar = document.createElement('div');
-                avatar.className = 'friends-avatar';
-                if (req?.photoDataUrl) {
-                    const img = document.createElement('img');
-                    img.src = req.photoDataUrl;
-                    img.alt = name;
-                    avatar.appendChild(img);
-                } else {
-                    avatar.textContent = initials || 'O';
-                }
+                const avatar = buildFriendAvatar({
+                    name,
+                    photoDataUrl: req?.photoDataUrl,
+                    isOnline: req?.isOnline === true
+                });
 
                 const meta = document.createElement('div');
                 meta.className = 'friends-meta';
@@ -12624,24 +12596,11 @@ function initAuthUi() {
                 item.className = 'friends-request-item';
                 const name = String(invite?.displayName || invite?.username || 'Account');
                 const username = invite?.username ? `@${invite.username}` : '';
-                const initials = name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part.charAt(0))
-                    .join('')
-                    .toUpperCase();
-
-                const avatar = document.createElement('div');
-                avatar.className = 'friends-avatar';
-                if (invite?.photoDataUrl) {
-                    const img = document.createElement('img');
-                    img.src = invite.photoDataUrl;
-                    img.alt = name;
-                    avatar.appendChild(img);
-                } else {
-                    avatar.textContent = initials || 'O';
-                }
+                const avatar = buildFriendAvatar({
+                    name,
+                    photoDataUrl: invite?.photoDataUrl,
+                    isOnline: invite?.isOnline === true
+                });
 
                 const meta = document.createElement('div');
                 meta.className = 'friends-meta';

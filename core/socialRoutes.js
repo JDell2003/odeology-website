@@ -10,6 +10,38 @@ const CACHE_TTL_MS = 30000;
 const friendsCache = new Map();
 const friendRequestsCache = new Map();
 const warningsCache = new Map();
+const ONLINE_WINDOW_MS = Math.max(30_000, Number(process.env.ONLINE_WINDOW_MS || 180_000));
+
+function toEpochMs(raw) {
+  if (!raw) return NaN;
+  if (typeof raw === 'number') return raw;
+  const parsed = Date.parse(String(raw));
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function isLastSeenOnline(lastSeenRaw) {
+  const ts = toEpochMs(lastSeenRaw);
+  if (!Number.isFinite(ts)) return false;
+  return (Date.now() - ts) <= ONLINE_WINDOW_MS;
+}
+
+async function touchUserLastSeen(userId) {
+  const id = String(userId || '').trim();
+  if (!id) return;
+  try {
+    await db.query(
+      `
+        UPDATE app_users
+        SET last_seen = now()
+        WHERE id = $1
+          AND (last_seen IS NULL OR last_seen < now() - interval '30 seconds');
+      `,
+      [id]
+    );
+  } catch {
+    // ignore best-effort presence update
+  }
+}
 
 function csvToSet(raw) {
   const out = new Set();
@@ -345,6 +377,7 @@ async function resolveUserFromSession(req) {
   );
   const row = result.rows?.[0];
   if (!row) return null;
+  await touchUserLastSeen(row.id);
   return {
     id: row.id,
     username: row.username,
@@ -451,6 +484,7 @@ async function socialRoutes(req, res, url) {
         SELECT f.friend_id AS id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_friends f
         JOIN app_users u ON u.id = f.friend_id
@@ -466,7 +500,9 @@ async function socialRoutes(req, res, url) {
         id: row.id,
         username: row.username,
         displayName: row.display_name,
-        photoDataUrl: row.photo || null
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
       }))
     };
     setCache(friendsCache, user.id, payload);
@@ -482,6 +518,7 @@ async function socialRoutes(req, res, url) {
         SELECT f.friend_id AS id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo,
                p.profile AS profile_json,
                tp.eval_weight_lb,
@@ -542,6 +579,8 @@ async function socialRoutes(req, res, url) {
 
       for (const friend of friends) {
         const profile = friend.profile_json || {};
+        const friendLastSeen = friend.last_seen || null;
+        const friendIsOnline = isLastSeenOnline(friendLastSeen);
         const goalMode = parseGoalMode(profile);
         const lastWeighinAt = friend.last_weighin_at ? String(friend.last_weighin_at).slice(0, 10) : null;
         const lastWeighinLb = friend.last_weighin_lb != null ? Number(friend.last_weighin_lb) : null;
@@ -565,6 +604,8 @@ async function socialRoutes(req, res, url) {
             username: friend.username,
             displayName: friend.display_name,
             photoDataUrl: friend.photo || null,
+            lastSeen: friendLastSeen,
+            isOnline: friendIsOnline,
             severity: 'med',
             type: 'weight',
             message: `Contact @${friend.username || 'friend'}: missed weigh-in for 14+ days.`
@@ -582,6 +623,8 @@ async function socialRoutes(req, res, url) {
               username: friend.username,
               displayName: friend.display_name,
               photoDataUrl: friend.photo || null,
+              lastSeen: friendLastSeen,
+              isOnline: friendIsOnline,
               severity: 'high',
               type: 'weight',
               message: `Contact @${friend.username || 'friend'}: expected ~${Math.round(projected)} lb, last weigh-in ${Math.round(lastWeighinLb)} lb.`
@@ -593,6 +636,8 @@ async function socialRoutes(req, res, url) {
               username: friend.username,
               displayName: friend.display_name,
               photoDataUrl: friend.photo || null,
+              lastSeen: friendLastSeen,
+              isOnline: friendIsOnline,
               severity: 'high',
               type: 'weight',
               message: `Contact @${friend.username || 'friend'}: expected ~${Math.round(projected)} lb, last weigh-in ${Math.round(lastWeighinLb)} lb.`
@@ -609,6 +654,8 @@ async function socialRoutes(req, res, url) {
               username: friend.username,
               displayName: friend.display_name,
               photoDataUrl: friend.photo || null,
+              lastSeen: friendLastSeen,
+              isOnline: friendIsOnline,
               severity: 'med',
               type: 'workout',
               message: `Contact @${friend.username || 'friend'}: ${logs.length} of ${expected} sessions logged in the last 14 days.`
@@ -643,6 +690,8 @@ async function socialRoutes(req, res, url) {
               username: friend.username,
               displayName: friend.display_name,
               photoDataUrl: friend.photo || null,
+              lastSeen: friendLastSeen,
+              isOnline: friendIsOnline,
               severity: 'high',
               type: 'workout',
               message: `Contact @${friend.username || 'friend'}: workout logs look incomplete vs projected volume.`
@@ -716,6 +765,7 @@ async function socialRoutes(req, res, url) {
                u.id AS from_user_id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_friend_requests r
         JOIN app_users u ON u.id = r.from_user_id
@@ -734,7 +784,9 @@ async function socialRoutes(req, res, url) {
         fromUserId: row.from_user_id,
         username: row.username,
         displayName: row.display_name || row.username || 'Account',
-        photoDataUrl: row.photo || null
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
       }))
     };
     setCache(friendRequestsCache, user.id, payload);
@@ -945,6 +997,7 @@ async function socialRoutes(req, res, url) {
         SELECT u.id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_friends f
         JOIN app_users u ON u.id = f.friend_id
@@ -961,7 +1014,9 @@ async function socialRoutes(req, res, url) {
         id: row.id,
         username: row.username || null,
         displayName: row.display_name || row.username || 'Account',
-        photoDataUrl: row.photo || null
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
       }))
     });
   }
@@ -1053,6 +1108,7 @@ async function socialRoutes(req, res, url) {
         SELECT u.id,
                u.username,
                u.display_name,
+               u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_friends f
         JOIN app_users u ON u.id = f.friend_id
@@ -1069,7 +1125,9 @@ async function socialRoutes(req, res, url) {
         id: row.id,
         username: row.username || null,
         displayName: row.display_name || row.username || 'Account',
-        photoDataUrl: row.photo || null
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
       }))
     });
   }
