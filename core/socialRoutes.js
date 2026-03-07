@@ -756,8 +756,11 @@ async function socialRoutes(req, res, url) {
   }
 
   if (url.pathname === '/api/friends/requests' && req.method === 'GET') {
-    const cached = getCache(friendRequestsCache, user.id);
-    if (cached) return sendJson(res, 200, cached);
+    const forceFresh = String(url.searchParams.get('fresh') || '').trim() === '1';
+    if (!forceFresh) {
+      const cached = getCache(friendRequestsCache, user.id);
+      if (cached) return sendJson(res, 200, cached);
+    }
     const result = await db.query(
       `
         SELECT r.id,
@@ -789,7 +792,7 @@ async function socialRoutes(req, res, url) {
         isOnline: isLastSeenOnline(row.last_seen)
       }))
     };
-    setCache(friendRequestsCache, user.id, payload);
+    if (!forceFresh) setCache(friendRequestsCache, user.id, payload);
     return sendJson(res, 200, payload);
   }
 

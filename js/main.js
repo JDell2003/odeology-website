@@ -11670,8 +11670,8 @@ function initAuthUi() {
         if (!currentUser) return { friend: 0, workout: 0, total: 0, ok: false };
         try {
             const [friendResp, workoutResp] = await Promise.all([
-                fetch('/api/friends/requests', { credentials: 'include' }),
-                fetch('/api/training/share/requests', { credentials: 'include' })
+                fetch('/api/friends/requests?fresh=1', { credentials: 'include', cache: 'no-store' }),
+                fetch('/api/training/share/requests?fresh=1', { credentials: 'include', cache: 'no-store' })
             ]);
             if (friendResp.status === 401 || workoutResp.status === 401) {
                 return { friend: 0, workout: 0, total: 0, ok: false };
@@ -11694,6 +11694,9 @@ function initAuthUi() {
         if (!requestCountBaselineReady || bootstrap) {
             requestCountBaselineReady = true;
             lastKnownRequestTotal = total;
+            if (total > 0 && !document.hidden) {
+                showIncomingRequestToast(total, total);
+            }
             return;
         }
         const delta = total - lastKnownRequestTotal;
@@ -12412,7 +12415,7 @@ function initAuthUi() {
             friendRequestsLoading = true;
             if (friendRequestsStatus) friendRequestsStatus.textContent = 'Loading friend requests...';
             try {
-                const resp = await fetch('/api/friends/requests', { credentials: 'include' });
+                const resp = await fetch('/api/friends/requests?fresh=1', { credentials: 'include', cache: 'no-store' });
                 if (resp.status === 401) {
                     renderFriendRequests([], 'Sign in to view friend requests.');
                     friendRequestsLoading = false;
@@ -12676,7 +12679,7 @@ function initAuthUi() {
             requestsLoading = true;
             if (requestsStatus) requestsStatus.textContent = 'Loading invites...';
             try {
-                const resp = await fetch('/api/training/share/requests', { credentials: 'include' });
+                const resp = await fetch('/api/training/share/requests?fresh=1', { credentials: 'include', cache: 'no-store' });
                 if (resp.status === 401) {
                     renderRequests([], 'Sign in to view invites.');
                     requestsLoading = false;
@@ -13202,7 +13205,7 @@ function initFriendsPage() {
 
     async function loadFriendRequests() {
         if (friendReqStatusEl) friendReqStatusEl.textContent = 'Loading friend requests...';
-        const resp = await api('/api/friends/requests');
+        const resp = await api('/api/friends/requests?fresh=1');
         if (!resp.ok) {
             state.pendingFriendRequests = 0;
             updateRequestBadge();
@@ -13217,7 +13220,7 @@ function initFriendsPage() {
 
     async function loadWorkoutInvites() {
         if (workoutReqStatusEl) workoutReqStatusEl.textContent = 'Loading workout invites...';
-        const resp = await api('/api/training/share/requests');
+        const resp = await api('/api/training/share/requests?fresh=1');
         if (!resp.ok) {
             state.pendingWorkoutInvites = 0;
             updateRequestBadge();

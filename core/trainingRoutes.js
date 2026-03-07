@@ -3766,8 +3766,11 @@ async function trainingRoutes(req, res, url) {
   }
 
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {
-    const cached = getInviteCache(user.id);
-    if (cached) return sendJson(res, 200, cached);
+    const forceFresh = String(url.searchParams.get('fresh') || '').trim() === '1';
+    if (!forceFresh) {
+      const cached = getInviteCache(user.id);
+      if (cached) return sendJson(res, 200, cached);
+    }
     const result = await db.query(
       `
         SELECT i.id,
@@ -3815,7 +3818,7 @@ async function trainingRoutes(req, res, url) {
     });
 
     const payload = { ok: true, invites };
-    setInviteCache(user.id, payload);
+    if (!forceFresh) setInviteCache(user.id, payload);
     return sendJson(res, 200, payload);
   }
 

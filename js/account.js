@@ -259,8 +259,8 @@
       if (!btn) return;
       if (showLoading) setStatus('Loading requests...');
       const [friendResp, workoutResp] = await Promise.all([
-        api('/api/friends/requests'),
-        api('/api/training/share/requests')
+        api('/api/friends/requests?fresh=1'),
+        api('/api/training/share/requests?fresh=1')
       ]);
       state.friendRequests = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
       state.workoutInvites = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
