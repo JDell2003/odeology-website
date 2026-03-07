@@ -11574,9 +11574,6 @@ function initAuthUi() {
     const modal = ensureAuthModal();
     const friendsBtn = ensureFriendsButton(wrapper);
     const mobileFriendsBtn = ensureMobileFriendsButton(mobileAuth?.wrap);
-    const requestsBtn = ensureRequestsButton(wrapper);
-    const mobileRequestsTopBtn = ensureMobileRequestsTopButton(navbarContainer);
-    const requestsPopover = ensureRequestsPopover();
     const friendsModal = ensureFriendsModal();
 
     let currentUser = null;
@@ -11588,12 +11585,6 @@ function initAuthUi() {
     let loadThreads = () => {};
     let loadRequests = () => {};
     let loadWarnings = () => {};
-    let requestsPopoverOpen = false;
-    let requestsPopoverAnchor = null;
-    let requestsActiveTab = 'workout';
-    let requestsFriendRows = [];
-    let requestsWorkoutRows = [];
-    let requestsPollingTimer = 0;
     const FRIENDS_CACHE_KEY = 'ode_friends_cache_v1';
     const FRIENDS_CACHE_TTL = 1000 * 60 * 10;
     const readFriendsCache = () => {
@@ -11622,197 +11613,6 @@ function initAuthUi() {
         } catch {
             // ignore
         }
-    };
-
-    const escapeRequestsHtml = (raw) => String(raw || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-
-    const updateRequestsBadges = () => {
-        const friendCount = Math.max(0, Number(requestsFriendRows.length || 0));
-        const workoutCount = Math.max(0, Number(requestsWorkoutRows.length || 0));
-        const total = friendCount + workoutCount;
-        const desktopCount = requestsBtn?.querySelector('#auth-requests-count');
-        const mobileCount = mobileRequestsTopBtn?.querySelector('#auth-mobile-requests-count');
-        if (desktopCount) {
-            desktopCount.textContent = String(total);
-            desktopCount.classList.toggle('hidden', total <= 0);
-        }
-        if (mobileCount) {
-            mobileCount.textContent = String(total);
-            mobileCount.classList.toggle('hidden', total <= 0);
-        }
-        const workoutTabCount = requestsPopover?.querySelector('#auth-req-workout-count');
-        const friendTabCount = requestsPopover?.querySelector('#auth-req-friends-count');
-        if (workoutTabCount) workoutTabCount.textContent = String(workoutCount);
-        if (friendTabCount) friendTabCount.textContent = String(friendCount);
-    };
-
-    const setRequestsButtonsVisibility = (visible) => {
-        requestsBtn?.classList.toggle('hidden', !visible);
-        mobileRequestsTopBtn?.classList.toggle('hidden', !visible);
-    };
-
-    const setRequestsPopoverStatus = (text) => {
-        const status = requestsPopover?.querySelector('#auth-requests-status');
-        if (!status) return;
-        status.textContent = String(text || '');
-    };
-
-    const renderRequestsPopoverList = () => {
-        const list = requestsPopover?.querySelector('#auth-requests-list');
-        if (!list) return;
-        const rows = requestsActiveTab === 'friends' ? requestsFriendRows : requestsWorkoutRows;
-        if (!rows.length) {
-            list.innerHTML = `<div class="auth-requests-empty">No ${requestsActiveTab === 'friends' ? 'friend requests' : 'workout invites'}.</div>`;
-            return;
-        }
-        if (requestsActiveTab === 'friends') {
-            list.innerHTML = rows.map((req) => {
-                const name = escapeRequestsHtml(req?.displayName || req?.username || 'Account');
-                const handle = escapeRequestsHtml(req?.username ? `@${req.username}` : '');
-                return `
-                    <article class="auth-requests-item">
-                        <div class="auth-requests-item-meta">
-                            <div class="auth-requests-item-name">${name}</div>
-                            <div class="auth-requests-item-sub">${handle || 'Friend request'}</div>
-                        </div>
-                        <div class="auth-requests-actions">
-                            <button type="button" class="auth-requests-action accept" data-req-kind="friend" data-req-id="${escapeRequestsHtml(req.id)}" data-req-action="accept">Accept</button>
-                            <button type="button" class="auth-requests-action reject" data-req-kind="friend" data-req-id="${escapeRequestsHtml(req.id)}" data-req-action="reject">Decline</button>
-                        </div>
-                    </article>
-                `;
-            }).join('');
-            return;
-        }
-        list.innerHTML = rows.map((invite) => {
-            const name = escapeRequestsHtml(invite?.displayName || invite?.username || 'Account');
-            const handle = escapeRequestsHtml(invite?.username ? `@${invite.username}` : '');
-            const discipline = escapeRequestsHtml(invite?.discipline ? String(invite.discipline).toUpperCase() : 'TRAINING');
-            const days = Number(invite?.daysPerWeek || 0);
-            const detail = days ? `${discipline} • ${days} days/week` : discipline;
-            return `
-                <article class="auth-requests-item">
-                    <div class="auth-requests-item-meta">
-                        <div class="auth-requests-item-name">${name}</div>
-                        <div class="auth-requests-item-sub">${handle || ''}</div>
-                        <div class="auth-requests-item-sub">${escapeRequestsHtml(detail)}</div>
-                    </div>
-                    <div class="auth-requests-actions">
-                        <button type="button" class="auth-requests-action accept" data-req-kind="workout" data-req-id="${escapeRequestsHtml(invite.id)}" data-req-action="accept">Accept</button>
-                        <button type="button" class="auth-requests-action reject" data-req-kind="workout" data-req-id="${escapeRequestsHtml(invite.id)}" data-req-action="reject">Decline</button>
-                    </div>
-                </article>
-            `;
-        }).join('');
-    };
-
-    const setRequestsActiveTab = (tabRaw) => {
-        const tab = String(tabRaw || '').toLowerCase() === 'friends' ? 'friends' : 'workout';
-        requestsActiveTab = tab;
-        requestsPopover?.querySelectorAll('.auth-requests-tab').forEach((btn) => {
-            const active = String(btn.getAttribute('data-req-tab') || '') === tab;
-            btn.classList.toggle('active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-        renderRequestsPopoverList();
-    };
-
-    const positionRequestsPopover = () => {
-        if (!requestsPopover || requestsPopover.classList.contains('hidden')) return;
-        const anchor = requestsPopoverAnchor;
-        const card = requestsPopover.querySelector('.auth-requests-card');
-        if (!anchor || !card) return;
-        const rect = anchor.getBoundingClientRect();
-        const margin = 10;
-        const gap = 8;
-        const width = card.offsetWidth || 340;
-        let left = rect.right - width;
-        left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
-        let top = rect.bottom + gap;
-        const maxTop = window.innerHeight - (card.offsetHeight || 420) - margin;
-        if (top > maxTop) top = Math.max(margin, rect.top - (card.offsetHeight || 420) - gap);
-        requestsPopover.style.left = `${Math.round(left)}px`;
-        requestsPopover.style.top = `${Math.round(top)}px`;
-    };
-
-    const closeRequestsPopover = () => {
-        if (!requestsPopover) return;
-        requestsPopover.classList.add('hidden');
-        requestsPopoverOpen = false;
-    };
-
-    const authApi = async (path, options = {}) => {
-        try {
-            const resp = await fetch(path, {
-                credentials: 'include',
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                }
-            });
-            const json = await resp.json().catch(() => ({}));
-            return { ok: resp.ok, status: resp.status, json };
-        } catch {
-            return { ok: false, status: 0, json: { error: 'Network error' } };
-        }
-    };
-
-    const refreshRequestsData = async ({ showLoading = false } = {}) => {
-        if (!currentUser) {
-            requestsFriendRows = [];
-            requestsWorkoutRows = [];
-            updateRequestsBadges();
-            renderRequestsPopoverList();
-            return;
-        }
-        if (showLoading) setRequestsPopoverStatus('Loading requests...');
-        const [friendResp, workoutResp] = await Promise.all([
-            authApi('/api/friends/requests'),
-            authApi('/api/training/share/requests')
-        ]);
-        requestsFriendRows = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
-        requestsWorkoutRows = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
-        updateRequestsBadges();
-        setRequestsPopoverStatus('');
-        renderRequestsPopoverList();
-        // Keep the full friends modal in sync too.
-        try {
-            loadFriendRequests();
-            loadRequests();
-        } catch {
-            // ignore
-        }
-    };
-
-    const openRequestsPopover = async (anchorEl) => {
-        if (!currentUser) {
-            openModal('login');
-            return;
-        }
-        requestsPopoverAnchor = anchorEl || requestsBtn || mobileRequestsTopBtn;
-        requestsPopover.classList.remove('hidden');
-        requestsPopoverOpen = true;
-        positionRequestsPopover();
-        await refreshRequestsData({ showLoading: true });
-    };
-
-    const startRequestsPolling = () => {
-        if (requestsPollingTimer) return;
-        requestsPollingTimer = window.setInterval(() => {
-            refreshRequestsData();
-        }, 45000);
-    };
-
-    const stopRequestsPolling = () => {
-        if (!requestsPollingTimer) return;
-        window.clearInterval(requestsPollingTimer);
-        requestsPollingTimer = 0;
     };
 
 
@@ -11943,12 +11743,6 @@ function initAuthUi() {
         syncControlPanelLabel(null);
         syncOwnerWorkoutDbLink(null);
         setImpersonationUi(null, null);
-        requestsFriendRows = [];
-        requestsWorkoutRows = [];
-        updateRequestsBadges();
-        setRequestsButtonsVisibility(false);
-        closeRequestsPopover();
-        stopRequestsPolling();
         emitAuthChanged(null);
     };
 
@@ -11974,7 +11768,6 @@ function initAuthUi() {
         syncControlPanelLabel(user);
         syncOwnerWorkoutDbLink(user);
         setImpersonationUi(user, meta);
-        setRequestsButtonsVisibility(true);
 
         menu.innerHTML = `
             ${imp ? '<a class="auth-menu-item" id="auth-menu-return-owner" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Return to Owner Account</a>' : ''}
@@ -11996,8 +11789,6 @@ function initAuthUi() {
         });
 
         emitAuthChanged(user);
-        refreshRequestsData();
-        startRequestsPolling();
         queueFriendsPrefetch();
     };
 
@@ -12099,85 +11890,6 @@ function initAuthUi() {
         if (!btn) return;
         btn.addEventListener('click', () => openFriendsModal(btn));
     });
-
-    const respondRequestFromPopover = async ({ kind, id, action }) => {
-        const reqKind = String(kind || '').toLowerCase();
-        const reqAction = String(action || '').toLowerCase();
-        const reqId = String(id || '');
-        if (!reqId) return;
-        if (reqKind === 'workout' && reqAction === 'accept') {
-            const ok = window.confirm('Joining this plan will replace your current training plan. Continue?');
-            if (!ok) return;
-        }
-        if (reqKind === 'friend') {
-            await authApi('/api/friends/respond', {
-                method: 'POST',
-                body: JSON.stringify({ requestId: reqId, action: reqAction })
-            });
-        } else if (reqKind === 'workout') {
-            await authApi('/api/training/share/respond', {
-                method: 'POST',
-                body: JSON.stringify({ inviteId: reqId, action: reqAction })
-            });
-        } else {
-            return;
-        }
-        await refreshRequestsData({ showLoading: false });
-        try {
-            loadFriendRequests();
-            loadRequests();
-            loadFriends();
-        } catch {
-            // ignore
-        }
-    };
-
-    [requestsBtn, mobileRequestsTopBtn].forEach((btn) => {
-        if (!btn) return;
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (requestsPopoverOpen && requestsPopoverAnchor === btn) {
-                closeRequestsPopover();
-                return;
-            }
-            openRequestsPopover(btn);
-        });
-    });
-
-    requestsPopover?.addEventListener('click', (e) => {
-        const target = e.target;
-        if (!(target instanceof Element)) return;
-        const tabBtn = target.closest('[data-req-tab]');
-        if (tabBtn) {
-            setRequestsActiveTab(tabBtn.getAttribute('data-req-tab'));
-            return;
-        }
-        const actionBtn = target.closest('[data-req-kind][data-req-id][data-req-action]');
-        if (actionBtn) {
-            respondRequestFromPopover({
-                kind: actionBtn.getAttribute('data-req-kind'),
-                id: actionBtn.getAttribute('data-req-id'),
-                action: actionBtn.getAttribute('data-req-action')
-            });
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!requestsPopoverOpen || !requestsPopover) return;
-        const target = e.target;
-        if (!(target instanceof Element)) return;
-        if (requestsPopover.contains(target)) return;
-        if ((requestsBtn && requestsBtn.contains(target)) || (mobileRequestsTopBtn && mobileRequestsTopBtn.contains(target))) return;
-        closeRequestsPopover();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && requestsPopoverOpen) closeRequestsPopover();
-    });
-
-    window.addEventListener('resize', positionRequestsPopover);
-    window.addEventListener('scroll', positionRequestsPopover, true);
 
     if (friendsModal && friendsModal.dataset.bound !== '1') {
         friendsModal.dataset.bound = '1';
@@ -13778,65 +13490,6 @@ function ensureMobileFriendsButton(wrap) {
         else wrap.insertBefore(btn, wrap.firstChild);
     }
     return btn;
-}
-
-function ensureRequestsButton(wrapper) {
-    if (!wrapper) return null;
-    let btn = wrapper.querySelector('#auth-requests-btn');
-    if (!btn) {
-        btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'auth-requests-btn';
-        btn.className = 'auth-nav-btn auth-requests-btn hidden';
-        btn.setAttribute('aria-label', 'Requests');
-        btn.innerHTML = '<span class="auth-requests-label">Requests</span><span class="auth-requests-count hidden" id="auth-requests-count">0</span>';
-        const userBtn = wrapper.querySelector('#auth-user-btn');
-        if (userBtn) wrapper.insertBefore(btn, userBtn);
-        else wrapper.appendChild(btn);
-    }
-    return btn;
-}
-
-function ensureMobileRequestsTopButton(navbarContainer) {
-    if (!navbarContainer) return null;
-    let btn = navbarContainer.querySelector('#auth-mobile-requests-top');
-    if (!btn) {
-        btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'auth-mobile-requests-top';
-        btn.className = 'auth-mobile-requests-top hidden';
-        btn.setAttribute('aria-label', 'Requests');
-        btn.innerHTML = '<span>Requests</span><span class="auth-requests-count hidden" id="auth-mobile-requests-count">0</span>';
-        const hamburger = navbarContainer.querySelector('#hamburger');
-        if (hamburger && hamburger.parentElement === navbarContainer) {
-            navbarContainer.insertBefore(btn, hamburger);
-        } else {
-            navbarContainer.appendChild(btn);
-        }
-    }
-    return btn;
-}
-
-function ensureRequestsPopover() {
-    let pop = document.getElementById('auth-requests-popover');
-    if (pop) return pop;
-    pop = document.createElement('div');
-    pop.id = 'auth-requests-popover';
-    pop.className = 'auth-requests-popover hidden';
-    pop.setAttribute('role', 'dialog');
-    pop.setAttribute('aria-modal', 'false');
-    pop.innerHTML = `
-        <div class="auth-requests-card">
-            <div class="auth-requests-tabs" role="tablist" aria-label="Request types">
-                <button type="button" class="auth-requests-tab active" data-req-tab="workout" role="tab" aria-selected="true">Workout <span class="auth-requests-tab-count" id="auth-req-workout-count">0</span></button>
-                <button type="button" class="auth-requests-tab" data-req-tab="friends" role="tab" aria-selected="false">Friends <span class="auth-requests-tab-count" id="auth-req-friends-count">0</span></button>
-            </div>
-            <div class="auth-requests-status" id="auth-requests-status">Loading requests...</div>
-            <div class="auth-requests-list" id="auth-requests-list"></div>
-        </div>
-    `.trim();
-    document.body.appendChild(pop);
-    return pop;
 }
 
 function ensureFriendsModal() {
