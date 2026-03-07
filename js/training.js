@@ -1396,11 +1396,9 @@
   }
 
   let exerciseMediaPersistTimer = 0;
-const LOCAL_EXERCISE_FOLDERS_URL = '/free-exercise-db/folders.json';
-let localExerciseFolders = null;
+let localExerciseFolders = [];
 let localExerciseFolderSet = new Set();
 let localExerciseFolderTokens = [];
-let localExerciseLoadPromise = null;
 
 function normalizeNameTokens(name) {
   return String(name || '')
@@ -1422,22 +1420,20 @@ function buildFolderTokenCache(folders) {
   });
 }
 
+function guessFolderFromName(name) {
+  const folder = String(name || '')
+    .replace(/\//g, '_')
+    .replace(/[()]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/['",]/g, '')
+    .replace(/__+/g, '_')
+    .trim();
+  return folder || null;
+}
+
 function ensureLocalExerciseFoldersLoaded() {
-  if (localExerciseFolders || localExerciseLoadPromise) return;
-  localExerciseLoadPromise = fetch(LOCAL_EXERCISE_FOLDERS_URL)
-    .then((r) => (r.ok ? r.json() : []))
-    .then((folders) => {
-      localExerciseFolders = Array.isArray(folders) ? folders : [];
-      buildFolderTokenCache(localExerciseFolders);
-      queueMediaRerender();
-    })
-    .catch(() => {
-      localExerciseFolders = [];
-      localExerciseFolderTokens = [];
-    })
-    .finally(() => {
-      localExerciseLoadPromise = null;
-    });
+  // Intentionally disabled in production: this file is not always deployed.
+  // Media now falls back to deterministic folder guesses + remote source.
 }
 
 function folderFromExactName(name) {
@@ -1453,7 +1449,7 @@ function folderFromExactName(name) {
 }
 
 function matchLocalExerciseFolder(name) {
-  if (!localExerciseFolders) {
+  if (!localExerciseFolders || !localExerciseFolders.length) {
     ensureLocalExerciseFoldersLoaded();
     return null;
   }
@@ -1750,7 +1746,7 @@ function toFreeExerciseDbRemotePath(src) {
       }
 
       const name = String(ex?.movementName || displayName || '').trim();
-      const folder = name ? matchLocalExerciseFolder(name) : null;
+      const folder = name ? (matchLocalExerciseFolder(name) || guessFolderFromName(name)) : null;
       if (folder) {
         const safeFolder = encodeURIComponent(folder);
         return {
