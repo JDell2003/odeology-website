@@ -686,6 +686,7 @@
 
   const workoutTimer = {
     running: false,
+    paused: false,
     startedAt: 0,
     elapsedMs: 0,
     intervalId: 0,
@@ -713,11 +714,15 @@
   function updateWorkoutTimerDisplay() {
     const node = document.getElementById('workout-timer-display');
     if (!node) return;
-    if (!workoutTimer.running) {
+    if (!workoutTimer.running && !workoutTimer.paused) {
       node.classList.add('hidden');
       return;
     }
     node.classList.remove('hidden');
+    if (workoutTimer.paused) {
+      node.textContent = `Paused ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+      return;
+    }
     node.textContent = `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
   }
 
@@ -756,11 +761,50 @@
 
   function startWorkoutTimer() {
     if (workoutTimer.running) return;
+    if (workoutTimer.paused && Number(workoutTimer.elapsedMs) > 0) {
+      workoutTimer.running = true;
+      workoutTimer.paused = false;
+      workoutTimer.startedAt = Date.now() - Math.max(0, Number(workoutTimer.elapsedMs) || 0);
+      ensureWorkoutTimerTick();
+      logTrainingEvent('workout_resume', {
+        planId: workoutTimer.context?.planId || state.planRow?.id || null,
+        weekIndex: Number.isFinite(workoutTimer.context?.weekIndex) ? workoutTimer.context.weekIndex : null,
+        dayIndex: Number.isFinite(workoutTimer.context?.dayIndex) ? workoutTimer.context.dayIndex : null,
+        activeDate: workoutTimer.context?.activeDate || null,
+        resumedAt: new Date().toISOString()
+      });
+      render();
+      return;
+    }
     workoutTimer.running = true;
+    workoutTimer.paused = false;
     workoutTimer.startedAt = Date.now();
     workoutTimer.elapsedMs = 0;
     workoutTimer.events = [];
     ensureWorkoutTimerTick();
+    render();
+  }
+
+  function pauseWorkoutTimer({ reason = 'manual' } = {}) {
+    if (!workoutTimer.running || !workoutTimer.startedAt) return;
+    const now = Date.now();
+    workoutTimer.elapsedMs = Math.max(0, now - workoutTimer.startedAt);
+    workoutTimer.running = false;
+    workoutTimer.paused = true;
+    if (workoutTimer.intervalId) {
+      clearInterval(workoutTimer.intervalId);
+      workoutTimer.intervalId = 0;
+    }
+    logTrainingEvent('workout_pause', {
+      planId: workoutTimer.context?.planId || state.planRow?.id || null,
+      weekIndex: Number.isFinite(workoutTimer.context?.weekIndex) ? workoutTimer.context.weekIndex : null,
+      dayIndex: Number.isFinite(workoutTimer.context?.dayIndex) ? workoutTimer.context.dayIndex : null,
+      activeDate: workoutTimer.context?.activeDate || null,
+      pausedAt: new Date(now).toISOString(),
+      elapsedSec: Math.round(workoutTimer.elapsedMs / 1000),
+      reason
+    });
+    updateWorkoutTimerDisplay();
     render();
   }
 
@@ -798,20 +842,28 @@
   async function confirmEndWorkout() {
     if (!workoutTimer.running) return;
     const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
-    let ok = false;
+    let action = 'dismiss';
     if (confirmFn) {
-      ok = await confirmFn({
+      action = await confirmFn({
         title: 'Finish workout?',
         message: 'Are you sure you want to finish your workout?\nYour workout timer and input events will be saved to your profile.',
         confirmText: 'Finish workout',
-        cancelText: 'Not yet',
-        danger: false
+        cancelText: 'Pause workout',
+        danger: false,
+        returnAction: true
       });
     } else {
-      ok = window.confirm('Finish workout?\nYour workout timer and input events will be saved to your profile.');
+      action = window.confirm('Finish workout?\nYour workout timer and input events will be saved to your profile.')
+        ? 'confirm'
+        : 'dismiss';
     }
-    if (!ok) return;
-    endWorkoutTimer({ reason: 'confirmed', showToast: true });
+    if (action === 'confirm') {
+      endWorkoutTimer({ reason: 'confirmed', showToast: true });
+      return;
+    }
+    if (action === 'cancel') {
+      pauseWorkoutTimer({ reason: 'confirm_cancel' });
+    }
   }
 
   function endWorkoutTimer({ reason = 'manual', showToast = false } = {}) {
@@ -843,6 +895,8 @@
       });
     }
     workoutTimer.running = false;
+    workoutTimer.paused = false;
+    workoutTimer.startedAt = 0;
     workoutTimer.elapsedMs = 0;
     workoutTimer.events = [];
     if (workoutTimer.intervalId) {
@@ -852,6 +906,28 @@
     updateWorkoutTimerDisplay();
     render();
     if (showToast) showWorkoutSavedToast();
+  }
+
+  function syncWorkoutInputLock() {
+    const locked = !!workoutTimer.paused;
+    const rootNode = document.querySelector('.plan-shell');
+    if (!rootNode) return;
+    const controls = rootNode.querySelectorAll(
+      '#workout-readiness, .exercise-set-row input[data-field], .exercise-set-add, .exercise-set-remove, .exercise-action-row button'
+    );
+    controls.forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      const alreadyDisabled = node.hasAttribute('disabled');
+      if (locked) {
+        if (!alreadyDisabled) node.dataset.pausedLock = '1';
+        node.setAttribute('disabled', 'true');
+        return;
+      }
+      if (node.dataset.pausedLock === '1') {
+        node.removeAttribute('disabled');
+        delete node.dataset.pausedLock;
+      }
+    });
   }
 
 
@@ -5478,12 +5554,12 @@ function toggleSharePopover(force) {
         isToday
           ? el('button', {
             type: 'button',
-            class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : ''}`,
+            class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : workoutTimer.paused ? ' is-paused' : ''}`,
             onclick: () => {
               if (workoutTimer.running) confirmEndWorkout();
               else startWorkoutTimer();
             }
-          }, workoutTimer.running ? 'End workout' : 'Start workout')
+          }, workoutTimer.running ? 'End workout' : workoutTimer.paused ? 'Resume workout' : 'Start workout')
           : null,
         isToday ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null,
         el('button', {
@@ -6348,6 +6424,7 @@ function toggleSharePopover(force) {
       renderQueued = false;
       try {
         renderApp();
+        syncWorkoutInputLock();
         updateWorkoutTimerDisplay();
         ensureWorkoutTimerTick();
       } catch (err) {
