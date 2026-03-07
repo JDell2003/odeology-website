@@ -159,6 +159,8 @@
       friendRequests: [],
       workoutInvites: []
     };
+    let requestsRefreshInFlight = false;
+    let requestsRefreshTimer = 0;
 
     const setStatus = (text) => {
       if (statusEl) statusEl.textContent = String(text || '');
@@ -257,16 +259,22 @@
 
     const refreshRequests = async (showLoading = false) => {
       if (!btn) return;
+      if (requestsRefreshInFlight) return;
+      requestsRefreshInFlight = true;
       if (showLoading) setStatus('Loading requests...');
-      const [friendResp, workoutResp] = await Promise.all([
-        api('/api/friends/requests?fresh=1'),
-        api('/api/training/share/requests?fresh=1')
-      ]);
-      state.friendRequests = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
-      state.workoutInvites = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
-      updateCounts();
-      setStatus('');
-      renderList();
+      try {
+        const [friendResp, workoutResp] = await Promise.all([
+          api('/api/friends/requests?fresh=1'),
+          api('/api/training/share/requests?fresh=1')
+        ]);
+        state.friendRequests = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
+        state.workoutInvites = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
+        updateCounts();
+        setStatus('');
+        renderList();
+      } finally {
+        requestsRefreshInFlight = false;
+      }
     };
 
     const respond = async (kindRaw, idRaw, actionRaw) => {
@@ -330,6 +338,16 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closePopover();
     });
+
+    const triggerRefreshSoon = () => {
+      if (document.hidden) return;
+      refreshRequests(false);
+    };
+    document.addEventListener('visibilitychange', triggerRefreshSoon);
+    window.addEventListener('focus', triggerRefreshSoon);
+    requestsRefreshTimer = window.setInterval(() => {
+      triggerRefreshSoon();
+    }, 8000);
 
     setActiveTab('workout');
     refreshRequests();

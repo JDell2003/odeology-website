@@ -3765,6 +3765,24 @@ async function trainingRoutes(req, res, url) {
     });
   }
 
+  if (pathname === '/api/training/share/outgoing' && req.method === 'GET') {
+    const result = await db.query(
+      `
+        SELECT to_user_id
+        FROM app_training_share_invites
+        WHERE from_user_id = $1
+          AND status = 'pending'
+        ORDER BY updated_at DESC
+        LIMIT 500;
+      `,
+      [user.id]
+    );
+    const targetUserIds = Array.from(new Set(
+      (result.rows || []).map((row) => String(row.to_user_id || '').trim()).filter(Boolean)
+    ));
+    return sendJson(res, 200, { ok: true, targetUserIds });
+  }
+
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {
     const forceFresh = String(url.searchParams.get('fresh') || '').trim() === '1';
     if (!forceFresh) {

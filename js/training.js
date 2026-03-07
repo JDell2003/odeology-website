@@ -2882,8 +2882,11 @@ function toFreeExerciseDbRemotePath(src) {
     render();
 
     try {
-      const resp = await api('/api/friends/list', { method: 'GET' });
-      if (resp.status === 401) {
+      const [resp, outgoingResp] = await Promise.all([
+        api('/api/friends/list', { method: 'GET' }),
+        api('/api/training/share/outgoing', { method: 'GET' })
+      ]);
+      if (resp.status === 401 || outgoingResp.status === 401) {
         shareUi.accounts = [];
         shareUi.status = 'Sign in to view friends.';
         shareUi.loading = false;
@@ -2906,6 +2909,16 @@ function toFreeExerciseDbRemotePath(src) {
             return name.includes(q) || username.includes(q);
           })
         : list;
+
+      const pendingFromServer = outgoingResp.ok && outgoingResp.json?.ok && Array.isArray(outgoingResp.json?.targetUserIds)
+        ? outgoingResp.json.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean)
+        : [];
+      const fallbackPending = pendingFromServer.length ? [] : readShareRequestedIds(state?.auth?.user?.id || null);
+      const pendingSet = new Set([...pendingFromServer, ...fallbackPending]);
+      shareUi.requested.clear();
+      pendingSet.forEach((id) => shareUi.requested.add(id));
+      if (pendingFromServer.length) persistShareRequestedIds();
+
       shareUi.accounts = filtered;
       const count = filtered.length;
       shareUi.status = q
