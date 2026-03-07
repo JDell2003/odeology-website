@@ -1484,6 +1484,21 @@ function matchLocalExerciseFolder(name) {
 function rewriteLegacyLocalMediaPath(src) {
   let out = String(src || '').trim();
   if (!out) return out;
+  out = out.replace(/\\/g, '/');
+  // Normalize localhost/absolute file references so production can load the same asset.
+  if (/^https?:\/\/localhost(?::\d+)?\//i.test(out) || /^https?:\/\/127\.0\.0\.1(?::\d+)?\//i.test(out)) {
+    try {
+      const u = new URL(out);
+      out = `${u.pathname || ''}${u.search || ''}${u.hash || ''}`;
+    } catch {
+      // ignore
+    }
+  }
+  const freeDbIdx = out.toLowerCase().indexOf('/free-exercise-db/');
+  if (freeDbIdx > 0) out = out.slice(freeDbIdx);
+  const winIdx = out.toLowerCase().indexOf('free-exercise-db/exercises/');
+  if (winIdx >= 0 && !out.startsWith('/')) out = `/${out.slice(winIdx)}`;
+  out = out.replace(/\/+/g, '/');
   out = out.replace(
     /\/free-exercise-db\/exercises\/Close-Grip_Bench_Press\/([^/?#]+)$/i,
     '/free-exercise-db/exercises/Smith_Machine_Close-Grip_Bench_Press/$1'
@@ -5544,6 +5559,10 @@ function toggleSharePopover(force) {
           const dayIndex = weekdayToDayIndex.get(weekday) || null;
           const day = dayIndex ? days[dayIndex - 1] : null;
           const abbr = WEEKDAYS_SHORT[weekday] || String(WEEKDAYS[weekday] || '').slice(0, 1);
+          const tabDate = dateForWeekday(activeWeek, weekday, plan);
+          const tabDateLabel = tabDate
+            ? `${tabDate.getMonth() + 1}/${tabDate.getDate()}`
+            : '';
           const key = dayIndex ? `${activeWeek}:${dayIndex}` : null;
           const saved = key ? Boolean(logsMap.get(key)) : false;
           return el('button', {
@@ -5556,6 +5575,7 @@ function toggleSharePopover(force) {
         el('div', { class: 'day-tab-title' },
           el('span', null, WEEKDAYS[weekday]),
           el('span', { class: 'day-tab-abbr', 'aria-hidden': 'true' }, abbr),
+          el('span', { class: 'day-tab-date', 'aria-hidden': 'true' }, tabDateLabel),
           el('span', { class: `day-dot ${saved ? 'good' : ''}`, title: saved ? 'Saved' : 'Not saved' })
         ),
         el('div', { class: 'day-tab-meta' },
