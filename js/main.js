@@ -9242,16 +9242,15 @@ function ensureBasicCheckinModal() {
                         <h4 class="checkin-step-title">Adherence + mindset</h4>
                         <p class="checkin-step-sub">Add context so trends are actionable, not random.</p>
                         <div class="checkin-grid">
-                            <label class="ns-field">
+                            <label class="ns-field checkin-adherence-pair">
                                 <span>Did you meal prep?</span>
                                 <select id="checkin-mealprep">
                                     <option value="">—</option>
                                     <option value="yes">Yes</option>
                                     <option value="no">No</option>
                                 </select>
-                                <div class="ns-muted tiny">If no, log why so we can prevent repeats.</div>
                             </label>
-                            <label class="ns-field">
+                            <label class="ns-field checkin-adherence-pair">
                                 <span>Mood (1–5)</span>
                                 <select id="checkin-mood">
                                     <option value="">—</option>
@@ -9262,6 +9261,7 @@ function ensureBasicCheckinModal() {
                                     <option value="5">5 (great)</option>
                                 </select>
                             </label>
+                            <div class="ns-muted tiny checkin-adherence-note">If no, log why so we can prevent repeats.</div>
                             <div class="ns-field hidden" id="checkin-mealprep-note-wrap">
                                 <span>What got in the way?</span>
                                 <textarea id="checkin-mealprep-note" rows="3" placeholder="e.g. travel, groceries, time, schedule friction..."></textarea>

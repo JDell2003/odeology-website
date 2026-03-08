@@ -12699,6 +12699,15 @@ html[data-theme="light"] .avatar-cropper-viewport {
     grid-column: 1 / -1;
 }
 
+.checkin-adherence-pair {
+    align-content: start;
+}
+
+.checkin-adherence-note {
+    grid-column: 1 / -1;
+    margin-top: -2px;
+}
+
 #checkin-mealprep-note-wrap,
 #checkin-mood-note-wrap {
     grid-column: 1 / -1;
