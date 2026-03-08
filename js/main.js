@@ -13904,6 +13904,14 @@ function ensureMobileFriendsButton(wrap) {
         btn.className = 'auth-mobile-btn auth-mobile-btn-ghost auth-mobile-friends';
         btn.setAttribute('aria-label', 'Messages');
         btn.innerHTML = '<span class="auth-mobile-icon"><svg aria-hidden="true"><use href="#icon-users"></use></svg></span><span>Messages</span>';
+    }
+    const userRow = wrap.querySelector('#auth-mobile-user-row');
+    const dashboardLink = wrap.querySelector('#auth-mobile-dashboard');
+    if (userRow && dashboardLink && dashboardLink.parentElement === userRow) {
+        dashboardLink.insertAdjacentElement('afterend', btn);
+    } else if (userRow) {
+        userRow.appendChild(btn);
+    } else {
         const signupBtn = wrap.querySelector('#auth-mobile-signup');
         if (signupBtn) wrap.insertBefore(btn, signupBtn);
         else wrap.insertBefore(btn, wrap.firstChild);
