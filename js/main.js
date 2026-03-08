@@ -9103,124 +9103,158 @@ function ensureBasicCheckinModal() {
                 <div class="checkin-weekbar-days" id="checkin-week-days" role="group" aria-label="Days in week"></div>
             </div>
 
-            <div class="checkin-tabs" role="tablist" aria-label="Check-in sections">
-                <button class="checkin-tab active" type="button" data-checkin-tab="0" role="tab" aria-selected="true">Weight</button>
-                <button class="checkin-tab" type="button" data-checkin-tab="1" role="tab" aria-selected="false">Measurements</button>
-                <button class="checkin-tab" type="button" data-checkin-tab="2" role="tab" aria-selected="false">Progress pictures</button>
-                <button class="checkin-tab" type="button" data-checkin-tab="3" role="tab" aria-selected="false">Meals</button>
-                <button class="checkin-tab" type="button" data-checkin-tab="4" role="tab" aria-selected="false">Extras</button>
+            <div class="checkin-compliance" aria-live="polite">
+                <div class="checkin-compliance-head">
+                    <span class="checkin-compliance-title">Daily completion</span>
+                    <span class="checkin-compliance-meta" id="checkin-complete-text">0/7 done</span>
+                </div>
+                <div class="checkin-compliance-track" aria-hidden="true">
+                    <div class="checkin-compliance-fill" id="checkin-complete-fill"></div>
+                </div>
             </div>
 
-            <div class="checkin-flow" role="group" aria-label="Check-in questions">
+            <div class="checkin-flow checkin-flow-unified" role="group" aria-label="Check-in questions">
                 <input id="checkin-date" type="date" class="checkin-date-hidden" tabindex="-1" aria-hidden="true">
-                <section class="checkin-step" data-checkin-step data-step-title="Weight">
-                    <h4 class="checkin-step-title">Weight</h4>
-                    <p class="checkin-step-sub">Weight is the only field most people need daily.</p>
-                    <div class="checkin-grid">
-                        <label class="ns-field">
-                            <span>Weight (lb)</span>
-                            <input id="checkin-weight" type="number" inputmode="decimal" placeholder="e.g. 198.4">
-                        </label>
-                    </div>
-                </section>
-
-                <section class="checkin-step checkin-step-hidden" data-checkin-step data-step-title="Measurements">
-                    <h4 class="checkin-step-title">Measurements (optional)</h4>
-                    <p class="checkin-step-sub">If you donÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t measure today, leave these blank.</p>
-                    <div class="checkin-grid">
-                        <label class="ns-field">
-                            <span>Waist (in)</span>
-                            <input id="checkin-waist" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 34.0">
-                        </label>
-                        <label class="ns-field">
-                            <span>Body fat (%)</span>
-                            <input id="checkin-bodyfat" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 18.5">
-                        </label>
-                        <label class="ns-field">
-                            <span>Chest (in)</span>
-                            <input id="checkin-chest" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 41.0">
-                        </label>
-                        <label class="ns-field">
-                            <span>Hips (in)</span>
-                            <input id="checkin-hips" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 38.0">
-                        </label>
-                    </div>
-                </section>
-
-                <section class="checkin-step checkin-step-hidden" data-checkin-step data-step-title="Progress pictures">
-                    <h4 class="checkin-step-title">Progress pictures</h4>
-                    <p class="checkin-step-sub">Same lighting, same pose. 30 seconds now saves weeks of second-guessing later.</p>
-                    <div class="checkin-grid">
-                        <div class="ns-field checkin-pp-field">
-                            <span>TodayÃ¢â‚¬â„¢s photos (recommended)</span>
-                            <div class="ns-muted tiny">Front + side + back. Relaxed posture. Camera at chest height.</div>
-                            <button class="btn btn-primary" type="button" id="checkin-progress-photos">Add / compare photos</button>
-                            <div class="ns-muted tiny">You can compare past dates inside the photo screen.</div>
+                <div class="checkin-unified-grid">
+                    <section class="checkin-step checkin-unified-block">
+                        <h4 class="checkin-step-title">Core daily stats</h4>
+                        <p class="checkin-step-sub">Complete these first for a strong daily signal.</p>
+                        <div class="checkin-grid">
+                            <label class="ns-field">
+                                <span>Weight (lb)</span>
+                                <input id="checkin-weight" type="number" inputmode="decimal" placeholder="e.g. 198.4">
+                            </label>
+                            <label class="ns-field">
+                                <span>Sleep (hours)</span>
+                                <input id="checkin-sleep-hours" type="number" inputmode="decimal" min="0" max="24" step="0.1" placeholder="e.g. 7.5">
+                            </label>
+                            <label class="ns-field">
+                                <span>Water (oz)</span>
+                                <input id="checkin-water-oz" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 96">
+                            </label>
+                            <label class="ns-field">
+                                <span>Stress</span>
+                                <select id="checkin-stress">
+                                    <option value="">—</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </label>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section class="checkin-step checkin-step-hidden" data-checkin-step data-step-title="Meals">
-                    <h4 class="checkin-step-title">Meals</h4>
-                    <p class="checkin-step-sub">Tap a meal box to see the premade plan, then log what you actually ate.</p>
-                    <div class="checkin-grid">
-                        <div class="ns-field checkin-meals-field">
-                            <span>Log meals</span>
-                            <div class="ns-muted tiny">If you didnÃ¢â‚¬â„¢t eat the planned meal, use Ã¢â‚¬Å“DidnÃ¢â‚¬â„¢t eatÃ¢â‚¬Â / Ã¢â‚¬Å“Clear allÃ¢â‚¬Â inside the popup.</div>
-                            <div class="checkin-meals-head">
-                                <div class="ns-muted tiny" id="checkin-meals-summary">â€”</div>
+                    <section class="checkin-step checkin-unified-block">
+                        <h4 class="checkin-step-title">Body metrics</h4>
+                        <p class="checkin-step-sub">Optional, but useful for trend quality.</p>
+                        <div class="checkin-grid">
+                            <label class="ns-field">
+                                <span>Body fat (%)</span>
+                                <input id="checkin-bodyfat" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 18.5">
+                            </label>
+                            <label class="ns-field">
+                                <span>Waist (in)</span>
+                                <input id="checkin-waist" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 34.0">
+                            </label>
+                            <label class="ns-field">
+                                <span>Chest (in)</span>
+                                <input id="checkin-chest" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 41.0">
+                            </label>
+                            <label class="ns-field">
+                                <span>Hips (in)</span>
+                                <input id="checkin-hips" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 38.0">
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="checkin-step checkin-unified-block">
+                        <h4 class="checkin-step-title">Nutrition compliance</h4>
+                        <p class="checkin-step-sub">Log meals + macro totals from what you actually ate.</p>
+                        <div class="checkin-grid">
+                            <label class="ns-field">
+                                <span>Calories</span>
+                                <input id="checkin-kcal" type="number" inputmode="numeric" placeholder="e.g. 2450">
+                            </label>
+                            <label class="ns-field">
+                                <span>Protein (g)</span>
+                                <input id="checkin-protein" type="number" inputmode="numeric" placeholder="e.g. 210">
+                            </label>
+                            <label class="ns-field">
+                                <span>Carbs (g)</span>
+                                <input id="checkin-carbs" type="number" inputmode="numeric" placeholder="e.g. 260">
+                            </label>
+                            <label class="ns-field">
+                                <span>Fat (g)</span>
+                                <input id="checkin-fats" type="number" inputmode="numeric" placeholder="e.g. 70">
+                            </label>
+                            <div class="ns-field checkin-meals-field">
+                                <span>Log meals</span>
+                                <div class="ns-muted tiny">Tap each meal to mark planned vs actual intake.</div>
+                                <div class="checkin-meals-head">
+                                    <div class="ns-muted tiny" id="checkin-meals-summary">—</div>
+                                </div>
+                                <div class="checkin-meal-buttons" id="checkin-meal-buttons" aria-label="Meal buttons"></div>
+                                <input type="hidden" id="checkin-meals-ok" value="">
                             </div>
-                            <div class="checkin-meal-buttons" id="checkin-meal-buttons" aria-label="Meal buttons"></div>
+                        </div>
+                    </section>
 
-                            <input type="hidden" id="checkin-meals-ok" value="">
+                    <section class="checkin-step checkin-unified-block">
+                        <h4 class="checkin-step-title">Adherence + mindset</h4>
+                        <p class="checkin-step-sub">Add context so trends are actionable, not random.</p>
+                        <div class="checkin-grid">
+                            <label class="ns-field">
+                                <span>Did you meal prep?</span>
+                                <select id="checkin-mealprep">
+                                    <option value="">—</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                                <div class="ns-muted tiny">If no, log why so we can prevent repeats.</div>
+                            </label>
+                            <label class="ns-field">
+                                <span>Mood (1–5)</span>
+                                <select id="checkin-mood">
+                                    <option value="">—</option>
+                                    <option value="1">1 (low)</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5 (great)</option>
+                                </select>
+                            </label>
+                            <div class="ns-field hidden" id="checkin-mealprep-note-wrap">
+                                <span>What got in the way?</span>
+                                <textarea id="checkin-mealprep-note" rows="3" placeholder="e.g. travel, groceries, time, schedule friction..."></textarea>
+                            </div>
+                            <div class="ns-field" id="checkin-mood-note-wrap">
+                                <span>Why that mood?</span>
+                                <textarea id="checkin-mood-note" rows="3" placeholder="Quick context: sleep, work stress, wins, recovery, etc."></textarea>
+                                <div class="ns-muted tiny">Private note for your own trend awareness.</div>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section class="checkin-step checkin-step-hidden" data-checkin-step data-step-title="Extras">
-                    <h4 class="checkin-step-title">Extras</h4>
-                    <p class="checkin-step-sub">Optional context that helps you spot patterns (and forgive yourself faster).</p>
-                    <div class="checkin-grid">
-                        <label class="ns-field">
-                            <span>Did you meal prep?</span>
-                            <select id="checkin-mealprep">
-                                <option value="">â€”</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select>
-                            <div class="ns-muted tiny">If Ã¢â‚¬Å“NoÃ¢â‚¬Â, add a quick note â€” it becomes your playbook.</div>
-                        </label>
-                        <div class="ns-field hidden" id="checkin-mealprep-note-wrap">
-                            <span>What got in the way?</span>
-                            <textarea id="checkin-mealprep-note" rows="3" placeholder="e.g. ran out of groceries, travel, time, stress..."></textarea>
+                    <section class="checkin-step checkin-unified-block">
+                        <h4 class="checkin-step-title">Progress photos</h4>
+                        <p class="checkin-step-sub">Same lighting + same posture. Best visual proof over time.</p>
+                        <div class="checkin-grid">
+                            <div class="ns-field checkin-pp-field">
+                                <span>Front, side, back</span>
+                                <div class="ns-muted tiny">Compare dates directly inside the photo screen.</div>
+                                <button class="btn btn-primary" type="button" id="checkin-progress-photos">Add / compare photos</button>
+                            </div>
                         </div>
-                        <label class="ns-field">
-                            <span>Mood (1Ã¢â‚¬â€œ5)</span>
-                            <select id="checkin-mood">
-                                <option value="">â€”</option>
-                                <option value="1">1 (low)</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5 (great)</option>
-                            </select>
-                        </label>
-                        <div class="ns-field" id="checkin-mood-note-wrap">
-                            <span>Why that mood?</span>
-                            <textarea id="checkin-mood-note" rows="3" placeholder="Quick note (sleep, work, stress, wins, etc.)"></textarea>
-                            <div class="ns-muted tiny">This is private â€” itÃ¢â‚¬â„¢s just for your trend awareness.</div>
-                        </div>
-                    </div>
-                </section>
+                    </section>
+                </div>
             </div>
             <div class="checkin-actions">
                 <div class="checkin-actions-left">
-                    <button class="btn btn-ghost" type="button" id="checkin-clear">Clear</button>
+                    <div class="checkin-autosave-status ns-muted tiny" id="checkin-autosave-status">Autosave is on.</div>
                     <button class="btn btn-ghost" type="button" id="checkin-load">Load last</button>
+                    <button class="btn btn-ghost" type="button" id="checkin-clear">Clear</button>
                 </div>
                 <div class="checkin-actions-right">
-                    <button class="btn btn-ghost checkin-btn-hidden" type="button" id="checkin-prev">Back</button>
-                    <button class="btn btn-ghost" type="button" id="checkin-next">Continue</button>
                     <button class="btn btn-primary" type="button" id="checkin-save">Save check-in</button>
                 </div>
             </div>
@@ -9454,6 +9488,9 @@ function setupBasicCheckin() {
     const waistEl = byId('checkin-waist');
     const chestEl = byId('checkin-chest');
     const hipsEl = byId('checkin-hips');
+    const sleepHoursEl = byId('checkin-sleep-hours');
+    const stressEl = byId('checkin-stress');
+    const waterOzEl = byId('checkin-water-oz');
     const kcalEl = byId('checkin-kcal');
     const proteinEl = byId('checkin-protein');
     const carbsEl = byId('checkin-carbs');
@@ -9467,6 +9504,9 @@ function setupBasicCheckin() {
     const mealsSummaryEl = byId('checkin-meals-summary');
     const mealButtonsEl = byId('checkin-meal-buttons');
     const progressPhotosBtn = byId('checkin-progress-photos');
+    const completionTextEl = byId('checkin-complete-text');
+    const completionFillEl = byId('checkin-complete-fill');
+    const autosaveStatusEl = byId('checkin-autosave-status');
     const mealEditorEl = byId('checkin-meal-editor'); // legacy (removed from modal markup)
     const mealHideBtn = null;
     const mealCloseBtn = null;
@@ -9507,6 +9547,12 @@ function setupBasicCheckin() {
     let mealEntries = {};
     let activeMealIndex = null;
     let activeOverride = false;
+    let applyingFill = false;
+    let draftDirty = false;
+    let autosaveInFlight = false;
+    let autosaveTimerId = 0;
+    let autosaveTickId = 0;
+    let trackedDayStamp = '';
 
     const cmmTitleEl = mmById('cmm-title');
     const cmmSubEl = mmById('cmm-sub');
@@ -9622,6 +9668,7 @@ function setupBasicCheckin() {
         if (mealsOkEl) {
             mealsOkEl.value = logged === 0 ? '' : (offPlan > 0 ? 'no' : 'yes');
         }
+        if (!applyingFill) updateCompletionUI();
     };
 
     const renderMealButtons = () => {
@@ -9721,6 +9768,7 @@ function setupBasicCheckin() {
         const idx = Number(cmmState.mealIndex) || null;
         if (!idx) return;
         delete mealEntries[String(idx)];
+        markDraftDirty();
         cmmClose();
         renderMealButtons();
         showAlert('Cleared meal.');
@@ -9730,6 +9778,7 @@ function setupBasicCheckin() {
         e.preventDefault();
         cmmState.dirty = true;
         cmmState.rows = [{ name: '', qty: '', kcal: '', p: '', c: '', f: '' }];
+        markDraftDirty();
         cmmRenderRows();
         cmmShowAlert('Cleared. Add what you ate.');
     });
@@ -9739,6 +9788,7 @@ function setupBasicCheckin() {
         cmmState.dirty = true;
         cmmState.rows = Array.isArray(cmmState.rows) ? cmmState.rows : [];
         cmmState.rows.push({ name: '', qty: '', kcal: '', p: '', c: '', f: '' });
+        markDraftDirty();
         cmmRenderRows();
         const inputs = cmmRowsEl?.querySelectorAll('input');
         inputs?.[inputs.length - 6]?.focus?.();
@@ -9777,6 +9827,7 @@ function setupBasicCheckin() {
             rows
         };
 
+        markDraftDirty();
         cmmClose();
         renderMealButtons();
         showAlert('Saved meal log.');
@@ -9896,6 +9947,52 @@ function setupBasicCheckin() {
             // ignore
         }
     };
+    const draftKey = 'ode_checkin_draft_v2';
+    const readDraftStore = () => {
+        try {
+            const raw = localStorage.getItem(draftKey);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    };
+    const writeDraftStore = (store) => {
+        try {
+            localStorage.setItem(draftKey, JSON.stringify(store || {}));
+        } catch {
+            // ignore
+        }
+    };
+    const readDraftForDay = (day) => {
+        const key = String(day || '').slice(0, 10);
+        if (!key) return null;
+        const store = readDraftStore();
+        const row = store[key];
+        return row && typeof row === 'object' ? row : null;
+    };
+    const writeDraftForDay = (day, payload) => {
+        const key = String(day || '').slice(0, 10);
+        if (!key || !payload || typeof payload !== 'object') return;
+        const store = readDraftStore();
+        store[key] = { ...payload, _draftUpdatedAt: new Date().toISOString() };
+        writeDraftStore(store);
+    };
+    const clearDraftForDay = (day) => {
+        const key = String(day || '').slice(0, 10);
+        if (!key) return;
+        const store = readDraftStore();
+        if (!Object.prototype.hasOwnProperty.call(store, key)) return;
+        delete store[key];
+        writeDraftStore(store);
+    };
+    const setAutosaveStatus = (text, kind = '') => {
+        if (!autosaveStatusEl) return;
+        autosaveStatusEl.textContent = text ? String(text) : 'Autosave is on.';
+        autosaveStatusEl.classList.toggle('is-warn', kind === 'warn');
+        autosaveStatusEl.classList.toggle('is-error', kind === 'error');
+        autosaveStatusEl.classList.toggle('is-ok', kind === 'ok');
+    };
 
     const toNum = (v) => {
         const n = Number(String(v ?? '').trim());
@@ -9928,9 +10025,20 @@ function setupBasicCheckin() {
         const mealPrepVal = String(mealPrepEl?.value || '').trim().toLowerCase();
         const mealPrepWhyRaw = String(mealPrepNoteEl?.value || '').trim();
         const moodWhyRaw = String(moodNoteEl?.value || '').trim();
+        const stressVal = String(stressEl?.value || '').trim().toLowerCase();
+        const sleepHours = toNum(sleepHoursEl?.value);
+        const waterOz = toNum(waterOzEl?.value);
         return {
             day,
             weightLb: toNum(weightEl?.value),
+            sleepHours,
+            stress: stressVal || null,
+            waterOz,
+            recovery: {
+                sleepHours,
+                stress: stressVal || null,
+                waterOz
+            },
             bodyfatPct: toNum(bodyfatEl?.value),
             circumferences: {
                 waistIn: toNum(waistEl?.value),
@@ -9948,14 +10056,66 @@ function setupBasicCheckin() {
             mealPrepWhy: mealPrepVal === 'no' ? (mealPrepWhyRaw || null) : null,
             moodWhy: moodWhyRaw || null,
             mealsOnPlan: mealsOkEl?.value || null,
+            extras: {
+                mealPrepWhy: mealPrepVal === 'no' ? (mealPrepWhyRaw || null) : null,
+                moodWhy: moodWhyRaw || null,
+                sleepHours,
+                stress: stressVal || null,
+                waterOz
+            },
             meals: mealList
         };
+    };
+    function completionScore(payload) {
+        const p = payload && typeof payload === 'object' ? payload : {};
+        let done = 0;
+        const total = 7;
+        if (Number.isFinite(Number(p.weightLb)) && Number(p.weightLb) > 0) done += 1;
+        if (Number.isFinite(Number(p.sleepHours)) && Number(p.sleepHours) > 0) done += 1;
+        if (Number.isFinite(Number(p.waterOz)) && Number(p.waterOz) > 0) done += 1;
+        if (Number.isFinite(Number(p.mood)) && Number(p.mood) >= 1) done += 1;
+        if (String(p.mealPrep || '').trim()) done += 1;
+        if (Array.isArray(p.meals) && p.meals.length > 0) done += 1;
+        const waist = Number(p?.circumferences?.waistIn);
+        const chest = Number(p?.circumferences?.chestIn);
+        const hips = Number(p?.circumferences?.hipsIn);
+        const bf = Number(p?.bodyfatPct);
+        const hasMeasure = (Number.isFinite(waist) && waist > 0)
+            || (Number.isFinite(chest) && chest > 0)
+            || (Number.isFinite(hips) && hips > 0)
+            || (Number.isFinite(bf) && bf > 0);
+        if (hasMeasure) done += 1;
+        return { done, total };
+    }
+    function updateCompletionUI(payload = null) {
+        const data = payload && typeof payload === 'object' ? payload : collect();
+        const score = completionScore(data);
+        const pct = score.total > 0 ? Math.round((score.done / score.total) * 100) : 0;
+        if (completionTextEl) completionTextEl.textContent = `${score.done}/${score.total} done`;
+        if (completionFillEl) completionFillEl.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+    }
+    const markDraftDirty = () => {
+        if (applyingFill) return;
+        draftDirty = true;
+        const payload = collect();
+        writeDraftForDay(payload.day, payload);
+        updateCompletionUI(payload);
+        setAutosaveStatus('Unsaved changes');
+        if (autosaveTimerId) window.clearTimeout(autosaveTimerId);
+        autosaveTimerId = window.setTimeout(() => {
+            autosaveTimerId = 0;
+            void saveCheckin({ silent: true, reason: 'autosave' });
+        }, 12000);
     };
 
     const fill = (data) => {
         const d = data || {};
+        applyingFill = true;
         if (dateEl && d.day) dateEl.value = String(d.day).slice(0, 10);
         if (weightEl) weightEl.value = d.weightLb ?? '';
+        if (sleepHoursEl) sleepHoursEl.value = d.sleepHours ?? d.recovery?.sleepHours ?? d.extras?.sleepHours ?? '';
+        if (stressEl) stressEl.value = d.stress ?? d.recovery?.stress ?? d.extras?.stress ?? '';
+        if (waterOzEl) waterOzEl.value = d.waterOz ?? d.recovery?.waterOz ?? d.extras?.waterOz ?? '';
         if (bodyfatEl) bodyfatEl.value = d.bodyfatPct ?? '';
         if (waistEl) waistEl.value = d.circumferences?.waistIn ?? '';
         if (chestEl) chestEl.value = d.circumferences?.chestIn ?? '';
@@ -10005,6 +10165,8 @@ function setupBasicCheckin() {
             });
         }
         renderMealButtons();
+        applyingFill = false;
+        updateCompletionUI();
     };
 
     function syncExtrasVisibility() {
@@ -10014,12 +10176,36 @@ function setupBasicCheckin() {
         if (!showMealPrepWhy && mealPrepNoteEl) mealPrepNoteEl.value = '';
     }
 
-    mealPrepEl?.addEventListener('change', syncExtrasVisibility);
+    mealPrepEl?.addEventListener('change', () => {
+        syncExtrasVisibility();
+        markDraftDirty();
+    });
     syncExtrasVisibility();
+    [
+        weightEl,
+        sleepHoursEl,
+        waterOzEl,
+        bodyfatEl,
+        waistEl,
+        chestEl,
+        hipsEl,
+        kcalEl,
+        proteinEl,
+        carbsEl,
+        fatsEl,
+        mealPrepNoteEl,
+        moodNoteEl
+    ].forEach((field) => {
+        field?.addEventListener('input', markDraftDirty);
+    });
+    [stressEl, moodEl].forEach((field) => {
+        field?.addEventListener('change', markDraftDirty);
+    });
 
     const clear = () => {
         const day = String(dateEl?.value || '').trim() || todayIso();
         fill({ day });
+        markDraftDirty();
     };
 
     const fetchMe = async () => {
@@ -10035,12 +10221,22 @@ function setupBasicCheckin() {
     const loadCheckin = async () => {
         showAlert('');
         const day = String(dateEl?.value || '').trim() || todayIso();
+        const draft = readDraftForDay(day);
 
         const me = await fetchMe();
         if (!me) {
             const store = readGuestStore();
-            fill(store[day] || { day });
-            showAlert(store[day] ? 'Loaded (guest storage).' : 'No check-in saved for this day yet.');
+            const fromStore = store[day] || { day };
+            fill(draft || fromStore);
+            if (draft) {
+                draftDirty = true;
+                showAlert('Loaded local draft for this day.');
+                setAutosaveStatus('Draft restored', 'warn');
+            } else {
+                draftDirty = false;
+                showAlert(store[day] ? 'Loaded (guest storage).' : 'No check-in saved for this day yet.');
+                setAutosaveStatus('Autosave is on.');
+            }
             return;
         }
 
@@ -10051,8 +10247,17 @@ function setupBasicCheckin() {
                 showAlert(data?.error || 'Could not load check-in.');
                 return;
             }
-            fill(data?.checkin?.data || { day });
-            showAlert(data?.checkin ? 'Loaded your check-in.' : 'No check-in saved for this day yet.');
+            const fromServer = data?.checkin?.data || { day };
+            fill(draft || fromServer);
+            if (draft) {
+                draftDirty = true;
+                showAlert('Loaded saved check-in + your unsaved draft.');
+                setAutosaveStatus('Draft restored', 'warn');
+            } else {
+                draftDirty = false;
+                showAlert(data?.checkin ? 'Loaded your check-in.' : 'No check-in saved for this day yet.');
+                setAutosaveStatus('Autosave is on.');
+            }
         } catch {
             showAlert('Could not load check-in.');
         }
@@ -10195,15 +10400,22 @@ function setupBasicCheckin() {
 
     setSelectedDay(selectedDayIso, { load: false });
 
-    const saveCheckin = async () => {
-        if (checkinLocked) {
-            showAlert('Locked: you can edit check-ins for the current week only.');
-            return;
+    const saveCheckin = async ({ silent = false, reason = 'manual' } = {}) => {
+        if (autosaveInFlight) return false;
+        if (autosaveTimerId) {
+            window.clearTimeout(autosaveTimerId);
+            autosaveTimerId = 0;
         }
-        showAlert('SavingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦');
+        if (checkinLocked) {
+            if (!silent) showAlert('Locked: you can edit check-ins for the current week only.');
+            return false;
+        }
+        if (!silent) showAlert('Saving...');
+        setAutosaveStatus('Saving...', 'warn');
         const payload = collect();
         const me = await fetchMe();
         const goalMode = inferGoalMode();
+        autosaveInFlight = true;
 
         if (Number.isFinite(payload.weightLb) && payload.weightLb > 0) {
             try {
@@ -10217,13 +10429,21 @@ function setupBasicCheckin() {
             const store = readGuestStore();
             store[payload.day] = payload;
             writeGuestStore(store);
-            showAlert('Saved (guest storage). Sign in to sync across devices.');
+            writeDraftForDay(payload.day, payload);
+            if (!silent) {
+                showAlert('Saved (guest storage). Sign in to sync across devices.');
+            }
+            const t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            setAutosaveStatus(`${silent ? 'Autosaved' : 'Saved'} at ${t}`, 'ok');
+            clearDraftForDay(payload.day);
+            draftDirty = false;
             try {
-                window.dispatchEvent(new CustomEvent('ode:checkin-saved', { detail: { payload, mode: 'guest' } }));
+                window.dispatchEvent(new CustomEvent('ode:checkin-saved', { detail: { payload, mode: 'guest', reason } }));
             } catch {
                 // ignore
             }
-            return;
+            autosaveInFlight = false;
+            return true;
         }
 
         // 1) Save weigh-in to training logic (auto-adjust + flags)
@@ -10239,10 +10459,10 @@ function setupBasicCheckin() {
                 if (wResp.ok) {
                     const offset = Number(wData?.profile?.calorie_offset) || 0;
                     if (Number.isFinite(offset)) localStorage.setItem('ode_training_calorie_offset', String(offset));
-                    if (wData?.adjusted && wData?.warning) {
+                    if (!silent && wData?.adjusted && wData?.warning) {
                         showAlert(wData.warning);
                     }
-                    if (wData?.flagged) {
+                    if (!silent && wData?.flagged) {
                         showAlert('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Profile flagged: 4+ auto-adjusts without progress.');
                     }
                 }
@@ -10261,17 +10481,28 @@ function setupBasicCheckin() {
             });
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) {
-                showAlert(data?.error || 'Could not save check-in.');
-                return;
+                if (!silent) showAlert(data?.error || 'Could not save check-in.');
+                setAutosaveStatus('Save failed. Changes kept locally.', 'error');
+                autosaveInFlight = false;
+                return false;
             }
-            showAlert('Saved your check-in.');
+            if (!silent) showAlert('Saved your check-in.');
+            const t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            setAutosaveStatus(`${silent ? 'Autosaved' : 'Saved'} at ${t}`, 'ok');
+            clearDraftForDay(payload.day);
+            draftDirty = false;
             try {
-                window.dispatchEvent(new CustomEvent('ode:checkin-saved', { detail: { payload, mode: 'server', checkin: data?.checkin || null } }));
+                window.dispatchEvent(new CustomEvent('ode:checkin-saved', { detail: { payload, mode: 'server', checkin: data?.checkin || null, reason } }));
             } catch {
                 // ignore
             }
+            autosaveInFlight = false;
+            return true;
         } catch {
-            showAlert('Could not save check-in.');
+            if (!silent) showAlert('Could not save check-in.');
+            setAutosaveStatus('Save failed. Changes kept locally.', 'error');
+            autosaveInFlight = false;
+            return false;
         }
     };
 
@@ -10280,6 +10511,8 @@ function setupBasicCheckin() {
         document.body.classList.add('modal-open');
         await setSelectedDay(String(dateEl?.value || '').trim() || selectedDayIso || todayIso(), { load: true });
         setStep(0, { focus: true });
+        updateCompletionUI();
+        setAutosaveStatus(draftDirty ? 'Unsaved changes' : 'Autosave is on.');
     };
 
     const close = () => {
@@ -10306,7 +10539,31 @@ function setupBasicCheckin() {
         showAlert('');
     });
     byId('checkin-load')?.addEventListener('click', loadCheckin);
-    byId('checkin-save')?.addEventListener('click', saveCheckin);
+    byId('checkin-save')?.addEventListener('click', () => {
+        void saveCheckin({ silent: false, reason: 'manual' });
+    });
+
+    trackedDayStamp = todayIso();
+    autosaveTickId = window.setInterval(() => {
+        const nowDay = todayIso();
+        if (nowDay !== trackedDayStamp) {
+            const editingDay = String(dateEl?.value || '').trim().slice(0, 10);
+            if (draftDirty && editingDay && editingDay === trackedDayStamp && !checkinLocked) {
+                void saveCheckin({ silent: true, reason: 'day-end' });
+            }
+            trackedDayStamp = nowDay;
+        }
+        const isOpen = !modal.classList.contains('hidden');
+        if (isOpen && draftDirty && !checkinLocked) {
+            void saveCheckin({ silent: true, reason: 'autosave' });
+        }
+    }, 60000);
+
+    window.addEventListener('beforeunload', () => {
+        if (!draftDirty) return;
+        const payload = collect();
+        writeDraftForDay(payload.day, payload);
+    });
 }
 
 function setupProgressPhotos() {

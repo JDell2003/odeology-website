@@ -12258,6 +12258,108 @@ html[data-theme="light"] .avatar-cropper-viewport {
     margin-top: 12px;
 }
 
+.checkin-flow-unified {
+    margin-top: 12px;
+}
+
+.checkin-compliance {
+    margin-top: 12px;
+    border-radius: 16px;
+    padding: 12px 12px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: linear-gradient(135deg, rgba(231, 163, 77, 0.14), rgba(34, 197, 94, 0.10));
+}
+
+.checkin-compliance-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.checkin-compliance-title {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.checkin-compliance-meta {
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.9;
+}
+
+.checkin-compliance-track {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+}
+
+.checkin-compliance-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(231, 163, 77, 0.95), rgba(34, 197, 94, 0.95));
+    transition: width 220ms ease;
+}
+
+.checkin-unified-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.checkin-unified-grid .checkin-unified-block {
+    margin: 0;
+}
+
+.checkin-unified-grid .checkin-unified-block:nth-child(3),
+.checkin-unified-grid .checkin-unified-block:nth-child(5) {
+    grid-column: 1 / -1;
+}
+
+.checkin-autosave-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.checkin-autosave-status.is-ok {
+    color: rgba(56, 239, 125, 0.92);
+    border-color: rgba(56, 239, 125, 0.45);
+}
+
+.checkin-autosave-status.is-warn {
+    color: rgba(255, 222, 120, 0.94);
+    border-color: rgba(255, 222, 120, 0.5);
+}
+
+.checkin-autosave-status.is-error {
+    color: rgba(255, 150, 150, 0.95);
+    border-color: rgba(255, 150, 150, 0.5);
+}
+
+:root[data-theme="light"] .checkin-compliance {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, rgba(231, 163, 77, 0.18), rgba(34, 197, 94, 0.1));
+}
+
+:root[data-theme="light"] .checkin-compliance-track {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .checkin-autosave-status {
+    border-color: rgba(0, 0, 0, 0.14);
+    background: rgba(0, 0, 0, 0.03);
+}
+
 .checkin-date-hidden {
     position: absolute;
     width: 1px;
@@ -12490,12 +12592,24 @@ html[data-theme="light"] .avatar-cropper-viewport {
 
 @media (max-width: 900px) {
     .checkin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .checkin-unified-grid { grid-template-columns: 1fr; }
+    .checkin-unified-grid .checkin-unified-block:nth-child(3),
+    .checkin-unified-grid .checkin-unified-block:nth-child(5) { grid-column: auto; }
 }
 
 @media (max-width: 520px) {
     .checkin-grid { grid-template-columns: 1fr; }
     .checkin-day { padding: 8px 4px; }
     .checkin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .checkin-actions-left,
+    .checkin-actions-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .checkin-autosave-status {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @keyframes slowSpin {
