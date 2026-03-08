@@ -861,7 +861,19 @@
       if (shareUi.loading || shareOutgoingSyncInFlight) return;
       if (shareUi.requesting.size || shareUi.kicking.size) return;
       if (shareUi.open) {
-        loadShareAccounts(shareUi.query || '');
+        if (!shareUi.loaded) {
+          loadShareAccounts(shareUi.query || '');
+          return;
+        }
+        shareOutgoingSyncInFlight = true;
+        try {
+          const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+          if (!outgoing.ok || !outgoing.json?.ok) return;
+          syncShareOutgoingState(outgoing.json);
+          render();
+        } finally {
+          shareOutgoingSyncInFlight = false;
+        }
         return;
       }
       if (!shareUi.bootstrapRequested) return;
