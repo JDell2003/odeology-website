@@ -3850,6 +3850,52 @@ async function trainingRoutes(req, res, url) {
     return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId });
   }
 
+  if (pathname === '/api/training/share/remove' && req.method === 'POST') {
+    logShareRoute('share.remove.request.received', { method: req.method, pathname, fromUserId: user.id });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+
+    const rawIds = [];
+    if (Array.isArray(payload?.targetUserIds)) rawIds.push(...payload.targetUserIds);
+    if (payload?.targetUserId != null) rawIds.push(payload.targetUserId);
+    const targetUserId = Array.from(new Set(rawIds.map((id) => String(id || '').trim()).filter(isUuid)))[0] || '';
+    if (!isUuid(targetUserId)) return sendJson(res, 400, { ok: false, error: 'Invalid account.' });
+    if (targetUserId === user.id) return sendJson(res, 400, { ok: false, error: 'Cannot remove your own account.' });
+
+    const latestInviteResult = await db.query(
+      `
+        SELECT id, status
+        FROM app_training_share_invites
+        WHERE from_user_id = $1
+          AND to_user_id = $2
+        ORDER BY updated_at DESC
+        LIMIT 1;
+      `,
+      [user.id, targetUserId]
+    );
+    const latestInvite = latestInviteResult.rows?.[0] || null;
+    if (!latestInvite) {
+      return sendJson(res, 404, { ok: false, error: 'No share relationship found for this account.' });
+    }
+
+    const latestStatus = String(latestInvite.status || '').trim().toLowerCase();
+    if (latestStatus !== 'accepted') {
+      return sendJson(res, 409, { ok: false, error: 'Account has not accepted your workout.' });
+    }
+
+    await db.query(
+      'UPDATE app_training_share_invites SET status = $1, responded_at = now(), updated_at = now() WHERE id = $2;',
+      ['removed', latestInvite.id]
+    );
+    clearInviteCache(targetUserId);
+    logShareRoute('share.remove.success', { fromUserId: user.id, targetUserId, inviteId: latestInvite.id });
+    return sendJson(res, 200, { ok: true, targetUserId, action: 'removed' });
+  }
+
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {
     logShareRoute('share.requests.requested', { method: req.method, pathname, toUserId: user.id });
     const forceFresh = String(url.searchParams.get('fresh') || '').trim() === '1';

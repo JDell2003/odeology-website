@@ -681,6 +681,7 @@
     accounts: [],
     status: '',
     requesting: new Set(),
+    kicking: new Set(),
     requested: new Set(),
     latestStatus: new Map(),
     confirmToastTimer: 0,
@@ -689,7 +690,7 @@
 
   const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
   const SHARE_OUTGOING_SYNC_MS = 4500;
-  const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-5';
+  const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-6';
   const shareDebugEnabled = (() => {
     try {
       const params = new URLSearchParams(String(window.location.search || ''));
@@ -2964,7 +2965,7 @@ function toFreeExerciseDbRemotePath(src) {
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
-      const btn = target.closest('.share-workout-add-btn, .share-workout-add');
+      const btn = target.closest('.share-workout-add-btn, .share-workout-add, .share-workout-kick-btn');
       if (!btn) return;
       try {
         const row = btn.closest('.share-workout-item');
@@ -3227,6 +3228,88 @@ function toFreeExerciseDbRemotePath(src) {
       }
     }
     render();
+  }
+
+  async function removeAcceptedShareForAccount(account) {
+    const key = String(account?.id || '').trim();
+    if (!key) return;
+    if (shareUi.kicking.has(key)) return;
+
+    const displayName = String(account?.displayName || account?.username || 'friend').trim();
+    const traceId = `share-kick-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+    shareUi.kicking.add(key);
+    shareUi.status = `Removing ${displayName}...`;
+    try {
+      shareDebugLog(`[${traceId}] Kick clicked`, {
+        targetUserId: key,
+        displayName
+      });
+    } catch {
+      // ignore console failures
+    }
+    render();
+
+    try {
+      const resp = await api('/api/training/share/remove', {
+        method: 'POST',
+        body: JSON.stringify({ targetUserId: key, targetUserIds: [key] })
+      });
+      try {
+        shareDebugLog(`[${traceId}] POST /api/training/share/remove`, {
+          ok: resp?.ok,
+          status: resp?.status,
+          json: resp?.json || null
+        });
+      } catch {
+        // ignore console failures
+      }
+
+      if (!resp.ok || !resp.json?.ok) {
+        shareUi.status = resp?.json?.error || 'Could not remove account from workout.';
+        return;
+      }
+
+      // Optimistic clear; we still refresh from server.
+      shareUi.requested.delete(key);
+      shareUi.latestStatus.delete(key);
+
+      const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+      if (outgoing.ok && outgoing.json?.ok) {
+        syncShareOutgoingState(outgoing.json);
+        const latestRaw = String(outgoing.json?.latestStatusByUserId?.[key] || '').trim().toLowerCase();
+        const confirmed = latestRaw === 'removed' || latestRaw === '';
+        try {
+          shareDebugLog(`[${traceId}] GET /api/training/share/outgoing`, {
+            ok: outgoing?.ok,
+            status: outgoing?.status,
+            latestRaw,
+            confirmed
+          });
+        } catch {
+          // ignore console failures
+        }
+        if (!confirmed) {
+          shareUi.status = 'Kick was not confirmed. Try again.';
+          return;
+        }
+      } else {
+        try {
+          shareDebugLog(`[${traceId}] GET /api/training/share/outgoing failed`, {
+            ok: outgoing?.ok,
+            status: outgoing?.status,
+            json: outgoing?.json || null
+          });
+        } catch {
+          // ignore console failures
+        }
+      }
+
+      shareUi.status = `${displayName} removed from shared workout.`;
+    } finally {
+      shareUi.kicking.delete(key);
+      render();
+    }
   }
 
 function toggleSharePopover(force) {
@@ -5959,6 +6042,7 @@ function toggleSharePopover(force) {
               .toUpperCase();
             const key = String(acct?.id || '').trim();
             const isRequesting = Boolean(key) && shareUi.requesting.has(key);
+            const isKicking = Boolean(key) && shareUi.kicking.has(key);
             const isRequested = Boolean(key) && shareUi.requested.has(key);
             const latestStatus = Boolean(key) ? String(shareUi.latestStatus.get(key) || '').toLowerCase() : '';
             const isAccepted = latestStatus === 'accepted';
@@ -5991,48 +6075,67 @@ function toggleSharePopover(force) {
                 el('div', { class: 'share-workout-name' }, name),
                 el('div', { class: 'share-workout-handle' }, username || ' ')
               ),
-              el('button', {
-                type: 'button',
-                class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,
-                disabled: isLocked ? 'disabled' : null,
-                'aria-label': isRequested
-                  ? `${name} already requested`
-                  : isAccepted
-                    ? `${name} accepted your request`
-                    : isDeclined
-                      ? `${name} declined your request`
-                  : `Send workout request to ${name}`,
-                onclick: async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!key) {
-                    try {
-                      shareDebugLog('Add ignored: missing friend id', {
-                        username: acct?.username || null,
-                        displayName: acct?.displayName || null
-                      });
-                    } catch {
-                      // ignore console failures
+              isAccepted
+                ? el('div', { class: 'share-workout-row-actions' },
+                  el('span', {
+                    class: `share-workout-add-btn accepted${isKicking ? ' requesting' : ''}`,
+                    'aria-hidden': 'true'
+                  }, isKicking ? 'Removing...' : 'Accepted'),
+                  el('button', {
+                    type: 'button',
+                    class: 'share-workout-kick-btn',
+                    disabled: isKicking ? 'disabled' : null,
+                    'aria-label': `Kick ${name} from workout`,
+                    onclick: async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!key || isKicking) return;
+                      await removeAcceptedShareForAccount(acct);
                     }
-                    return;
-                  }
-                  if (isLocked) {
-                    try {
-                      shareDebugLog('Add ignored: row locked', {
-                        id: key,
-                        isRequesting,
-                        isRequested,
-                        isAccepted,
-                        isDeclined
-                      });
-                    } catch {
-                      // ignore console failures
+                  }, 'x')
+                )
+                : el('button', {
+                  type: 'button',
+                  class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,
+                  disabled: isLocked ? 'disabled' : null,
+                  'aria-label': isRequested
+                    ? `${name} already requested`
+                    : isAccepted
+                      ? `${name} accepted your request`
+                      : isDeclined
+                        ? `${name} declined your request`
+                    : `Send workout request to ${name}`,
+                  onclick: async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!key) {
+                      try {
+                        shareDebugLog('Add ignored: missing friend id', {
+                          username: acct?.username || null,
+                          displayName: acct?.displayName || null
+                        });
+                      } catch {
+                        // ignore console failures
+                      }
+                      return;
                     }
-                    return;
+                    if (isLocked) {
+                      try {
+                        shareDebugLog('Add ignored: row locked', {
+                          id: key,
+                          isRequesting,
+                          isRequested,
+                          isAccepted,
+                          isDeclined
+                        });
+                      } catch {
+                        // ignore console failures
+                      }
+                      return;
+                    }
+                    await sendShareRequestToAccount(acct);
                   }
-                  await sendShareRequestToAccount(acct);
-                }
-              }, actionLabel)
+                }, actionLabel)
             );
           })
         : [el('div', { class: 'share-workout-empty' }, 'No friends found.')]);
