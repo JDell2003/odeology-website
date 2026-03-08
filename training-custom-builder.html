@@ -107,6 +107,33 @@
       white-space: nowrap;
     }
 
+    .builder-section-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 8px;
+    }
+
+    .builder-section-pill {
+      border: 1px solid #d4bf9f;
+      background: #fff8ed;
+      color: #6f583b;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+    }
+
+    .builder-section-pill.active {
+      border-color: #be8d45;
+      background: linear-gradient(145deg, #efd7ad 0%, #dfb170 100%);
+      color: #2f2418;
+    }
+
     .builder-custom-form {
       display: grid;
       gap: 7px;
@@ -706,6 +733,11 @@
           <button type="button" class="btn btn-ghost" id="builder-search-btn">Search</button>
           <button type="button" class="btn btn-ghost builder-custom-toggle" id="builder-custom-toggle" aria-expanded="false">+ Add custom workout</button>
         </div>
+        <div id="builder-section-filters" class="builder-section-filters" aria-label="Workout section filters">
+          <button type="button" class="builder-section-pill active" data-filter-section="calisthenics" aria-pressed="true">Calisthenics</button>
+          <button type="button" class="builder-section-pill active" data-filter-section="free_weights" aria-pressed="true">Free Weights</button>
+          <button type="button" class="builder-section-pill active" data-filter-section="stretching" aria-pressed="true">Stretching</button>
+        </div>
         <form id="builder-custom-form" class="builder-custom-form" style="display:none;">
           <div class="builder-custom-form-head">Custom workouts save to your account and appear in folders below.</div>
           <div class="builder-custom-grid">
@@ -811,6 +843,7 @@
       const authGateEl = $('builder-auth-gate');
       const dbCountEl = $('builder-db-count');
       const dbListEl = $('builder-db-list');
+      const sectionFiltersEl = $('builder-section-filters');
       const searchEl = $('builder-search');
       const searchBtn = $('builder-search-btn');
       const weekdaysEl = $('builder-weekdays');
@@ -834,6 +867,11 @@
         dbRows: [],
         customRows: [],
         query: '',
+        sectionFilters: {
+          calisthenics: true,
+          free_weights: true,
+          stretching: true
+        },
         selectedWeekdays: [1, 2, 4, 5],
         planByWeekday: new Map(),
         saving: false,
@@ -880,6 +918,28 @@
           customToggleBtn.textContent = state.customFormOpen ? 'Hide custom form' : '+ Add custom workout';
           customToggleBtn.setAttribute('aria-expanded', state.customFormOpen ? 'true' : 'false');
         }
+      }
+
+      function activeSectionFilterKeys() {
+        const filters = state.sectionFilters || {};
+        return Object.keys(filters).filter((key) => filters[key]);
+      }
+
+      function applySectionFilters(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        const active = activeSectionFilterKeys();
+        if (!active.length) return list;
+        return list.filter((row) => active.includes(classifySection(row)));
+      }
+
+      function renderSectionFilterPills() {
+        if (!sectionFiltersEl) return;
+        sectionFiltersEl.querySelectorAll('[data-filter-section]').forEach((btn) => {
+          const key = String(btn.getAttribute('data-filter-section') || '').trim();
+          const active = Boolean(state.sectionFilters?.[key]);
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
       }
 
       function escapeHtml(raw) {
@@ -1360,10 +1420,11 @@
         });
       }
 
-      function searchRows(queryText) {
+      function searchRows(queryText, sourceRows) {
         const q = String(queryText || '').trim().toLowerCase();
-        if (!q) return allLibraryRows();
-        return allLibraryRows()
+        const rows = Array.isArray(sourceRows) ? sourceRows : allLibraryRows();
+        if (!q) return rows;
+        return rows
           .filter((row) => {
             const hay = [
               row?.name,
@@ -1501,15 +1562,21 @@
       function renderDatabaseList() {
         if (!dbListEl || !dbCountEl) return;
         const query = String(state.query || '').trim();
-        const total = allLibraryRows().length;
+        const allRows = allLibraryRows();
+        const scopedRows = applySectionFilters(allRows);
+        const activeFilters = activeSectionFilterKeys();
+        const filterNote = activeFilters.length
+          ? `${activeFilters.length} filter${activeFilters.length === 1 ? '' : 's'} on`
+          : 'default view';
 
         if (!query) {
-          renderFolderTree(allLibraryRows());
+          dbCountEl.textContent = `${scopedRows.length} workouts (${filterNote})`;
+          renderFolderTree(scopedRows);
           return;
         }
 
-        const rows = searchRows(query);
-        dbCountEl.textContent = `${rows.length} search results (${total} workouts total)`;
+        const rows = searchRows(query, scopedRows);
+        dbCountEl.textContent = `${rows.length} search results (${filterNote})`;
         dbListEl.innerHTML = '';
         if (!rows.length) {
           dbListEl.innerHTML = '<div class="builder-day-empty">No exercises found.</div>';
@@ -1849,7 +1916,18 @@
         syncSelectedDays(state.selectedWeekdays);
         renderWeekdayChips();
         renderDayColumns();
+        renderSectionFilterPills();
         bindPlanInputEvents();
+
+        sectionFiltersEl?.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-filter-section]');
+          if (!btn) return;
+          const key = String(btn.getAttribute('data-filter-section') || '').trim();
+          if (!Object.prototype.hasOwnProperty.call(state.sectionFilters, key)) return;
+          state.sectionFilters[key] = !state.sectionFilters[key];
+          renderSectionFilterPills();
+          renderDatabaseList();
+        });
 
         searchEl?.addEventListener('input', () => {
           state.query = String(searchEl.value || '');
