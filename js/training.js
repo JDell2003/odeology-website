@@ -765,7 +765,7 @@
   }
 
   let pendingTrainingWelcome = consumeTrainingWelcomePayload();
-  let shareEventsCheckedUserId = '';
+  let shareEventsInFlight = false;
 
   function maybeShowTrainingWelcomeModal() {
     if (trainingWelcomeShown) return;
@@ -892,34 +892,39 @@
     document.body.appendChild(overlay);
   }
 
-  async function checkShareEventsOnce() {
+  async function pollShareEvents({ force = false } = {}) {
     const uid = String(state.auth.user?.id || '').trim();
     if (!uid) return;
-    if (shareEventsCheckedUserId === uid) return;
-    shareEventsCheckedUserId = uid;
-    const resp = await api('/api/training/share/events?fresh=1', { method: 'GET' });
-    if (!resp.ok || !resp.json?.ok) return;
-    const events = Array.isArray(resp.json?.events) ? resp.json.events : [];
-    if (!events.length) return;
-    events
-      .slice()
-      .reverse()
-      .forEach((evt) => {
-        const actorName = String(evt?.actorDisplayName || evt?.actorUsername || 'Owner').trim() || 'Owner';
-        const whenText = (() => {
-          const d = new Date(evt?.createdAt || Date.now());
-          if (!Number.isFinite(d.getTime())) return new Date().toLocaleString();
-          return d.toLocaleString();
-        })();
-        const type = String(evt?.eventType || '').trim().toLowerCase();
-        if (type === 'owner_removed') {
-          showOwnerRemovedModal({ actorName, whenText });
-          return;
-        }
-        if (type === 'recipient_left') {
-          showShareSystemToast('Share update', `${actorName} removed themselves at ${whenText}.`);
-        }
-      });
+    if (!force && document.hidden) return;
+    if (shareEventsInFlight) return;
+    shareEventsInFlight = true;
+    try {
+      const resp = await api('/api/training/share/events?fresh=1', { method: 'GET' });
+      if (!resp.ok || !resp.json?.ok) return;
+      const events = Array.isArray(resp.json?.events) ? resp.json.events : [];
+      if (!events.length) return;
+      events
+        .slice()
+        .reverse()
+        .forEach((evt) => {
+          const actorName = String(evt?.actorDisplayName || evt?.actorUsername || 'Owner').trim() || 'Owner';
+          const whenText = (() => {
+            const d = new Date(evt?.createdAt || Date.now());
+            if (!Number.isFinite(d.getTime())) return new Date().toLocaleString();
+            return d.toLocaleString();
+          })();
+          const type = String(evt?.eventType || '').trim().toLowerCase();
+          if (type === 'owner_removed') {
+            showOwnerRemovedModal({ actorName, whenText });
+            return;
+          }
+          if (type === 'recipient_left') {
+            showShareSystemToast('Share update', `${actorName} removed themselves at ${whenText}.`);
+          }
+        });
+    } finally {
+      shareEventsInFlight = false;
+    }
   }
 
   const shareDebugEnabled = (() => {
@@ -1214,6 +1219,7 @@
     if (shareOutgoingSyncTimer) return;
     shareOutgoingSyncTimer = window.setInterval(async () => {
       if (!state.auth.user) return;
+      pollShareEvents().catch(() => {});
       if (document.hidden) return;
       if (shareUi.loading || shareOutgoingSyncInFlight) return;
       if (shareUi.requesting.size || shareUi.kicking.size) return;
@@ -3922,7 +3928,7 @@ function toggleSharePopover(force) {
     if (next === 'plan') {
       window.setTimeout(() => {
         try { maybeShowTrainingWelcomeModal(); } catch { /* ignore */ }
-        checkShareEventsOnce().catch(() => {});
+        pollShareEvents({ force: true }).catch(() => {});
       }, 80);
     }
   }
@@ -4009,7 +4015,7 @@ function toggleSharePopover(force) {
       me = await api('/api/auth/me', { method: 'GET' });
     } catch {
       state.auth.user = null;
-      shareEventsCheckedUserId = '';
+      shareEventsInFlight = false;
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -4034,7 +4040,7 @@ function toggleSharePopover(force) {
     const meUser = me.ok ? (me.json?.user || null) : null;
     if (!me.ok || !meUser) {
       state.auth.user = null;
-      shareEventsCheckedUserId = '';
+      shareEventsInFlight = false;
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -4056,9 +4062,7 @@ function toggleSharePopover(force) {
       return;
     }
     state.auth.user = meUser;
-    if (shareEventsCheckedUserId && shareEventsCheckedUserId !== String(meUser?.id || '').trim()) {
-      shareEventsCheckedUserId = '';
-    }
+    shareEventsInFlight = false;
     shareUi.open = false;
     shareUi.loaded = false;
     shareUi.bootstrapRequested = false;
@@ -4084,7 +4088,7 @@ function toggleSharePopover(force) {
     if (!s.ok) {
       if (s.status === 401) {
         state.auth.user = null;
-        shareEventsCheckedUserId = '';
+        shareEventsInFlight = false;
         state.profile = null;
         state.planRow = null;
         state.logs = [];
