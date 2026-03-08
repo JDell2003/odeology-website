@@ -61,6 +61,22 @@
   }
 
   function updateMobileActionUi() {
+    const cameraBtn = $('#owner-msg-mobile-camera');
+    const hasTypedText = getDirectMessageText().length > 0;
+    if (cameraBtn) {
+      if (hasTypedText) {
+        cameraBtn.textContent = '↑';
+        cameraBtn.setAttribute('aria-label', 'Send message');
+        cameraBtn.dataset.mode = 'send';
+        cameraBtn.classList.add('is-send');
+      } else {
+        cameraBtn.textContent = '📷';
+        cameraBtn.setAttribute('aria-label', 'Use camera');
+        cameraBtn.dataset.mode = 'camera';
+        cameraBtn.classList.remove('is-send');
+      }
+    }
+
     const btn = $('#owner-msg-mobile-action');
     if (!btn) return;
     const hasPayload = getDirectMessageText().length > 0 || Boolean(state.pendingDirectImageDataUrl) || Boolean(state.pendingDirectAttachmentNote);
@@ -1102,7 +1118,19 @@
     const mobileCameraBtn = $('#owner-msg-mobile-camera');
     const mobileCameraInput = $('#owner-msg-mobile-camera-input');
     if (mobileCameraBtn && mobileCameraInput) {
-      mobileCameraBtn.addEventListener('click', () => mobileCameraInput.click());
+      mobileCameraBtn.addEventListener('click', () => {
+        const mode = String(mobileCameraBtn.dataset?.mode || 'camera');
+        if (mode === 'send') {
+          const form = $('#owner-msg-send-form');
+          if (form?.requestSubmit) {
+            form.requestSubmit();
+          } else if (form) {
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+          }
+          return;
+        }
+        mobileCameraInput.click();
+      });
       mobileCameraInput.addEventListener('change', () => {
         const file = mobileCameraInput.files?.[0];
         handleMobileSelectedFile(file, 'camera');

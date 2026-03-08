@@ -82,6 +82,45 @@
       .replace(/'/g, '&#39;');
   }
 
+  function normalizePhoneForHref(raw) {
+    const digits = String(raw || '').replace(/\D+/g, '');
+    return digits || '';
+  }
+
+  function buildWarningContacts(warn) {
+    const phoneRaw = String(warn?.phone || '').trim();
+    const phone = normalizePhoneForHref(phoneRaw);
+    const email = String(warn?.email || '').trim();
+    if (!phone && !email) return null;
+
+    const row = document.createElement('div');
+    row.className = 'account-warning-contacts';
+
+    if (phone) {
+      const call = document.createElement('a');
+      call.className = 'account-warning-contact';
+      call.href = `tel:${phone}`;
+      call.textContent = 'Call';
+      row.appendChild(call);
+
+      const text = document.createElement('a');
+      text.className = 'account-warning-contact';
+      text.href = `sms:${phone}`;
+      text.textContent = 'Text';
+      row.appendChild(text);
+    }
+
+    if (email) {
+      const mail = document.createElement('a');
+      mail.className = 'account-warning-contact';
+      mail.href = `mailto:${encodeURIComponent(email)}`;
+      mail.textContent = 'Email';
+      row.appendChild(mail);
+    }
+
+    return row;
+  }
+
   function getProfilePhotoFromPayload(payload) {
     const row = payload?.profile && typeof payload.profile === 'object' ? payload.profile : null;
     const profileJson = row?.profile && typeof row.profile === 'object' ? row.profile : {};
@@ -160,6 +199,8 @@
       text.textContent = String(warn?.message || 'No details.');
       meta.appendChild(title);
       meta.appendChild(text);
+      const contacts = buildWarningContacts(warn);
+      if (contacts) meta.appendChild(contacts);
 
       const severity = document.createElement('div');
       severity.className = 'account-warning-severity';

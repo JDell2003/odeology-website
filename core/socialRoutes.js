@@ -518,6 +518,8 @@ async function socialRoutes(req, res, url) {
         SELECT f.friend_id AS id,
                u.username,
                u.display_name,
+               u.email,
+               u.phone,
                u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo,
                p.profile AS profile_json,
@@ -581,6 +583,21 @@ async function socialRoutes(req, res, url) {
         const profile = friend.profile_json || {};
         const friendLastSeen = friend.last_seen || null;
         const friendIsOnline = isLastSeenOnline(friendLastSeen);
+        const friendEmail = String(friend.email || '').trim() || null;
+        const friendPhone = String(friend.phone || '').trim() || null;
+        const buildWarning = ({ severity = 'med', type = 'weight', message = '' } = {}) => ({
+          friendId: friend.id,
+          username: friend.username,
+          displayName: friend.display_name,
+          email: friendEmail,
+          phone: friendPhone,
+          photoDataUrl: friend.photo || null,
+          lastSeen: friendLastSeen,
+          isOnline: friendIsOnline,
+          severity,
+          type,
+          message
+        });
         const goalMode = parseGoalMode(profile);
         const lastWeighinAt = friend.last_weighin_at ? String(friend.last_weighin_at).slice(0, 10) : null;
         const lastWeighinLb = friend.last_weighin_lb != null ? Number(friend.last_weighin_lb) : null;
@@ -599,17 +616,11 @@ async function socialRoutes(req, res, url) {
 
         const daysSinceWeighin = daysBetweenIso(lastWeighinAt, new Date().toISOString().slice(0, 10));
         if (daysSinceWeighin != null && daysSinceWeighin >= 14) {
-          warnings.push({
-            friendId: friend.id,
-            username: friend.username,
-            displayName: friend.display_name,
-            photoDataUrl: friend.photo || null,
-            lastSeen: friendLastSeen,
-            isOnline: friendIsOnline,
+          warnings.push(buildWarning({
             severity: 'med',
             type: 'weight',
             message: `Contact @${friend.username || 'friend'}: missed weigh-in for 14+ days.`
-          });
+          }));
         }
 
         const daysSinceBaseline = daysBetweenIso(evalWeightAt, new Date().toISOString().slice(0, 10));
@@ -618,30 +629,18 @@ async function socialRoutes(req, res, url) {
           const delta = lastWeighinLb - projected;
           const offTrackThreshold = 8;
           if (goalMode === 'cut' && delta > offTrackThreshold) {
-            warnings.push({
-              friendId: friend.id,
-              username: friend.username,
-              displayName: friend.display_name,
-              photoDataUrl: friend.photo || null,
-              lastSeen: friendLastSeen,
-              isOnline: friendIsOnline,
+            warnings.push(buildWarning({
               severity: 'high',
               type: 'weight',
               message: `Contact @${friend.username || 'friend'}: expected ~${Math.round(projected)} lb, last weigh-in ${Math.round(lastWeighinLb)} lb.`
-            });
+            }));
           }
           if (goalMode === 'bulk' && delta < -offTrackThreshold) {
-            warnings.push({
-              friendId: friend.id,
-              username: friend.username,
-              displayName: friend.display_name,
-              photoDataUrl: friend.photo || null,
-              lastSeen: friendLastSeen,
-              isOnline: friendIsOnline,
+            warnings.push(buildWarning({
               severity: 'high',
               type: 'weight',
               message: `Contact @${friend.username || 'friend'}: expected ~${Math.round(projected)} lb, last weigh-in ${Math.round(lastWeighinLb)} lb.`
-            });
+            }));
           }
         }
 
@@ -649,17 +648,11 @@ async function socialRoutes(req, res, url) {
           const logs = logsByUser.get(String(friend.id)) || [];
           const expected = Number(friend.days_per_week || 0) * 2;
           if (expected >= 2 && logs.length < Math.max(1, Math.round(expected * 0.4))) {
-            warnings.push({
-              friendId: friend.id,
-              username: friend.username,
-              displayName: friend.display_name,
-              photoDataUrl: friend.photo || null,
-              lastSeen: friendLastSeen,
-              isOnline: friendIsOnline,
+            warnings.push(buildWarning({
               severity: 'med',
               type: 'workout',
               message: `Contact @${friend.username || 'friend'}: ${logs.length} of ${expected} sessions logged in the last 14 days.`
-            });
+            }));
           }
 
           let suspicious = false;
@@ -685,17 +678,11 @@ async function socialRoutes(req, res, url) {
             }
           }
           if (suspicious) {
-            warnings.push({
-              friendId: friend.id,
-              username: friend.username,
-              displayName: friend.display_name,
-              photoDataUrl: friend.photo || null,
-              lastSeen: friendLastSeen,
-              isOnline: friendIsOnline,
+            warnings.push(buildWarning({
               severity: 'high',
               type: 'workout',
               message: `Contact @${friend.username || 'friend'}: workout logs look incomplete vs projected volume.`
-            });
+            }));
           }
         }
       }

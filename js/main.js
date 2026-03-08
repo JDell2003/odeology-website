@@ -11745,6 +11745,91 @@ function initThemeToggle() {
    AUTH (NEON-BACKED SESSIONS)
    ============================================ */
 
+const AUTH_USER_HINT_KEY = 'ode_auth_user_hint_v1';
+const AUTH_USER_HINT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 14;
+let authMeBootstrapPromise = null;
+
+function readAuthUserHint() {
+    try {
+        const raw = localStorage.getItem(AUTH_USER_HINT_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        const ts = Number(parsed.ts || 0);
+        if (!Number.isFinite(ts) || ts <= 0 || Date.now() - ts > AUTH_USER_HINT_MAX_AGE_MS) {
+            localStorage.removeItem(AUTH_USER_HINT_KEY);
+            return null;
+        }
+        const user = parsed.user;
+        if (!user || typeof user !== 'object') return null;
+        const id = String(user.id || '').trim();
+        if (!id) return null;
+        return {
+            id,
+            username: String(user.username || '').trim(),
+            displayName: String(user.displayName || '').trim(),
+            isOwner: Boolean(user.isOwner)
+        };
+    } catch {
+        return null;
+    }
+}
+
+function writeAuthUserHint(user) {
+    try {
+        const id = String(user?.id || '').trim();
+        if (!id) return;
+        const payload = {
+            ts: Date.now(),
+            user: {
+                id,
+                username: String(user?.username || '').trim(),
+                displayName: String(user?.displayName || '').trim(),
+                isOwner: Boolean(user?.isOwner)
+            }
+        };
+        localStorage.setItem(AUTH_USER_HINT_KEY, JSON.stringify(payload));
+    } catch {
+        // ignore
+    }
+}
+
+function clearAuthUserHint() {
+    try {
+        localStorage.removeItem(AUTH_USER_HINT_KEY);
+    } catch {
+        // ignore
+    }
+}
+
+async function fetchAuthMeSnapshot() {
+    try {
+        const resp = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+        const data = await resp.json().catch(() => ({}));
+        return {
+            networkOk: true,
+            status: Number(resp.status || 0),
+            user: data?.user || null,
+            data
+        };
+    } catch (err) {
+        return {
+            networkOk: false,
+            status: 0,
+            user: null,
+            data: null,
+            error: err || null
+        };
+    }
+}
+
+function getAuthMeBootstrapSnapshot({ refresh = false } = {}) {
+    if (refresh || !authMeBootstrapPromise) {
+        authMeBootstrapPromise = fetchAuthMeSnapshot();
+    }
+    return authMeBootstrapPromise;
+}
+
 function initAuthUi() {
     const navbarContainer = document.querySelector('.navbar-container');
     if (!navbarContainer) return;
@@ -12062,6 +12147,7 @@ function initAuthUi() {
     const setSignedOutUi = () => {
         currentUser = null;
         window.__odeCurrentUser = null;
+        clearAuthUserHint();
         signInBtn.classList.remove('hidden');
         signUpBtn.classList.remove('hidden');
         if (sep) sep.classList.remove('hidden');
@@ -12084,6 +12170,7 @@ function initAuthUi() {
     const setSignedInUi = (user, meta = null) => {
         currentUser = user;
         window.__odeCurrentUser = user;
+        writeAuthUserHint(user);
         const label = user?.displayName || user?.username || 'Account';
         const imp = getImpersonation(meta);
         signInBtn.classList.add('hidden');
@@ -12138,6 +12225,13 @@ function initAuthUi() {
                 updateControlSigninBadge(0, { signedIn: true });
             });
     };
+
+    // Use cached identity immediately so authenticated pages do not prompt
+    // again while the session check request is still in flight.
+    const bootHintUser = readAuthUserHint();
+    if (bootHintUser) {
+        setSignedInUi(bootHintUser, null);
+    }
 
     const redirectToTrainingAfterAuth = () => {
         try {
@@ -12319,6 +12413,39 @@ function initAuthUi() {
             avatar.appendChild(dot);
             return avatar;
         };
+        const normalizePhoneForHref = (raw) => {
+            const digits = String(raw || '').replace(/\D+/g, '');
+            return digits || '';
+        };
+        const buildWarningContactsNode = (warn) => {
+            const phoneRaw = String(warn?.phone || '').trim();
+            const phone = normalizePhoneForHref(phoneRaw);
+            const email = String(warn?.email || '').trim();
+            if (!phone && !email) return null;
+            const row = document.createElement('div');
+            row.className = 'friends-warning-contacts';
+            if (phone) {
+                const call = document.createElement('a');
+                call.className = 'friends-warning-contact';
+                call.href = `tel:${phone}`;
+                call.textContent = 'Call';
+                row.appendChild(call);
+
+                const text = document.createElement('a');
+                text.className = 'friends-warning-contact';
+                text.href = `sms:${phone}`;
+                text.textContent = 'Text';
+                row.appendChild(text);
+            }
+            if (email) {
+                const mail = document.createElement('a');
+                mail.className = 'friends-warning-contact';
+                mail.href = `mailto:${encodeURIComponent(email)}`;
+                mail.textContent = 'Email';
+                row.appendChild(mail);
+            }
+            return row;
+        };
 
         const renderWarnings = (items, statusText) => {
             if (!warningsList) return;
@@ -12356,6 +12483,8 @@ function initAuthUi() {
                 meta.appendChild(nameEl);
                 meta.appendChild(handleEl);
                 meta.appendChild(msgEl);
+                const contacts = buildWarningContactsNode(warn);
+                if (contacts) meta.appendChild(contacts);
 
                 const tag = document.createElement('div');
                 tag.className = 'friends-warning-tag';
@@ -13024,17 +13153,21 @@ function initAuthUi() {
     }
 
     const refreshMe = async () => {
-        try {
-            const resp = await fetch('/api/auth/me', { credentials: 'include' });
-            const data = await resp.json();
-            if (data?.user) {
-                setSignedInUi(data.user, data);
-            } else {
-                setSignedOutUi();
-            }
-        } catch {
-            setSignedOutUi();
+        const snap = await getAuthMeBootstrapSnapshot();
+        if (snap?.user) {
+            setSignedInUi(snap.user, snap.data || null);
+            return;
         }
+        if (snap?.networkOk) {
+            setSignedOutUi();
+            return;
+        }
+        const fallbackUser = readAuthUserHint();
+        if (fallbackUser) {
+            setSignedInUi(fallbackUser, null);
+            return;
+        }
+        setSignedOutUi();
     };
 
     const openModal = (mode) => {
@@ -13760,6 +13893,7 @@ function initAuthGate() {
     if (!requiresAuth) return;
 
     const applyGate = () => {
+        if (document.body.classList.contains('auth-gated')) return;
         document.body.classList.add('auth-gated');
         if (typeof odeOpenAuthModal === 'function') odeOpenAuthModal('login');
         else document.getElementById('control-signin')?.click?.();
@@ -13775,15 +13909,24 @@ function initAuthGate() {
         else applyGate();
     });
 
+    const hintedUser = readAuthUserHint();
+    if (hintedUser) clearGate();
+
     (async () => {
-        try {
-            const resp = await fetch('/api/auth/me', { credentials: 'include' });
-            const data = await resp.json().catch(() => ({}));
-            if (data?.user) clearGate();
-            else applyGate();
-        } catch {
-            applyGate();
+        const snap = await getAuthMeBootstrapSnapshot();
+        if (snap?.user) {
+            clearGate();
+            return;
         }
+        if (snap?.networkOk) {
+            applyGate();
+            return;
+        }
+        if (readAuthUserHint()) {
+            clearGate();
+            return;
+        }
+        applyGate();
     })();
 }
 

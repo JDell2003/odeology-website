@@ -335,30 +335,45 @@
     }
 
     body.owner-messaging-page.owner-thread-active .owner-msg-wrap {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: none;
+      width: 100%;
       margin-top: calc(var(--navbar-height, 72px) + 8px);
       margin-bottom: 0;
-      padding-bottom: 0;
+      padding: 0 8px 0;
       min-height: calc(100dvh - var(--navbar-height, 72px) - 8px);
+    }
+
+    body.owner-messaging-page.owner-thread-active .owner-msg-head,
+    body.owner-messaging-page.owner-thread-active #owner-msg-list-card {
+      display: none !important;
     }
 
     body.owner-messaging-page.owner-thread-active #owner-msg-thread-card {
       min-height: calc(100dvh - var(--navbar-height, 72px) - 22px);
       height: calc(100dvh - var(--navbar-height, 72px) - 22px);
+      border-radius: 14px 14px 0 0;
+      margin: 0;
     }
 
     body.owner-messaging-page.owner-thread-active #owner-msg-thread-list {
       min-height: 0;
       max-height: none;
       height: 100%;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
     }
 
     body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
-      position: sticky;
+      position: fixed;
+      left: 8px;
+      right: 8px;
       bottom: 0;
-      z-index: 25;
+      z-index: 85;
       background: #fff;
+      padding-top: 8px;
       padding-bottom: max(8px, env(safe-area-inset-bottom));
       border-top: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.08);
     }
 
     .owner-msg-mobile-compose {
@@ -862,6 +877,11 @@
         font-size: 16px;
       }
 
+      #owner-msg-mobile-camera.owner-msg-icon-btn.is-send {
+        color: var(--ios-blue);
+        font-weight: 800;
+      }
+
       .owner-msg-mobile-action {
         width: 4.5vh;
         width: 4.5dvh;
@@ -1067,7 +1087,7 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-03-05-owner-15"></script>
-  <script src="js/ownerMessaging.js?v=2026-03-08-owner-thread-bottom-21"></script>
+  <script src="js/main.js?v=2026-03-08-auth-persist-1"></script>
+  <script src="js/ownerMessaging.js?v=2026-03-08-owner-camera-send-22"></script>
 </body>
 </html>

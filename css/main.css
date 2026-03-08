@@ -5956,6 +5956,35 @@ body.auth-gated .auth-backdrop {
     color: #f8e3b0;
 }
 
+.friends-warning-contacts {
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.friends-warning-contact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 214, 117, 0.55);
+    background: rgba(255, 247, 219, 0.85);
+    color: #5a3a03;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-decoration: none;
+    padding: 0.18rem 0.5rem;
+}
+
+.friends-warning-contact:hover {
+    background: rgba(255, 247, 219, 0.96);
+    border-color: rgba(255, 214, 117, 0.75);
+    color: #402701;
+}
+
 .friends-warning-tag {
     font-size: 0.72rem;
     font-weight: 800;
