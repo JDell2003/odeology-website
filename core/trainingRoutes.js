@@ -2912,6 +2912,26 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_events_type ON app_training_events(event_type);');
 
     await safeQuery(`
+      CREATE TABLE IF NOT EXISTS app_training_user_workouts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        exercise_id text NOT NULL,
+        name text NOT NULL,
+        category text NOT NULL DEFAULT 'strength',
+        equipment text NOT NULL DEFAULT '',
+        level text NOT NULL DEFAULT 'beginner',
+        primary_muscles jsonb NOT NULL DEFAULT '[]'::jsonb,
+        secondary_muscles jsonb NOT NULL DEFAULT '[]'::jsonb,
+        instructions jsonb NOT NULL DEFAULT '[]'::jsonb,
+        image_url text NOT NULL DEFAULT ''
+      );
+    `);
+    await safeQuery('CREATE UNIQUE INDEX IF NOT EXISTS uq_app_training_user_workouts_user_exercise_id ON app_training_user_workouts(user_id, exercise_id);');
+    await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_user_workouts_user_created ON app_training_user_workouts(user_id, created_at DESC);');
+
+    await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_daily_checkins (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
@@ -3222,6 +3242,151 @@ function normalizeCustomPlanDays(rawDays, dbRowsById) {
     if (out.length >= 6) break;
   }
   return out;
+}
+
+function normalizeCustomWorkoutLevel(raw) {
+  const level = String(raw || '').trim().toLowerCase();
+  if (level === 'intermediate' || level === 'expert' || level === 'beginner') return level;
+  return 'beginner';
+}
+
+function normalizeCustomWorkoutImageUrl(raw) {
+  const value = safeText(raw, 480) || '';
+  if (!value) return '';
+  if (!/^https?:\/\/\S+$/i.test(value)) return '';
+  return value;
+}
+
+function normalizeUserCustomWorkoutEntry(payload, { fixedExerciseId = null } = {}) {
+  const name = safeText(payload?.name, 160);
+  if (!name) return { ok: false, error: 'Workout name is required' };
+
+  let baseExerciseId = slugifyExerciseId(fixedExerciseId || payload?.exerciseId || name);
+  if (!fixedExerciseId && baseExerciseId && !/^custom_/i.test(baseExerciseId)) {
+    baseExerciseId = `custom_${baseExerciseId}`;
+  }
+  if (!baseExerciseId) return { ok: false, error: 'Invalid workout id' };
+
+  const primaryMuscles = asTextArray(payload?.primaryMuscles || payload?.primaryMuscle, {
+    maxItems: 6,
+    maxLen: 48
+  })
+    .map((x) => String(x || '').trim().toLowerCase())
+    .filter(Boolean);
+  if (!primaryMuscles.length) return { ok: false, error: 'Primary muscle is required' };
+
+  const secondaryMuscles = asTextArray(payload?.secondaryMuscles, {
+    maxItems: 8,
+    maxLen: 48
+  })
+    .map((x) => String(x || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  const instructions = asTextArray(payload?.instructions, {
+    maxItems: 20,
+    maxLen: 300
+  });
+
+  const entry = {
+    exerciseId: baseExerciseId,
+    name,
+    category: normalizeWorkoutCategory(payload?.category),
+    equipment: safeText(payload?.equipment, 80) || '',
+    level: normalizeCustomWorkoutLevel(payload?.level),
+    primaryMuscles,
+    secondaryMuscles,
+    instructions,
+    imageUrl: normalizeCustomWorkoutImageUrl(payload?.imageUrl)
+  };
+  return { ok: true, entry };
+}
+
+function formatUserCustomWorkoutRow(row) {
+  const imageUrl = safeText(row?.image_url, 480) || '';
+  return {
+    id: String(row?.exercise_id || ''),
+    name: String(row?.name || row?.exercise_id || 'Custom workout'),
+    category: String(row?.category || 'strength'),
+    equipment: String(row?.equipment || ''),
+    level: String(row?.level || 'beginner'),
+    primaryMuscles: Array.isArray(row?.primary_muscles) ? row.primary_muscles : [],
+    secondaryMuscles: Array.isArray(row?.secondary_muscles) ? row.secondary_muscles : [],
+    instructions: Array.isArray(row?.instructions) ? row.instructions : [],
+    imageUrl,
+    images: imageUrl ? [imageUrl] : [],
+    isCustom: true,
+    createdAt: row?.created_at || null,
+    updatedAt: row?.updated_at || null
+  };
+}
+
+async function listUserCustomWorkouts(userId) {
+  const result = await db.query(
+    `
+      SELECT exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, created_at, updated_at
+      FROM app_training_user_workouts
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 400;
+    `,
+    [userId]
+  );
+  return (result.rows || []).map((row) => formatUserCustomWorkoutRow(row));
+}
+
+async function createUserCustomWorkout(userId, payload) {
+  const normalized = normalizeUserCustomWorkoutEntry(payload || {});
+  if (!normalized.ok) return normalized;
+
+  let exerciseId = normalized.entry.exerciseId;
+  const baseId = exerciseId;
+  for (let i = 0; i < 80; i += 1) {
+    const probe = await db.query(
+      'SELECT 1 FROM app_training_user_workouts WHERE user_id = $1 AND exercise_id = $2 LIMIT 1;',
+      [userId, exerciseId]
+    );
+    if (!probe.rows?.length) break;
+    exerciseId = `${baseId}_${i + 2}`;
+  }
+
+  const inserted = await db.query(
+    `
+      INSERT INTO app_training_user_workouts (
+        user_id, exercise_id, name, category, equipment, level,
+        primary_muscles, secondary_muscles, instructions, image_url
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10)
+      RETURNING exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, created_at, updated_at;
+    `,
+    [
+      userId,
+      exerciseId,
+      normalized.entry.name,
+      normalized.entry.category,
+      normalized.entry.equipment,
+      normalized.entry.level,
+      JSON.stringify(normalized.entry.primaryMuscles),
+      JSON.stringify(normalized.entry.secondaryMuscles),
+      JSON.stringify(normalized.entry.instructions),
+      normalized.entry.imageUrl
+    ]
+  );
+  return { ok: true, item: formatUserCustomWorkoutRow(inserted.rows?.[0] || {}) };
+}
+
+async function deleteUserCustomWorkout(userId, exerciseId) {
+  const id = safeText(exerciseId, 180);
+  if (!id) return { ok: false, error: 'Missing exercise id' };
+  const result = await db.query(
+    `
+      DELETE FROM app_training_user_workouts
+      WHERE user_id = $1 AND lower(exercise_id) = lower($2)
+      RETURNING exercise_id;
+    `,
+    [userId, id]
+  );
+  if (!result.rows?.length) return { ok: false, error: 'Custom workout not found' };
+  return { ok: true };
 }
 
 function buildCustomWorkoutPlan({ discipline, experience, templateDays, preferredWeekdays }) {
@@ -3797,6 +3962,7 @@ async function trainingRoutes(req, res, url) {
   }
 
   const workoutDbItemMatch = pathname.match(/^\/api\/training\/workout-database\/([^/]+)$/);
+  const customWorkoutItemMatch = pathname.match(/^\/api\/training\/custom-workouts\/([^/]+)$/);
 
   if (pathname === '/api/training/workout-database' && req.method === 'GET') {
     try {
@@ -3961,6 +4127,43 @@ async function trainingRoutes(req, res, url) {
 
   const user = await resolveUserFromSession(req);
   if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+
+    if (pathname === '/api/training/custom-workouts' && req.method === 'GET') {
+      try {
+        const items = await listUserCustomWorkouts(user.id);
+        return sendJson(res, 200, { ok: true, items });
+      } catch (err) {
+        return handleTrainingDbFailure(res, err, 'training-custom-workouts-list', 'Failed to load custom workouts');
+      }
+    }
+
+    if (pathname === '/api/training/custom-workouts' && req.method === 'POST') {
+      let payload;
+      try {
+        payload = await readJsonBody(req);
+      } catch (err) {
+        return sendJson(res, 400, { ok: false, error: err.message });
+      }
+      try {
+        const created = await createUserCustomWorkout(user.id, payload || {});
+        if (!created.ok) return sendJson(res, 400, { ok: false, error: created.error || 'Could not create custom workout' });
+        return sendJson(res, 201, { ok: true, item: created.item });
+      } catch (err) {
+        return handleTrainingDbFailure(res, err, 'training-custom-workouts-create', 'Failed to save custom workout');
+      }
+    }
+
+    if (customWorkoutItemMatch && req.method === 'DELETE') {
+      const exerciseId = decodeURIComponent(customWorkoutItemMatch[1] || '').trim();
+      if (!exerciseId) return sendJson(res, 400, { ok: false, error: 'Missing exercise id' });
+      try {
+        const removed = await deleteUserCustomWorkout(user.id, exerciseId);
+        if (!removed.ok) return sendJson(res, 404, { ok: false, error: removed.error || 'Custom workout not found' });
+        return sendJson(res, 200, { ok: true });
+      } catch (err) {
+        return handleTrainingDbFailure(res, err, 'training-custom-workouts-delete', 'Failed to delete custom workout');
+      }
+    }
 
     if (pathname === '/api/training/state' && req.method === 'GET') {
       const profile = await getProfile(user.id);
