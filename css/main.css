@@ -12761,18 +12761,27 @@ html[data-theme="light"] .avatar-cropper-viewport {
 
 .checkin-actions {
     margin-top: 12px;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "status status"
+        "clear save";
+    align-items: center;
     gap: 10px;
 }
 
-.checkin-actions-left,
-.checkin-actions-right {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+.checkin-autosave-status {
+    grid-area: status;
+}
+
+.checkin-clear-btn {
+    grid-area: clear;
+    justify-self: start;
+}
+
+.checkin-save-btn {
+    grid-area: save;
+    justify-self: end;
 }
 
 .checkin-btn-hidden {
@@ -12792,15 +12801,7 @@ html[data-theme="light"] .avatar-cropper-viewport {
     .checkin-grid { grid-template-columns: 1fr; }
     .checkin-day { padding: 8px 4px; }
     .checkin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .checkin-actions-left,
-    .checkin-actions-right {
-        width: 100%;
-        justify-content: space-between;
-    }
-    .checkin-autosave-status {
-        width: 100%;
-        justify-content: center;
-    }
+    .checkin-actions { grid-template-columns: 1fr auto; }
     .checkin-macro-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .checkin-meals-topline {
         flex-direction: column;

@@ -9313,13 +9313,9 @@ function ensureBasicCheckinModal() {
                 </div>
             </div>
             <div class="checkin-actions">
-                <div class="checkin-actions-left">
-                    <div class="checkin-autosave-status ns-muted tiny" id="checkin-autosave-status">Autosave is on.</div>
-                    <button class="btn btn-ghost" type="button" id="checkin-clear">Clear</button>
-                </div>
-                <div class="checkin-actions-right">
-                    <button class="btn btn-primary" type="button" id="checkin-save">Save check-in</button>
-                </div>
+                <div class="checkin-autosave-status ns-muted tiny" id="checkin-autosave-status">Autosave is on.</div>
+                <button class="btn btn-ghost checkin-clear-btn" type="button" id="checkin-clear">Clear</button>
+                <button class="btn btn-primary checkin-save-btn" type="button" id="checkin-save">Save check-in</button>
             </div>
         </div>
     `;
