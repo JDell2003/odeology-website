@@ -6250,6 +6250,8 @@ function toggleSharePopover(force) {
       el('div', { class: 'share-workout-members-list' },
         acceptedShareVisible.map((member) => {
           const memberName = String(member?.displayName || member?.username || 'Account').trim() || 'Account';
+          const memberId = String(member?.id || '').trim();
+          const isKickingMember = Boolean(memberId) && shareUi.kicking.has(memberId);
           const initials = memberName
             .split(/\s+/)
             .filter(Boolean)
@@ -6257,13 +6259,32 @@ function toggleSharePopover(force) {
             .map((part) => part.charAt(0))
             .join('')
             .toUpperCase();
-          return el('div', {
-            class: 'share-workout-member-avatar',
-            title: member?.username ? `${memberName} (@${member.username})` : memberName
+          if (!memberId) {
+            return el('div', {
+              class: 'share-workout-member-avatar',
+              title: member?.username ? `${memberName} (@${member.username})` : memberName
+            },
+            member?.photoDataUrl
+              ? el('img', { src: member.photoDataUrl, alt: memberName })
+              : (initials || 'O'));
+          }
+          return el('button', {
+            type: 'button',
+            class: `share-workout-member-avatar share-workout-member-btn${isKickingMember ? ' is-kicking' : ''}`,
+            title: member?.username ? `${memberName} (@${member.username})` : memberName,
+            disabled: isKickingMember ? 'disabled' : null,
+            'aria-label': `Kick ${memberName} from workout`,
+            onclick: async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isKickingMember) return;
+              await removeAcceptedShareForAccount(member);
+            }
           },
           member?.photoDataUrl
             ? el('img', { src: member.photoDataUrl, alt: memberName })
-            : (initials || 'O'));
+            : (initials || 'O'),
+          el('span', { class: 'share-workout-member-kick', 'aria-hidden': 'true' }, 'x'));
         }),
         acceptedShareOverflow > 0
           ? el('div', { class: 'share-workout-member-avatar extra', title: `${acceptedShareOverflow} more` }, `+${acceptedShareOverflow}`)
@@ -6320,24 +6341,12 @@ function toggleSharePopover(force) {
                 el('div', { class: 'share-workout-handle' }, username || ' ')
               ),
               isAccepted
-                ? el('div', { class: 'share-workout-row-actions' },
-                  el('span', {
-                    class: `share-workout-add-btn accepted${isKicking ? ' requesting' : ''}`,
-                    'aria-hidden': 'true'
-                  }, isKicking ? 'Removing...' : 'Accepted'),
-                  el('button', {
-                    type: 'button',
-                    class: 'share-workout-kick-btn',
-                    disabled: isKicking ? 'disabled' : null,
-                    'aria-label': `Kick ${name} from workout`,
-                    onclick: async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!key || isKicking) return;
-                      await removeAcceptedShareForAccount(acct);
-                    }
-                  }, 'x')
-                )
+                ? el('button', {
+                  type: 'button',
+                  class: `share-workout-add-btn accepted${isKicking ? ' requesting' : ''}`,
+                  disabled: 'disabled',
+                  'aria-label': `${name} accepted your request`
+                }, isKicking ? 'Removing...' : 'Accepted')
                 : el('button', {
                   type: 'button',
                   class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,

@@ -17556,6 +17556,7 @@ html[data-theme="light"] .ode-tour-btn.primary {
 .share-workout-member-avatar {
     width: 2.12rem;
     height: 2.12rem;
+    position: relative;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--training-accent) 30%, var(--training-border));
     background: color-mix(in srgb, var(--training-surface-2) 92%, #000);
@@ -17568,6 +17569,39 @@ html[data-theme="light"] .ode-tour-btn.primary {
     margin-left: -0.4rem;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.share-workout-member-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--training-accent) 30%, var(--training-border));
+}
+
+.share-workout-member-btn:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.share-workout-member-kick {
+    position: absolute;
+    right: 0.12rem;
+    top: 0.12rem;
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    background: #c72525;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.54rem;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
 }
 
 .share-workout-member-avatar:first-child {
@@ -17941,6 +17975,12 @@ html[data-theme="light"] .ode-tour-btn.primary {
         height: 1.18rem;
         min-width: 1.18rem;
         min-height: 1.18rem;
+    }
+
+    .share-workout-member-kick {
+        width: 0.66rem;
+        height: 0.66rem;
+        font-size: 0.5rem;
     }
 }
 
