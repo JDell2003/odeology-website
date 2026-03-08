@@ -1635,7 +1635,15 @@ const serveStatic = (req, res, pathname) => {
 };
 
 const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim();
+    const hostHeader = String(req.headers.host || '').trim();
+    const baseHost = forwardedHost || hostHeader || `localhost:${listenPort || PORT || 3000}`;
+    let url;
+    try {
+        url = new URL(req.url || '/', `http://${baseHost}`);
+    } catch {
+        url = new URL(req.url || '/', `http://localhost:${listenPort || PORT || 3000}`);
+    }
 
     if (url.pathname === '/__dev/status' && req.method === 'GET') {
         return sendJson(res, 200, {
@@ -2235,6 +2243,7 @@ const server = http.createServer(async (req, res) => {
 const REQUESTED_PORT = process.env.PORT;
 let listenPort = Number(PORT);
 if (!Number.isFinite(listenPort) || listenPort <= 0) listenPort = 3000;
+const listenHost = String(process.env.HOST || '0.0.0.0').trim() || '0.0.0.0';
 
 server.on('error', (err) => {
     if (err && err.code === 'EADDRINUSE') {
@@ -2248,8 +2257,8 @@ server.on('error', (err) => {
     process.exit(1);
 });
 
-server.listen(listenPort, () => {
-    console.log(`Server running on http://localhost:${listenPort} (pid ${process.pid})`);
+server.listen(listenPort, listenHost, () => {
+    console.log(`Server running on http://${listenHost}:${listenPort} (pid ${process.pid})`);
     console.log('[asset] main.js resolved path:', path.resolve(PUBLIC_DIR, 'js', 'main.js'));
 });
 
