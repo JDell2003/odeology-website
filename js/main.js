@@ -12441,6 +12441,7 @@ async function fetchAuthMeSnapshot() {
             networkOk: true,
             status: Number(resp.status || 0),
             user: data?.user || null,
+            dbUnavailable: Boolean(data?.dbUnavailable),
             data
         };
     } catch (err) {
@@ -12448,6 +12449,7 @@ async function fetchAuthMeSnapshot() {
             networkOk: false,
             status: 0,
             user: null,
+            dbUnavailable: false,
             data: null,
             error: err || null
         };
@@ -14012,11 +14014,15 @@ function initAuthUi() {
             setSignedInUi(snap.user, snap.data || null);
             return;
         }
+        const fallbackUser = readAuthUserHint();
+        if (snap?.dbUnavailable && fallbackUser) {
+            setSignedInUi(fallbackUser, null);
+            return;
+        }
         if (snap?.networkOk) {
             setSignedOutUi();
             return;
         }
-        const fallbackUser = readAuthUserHint();
         if (fallbackUser) {
             setSignedInUi(fallbackUser, null);
             return;
@@ -14991,6 +14997,10 @@ function initAuthGate() {
         const snap = await getAuthMeBootstrapSnapshot();
         if (snap?.user) {
             clearGate();
+            return;
+        }
+        if (snap?.dbUnavailable) {
+            if (readAuthUserHint()) clearGate();
             return;
         }
         if (snap?.networkOk) {
