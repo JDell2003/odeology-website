@@ -669,11 +669,11 @@
         right: 8px;
         bottom: 30px;
         z-index: 85;
-        background: #fff;
-        padding-top: 8px;
-        padding-bottom: max(8px, env(safe-area-inset-bottom));
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
-        box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.08);
+        background: transparent;
+        padding-top: 0;
+        padding-bottom: max(4px, env(safe-area-inset-bottom));
+        border-top: 0;
+        box-shadow: none;
       }
 
       body.owner-messaging-page.owner-thread-active #control-panel {
@@ -797,6 +797,12 @@
         max-height: 60dvh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+      }
+
+      .owner-msg-thread-list > .owner-msg-muted {
+        display: block;
+        max-height: calc(100% - 92px);
+        overflow-y: auto;
       }
 
       .owner-msg-row {
