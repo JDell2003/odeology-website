@@ -3951,6 +3951,35 @@ async function trainingRoutes(req, res, url) {
       latestStatusByUserId[toUserId] = status;
       if (status === 'pending') targetUserIds.push(toUserId);
     }
+    const acceptedIds = Object.entries(latestStatusByUserId)
+      .filter(([, status]) => String(status || '').toLowerCase() === 'accepted')
+      .map(([id]) => String(id || '').trim())
+      .filter((id) => isUuid(id));
+    let acceptedUsers = [];
+    if (acceptedIds.length) {
+      const usersResult = await db.query(
+        `
+          SELECT u.id,
+                 u.username,
+                 u.display_name,
+                 u.last_seen,
+                 p.profile->'profile'->>'photoDataUrl' AS photo
+          FROM app_users u
+          LEFT JOIN app_user_profiles p ON p.user_id = u.id
+          WHERE u.id = ANY($1::uuid[])
+          LIMIT 2000;
+        `,
+        [acceptedIds]
+      );
+      acceptedUsers = (usersResult.rows || []).map((row) => ({
+        id: row.id,
+        username: row.username || null,
+        displayName: row.display_name || row.username || 'Account',
+        photoDataUrl: row.photo || null,
+        lastSeen: row.last_seen || null,
+        isOnline: isLastSeenOnline(row.last_seen)
+      }));
+    }
     const acceptedCount = Object.values(latestStatusByUserId).filter((s) => s === 'accepted').length;
     const rejectedCount = Object.values(latestStatusByUserId).filter((s) => s === 'rejected').length;
     logShareRoute('share.outgoing.result', {
@@ -3959,7 +3988,7 @@ async function trainingRoutes(req, res, url) {
       acceptedCount,
       rejectedCount
     });
-    return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId });
+    return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId, acceptedUsers });
   }
 
   if (pathname === '/api/training/share/remove' && req.method === 'POST') {

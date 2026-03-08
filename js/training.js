@@ -943,7 +943,32 @@
       shareUi.latestStatus.set(id, status);
     }
 
+    const acceptedUsers = Array.isArray(payload?.acceptedUsers) ? payload.acceptedUsers : [];
+    for (const row of acceptedUsers) {
+      const id = String(row?.id || '').trim();
+      if (!id) continue;
+      const prev = shareUi.accountIndex.get(id) || {};
+      shareUi.accountIndex.set(id, {
+        ...prev,
+        id,
+        username: row?.username != null ? String(row.username) : (prev?.username || null),
+        displayName: row?.displayName != null ? String(row.displayName) : (prev?.displayName || prev?.username || 'Account'),
+        photoDataUrl: row?.photoDataUrl || prev?.photoDataUrl || null,
+        isOnline: row?.isOnline === true,
+        lastSeen: row?.lastSeen || prev?.lastSeen || null
+      });
+    }
+
     return pendingSet;
+  }
+
+  async function refreshShareOutgoingState({ rerender = true } = {}) {
+    if (!state.auth.user) return false;
+    const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+    if (!outgoing.ok || !outgoing.json?.ok) return false;
+    syncShareOutgoingState(outgoing.json);
+    if (rerender) render();
+    return true;
   }
 
   function showShareRequestSentToast(sentCount = 1) {
@@ -1010,10 +1035,7 @@
         }
         shareOutgoingSyncInFlight = true;
         try {
-          const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
-          if (!outgoing.ok || !outgoing.json?.ok) return;
-          syncShareOutgoingState(outgoing.json);
-          render();
+          await refreshShareOutgoingState({ rerender: true });
         } finally {
           shareOutgoingSyncInFlight = false;
         }
@@ -1022,10 +1044,7 @@
       if (!shareUi.bootstrapRequested) return;
       shareOutgoingSyncInFlight = true;
       try {
-        const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
-        if (!outgoing.ok || !outgoing.json?.ok) return;
-        syncShareOutgoingState(outgoing.json);
-        render();
+        await refreshShareOutgoingState({ rerender: true });
       } finally {
         shareOutgoingSyncInFlight = false;
       }
@@ -6227,7 +6246,14 @@ function toggleSharePopover(force) {
     const canShare = !isPreview && Boolean(state.auth.user);
     if (canShare && !shareUi.bootstrapRequested && !shareUi.loading) {
       shareUi.bootstrapRequested = true;
-      loadShareAccounts('');
+      if (!shareOutgoingSyncInFlight) {
+        shareOutgoingSyncInFlight = true;
+        refreshShareOutgoingState({ rerender: true })
+          .catch(() => false)
+          .finally(() => {
+            shareOutgoingSyncInFlight = false;
+          });
+      }
     }
     const acceptedShareMembers = [];
     for (const [rawId, status] of shareUi.latestStatus.entries()) {
