@@ -660,7 +660,7 @@
         min-height: 0;
         max-height: none;
         height: 100%;
-        padding-bottom: calc(96px + env(safe-area-inset-bottom));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
 
       body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
@@ -993,7 +993,7 @@
       body.owner-mobile-thread #owner-msg-thread-list {
         min-height: 0;
         max-height: none;
-        height: 100%;
+        height: calc(100% - 78px);
       }
 
       body.owner-messaging-page:not(.owner-mobile-thread) #owner-msg-thread-card {
