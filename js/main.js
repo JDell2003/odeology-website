@@ -4011,6 +4011,7 @@ function initNutritionFunnel() {
     const entry = document.getElementById('ns-entry');
     const flow = document.getElementById('ns-flow');
     if (!entry || !flow) return;
+    let deepStartRequested = false;
 
     // Allow deep-linking into the nutrition + grocery generator funnel.
     // Used by the left control panel "Grocery List Generator" to restart from the beginning.
@@ -4018,7 +4019,9 @@ function initNutritionFunnel() {
         const url = new URL(window.location.href);
         const params = url.searchParams;
         const shouldResetGrocery = params.get('reset') === 'grocery';
-        const shouldStart = params.get('ns') === 'start' || url.hash === '#ns-entry';
+        const shouldAutoStart = params.get('ns') === 'start';
+        const shouldScrollToEntry = shouldAutoStart || url.hash === '#ns-entry';
+        deepStartRequested = shouldAutoStart;
 
         if (shouldResetGrocery) {
             try {
@@ -4039,17 +4042,17 @@ function initNutritionFunnel() {
             resetNutritionFlow();
         }
 
-        if (shouldStart) {
+        if (shouldScrollToEntry) {
             window.setTimeout(() => {
                 try {
-                    document.getElementById('ns-entry')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById('ns-entry')?.scrollIntoView({ behavior: 'auto', block: 'start' });
                 } catch {
                     // ignore
                 }
             }, 60);
         }
 
-        if (shouldResetGrocery || shouldStart) {
+        if (shouldResetGrocery || shouldAutoStart || url.hash === '#ns-entry') {
             // Prevent re-running on refresh/back.
             params.delete('reset');
             params.delete('ns');
@@ -4167,10 +4170,10 @@ function initNutritionFunnel() {
     // Deep-link support: allow other pages to send users straight into the questions flow.
     try {
         const u = new URL(window.location.href);
-        const wantsStart = (u.searchParams.get('ns') || '').toLowerCase() === 'start';
+        const wantsStart = deepStartRequested || (u.searchParams.get('ns') || '').toLowerCase() === 'start';
         if (wantsStart) startFlow();
     } catch {
-        // ignore
+        if (deepStartRequested) startFlow();
     }
 
     let nsAuthUser = null;
