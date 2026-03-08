@@ -491,12 +491,12 @@
             flex: 1;
             min-width: 0;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 4px;
             border: 1px solid rgba(0, 0, 0, 0.12);
             border-radius: 999px;
             background: #fff;
-            padding: 4px 8px 6px;
+            padding: 2px 8px;
         }
 
         .user-msg-mobile-input {
@@ -507,14 +507,17 @@
             color: #1f1f1f;
             font-size: 15px;
             outline: none;
-            line-height: 1.28;
+            line-height: 1.24;
             resize: none;
             overflow-y: hidden;
             white-space: pre-wrap;
             word-break: break-word;
-            min-height: 24px;
+            min-height: 22px;
             max-height: 90px;
-            padding: 7px 4px 5px;
+            padding: 4px;
+            margin: 0;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         .user-msg-compose-mobile-meta {
@@ -750,13 +753,14 @@
                 background: #fff;
                 min-height: 40px;
                 max-height: none;
-                padding: 2px 8px 6px;
+                padding: 2px 8px;
             }
 
             .user-msg-mobile-input {
                 color: var(--ios-text);
                 min-height: 24px;
                 max-height: 92px;
+                padding: 4px;
             }
 
             #user-msg-mobile-attach.user-msg-icon-btn,
