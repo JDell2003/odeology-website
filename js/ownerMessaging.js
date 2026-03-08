@@ -392,7 +392,12 @@
     }
 
     if (!state.messages.length) {
-      listEl.innerHTML = '<div class="owner-msg-muted">No messages yet. Send the first one.</div>';
+      listEl.innerHTML = `
+        <div class="owner-msg-empty-state" role="status" aria-live="polite">
+          <div class="owner-msg-empty-icon" aria-hidden="true">🏋️</div>
+          <div class="owner-msg-empty-text">Start a conversation with your teammate.</div>
+        </div>
+      `;
       updateMobileActionUi();
       return;
     }
