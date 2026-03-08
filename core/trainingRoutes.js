@@ -126,10 +126,26 @@ async function touchUserLastSeen(userId) {
 
 const mediaEnrichInFlight = new Set();
 const QUOTE_BANK_PATH = path.join(__dirname, 'quoteBank.json');
-const WORKOUT_DB_PATH = path.join(__dirname, '..', 'free-exercise-db', 'dist', 'exercises.json');
-const WORKOUT_DB_IMAGE_ROOT = path.join(__dirname, '..', 'free-exercise-db', 'exercises');
+const WORKOUT_DB_PRIMARY_PATH = path.join(__dirname, '..', 'free-exercise-db', 'dist', 'exercises.json');
+const WORKOUT_DB_FALLBACK_PATH = path.join(__dirname, '..', 'data', 'workout-database.json');
+const WORKOUT_DB_PRIMARY_IMAGE_ROOT = path.join(__dirname, '..', 'free-exercise-db', 'exercises');
+const WORKOUT_DB_FALLBACK_IMAGE_ROOT = path.join(__dirname, '..', 'data', 'workout-images');
 const WORKOUT_UPLOAD_MAX_IMAGES = 2;
 const WORKOUT_UPLOAD_MAX_BYTES = 900_000;
+
+function resolveWorkoutDbReadPaths() {
+  return [WORKOUT_DB_PRIMARY_PATH, WORKOUT_DB_FALLBACK_PATH];
+}
+
+function resolveWorkoutDbWritePath() {
+  if (fs.existsSync(WORKOUT_DB_PRIMARY_PATH)) return WORKOUT_DB_PRIMARY_PATH;
+  return WORKOUT_DB_FALLBACK_PATH;
+}
+
+function resolveWorkoutImageRoot() {
+  if (fs.existsSync(WORKOUT_DB_PRIMARY_IMAGE_ROOT)) return WORKOUT_DB_PRIMARY_IMAGE_ROOT;
+  return WORKOUT_DB_FALLBACK_IMAGE_ROOT;
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
@@ -430,16 +446,30 @@ function normalizeWorkoutCategory(raw) {
 }
 
 function readWorkoutDatabase() {
-  const raw = fs.readFileSync(WORKOUT_DB_PATH, 'utf8');
-  const json = JSON.parse(raw);
-  return Array.isArray(json) ? json : [];
+  let parseError = null;
+  for (const candidate of resolveWorkoutDbReadPaths()) {
+    if (!fs.existsSync(candidate)) continue;
+    try {
+      const raw = fs.readFileSync(candidate, 'utf8');
+      const json = JSON.parse(raw);
+      return Array.isArray(json) ? json : [];
+    } catch (err) {
+      parseError = err;
+    }
+  }
+  if (parseError) {
+    console.error('[workout-db] Could not parse dataset:', parseError?.message || parseError);
+  }
+  return [];
 }
 
 function writeWorkoutDatabase(list) {
   const normalized = Array.isArray(list) ? list : [];
-  const tmpPath = `${WORKOUT_DB_PATH}.tmp`;
+  const targetPath = resolveWorkoutDbWritePath();
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  const tmpPath = `${targetPath}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(normalized, null, 2), 'utf8');
-  fs.renameSync(tmpPath, WORKOUT_DB_PATH);
+  fs.renameSync(tmpPath, targetPath);
   invalidateDatasetCache();
 }
 
@@ -492,7 +522,7 @@ function resolveWorkoutImages({ exerciseId, existingImages, imageUploads, replac
 
   const safeExerciseId = slugifyExerciseId(exerciseId);
   if (!safeExerciseId) throw new Error('Invalid exercise id for image upload');
-  const exerciseDir = path.join(WORKOUT_DB_IMAGE_ROOT, safeExerciseId);
+  const exerciseDir = path.join(resolveWorkoutImageRoot(), safeExerciseId);
   fs.mkdirSync(exerciseDir, { recursive: true });
 
   const written = [];

@@ -676,6 +676,7 @@
 
   const shareUi = {
     open: false,
+    mode: 'app',
     loading: false,
     loaded: false,
     bootstrapRequested: false,
@@ -3433,12 +3434,14 @@ function toFreeExerciseDbRemotePath(src) {
       if (popover && popover.contains(target)) return;
       if (anchor && anchor.contains(target)) return;
       shareUi.open = false;
+      shareUi.mode = 'app';
       render();
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && shareUi.open) {
         shareUi.open = false;
+        shareUi.mode = 'app';
         render();
       }
     });
@@ -3760,6 +3763,7 @@ function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
     if (shareUi.open) {
+      shareUi.mode = 'app';
       // Always refresh from server so "Requested" clears after receiver accepts/declines.
       loadShareAccounts(shareUi.query || '');
     }
@@ -4020,6 +4024,7 @@ function toggleSharePopover(force) {
       state.planRow = null;
       state.logs = [];
       shareUi.open = false;
+      shareUi.mode = 'app';
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
@@ -4045,6 +4050,7 @@ function toggleSharePopover(force) {
       state.planRow = null;
       state.logs = [];
       shareUi.open = false;
+      shareUi.mode = 'app';
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
@@ -4064,6 +4070,7 @@ function toggleSharePopover(force) {
     state.auth.user = meUser;
     shareEventsInFlight = false;
     shareUi.open = false;
+    shareUi.mode = 'app';
     shareUi.loaded = false;
     shareUi.bootstrapRequested = false;
     shareUi.accounts = [];
@@ -4093,6 +4100,7 @@ function toggleSharePopover(force) {
         state.planRow = null;
         state.logs = [];
         shareUi.open = false;
+        shareUi.mode = 'app';
         shareUi.loaded = false;
         shareUi.bootstrapRequested = false;
         shareUi.accounts = [];
@@ -6539,6 +6547,137 @@ function toggleSharePopover(force) {
       }, 250);
     };
 
+    const normalizeSmsPhone = (raw) => {
+      const src = String(raw || '').trim();
+      if (!src) return '';
+      const hasPlus = src.startsWith('+');
+      const digits = src.replace(/\D+/g, '');
+      if (!digits) return '';
+      return hasPlus ? `+${digits}` : digits;
+    };
+
+    const buildShareWorkoutLink = () => {
+      const origin = String(window.location?.origin || '').replace(/\/+$/, '') || '';
+      const inviter = String(
+        state.auth?.user?.displayName
+        || state.auth?.user?.username
+        || 'your friend'
+      ).trim();
+      const discipline = String(plan?.meta?.discipline || '').trim().toLowerCase() || 'training';
+      const days = Number(plan?.meta?.daysPerWeek) || 0;
+      const params = new URLSearchParams({
+        from: inviter,
+        via: 'sms',
+        discipline,
+        days: String(days || '')
+      });
+      return `${origin}/training.html?${params.toString()}`;
+    };
+
+    const buildShareWorkoutImageLink = () => {
+      const origin = String(window.location?.origin || '').replace(/\/+$/, '') || '';
+      return `${origin}/assets/hero-nutrition.jpg`;
+    };
+
+    const buildWorkoutPdfShareUrl = () => {
+      const raw = buildShareWorkoutLink();
+      try {
+        const u = new URL(raw);
+        u.searchParams.set('pdf', '1');
+        return u.toString();
+      } catch {
+        return raw;
+      }
+    };
+
+    const buildSmsInviteCopy = (acct) => {
+      const inviteeName = String(acct?.displayName || acct?.username || 'you').trim() || 'you';
+      const inviter = String(
+        state.auth?.user?.displayName
+        || state.auth?.user?.username
+        || 'your friend'
+      ).trim();
+      const discipline = String(plan?.meta?.discipline || 'training').trim().toUpperCase();
+      const days = Number(plan?.meta?.daysPerWeek) || 0;
+      const workoutLink = buildShareWorkoutLink();
+      const imageLink = buildShareWorkoutImageLink();
+      return [
+        `Yo ${inviteeName} — join ${inviter} on their workout in odeology_.`,
+        `Track your progress, stay accountable, and keep momentum (${discipline}${days ? `, ${days} days/week` : ''}).`,
+        `Join link: ${workoutLink}`,
+        `Preview image: ${imageLink}`
+      ].join('\n');
+    };
+
+    const openSmsInviteForAccount = (acct) => {
+      const name = String(acct?.displayName || acct?.username || 'friend').trim() || 'friend';
+      const phone = normalizeSmsPhone(acct?.phone || '');
+      if (!phone) {
+        shareUi.status = `${name} does not have a phone number linked.`;
+        render();
+        return;
+      }
+      const body = buildSmsInviteCopy(acct);
+      const smsUrl = `sms:${phone}?&body=${encodeURIComponent(body)}`;
+      shareUi.status = `Opening SMS invite for ${name}...`;
+      render();
+      window.location.href = smsUrl;
+    };
+
+    const openWorkoutPdfQrModal = () => {
+      const existing = document.getElementById('training-share-pdf-qr-modal');
+      if (existing) existing.remove();
+
+      const targetUrl = buildWorkoutPdfShareUrl();
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(targetUrl)}`;
+      const close = () => {
+        const node = document.getElementById('training-share-pdf-qr-modal');
+        if (node) node.remove();
+      };
+
+      const overlay = el('div', {
+        class: 'schedule-modal training-share-pdf-qr-modal',
+        id: 'training-share-pdf-qr-modal',
+        role: 'dialog',
+        'aria-modal': 'true'
+      },
+      el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close QR modal' }),
+      el('div', { class: 'schedule-modal-card' },
+        el('div', { class: 'schedule-modal-head' },
+          el('div', { class: 'schedule-modal-title' }, 'Workout PDF QR'),
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close QR modal' }, '×')
+        ),
+        el('div', { class: 'schedule-modal-body training-share-pdf-qr-body' },
+          el('div', { class: 'training-share-welcome-line' }, 'Scan this code to open the workout share link.'),
+          el('div', { class: 'training-share-pdf-qr-wrap' },
+            el('img', { class: 'training-share-pdf-qr-img', src: qrSrc, alt: 'Workout share QR code' })
+          ),
+          el('a', { class: 'training-share-pdf-link', href: targetUrl, target: '_blank', rel: 'noopener' }, targetUrl)
+        ),
+        el('div', { class: 'schedule-modal-actions' },
+          el('button', {
+            type: 'button',
+            class: 'btn btn-ghost',
+            onclick: async () => {
+              try {
+                await navigator.clipboard.writeText(targetUrl);
+                shareUi.status = 'Share link copied.';
+                render();
+              } catch {
+                shareUi.status = 'Could not copy link.';
+                render();
+              }
+            }
+          }, 'Copy link'),
+          el('button', { type: 'button', class: 'btn btn-primary', onclick: printPlanPdf }, 'Open PDF'),
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: close }, 'Close')
+        )
+      ));
+      overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', close);
+      overlay.querySelector('.schedule-modal-close')?.addEventListener('click', close);
+      document.body.appendChild(overlay);
+    };
+
     const canShare = !isPreview && Boolean(state.auth.user);
     if (canShare && !shareUi.bootstrapRequested && !shareUi.loading) {
       shareUi.bootstrapRequested = true;
@@ -6614,6 +6753,11 @@ function toggleSharePopover(force) {
       )
       )
       : null;
+    const shareMode = String(shareUi.mode || 'app').trim().toLowerCase();
+    const isAppShareMode = shareMode === 'app';
+    const isSmsShareMode = shareMode === 'sms';
+    const isPdfShareMode = shareMode === 'pdf';
+
     const shareListItems = shareUi.loading
       ? []
       : (shareUi.accounts && shareUi.accounts.length
@@ -6635,6 +6779,8 @@ function toggleSharePopover(force) {
             const isAccepted = latestStatus === 'accepted';
             const isDeclined = latestStatus === 'declined';
             const isLocked = isRequesting || isRequested || isAccepted || isDeclined;
+            const smsPhone = normalizeSmsPhone(acct?.phone || '');
+            const smsReady = Boolean(smsPhone);
             const actionLabel = isRequesting
               ? 'Requesting...'
               : isRequested
@@ -6644,6 +6790,7 @@ function toggleSharePopover(force) {
                   : isDeclined
                     ? 'Declined'
                     : 'Add';
+            const smsLabel = smsReady ? 'SMS' : 'No Phone';
             return el('div', {
               class: `share-workout-item${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,
               'data-user-id': key || null,
@@ -6662,7 +6809,22 @@ function toggleSharePopover(force) {
                 el('div', { class: 'share-workout-name' }, name),
                 el('div', { class: 'share-workout-handle' }, username || ' ')
               ),
-              isAccepted
+              !isAppShareMode
+                ? el('button', {
+                  type: 'button',
+                  class: `share-workout-add-btn${smsReady ? ' sms' : ' declined'}`,
+                  disabled: smsReady ? null : 'disabled',
+                  'aria-label': smsReady
+                    ? `Text workout invite link to ${name}`
+                    : `${name} has no phone number linked`,
+                  onclick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!smsReady) return;
+                    openSmsInviteForAccount(acct);
+                  }
+                }, smsLabel)
+                : isAccepted
                 ? el('button', {
                   type: 'button',
                   class: `share-workout-add-btn accepted${isKicking ? ' requesting' : ''}`,
@@ -6853,24 +7015,76 @@ function toggleSharePopover(force) {
         class: `share-workout-popover${shareUi.open ? '' : ' hidden'}`,
         id: 'share-workout-popover'
       },
-        el('div', { class: 'share-workout-title' }, 'Share workout'),
-        el('div', { class: 'share-workout-search' },
-          el('input', {
-            type: 'text',
-            class: 'auth-input share-workout-input',
-            value: shareUi.query || '',
-            placeholder: 'Search friends',
-            oninput: (e) => {
-              shareUi.query = e.target.value;
-            },
-            onkeydown: (e) => {
-              if (e.key === 'Enter') loadShareAccounts(shareUi.query || '');
+        el('div', { class: 'share-workout-head-row' },
+          el('div', { class: 'share-workout-title' }, 'Share workout'),
+          el('div', {
+            class: 'share-workout-mode-toggle',
+            role: 'tablist',
+            'aria-label': 'Share mode'
+          },
+          el('button', {
+            type: 'button',
+            class: `share-workout-mode-btn${isAppShareMode ? ' active' : ''}`,
+            role: 'tab',
+            'aria-selected': isAppShareMode ? 'true' : 'false',
+            onclick: (e) => {
+              e.preventDefault();
+              shareUi.mode = 'app';
+              render();
             }
-          }),
-          el('button', { type: 'button', class: 'btn btn-ghost share-workout-search-btn', onclick: () => loadShareAccounts(shareUi.query || '') }, 'Search')
+          }, 'APP'),
+          el('button', {
+            type: 'button',
+            class: `share-workout-mode-btn${isSmsShareMode ? ' active' : ''}`,
+            role: 'tab',
+            'aria-selected': isSmsShareMode ? 'true' : 'false',
+            onclick: (e) => {
+              e.preventDefault();
+              shareUi.mode = 'sms';
+              render();
+            }
+          }, 'SMS'),
+          el('button', {
+            type: 'button',
+            class: `share-workout-mode-btn${isPdfShareMode ? ' active' : ''}`,
+            role: 'tab',
+            'aria-selected': isPdfShareMode ? 'true' : 'false',
+            onclick: (e) => {
+              e.preventDefault();
+              shareUi.mode = 'pdf';
+              render();
+              openWorkoutPdfQrModal();
+            }
+          }, 'PDF')
+          )
         ),
-        el('div', { class: 'share-workout-status' }, shareUi.status || ''),
-        el('div', { class: 'share-workout-list' }, shareListItems)
+        isPdfShareMode
+          ? el('div', { class: 'share-workout-pdf-panel' },
+            el('div', { class: 'share-workout-pdf-copy' }, 'Generate a workout PDF and share it with a QR code.'),
+            el('div', { class: 'share-workout-pdf-actions' },
+              el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'Open PDF'),
+              el('button', { type: 'button', class: 'btn btn-share-workout', onclick: openWorkoutPdfQrModal }, 'Show QR')
+            )
+          )
+          : [
+            el('div', { class: 'share-workout-search' },
+              el('input', {
+                type: 'text',
+                class: 'auth-input share-workout-input',
+                value: shareUi.query || '',
+                placeholder: isSmsShareMode ? 'Search friends for SMS' : 'Search friends',
+                oninput: (e) => {
+                  shareUi.query = e.target.value;
+                },
+                onkeydown: (e) => {
+                  if (e.key === 'Enter') loadShareAccounts(shareUi.query || '');
+                }
+              }),
+              el('button', { type: 'button', class: 'btn btn-ghost share-workout-search-btn', onclick: () => loadShareAccounts(shareUi.query || '') }, 'Search')
+            ),
+            el('div', { class: 'share-workout-status' }, shareUi.status || ''),
+            el('div', { class: 'share-workout-list' }, shareListItems)
+          ]
       )
     );
     const header = el('div', { class: 'training-card plan-topbar' },

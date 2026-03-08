@@ -506,6 +506,7 @@ async function socialRoutes(req, res, url) {
         SELECT f.friend_id AS id,
                u.username,
                u.display_name,
+               u.phone,
                u.last_seen,
                p.profile->'profile'->>'photoDataUrl' AS photo
         FROM app_friends f
@@ -522,6 +523,7 @@ async function socialRoutes(req, res, url) {
         id: row.id,
         username: row.username,
         displayName: row.display_name,
+        phone: row.phone || null,
         photoDataUrl: row.photo || null,
         lastSeen: row.last_seen || null,
         isOnline: isLastSeenOnline(row.last_seen)

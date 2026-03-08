@@ -17814,7 +17814,62 @@ html[data-theme="light"] .ode-tour-btn.primary {
 
 .share-workout-title {
     font-weight: 800;
+    margin-bottom: 0;
+}
+
+.share-workout-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem;
     margin-bottom: 0.55rem;
+}
+
+.share-workout-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    border: 1px solid var(--training-border);
+    border-radius: 999px;
+    padding: 0.12rem;
+    background: color-mix(in srgb, var(--training-surface-2) 88%, #fff);
+}
+
+.share-workout-mode-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.22rem 0.56rem;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--training-muted);
+    background: transparent;
+    cursor: pointer;
+}
+
+.share-workout-mode-btn.active {
+    color: #102033;
+    background: color-mix(in srgb, var(--training-accent) 22%, #fff);
+}
+
+.share-workout-pdf-panel {
+    border: 1px solid var(--training-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--training-surface-2) 80%, #fff);
+    padding: 0.65rem;
+}
+
+.share-workout-pdf-copy {
+    font-size: 0.82rem;
+    color: var(--training-muted);
+    margin-bottom: 0.55rem;
+}
+
+.share-workout-pdf-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
 }
 
 .share-workout-search {
@@ -18005,6 +18060,12 @@ html[data-theme="light"] .ode-tour-btn.primary {
     color: #8d2020;
 }
 
+.share-workout-add-btn.sms {
+    border-color: color-mix(in srgb, #2e9fd4 50%, var(--training-border));
+    background: color-mix(in srgb, #2e9fd4 16%, #ffffff);
+    color: #125b7c;
+}
+
 .share-workout-add-btn:disabled {
     cursor: default;
     box-shadow: none;
@@ -18101,6 +18162,27 @@ html[data-theme="light"] .ode-tour-btn.primary {
     font-size: 0.85rem;
     color: var(--training-muted);
     padding: 0.35rem 0;
+}
+
+.training-share-pdf-qr-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0.35rem 0 0.55rem;
+}
+
+.training-share-pdf-qr-img {
+    width: 220px;
+    height: 220px;
+    border-radius: 12px;
+    border: 1px solid var(--training-border);
+    background: #fff;
+}
+
+.training-share-pdf-link {
+    display: block;
+    font-size: 0.74rem;
+    word-break: break-all;
+    color: #2b5f91;
 }
 
 @media (max-width: 900px) {

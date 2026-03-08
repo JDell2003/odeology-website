@@ -1114,6 +1114,17 @@
         if (mobile) mobile.value = desktopBodyInput.value;
         updateMobileActionUi();
       });
+      desktopBodyInput.addEventListener('keydown', (event) => {
+        if (isMobileThreadUi()) return;
+        if (event.key !== 'Enter' || event.shiftKey) return;
+        event.preventDefault();
+        const form = $('#owner-msg-send-form');
+        if (form?.requestSubmit) {
+          form.requestSubmit();
+        } else if (form) {
+          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      });
     }
 
     const mobileAttachBtn = $('#owner-msg-mobile-attach');

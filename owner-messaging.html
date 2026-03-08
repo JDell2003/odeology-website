@@ -1069,13 +1069,8 @@
         <div class="owner-msg-muted">Select an account to load messages.</div>
       </div>
       <form id="owner-msg-send-form" class="owner-msg-compose">
-        <textarea id="owner-msg-body" class="auth-input" rows="4" maxlength="4000" placeholder="Write a message..." autocomplete="off"></textarea>
+        <textarea id="owner-msg-body" class="auth-input" rows="4" maxlength="4000" placeholder="Write a message... (Enter to send, Shift+Enter for newline)" autocomplete="off"></textarea>
         <div class="owner-msg-desktop-send" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input id="owner-msg-image" class="auth-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:320px;" />
-          <span id="owner-msg-image-meta" class="owner-msg-muted">Optional image (max 900KB)</span>
-        </div>
-        <div class="owner-msg-desktop-send" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button type="submit" id="owner-msg-send" class="btn btn-primary">Send</button>
           <span id="owner-msg-status" class="owner-msg-status"></span>
         </div>
         <div id="owner-msg-mobile-status" class="owner-msg-compose-mobile-status"></div>
