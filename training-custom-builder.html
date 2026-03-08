@@ -1446,10 +1446,9 @@
           return;
         }
 
-        tree.forEach((section, sectionIdx) => {
+        tree.forEach((section) => {
           const sectionDetails = document.createElement('details');
           sectionDetails.className = 'builder-folder builder-folder-section';
-          if (sectionIdx === 0) sectionDetails.open = true;
           sectionDetails.innerHTML = `
             <summary>
               <span>${escapeHtml(section.label)}</span>
@@ -1459,10 +1458,9 @@
           const sectionBody = document.createElement('div');
           sectionBody.className = 'builder-folder-body';
 
-          section.groups.forEach((group, groupIdx) => {
+          section.groups.forEach((group) => {
             const groupDetails = document.createElement('details');
             groupDetails.className = 'builder-folder builder-folder-group';
-            if (sectionIdx === 0 && groupIdx === 0) groupDetails.open = true;
             groupDetails.innerHTML = `
               <summary>
                 <span>${escapeHtml(group.label)}</span>
@@ -1472,10 +1470,9 @@
             const groupBody = document.createElement('div');
             groupBody.className = 'builder-folder-body';
 
-            group.subs.forEach((sub, subIdx) => {
+            group.subs.forEach((sub) => {
               const subDetails = document.createElement('details');
               subDetails.className = 'builder-folder builder-folder-sub';
-              if (sectionIdx === 0 && groupIdx === 0 && subIdx === 0) subDetails.open = true;
               subDetails.innerHTML = `
                 <summary>
                   <span>${escapeHtml(sub.label)}</span>
