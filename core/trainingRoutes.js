@@ -3041,7 +3041,7 @@ async function getProfile(userId) {
 async function upsertProfile(userId, data) {
   const discipline = normalizeDiscipline(data?.discipline);
   const experience = normalizeExperience(data?.experience);
-  const daysPerWeek = clampInt(data?.daysPerWeek, 2, 6, null);
+  const daysPerWeek = clampInt(data?.daysPerWeek, 1, 7, null);
   const strength = data?.strength && typeof data.strength === 'object' ? data.strength : {};
   strength.unavailableDays = normalizeWeekdayIndexList(data?.unavailableDays ?? strength?.unavailableDays);
   const equipmentAccess = normalizeEquipmentAccess(data?.equipmentAccess);
@@ -3239,7 +3239,7 @@ function normalizeCustomPlanDays(rawDays, dbRowsById) {
       label: WEEKDAY_LABELS[weekday] || `Day ${weekday}`,
       exercises
     });
-    if (out.length >= 6) break;
+    if (out.length >= 7) break;
   }
   return out;
 }
@@ -4990,9 +4990,9 @@ async function trainingRoutes(req, res, url) {
       (Array.isArray(dbRows) ? dbRows : []).map((row) => [String(row?.id || '').trim().toLowerCase(), row])
     );
     const templateDays = normalizeCustomPlanDays(payload?.days, dbRowsById);
-    const daysPerWeek = clampInt(templateDays.length, 2, 6, null);
+    const daysPerWeek = clampInt(templateDays.length, 1, 7, null);
     if (!daysPerWeek) {
-      return sendJson(res, 400, { ok: false, error: 'Select between 2 and 6 workout days.' });
+      return sendJson(res, 400, { ok: false, error: 'Select between 1 and 7 workout days.' });
     }
     if (templateDays.some((day) => !Array.isArray(day?.exercises) || !day.exercises.length)) {
       return sendJson(res, 400, { ok: false, error: 'Each selected day needs at least one exercise.' });

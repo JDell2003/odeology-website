@@ -372,7 +372,7 @@
       font-weight: 700;
     }
 
-    .builder-days-select label {
+    .builder-days-label {
       font-size: 0.86rem;
       letter-spacing: 0.01em;
     }
@@ -761,14 +761,7 @@
       <section class="builder-panel">
         <div class="builder-plan-top">
           <div class="builder-days-select">
-            <label for="builder-days-select">Days per week</label>
-            <select id="builder-days-select" class="auth-input" style="max-width:110px;">
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4" selected>4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-            </select>
+            <span class="builder-days-label">Select workout days</span>
           </div>
           <div id="builder-weekdays" class="builder-weekdays" aria-label="Select workout days"></div>
         </div>
@@ -843,7 +836,6 @@
       const dbListEl = $('builder-db-list');
       const searchEl = $('builder-search');
       const searchBtn = $('builder-search-btn');
-      const daysSelectEl = $('builder-days-select');
       const weekdaysEl = $('builder-weekdays');
       const dayColumnsEl = $('builder-day-columns');
       const saveBtn = $('builder-save-btn');
@@ -866,7 +858,6 @@
         dbRows: [],
         customRows: [],
         query: '',
-        daysPerWeek: 4,
         selectedWeekdays: [1, 2, 4, 5],
         planByWeekday: new Map(),
         saving: false,
@@ -1158,15 +1149,6 @@
           }));
       }
 
-      function defaultPattern(days) {
-        const n = Math.max(2, Math.min(6, Number(days) || 4));
-        if (n === 2) return [1, 4];
-        if (n === 3) return [1, 3, 5];
-        if (n === 4) return [1, 2, 4, 5];
-        if (n === 5) return [1, 2, 3, 5, 6];
-        return [1, 2, 3, 4, 5, 6];
-      }
-
       function openAuth(mode) {
         try {
           sessionStorage.setItem('ode_auth_return_to', 'training-custom-builder.html');
@@ -1199,14 +1181,7 @@
       function syncSelectedDays(next) {
         const normalized = Array.from(new Set((Array.isArray(next) ? next : []).map((v) => Number(v))))
           .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6)
-          .slice(0, state.daysPerWeek);
-
-        if (normalized.length < state.daysPerWeek) {
-          for (const w of defaultPattern(state.daysPerWeek)) {
-            if (normalized.length >= state.daysPerWeek) break;
-            if (!normalized.includes(w)) normalized.push(w);
-          }
-        }
+          .sort((a, b) => a - b);
 
         state.selectedWeekdays = normalized;
         for (const weekday of normalized) {
@@ -1229,19 +1204,8 @@
           btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
           btn.addEventListener('click', () => {
             const active = state.selectedWeekdays.includes(day.i);
-            if (active) {
-              if (state.selectedWeekdays.length <= 2) {
-                setStatus('Minimum is 2 training days.', 'error');
-                return;
-              }
-              syncSelectedDays(state.selectedWeekdays.filter((v) => v !== day.i));
-            } else {
-              if (state.selectedWeekdays.length >= state.daysPerWeek) {
-                setStatus(`Select exactly ${state.daysPerWeek} days.`, 'error');
-                return;
-              }
-              syncSelectedDays([...state.selectedWeekdays, day.i]);
-            }
+            if (active) syncSelectedDays(state.selectedWeekdays.filter((v) => v !== day.i));
+            else syncSelectedDays([...state.selectedWeekdays, day.i]);
             setStatus('');
             renderWeekdayChips();
             renderDayColumns();
@@ -1348,6 +1312,10 @@
       function renderDayColumns() {
         if (!dayColumnsEl) return;
         dayColumnsEl.innerHTML = '';
+        if (!state.selectedWeekdays.length) {
+          dayColumnsEl.innerHTML = '<div class="builder-day-empty">Select at least one weekday to build your workout.</div>';
+          return;
+        }
 
         state.selectedWeekdays.forEach((weekday) => {
           const dayName = WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`;
@@ -1849,8 +1817,8 @@
           return;
         }
 
-        if (state.selectedWeekdays.length !== state.daysPerWeek) {
-          setStatus(`Select exactly ${state.daysPerWeek} days.`, 'error');
+        if (!state.selectedWeekdays.length) {
+          setStatus('Select at least one workout day.', 'error');
           return;
         }
 
@@ -1908,17 +1876,6 @@
         renderWeekdayChips();
         renderDayColumns();
         bindPlanInputEvents();
-
-        if (daysSelectEl) {
-          daysSelectEl.value = String(state.daysPerWeek);
-          daysSelectEl.addEventListener('change', () => {
-            state.daysPerWeek = Math.max(2, Math.min(6, Number(daysSelectEl.value) || 4));
-            syncSelectedDays(defaultPattern(state.daysPerWeek));
-            setStatus('');
-            renderWeekdayChips();
-            renderDayColumns();
-          });
-        }
 
         searchEl?.addEventListener('input', () => {
           state.query = String(searchEl.value || '');
