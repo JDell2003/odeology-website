@@ -12167,6 +12167,22 @@ function initAuthUi() {
         emitAuthChanged(null);
     };
 
+    let friendsPrefetchTimer = null;
+    function queueFriendsPrefetch() {
+        if (friendsPrefetchTimer) return;
+        friendsPrefetchTimer = setTimeout(() => {
+            friendsPrefetchTimer = null;
+            try {
+                loadWarnings();
+                loadFriends();
+                loadFriendRequests();
+                loadRequests();
+            } catch {
+                // ignore
+            }
+        }, 120);
+    }
+
     const setSignedInUi = (user, meta = null) => {
         currentUser = user;
         window.__odeCurrentUser = user;
@@ -12248,22 +12264,6 @@ function initAuthUi() {
         } catch {
             // ignore
         }
-    };
-
-    let friendsPrefetchTimer = null;
-    const queueFriendsPrefetch = () => {
-        if (friendsPrefetchTimer) return;
-        friendsPrefetchTimer = setTimeout(() => {
-            friendsPrefetchTimer = null;
-            try {
-                loadWarnings();
-                loadFriends();
-                loadFriendRequests();
-                loadRequests();
-            } catch {
-                // ignore
-            }
-        }, 120);
     };
 
     wireAuthModal(modal, {
@@ -12417,6 +12417,137 @@ function initAuthUi() {
             const digits = String(raw || '').replace(/\D+/g, '');
             return digits || '';
         };
+        const WARNING_EMAIL_TEMPLATE_KEY = 'ode_warning_email_template_idx_v1';
+        const WARNING_TEXT_TEMPLATE_KEY = 'ode_warning_text_template_idx_v1';
+        const nextWarningEmailTemplateIndex = () => {
+            try {
+                const raw = Number(localStorage.getItem(WARNING_EMAIL_TEMPLATE_KEY) || 0);
+                const idx = Number.isFinite(raw) ? Math.abs(Math.floor(raw)) % 7 : 0;
+                localStorage.setItem(WARNING_EMAIL_TEMPLATE_KEY, String((idx + 1) % 7));
+                return idx;
+            } catch {
+                return Math.floor(Math.random() * 7);
+            }
+        };
+        const nextWarningTextTemplateIndex = () => {
+            try {
+                const raw = Number(localStorage.getItem(WARNING_TEXT_TEMPLATE_KEY) || 0);
+                const idx = Number.isFinite(raw) ? Math.abs(Math.floor(raw)) % 7 : 0;
+                localStorage.setItem(WARNING_TEXT_TEMPLATE_KEY, String((idx + 1) % 7));
+                return idx;
+            } catch {
+                return Math.floor(Math.random() * 7);
+            }
+        };
+        const warningGoalSummary = (warn) => {
+            const goalModeRaw = String(warn?.goalMode || '').trim().toLowerCase();
+            const goalMode = goalModeRaw === 'cut' || goalModeRaw === 'bulk' || goalModeRaw === 'recomp'
+                ? goalModeRaw
+                : 'goal';
+            const goalWeight = Number(warn?.goalWeightLb);
+            const currentWeight = Number(warn?.currentWeightLb);
+            const targetText = Number.isFinite(goalWeight) && goalWeight > 0
+                ? `${Math.round(goalWeight)} lb`
+                : 'your target bodyweight';
+            const currentText = Number.isFinite(currentWeight) && currentWeight > 0
+                ? `${Math.round(currentWeight)} lb`
+                : 'your current check-in';
+            const modeText = goalMode === 'goal' ? 'goal phase' : `${goalMode} phase`;
+            return { targetText, currentText, modeText };
+        };
+        const buildWarningEmailDraft = (warn, templateIdx = 0) => {
+            const name = String(warn?.displayName || warn?.username || 'you').trim() || 'you';
+            const username = String(warn?.username || '').trim();
+            const handle = username ? `@${username}` : name;
+            const alertLine = String(warn?.message || 'My app is flagging your consistency right now.').trim();
+            const { targetText, currentText, modeText } = warningGoalSummary(warn);
+            const subjects = [
+                `Gym check-in for ${name}`,
+                `${name}, lock in today`,
+                `${name}, your plan needs action`,
+                `${name}, tighten up this week`,
+                `${name}, stop drifting`,
+                `${name}, this is your wake-up call`,
+                `${name}, execute your goal now`
+            ];
+            const bodies = [
+                `Yo ${handle}, get your shit together.\n\n${alertLine}\n\nI hope it's a fluke because you're supposed to be in the gym.\nYour goal is ${targetText} (${modeText}). You're sitting around ${currentText}.\nHow are you going to get there BSing? Lock in today.`,
+                `Hey ${handle}, quick reality check.\n\n${alertLine}\n\nGet your shit together. I hope this is a fluke because you're supposed to be in the gym.\nGoal: ${targetText} (${modeText}). Current: ${currentText}.\nHow are you planning to get there BSing?`,
+                `${handle}, I'm calling it out directly.\n\n${alertLine}\n\nGet your shit together and get back to execution.\nYou're chasing ${targetText} (${modeText}) and currently around ${currentText}.\nHow are you going to hit that goal if you're BSing the process?`,
+                `${handle}, this is a hard nudge.\n\n${alertLine}\n\nI hope this is a one-off, but get your shit together.\nTarget is ${targetText} (${modeText}); current trend looks like ${currentText}.\nYou're supposed to be in the gym. Let's fix it now.`,
+                `What's up ${handle},\n\n${alertLine}\n\nNo fluff: get your shit together.\nYour goal is ${targetText} (${modeText}) and you're around ${currentText} right now.\nHow are you getting there BSing? Show up and execute.`,
+                `${handle}, sending this because I want results for you.\n\n${alertLine}\n\nGet your shit together and get back on plan.\nGoal: ${targetText} (${modeText}). Current: ${currentText}.\nI hope this is a fluke, because you're supposed to be in the gym.`,
+                `${handle}, final reminder.\n\n${alertLine}\n\nGet your shit together.\nYou said ${targetText} (${modeText}) is the goal, and you're around ${currentText}.\nHow are you going to get there BSing? Let's stop playing and lock in.`
+            ];
+            const idx = Math.abs(Number(templateIdx) || 0) % 7;
+            return {
+                subject: subjects[idx],
+                body: bodies[idx]
+            };
+        };
+        const buildWarningTextDraft = (warn, templateIdx = 0) => {
+            const name = String(warn?.displayName || warn?.username || 'you').trim() || 'you';
+            const username = String(warn?.username || '').trim();
+            const handle = username ? `@${username}` : name;
+            const alertLine = String(warn?.message || 'My app is flagging your consistency right now.').trim();
+            const { targetText, currentText, modeText } = warningGoalSummary(warn);
+            const templates = [
+                `${handle}, get your shit together. ${alertLine} I hope it's a fluke because you're supposed to be in the gym. Goal: ${targetText} (${modeText}), current: ${currentText}. How are you getting there BSing?`,
+                `${handle} quick check: ${alertLine} Lock in. You're supposed to be in the gym. Goal is ${targetText} (${modeText}), current trend ${currentText}.`,
+                `${handle} this is direct: ${alertLine} Get your shit together and execute. You said ${targetText} (${modeText}) is the goal.`,
+                `${handle} hard truth: ${alertLine} If your target is ${targetText} (${modeText}), how are you getting there BSing around ${currentText}?`,
+                `${handle} no fluff, lock in today. ${alertLine} Goal ${targetText} (${modeText}), current ${currentText}. Show up.`,
+                `${handle}, reminder: ${alertLine} I hope it's a fluke. You're supposed to be in the gym working toward ${targetText}.`,
+                `${handle}, wake up call: ${alertLine} Goal ${targetText} (${modeText}), current ${currentText}. Stop BSing and execute.`
+            ];
+            const idx = Math.abs(Number(templateIdx) || 0) % 7;
+            return templates[idx];
+        };
+        const isLikelyMobileDevice = () => {
+            try {
+                return window.matchMedia('(pointer:coarse)').matches || window.matchMedia('(max-width: 900px)').matches;
+            } catch {
+                return false;
+            }
+        };
+        const buildSmsComposeUrl = (phone, body) => {
+            const number = String(phone || '').trim();
+            const text = String(body || '').trim();
+            return `sms:${number}?&body=${encodeURIComponent(text)}`;
+        };
+        const openWarningTextCompose = (warn, phone) => {
+            const number = String(phone || '').trim();
+            if (!number) return;
+            const idx = nextWarningTextTemplateIndex();
+            const body = buildWarningTextDraft(warn, idx);
+            window.location.href = buildSmsComposeUrl(number, body);
+        };
+        const buildGmailComposeUrl = (email, subject, body) => {
+            const qs = new URLSearchParams({
+                view: 'cm',
+                fs: '1',
+                to: String(email || '').trim(),
+                su: String(subject || '').trim(),
+                body: String(body || '').trim()
+            });
+            return `https://mail.google.com/mail/?${qs.toString()}`;
+        };
+        const openWarningEmailCompose = (warn, email) => {
+            const cleaned = String(email || '').trim();
+            if (!cleaned) return;
+            const idx = nextWarningEmailTemplateIndex();
+            const draft = buildWarningEmailDraft(warn, idx);
+            const prefersDesktopGmail = (() => {
+                try { return window.matchMedia('(pointer:fine)').matches; } catch { return true; }
+            })();
+            if (prefersDesktopGmail) {
+                const gmailUrl = buildGmailComposeUrl(cleaned, draft.subject, draft.body);
+                const win = window.open(gmailUrl, '_blank', 'noopener');
+                if (win) return;
+            }
+            const fallbackMailto = `mailto:${encodeURIComponent(cleaned)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`;
+            window.location.href = fallbackMailto;
+        };
         const buildWarningContactsNode = (warn) => {
             const phoneRaw = String(warn?.phone || '').trim();
             const phone = normalizePhoneForHref(phoneRaw);
@@ -12435,6 +12566,11 @@ function initAuthUi() {
                 text.className = 'friends-warning-contact';
                 text.href = `sms:${phone}`;
                 text.textContent = 'Text';
+                text.addEventListener('click', (e) => {
+                    if (!isLikelyMobileDevice()) return;
+                    e.preventDefault();
+                    openWarningTextCompose(warn, phone);
+                });
                 row.appendChild(text);
             }
             if (email) {
@@ -12442,6 +12578,10 @@ function initAuthUi() {
                 mail.className = 'friends-warning-contact';
                 mail.href = `mailto:${encodeURIComponent(email)}`;
                 mail.textContent = 'Email';
+                mail.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openWarningEmailCompose(warn, email);
+                });
                 row.appendChild(mail);
             }
             return row;

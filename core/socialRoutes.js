@@ -184,6 +184,28 @@ function parseGoalMode(profile) {
   return null;
 }
 
+function parseGoalWeightLb(profile) {
+  const candidates = [
+    profile?.nutrition?.goalWeightLbs,
+    profile?.nutrition?.goalWeightLb,
+    profile?.nutrition?.goal_weight_lb,
+    profile?.nutrition?.targetWeightLbs,
+    profile?.nutrition?.targetWeightLb,
+    profile?.training_intake?.goalWeightLbs,
+    profile?.training_intake?.goalWeightLb,
+    profile?.training_intake?.goal_weight_lb,
+    profile?.training_intake?.targetWeightLbs,
+    profile?.training_intake?.targetWeightLb
+  ];
+  for (const raw of candidates) {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    if (n < 60 || n > 800) continue;
+    return n;
+  }
+  return null;
+}
+
 function parsePhaseRate(rateRaw, weightLb) {
   const raw = String(rateRaw || '').toLowerCase().trim();
   if (!raw) return null;
@@ -581,6 +603,15 @@ async function socialRoutes(req, res, url) {
 
       for (const friend of friends) {
         const profile = friend.profile_json || {};
+        const goalMode = parseGoalMode(profile);
+        const lastWeighinAt = friend.last_weighin_at ? String(friend.last_weighin_at).slice(0, 10) : null;
+        const lastWeighinLb = friend.last_weighin_lb != null ? Number(friend.last_weighin_lb) : null;
+        const evalWeightAt = friend.eval_weight_at ? String(friend.eval_weight_at).slice(0, 10) : null;
+        const evalWeightLb = friend.eval_weight_lb != null ? Number(friend.eval_weight_lb) : null;
+        const goalWeightLb = parseGoalWeightLb(profile);
+        const currentWeightLb = Number.isFinite(lastWeighinLb)
+          ? lastWeighinLb
+          : (Number.isFinite(evalWeightLb) ? evalWeightLb : null);
         const friendLastSeen = friend.last_seen || null;
         const friendIsOnline = isLastSeenOnline(friendLastSeen);
         const friendEmail = String(friend.email || '').trim() || null;
@@ -594,15 +625,13 @@ async function socialRoutes(req, res, url) {
           photoDataUrl: friend.photo || null,
           lastSeen: friendLastSeen,
           isOnline: friendIsOnline,
+          goalMode,
+          goalWeightLb: Number.isFinite(goalWeightLb) ? goalWeightLb : null,
+          currentWeightLb: Number.isFinite(currentWeightLb) ? currentWeightLb : null,
           severity,
           type,
           message
         });
-        const goalMode = parseGoalMode(profile);
-        const lastWeighinAt = friend.last_weighin_at ? String(friend.last_weighin_at).slice(0, 10) : null;
-        const lastWeighinLb = friend.last_weighin_lb != null ? Number(friend.last_weighin_lb) : null;
-        const evalWeightAt = friend.eval_weight_at ? String(friend.eval_weight_at).slice(0, 10) : null;
-        const evalWeightLb = friend.eval_weight_lb != null ? Number(friend.eval_weight_lb) : null;
 
         const rateRaw = profile?.nutrition?.phaseRate || profile?.training_intake?.phaseRate || '';
         const baselineWeight = Number.isFinite(evalWeightLb) ? evalWeightLb : (Number.isFinite(lastWeighinLb) ? lastWeighinLb : null);

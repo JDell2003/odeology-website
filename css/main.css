@@ -5957,32 +5957,42 @@ body.auth-gated .auth-backdrop {
 }
 
 .friends-warning-contacts {
-    margin-top: 0.35rem;
-    display: flex;
+    margin-top: 0.45rem;
+    width: 100%;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(245, 223, 166, 0.26);
 }
 
 .friends-warning-contact {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 214, 117, 0.55);
-    background: rgba(255, 247, 219, 0.85);
-    color: #5a3a03;
-    font-size: 0.7rem;
+    position: relative;
+    display: block;
+    text-align: center;
+    color: #f5dfa6;
+    font-size: 0.76rem;
     font-weight: 800;
+    letter-spacing: 0.01em;
     line-height: 1.2;
     text-decoration: none;
-    padding: 0.18rem 0.5rem;
+    padding: 0.16rem 0.2rem;
+}
+
+.friends-warning-contact + .friends-warning-contact::before {
+    content: "|";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(245, 223, 166, 0.58);
+    pointer-events: none;
 }
 
 .friends-warning-contact:hover {
-    background: rgba(255, 247, 219, 0.96);
-    border-color: rgba(255, 214, 117, 0.75);
-    color: #402701;
+    color: #fff3cf;
+    text-decoration: underline;
 }
 
 .friends-warning-tag {
@@ -17566,13 +17576,19 @@ html[data-theme="light"] .ode-tour-btn.primary {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    margin-top: -0.05rem;
 }
 
 .training-page .plan-topbar-actions-toggle {
-    min-width: 2.5rem;
-    padding-inline: 0.7rem;
+    min-width: 2.2rem;
+    width: 2.2rem;
+    height: 2rem;
+    padding: 0;
     font-size: 0.96rem;
+    font-weight: 900;
     line-height: 1;
+    border-color: rgba(197, 141, 79, 0.38);
+    background: color-mix(in srgb, var(--training-surface-2) 92%, #fff);
 }
 
 .training-page .plan-topbar-actions-dropdown {

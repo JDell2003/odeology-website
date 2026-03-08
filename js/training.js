@@ -6265,23 +6265,6 @@ function toggleSharePopover(force) {
     const isDeloadWeek = deloadWeeks.includes(activeWeek);
     const lastDecisionByBase = autoreg?.lastDecision && typeof autoreg.lastDecision === 'object' ? autoreg.lastDecision : {};
 
-    const rules = plan?.meta?.rules && typeof plan.meta.rules === 'object' ? plan.meta.rules : null;
-    const rulesDetails = rules
-      ? el('details', { class: 'plan-rules plan-rules-inline' },
-        el('summary', { class: 'plan-rules-summary btn btn-ghost' }, 'Rules'),
-        el('div', { class: 'plan-rules-body' },
-          ['structure', 'intensity', 'volume', 'progression', 'deload']
-            .filter((k) => Array.isArray(rules?.[k]) && rules[k].length)
-            .map((k) =>
-              el('div', { class: 'plan-rules-block' },
-                el('div', { class: 'plan-rules-title' }, k),
-                el('ul', { class: 'plan-rules-list' }, rules[k].slice(0, 4).map((line) => el('li', null, String(line))))
-              )
-            )
-        )
-      )
-      : null;
-
     const escapeHtml = (input) => String(input ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -6903,8 +6886,7 @@ function toggleSharePopover(force) {
       (() => {
         const dropdown = el('div', { class: 'plan-topbar-actions-dropdown', 'aria-hidden': 'true' },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
-          el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping'),
-          rulesDetails
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping')
         );
         const toggle = el('button', {
           type: 'button',
@@ -6916,9 +6898,9 @@ function toggleSharePopover(force) {
             const isOpen = dropdown.classList.toggle('open');
             dropdown.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            toggle.textContent = isOpen ? '▲' : '▼';
+            toggle.textContent = isOpen ? '^' : 'v';
           }
-        }, '▼');
+        }, 'v');
         return el('div', { class: 'plan-topbar-actions' },
           el('div', { class: 'plan-topbar-actions-mainrow' },
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
