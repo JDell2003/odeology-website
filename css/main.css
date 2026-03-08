@@ -12097,6 +12097,23 @@ html[data-theme="light"] .avatar-cropper-viewport {
     gap: 10px;
 }
 
+.checkin-meals-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.checkin-new-plan-btn {
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
 .checkin-meal-buttons {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -12557,6 +12574,80 @@ html[data-theme="light"] .avatar-cropper-viewport {
     gap: 12px;
 }
 
+.checkin-macro-rings {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.checkin-macro-ring {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+}
+
+.checkin-macro-donut {
+    --pct: 0;
+    --ring-color: #6b7280;
+    width: clamp(100px, 10vw, 128px);
+    aspect-ratio: 1 / 1;
+    border-radius: 999px;
+    background: conic-gradient(var(--ring-color) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.10) 0);
+    display: grid;
+    place-items: center;
+    position: relative;
+}
+
+.checkin-macro-donut::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+:root[data-theme="light"] .checkin-macro-donut {
+    background: conic-gradient(var(--ring-color) calc(var(--pct) * 1%), rgba(0, 0, 0, 0.10) 0);
+}
+
+:root[data-theme="light"] .checkin-macro-donut::before {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(0, 0, 0, 0.14);
+}
+
+.checkin-macro-center {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    display: grid;
+    gap: 2px;
+}
+
+.checkin-macro-value {
+    font-size: clamp(16px, 2.3vw, 22px);
+    font-weight: 950;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.checkin-macro-goal {
+    font-size: 11px;
+    opacity: 0.78;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.checkin-macro-label {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
 .checkin-pp-field .btn {
     width: 100%;
     margin-top: 8px;
@@ -12639,6 +12730,7 @@ html[data-theme="light"] .avatar-cropper-viewport {
     .checkin-unified-grid .checkin-unified-block:nth-child(3),
     .checkin-unified-grid .checkin-unified-block:nth-child(4),
     .checkin-unified-grid .checkin-unified-block:nth-child(5) { grid-column: auto; }
+    .checkin-macro-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .checkin-pp-grid { grid-template-columns: 1fr; }
 }
 
@@ -12652,6 +12744,15 @@ html[data-theme="light"] .avatar-cropper-viewport {
         justify-content: space-between;
     }
     .checkin-autosave-status {
+        width: 100%;
+        justify-content: center;
+    }
+    .checkin-macro-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .checkin-meals-topline {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .checkin-new-plan-btn {
         width: 100%;
         justify-content: center;
     }

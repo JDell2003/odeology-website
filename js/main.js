@@ -9178,25 +9178,54 @@ function ensureBasicCheckinModal() {
                         <h4 class="checkin-step-title">Nutrition compliance</h4>
                         <p class="checkin-step-sub">Log meals + macro totals from what you actually ate.</p>
                         <div class="checkin-grid">
-                            <label class="ns-field">
-                                <span>Calories</span>
-                                <input id="checkin-kcal" type="number" inputmode="numeric" placeholder="e.g. 2450">
-                            </label>
-                            <label class="ns-field">
-                                <span>Protein (g)</span>
-                                <input id="checkin-protein" type="number" inputmode="numeric" placeholder="e.g. 210">
-                            </label>
-                            <label class="ns-field">
-                                <span>Carbs (g)</span>
-                                <input id="checkin-carbs" type="number" inputmode="numeric" placeholder="e.g. 260">
-                            </label>
-                            <label class="ns-field">
-                                <span>Fat (g)</span>
-                                <input id="checkin-fats" type="number" inputmode="numeric" placeholder="e.g. 70">
-                            </label>
+                            <div class="checkin-macro-rings" aria-label="Macro progress">
+                                <div class="checkin-macro-ring">
+                                    <div class="checkin-macro-donut" id="checkin-ring-kcal">
+                                        <div class="checkin-macro-center">
+                                            <div class="checkin-macro-value" id="checkin-ring-kcal-value">0</div>
+                                            <div class="checkin-macro-goal" id="checkin-ring-kcal-goal">of -</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkin-macro-label">Calories</div>
+                                </div>
+                                <div class="checkin-macro-ring">
+                                    <div class="checkin-macro-donut" id="checkin-ring-protein">
+                                        <div class="checkin-macro-center">
+                                            <div class="checkin-macro-value" id="checkin-ring-protein-value">0</div>
+                                            <div class="checkin-macro-goal" id="checkin-ring-protein-goal">of -</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkin-macro-label">Protein</div>
+                                </div>
+                                <div class="checkin-macro-ring">
+                                    <div class="checkin-macro-donut" id="checkin-ring-carbs">
+                                        <div class="checkin-macro-center">
+                                            <div class="checkin-macro-value" id="checkin-ring-carbs-value">0</div>
+                                            <div class="checkin-macro-goal" id="checkin-ring-carbs-goal">of -</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkin-macro-label">Carbs</div>
+                                </div>
+                                <div class="checkin-macro-ring">
+                                    <div class="checkin-macro-donut" id="checkin-ring-fat">
+                                        <div class="checkin-macro-center">
+                                            <div class="checkin-macro-value" id="checkin-ring-fat-value">0</div>
+                                            <div class="checkin-macro-goal" id="checkin-ring-fat-goal">of -</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkin-macro-label">Fat</div>
+                                </div>
+                            </div>
+                            <input id="checkin-kcal" type="hidden" inputmode="numeric" value="">
+                            <input id="checkin-protein" type="hidden" inputmode="numeric" value="">
+                            <input id="checkin-carbs" type="hidden" inputmode="numeric" value="">
+                            <input id="checkin-fats" type="hidden" inputmode="numeric" value="">
                             <div class="ns-field checkin-meals-field">
                                 <span>Log meals</span>
-                                <div class="ns-muted tiny">Tap each meal to mark planned vs actual intake.</div>
+                                <div class="checkin-meals-topline">
+                                    <div class="ns-muted tiny">Tap each meal to mark planned vs actual intake.</div>
+                                    <button class="btn btn-ghost checkin-new-plan-btn" type="button" id="checkin-new-meal-plan">Create new meal plan</button>
+                                </div>
                                 <div class="checkin-meals-head">
                                     <div class="ns-muted tiny" id="checkin-meals-summary">—</div>
                                 </div>
@@ -9515,6 +9544,25 @@ function setupBasicCheckin() {
     const proteinEl = byId('checkin-protein');
     const carbsEl = byId('checkin-carbs');
     const fatsEl = byId('checkin-fats');
+    const newMealPlanBtn = byId('checkin-new-meal-plan');
+    const macroRingEls = {
+        kcal: byId('checkin-ring-kcal'),
+        protein: byId('checkin-ring-protein'),
+        carbs: byId('checkin-ring-carbs'),
+        fat: byId('checkin-ring-fat')
+    };
+    const macroRingValueEls = {
+        kcal: byId('checkin-ring-kcal-value'),
+        protein: byId('checkin-ring-protein-value'),
+        carbs: byId('checkin-ring-carbs-value'),
+        fat: byId('checkin-ring-fat-value')
+    };
+    const macroRingGoalEls = {
+        kcal: byId('checkin-ring-kcal-goal'),
+        protein: byId('checkin-ring-protein-goal'),
+        carbs: byId('checkin-ring-carbs-goal'),
+        fat: byId('checkin-ring-fat-goal')
+    };
     const moodEl = byId('checkin-mood');
     const mealPrepEl = byId('checkin-mealprep');
     const mealPrepNoteWrapEl = byId('checkin-mealprep-note-wrap');
@@ -9677,6 +9725,113 @@ function setupBasicCheckin() {
         });
     };
 
+    const macroTargets = (() => {
+        const t = mealPlanSnap?.macroTargets && typeof mealPlanSnap.macroTargets === 'object'
+            ? mealPlanSnap.macroTargets
+            : {};
+        const toGoal = (value) => {
+            const n = Number(value);
+            return Number.isFinite(n) && n > 0 ? n : null;
+        };
+        return {
+            kcal: toGoal(t?.calories),
+            protein: toGoal(t?.protein_g),
+            carbs: toGoal(t?.carbs_g),
+            fat: toGoal(t?.fat_g)
+        };
+    })();
+
+    const parseMacroNum = (raw) => {
+        const n = Number(String(raw ?? '').trim());
+        return Number.isFinite(n) ? n : null;
+    };
+
+    const readHiddenMacroTotals = () => ({
+        kcal: parseMacroNum(kcalEl?.value) || 0,
+        protein: parseMacroNum(proteinEl?.value) || 0,
+        carbs: parseMacroNum(carbsEl?.value) || 0,
+        fat: parseMacroNum(fatsEl?.value) || 0
+    });
+
+    const writeHiddenMacroTotals = (totals) => {
+        if (kcalEl) kcalEl.value = Number.isFinite(Number(totals?.kcal)) ? String(Math.max(0, Math.round(Number(totals.kcal)))) : '';
+        if (proteinEl) proteinEl.value = Number.isFinite(Number(totals?.protein)) ? String(Math.max(0, Math.round(Number(totals.protein)))) : '';
+        if (carbsEl) carbsEl.value = Number.isFinite(Number(totals?.carbs)) ? String(Math.max(0, Math.round(Number(totals.carbs)))) : '';
+        if (fatsEl) fatsEl.value = Number.isFinite(Number(totals?.fat)) ? String(Math.max(0, Math.round(Number(totals.fat)))) : '';
+    };
+
+    const mealEntryMacroTotals = () => {
+        const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+        let hasValues = false;
+        Object.values(mealEntries || {}).forEach((entry) => {
+            const rows = Array.isArray(entry?.rows) ? entry.rows : [];
+            rows.forEach((row) => {
+                const kcal = parseMacroNum(row?.kcal);
+                const p = parseMacroNum(row?.p);
+                const c = parseMacroNum(row?.c);
+                const f = parseMacroNum(row?.f);
+                if (kcal !== null) {
+                    totals.kcal += Math.max(0, kcal);
+                    hasValues = true;
+                }
+                if (p !== null) {
+                    totals.protein += Math.max(0, p);
+                    hasValues = true;
+                }
+                if (c !== null) {
+                    totals.carbs += Math.max(0, c);
+                    hasValues = true;
+                }
+                if (f !== null) {
+                    totals.fat += Math.max(0, f);
+                    hasValues = true;
+                }
+            });
+        });
+        return { totals, hasValues };
+    };
+
+    const macroRingColor = (ratioRaw) => {
+        const ratio = Number(ratioRaw);
+        if (!Number.isFinite(ratio) || ratio <= 0) return '#6b7280';
+        if (ratio >= 1.08) return '#38bdf8';
+        if (ratio >= 1.0) return '#22c55e';
+        if (ratio >= 0.85) return '#84cc16';
+        if (ratio >= 0.6) return '#f59e0b';
+        if (ratio >= 0.35) return '#f97316';
+        return '#ef4444';
+    };
+
+    const renderMacroCompliance = () => {
+        const fromMeals = mealEntryMacroTotals();
+        const totals = fromMeals.hasValues ? fromMeals.totals : readHiddenMacroTotals();
+        if (fromMeals.hasValues) {
+            writeHiddenMacroTotals(totals);
+        }
+
+        const setRing = (key, valueRaw, goalRaw) => {
+            const ringEl = macroRingEls[key];
+            const valueEl = macroRingValueEls[key];
+            const goalEl = macroRingGoalEls[key];
+            const value = Math.max(0, Number(valueRaw) || 0);
+            const goal = Number(goalRaw);
+            const ratio = Number.isFinite(goal) && goal > 0 ? (value / goal) : 0;
+            const pct = Number.isFinite(goal) && goal > 0 ? Math.max(0, Math.min(100, ratio * 100)) : 0;
+            const color = macroRingColor(ratio);
+            if (ringEl) {
+                ringEl.style.setProperty('--pct', String(pct.toFixed(2)));
+                ringEl.style.setProperty('--ring-color', color);
+            }
+            if (valueEl) valueEl.textContent = String(Math.round(value));
+            if (goalEl) goalEl.textContent = Number.isFinite(goal) && goal > 0 ? `of ${Math.round(goal)}` : 'of -';
+        };
+
+        setRing('kcal', totals.kcal, macroTargets.kcal);
+        setRing('protein', totals.protein, macroTargets.protein);
+        setRing('carbs', totals.carbs, macroTargets.carbs);
+        setRing('fat', totals.fat, macroTargets.fat);
+    };
+
     const renderMealSummary = () => {
         const keys = Object.keys(mealEntries || {});
         const logged = keys.length;
@@ -9691,6 +9846,7 @@ function setupBasicCheckin() {
         if (mealsOkEl) {
             mealsOkEl.value = logged === 0 ? '' : (offPlan > 0 ? 'no' : 'yes');
         }
+        renderMacroCompliance();
         if (!applyingFill) updateCompletionUI();
     };
 
@@ -10411,6 +10567,73 @@ function setupBasicCheckin() {
 
         if (load) await loadCheckin();
     };
+
+    const hasSavedMealPlan = () => {
+        try {
+            const snap = readMealPlanSnapshotForLogging();
+            return Array.isArray(snap?.meals) && snap.meals.length > 0;
+        } catch {
+            return false;
+        }
+    };
+
+    const saveDraftBeforeMealPlanRedirect = () => {
+        const payload = collect();
+        writeDraftForDay(payload.day, payload);
+    };
+
+    const clearMealPlanStateForRestart = () => {
+        try {
+            localStorage.removeItem(ODE_MEAL_PLAN_SNAPSHOT_KEY);
+        } catch {
+            // ignore
+        }
+        try {
+            [
+                'grocerySession',
+                'groceryPrefs',
+                'groceryPurchaseOverrides',
+                'groceryExpiredOverrides',
+                'groceryStartDate',
+                'groceryReturn',
+                'groceryItemChoice',
+                'adjustedBaselineFoods',
+                'ode_hint_update_macros',
+                'ode_latest_grocery_list_draft_v1',
+                'ode_last_grocery_save_key'
+            ].forEach((k) => sessionStorage.removeItem(k));
+        } catch {
+            // ignore
+        }
+    };
+
+    const goToMacroCalculatorStart = ({ resetPlan = false } = {}) => {
+        saveDraftBeforeMealPlanRedirect();
+        if (resetPlan) clearMealPlanStateForRestart();
+        window.location.href = `index.html?${resetPlan ? 'reset=grocery&' : ''}ns=start#ns-entry`;
+    };
+
+    newMealPlanBtn?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!hasSavedMealPlan()) {
+            goToMacroCalculatorStart({ resetPlan: false });
+            return;
+        }
+        let confirmed = false;
+        if (typeof odeConfirm === 'function') {
+            confirmed = await odeConfirm({
+                title: 'Create new meal plan?',
+                message: 'You already have a meal plan.\nIf you continue, your current meal plan data will be erased and you will restart from the macro calculator.',
+                confirmText: 'Erase and restart',
+                cancelText: 'Keep current plan',
+                danger: true
+            });
+        } else {
+            confirmed = window.confirm('You already have a meal plan. Continue to erase current meal plan data and restart from the macro calculator?');
+        }
+        if (!confirmed) return;
+        goToMacroCalculatorStart({ resetPlan: true });
+    });
 
     const openProgressPhotos = (pose = 'front') => {
         if (typeof window.odeProgressPhotos?.open !== 'function') {
@@ -15653,7 +15876,7 @@ function saveMealPlanSnapshotForLogging({ meals, mealsPerDay, macroTargets }) {
             }).filter((i) => i.foodName);
 
             const plannedText = items.length
-                ? items.map((i) => `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${i.foodName} â€” ${i.measurementText}`).join('\n')
+                ? items.map((i) => `- ${i.foodName} - ${i.measurementText}`).join('\n')
                 : '';
 
             return { index: idx + 1, items, plannedText };
