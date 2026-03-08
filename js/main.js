@@ -15353,6 +15353,21 @@ function setupPreloader() {
     let preloader = document.getElementById('preloader');
     const word = document.getElementById('preloader-word');
     const brand = document.querySelector('.navbar-brand');
+    const bypassForTour = (() => {
+        try {
+            const hash = String(window.location.hash || '').toLowerCase();
+            if (hash === '#tour') return true;
+            const url = new URL(window.location.href);
+            return String(url.searchParams.get('tour') || '') === '1';
+        } catch {
+            return String(window.location.hash || '').toLowerCase() === '#tour';
+        }
+    })();
+
+    if (bypassForTour) {
+        if (preloader) preloader.remove();
+        return;
+    }
 
     const isDashboardPage = Boolean(
         document.body?.classList?.contains('training-page') ||
@@ -15602,6 +15617,7 @@ function setupOnboardingTour() {
         const parts = String(location.pathname || '').split('/').filter(Boolean);
         return parts.length ? parts[parts.length - 1] : 'index.html';
     };
+    const hasTourHash = () => String(location.hash || '').toLowerCase() === '#tour';
 
     const buildTourSteps = ({ signedIn = false } = {}) => {
         if (!signedIn) {
@@ -15647,10 +15663,38 @@ function setupOnboardingTour() {
             },
             {
                 key: 'panel',
-                url: 'index.html',
+                url: 'overview.html',
                 selector: '#control-panel',
-                title: 'Control panel map',
-                body: 'Use this as your command center for Dash, Overview, Training Program, Grocery Calendar, Messages, and Account.'
+                title: 'Dashboard tabs map',
+                body: 'This control panel is your dashboard map. Every key tab for training, groceries, messages, and progress lives here.'
+            },
+            {
+                key: 'dashTab',
+                url: 'overview.html',
+                selector: '#control-checkin',
+                title: 'Dash tab',
+                body: 'Open Dash from here for daily check-ins: weight, meals, sleep, stress, water, and photos.'
+            },
+            {
+                key: 'overviewTab',
+                url: 'overview.html',
+                selector: '#control-panel a.control-link[href=\"overview.html\"]',
+                title: 'Overview tab',
+                body: 'Overview is your high-level home: meal plan, grocery status, training summary, photos, and leaderboard.'
+            },
+            {
+                key: 'trainingTab',
+                url: 'overview.html',
+                selector: '#control-panel a.control-link[href=\"training.html\"]',
+                title: 'Training tab',
+                body: 'Training Program is where your live workouts are run and logged day by day.'
+            },
+            {
+                key: 'messagesTab',
+                url: 'overview.html',
+                selector: '#control-panel a.control-link[href=\"friends.html\"]',
+                title: 'Messages tab',
+                body: 'Messages opens your conversations plus incoming workout/friend requests.'
             },
             {
                 key: 'macros',
@@ -15702,13 +15746,6 @@ function setupOnboardingTour() {
                 body: 'Use front/side/back uploads to verify body composition changes that scale weight alone can hide.'
             },
             {
-                key: 'dash',
-                url: 'overview.html',
-                selector: '#control-checkin',
-                title: 'Daily Dash check-in',
-                body: 'Daily logging lives here: weight, nutrition, sleep, stress, water, and photos. Data saves into your trend history.'
-            },
-            {
                 key: 'calendar',
                 url: 'grocery-calendar.html',
                 selector: '#food-calendar',
@@ -15733,8 +15770,15 @@ function setupOnboardingTour() {
                 key: 'trainingShare',
                 url: 'training.html',
                 selector: '[data-share-workout=\"1\"]',
-                title: 'Share workout',
-                body: 'Share sends invites to teammates. Once accepted, both users can track linked participation from their own accounts.'
+                title: 'Share workout button',
+                body: 'Use Share workout to invite people into your workout group and track together.'
+            },
+            {
+                key: 'trainingShareList',
+                url: 'training.html',
+                selector: '#share-workout-popover .share-workout-list',
+                title: 'Add people to workout',
+                body: 'This is where you tap Add for a friend. That creates the request they can Accept or Decline.'
             },
             {
                 key: 'messages',
@@ -15744,11 +15788,25 @@ function setupOnboardingTour() {
                 body: 'Manage friend requests, workout invites, and direct conversations from this hub.'
             },
             {
+                key: 'messagesRequestsTab',
+                url: 'friends.html',
+                selector: '[data-user-tab-btn=\"requests\"]',
+                title: 'Requests tab',
+                body: 'Open Requests to view friend requests and workout invites in one place.'
+            },
+            {
+                key: 'messagesRequestsPanel',
+                url: 'friends.html',
+                selector: '#user-msg-pane-requests',
+                title: 'Accept / decline requests',
+                body: 'Use these request cards to Accept or Decline invites. This is where friend/workout request actions happen.'
+            },
+            {
                 key: 'accountRequests',
                 url: 'account.html',
-                selector: '#account-requests-btn',
-                title: 'Account requests',
-                body: 'Incoming workout invites appear here. Accept or decline from this panel and status syncs back to the sender.'
+                selector: '.account-row',
+                title: 'Account request area',
+                body: 'On Account, request controls appear in this top row when new workout or friend requests come in.'
             },
             {
                 key: 'leaderboard',
@@ -16286,6 +16344,24 @@ function setupOnboardingTour() {
         if (step.selector.startsWith('#control-') || step.selector === '#control-panel') {
             try { openControlPanel(); } catch {}
         }
+        if (step.key === 'trainingShareList') {
+            try {
+                const shareBtn = document.querySelector('[data-share-workout="1"]');
+                shareBtn?.click?.();
+            } catch {
+                // ignore
+            }
+            await new Promise((resolve) => setTimeout(resolve, 140));
+        }
+        if (step.key === 'messagesRequestsTab' || step.key === 'messagesRequestsPanel') {
+            try {
+                const requestsBtn = document.querySelector('[data-user-tab-btn="requests"]');
+                requestsBtn?.click?.();
+            } catch {
+                // ignore
+            }
+            await new Promise((resolve) => setTimeout(resolve, 120));
+        }
 
         const el = document.querySelector(step.selector);
         if (!isRenderableTarget(el)) {
@@ -16364,6 +16440,11 @@ function setupOnboardingTour() {
 
             if (isForceRequired() && !isDone() && signedIn) {
                 await start({ forced: true });
+                return;
+            }
+
+            if (hasTourHash()) {
+                await start({ forced: false });
                 return;
             }
 
