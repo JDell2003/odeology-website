@@ -354,7 +354,7 @@
       listEl.innerHTML = '<div class="owner-msg-muted">Select an account to load messages.</div>';
       if (avatarEl) {
         avatarEl.innerHTML = '';
-        avatarEl.textContent = '•';
+        avatarEl.textContent = 'OA';
       }
       updateMobileActionUi();
       return;

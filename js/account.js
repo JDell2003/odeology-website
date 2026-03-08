@@ -136,22 +136,22 @@
     const alertLine = String(warn?.message || 'My app is flagging your consistency right now.').trim();
     const { targetText, currentText, modeText } = warningGoalSummary(warn);
     const subjects = [
-      `Gym check-in for ${name}`,
-      `${name}, lock in today`,
-      `${name}, your plan needs action`,
-      `${name}, tighten up this week`,
-      `${name}, stop drifting`,
-      `${name}, this is your wake-up call`,
-      `${name}, execute your goal now`
+      `Quick check-in on your goal, ${name}`,
+      `${name}, your plan needs attention`,
+      `${name}, this warning is about your goal`,
+      `${name}, can we reset this week?`,
+      `${name}, you're off track from your target`,
+      `${name}, let's get you back on plan`,
+      `${name}, action needed on your training goal`
     ];
     const bodies = [
-      `Yo ${handle}, get your shit together.\n\n${alertLine}\n\nI hope it's a fluke because you're supposed to be in the gym.\nYour goal is ${targetText} (${modeText}). You're sitting around ${currentText}.\nHow are you going to get there BSing? Lock in today.`,
-      `Hey ${handle}, quick reality check.\n\n${alertLine}\n\nGet your shit together. I hope this is a fluke because you're supposed to be in the gym.\nGoal: ${targetText} (${modeText}). Current: ${currentText}.\nHow are you planning to get there BSing?`,
-      `${handle}, I'm calling it out directly.\n\n${alertLine}\n\nGet your shit together and get back to execution.\nYou're chasing ${targetText} (${modeText}) and currently around ${currentText}.\nHow are you going to hit that goal if you're BSing the process?`,
-      `${handle}, this is a hard nudge.\n\n${alertLine}\n\nI hope this is a one-off, but get your shit together.\nTarget is ${targetText} (${modeText}); current trend looks like ${currentText}.\nYou're supposed to be in the gym. Let's fix it now.`,
-      `What's up ${handle},\n\n${alertLine}\n\nNo fluff: get your shit together.\nYour goal is ${targetText} (${modeText}) and you're around ${currentText} right now.\nHow are you getting there BSing? Show up and execute.`,
-      `${handle}, sending this because I want results for you.\n\n${alertLine}\n\nGet your shit together and get back on plan.\nGoal: ${targetText} (${modeText}). Current: ${currentText}.\nI hope this is a fluke, because you're supposed to be in the gym.`,
-      `${handle}, final reminder.\n\n${alertLine}\n\nGet your shit together.\nYou said ${targetText} (${modeText}) is the goal, and you're around ${currentText}.\nHow are you going to get there BSing? Let's stop playing and lock in.`
+      `Hey ${handle}, quick heads-up.\n\nMy app flagged this warning: "${alertLine}"\n\nI'm reaching out because your goal is ${targetText} (${modeText}), and your latest check-in is around ${currentText}. I want to make sure this doesn't turn into a longer slide.\n\nCan you get a session in today and get back on plan?`,
+      `Yo ${handle}, this message is about your goal progress.\n\nWarning from my app: "${alertLine}"\n\nYou told the app your target is ${targetText} in a ${modeText}, and right now you're around ${currentText}. That's why I'm checking in.\n\nWhat's your plan for today so we can get you back on track?`,
+      `${handle}, direct check-in.\n\nThe app flagged: "${alertLine}"\n\nI'm not texting randomly. I'm texting because your goal is ${targetText} (${modeText}) and your current trend shows ${currentText}. I want you closing the gap, not drifting away from it.\n\nLet's lock in this week.`,
+      `What's up ${handle},\n\nI got a warning from the app: "${alertLine}"\n\nReason for the message: your stated target is ${targetText} (${modeText}), and your latest number is around ${currentText}. That gap is fixable if you get consistent now.\n\nCan you commit to your next session today?`,
+      `${handle}, this is a support nudge, not a random callout.\n\nFlag shown in app: "${alertLine}"\n\nI'm reaching out because your goal is ${targetText} (${modeText}) and your current check-in is ${currentText}. I want to help you move toward the target again.\n\nReply with what time you're training today.`,
+      `Hey ${handle}, checking in because the app raised a consistency warning: "${alertLine}"\n\nYou set a target of ${targetText} (${modeText}), and current progress is around ${currentText}. That's exactly why I'm reaching out.\n\nLet's tighten this up now instead of waiting another week.`,
+      `${handle}, final reminder for this week.\n\nWarning in app: "${alertLine}"\n\nThis is about your stated goal of ${targetText} (${modeText}). You're currently around ${currentText}, so we need consistent sessions again to move the right direction.\n\nGet one workout done today and message me after.`
     ];
     const idx = Math.abs(Number(templateIdx) || 0) % 7;
     return {
@@ -167,13 +167,13 @@
     const alertLine = String(warn?.message || 'My app is flagging your consistency right now.').trim();
     const { targetText, currentText, modeText } = warningGoalSummary(warn);
     const templates = [
-      `${handle}, get your shit together. ${alertLine} I hope it's a fluke because you're supposed to be in the gym. Goal: ${targetText} (${modeText}), current: ${currentText}. How are you getting there BSing?`,
-      `${handle} quick check: ${alertLine} Lock in. You're supposed to be in the gym. Goal is ${targetText} (${modeText}), current trend ${currentText}.`,
-      `${handle} this is direct: ${alertLine} Get your shit together and execute. You said ${targetText} (${modeText}) is the goal.`,
-      `${handle} hard truth: ${alertLine} If your target is ${targetText} (${modeText}), how are you getting there BSing around ${currentText}?`,
-      `${handle} no fluff, lock in today. ${alertLine} Goal ${targetText} (${modeText}), current ${currentText}. Show up.`,
-      `${handle}, reminder: ${alertLine} I hope it's a fluke. You're supposed to be in the gym working toward ${targetText}.`,
-      `${handle}, wake up call: ${alertLine} Goal ${targetText} (${modeText}), current ${currentText}. Stop BSing and execute.`
+      `${handle} quick check-in: app warning says "${alertLine}". I'm texting because your goal is ${targetText} (${modeText}) and you're around ${currentText}. Can you get a session in today?`,
+      `${handle} this is about your goal progress. Alert: "${alertLine}". Target is ${targetText} (${modeText}); current check-in ${currentText}. Let's lock in this week.`,
+      `${handle}, not random. The app flagged "${alertLine}" and your goal is ${targetText} (${modeText}) with current around ${currentText}. What's your plan for today?`,
+      `${handle} I reached out because of this warning: "${alertLine}". You want ${targetText} (${modeText}) and you're at ${currentText} now. Let's get back on track today.`,
+      `${handle} support nudge: "${alertLine}". Reason I'm texting is your goal target ${targetText} (${modeText}) vs current ${currentText}. Reply with your workout time today.`,
+      `${handle} app check-in: "${alertLine}". Goal is ${targetText} (${modeText}) and trend shows ${currentText}. Tighten up today so we close that gap.`,
+      `${handle} final nudge for now: "${alertLine}". Your stated goal is ${targetText} (${modeText}) and current is ${currentText}. Get one session done today.`
     ];
     const idx = Math.abs(Number(templateIdx) || 0) % 7;
     return templates[idx];

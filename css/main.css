@@ -17616,6 +17616,22 @@ html[data-theme="light"] .ode-tour-btn.primary {
     white-space: nowrap;
 }
 
+@media (min-width: 901px) {
+    .training-page .plan-topbar-actions-toggle-row,
+    .training-page .plan-topbar-actions-dropdown {
+        display: none !important;
+    }
+
+    .training-page .plan-topbar-actions {
+        width: auto;
+        align-items: flex-end;
+    }
+
+    .training-page .plan-topbar-actions-mainrow {
+        justify-content: flex-end;
+    }
+}
+
 .training-page .plan-topbar-share {
     margin-left: auto;
     align-self: flex-start;

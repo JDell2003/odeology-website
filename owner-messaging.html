@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Work Outreach · odeology_</title>
+  <title>Work Outreach Â· odeology_</title>
   <link rel="stylesheet" href="css/main.css">
   <style>
     :root {
@@ -58,10 +58,11 @@
     }
 
     .owner-msg-card {
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.93);
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 14px;
       padding: 14px;
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08);
     }
 
     .owner-msg-muted {
@@ -84,11 +85,19 @@
       background: #fff;
       padding: 10px;
       cursor: pointer;
+      text-align: left;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .owner-msg-account:hover {
+      transform: translateY(-1px);
+      border-color: rgba(197, 141, 79, 0.45);
     }
 
     .owner-msg-account.active {
       border-color: rgba(197, 141, 79, 0.9);
       box-shadow: inset 0 0 0 1px rgba(197, 141, 79, 0.3);
+      background: linear-gradient(160deg, rgba(197, 141, 79, 0.08), rgba(197, 141, 79, 0.02));
     }
 
     .owner-msg-account-name {
@@ -198,13 +207,14 @@
     }
 
     .owner-msg-thread-avatar {
-      width: 34px;
-      height: 34px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: rgba(197, 141, 79, 0.22);
-      border: 1px solid rgba(197, 141, 79, 0.45);
+      background: radial-gradient(circle at 30% 20%, #f6dfba 0%, #d5ab75 55%, #b7884e 100%);
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 4px 12px rgba(56, 35, 10, 0.22);
       color: #2b1d11;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
       display: grid;
       place-items: center;
@@ -322,54 +332,63 @@
 
     .owner-msg-compose {
       border-top: 1px solid rgba(0, 0, 0, 0.08);
-      padding-top: 6px;
+      padding-top: 10px;
       padding-bottom: max(6px, env(safe-area-inset-bottom));
       display: grid;
-      gap: 6px;
+      gap: 8px;
       align-self: end;
       background: #fff;
     }
 
-    body.owner-messaging-page.owner-thread-active .owner-msg-wrap {
-      grid-template-columns: minmax(0, 1fr);
-      max-width: none;
-      width: 100%;
-      margin-top: calc(var(--navbar-height, 72px) + 8px);
-      margin-bottom: 0;
-      padding: 0 8px 0;
-      min-height: calc(100dvh - var(--navbar-height, 72px) - 8px);
+    #owner-msg-body {
+      min-height: 86px;
+      resize: vertical;
     }
 
-    body.owner-messaging-page.owner-thread-active .owner-msg-head,
-    body.owner-messaging-page.owner-thread-active #owner-msg-list-card {
-      display: none !important;
-    }
+    @media (min-width: 641px) {
+      body.owner-messaging-page.owner-thread-active .owner-msg-wrap {
+        grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+        max-width: 1200px;
+        width: auto;
+        margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+        padding: 0 16px 24px;
+        min-height: calc(100dvh - var(--navbar-height, 72px) - 34px);
+      }
 
-    body.owner-messaging-page.owner-thread-active #owner-msg-thread-card {
-      min-height: calc(100dvh - var(--navbar-height, 72px) - 22px);
-      height: calc(100dvh - var(--navbar-height, 72px) - 22px);
-      border-radius: 14px 14px 0 0;
-      margin: 0;
-    }
+      body.owner-messaging-page.owner-thread-active .owner-msg-head {
+        display: flex !important;
+      }
 
-    body.owner-messaging-page.owner-thread-active #owner-msg-thread-list {
-      min-height: 0;
-      max-height: none;
-      height: 100%;
-      padding-bottom: calc(96px + env(safe-area-inset-bottom));
-    }
+      body.owner-messaging-page.owner-thread-active #owner-msg-list-card {
+        display: block !important;
+      }
 
-    body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
-      position: fixed;
-      left: 8px;
-      right: 8px;
-      bottom: 0;
-      z-index: 85;
-      background: #fff;
-      padding-top: 8px;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
-      border-top: 1px solid rgba(0, 0, 0, 0.1);
-      box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.08);
+      body.owner-messaging-page.owner-thread-active #owner-msg-thread-card {
+        min-height: calc(100dvh - var(--navbar-height, 72px) - 120px);
+        height: auto;
+        border-radius: 14px;
+        margin: 0;
+      }
+
+      body.owner-messaging-page.owner-thread-active #owner-msg-thread-list {
+        min-height: 220px;
+        max-height: calc(100vh - var(--navbar-height, 72px) - 380px);
+        height: auto;
+        padding-bottom: 2px;
+      }
+
+      body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        z-index: auto;
+        background: #fff;
+        padding-top: 10px;
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: none;
+      }
     }
 
     .owner-msg-mobile-compose {
@@ -615,6 +634,48 @@
     }
 
     @media (max-width: 640px) {
+      body.owner-messaging-page.owner-thread-active .owner-msg-wrap {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: none;
+        width: 100%;
+        margin-top: calc(var(--navbar-height, 72px) + 8px);
+        margin-bottom: 0;
+        padding: 0 8px 0;
+        min-height: calc(100dvh - var(--navbar-height, 72px) - 8px);
+      }
+
+      body.owner-messaging-page.owner-thread-active .owner-msg-head,
+      body.owner-messaging-page.owner-thread-active #owner-msg-list-card {
+        display: none !important;
+      }
+
+      body.owner-messaging-page.owner-thread-active #owner-msg-thread-card {
+        min-height: calc(100dvh - var(--navbar-height, 72px) - 22px);
+        height: calc(100dvh - var(--navbar-height, 72px) - 22px);
+        border-radius: 14px 14px 0 0;
+        margin: 0;
+      }
+
+      body.owner-messaging-page.owner-thread-active #owner-msg-thread-list {
+        min-height: 0;
+        max-height: none;
+        height: 100%;
+        padding-bottom: calc(96px + env(safe-area-inset-bottom));
+      }
+
+      body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 0;
+        z-index: 85;
+        background: #fff;
+        padding-top: 8px;
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.08);
+      }
+
       body.owner-messaging-page.owner-thread-active #control-panel {
         display: none !important;
       }
@@ -989,7 +1050,7 @@
       <div class="owner-msg-thread-head">
         <div class="owner-msg-thread-head-main">
           <button type="button" class="owner-msg-mobile-back owner-msg-mobile-only" id="owner-msg-mobile-back" aria-label="Back to accounts">&#x2039;</button>
-          <div id="owner-msg-thread-avatar" class="owner-msg-thread-avatar">•</div>
+          <div id="owner-msg-thread-avatar" class="owner-msg-thread-avatar">OA</div>
           <div class="owner-msg-thread-title">
             <div id="owner-msg-thread-name">Select an account</div>
             <div id="owner-msg-thread-sub" class="owner-msg-muted">No conversation selected.</div>
@@ -1008,8 +1069,13 @@
         <div class="owner-msg-muted">Select an account to load messages.</div>
       </div>
       <form id="owner-msg-send-form" class="owner-msg-compose">
-        <input id="owner-msg-body" class="auth-input" type="text" maxlength="4000" placeholder="Type a message..." autocomplete="off" />
+        <textarea id="owner-msg-body" class="auth-input" rows="4" maxlength="4000" placeholder="Write a message..." autocomplete="off"></textarea>
         <div class="owner-msg-desktop-send" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input id="owner-msg-image" class="auth-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:320px;" />
+          <span id="owner-msg-image-meta" class="owner-msg-muted">Optional image (max 900KB)</span>
+        </div>
+        <div class="owner-msg-desktop-send" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button type="submit" id="owner-msg-send" class="btn btn-primary">Send</button>
           <span id="owner-msg-status" class="owner-msg-status"></span>
         </div>
         <div id="owner-msg-mobile-status" class="owner-msg-compose-mobile-status"></div>
