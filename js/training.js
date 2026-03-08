@@ -687,6 +687,7 @@
   };
 
   const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
+  const SHARE_OUTGOING_SYNC_MS = 4500;
   const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-5';
   const shareDebugEnabled = (() => {
     try {
@@ -816,9 +817,20 @@
   };
 
   let shareCloseBound = false;
+  let shareOutgoingSyncTimer = 0;
   let workoutInputBound = false;
   let workoutInputGateBound = false;
   let workoutInputGateToastAt = 0;
+
+  function ensureShareOutgoingSyncTimer() {
+    if (shareOutgoingSyncTimer) return;
+    shareOutgoingSyncTimer = window.setInterval(() => {
+      if (!shareUi.open) return;
+      if (document.hidden) return;
+      if (shareUi.loading) return;
+      loadShareAccounts(shareUi.query || '');
+    }, SHARE_OUTGOING_SYNC_MS);
+  }
 
   function formatWorkoutElapsed(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
@@ -3191,7 +3203,8 @@ function toFreeExerciseDbRemotePath(src) {
 function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
-    if (shareUi.open && !shareUi.loaded) {
+    if (shareUi.open) {
+      // Always refresh from server so "Requested" clears after receiver accepts/declines.
       loadShareAccounts(shareUi.query || '');
     }
     render();
@@ -6999,6 +7012,12 @@ function toggleSharePopover(force) {
   }
 
   bindShareClose();
+  ensureShareOutgoingSyncTimer();
+  window.addEventListener('beforeunload', () => {
+    if (!shareOutgoingSyncTimer) return;
+    window.clearInterval(shareOutgoingSyncTimer);
+    shareOutgoingSyncTimer = 0;
+  });
   wireAuthSync();
   bindWorkoutInputTracking();
   bindWorkoutInputGate();
