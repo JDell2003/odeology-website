@@ -9248,8 +9248,22 @@ function ensureBasicCheckinModal() {
                         <div class="checkin-grid">
                             <div class="ns-field checkin-pp-field">
                                 <span>Front, side, back</span>
-                                <div class="ns-muted tiny">Compare dates directly inside the photo screen.</div>
-                                <button class="btn btn-primary" type="button" id="checkin-progress-photos">Add / compare photos</button>
+                                <div class="ns-muted tiny">Tap a pose to upload or take a photo for that angle.</div>
+                                <div class="checkin-pp-grid" role="group" aria-label="Progress photo poses">
+                                    <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="front">
+                                        <span class="checkin-pp-slot-label">Front</span>
+                                        <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
+                                    </button>
+                                    <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="side">
+                                        <span class="checkin-pp-slot-label">Side</span>
+                                        <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
+                                    </button>
+                                    <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="back">
+                                        <span class="checkin-pp-slot-label">Back</span>
+                                        <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
+                                    </button>
+                                </div>
+                                <button class="btn btn-ghost" type="button" id="checkin-progress-photos">Open photo manager</button>
                             </div>
                         </div>
                     </section>
@@ -9285,10 +9299,10 @@ function ensureCheckinMealModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title" id="cmm-title">Meal</h3>
-                    <p class="checkin-sub" id="cmm-sub">Planned vs. actual. Clear it if you didnÃ¢â‚¬â„¢t eat it.</p>
+                    <p class="checkin-sub" id="cmm-sub">Planned vs. actual. Clear it if you did not eat it.</p>
                 </div>
                 <div class="meal-log-head-actions">
-                    <button class="btn btn-ghost" type="button" id="cmm-skip">DidnÃ¢â‚¬â„¢t eat</button>
+                    <button class="btn btn-ghost" type="button" id="cmm-skip">Did not eat</button>
                     <button class="btn btn-ghost" type="button" id="cmm-clear">Clear all</button>
                     <button type="button" class="checkin-close" data-cmm-close aria-label="Close">&times;</button>
                 </div>
@@ -9337,7 +9351,7 @@ function ensureProgressPhotosModal() {
             <div class="checkin-head">
                 <div>
                     <h3 class="checkin-title">Progress photos</h3>
-                    <p class="checkin-sub">Front + side + back photos help you see changes that the scale canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t.</p>
+                    <p class="checkin-sub">Front + side + back photos help you see changes that the scale cannot.</p>
                 </div>
                 <button type="button" class="checkin-close" data-pp-close aria-label="Close">&times;</button>
             </div>
@@ -9428,11 +9442,11 @@ function ensureProgressCompareModal() {
             </div>
             <div class="pc-grid" id="pc-grid">
                 <div class="pc-slot">
-                    <div class="pc-label" id="pc-a-label">â€”</div>
+                    <div class="pc-label" id="pc-a-label">-</div>
                     <img id="pc-a-img" alt="Photo A">
                 </div>
                 <div class="pc-slot">
-                    <div class="pc-label" id="pc-b-label">â€”</div>
+                    <div class="pc-label" id="pc-b-label">-</div>
                     <img id="pc-b-img" alt="Photo B">
                 </div>
             </div>
@@ -9510,6 +9524,7 @@ function setupBasicCheckin() {
     const mealsSummaryEl = byId('checkin-meals-summary');
     const mealButtonsEl = byId('checkin-meal-buttons');
     const progressPhotosBtn = byId('checkin-progress-photos');
+    const progressPhotoPoseBtns = Array.from(modal.querySelectorAll('[data-checkin-pp-pose]'));
     const completionTextEl = byId('checkin-complete-text');
     const completionFillEl = byId('checkin-complete-fill');
     const autosaveStatusEl = byId('checkin-autosave-status');
@@ -9541,12 +9556,14 @@ function setupBasicCheckin() {
         try {
             const prefs = JSON.parse(sessionStorage.getItem('groceryPrefs') || 'null');
             const n = Number(prefs?.mealsPerDay);
-            if (Number.isFinite(n) && n >= 2 && n <= 5) return Math.round(n);
+            if (Number.isFinite(n) && n >= 2 && n <= 6) return Math.round(n);
         } catch {
             // ignore
         }
+        const byMealsArray = Array.isArray(mealPlanSnap?.meals) ? Number(mealPlanSnap.meals.length) : 0;
+        if (Number.isFinite(byMealsArray) && byMealsArray >= 2 && byMealsArray <= 6) return Math.round(byMealsArray);
         const n = Number(mealPlanSnap?.mealsPerDay);
-        if (Number.isFinite(n) && n >= 2 && n <= 5) return Math.round(n);
+        if (Number.isFinite(n) && n >= 2 && n <= 6) return Math.round(n);
         return 3;
     })();
 
@@ -9628,10 +9645,10 @@ function setupBasicCheckin() {
             <div class="meal-log-row" data-cmm-row="${i}">
                 <input class="meal-log-input meal-log-name" data-cmm-field="name" data-cmm-i="${i}" placeholder="e.g. Chicken breast" value="${escapeHtml(r.name || '')}">
                 <input class="meal-log-input meal-log-qty" data-cmm-field="qty" data-cmm-i="${i}" placeholder="e.g. 6 oz" value="${escapeHtml(r.qty || '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="kcal" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.kcal ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="p" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.p ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="c" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.c ?? '')}">
-                <input class="meal-log-input meal-log-num" data-cmm-field="f" data-cmm-i="${i}" inputmode="numeric" placeholder="â€”" value="${escapeHtml(r.f ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="kcal" data-cmm-i="${i}" inputmode="numeric" placeholder="-" value="${escapeHtml(r.kcal ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="p" data-cmm-i="${i}" inputmode="numeric" placeholder="-" value="${escapeHtml(r.p ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="c" data-cmm-i="${i}" inputmode="numeric" placeholder="-" value="${escapeHtml(r.c ?? '')}">
+                <input class="meal-log-input meal-log-num" data-cmm-field="f" data-cmm-i="${i}" inputmode="numeric" placeholder="-" value="${escapeHtml(r.f ?? '')}">
                 <button class="meal-log-del" type="button" data-cmm-del="${i}" aria-label="Remove row">&times;</button>
             </div>
         `).join('');
@@ -9666,7 +9683,7 @@ function setupBasicCheckin() {
         const onPlan = keys.filter((k) => String(mealEntries[k]?.mode) === 'planned').length;
         const offPlan = keys.filter((k) => String(mealEntries[k]?.mode) === 'override').length;
         const summary = logged
-            ? `Logged: ${logged}/${mealsPerDay} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ On plan: ${onPlan} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Off plan: ${offPlan}`
+            ? `Logged: ${logged}/${mealsPerDay} | On plan: ${onPlan} | Off plan: ${offPlan}`
             : `Logged: 0/${mealsPerDay}`;
         if (mealsSummaryEl) mealsSummaryEl.textContent = summary;
 
@@ -9687,7 +9704,7 @@ function setupBasicCheckin() {
             const plannedPreview = plannedNames.join(', ');
             const plannedMore = planned.length > plannedNames.length;
             const sub = plannedPreview
-                ? `${escapeHtml(plannedPreview)}${plannedMore ? 'Ã¢â‚¬Â¦' : ''}`
+                ? `${escapeHtml(plannedPreview)}${plannedMore ? '...' : ''}`
                 : 'No premade meal';
             const cls = `btn btn-ghost checkin-meal-btn ${done ? 'done' : ''}`;
             return `
@@ -9733,8 +9750,8 @@ function setupBasicCheckin() {
         if (cmmTitleEl) cmmTitleEl.textContent = `Meal ${mealIndex}`;
         if (cmmSubEl) {
             cmmSubEl.textContent = cmmState.hasPlan
-                ? 'Premade plan loaded. Edit if needed, or tap Ã¢â‚¬Å“DidnÃ¢â‚¬â„¢t eatÃ¢â‚¬Â.'
-                : 'No plan found yet â€” add what you ate.';
+                ? 'Premade plan loaded. Edit if needed, or tap "Did not eat".'
+                : 'No plan found yet - add what you ate.';
         }
         if (cmmPlanEl) {
             if (!plannedRows.length) {
@@ -9821,7 +9838,7 @@ function setupBasicCheckin() {
         const planned = plannedMealText(idx);
         const hasPlan = plannedMealRows(idx).length > 0;
         const mode = !hasPlan || cmmState.dirty ? 'override' : 'planned';
-        const actualText = rows.map((r) => `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${r.name}${r.qty ? ` â€” ${r.qty}` : ''}`).join('\n');
+        const actualText = rows.map((r) => `- ${r.name}${r.qty ? ` - ${r.qty}` : ''}`).join('\n');
 
         mealEntries[String(idx)] = {
             index: idx,
@@ -9861,7 +9878,7 @@ function setupBasicCheckin() {
         e.preventDefault();
         if (!activeMealIndex) return;
         activeOverride = true;
-        if (mealStatusEl) mealStatusEl.textContent = 'Override â€” type what you ate (servings optional).';
+        if (mealStatusEl) mealStatusEl.textContent = 'Override - type what you ate (servings optional).';
         if (mealActualEl) mealActualEl.focus();
     });
 
@@ -10284,8 +10301,8 @@ function setupBasicCheckin() {
         return toIsoLocal(d);
     };
 
-    // "Program week" = fixed 7-day blocks within the month (1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“7, 8ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“14, 15ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“21, 22ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“28, 29ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“31).
-    // This matches the "if I'm on the 2nd, show 1stÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“7th" requirement.
+    // "Program week" = fixed 7-day blocks within the month (1-7, 8-14, 15-21, 22-28, 29-31).
+    // This matches the "if I'm on the 2nd, show 1st-7th" requirement.
     const startOfProgramWeekIso = (iso) => {
         const d = isoToDateLocal(iso);
         const dom = d.getDate();
@@ -10299,14 +10316,14 @@ function setupBasicCheckin() {
 
     const fmtDayLong = (iso) => {
         const d = isoToDateLocal(iso);
-        if (Number.isNaN(d.getTime())) return 'â€”';
+        if (Number.isNaN(d.getTime())) return '-';
         return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     };
 
     const fmtRange = (startIso, endIso) => {
         const s = isoToDateLocal(startIso);
         const e = isoToDateLocal(endIso);
-        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 'â€”';
+        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return '-';
         const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
         const left = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         const right = e.toLocaleDateString(undefined, { month: sameMonth ? 'short' : 'short', day: 'numeric' });
@@ -10321,7 +10338,7 @@ function setupBasicCheckin() {
     const setLocked = (locked) => {
         checkinLocked = !!locked;
         const msg = locked
-            ? 'Locked: you canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t log future days.'
+            ? 'Locked: you cannot log future days.'
             : '';
 
         if (lockNoteEl) {
@@ -10367,7 +10384,7 @@ function setupBasicCheckin() {
         if (!nextIso) return;
         if (nextIso < currentWeekStartIso || nextIso > currentWeekEndIso) return;
         if (nextIso > todayIso()) {
-            showAlert('You canÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢t log future days.');
+            showAlert('You cannot log future days.');
             return;
         }
         selectedDayIso = nextIso;
@@ -10385,7 +10402,7 @@ function setupBasicCheckin() {
         })();
 
         if (weekMetaEl) {
-            const endsTxt = endsInDays == null ? '' : ` Ãƒâ€šÃ‚Â· ends in ${endsInDays} day${endsInDays === 1 ? '' : 's'}`;
+            const endsTxt = endsInDays == null ? '' : ` | ends in ${endsInDays} day${endsInDays === 1 ? '' : 's'}`;
             weekMetaEl.textContent = `Week: ${fmtRange(currentWeekStartIso, currentWeekEndIso)}${endsTxt}`;
         }
 
@@ -10395,13 +10412,24 @@ function setupBasicCheckin() {
         if (load) await loadCheckin();
     };
 
-    progressPhotosBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
+    const openProgressPhotos = (pose = 'front') => {
         if (typeof window.odeProgressPhotos?.open !== 'function') {
             showAlert('Progress photos are still loading. Try again.');
             return;
         }
-        window.odeProgressPhotos.open({ day: selectedDayIso, pose: 'front' });
+        const safePose = (pose === 'side' || pose === 'back') ? pose : 'front';
+        window.odeProgressPhotos.open({ day: selectedDayIso, pose: safePose });
+    };
+
+    progressPhotosBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openProgressPhotos('front');
+    });
+    progressPhotoPoseBtns.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openProgressPhotos(btn.getAttribute('data-checkin-pp-pose'));
+        });
     });
 
     setSelectedDay(selectedDayIso, { load: false });
@@ -10469,7 +10497,7 @@ function setupBasicCheckin() {
                         showAlert(wData.warning);
                     }
                     if (!silent && wData?.flagged) {
-                        showAlert('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Profile flagged: 4+ auto-adjusts without progress.');
+                        showAlert('Warning: profile flagged (4+ auto-adjusts without progress).');
                     }
                 }
             } catch {
@@ -10713,7 +10741,7 @@ function setupProgressPhotos() {
 
         const fmt = (iso) => {
             const d = new Date(`${String(iso).slice(0, 10)}T00:00:00`);
-            if (Number.isNaN(d.getTime())) return String(iso || 'â€”');
+            if (Number.isNaN(d.getTime())) return String(iso || '-');
             return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         };
 
@@ -10756,7 +10784,7 @@ function setupProgressPhotos() {
                 previewImg.src = selected.imageDataUrl;
                 previewImg.classList.remove('hidden');
             }
-            if (previewMeta) previewMeta.textContent = `${fmt(selected.day)} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${selected.pose}`;
+            if (previewMeta) previewMeta.textContent = `${fmt(selected.day)} | ${selected.pose}`;
         };
 
         const openCompare = async () => {
@@ -10791,8 +10819,8 @@ function setupProgressPhotos() {
                 const b = photos.find((x) => x.pose === p && x.day === bDay) || null;
                 if (aImg) aImg.src = a?.imageDataUrl || '';
                 if (bImg) bImg.src = b?.imageDataUrl || '';
-                if (aLabel) aLabel.textContent = a ? fmt(a.day) : 'â€”';
-                if (bLabel) bLabel.textContent = b ? fmt(b.day) : 'â€”';
+                if (aLabel) aLabel.textContent = a ? fmt(a.day) : '-';
+                if (bLabel) bLabel.textContent = b ? fmt(b.day) : '-';
             };
 
             pc.classList.remove('hidden');

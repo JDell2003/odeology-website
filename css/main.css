@@ -12099,7 +12099,7 @@ html[data-theme="light"] .avatar-cropper-viewport {
 
 .checkin-meal-buttons {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 10px;
     margin-top: 10px;
 }
@@ -12318,6 +12318,7 @@ html[data-theme="light"] .avatar-cropper-viewport {
 }
 
 .checkin-unified-grid .checkin-unified-block:nth-child(3),
+.checkin-unified-grid .checkin-unified-block:nth-child(4),
 .checkin-unified-grid .checkin-unified-block:nth-child(5) {
     grid-column: 1 / -1;
 }
@@ -12561,6 +12562,48 @@ html[data-theme="light"] .avatar-cropper-viewport {
     margin-top: 8px;
 }
 
+.checkin-pp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkin-pp-slot {
+    border: 1px dashed rgba(231, 163, 77, 0.45);
+    border-radius: 14px;
+    background: rgba(231, 163, 77, 0.08);
+    min-height: 86px;
+    padding: 10px;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 4px;
+    color: inherit;
+    cursor: pointer;
+    transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.checkin-pp-slot:hover {
+    transform: translateY(-1px);
+    border-color: rgba(231, 163, 77, 0.72);
+    background: rgba(231, 163, 77, 0.14);
+}
+
+.checkin-pp-slot-label {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.checkin-pp-slot-sub {
+    opacity: 0.82;
+}
+
+:root[data-theme="light"] .checkin-pp-slot {
+    border-color: rgba(193, 132, 44, 0.46);
+    background: rgba(225, 170, 91, 0.12);
+}
+
 .checkin-meals-field {
     grid-column: 1 / -1;
 }
@@ -12594,7 +12637,9 @@ html[data-theme="light"] .avatar-cropper-viewport {
     .checkin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .checkin-unified-grid { grid-template-columns: 1fr; }
     .checkin-unified-grid .checkin-unified-block:nth-child(3),
+    .checkin-unified-grid .checkin-unified-block:nth-child(4),
     .checkin-unified-grid .checkin-unified-block:nth-child(5) { grid-column: auto; }
+    .checkin-pp-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {
