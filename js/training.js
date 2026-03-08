@@ -6284,7 +6284,7 @@ function toggleSharePopover(force) {
           member?.photoDataUrl
             ? el('img', { src: member.photoDataUrl, alt: memberName })
             : (initials || 'O'),
-          el('span', { class: 'share-workout-member-kick', 'aria-hidden': 'true' }, 'x'));
+          el('span', { class: 'share-workout-member-kick', 'aria-hidden': 'true' }, '×'));
         }),
         acceptedShareOverflow > 0
           ? el('div', { class: 'share-workout-member-avatar extra', title: `${acceptedShareOverflow} more` }, `+${acceptedShareOverflow}`)
