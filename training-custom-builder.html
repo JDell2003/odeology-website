@@ -730,6 +730,9 @@
         { match: /^Close-Grip_Bench_Press\//i, replace: 'Smith_Machine_Close-Grip_Bench_Press/' },
         { match: /^Overhead_Press\//i, replace: 'Barbell_Shoulder_Press/' }
       ];
+      const MAX_UNFILTERED_RESULTS = 140;
+      const MAX_FILTERED_RESULTS = 220;
+      const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
 
       const $ = (id) => document.getElementById(id);
       const statusEl = $('builder-status');
@@ -869,9 +872,11 @@
         const normalized = normalizeImagePath(rawPath);
         if (!normalized) return [];
         if (/^https?:\/\//i.test(normalized)) return [normalized];
+        if (!normalized.includes('/')) return [];
         const encoded = encodeImagePath(normalized);
         if (!encoded) return [];
         return [
+          `${EXERCISE_CDN_BASE}/${encoded}`,
           `/free-exercise-db/exercises/${encoded}`,
           `/exercise-db/exercises/${encoded}`
         ];
@@ -1194,7 +1199,7 @@
             .join(' ');
           return hay.includes(q);
         });
-        return base.slice(0, 350);
+        return base.slice(0, q ? MAX_FILTERED_RESULTS : MAX_UNFILTERED_RESULTS);
       }
 
       function renderDatabaseList() {
@@ -1665,8 +1670,10 @@
           await loadCustomWorkouts();
         });
 
-        await loadWorkoutDatabase();
-        await loadCustomWorkouts();
+        await Promise.all([
+          loadWorkoutDatabase(),
+          loadCustomWorkouts()
+        ]);
       }
 
       init();
