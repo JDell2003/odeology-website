@@ -17842,10 +17842,10 @@ html[data-theme="light"] .ode-tour-btn.primary {
     font-size: 0.67rem;
     font-weight: 800;
     letter-spacing: 0.02em;
-    color: color-mix(in srgb, var(--training-muted) 92%, #ccd6e2);
+    color: #7b8794 !important;
     background: transparent;
     cursor: pointer;
-    transition: color 0.16s ease;
+    transition: color 0.16s ease, background 0.16s ease;
 }
 
 .share-workout-mode-btn + .share-workout-mode-btn {
@@ -17860,17 +17860,19 @@ html[data-theme="light"] .ode-tour-btn.primary {
     left: 0.08rem;
     top: 50%;
     transform: translateY(-52%);
-    color: color-mix(in srgb, #dfe6ef 85%, #ffffff);
+    color: #d5dde7;
     font-weight: 600;
 }
 
 .share-workout-mode-btn.active {
-    color: color-mix(in srgb, var(--training-accent) 88%, #8f6b2a);
-    text-shadow: 0 0 0 transparent;
+    color: #b7884e !important;
+    background: #f7ecd8;
+    border-radius: 999px;
+    text-shadow: none;
 }
 
 .share-workout-mode-btn:hover {
-    color: color-mix(in srgb, var(--training-accent) 72%, #8f6b2a);
+    color: #9f7740 !important;
 }
 
 .share-workout-pdf-panel {
