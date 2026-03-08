@@ -682,6 +682,7 @@
     status: '',
     requesting: new Set(),
     requested: new Set(),
+    latestStatus: new Map(),
     confirmToastTimer: 0,
     query: ''
   };
@@ -771,6 +772,32 @@
     if (!shareUi.confirmToastTimer) return;
     window.clearTimeout(shareUi.confirmToastTimer);
     shareUi.confirmToastTimer = 0;
+  }
+
+  function syncShareOutgoingState(payload) {
+    const pendingIds = Array.isArray(payload?.targetUserIds)
+      ? payload.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean)
+      : [];
+    const pendingSet = new Set(pendingIds);
+    shareUi.requested.clear();
+    pendingSet.forEach((id) => shareUi.requested.add(id));
+
+    shareUi.latestStatus.clear();
+    const rawStatusByUser = payload?.latestStatusByUserId && typeof payload.latestStatusByUserId === 'object'
+      ? payload.latestStatusByUserId
+      : {};
+    for (const [rawId, rawStatus] of Object.entries(rawStatusByUser)) {
+      const id = String(rawId || '').trim();
+      if (!id) continue;
+      let status = String(rawStatus || '').trim().toLowerCase();
+      if (!status) continue;
+      if (status === 'rejected') status = 'declined';
+      if (status === 'pending') continue;
+      if (status !== 'accepted' && status !== 'declined') continue;
+      shareUi.latestStatus.set(id, status);
+    }
+
+    return pendingSet;
   }
 
   function showShareRequestSentToast(sentCount = 1) {
@@ -3065,12 +3092,15 @@ function toFreeExerciseDbRemotePath(src) {
           })
         : list;
 
-      const pendingFromServer = outgoingResp.ok && outgoingResp.json?.ok && Array.isArray(outgoingResp.json?.targetUserIds)
-        ? outgoingResp.json.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean)
-        : [];
-      const pendingSet = new Set(pendingFromServer);
-      shareUi.requested.clear();
-      pendingSet.forEach((id) => shareUi.requested.add(id));
+      if (outgoingResp.ok && outgoingResp.json?.ok) {
+        syncShareOutgoingState(outgoingResp.json);
+      } else {
+        shareDebugLog('outgoing refresh failed during loadShareAccounts', {
+          ok: outgoingResp?.ok,
+          status: outgoingResp?.status,
+          json: outgoingResp?.json || null
+        });
+      }
 
       shareUi.accounts = filtered;
       try {
@@ -3141,17 +3171,16 @@ function toFreeExerciseDbRemotePath(src) {
     if (sent > 0) {
       let confirmed = false;
       const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
-      if (outgoing.ok && outgoing.json?.ok && Array.isArray(outgoing.json?.targetUserIds)) {
-        const pending = new Set(outgoing.json.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean));
-        shareUi.requested.clear();
-        pending.forEach((id) => shareUi.requested.add(id));
+      if (outgoing.ok && outgoing.json?.ok) {
+        const pending = syncShareOutgoingState(outgoing.json);
         confirmed = pending.has(key);
         try {
           shareDebugLog(`[${traceId}] GET /api/training/share/outgoing`, {
             ok: outgoing?.ok,
             status: outgoing?.status,
             pendingCount: pending.size,
-            containsTarget: confirmed
+            containsTarget: confirmed,
+            latestStatus: shareUi.latestStatus.get(key) || null
           });
         } catch {
           // ignore console failures
@@ -3462,6 +3491,7 @@ function toggleSharePopover(force) {
       shareUi.status = '';
       shareUi.requesting.clear();
       shareUi.requested.clear();
+      shareUi.latestStatus.clear();
       clearShareConfirmToastTimer();
       const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
@@ -3481,6 +3511,7 @@ function toggleSharePopover(force) {
       shareUi.status = '';
       shareUi.requesting.clear();
       shareUi.requested.clear();
+      shareUi.latestStatus.clear();
       clearShareConfirmToastTimer();
       const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
       if (autoOnboarded) return;
@@ -3494,6 +3525,7 @@ function toggleSharePopover(force) {
     shareUi.status = '';
     shareUi.requesting.clear();
     shareUi.requested.clear();
+    shareUi.latestStatus.clear();
     clearShareConfirmToastTimer();
 
     let s;
@@ -3517,6 +3549,7 @@ function toggleSharePopover(force) {
         shareUi.status = '';
         shareUi.requesting.clear();
         shareUi.requested.clear();
+        shareUi.latestStatus.clear();
         clearShareConfirmToastTimer();
         setView('wizard');
         return;
@@ -5927,14 +5960,21 @@ function toggleSharePopover(force) {
             const key = String(acct?.id || '').trim();
             const isRequesting = Boolean(key) && shareUi.requesting.has(key);
             const isRequested = Boolean(key) && shareUi.requested.has(key);
-            const isLocked = isRequesting || isRequested;
-            const actionLabel = isRequested
-              ? 'Requested'
-              : isRequesting
-                ? 'Requesting...'
-                : 'Add';
+            const latestStatus = Boolean(key) ? String(shareUi.latestStatus.get(key) || '').toLowerCase() : '';
+            const isAccepted = latestStatus === 'accepted';
+            const isDeclined = latestStatus === 'declined';
+            const isLocked = isRequesting || isRequested || isAccepted || isDeclined;
+            const actionLabel = isRequesting
+              ? 'Requesting...'
+              : isRequested
+                ? 'Requested'
+                : isAccepted
+                  ? 'Accepted'
+                  : isDeclined
+                    ? 'Declined'
+                    : 'Add';
             return el('div', {
-              class: `share-workout-item${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}`,
+              class: `share-workout-item${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,
               'data-user-id': key || null,
               'data-username': acct?.username ? String(acct.username) : null
             },
@@ -5953,10 +5993,14 @@ function toggleSharePopover(force) {
               ),
               el('button', {
                 type: 'button',
-                class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}`,
+                class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}${isAccepted ? ' accepted' : ''}${isDeclined ? ' declined' : ''}`,
                 disabled: isLocked ? 'disabled' : null,
                 'aria-label': isRequested
                   ? `${name} already requested`
+                  : isAccepted
+                    ? `${name} accepted your request`
+                    : isDeclined
+                      ? `${name} declined your request`
                   : `Send workout request to ${name}`,
                 onclick: async (e) => {
                   e.preventDefault();
@@ -5977,7 +6021,9 @@ function toggleSharePopover(force) {
                       shareDebugLog('Add ignored: row locked', {
                         id: key,
                         isRequesting,
-                        isRequested
+                        isRequested,
+                        isAccepted,
+                        isDeclined
                       });
                     } catch {
                       // ignore console failures

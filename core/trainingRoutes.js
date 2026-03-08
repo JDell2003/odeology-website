@@ -3818,20 +3818,36 @@ async function trainingRoutes(req, res, url) {
     logShareRoute('share.outgoing.requested', { method: req.method, pathname, fromUserId: user.id });
     const result = await db.query(
       `
-        SELECT to_user_id
+        SELECT DISTINCT ON (to_user_id)
+               to_user_id,
+               status,
+               updated_at
         FROM app_training_share_invites
         WHERE from_user_id = $1
-          AND status = 'pending'
-        ORDER BY updated_at DESC
-        LIMIT 500;
+        ORDER BY to_user_id, updated_at DESC
+        LIMIT 2000;
       `,
       [user.id]
     );
-    const targetUserIds = Array.from(new Set(
-      (result.rows || []).map((row) => String(row.to_user_id || '').trim()).filter(Boolean)
-    ));
-    logShareRoute('share.outgoing.result', { fromUserId: user.id, pendingCount: targetUserIds.length });
-    return sendJson(res, 200, { ok: true, targetUserIds });
+    const latestStatusByUserId = {};
+    const targetUserIds = [];
+    for (const row of (result.rows || [])) {
+      const toUserId = String(row?.to_user_id || '').trim();
+      if (!toUserId) continue;
+      const status = String(row?.status || '').trim().toLowerCase();
+      if (!status) continue;
+      latestStatusByUserId[toUserId] = status;
+      if (status === 'pending') targetUserIds.push(toUserId);
+    }
+    const acceptedCount = Object.values(latestStatusByUserId).filter((s) => s === 'accepted').length;
+    const rejectedCount = Object.values(latestStatusByUserId).filter((s) => s === 'rejected').length;
+    logShareRoute('share.outgoing.result', {
+      fromUserId: user.id,
+      pendingCount: targetUserIds.length,
+      acceptedCount,
+      rejectedCount
+    });
+    return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId });
   }
 
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {

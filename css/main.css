@@ -17699,12 +17699,30 @@ html[data-theme="light"] .ode-tour-btn.primary {
     background: color-mix(in srgb, #2d9f58 12%, var(--training-surface-2));
 }
 
+.share-workout-item.accepted {
+    border-color: color-mix(in srgb, #2d9f58 52%, var(--training-border));
+    background: color-mix(in srgb, #2d9f58 16%, var(--training-surface-2));
+}
+
+.share-workout-item.declined {
+    border-color: color-mix(in srgb, #d94a4a 50%, var(--training-border));
+    background: color-mix(in srgb, #d94a4a 10%, var(--training-surface-2));
+}
+
 .share-workout-item.requesting:hover {
     border-color: color-mix(in srgb, #f39c12 45%, var(--training-border));
 }
 
 .share-workout-item.requested:hover {
     border-color: color-mix(in srgb, #2d9f58 45%, var(--training-border));
+}
+
+.share-workout-item.accepted:hover {
+    border-color: color-mix(in srgb, #2d9f58 56%, var(--training-border));
+}
+
+.share-workout-item.declined:hover {
+    border-color: color-mix(in srgb, #d94a4a 58%, var(--training-border));
 }
 
 .share-workout-avatar {
@@ -17771,6 +17789,18 @@ html[data-theme="light"] .ode-tour-btn.primary {
     border-color: color-mix(in srgb, #2d9f58 52%, var(--training-border));
     background: color-mix(in srgb, #2d9f58 18%, #ffffff);
     color: #1c6f3d;
+}
+
+.share-workout-add-btn.accepted {
+    border-color: color-mix(in srgb, #2d9f58 60%, var(--training-border));
+    background: color-mix(in srgb, #2d9f58 24%, #ffffff);
+    color: #165f33;
+}
+
+.share-workout-add-btn.declined {
+    border-color: color-mix(in srgb, #d94a4a 62%, var(--training-border));
+    background: color-mix(in srgb, #d94a4a 16%, #ffffff);
+    color: #8d2020;
 }
 
 .share-workout-add-btn:disabled {
