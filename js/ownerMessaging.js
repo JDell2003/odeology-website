@@ -440,6 +440,7 @@
     state.selectedAccount = state.accounts.find((a) => String(a.id) === state.selectedUserId) || null;
     state.messages = [];
     state.threadLoading = true;
+    setThreadSelectionUi(true);
     setDirectMessageText('');
     clearPendingDirectMedia();
     stopVoiceInput();
