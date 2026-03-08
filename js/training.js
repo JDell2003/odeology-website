@@ -6108,8 +6108,7 @@ function toggleSharePopover(force) {
         acceptedShareOverflow > 0
           ? el('div', { class: 'share-workout-member-avatar extra', title: `${acceptedShareOverflow} more` }, `+${acceptedShareOverflow}`)
           : null
-      ),
-      el('div', { class: 'share-workout-members-text' }, `${acceptedShareMembers.length} on workout`)
+      )
       )
       : null;
     const shareListItems = shareUi.loading
