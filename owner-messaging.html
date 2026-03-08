@@ -57,6 +57,10 @@
       display: none;
     }
 
+    .owner-msg-desktop-only {
+      display: inline-flex;
+    }
+
     .owner-msg-card {
       background: rgba(255, 255, 255, 0.93);
       border: 1px solid rgba(0, 0, 0, 0.08);
@@ -427,12 +431,12 @@
       flex: 1;
       min-width: 0;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 4px;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 999px;
       background: #fff;
-      padding: 4px 8px;
+      padding: 4px 8px 6px;
     }
 
     .owner-msg-mobile-input {
@@ -443,7 +447,14 @@
       color: #1f1f1f;
       font-size: 15px;
       outline: none;
-      padding: 8px 4px;
+      line-height: 1.28;
+      resize: none;
+      overflow-y: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 24px;
+      max-height: 90px;
+      padding: 7px 4px 5px;
     }
 
     .owner-msg-mobile-action {
@@ -711,6 +722,10 @@
         display: inline-flex;
       }
 
+      .owner-msg-desktop-only {
+        display: none !important;
+      }
+
       .owner-msg-head {
         display: none !important;
       }
@@ -947,15 +962,15 @@
       .owner-msg-mobile-input-wrap {
         border: 1px solid #d7d7dc;
         background: #fff;
-        height: 4.5vh;
-        height: 4.5dvh;
         min-height: 40px;
-        max-height: 48px;
-        padding: 2px 8px;
+        max-height: none;
+        padding: 2px 8px 6px;
       }
 
       .owner-msg-mobile-input {
         color: var(--ios-text);
+        min-height: 24px;
+        max-height: 92px;
       }
 
       #owner-msg-mobile-attach.owner-msg-icon-btn,
@@ -1094,6 +1109,9 @@
             <div id="owner-msg-thread-bio"></div>
           </div>
         </div>
+        <div class="owner-msg-thread-actions owner-msg-desktop-only">
+          <button type="button" class="owner-msg-icon-btn" id="owner-msg-desktop-attach" aria-label="Attach file" title="Attach file">&#x1F4CE;</button>
+        </div>
         <div class="owner-msg-thread-actions owner-msg-mobile-only">
           <button type="button" class="owner-msg-icon-btn" id="owner-msg-more-options" aria-label="More options">&#x22EE;</button>
           <div class="owner-msg-menu hidden" id="owner-msg-options-menu">
@@ -1115,10 +1133,11 @@
         <div class="owner-msg-mobile-compose owner-msg-mobile-only">
           <div class="owner-msg-mobile-input-wrap">
             <button type="button" id="owner-msg-mobile-attach" class="owner-msg-icon-btn" aria-label="Attach file">&#x1F4CE;</button>
-            <input id="owner-msg-mobile-input" class="owner-msg-mobile-input" type="text" maxlength="4000" placeholder="Type a message" autocomplete="off" />
+            <textarea id="owner-msg-mobile-input" class="owner-msg-mobile-input" rows="1" maxlength="4000" placeholder="Type a message" autocomplete="off"></textarea>
             <button type="button" id="owner-msg-mobile-camera" class="owner-msg-icon-btn" aria-label="Use camera">&#x1F4F7;</button>
           </div>
         </div>
+        <input id="owner-msg-desktop-attach-input" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx" style="display:none;" />
         <input id="owner-msg-mobile-attach-input" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx" style="display:none;" />
         <input id="owner-msg-mobile-camera-input" type="file" accept="image/*" capture="environment" style="display:none;" />
       </form>

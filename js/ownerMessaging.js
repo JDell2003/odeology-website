@@ -69,6 +69,17 @@
     const desktopInput = $('#owner-msg-body');
     if (mobileInput) mobileInput.value = v;
     if (desktopInput) desktopInput.value = v;
+    syncMobileInputHeight();
+  }
+
+  function syncMobileInputHeight() {
+    const mobileInput = $('#owner-msg-mobile-input');
+    if (!mobileInput) return;
+    mobileInput.style.height = 'auto';
+    const maxHeight = 92;
+    const nextHeight = Math.min(maxHeight, Math.max(24, Number(mobileInput.scrollHeight) || 24));
+    mobileInput.style.height = `${nextHeight}px`;
+    mobileInput.style.overflowY = (Number(mobileInput.scrollHeight) || 0) > maxHeight ? 'auto' : 'hidden';
   }
 
   function updateMobileActionUi() {
@@ -121,8 +132,10 @@
   function clearPendingDirectMedia() {
     state.pendingDirectImageDataUrl = null;
     state.pendingDirectAttachmentNote = '';
+    const desktopAttachInput = $('#owner-msg-desktop-attach-input');
     const attachInput = $('#owner-msg-mobile-attach-input');
     const cameraInput = $('#owner-msg-mobile-camera-input');
+    if (desktopAttachInput) desktopAttachInput.value = '';
     if (attachInput) attachInput.value = '';
     if (cameraInput) cameraInput.value = '';
     updateMobileFileMeta('');
@@ -1100,18 +1113,23 @@
       mobileInput.addEventListener('input', () => {
         const desktopInput = $('#owner-msg-body');
         if (desktopInput) desktopInput.value = mobileInput.value;
+        syncMobileInputHeight();
         updateMobileActionUi();
       });
       mobileInput.addEventListener('keydown', (event) => {
         if (event.key !== 'Enter') return;
-        event.preventDefault();
+        if (event.shiftKey) return;
         const actionBtn = $('#owner-msg-mobile-action');
         if (!actionBtn) {
+          event.preventDefault();
           handleMobileActionButton();
           return;
         }
         const mode = String(actionBtn.dataset?.mode || '');
-        if (mode === 'send') handleMobileActionButton();
+        if (mode === 'send') {
+          event.preventDefault();
+          handleMobileActionButton();
+        }
       });
     }
 
@@ -1170,6 +1188,23 @@
     const mobileAction = $('#owner-msg-mobile-action');
     if (mobileAction) {
       mobileAction.addEventListener('click', handleMobileActionButton);
+    }
+
+    const desktopAttachBtn = $('#owner-msg-desktop-attach');
+    const desktopAttachInput = $('#owner-msg-desktop-attach-input');
+    if (desktopAttachBtn && desktopAttachInput) {
+      desktopAttachBtn.addEventListener('click', () => {
+        if (!state.selectedUserId) {
+          setStatus('Select an account first.', 'error');
+          return;
+        }
+        desktopAttachInput.click();
+      });
+      desktopAttachInput.addEventListener('change', () => {
+        const file = desktopAttachInput.files?.[0];
+        handleMobileSelectedFile(file, 'desktop');
+        updateMobileActionUi();
+      });
     }
 
     const threadList = $('#owner-msg-thread-list');
@@ -1310,6 +1345,7 @@
     setThreadSelectionUi(false);
     updateImageMeta('#owner-msg-image', '#owner-msg-image-meta');
     updateImageMeta('#owner-msg-mass-image', '#owner-msg-mass-image-meta');
+    syncMobileInputHeight();
     updateMobileActionUi();
     await loadAccounts();
     loadStats();
