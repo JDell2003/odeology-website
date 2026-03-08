@@ -32,6 +32,12 @@
     body.classList.toggle('owner-mobile-thread', showThread);
   }
 
+  function setThreadSelectionUi(active) {
+    const body = document.body;
+    if (!body) return;
+    body.classList.toggle('owner-thread-active', Boolean(active));
+  }
+
   function getDirectMessageText() {
     const mobileInput = $('#owner-msg-mobile-input');
     const desktopInput = $('#owner-msg-body');
@@ -311,6 +317,7 @@
     if (!nameEl || !subEl || !listEl) return;
 
     if (!state.selectedAccount) {
+      setThreadSelectionUi(false);
       nameEl.textContent = 'Select an account';
       subEl.textContent = 'No conversation selected.';
       if (bioEl) {
@@ -327,6 +334,7 @@
     }
 
     const override = getProfileOverride(state.selectedUserId);
+    setThreadSelectionUi(true);
     const displayName = state.selectedAccount.displayName || state.selectedAccount.username || 'Account';
     nameEl.textContent = displayName;
     subEl.textContent = `${state.selectedAccount.username ? `@${state.selectedAccount.username} · ` : ''}${state.selectedAccount.email || 'No email'}`;
@@ -1029,6 +1037,7 @@
       mobileBack.addEventListener('click', () => {
         closeOptionsMenu();
         setMobileView('list');
+        setThreadSelectionUi(false);
       });
     }
 
@@ -1239,6 +1248,7 @@
 
     bindEvents();
     setMobileView('list');
+    setThreadSelectionUi(false);
     updateImageMeta('#owner-msg-image', '#owner-msg-image-meta');
     updateImageMeta('#owner-msg-mass-image', '#owner-msg-mass-image-meta');
     updateMobileActionUi();
