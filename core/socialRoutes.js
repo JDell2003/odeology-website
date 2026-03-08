@@ -264,6 +264,7 @@ async function ensureSchema() {
         `);
         await db.query('CREATE INDEX IF NOT EXISTS idx_app_sessions_user_id ON app_sessions(user_id);');
         await db.query('CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_app_users_created_at ON app_users(created_at DESC);');
 
         await db.query(`
           CREATE TABLE IF NOT EXISTS app_user_profiles (
@@ -1072,12 +1073,27 @@ async function socialRoutes(req, res, url) {
       values.push(`%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`);
       whereSql += ' AND (u.username ILIKE $2 OR u.display_name ILIKE $2 OR u.email ILIKE $2)';
     }
+    // Pull a recent seed first to avoid sorting across all users every request.
+    const seedLimit = q ? limit : Math.min(5000, Math.max(limit, limit * 3));
+    values.push(seedLimit);
+    const seedLimitIdx = values.length;
     values.push(limit);
     const limitIdx = values.length;
 
     const result = await db.query(
       `
-        WITH owner_threads AS (
+        WITH base_users AS (
+          SELECT u.id,
+                 u.username,
+                 u.display_name,
+                 u.email,
+                 u.created_at
+          FROM app_users u
+          ${whereSql}
+          ORDER BY u.created_at DESC
+          LIMIT $${seedLimitIdx}
+        ),
+        owner_threads AS (
           SELECT DISTINCT ON (peer_user_id)
                  peer_user_id,
                  last_message_at,
@@ -1094,19 +1110,18 @@ async function socialRoutes(req, res, url) {
           ) t
           ORDER BY peer_user_id, last_message_at DESC NULLS LAST
         )
-        SELECT u.id,
-               u.username,
-               u.display_name,
-               u.email,
-               u.created_at,
+        SELECT b.id,
+               b.username,
+               b.display_name,
+               b.email,
+               b.created_at,
                p.profile->'profile'->>'photoDataUrl' AS photo,
                t.last_message_at,
                t.last_message_text
-        FROM app_users u
-        LEFT JOIN app_user_profiles p ON p.user_id = u.id
-        LEFT JOIN owner_threads t ON t.peer_user_id = u.id
-        ${whereSql}
-        ORDER BY COALESCE(t.last_message_at, u.created_at) DESC
+        FROM base_users b
+        LEFT JOIN app_user_profiles p ON p.user_id = b.id
+        LEFT JOIN owner_threads t ON t.peer_user_id = b.id
+        ORDER BY COALESCE(t.last_message_at, b.created_at) DESC
         LIMIT $${limitIdx};
       `,
       values

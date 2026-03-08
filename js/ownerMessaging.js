@@ -442,7 +442,7 @@
   async function loadAccounts() {
     const qs = new URLSearchParams();
     // Keep first paint fast on large user tables; search can still fetch a larger slice.
-    qs.set('limit', state.search ? '800' : '350');
+    qs.set('limit', state.search ? '800' : '200');
     if (state.search) qs.set('q', state.search);
     const resp = await api(`/api/messages/owner/accounts?${qs.toString()}`);
     if (!resp.ok) {
