@@ -18109,6 +18109,17 @@ html[data-theme="light"] .ode-tour-btn.primary {
     gap: 0.65rem;
 }
 
+.training-page .training-share-welcome-body {
+    gap: 0.55rem;
+}
+
+.training-page .training-share-welcome-line {
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: #2a241f;
+    line-height: 1.4;
+}
+
 .training-page .schedule-day-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

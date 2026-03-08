@@ -182,6 +182,118 @@ function isUuid(input) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(input || '').trim());
 }
 
+const TRAINING_WEEKDAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+const TRAINING_WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function normalizeWeekdayIndexList(raw) {
+  const src = Array.isArray(raw) ? raw : [];
+  const out = [];
+  for (const x of src) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) continue;
+    const i = Math.max(0, Math.min(6, Math.floor(n)));
+    if (!out.includes(i)) out.push(i);
+  }
+  return out;
+}
+
+function preferredWeekdayPattern(daysPerWeek) {
+  const n = Number(daysPerWeek) || 0;
+  if (n <= 0) return [];
+  if (n === 1) return [1];
+  if (n === 2) return [1, 4];
+  if (n === 3) return [1, 3, 5];
+  if (n === 4) return [1, 2, 4, 5];
+  if (n === 5) return [1, 2, 3, 4, 5];
+  if (n === 6) return [1, 2, 3, 4, 5, 6];
+  return [0, 1, 2, 3, 4, 5, 6];
+}
+
+function buildTrainingWeekdays(daysPerWeek, unavailableDays) {
+  const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
+  if (!n) return [];
+  const unavailable = new Set(normalizeWeekdayIndexList(unavailableDays));
+  const available = [1, 2, 3, 4, 5, 6, 0].filter((d) => !unavailable.has(d));
+  if (available.length < n) return [];
+
+  const chosen = [];
+  const pattern = preferredWeekdayPattern(n);
+  for (const d of pattern) {
+    if (chosen.length >= n) break;
+    if (!unavailable.has(d) && !chosen.includes(d)) chosen.push(d);
+  }
+  for (const d of available) {
+    if (chosen.length >= n) break;
+    if (!chosen.includes(d)) chosen.push(d);
+  }
+  const weekdayOrder = new Map([[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [0, 6]]);
+  chosen.sort((a, b) => (weekdayOrder.get(a) ?? 99) - (weekdayOrder.get(b) ?? 99));
+  return chosen.slice(0, n);
+}
+
+function titleCaseWords(raw) {
+  return String(raw || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function humanDisciplineLabel(disciplineRaw) {
+  const d = String(disciplineRaw || '').trim().toLowerCase();
+  if (d === 'bodybuilding') return 'Bodybuilding';
+  if (d === 'powerlifting') return 'Powerlifting';
+  if (d === 'calisthenics') return 'Calisthenics';
+  if (d === 'powerbuilding') return 'Powerbuilding';
+  return 'Training';
+}
+
+function deriveSplitLabelFromSnapshot(snapshot, disciplineRaw) {
+  const firstWeek = Array.isArray(snapshot?.weeks) ? snapshot.weeks[0] : null;
+  const days = Array.isArray(firstWeek?.days) ? firstWeek.days : [];
+  const seen = new Set();
+  const parts = [];
+  for (const day of days) {
+    const raw = day?.focus || day?.title || day?.name || '';
+    const clean = titleCaseWords(raw);
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    parts.push(clean);
+    if (parts.length >= 4) break;
+  }
+  if (parts.length >= 2) return `${parts.join(' / ')} split`;
+  if (parts.length === 1) return `${parts[0]} split`;
+  return `${humanDisciplineLabel(disciplineRaw)} split`;
+}
+
+function buildShareWelcomePayload({ snapshot, fromDisplayName, fromUsername }) {
+  const discipline = normalizeDiscipline(snapshot?.meta?.discipline || snapshot?.discipline || '') || '';
+  const daysPerWeek = clampInt(snapshot?.meta?.daysPerWeek || snapshot?.daysPerWeek, 2, 7, null);
+  const schedule = snapshot?.meta?.schedule && typeof snapshot.meta.schedule === 'object'
+    ? snapshot.meta.schedule
+    : null;
+  const unavailableDays = schedule?.unavailableDays ?? snapshot?.meta?.unavailableDays ?? [];
+  const weekdays = daysPerWeek ? buildTrainingWeekdays(daysPerWeek, unavailableDays) : [];
+  const dayCodes = weekdays.map((idx) => TRAINING_WEEKDAY_CODES[idx]).filter(Boolean);
+  const todayIdx = new Date().getDay();
+  const todayCode = TRAINING_WEEKDAY_CODES[todayIdx] || '';
+  const todayDayName = TRAINING_WEEKDAY_NAMES[todayIdx] || 'Today';
+  const dayPos = weekdays.indexOf(todayIdx);
+  return {
+    fromDisplayName: safeText(fromDisplayName || fromUsername || 'Account', 120) || 'Account',
+    fromUsername: safeText(fromUsername, 80) || null,
+    dayCodes,
+    split: deriveSplitLabelFromSnapshot(snapshot, discipline),
+    todayCode,
+    todayDayName,
+    todayPlanDay: dayPos >= 0 ? (dayPos + 1) : null
+  };
+}
+
 function safeText(raw, maxLen) {
   const s = String(raw ?? '').trim();
   if (!s) return null;
@@ -3822,7 +3934,7 @@ async function trainingRoutes(req, res, url) {
                to_user_id,
                status,
                updated_at
-        FROM app_training_share_invites
+        FROM app_training_share_invites i
         WHERE from_user_id = $1
         ORDER BY to_user_id, updated_at DESC
         LIMIT 2000;
@@ -3970,9 +4082,13 @@ async function trainingRoutes(req, res, url) {
 
     const inviteResult = await db.query(
       `
-        SELECT id, plan_snapshot
+        SELECT i.id,
+               i.plan_snapshot,
+               u.username AS from_username,
+               u.display_name AS from_display_name
         FROM app_training_share_invites
-        WHERE id = $1 AND to_user_id = $2 AND status = 'pending'
+        JOIN app_users u ON u.id = i.from_user_id
+        WHERE i.id = $1 AND i.to_user_id = $2 AND i.status = 'pending'
         LIMIT 1;
       `,
       [inviteId, user.id]
@@ -4019,9 +4135,25 @@ async function trainingRoutes(req, res, url) {
       ['accepted', inviteId]
     );
     clearInviteCache(user.id);
-    logShareRoute('share.respond.accepted', { toUserId: user.id, inviteId, planId: inserted.rows?.[0]?.id || null });
+    const welcome = buildShareWelcomePayload({
+      snapshot,
+      fromDisplayName: invite?.from_display_name,
+      fromUsername: invite?.from_username
+    });
+    logShareRoute('share.respond.accepted', {
+      toUserId: user.id,
+      inviteId,
+      planId: inserted.rows?.[0]?.id || null,
+      fromUsername: invite?.from_username || null,
+      dayCodes: Array.isArray(welcome?.dayCodes) ? welcome.dayCodes : []
+    });
 
-    return sendJson(res, 200, { ok: true, action: 'accepted', planId: inserted.rows?.[0]?.id || null });
+    return sendJson(res, 200, {
+      ok: true,
+      action: 'accepted',
+      planId: inserted.rows?.[0]?.id || null,
+      welcome
+    });
   }
 
   if (pathname === '/api/training/reset' && req.method === 'POST') {

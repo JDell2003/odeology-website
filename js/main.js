@@ -12809,6 +12809,46 @@ function initAuthUi() {
             if (tab) tab.click();
         };
 
+        const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
+        let latestWorkoutInvites = [];
+        const defaultTrainingDayCodes = (daysPerWeekRaw) => {
+            const n = Math.max(0, Math.min(7, Math.floor(Number(daysPerWeekRaw) || 0)));
+            if (n <= 0) return [];
+            if (n === 1) return ['M'];
+            if (n === 2) return ['M', 'TH'];
+            if (n === 3) return ['M', 'W', 'F'];
+            if (n === 4) return ['M', 'T', 'TH', 'F'];
+            if (n === 5) return ['M', 'T', 'W', 'TH', 'F'];
+            if (n === 6) return ['M', 'T', 'W', 'TH', 'F', 'S'];
+            return ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+        };
+        const fallbackWelcomeFromInvite = (invite) => {
+            const fromDisplayName = String(invite?.displayName || invite?.username || 'your friend').trim() || 'your friend';
+            const fromUsername = String(invite?.username || '').trim() || null;
+            const discipline = String(invite?.discipline || '').trim().toLowerCase();
+            const split = discipline
+                ? `${discipline.charAt(0).toUpperCase()}${discipline.slice(1)} split`
+                : 'Training split';
+            return {
+                fromDisplayName,
+                fromUsername,
+                dayCodes: defaultTrainingDayCodes(invite?.daysPerWeek),
+                split
+            };
+        };
+        const stashTrainingWelcomeAndRedirect = (welcomeRaw) => {
+            const welcome = welcomeRaw && typeof welcomeRaw === 'object' ? welcomeRaw : {};
+            try {
+                sessionStorage.setItem(TRAINING_WELCOME_STORAGE_KEY, JSON.stringify({
+                    ...welcome,
+                    ts: Date.now()
+                }));
+            } catch {
+                // ignore storage issues
+            }
+            window.location.href = 'training.html';
+        };
+
         const renderRequests = (invites, statusText) => {
             if (!requestsList) return;
             requestsList.innerHTML = '';
@@ -12893,6 +12933,15 @@ function initAuthUi() {
                     requestsLoading = false;
                     return;
                 }
+                if (action === 'accept') {
+                    const invite = latestWorkoutInvites.find((row) => String(row?.id || '') === String(inviteId || '')) || null;
+                    const welcome = (data?.welcome && typeof data.welcome === 'object')
+                        ? data.welcome
+                        : fallbackWelcomeFromInvite(invite);
+                    requestsLoading = false;
+                    stashTrainingWelcomeAndRedirect(welcome);
+                    return;
+                }
                 loadRequests();
             } catch {
                 renderRequests([], 'Could not update invite.');
@@ -12907,18 +12956,22 @@ function initAuthUi() {
             try {
                 const resp = await fetch('/api/training/share/requests?fresh=1', { credentials: 'include', cache: 'no-store' });
                 if (resp.status === 401) {
+                    latestWorkoutInvites = [];
                     renderRequests([], 'Sign in to view invites.');
                     requestsLoading = false;
                     return;
                 }
                 const data = await resp.json().catch(() => ({}));
                 if (!data?.ok) {
+                    latestWorkoutInvites = [];
                     renderRequests([], 'Could not load invites.');
                     requestsLoading = false;
                     return;
                 }
+                latestWorkoutInvites = Array.isArray(data.invites) ? data.invites : [];
                 renderRequests(data.invites || [], data.invites?.length ? 'Pending invites' : 'No invites yet.');
             } catch {
+                latestWorkoutInvites = [];
                 renderRequests([], 'Could not load invites.');
             }
             requestsLoading = false;
@@ -13107,8 +13160,48 @@ function initFriendsPage() {
         activeTab: 'messages',
         pendingFriendRequests: 0,
         pendingWorkoutInvites: 0,
+        workoutInvites: [],
         search: '',
         summaries: new Map()
+    };
+
+    const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
+    const defaultTrainingDayCodes = (daysPerWeekRaw) => {
+        const n = Math.max(0, Math.min(7, Math.floor(Number(daysPerWeekRaw) || 0)));
+        if (n <= 0) return [];
+        if (n === 1) return ['M'];
+        if (n === 2) return ['M', 'TH'];
+        if (n === 3) return ['M', 'W', 'F'];
+        if (n === 4) return ['M', 'T', 'TH', 'F'];
+        if (n === 5) return ['M', 'T', 'W', 'TH', 'F'];
+        if (n === 6) return ['M', 'T', 'W', 'TH', 'F', 'S'];
+        return ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+    };
+    const fallbackWelcomeFromInvite = (invite) => {
+        const fromDisplayName = String(invite?.displayName || invite?.username || 'your friend').trim() || 'your friend';
+        const fromUsername = String(invite?.username || '').trim() || null;
+        const discipline = String(invite?.discipline || '').trim().toLowerCase();
+        const split = discipline
+            ? `${discipline.charAt(0).toUpperCase()}${discipline.slice(1)} split`
+            : 'Training split';
+        return {
+            fromDisplayName,
+            fromUsername,
+            dayCodes: defaultTrainingDayCodes(invite?.daysPerWeek),
+            split
+        };
+    };
+    const stashTrainingWelcomeAndRedirect = (welcomeRaw) => {
+        const welcome = welcomeRaw && typeof welcomeRaw === 'object' ? welcomeRaw : {};
+        try {
+            sessionStorage.setItem(TRAINING_WELCOME_STORAGE_KEY, JSON.stringify({
+                ...welcome,
+                ts: Date.now()
+            }));
+        } catch {
+            // ignore storage issues
+        }
+        window.location.href = 'training.html';
     };
 
     const searchEl = root.querySelector('#user-msg-search');
@@ -13448,12 +13541,14 @@ function initFriendsPage() {
         if (workoutReqStatusEl) workoutReqStatusEl.textContent = 'Loading workout invites...';
         const resp = await api('/api/training/share/requests?fresh=1');
         if (!resp.ok) {
+            state.workoutInvites = [];
             state.pendingWorkoutInvites = 0;
             updateRequestBadge();
             renderWorkoutInvites([], resp.status === 401 ? 'Sign in to view workout invites.' : 'Could not load workout invites.');
             return;
         }
         const invites = Array.isArray(resp.json?.invites) ? resp.json.invites : [];
+        state.workoutInvites = invites;
         state.pendingWorkoutInvites = invites.length;
         updateRequestBadge();
         renderWorkoutInvites(invites, invites.length ? `Incoming: ${invites.length}` : 'No workout invites.');
@@ -13489,6 +13584,14 @@ function initFriendsPage() {
         });
         if (!resp.ok) {
             renderWorkoutInvites([], resp.json?.error || 'Could not update workout invite.');
+            return;
+        }
+        if (action === 'accept') {
+            const invite = state.workoutInvites.find((row) => String(row?.id || '') === String(inviteId || '')) || null;
+            const welcome = (resp?.json?.welcome && typeof resp.json.welcome === 'object')
+                ? resp.json.welcome
+                : fallbackWelcomeFromInvite(invite);
+            stashTrainingWelcomeAndRedirect(welcome);
             return;
         }
         await loadWorkoutInvites();

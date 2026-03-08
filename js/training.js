@@ -693,6 +693,149 @@
   const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
   const SHARE_OUTGOING_SYNC_MS = 4500;
   const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-6';
+  const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
+  const TRAINING_WELCOME_TTL_MS = 6 * 60 * 60 * 1000;
+  const TRAINING_WELCOME_DAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+  const TRAINING_WELCOME_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const TRAINING_WELCOME_DAY_ALIASES = {
+    s: 'S',
+    sa: 'S',
+    sat: 'S',
+    saturday: 'S',
+    su: 'SU',
+    sun: 'SU',
+    sunday: 'SU',
+    m: 'M',
+    mo: 'M',
+    mon: 'M',
+    monday: 'M',
+    t: 'T',
+    tu: 'T',
+    tue: 'T',
+    tues: 'T',
+    tuesday: 'T',
+    w: 'W',
+    we: 'W',
+    wed: 'W',
+    wednesday: 'W',
+    th: 'TH',
+    thu: 'TH',
+    thur: 'TH',
+    thurs: 'TH',
+    thursday: 'TH',
+    f: 'F',
+    fr: 'F',
+    fri: 'F',
+    friday: 'F'
+  };
+  let trainingWelcomeShown = false;
+
+  function normalizeTrainingWelcomeDayCodes(raw) {
+    const src = Array.isArray(raw) ? raw : [];
+    const out = [];
+    for (const item of src) {
+      const key = String(item || '').trim().toLowerCase();
+      if (!key) continue;
+      const mapped = TRAINING_WELCOME_DAY_ALIASES[key];
+      if (!mapped) continue;
+      if (!out.includes(mapped)) out.push(mapped);
+    }
+    return out;
+  }
+
+  function consumeTrainingWelcomePayload() {
+    try {
+      const raw = sessionStorage.getItem(TRAINING_WELCOME_STORAGE_KEY);
+      if (!raw) return null;
+      sessionStorage.removeItem(TRAINING_WELCOME_STORAGE_KEY);
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      const ts = Number(parsed.ts || 0);
+      if (Number.isFinite(ts) && ts > 0 && Math.abs(Date.now() - ts) > TRAINING_WELCOME_TTL_MS) return null;
+      const fromDisplayName = String(parsed.fromDisplayName || parsed.fromUsername || 'your friend').trim() || 'your friend';
+      const fromUsername = String(parsed.fromUsername || '').trim() || null;
+      const split = String(parsed.split || '').trim() || 'Training split';
+      const dayCodes = normalizeTrainingWelcomeDayCodes(parsed.dayCodes);
+      return { fromDisplayName, fromUsername, split, dayCodes };
+    } catch {
+      try { sessionStorage.removeItem(TRAINING_WELCOME_STORAGE_KEY); } catch { /* ignore */ }
+      return null;
+    }
+  }
+
+  let pendingTrainingWelcome = consumeTrainingWelcomePayload();
+
+  function maybeShowTrainingWelcomeModal() {
+    if (trainingWelcomeShown) return;
+    if (!pendingTrainingWelcome) return;
+    if (state.view !== 'plan') return;
+    if (!state.auth.user || !state.planRow?.id) return;
+
+    let dayCodes = Array.isArray(pendingTrainingWelcome.dayCodes) ? [...pendingTrainingWelcome.dayCodes] : [];
+    if (!dayCodes.length) {
+      const daysPerWeek = Number(state.planRow?.plan?.meta?.daysPerWeek || state.planRow?.days_per_week || 0);
+      if (daysPerWeek > 0) {
+        dayCodes = scheduleWeekdays(daysPerWeek, new Date())
+          .map((idx) => TRAINING_WELCOME_DAY_CODES[idx])
+          .filter(Boolean);
+      }
+    }
+    if (!dayCodes.length) {
+      dayCodes = ['M', 'T', 'W', 'TH', 'F'];
+    }
+
+    const fromName = String(pendingTrainingWelcome.fromDisplayName || pendingTrainingWelcome.fromUsername || 'your friend').trim() || 'your friend';
+    const fromPossessive = fromName.toLowerCase().endsWith('s') ? `${fromName}'` : `${fromName}'s`;
+    const split = String(pendingTrainingWelcome.split || 'Training split').trim();
+
+    const todayIdx = new Date().getDay();
+    const todayCode = TRAINING_WELCOME_DAY_CODES[todayIdx] || '';
+    const todayName = TRAINING_WELCOME_DAY_NAMES[todayIdx] || 'Today';
+    const dayPosition = dayCodes.indexOf(todayCode);
+    const todayLine = dayPosition >= 0
+      ? `Today is ${todayName} (Day ${dayPosition + 1}).`
+      : `Today is ${todayName}.`;
+
+    const existing = document.getElementById('training-share-welcome-modal');
+    if (existing) existing.remove();
+
+    const close = () => {
+      const node = document.getElementById('training-share-welcome-modal');
+      if (node) node.remove();
+    };
+
+    const overlay = el('div', {
+      class: 'schedule-modal training-share-welcome-modal',
+      id: 'training-share-welcome-modal',
+      role: 'dialog',
+      'aria-modal': 'true'
+    },
+    el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close welcome' }),
+    el('div', { class: 'schedule-modal-card' },
+      el('div', { class: 'schedule-modal-head' },
+        el('div', { class: 'schedule-modal-title' }, 'Welcome to your new workout'),
+        el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close welcome' }, '×')
+      ),
+      el('div', { class: 'schedule-modal-body training-share-welcome-body' },
+        el('div', { class: 'training-share-welcome-line' }, `Welcome to ${fromPossessive} workout.`),
+        el('div', { class: 'training-share-welcome-line' }, `They are working out ${dayCodes.join(' ')}.`),
+        el('div', { class: 'training-share-welcome-line' }, `On a ${split}.`),
+        el('div', { class: 'training-share-welcome-line' }, todayLine)
+      ),
+      el('div', { class: 'schedule-modal-actions' },
+        el('button', { type: 'button', class: 'btn btn-share-workout' }, 'Enter workout')
+      )
+    ));
+
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', close);
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', close);
+    overlay.querySelector('.schedule-modal-actions button')?.addEventListener('click', close);
+    document.body.appendChild(overlay);
+
+    trainingWelcomeShown = true;
+    pendingTrainingWelcome = null;
+  }
+
   const shareDebugEnabled = (() => {
     try {
       const params = new URLSearchParams(String(window.location.search || ''));
@@ -3519,6 +3662,11 @@ function toggleSharePopover(force) {
     render();
     if (prev === 'generating' && next !== 'generating') stopGeneratingTicker();
     if (next === 'generating') startGeneratingTicker();
+    if (next === 'plan') {
+      window.setTimeout(() => {
+        try { maybeShowTrainingWelcomeModal(); } catch { /* ignore */ }
+      }, 80);
+    }
   }
 
   function setWizard(patch) {

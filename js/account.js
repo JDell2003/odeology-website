@@ -18,6 +18,49 @@
     }
   }
 
+  const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
+  const TRAINING_DAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+
+  function defaultTrainingDayCodes(daysPerWeekRaw) {
+    const n = Math.max(0, Math.min(7, Math.floor(Number(daysPerWeekRaw) || 0)));
+    if (n <= 0) return [];
+    if (n === 1) return ['M'];
+    if (n === 2) return ['M', 'TH'];
+    if (n === 3) return ['M', 'W', 'F'];
+    if (n === 4) return ['M', 'T', 'TH', 'F'];
+    if (n === 5) return ['M', 'T', 'W', 'TH', 'F'];
+    if (n === 6) return ['M', 'T', 'W', 'TH', 'F', 'S'];
+    return [...TRAINING_DAY_CODES];
+  }
+
+  function fallbackWelcomeFromInvite(invite) {
+    const fromDisplayName = String(invite?.displayName || invite?.username || 'your friend').trim() || 'your friend';
+    const fromUsername = String(invite?.username || '').trim() || null;
+    const discipline = String(invite?.discipline || '').trim().toLowerCase();
+    const split = discipline
+      ? `${discipline.charAt(0).toUpperCase()}${discipline.slice(1)} split`
+      : 'Training split';
+    return {
+      fromDisplayName,
+      fromUsername,
+      dayCodes: defaultTrainingDayCodes(invite?.daysPerWeek),
+      split
+    };
+  }
+
+  function stashTrainingWelcomeAndRedirect(welcome) {
+    const payload = welcome && typeof welcome === 'object' ? welcome : {};
+    try {
+      sessionStorage.setItem(TRAINING_WELCOME_STORAGE_KEY, JSON.stringify({
+        ...payload,
+        ts: Date.now()
+      }));
+    } catch {
+      // ignore storage issues
+    }
+    window.location.href = 'training.html';
+  }
+
   function initialsFromName(raw) {
     const name = String(raw || '').trim();
     if (!name) return 'A';
@@ -419,6 +462,16 @@
       if (!resp?.ok || !resp?.json?.ok) {
         setStatus(resp?.json?.error || 'Could not update request.');
         setActionsDisabled(false);
+        return;
+      }
+
+      if (kind === 'workout' && action === 'accept') {
+        const invite = state.workoutInvites.find((row) => String(row?.id || '') === id) || null;
+        const welcome = (resp?.json?.welcome && typeof resp.json.welcome === 'object')
+          ? resp.json.welcome
+          : fallbackWelcomeFromInvite(invite);
+        setActionsDisabled(false);
+        stashTrainingWelcomeAndRedirect(welcome);
         return;
       }
 
