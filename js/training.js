@@ -678,7 +678,9 @@
     open: false,
     loading: false,
     loaded: false,
+    bootstrapRequested: false,
     accounts: [],
+    accountIndex: new Map(),
     status: '',
     requesting: new Set(),
     kicking: new Set(),
@@ -846,17 +848,32 @@
 
   let shareCloseBound = false;
   let shareOutgoingSyncTimer = 0;
+  let shareOutgoingSyncInFlight = false;
   let workoutInputBound = false;
   let workoutInputGateBound = false;
   let workoutInputGateToastAt = 0;
 
   function ensureShareOutgoingSyncTimer() {
     if (shareOutgoingSyncTimer) return;
-    shareOutgoingSyncTimer = window.setInterval(() => {
-      if (!shareUi.open) return;
+    shareOutgoingSyncTimer = window.setInterval(async () => {
+      if (!state.auth.user) return;
       if (document.hidden) return;
-      if (shareUi.loading) return;
-      loadShareAccounts(shareUi.query || '');
+      if (shareUi.loading || shareOutgoingSyncInFlight) return;
+      if (shareUi.requesting.size || shareUi.kicking.size) return;
+      if (shareUi.open) {
+        loadShareAccounts(shareUi.query || '');
+        return;
+      }
+      if (!shareUi.bootstrapRequested) return;
+      shareOutgoingSyncInFlight = true;
+      try {
+        const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+        if (!outgoing.ok || !outgoing.json?.ok) return;
+        syncShareOutgoingState(outgoing.json);
+        render();
+      } finally {
+        shareOutgoingSyncInFlight = false;
+      }
     }, SHARE_OUTGOING_SYNC_MS);
   }
 
@@ -3071,6 +3088,7 @@ function toFreeExerciseDbRemotePath(src) {
       ]);
       if (resp.status === 401 || outgoingResp.status === 401) {
         shareUi.accounts = [];
+        shareUi.accountIndex.clear();
         shareUi.status = 'Sign in to view friends.';
         shareUi.loading = false;
         render();
@@ -3078,12 +3096,19 @@ function toFreeExerciseDbRemotePath(src) {
       }
       if (!resp.ok || !resp.json?.ok) {
         shareUi.accounts = [];
+        shareUi.accountIndex.clear();
         shareUi.status = 'Could not load friends.';
         shareUi.loading = false;
         render();
         return;
       }
       const list = Array.isArray(resp.json?.friends) ? resp.json.friends : [];
+      shareUi.accountIndex.clear();
+      for (const item of list) {
+        const id = String(item?.id || '').trim();
+        if (!id) continue;
+        shareUi.accountIndex.set(id, item);
+      }
       const q = String(query || '').trim().toLowerCase();
       const filtered = q
         ? list.filter((item) => {
@@ -3120,6 +3145,7 @@ function toFreeExerciseDbRemotePath(src) {
       shareUi.loaded = true;
     } catch {
       shareUi.accounts = [];
+      shareUi.accountIndex.clear();
       shareUi.status = 'Could not load friends.';
     }
 
@@ -3570,9 +3596,12 @@ function toggleSharePopover(force) {
       state.logs = [];
       shareUi.open = false;
       shareUi.loaded = false;
+      shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
+      shareUi.accountIndex.clear();
       shareUi.status = '';
       shareUi.requesting.clear();
+      shareUi.kicking.clear();
       shareUi.requested.clear();
       shareUi.latestStatus.clear();
       clearShareConfirmToastTimer();
@@ -3590,9 +3619,12 @@ function toggleSharePopover(force) {
       state.logs = [];
       shareUi.open = false;
       shareUi.loaded = false;
+      shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
+      shareUi.accountIndex.clear();
       shareUi.status = '';
       shareUi.requesting.clear();
+      shareUi.kicking.clear();
       shareUi.requested.clear();
       shareUi.latestStatus.clear();
       clearShareConfirmToastTimer();
@@ -3604,9 +3636,12 @@ function toggleSharePopover(force) {
     state.auth.user = meUser;
     shareUi.open = false;
     shareUi.loaded = false;
+    shareUi.bootstrapRequested = false;
     shareUi.accounts = [];
+    shareUi.accountIndex.clear();
     shareUi.status = '';
     shareUi.requesting.clear();
+    shareUi.kicking.clear();
     shareUi.requested.clear();
     shareUi.latestStatus.clear();
     clearShareConfirmToastTimer();
@@ -3628,9 +3663,12 @@ function toggleSharePopover(force) {
         state.logs = [];
         shareUi.open = false;
         shareUi.loaded = false;
+        shareUi.bootstrapRequested = false;
         shareUi.accounts = [];
+        shareUi.accountIndex.clear();
         shareUi.status = '';
         shareUi.requesting.clear();
+        shareUi.kicking.clear();
         shareUi.requested.clear();
         shareUi.latestStatus.clear();
         clearShareConfirmToastTimer();
@@ -6027,6 +6065,53 @@ function toggleSharePopover(force) {
     };
 
     const canShare = !isPreview && Boolean(state.auth.user);
+    if (canShare && !shareUi.bootstrapRequested && !shareUi.loading) {
+      shareUi.bootstrapRequested = true;
+      loadShareAccounts('');
+    }
+    const acceptedShareMembers = [];
+    for (const [rawId, status] of shareUi.latestStatus.entries()) {
+      if (String(status || '').toLowerCase() !== 'accepted') continue;
+      const id = String(rawId || '').trim();
+      if (!id) continue;
+      const account = shareUi.accountIndex.get(id)
+        || (shareUi.accounts || []).find((item) => String(item?.id || '').trim() === id)
+        || null;
+      if (!account) continue;
+      acceptedShareMembers.push(account);
+    }
+    const acceptedShareVisible = acceptedShareMembers.slice(0, 6);
+    const acceptedShareOverflow = Math.max(0, acceptedShareMembers.length - acceptedShareVisible.length);
+    const shareMembersStrip = acceptedShareMembers.length
+      ? el('div', {
+        class: 'share-workout-members',
+        'aria-label': `${acceptedShareMembers.length} account${acceptedShareMembers.length === 1 ? '' : 's'} on this workout`
+      },
+      el('div', { class: 'share-workout-members-list' },
+        acceptedShareVisible.map((member) => {
+          const memberName = String(member?.displayName || member?.username || 'Account').trim() || 'Account';
+          const initials = memberName
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part.charAt(0))
+            .join('')
+            .toUpperCase();
+          return el('div', {
+            class: 'share-workout-member-avatar',
+            title: member?.username ? `${memberName} (@${member.username})` : memberName
+          },
+          member?.photoDataUrl
+            ? el('img', { src: member.photoDataUrl, alt: memberName })
+            : (initials || 'O'));
+        }),
+        acceptedShareOverflow > 0
+          ? el('div', { class: 'share-workout-member-avatar extra', title: `${acceptedShareOverflow} more` }, `+${acceptedShareOverflow}`)
+          : null
+      ),
+      el('div', { class: 'share-workout-members-text' }, `${acceptedShareMembers.length} on workout`)
+      )
+      : null;
     const shareListItems = shareUi.loading
       ? []
       : (shareUi.accounts && shareUi.accounts.length
@@ -6222,6 +6307,7 @@ function toggleSharePopover(force) {
           }
         }, 'Share Workout')
       ),
+      shareMembersStrip,
       el('div', {
         class: `share-workout-popover${shareUi.open ? '' : ' hidden'}`,
         id: 'share-workout-popover'

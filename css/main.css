@@ -17540,6 +17540,59 @@ html[data-theme="light"] .ode-tour-btn.primary {
     gap: 0.55rem;
 }
 
+.share-workout-members {
+    margin-top: 0.42rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.42rem;
+}
+
+.share-workout-members-list {
+    display: inline-flex;
+    align-items: center;
+}
+
+.share-workout-member-avatar {
+    width: 1.56rem;
+    height: 1.56rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--training-accent) 30%, var(--training-border));
+    background: color-mix(in srgb, var(--training-surface-2) 92%, #000);
+    color: var(--training-ink);
+    font-size: 0.64rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -0.28rem;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.share-workout-member-avatar:first-child {
+    margin-left: 0;
+}
+
+.share-workout-member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.share-workout-member-avatar.extra {
+    font-size: 0.56rem;
+    letter-spacing: 0.01em;
+}
+
+.share-workout-members-text {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--training-muted);
+    white-space: nowrap;
+}
+
 .training-page .btn-start-workout {
     display: inline-flex;
     align-items: center;
@@ -17871,6 +17924,10 @@ html[data-theme="light"] .ode-tour-btn.primary {
     .training-page .plan-topbar-share-row {
         width: 100%;
         flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .share-workout-members {
         justify-content: flex-start;
     }
 
