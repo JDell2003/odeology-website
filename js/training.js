@@ -676,7 +676,15 @@
 
   const shareUi = {
     open: false,
-    mode: 'app',
+    mode: (() => {
+      try {
+        const raw = String(sessionStorage.getItem('ode_training_share_mode_v1') || '').trim().toLowerCase();
+        if (raw === 'sms' || raw === 'pdf') return raw;
+      } catch {
+        // ignore storage failures
+      }
+      return 'app';
+    })(),
     loading: false,
     loaded: false,
     bootstrapRequested: false,
@@ -691,6 +699,21 @@
     confirmToastTimer: 0,
     query: ''
   };
+
+  function normalizeShareMode(raw) {
+    const key = String(raw || '').trim().toLowerCase();
+    return key === 'sms' || key === 'pdf' ? key : 'app';
+  }
+
+  function setShareMode(raw) {
+    const next = normalizeShareMode(raw);
+    shareUi.mode = next;
+    try {
+      sessionStorage.setItem('ode_training_share_mode_v1', next);
+    } catch {
+      // ignore storage failures
+    }
+  }
 
   const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
   const SHARE_OUTGOING_SYNC_MS = 4500;
@@ -3434,14 +3457,12 @@ function toFreeExerciseDbRemotePath(src) {
       if (popover && popover.contains(target)) return;
       if (anchor && anchor.contains(target)) return;
       shareUi.open = false;
-      shareUi.mode = 'app';
       render();
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && shareUi.open) {
         shareUi.open = false;
-        shareUi.mode = 'app';
         render();
       }
     });
@@ -3763,7 +3784,6 @@ function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
     if (shareUi.open) {
-      shareUi.mode = 'app';
       // Always refresh from server so "Requested" clears after receiver accepts/declines.
       loadShareAccounts(shareUi.query || '');
     }
@@ -4024,7 +4044,6 @@ function toggleSharePopover(force) {
       state.planRow = null;
       state.logs = [];
       shareUi.open = false;
-      shareUi.mode = 'app';
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
@@ -4050,7 +4069,6 @@ function toggleSharePopover(force) {
       state.planRow = null;
       state.logs = [];
       shareUi.open = false;
-      shareUi.mode = 'app';
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
@@ -4070,7 +4088,6 @@ function toggleSharePopover(force) {
     state.auth.user = meUser;
     shareEventsInFlight = false;
     shareUi.open = false;
-    shareUi.mode = 'app';
     shareUi.loaded = false;
     shareUi.bootstrapRequested = false;
     shareUi.accounts = [];
@@ -4100,7 +4117,6 @@ function toggleSharePopover(force) {
         state.planRow = null;
         state.logs = [];
         shareUi.open = false;
-        shareUi.mode = 'app';
         shareUi.loaded = false;
         shareUi.bootstrapRequested = false;
         shareUi.accounts = [];
@@ -6753,7 +6769,7 @@ function toggleSharePopover(force) {
       )
       )
       : null;
-    const shareMode = String(shareUi.mode || 'app').trim().toLowerCase();
+    const shareMode = normalizeShareMode(shareUi.mode);
     const isAppShareMode = shareMode === 'app';
     const isSmsShareMode = shareMode === 'sms';
     const isPdfShareMode = shareMode === 'pdf';
@@ -7029,7 +7045,7 @@ function toggleSharePopover(force) {
             'aria-selected': isAppShareMode ? 'true' : 'false',
             onclick: (e) => {
               e.preventDefault();
-              shareUi.mode = 'app';
+              setShareMode('app');
               render();
             }
           }, 'APP'),
@@ -7040,7 +7056,7 @@ function toggleSharePopover(force) {
             'aria-selected': isSmsShareMode ? 'true' : 'false',
             onclick: (e) => {
               e.preventDefault();
-              shareUi.mode = 'sms';
+              setShareMode('sms');
               render();
             }
           }, 'SMS'),
@@ -7051,7 +7067,7 @@ function toggleSharePopover(force) {
             'aria-selected': isPdfShareMode ? 'true' : 'false',
             onclick: (e) => {
               e.preventDefault();
-              shareUi.mode = 'pdf';
+              setShareMode('pdf');
               render();
               openWorkoutPdfQrModal();
             }

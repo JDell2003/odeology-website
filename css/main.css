@@ -17828,28 +17828,49 @@ html[data-theme="light"] .ode-tour-btn.primary {
 .share-workout-mode-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.15rem;
-    border: 1px solid var(--training-border);
-    border-radius: 999px;
-    padding: 0.12rem;
-    background: color-mix(in srgb, var(--training-surface-2) 88%, #fff);
+    gap: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
 }
 
 .share-workout-mode-btn {
     border: 0;
-    border-radius: 999px;
-    padding: 0.22rem 0.56rem;
-    font-size: 0.66rem;
+    border-radius: 0;
+    padding: 0.08rem 0.34rem;
+    font-size: 0.67rem;
     font-weight: 800;
     letter-spacing: 0.02em;
-    color: var(--training-muted);
+    color: color-mix(in srgb, var(--training-muted) 92%, #ccd6e2);
     background: transparent;
     cursor: pointer;
+    transition: color 0.16s ease;
+}
+
+.share-workout-mode-btn + .share-workout-mode-btn {
+    position: relative;
+    margin-left: 0.38rem;
+    padding-left: 0.62rem;
+}
+
+.share-workout-mode-btn + .share-workout-mode-btn::before {
+    content: '|';
+    position: absolute;
+    left: 0.08rem;
+    top: 50%;
+    transform: translateY(-52%);
+    color: color-mix(in srgb, #dfe6ef 85%, #ffffff);
+    font-weight: 600;
 }
 
 .share-workout-mode-btn.active {
-    color: #102033;
-    background: color-mix(in srgb, var(--training-accent) 22%, #fff);
+    color: color-mix(in srgb, var(--training-accent) 88%, #8f6b2a);
+    text-shadow: 0 0 0 transparent;
+}
+
+.share-workout-mode-btn:hover {
+    color: color-mix(in srgb, var(--training-accent) 72%, #8f6b2a);
 }
 
 .share-workout-pdf-panel {
