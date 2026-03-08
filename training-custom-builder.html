@@ -294,6 +294,69 @@
       font-weight: 700;
     }
 
+    .builder-folder {
+      border: 1px solid #e0cfb7;
+      border-radius: 12px;
+      background: #fffaf2;
+      overflow: hidden;
+    }
+
+    .builder-folder + .builder-folder {
+      margin-top: 8px;
+    }
+
+    .builder-folder > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 11px;
+      color: #473620;
+      font-weight: 800;
+      font-size: 0.82rem;
+      background: linear-gradient(180deg, #fff6e8 0%, #f7e9d2 100%);
+    }
+
+    .builder-folder > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .builder-folder-badge {
+      border: 1px solid #d6bf9f;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.68rem;
+      color: #72583a;
+      background: #fff8ed;
+      flex-shrink: 0;
+    }
+
+    .builder-folder-body {
+      padding: 8px;
+      display: grid;
+      gap: 7px;
+      background: #fffdf8;
+    }
+
+    .builder-folder.builder-folder-group > summary,
+    .builder-folder.builder-folder-sub > summary {
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #fff9ef;
+      color: #5d472d;
+      border-top: 1px solid #efdfc8;
+    }
+
+    .builder-folder-items {
+      display: grid;
+      gap: 7px;
+      padding: 7px;
+      border-top: 1px solid #efe1cc;
+      background: #fffefb;
+    }
+
     .builder-plan-top {
       display: grid;
       gap: 12px;
@@ -730,9 +793,48 @@
         { match: /^Close-Grip_Bench_Press\//i, replace: 'Smith_Machine_Close-Grip_Bench_Press/' },
         { match: /^Overhead_Press\//i, replace: 'Barbell_Shoulder_Press/' }
       ];
-      const MAX_UNFILTERED_RESULTS = 140;
       const MAX_FILTERED_RESULTS = 220;
       const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
+      const SECTION_ORDER = ['calisthenics', 'free_weights', 'plyometrics', 'stretching'];
+      const SECTION_LABELS = {
+        calisthenics: 'Calisthenics',
+        free_weights: 'Free Weights',
+        plyometrics: 'Plyometrics',
+        stretching: 'Stretching'
+      };
+      const MUSCLE_GROUP_ORDER = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core', 'full_body', 'neck', 'other'];
+      const MUSCLE_GROUP_LABELS = {
+        chest: 'Chest',
+        back: 'Back',
+        shoulders: 'Shoulders',
+        arms: 'Arms',
+        legs: 'Legs',
+        core: 'Core',
+        full_body: 'Full Body',
+        neck: 'Neck',
+        other: 'Other'
+      };
+      const SUB_MUSCLE_LABELS = {
+        abdominals: 'Abdominals',
+        abductors: 'Abductors',
+        adductors: 'Adductors',
+        biceps: 'Biceps',
+        calves: 'Calves',
+        chest: 'Chest',
+        forearms: 'Forearms',
+        glutes: 'Glutes',
+        hamstrings: 'Hamstrings',
+        lats: 'Lats',
+        lowerback: 'Lower Back',
+        middleback: 'Middle Back',
+        neck: 'Neck',
+        obliques: 'Obliques',
+        quadriceps: 'Quadriceps',
+        shoulders: 'Shoulders',
+        traps: 'Traps',
+        hipflexors: 'Hip Flexors',
+        serratus: 'Serratus'
+      };
 
       const $ = (id) => document.getElementById(id);
       const statusEl = $('builder-status');
@@ -942,6 +1044,118 @@
         base.restSec = Math.max(30, Math.min(300, Number(payload?.restSec) || Number(base.restSec) || 90));
         base.expanded = Boolean(payload?.expanded);
         return base;
+      }
+
+      function majorGroupFromToken(rawToken) {
+        const token = normalizeToken(rawToken);
+        if (!token) return 'other';
+        if (token.includes('chest') || token.includes('pect')) return 'chest';
+        if (token.includes('lats') || token.includes('lat') || token.includes('back') || token.includes('rhomboid') || token.includes('trap')) return 'back';
+        if (token.includes('shoulder') || token.includes('delt')) return 'shoulders';
+        if (token.includes('bicep') || token.includes('tricep') || token.includes('forearm') || token.includes('brach')) return 'arms';
+        if (
+          token.includes('quad') || token.includes('hamstring') || token.includes('glute') || token.includes('calf')
+          || token.includes('adductor') || token.includes('abductor') || token.includes('hipflexor') || token.includes('leg')
+        ) return 'legs';
+        if (token.includes('abdominal') || token.includes('oblique') || token.includes('core') || token.includes('serratus')) return 'core';
+        if (token.includes('fullbody') || token.includes('totalbody')) return 'full_body';
+        if (token.includes('neck')) return 'neck';
+        return 'other';
+      }
+
+      function classifySection(row) {
+        const category = normalizeToken(row?.category);
+        const equipment = normalizeToken(row?.equipment);
+        const name = String(row?.name || '').toLowerCase();
+
+        if (category.includes('plyometric')) return 'plyometrics';
+        if (
+          category.includes('stretch')
+          || category.includes('warmup')
+          || category.includes('mobility')
+          || category.includes('rehabilitation')
+        ) return 'stretching';
+
+        const bodyByEquipment = equipment.includes('bodyonly') || equipment.includes('bodyweight') || equipment === 'none';
+        const bodyByName = /\b(push[- ]?up|pull[- ]?up|chin[- ]?up|dip|plank|burpee|mountain climber|handstand)\b/i.test(name);
+        if (category.includes('calisthenic') || bodyByEquipment || bodyByName) return 'calisthenics';
+        return 'free_weights';
+      }
+
+      function subMuscleLabelFromRow(row) {
+        const first = Array.isArray(row?.primaryMuscles) && row.primaryMuscles.length
+          ? String(row.primaryMuscles[0] || '')
+          : (Array.isArray(row?.secondaryMuscles) && row.secondaryMuscles.length ? String(row.secondaryMuscles[0] || '') : '');
+        const token = normalizeToken(first);
+        if (!token) return { key: 'general', label: 'General' };
+        return { key: token, label: SUB_MUSCLE_LABELS[token] || toTitleCase(first) || 'General' };
+      }
+
+      function buildFolderTree(rows) {
+        const sections = new Map();
+        rows.forEach((row) => {
+          const sectionKey = classifySection(row);
+          if (!sections.has(sectionKey)) {
+            sections.set(sectionKey, {
+              key: sectionKey,
+              label: SECTION_LABELS[sectionKey] || 'Other',
+              groups: new Map(),
+              count: 0
+            });
+          }
+          const section = sections.get(sectionKey);
+          section.count += 1;
+
+          const primary = Array.isArray(row?.primaryMuscles) && row.primaryMuscles.length
+            ? String(row.primaryMuscles[0] || '')
+            : (Array.isArray(row?.secondaryMuscles) && row.secondaryMuscles.length ? String(row.secondaryMuscles[0] || '') : '');
+          const groupKey = majorGroupFromToken(primary);
+          if (!section.groups.has(groupKey)) {
+            section.groups.set(groupKey, {
+              key: groupKey,
+              label: MUSCLE_GROUP_LABELS[groupKey] || 'Other',
+              subs: new Map(),
+              count: 0
+            });
+          }
+          const group = section.groups.get(groupKey);
+          group.count += 1;
+
+          const sub = subMuscleLabelFromRow(row);
+          if (!group.subs.has(sub.key)) {
+            group.subs.set(sub.key, {
+              key: sub.key,
+              label: sub.label,
+              rows: []
+            });
+          }
+          group.subs.get(sub.key).rows.push(row);
+        });
+
+        return SECTION_ORDER
+          .map((sectionKey) => sections.get(sectionKey))
+          .filter(Boolean)
+          .map((section) => ({
+            ...section,
+            groups: Array.from(section.groups.values())
+              .sort((a, b) => {
+                const ao = MUSCLE_GROUP_ORDER.indexOf(a.key);
+                const bo = MUSCLE_GROUP_ORDER.indexOf(b.key);
+                if (ao !== bo) return (ao < 0 ? 999 : ao) - (bo < 0 ? 999 : bo);
+                return a.label.localeCompare(b.label);
+              })
+              .map((group) => ({
+                ...group,
+                subs: Array.from(group.subs.values())
+                  .map((sub) => ({
+                    ...sub,
+                    rows: sub.rows
+                      .slice()
+                      .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
+                  }))
+                  .sort((a, b) => a.label.localeCompare(b.label))
+              }))
+          }));
       }
 
       function defaultPattern(days) {
@@ -1180,71 +1394,157 @@
         });
       }
 
-      function filteredRows() {
-        const sourceRows = allLibraryRows();
-        const q = String(state.query || '').trim().toLowerCase();
-        const base = !q
-          ? sourceRows
-          : sourceRows.filter((row) => {
-          const hay = [
-            row?.name,
-            row?.id,
-            row?.category,
-            row?.equipment,
-            row?.level,
-            ...(Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : []),
-            ...(Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [])
-          ]
-            .map((v) => String(v || '').toLowerCase())
-            .join(' ');
-          return hay.includes(q);
+      function searchRows(queryText) {
+        const q = String(queryText || '').trim().toLowerCase();
+        if (!q) return allLibraryRows();
+        return allLibraryRows()
+          .filter((row) => {
+            const hay = [
+              row?.name,
+              row?.id,
+              row?.category,
+              row?.equipment,
+              row?.level,
+              ...(Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : []),
+              ...(Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [])
+            ]
+              .map((v) => String(v || '').toLowerCase())
+              .join(' ');
+            return hay.includes(q);
+          })
+          .slice(0, MAX_FILTERED_RESULTS);
+      }
+
+      function createDatabaseCard(row) {
+        const card = document.createElement('article');
+        card.className = 'builder-db-card';
+        card.draggable = true;
+        const name = String(row?.name || row?.id || 'Exercise');
+        const imageUrl = exerciseImageUrl(row);
+        const primary = listToText(row?.primaryMuscles, row?.equipment || 'General');
+        const tags = [
+          row?.isCustom ? 'Mine' : '',
+          row?.category ? toTitleCase(row.category) : '',
+          row?.equipment ? toTitleCase(row.equipment) : '',
+          Array.isArray(row?.primaryMuscles) && row.primaryMuscles[0] ? toTitleCase(row.primaryMuscles[0]) : ''
+        ].filter(Boolean).slice(0, 3);
+        card.innerHTML = `
+          <div class="builder-db-thumb${imageUrl ? '' : ' is-empty'}">
+            ${imageUrl
+              ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" loading="lazy">`
+              : escapeHtml(initialsFromName(name))}
+          </div>
+          <div>
+            <div class="builder-db-name">${escapeHtml(name)}</div>
+            <div class="builder-db-meta">${escapeHtml(primary)}</div>
+            <div class="builder-db-tags">
+              ${tags.map((tag) => `<span class="builder-db-tag">${escapeHtml(tag)}</span>`).join('')}
+            </div>
+          </div>
+        `;
+        card.addEventListener('dragstart', (e) => {
+          const payload = toDbExerciseState(row);
+          e.dataTransfer?.setData('application/json', JSON.stringify(payload));
+          e.dataTransfer.effectAllowed = 'copy';
         });
-        return base.slice(0, q ? MAX_FILTERED_RESULTS : MAX_UNFILTERED_RESULTS);
+        return card;
+      }
+
+      function ensureFolderLeafRendered(leafDetailsEl) {
+        if (!leafDetailsEl || leafDetailsEl.dataset.loaded === '1') return;
+        const list = leafDetailsEl.querySelector('.builder-folder-items');
+        if (!list) return;
+        list.innerHTML = '';
+        const rows = Array.isArray(leafDetailsEl.__rows) ? leafDetailsEl.__rows : [];
+        if (!rows.length) {
+          list.innerHTML = '<div class="builder-day-empty">No workouts in this folder.</div>';
+          leafDetailsEl.dataset.loaded = '1';
+          return;
+        }
+        rows.forEach((row) => list.appendChild(createDatabaseCard(row)));
+        leafDetailsEl.dataset.loaded = '1';
+      }
+
+      function renderFolderTree(rows) {
+        if (!dbListEl || !dbCountEl) return;
+        const tree = buildFolderTree(rows);
+        dbCountEl.textContent = `${rows.length} workouts grouped in folders`;
+        dbListEl.innerHTML = '';
+        if (!tree.length) {
+          dbListEl.innerHTML = '<div class="builder-day-empty">No exercises found.</div>';
+          return;
+        }
+
+        tree.forEach((section, sectionIdx) => {
+          const sectionDetails = document.createElement('details');
+          sectionDetails.className = 'builder-folder builder-folder-section';
+          if (sectionIdx === 0) sectionDetails.open = true;
+          sectionDetails.innerHTML = `
+            <summary>
+              <span>${escapeHtml(section.label)}</span>
+              <span class="builder-folder-badge">${section.count}</span>
+            </summary>
+          `;
+          const sectionBody = document.createElement('div');
+          sectionBody.className = 'builder-folder-body';
+
+          section.groups.forEach((group, groupIdx) => {
+            const groupDetails = document.createElement('details');
+            groupDetails.className = 'builder-folder builder-folder-group';
+            if (sectionIdx === 0 && groupIdx === 0) groupDetails.open = true;
+            groupDetails.innerHTML = `
+              <summary>
+                <span>${escapeHtml(group.label)}</span>
+                <span class="builder-folder-badge">${group.count}</span>
+              </summary>
+            `;
+            const groupBody = document.createElement('div');
+            groupBody.className = 'builder-folder-body';
+
+            group.subs.forEach((sub, subIdx) => {
+              const subDetails = document.createElement('details');
+              subDetails.className = 'builder-folder builder-folder-sub';
+              if (sectionIdx === 0 && groupIdx === 0 && subIdx === 0) subDetails.open = true;
+              subDetails.innerHTML = `
+                <summary>
+                  <span>${escapeHtml(sub.label)}</span>
+                  <span class="builder-folder-badge">${sub.rows.length}</span>
+                </summary>
+                <div class="builder-folder-items"></div>
+              `;
+              subDetails.__rows = sub.rows;
+              groupBody.appendChild(subDetails);
+              if (subDetails.open) ensureFolderLeafRendered(subDetails);
+            });
+
+            groupDetails.appendChild(groupBody);
+            sectionBody.appendChild(groupDetails);
+          });
+
+          sectionDetails.appendChild(sectionBody);
+          dbListEl.appendChild(sectionDetails);
+        });
       }
 
       function renderDatabaseList() {
         if (!dbListEl || !dbCountEl) return;
-        const rows = filteredRows();
+        const query = String(state.query || '').trim();
         const total = allLibraryRows().length;
-        dbCountEl.textContent = `${rows.length} shown (${total} loaded)`;
+
+        if (!query) {
+          renderFolderTree(allLibraryRows());
+          return;
+        }
+
+        const rows = searchRows(query);
+        dbCountEl.textContent = `${rows.length} search results (${total} workouts total)`;
         dbListEl.innerHTML = '';
         if (!rows.length) {
           dbListEl.innerHTML = '<div class="builder-day-empty">No exercises found.</div>';
           return;
         }
         rows.forEach((row) => {
-          const card = document.createElement('article');
-          card.className = 'builder-db-card';
-          card.draggable = true;
-          const name = String(row?.name || row?.id || 'Exercise');
-          const imageUrl = exerciseImageUrl(row);
-          const primary = listToText(row?.primaryMuscles, row?.equipment || 'General');
-          const tags = [
-            row?.isCustom ? 'Mine' : '',
-            row?.category ? toTitleCase(row.category) : '',
-            row?.equipment ? toTitleCase(row.equipment) : '',
-            Array.isArray(row?.primaryMuscles) && row.primaryMuscles[0] ? toTitleCase(row.primaryMuscles[0]) : ''
-          ].filter(Boolean).slice(0, 3);
-          card.innerHTML = `
-            <div class="builder-db-thumb${imageUrl ? '' : ' is-empty'}">
-              ${imageUrl
-                ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" loading="lazy">`
-                : escapeHtml(initialsFromName(name))}
-            </div>
-            <div>
-              <div class="builder-db-name">${escapeHtml(name)}</div>
-              <div class="builder-db-meta">${escapeHtml(primary)}</div>
-              <div class="builder-db-tags">
-                ${tags.map((tag) => `<span class="builder-db-tag">${escapeHtml(tag)}</span>`).join('')}
-              </div>
-            </div>
-          `;
-          card.addEventListener('dragstart', (e) => {
-            const payload = toDbExerciseState(row);
-            e.dataTransfer?.setData('application/json', JSON.stringify(payload));
-            e.dataTransfer.effectAllowed = 'copy';
-          });
-          dbListEl.appendChild(card);
+          dbListEl.appendChild(createDatabaseCard(row));
         });
       }
 
@@ -1654,6 +1954,13 @@
           wrap.classList.add('is-empty');
           wrap.textContent = initialsFromName(img.getAttribute('alt') || 'Exercise');
         }, true);
+        dbListEl?.addEventListener('toggle', (e) => {
+          const detailEl = e.target;
+          if (!detailEl || detailEl.tagName !== 'DETAILS') return;
+          if (!detailEl.classList.contains('builder-folder-sub')) return;
+          if (!detailEl.open) return;
+          ensureFolderLeafRendered(detailEl);
+        });
 
         saveBtn?.addEventListener('click', saveCustomPlan);
         loginBtn?.addEventListener('click', () => openAuth('login'));
