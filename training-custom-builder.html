@@ -450,6 +450,57 @@
       background: linear-gradient(180deg, #fff4df 0%, #f7e6cc 100%);
     }
 
+    .builder-day-toggle {
+      width: 100%;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font: inherit;
+    }
+
+    .builder-day-toggle:focus-visible {
+      outline: 2px solid #be8d45;
+      outline-offset: -2px;
+    }
+
+    .builder-day-head-title {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .builder-day-head-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .builder-day-head-count {
+      min-width: 26px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid #d4ba97;
+      background: #fff8ee;
+      color: #6a5437;
+      font-size: 0.74rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+    }
+
+    .builder-day-head-caret {
+      font-size: 0.9rem;
+      color: #6a5437;
+      line-height: 1;
+      transition: transform 0.16s ease;
+    }
+
     .builder-day-list {
       padding: 10px;
       display: grid;
@@ -647,6 +698,8 @@
     @media (max-width: 980px) {
       .builder-grid { grid-template-columns: 1fr; }
       .builder-db-list { max-height: 320px; }
+      .builder-plan-panel { order: 1; }
+      .builder-db-panel { order: 2; }
     }
 
     @media (max-width: 700px) {
@@ -697,6 +750,26 @@
         grid-template-columns: 1fr;
       }
 
+      .builder-day {
+        min-height: 0;
+      }
+
+      .builder-day.is-collapsed {
+        min-height: 58px;
+      }
+
+      .builder-day.is-collapsed .builder-day-head {
+        border-bottom: none;
+      }
+
+      .builder-day.is-collapsed .builder-day-list {
+        display: none;
+      }
+
+      .builder-day.is-collapsed .builder-day-head-caret {
+        transform: rotate(-90deg);
+      }
+
       .builder-db-card {
         grid-template-columns: 50px 1fr;
         gap: 8px;
@@ -745,7 +818,7 @@
     </section>
 
     <section class="builder-grid">
-      <aside class="builder-panel">
+      <aside class="builder-panel builder-db-panel">
         <div class="builder-db-toolbar">
           <input id="builder-search" class="auth-input" type="text" placeholder="Search exercises" autocomplete="off" />
           <button type="button" class="btn btn-ghost" id="builder-search-btn">Search</button>
@@ -784,7 +857,7 @@
         <div id="builder-db-list" class="builder-db-list" aria-live="polite"></div>
       </aside>
 
-      <section class="builder-panel">
+      <section class="builder-panel builder-plan-panel">
         <div class="builder-plan-top">
           <div class="builder-days-select">
             <span class="builder-days-label">Select workout days</span>
@@ -813,6 +886,7 @@
         { match: /^Overhead_Press\//i, replace: 'Barbell_Shoulder_Press/' }
       ];
       const MAX_FILTERED_RESULTS = 220;
+      const MOBILE_BREAKPOINT_QUERY = '(max-width: 700px)';
       const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
       const SECTION_ORDER = ['calisthenics', 'free_weights', 'plyometrics', 'stretching'];
       const SECTION_LABELS = {
@@ -890,12 +964,27 @@
           free_weights: true,
           stretching: true
         },
-        selectedWeekdays: [1, 2, 4, 5],
+        selectedWeekdays: [1, 2, 3, 4, 5],
+        mobileDayOpenByWeekday: {},
         planByWeekday: new Map(),
         saving: false,
         customFormOpen: false,
         customSaving: false
       };
+
+      function isMobileLayout() {
+        return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+      }
+
+      function syncMobileDayOpenState() {
+        const next = {};
+        state.selectedWeekdays.forEach((weekday) => {
+          const key = String(weekday);
+          const current = state.mobileDayOpenByWeekday[key];
+          next[key] = typeof current === 'boolean' ? current : false;
+        });
+        state.mobileDayOpenByWeekday = next;
+      }
 
       function setStatus(text, kind) {
         if (!statusEl) return;
@@ -1266,6 +1355,7 @@
         for (const key of Array.from(state.planByWeekday.keys())) {
           if (!normalized.includes(key)) state.planByWeekday.delete(key);
         }
+        syncMobileDayOpenState();
       }
 
       function renderWeekdayChips() {
@@ -1393,14 +1483,28 @@
           return;
         }
 
+        const mobile = isMobileLayout();
         state.selectedWeekdays.forEach((weekday) => {
           const dayName = WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`;
-          const dayWrap = document.createElement('section');
-          dayWrap.className = 'builder-day';
-          dayWrap.dataset.weekday = String(weekday);
-          dayWrap.innerHTML = `<div class="builder-day-head">${dayName}</div><div class="builder-day-list"></div>`;
-          const list = dayWrap.querySelector('.builder-day-list');
           const exercises = state.planByWeekday.get(weekday) || [];
+          const mobileKey = String(weekday);
+          const isOpen = !mobile || Boolean(state.mobileDayOpenByWeekday[mobileKey]);
+          const dayWrap = document.createElement('section');
+          dayWrap.className = `builder-day${mobile && !isOpen ? ' is-collapsed' : ''}`;
+          dayWrap.dataset.weekday = String(weekday);
+          dayWrap.innerHTML = mobile
+            ? `
+              <button type="button" class="builder-day-head builder-day-toggle" data-day-collapse-toggle="${weekday}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-label="Toggle ${escapeHtml(dayName)} workout">
+                <span class="builder-day-head-title">${escapeHtml(dayName)}</span>
+                <span class="builder-day-head-right">
+                  <span class="builder-day-head-count">${exercises.length}</span>
+                  <span class="builder-day-head-caret">▾</span>
+                </span>
+              </button>
+              <div class="builder-day-list"></div>
+            `
+            : `<div class="builder-day-head">${escapeHtml(dayName)}</div><div class="builder-day-list"></div>`;
+          const list = dayWrap.querySelector('.builder-day-list');
 
           if (!exercises.length) {
             const empty = document.createElement('div');
@@ -1774,6 +1878,16 @@
 
       function bindPlanInputEvents() {
         dayColumnsEl?.addEventListener('click', (e) => {
+          const collapseBtn = e.target.closest('[data-day-collapse-toggle]');
+          if (collapseBtn) {
+            const day = Number(collapseBtn.getAttribute('data-day-collapse-toggle'));
+            const key = String(day);
+            const current = Boolean(state.mobileDayOpenByWeekday[key]);
+            state.mobileDayOpenByWeekday[key] = !current;
+            renderDayColumns();
+            return;
+          }
+
           const toggleBtn = e.target.closest('[data-toggle-day][data-toggle-idx]');
           if (toggleBtn) {
             const day = Number(toggleBtn.getAttribute('data-toggle-day'));
@@ -1926,6 +2040,7 @@
       }
 
       async function init() {
+        let lastMobileLayout = isMobileLayout();
         state.user = await fetchAuthUser();
         setAuthGate(!state.user);
         setCustomFormOpen(false);
@@ -1994,6 +2109,12 @@
         saveBtn?.addEventListener('click', saveCustomPlan);
         loginBtn?.addEventListener('click', () => openAuth('login'));
         signupBtn?.addEventListener('click', () => openAuth('signup'));
+        window.addEventListener('resize', () => {
+          const mobileNow = isMobileLayout();
+          if (mobileNow === lastMobileLayout) return;
+          lastMobileLayout = mobileNow;
+          renderDayColumns();
+        });
 
         window.addEventListener('odeauth', async (e) => {
           state.user = e?.detail?.user || await fetchAuthUser();
