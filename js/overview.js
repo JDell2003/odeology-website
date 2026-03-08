@@ -2183,9 +2183,6 @@
                 }
             };
 
-            const me = await api('/api/auth/me');
-            if (!me.ok || !me.json?.user) return false;
-
             const latest = await api('/api/groceries/latest');
             if (!latest.ok || !latest.json?.list) return false;
 
@@ -2331,14 +2328,18 @@
             return true;
         };
 
-        await hydrateGroceryFromAccount();
+        const hydrateAttempt = Promise.race([
+            hydrateGroceryFromAccount(),
+            new Promise((resolve) => window.setTimeout(() => resolve(false), 1500))
+        ]);
+        await hydrateAttempt;
         hydrateGroceryFromDraft();
 
         await waitFor(() => {
             const hasAnyGrocery = document.querySelector('.grocery-card, .grocery-item-row');
             const hasMeals = !!$('.meal-block', $('#meal-grid')) || !!$('.meal-blocks', $('#meal-grid'));
             return !!hasAnyGrocery || !!hasMeals;
-        }, { timeoutMs: 12000 });
+        }, { timeoutMs: 1200, intervalMs: 120 });
 
         const parsed = parsePlanItems();
         const { items, unit } = parsed;

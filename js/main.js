@@ -16297,6 +16297,9 @@ async function handleCustomMacroPlanCtaClick(e) {
 }
 
 function setupGroceryFinalPage() {
+    const form = document.getElementById('g-final-form');
+    if (!form) return;
+
         // Default allergy state (editable): none checked unless saved prefs say otherwise.
         const allergyChecks = Array.from(document.querySelectorAll('.allergy-checkbox input[type="checkbox"]'));
         allergyChecks.forEach((input) => {
@@ -16332,8 +16335,6 @@ function setupGroceryFinalPage() {
             });
         });
         syncAllergyHidden();
-    const form = document.getElementById('g-final-form');
-    if (!form) return;
 
     populateTimeSelects();
 
@@ -18952,7 +18953,7 @@ async function setupGroceryPlanPage() {
     } catch {
         // ignore
     }
-    const planPage = document.getElementById('plan-page');
+    const planPage = document.querySelector('.plan-page#plan-page');
     if (!planPage) return;
 
     // Wire CTA / close button even if we early-return (e.g. hydrating saved list).
