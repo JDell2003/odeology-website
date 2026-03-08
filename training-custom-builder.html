@@ -7,42 +7,46 @@
   <link rel="stylesheet" href="css/main.css" />
   <style>
     body.custom-builder-page {
-      background: radial-gradient(circle at 10% 8%, rgba(62, 137, 211, 0.16), transparent 34%),
-        radial-gradient(circle at 88% 18%, rgba(245, 200, 75, 0.14), transparent 30%),
-        linear-gradient(130deg, #061523 0%, #0b2338 45%, #0a1f33 100%);
+      background:
+        radial-gradient(circle at 8% 4%, rgba(255, 208, 135, 0.4), transparent 34%),
+        radial-gradient(circle at 92% 12%, rgba(198, 154, 93, 0.24), transparent 30%),
+        linear-gradient(150deg, #f6efe2 0%, #efe4d3 52%, #e9dbc7 100%);
       min-height: 100vh;
-      color: #e8f2ff;
+      color: #2f2418;
     }
 
     .builder-wrap {
-      width: min(1200px, calc(100% - 28px));
-      margin: 88px auto 28px;
+      width: min(1240px, calc(100% - 28px));
+      margin: 88px auto 30px;
     }
 
     .builder-head,
     .builder-panel {
-      background: rgba(8, 28, 47, 0.78);
-      border: 1px solid rgba(137, 182, 230, 0.28);
-      border-radius: 16px;
+      background: rgba(255, 252, 246, 0.95);
+      border: 1px solid #ddcdb4;
+      border-radius: 20px;
+      box-shadow: 0 16px 34px rgba(84, 52, 19, 0.12);
     }
 
     .builder-head {
-      padding: 18px;
-      margin-bottom: 12px;
+      padding: 22px;
+      margin-bottom: 14px;
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
 
     .builder-head h1 {
       margin: 0;
-      font-size: clamp(1.2rem, 2.2vw, 1.9rem);
-      letter-spacing: -0.01em;
+      font-size: clamp(1.32rem, 2.4vw, 2.05rem);
+      letter-spacing: -0.02em;
+      color: #271d13;
     }
 
     .builder-head p {
       margin: 0;
-      color: #c7ddf3;
-      line-height: 1.45;
+      color: #5f5240;
+      line-height: 1.5;
+      max-width: 900px;
     }
 
     .builder-head-actions {
@@ -56,20 +60,38 @@
     .builder-status {
       min-height: 20px;
       font-size: 0.9rem;
-      color: #c9ddf4;
+      color: #67563f;
     }
 
-    .builder-status.error { color: #ffb4b4; }
-    .builder-status.ok { color: #b8ffd2; }
+    .builder-status.error { color: #a72e21; }
+    .builder-status.ok { color: #146f43; }
 
     .builder-grid {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 12px;
+      grid-template-columns: minmax(320px, 360px) 1fr;
+      gap: 14px;
       align-items: start;
     }
 
-    .builder-panel { padding: 14px; }
+    .builder-panel {
+      padding: 16px;
+      backdrop-filter: blur(5px);
+    }
+
+    .builder-wrap .auth-input,
+    .builder-wrap select.auth-input {
+      background: #fffdfa;
+      border: 1px solid #d9c5a8;
+      color: #2f2418;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .builder-wrap .auth-input:focus,
+    .builder-wrap select.auth-input:focus {
+      outline: none;
+      border-color: #b8833a;
+      box-shadow: 0 0 0 3px rgba(184, 131, 58, 0.18);
+    }
 
     .builder-db-toolbar {
       display: grid;
@@ -80,7 +102,7 @@
 
     .builder-db-count {
       font-size: 0.82rem;
-      color: #a7c0d8;
+      color: #7b6650;
       margin-bottom: 8px;
     }
 
@@ -88,38 +110,87 @@
       max-height: 66vh;
       overflow: auto;
       display: grid;
-      gap: 8px;
+      gap: 9px;
       padding-right: 4px;
     }
 
     .builder-db-card {
-      border: 1px solid rgba(137, 182, 230, 0.24);
-      background: rgba(9, 35, 58, 0.74);
-      border-radius: 12px;
-      padding: 10px;
+      border: 1px solid #e2d4c2;
+      background: linear-gradient(150deg, #fffaf3 0%, #f8eddc 100%);
+      border-radius: 14px;
+      padding: 9px;
       cursor: grab;
       display: grid;
-      gap: 6px;
+      grid-template-columns: 56px 1fr;
+      gap: 10px;
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .builder-db-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(80, 51, 22, 0.11);
     }
 
     .builder-db-card:active { cursor: grabbing; }
 
+    .builder-db-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #d9c6aa;
+      background: linear-gradient(145deg, #f2dec0 0%, #debb87 100%);
+      color: #5a401f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .builder-db-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
     .builder-db-name {
       font-weight: 800;
-      color: #e9f5ff;
+      color: #2b2116;
       line-height: 1.25;
+      margin-bottom: 2px;
     }
 
     .builder-db-meta {
       font-size: 0.78rem;
-      color: #aec7de;
+      color: #725f48;
       line-height: 1.2;
+    }
+
+    .builder-db-tags {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .builder-db-tag {
+      border: 1px solid #ddc7a8;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.68rem;
+      color: #684f31;
+      background: rgba(255, 247, 233, 0.92);
+      font-weight: 700;
     }
 
     .builder-plan-top {
       display: grid;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 10px;
     }
 
     .builder-days-select {
@@ -127,6 +198,13 @@
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
+      color: #5f4c35;
+      font-weight: 700;
+    }
+
+    .builder-days-select label {
+      font-size: 0.86rem;
+      letter-spacing: 0.01em;
     }
 
     .builder-weekdays {
@@ -136,93 +214,125 @@
     }
 
     .builder-weekday {
-      border: 1px solid rgba(137, 182, 230, 0.28);
-      background: rgba(8, 30, 49, 0.62);
-      color: #d8ebfc;
+      border: 1px solid #d7c2a3;
+      background: #fff7ec;
+      color: #6f5a3d;
       border-radius: 999px;
-      padding: 6px 10px;
+      padding: 6px 11px;
       font-size: 0.8rem;
       cursor: pointer;
+      font-weight: 700;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
     .builder-weekday.active {
-      border-color: rgba(242, 196, 78, 0.62);
-      background: rgba(242, 196, 78, 0.16);
-      color: #ffecbe;
+      border-color: #bc8940;
+      background: linear-gradient(145deg, #efd7ae 0%, #ddb16f 100%);
+      color: #2f2418;
     }
 
     .builder-day-columns {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
       align-items: start;
     }
 
     .builder-day {
-      border: 1px solid rgba(137, 182, 230, 0.26);
-      background: rgba(8, 30, 49, 0.68);
-      border-radius: 14px;
-      min-height: 210px;
+      border: 1px solid #dac6a7;
+      background: rgba(255, 251, 244, 0.94);
+      border-radius: 16px;
+      min-height: 225px;
       display: grid;
       grid-template-rows: auto 1fr;
       overflow: hidden;
+      box-shadow: 0 10px 24px rgba(80, 51, 22, 0.09);
     }
 
     .builder-day.is-drop {
-      border-color: rgba(242, 196, 78, 0.76);
-      box-shadow: 0 0 0 2px rgba(242, 196, 78, 0.2) inset;
+      border-color: #b97e2f;
+      box-shadow: 0 0 0 2px rgba(185, 126, 47, 0.2) inset, 0 10px 24px rgba(80, 51, 22, 0.09);
     }
 
     .builder-day-head {
-      padding: 10px;
-      border-bottom: 1px solid rgba(137, 182, 230, 0.18);
+      padding: 12px;
+      border-bottom: 1px solid #e6d6bd;
       font-weight: 800;
       letter-spacing: 0.01em;
-      color: #f0f8ff;
+      color: #2b2116;
+      background: linear-gradient(180deg, #fff4df 0%, #f7e6cc 100%);
     }
 
     .builder-day-list {
       padding: 10px;
       display: grid;
-      gap: 8px;
+      gap: 9px;
       align-content: start;
-      min-height: 120px;
+      min-height: 130px;
     }
 
     .builder-day-empty {
-      border: 1px dashed rgba(137, 182, 230, 0.3);
-      border-radius: 10px;
-      padding: 10px;
-      color: #9fb8d0;
+      border: 1px dashed #d7c2a3;
+      border-radius: 12px;
+      padding: 12px;
+      color: #816c52;
       font-size: 0.82rem;
       text-align: center;
-      background: rgba(5, 21, 36, 0.35);
+      background: #fdf7ef;
     }
 
     .builder-plan-item {
-      border: 1px solid rgba(137, 182, 230, 0.25);
-      background: rgba(7, 24, 40, 0.72);
-      border-radius: 10px;
-      padding: 8px;
+      border: 1px solid #e3d4c1;
+      background: linear-gradient(165deg, #fffdf9 0%, #f9f0e3 100%);
+      border-radius: 12px;
+      padding: 9px;
       display: grid;
       gap: 8px;
     }
 
+    .builder-plan-item.is-open {
+      border-color: #c69349;
+      box-shadow: 0 0 0 1px rgba(198, 147, 73, 0.24) inset;
+    }
+
     .builder-plan-item-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
       font-size: 0.86rem;
       font-weight: 800;
-      color: #e6f3ff;
+      color: #2f2418;
       line-height: 1.25;
     }
 
+    .builder-plan-item-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .builder-plan-item-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .builder-plan-toggle {
+      border: 1px solid #d3be9f;
+      background: #fff6ea;
+      color: #6b5538;
+      border-radius: 8px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.72rem;
+    }
+
     .builder-plan-remove {
-      border: 1px solid rgba(255, 132, 132, 0.4);
-      background: rgba(100, 18, 18, 0.5);
-      color: #ffd9d9;
+      border: 1px solid #d69790;
+      background: #fde7e5;
+      color: #8f2d21;
       border-radius: 8px;
       padding: 2px 7px;
       cursor: pointer;
@@ -240,25 +350,106 @@
       display: grid;
       gap: 4px;
       font-size: 0.72rem;
-      color: #a9c3db;
+      color: #7c664c;
+      font-weight: 700;
     }
 
     .builder-plan-grid input {
       width: 100%;
-      border-radius: 8px;
-      border: 1px solid rgba(137, 182, 230, 0.32);
-      background: rgba(255, 255, 255, 0.08);
-      color: #eef7ff;
+      border-radius: 9px;
+      border: 1px solid #d8c3a5;
+      background: #fff;
+      color: #2f2418;
       padding: 6px 8px;
       font-size: 0.82rem;
     }
 
+    .builder-plan-detail {
+      display: none;
+      gap: 9px;
+      border-top: 1px solid #e5d5be;
+      padding-top: 9px;
+    }
+
+    .builder-plan-item.is-open .builder-plan-detail {
+      display: grid;
+    }
+
+    .builder-plan-detail-top {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .builder-plan-image {
+      width: 84px;
+      height: 84px;
+      border-radius: 12px;
+      border: 1px solid #d7c29f;
+      overflow: hidden;
+      background: linear-gradient(145deg, #efd6ab 0%, #dcb06b 100%);
+      color: #5a401f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .builder-plan-image.is-empty {
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+    }
+
+    .builder-plan-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .builder-plan-detail-meta {
+      display: grid;
+      gap: 5px;
+      font-size: 0.74rem;
+      color: #6d593f;
+    }
+
+    .builder-plan-detail-meta b {
+      color: #4b3924;
+      margin-right: 5px;
+    }
+
+    .builder-plan-instructions {
+      font-size: 0.72rem;
+      color: #736048;
+      line-height: 1.35;
+      background: #fff9f0;
+      border: 1px solid #e6d8c4;
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+
+    .builder-plan-swap-row label {
+      display: grid;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: #725f45;
+      font-weight: 700;
+    }
+
+    .builder-plan-swap-select {
+      width: 100%;
+      min-height: 34px;
+    }
+
     .builder-auth-gate {
-      border: 1px solid rgba(242, 196, 78, 0.42);
-      background: rgba(41, 30, 8, 0.48);
+      border: 1px solid #d8b075;
+      background: linear-gradient(145deg, #fff5e2 0%, #f9e7c8 100%);
       border-radius: 12px;
       padding: 12px;
-      color: #ffe7ac;
+      color: #6a4f2d;
       display: none;
       gap: 10px;
       margin-bottom: 8px;
@@ -268,12 +459,27 @@
 
     @media (max-width: 980px) {
       .builder-grid { grid-template-columns: 1fr; }
-      .builder-db-list { max-height: 300px; }
+      .builder-db-list { max-height: 320px; }
     }
 
-    @media (max-width: 640px) {
-      .builder-wrap { width: calc(100% - 18px); margin-top: 78px; }
-      .builder-plan-grid { grid-template-columns: 1fr; }
+    @media (max-width: 700px) {
+      .builder-wrap {
+        width: calc(100% - 18px);
+        margin-top: 78px;
+      }
+
+      .builder-plan-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-plan-detail-top {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-plan-image {
+        width: 100%;
+        height: 140px;
+      }
     }
   </style>
 </head>
@@ -350,6 +556,10 @@
         { i: 5, label: 'Friday', short: 'Fri' },
         { i: 6, label: 'Saturday', short: 'Sat' }
       ];
+      const IMAGE_PATH_ALIASES = [
+        { match: /^Close-Grip_Bench_Press\//i, replace: 'Smith_Machine_Close-Grip_Bench_Press/' },
+        { match: /^Overhead_Press\//i, replace: 'Barbell_Shoulder_Press/' }
+      ];
 
       const $ = (id) => document.getElementById(id);
       const statusEl = $('builder-status');
@@ -381,6 +591,135 @@
         statusEl.classList.remove('error', 'ok');
         if (kind === 'error') statusEl.classList.add('error');
         if (kind === 'ok') statusEl.classList.add('ok');
+      }
+
+      function escapeHtml(raw) {
+        return String(raw || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function toTitleCase(raw) {
+        return String(raw || '')
+          .replace(/[_-]+/g, ' ')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/\b\w/g, (m) => m.toUpperCase());
+      }
+
+      function normalizeToken(raw) {
+        return String(raw || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+
+      function listToText(list, fallback = '-') {
+        if (!Array.isArray(list)) return fallback;
+        const next = list.map((v) => String(v || '').trim()).filter(Boolean);
+        return next.length ? next.map((x) => toTitleCase(x)).join(', ') : fallback;
+      }
+
+      function initialsFromName(raw) {
+        const words = String(raw || '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        const first = words[0]?.[0] || '';
+        const second = words[1]?.[0] || words[0]?.[1] || '';
+        const value = `${first}${second}`.toUpperCase().trim();
+        return value || 'EX';
+      }
+
+      function normalizeImagePath(rawPath) {
+        let next = String(rawPath || '').trim();
+        if (!next) return '';
+        IMAGE_PATH_ALIASES.forEach((alias) => {
+          if (alias.match.test(next)) next = next.replace(alias.match, alias.replace);
+        });
+        return next;
+      }
+
+      function encodeImagePath(rawPath) {
+        return String(rawPath || '')
+          .split('/')
+          .filter(Boolean)
+          .map((part) => encodeURIComponent(part))
+          .join('/');
+      }
+
+      function buildImageCandidates(rawPath) {
+        const normalized = normalizeImagePath(rawPath);
+        if (!normalized) return [];
+        if (/^https?:\/\//i.test(normalized)) return [normalized];
+        const encoded = encodeImagePath(normalized);
+        if (!encoded) return [];
+        return [
+          `/free-exercise-db/exercises/${encoded}`,
+          `/exercise-db/exercises/${encoded}`
+        ];
+      }
+
+      function exerciseImageUrl(exercise) {
+        const images = Array.isArray(exercise?.images) ? exercise.images : [];
+        const firstPath = String(images.find(Boolean) || '').trim();
+        if (firstPath) {
+          const candidates = buildImageCandidates(firstPath);
+          if (candidates.length) return candidates[0];
+          if (/^https?:\/\//i.test(firstPath)) return firstPath;
+        }
+
+        const fallbackPath = String(
+          exercise?.imageUrl || exercise?.image || exercise?.gifUrl || exercise?.gif || ''
+        ).trim();
+        if (!fallbackPath) return '';
+        if (/^https?:\/\//i.test(fallbackPath)) return fallbackPath;
+        const fallbackCandidates = buildImageCandidates(fallbackPath);
+        return fallbackCandidates[0] || '';
+      }
+
+      function toDbExerciseState(row) {
+        return {
+          exerciseId: String(row?.id || ''),
+          name: String(row?.name || row?.id || 'Exercise'),
+          sets: 3,
+          reps: '8-12',
+          restSec: 90,
+          category: String(row?.category || ''),
+          equipment: String(row?.equipment || ''),
+          level: String(row?.level || ''),
+          primaryMuscles: Array.isArray(row?.primaryMuscles) ? row.primaryMuscles.slice(0, 6) : [],
+          secondaryMuscles: Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles.slice(0, 8) : [],
+          instructions: Array.isArray(row?.instructions) ? row.instructions.slice(0, 8) : [],
+          imageUrl: exerciseImageUrl(row),
+          expanded: false
+        };
+      }
+
+      function planExerciseFromPayload(payload) {
+        const id = String(payload?.exerciseId || payload?.id || '').trim();
+        if (!id) return null;
+        const dbMatch = state.dbRows.find((row) => String(row?.id || '').toLowerCase() === id.toLowerCase());
+        const base = dbMatch ? toDbExerciseState(dbMatch) : {
+          exerciseId: id,
+          name: String(payload?.name || id),
+          sets: 3,
+          reps: '8-12',
+          restSec: 90,
+          category: String(payload?.category || ''),
+          equipment: String(payload?.equipment || ''),
+          level: String(payload?.level || ''),
+          primaryMuscles: Array.isArray(payload?.primaryMuscles) ? payload.primaryMuscles.slice(0, 6) : [],
+          secondaryMuscles: Array.isArray(payload?.secondaryMuscles) ? payload.secondaryMuscles.slice(0, 8) : [],
+          instructions: Array.isArray(payload?.instructions) ? payload.instructions.slice(0, 8) : [],
+          imageUrl: String(payload?.imageUrl || ''),
+          expanded: false
+        };
+        base.sets = Math.max(1, Math.min(8, Number(payload?.sets) || Number(base.sets) || 3));
+        base.reps = String(payload?.reps || base.reps || '8-12').trim().slice(0, 16) || '8-12';
+        base.restSec = Math.max(30, Math.min(300, Number(payload?.restSec) || Number(base.restSec) || 90));
+        base.expanded = Boolean(payload?.expanded);
+        return base;
       }
 
       function defaultPattern(days) {
@@ -475,24 +814,96 @@
         });
       }
 
+      function swapOptionsForExercise(exercise) {
+        const activeId = String(exercise?.exerciseId || '').toLowerCase();
+        const primaryToken = normalizeToken(Array.isArray(exercise?.primaryMuscles) ? exercise.primaryMuscles[0] : '');
+        const categoryToken = normalizeToken(exercise?.category);
+        const pickPool = (rows, token, accessor) => {
+          if (!token) return [];
+          return rows.filter((row) => normalizeToken(accessor(row)) === token);
+        };
+
+        let pool = pickPool(state.dbRows, primaryToken, (row) => Array.isArray(row?.primaryMuscles) ? row.primaryMuscles[0] : '');
+        if (pool.length < 6) {
+          const byCategory = pickPool(state.dbRows, categoryToken, (row) => row?.category || '');
+          if (byCategory.length > pool.length) pool = byCategory;
+        }
+        if (pool.length < 6) pool = state.dbRows.slice();
+
+        return pool
+          .slice()
+          .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
+          .filter((row) => String(row?.id || '').toLowerCase() !== activeId)
+          .slice(0, 32);
+      }
+
       function exerciseCardMarkup(weekday, ex, exIdx) {
         const wrapper = document.createElement('article');
-        wrapper.className = 'builder-plan-item';
+        wrapper.className = `builder-plan-item${ex?.expanded ? ' is-open' : ''}`;
+        const detailId = `builder-plan-detail-${weekday}-${exIdx}`;
+        const options = swapOptionsForExercise(ex);
+        const optionMarkup = options.map((row) => {
+          const id = String(row?.id || '');
+          const label = String(row?.name || id || 'Exercise');
+          return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+        }).join('');
+        const imageUrl = String(ex?.imageUrl || '').trim();
+        const primary = listToText(ex?.primaryMuscles, 'General');
+        const secondary = listToText(ex?.secondaryMuscles, '-');
+        const instructions = Array.isArray(ex?.instructions) ? ex.instructions.filter(Boolean).slice(0, 2) : [];
+        const instructionsText = instructions.length ? instructions.join(' ') : 'No setup notes yet.';
+
         wrapper.innerHTML = `
           <div class="builder-plan-item-head">
-            <span>${String(ex.name || 'Exercise')}</span>
-            <button type="button" class="builder-plan-remove" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+            <span class="builder-plan-item-title">${escapeHtml(ex?.name || 'Exercise')}</span>
+            <div class="builder-plan-item-controls">
+              <button
+                type="button"
+                class="builder-plan-toggle"
+                data-toggle-day="${weekday}"
+                data-toggle-idx="${exIdx}"
+                aria-expanded="${ex?.expanded ? 'true' : 'false'}"
+                aria-controls="${detailId}"
+              >${ex?.expanded ? 'Hide' : 'Details'}</button>
+              <button type="button" class="builder-plan-remove" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+            </div>
           </div>
           <div class="builder-plan-grid">
             <label>Sets
-              <input type="number" min="1" max="8" step="1" value="${Number(ex.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
             <label>Reps
-              <input type="text" maxlength="16" value="${String(ex.reps || '8-12')}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
             <label>Rest (sec)
-              <input type="number" min="30" max="300" step="5" value="${Number(ex.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
+          </div>
+          <div id="${detailId}" class="builder-plan-detail" aria-hidden="${ex?.expanded ? 'false' : 'true'}">
+            <div class="builder-plan-detail-top">
+              <div class="builder-plan-image${imageUrl ? '' : ' is-empty'}">
+                ${imageUrl
+                  ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(String(ex?.name || 'Exercise'))}" loading="lazy">`
+                  : `<span>${escapeHtml(initialsFromName(ex?.name || 'Exercise'))}</span>`}
+              </div>
+              <div class="builder-plan-detail-meta">
+                <div><b>Primary:</b>${escapeHtml(primary)}</div>
+                <div><b>Secondary:</b>${escapeHtml(secondary)}</div>
+                <div><b>Category:</b>${escapeHtml(toTitleCase(ex?.category || 'General'))}</div>
+                <div><b>Equipment:</b>${escapeHtml(toTitleCase(ex?.equipment || 'Any'))}</div>
+                <div><b>Level:</b>${escapeHtml(toTitleCase(ex?.level || 'Beginner'))}</div>
+              </div>
+            </div>
+            <div class="builder-plan-instructions">${escapeHtml(instructionsText)}</div>
+            <div class="builder-plan-swap-row">
+              <label>
+                Swap exercise
+                <select class="auth-input builder-plan-swap-select" data-swap-day="${weekday}" data-swap-idx="${exIdx}">
+                  <option value="">Choose replacement...</option>
+                  ${optionMarkup}
+                </select>
+              </label>
+            </div>
           </div>
         `;
         return wrapper;
@@ -534,15 +945,11 @@
             if (!raw) return;
             let parsed = null;
             try { parsed = JSON.parse(raw); } catch { parsed = null; }
-            if (!parsed || !parsed.id) return;
+            if (!parsed) return;
+            const dropped = planExerciseFromPayload(parsed);
+            if (!dropped) return;
             const cur = state.planByWeekday.get(weekday) || [];
-            cur.push({
-              exerciseId: String(parsed.id),
-              name: String(parsed.name || parsed.id),
-              sets: 3,
-              reps: '8-12',
-              restSec: 90
-            });
+            cur.push(dropped);
             state.planByWeekday.set(weekday, cur);
             renderDayColumns();
           });
@@ -581,15 +988,30 @@
           const card = document.createElement('article');
           card.className = 'builder-db-card';
           card.draggable = true;
+          const name = String(row?.name || row?.id || 'Exercise');
+          const imageUrl = exerciseImageUrl(row);
+          const primary = listToText(row?.primaryMuscles, row?.equipment || 'General');
+          const tags = [
+            row?.category ? toTitleCase(row.category) : '',
+            row?.equipment ? toTitleCase(row.equipment) : '',
+            Array.isArray(row?.primaryMuscles) && row.primaryMuscles[0] ? toTitleCase(row.primaryMuscles[0]) : ''
+          ].filter(Boolean).slice(0, 3);
           card.innerHTML = `
-            <div class="builder-db-name">${String(row?.name || row?.id || 'Exercise')}</div>
-            <div class="builder-db-meta">${String((Array.isArray(row?.primaryMuscles) ? row.primaryMuscles.join(', ') : row?.equipment || 'General') || 'General')}</div>
+            <div class="builder-db-thumb${imageUrl ? '' : ' is-empty'}">
+              ${imageUrl
+                ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" loading="lazy">`
+                : escapeHtml(initialsFromName(name))}
+            </div>
+            <div>
+              <div class="builder-db-name">${escapeHtml(name)}</div>
+              <div class="builder-db-meta">${escapeHtml(primary)}</div>
+              <div class="builder-db-tags">
+                ${tags.map((tag) => `<span class="builder-db-tag">${escapeHtml(tag)}</span>`).join('')}
+              </div>
+            </div>
           `;
           card.addEventListener('dragstart', (e) => {
-            const payload = {
-              id: String(row?.id || ''),
-              name: String(row?.name || row?.id || 'Exercise')
-            };
+            const payload = toDbExerciseState(row);
             e.dataTransfer?.setData('application/json', JSON.stringify(payload));
             e.dataTransfer.effectAllowed = 'copy';
           });
@@ -627,6 +1049,18 @@
 
       function bindPlanInputEvents() {
         dayColumnsEl?.addEventListener('click', (e) => {
+          const toggleBtn = e.target.closest('[data-toggle-day][data-toggle-idx]');
+          if (toggleBtn) {
+            const day = Number(toggleBtn.getAttribute('data-toggle-day'));
+            const idx = Number(toggleBtn.getAttribute('data-toggle-idx'));
+            const cur = state.planByWeekday.get(day) || [];
+            const row = cur[idx];
+            if (!row) return;
+            row.expanded = !row.expanded;
+            renderDayColumns();
+            return;
+          }
+
           const removeBtn = e.target.closest('[data-remove-day][data-remove-idx]');
           if (!removeBtn) return;
           const day = Number(removeBtn.getAttribute('data-remove-day'));
@@ -664,6 +1098,49 @@
             row.reps = text || '8-12';
           }
         });
+
+        dayColumnsEl?.addEventListener('change', (e) => {
+          const select = e.target.closest('select[data-swap-day][data-swap-idx]');
+          if (!select) return;
+
+          const nextId = String(select.value || '').trim();
+          if (!nextId) return;
+
+          const day = Number(select.getAttribute('data-swap-day'));
+          const idx = Number(select.getAttribute('data-swap-idx'));
+          const cur = state.planByWeekday.get(day) || [];
+          const existing = cur[idx];
+          if (!existing) return;
+
+          const replacementRow = state.dbRows.find((row) => String(row?.id || '').toLowerCase() === nextId.toLowerCase());
+          if (!replacementRow) {
+            setStatus('Could not find replacement exercise.', 'error');
+            select.value = '';
+            return;
+          }
+
+          const swapped = toDbExerciseState(replacementRow);
+          swapped.sets = Number(existing.sets) || 3;
+          swapped.reps = String(existing.reps || '8-12');
+          swapped.restSec = Number(existing.restSec) || 90;
+          swapped.expanded = true;
+          cur[idx] = swapped;
+          state.planByWeekday.set(day, cur);
+          setStatus(`${swapped.name} swapped in.`, 'ok');
+          renderDayColumns();
+        });
+
+        dayColumnsEl?.addEventListener('error', (e) => {
+          const img = e.target.closest('.builder-plan-image img');
+          if (!img) return;
+          const wrap = img.closest('.builder-plan-image');
+          if (!wrap) return;
+          wrap.classList.add('is-empty');
+          const fallback = document.createElement('span');
+          fallback.textContent = initialsFromName(img.getAttribute('alt') || 'Exercise');
+          wrap.innerHTML = '';
+          wrap.appendChild(fallback);
+        }, true);
       }
 
       async function saveCustomPlan() {
@@ -751,6 +1228,15 @@
           state.query = String(searchEl?.value || '');
           renderDatabaseList();
         });
+
+        dbListEl?.addEventListener('error', (e) => {
+          const img = e.target.closest('.builder-db-thumb img');
+          if (!img) return;
+          const wrap = img.closest('.builder-db-thumb');
+          if (!wrap) return;
+          wrap.classList.add('is-empty');
+          wrap.textContent = initialsFromName(img.getAttribute('alt') || 'Exercise');
+        }, true);
 
         saveBtn?.addEventListener('click', saveCustomPlan);
         loginBtn?.addEventListener('click', () => openAuth('login'));
