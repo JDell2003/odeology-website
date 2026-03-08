@@ -309,6 +309,8 @@ async function ensureSchema() {
           );
         `);
         await db.query('CREATE UNIQUE INDEX IF NOT EXISTS uq_message_threads_pair ON app_message_threads(user_a, user_b);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_message_threads_user_a_last ON app_message_threads(user_a, last_message_at DESC);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_message_threads_user_b_last ON app_message_threads(user_b, last_message_at DESC);');
 
         await db.query(`
           CREATE TABLE IF NOT EXISTS app_messages (
@@ -335,6 +337,8 @@ async function ensureSchema() {
           END $$;
         `);
         await db.query('CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON app_messages(thread_id, created_at);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_messages_sender_receiver_created ON app_messages(sender_id, receiver_id, created_at DESC);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_messages_receiver_sender_created ON app_messages(receiver_id, sender_id, created_at DESC);');
 
         await db.query(`
           CREATE TABLE IF NOT EXISTS app_message_groups (
@@ -1073,6 +1077,23 @@ async function socialRoutes(req, res, url) {
 
     const result = await db.query(
       `
+        WITH owner_threads AS (
+          SELECT DISTINCT ON (peer_user_id)
+                 peer_user_id,
+                 last_message_at,
+                 last_message_text
+          FROM (
+            SELECT CASE
+                     WHEN mt.user_a = $1 THEN mt.user_b
+                     ELSE mt.user_a
+                   END AS peer_user_id,
+                   mt.last_message_at,
+                   mt.last_message_text
+            FROM app_message_threads mt
+            WHERE mt.user_a = $1 OR mt.user_b = $1
+          ) t
+          ORDER BY peer_user_id, last_message_at DESC NULLS LAST
+        )
         SELECT u.id,
                u.username,
                u.display_name,
@@ -1080,22 +1101,10 @@ async function socialRoutes(req, res, url) {
                u.created_at,
                p.profile->'profile'->>'photoDataUrl' AS photo,
                t.last_message_at,
-               t.last_message_text,
-               (
-                 SELECT COUNT(*)::int
-                 FROM app_messages m
-                 WHERE (m.sender_id = $1 AND m.receiver_id = u.id)
-                    OR (m.sender_id = u.id AND m.receiver_id = $1)
-               ) AS message_count
+               t.last_message_text
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
-        LEFT JOIN LATERAL (
-          SELECT last_message_at, last_message_text
-          FROM app_message_threads mt
-          WHERE (mt.user_a = $1 AND mt.user_b = u.id)
-             OR (mt.user_a = u.id AND mt.user_b = $1)
-          LIMIT 1
-        ) t ON true
+        LEFT JOIN owner_threads t ON t.peer_user_id = u.id
         ${whereSql}
         ORDER BY COALESCE(t.last_message_at, u.created_at) DESC
         LIMIT $${limitIdx};
@@ -1115,7 +1124,7 @@ async function socialRoutes(req, res, url) {
         createdAt: row.created_at || null,
         lastMessageAt: row.last_message_at || null,
         lastMessageText: row.last_message_text || null,
-        messageCount: Number(row.message_count || 0)
+        messageCount: 0
       }))
     });
   }

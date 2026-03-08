@@ -441,7 +441,8 @@
 
   async function loadAccounts() {
     const qs = new URLSearchParams();
-    qs.set('limit', '2000');
+    // Keep first paint fast on large user tables; search can still fetch a larger slice.
+    qs.set('limit', state.search ? '800' : '350');
     if (state.search) qs.set('q', state.search);
     const resp = await api(`/api/messages/owner/accounts?${qs.toString()}`);
     if (!resp.ok) {
@@ -1305,7 +1306,8 @@
     updateImageMeta('#owner-msg-image', '#owner-msg-image-meta');
     updateImageMeta('#owner-msg-mass-image', '#owner-msg-mass-image-meta');
     updateMobileActionUi();
-    await Promise.all([loadStats(), loadAccounts()]);
+    await loadAccounts();
+    loadStats();
   }
 
   document.addEventListener('DOMContentLoaded', init);
