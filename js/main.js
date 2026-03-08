@@ -8784,7 +8784,14 @@ function setupComingSoonLinks() {
     const dashControl = document.querySelector('.control-panel .control-link#control-checkin');
     const leaderboardControl = document.querySelector('.control-panel a.control-link[href="leaderboard.html"]');
     lockLink(storeControl, { addSub: true });
-    lockLink(dashControl, { addSub: true });
+    // Daily Dash is live. Make sure it is never locked as "coming soon".
+    if (dashControl) {
+        dashControl.classList.remove('coming-soon-item', 'is-locked', 'coming-soon-link');
+        dashControl.removeAttribute('aria-disabled');
+        const dashTextEl = dashControl.querySelector('.text') || dashControl;
+        const dashSub = dashTextEl.querySelector('.control-sub');
+        if (dashSub) dashSub.remove();
+    }
     // Leaderboard is now live in control panel.
     if (leaderboardControl) {
         leaderboardControl.classList.remove('coming-soon-item', 'is-locked', 'coming-soon-link');
