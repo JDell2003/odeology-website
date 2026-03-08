@@ -57,6 +57,21 @@
       justify-content: space-between;
     }
 
+    .builder-save-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .builder-save-cta-label {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #6b5539;
+      white-space: nowrap;
+    }
+
     .builder-status {
       min-height: 20px;
       font-size: 0.9rem;
@@ -721,7 +736,10 @@
       </div>
       <div class="builder-head-actions">
         <a href="training.html" class="btn btn-ghost">Back to Training</a>
-        <button type="button" class="btn btn-primary" id="builder-save-btn">Save to My Workout</button>
+        <div class="builder-save-cta">
+          <span class="builder-save-cta-label">Generate my workout for me</span>
+          <button type="button" class="btn btn-primary" id="builder-save-btn">Save to My Workout</button>
+        </div>
       </div>
       <div id="builder-status" class="builder-status"></div>
     </section>
