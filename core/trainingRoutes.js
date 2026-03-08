@@ -52,6 +52,47 @@ function clearInviteCache(userId) {
   trainingInviteCache.delete(userId);
 }
 
+async function createShareEvent({
+  userId,
+  actorUserId = null,
+  counterpartyUserId = null,
+  inviteId = null,
+  eventType,
+  meta = {}
+} = {}) {
+  const targetUserId = String(userId || '').trim();
+  const type = String(eventType || '').trim().toLowerCase();
+  if (!isUuid(targetUserId) || !type) return;
+  const actorId = String(actorUserId || '').trim();
+  const counterpartyId = String(counterpartyUserId || '').trim();
+  const inviteIdNorm = String(inviteId || '').trim();
+  try {
+    await db.query(
+      `
+        INSERT INTO app_training_share_events (
+          user_id,
+          actor_user_id,
+          counterparty_user_id,
+          invite_id,
+          event_type,
+          meta
+        )
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb);
+      `,
+      [
+        targetUserId,
+        isUuid(actorId) ? actorId : null,
+        isUuid(counterpartyId) ? counterpartyId : null,
+        isUuid(inviteIdNorm) ? inviteIdNorm : null,
+        type,
+        JSON.stringify(meta && typeof meta === 'object' ? meta : {})
+      ]
+    );
+  } catch {
+    // non-blocking notification write
+  }
+}
+
 function toEpochMs(raw) {
   if (!raw) return NaN;
   if (typeof raw === 'number') return raw;
@@ -2793,6 +2834,20 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_training_share_invites_to_status ON app_training_share_invites(to_user_id, status, created_at);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_training_share_invites_from_status ON app_training_share_invites(from_user_id, status, created_at);');
     await safeQuery("CREATE UNIQUE INDEX IF NOT EXISTS uq_training_share_invites_pending ON app_training_share_invites(from_user_id, to_user_id) WHERE status = 'pending';");
+    await safeQuery(`
+      CREATE TABLE IF NOT EXISTS app_training_share_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        created_at timestamptz NOT NULL DEFAULT now(),
+        user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        actor_user_id uuid REFERENCES app_users(id) ON DELETE SET NULL,
+        counterparty_user_id uuid REFERENCES app_users(id) ON DELETE SET NULL,
+        invite_id uuid REFERENCES app_training_share_invites(id) ON DELETE SET NULL,
+        event_type text NOT NULL,
+        meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+        read_at timestamptz
+      );
+    `);
+    await safeQuery('CREATE INDEX IF NOT EXISTS idx_training_share_events_user_read_created ON app_training_share_events(user_id, read_at, created_at DESC);');
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_workouts (
@@ -3980,6 +4035,32 @@ async function trainingRoutes(req, res, url) {
         isOnline: isLastSeenOnline(row.last_seen)
       }));
     }
+    const joinedResult = await db.query(
+      `
+        SELECT DISTINCT ON (i.from_user_id)
+               i.from_user_id,
+               u.username,
+               u.display_name,
+               u.last_seen,
+               p.profile->'profile'->>'photoDataUrl' AS photo
+        FROM app_training_share_invites i
+        JOIN app_users u ON u.id = i.from_user_id
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        WHERE i.to_user_id = $1
+          AND i.status = 'accepted'
+        ORDER BY i.from_user_id, i.updated_at DESC
+        LIMIT 2000;
+      `,
+      [user.id]
+    );
+    const joinedFromUsers = (joinedResult.rows || []).map((row) => ({
+      id: row.from_user_id,
+      username: row.username || null,
+      displayName: row.display_name || row.username || 'Account',
+      photoDataUrl: row.photo || null,
+      lastSeen: row.last_seen || null,
+      isOnline: isLastSeenOnline(row.last_seen)
+    }));
     const acceptedCount = Object.values(latestStatusByUserId).filter((s) => s === 'accepted').length;
     const rejectedCount = Object.values(latestStatusByUserId).filter((s) => s === 'rejected').length;
     logShareRoute('share.outgoing.result', {
@@ -3988,7 +4069,7 @@ async function trainingRoutes(req, res, url) {
       acceptedCount,
       rejectedCount
     });
-    return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId, acceptedUsers });
+    return sendJson(res, 200, { ok: true, targetUserIds, latestStatusByUserId, acceptedUsers, joinedFromUsers });
   }
 
   if (pathname === '/api/training/share/remove' && req.method === 'POST') {
@@ -4033,8 +4114,108 @@ async function trainingRoutes(req, res, url) {
       ['removed', latestInvite.id]
     );
     clearInviteCache(targetUserId);
+    await createShareEvent({
+      userId: targetUserId,
+      actorUserId: user.id,
+      counterpartyUserId: targetUserId,
+      inviteId: latestInvite.id,
+      eventType: 'owner_removed',
+      meta: { removedBy: 'owner' }
+    });
     logShareRoute('share.remove.success', { fromUserId: user.id, targetUserId, inviteId: latestInvite.id });
     return sendJson(res, 200, { ok: true, targetUserId, action: 'removed' });
+  }
+
+  if (pathname === '/api/training/share/leave' && req.method === 'POST') {
+    logShareRoute('share.leave.request.received', { method: req.method, pathname, toUserId: user.id });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+    const ownerUserId = String(payload?.ownerUserId || payload?.fromUserId || '').trim();
+    const ownerFilter = isUuid(ownerUserId) ? ownerUserId : null;
+
+    const latestInviteResult = await db.query(
+      `
+        SELECT id, from_user_id
+        FROM app_training_share_invites
+        WHERE to_user_id = $1
+          AND status = 'accepted'
+          AND ($2::uuid IS NULL OR from_user_id = $2::uuid)
+        ORDER BY updated_at DESC
+        LIMIT 1;
+      `,
+      [user.id, ownerFilter]
+    );
+    const latestInvite = latestInviteResult.rows?.[0] || null;
+    if (!latestInvite) return sendJson(res, 404, { ok: false, error: 'No accepted shared workout found.' });
+
+    await db.query(
+      'UPDATE app_training_share_invites SET status = $1, responded_at = now(), updated_at = now() WHERE id = $2;',
+      ['removed_by_recipient', latestInvite.id]
+    );
+    clearInviteCache(user.id);
+    clearInviteCache(latestInvite.from_user_id);
+    await createShareEvent({
+      userId: latestInvite.from_user_id,
+      actorUserId: user.id,
+      counterpartyUserId: latestInvite.from_user_id,
+      inviteId: latestInvite.id,
+      eventType: 'recipient_left',
+      meta: { removedBy: 'recipient' }
+    });
+    logShareRoute('share.leave.success', {
+      toUserId: user.id,
+      ownerUserId: latestInvite.from_user_id,
+      inviteId: latestInvite.id
+    });
+    return sendJson(res, 200, {
+      ok: true,
+      action: 'left',
+      inviteId: latestInvite.id,
+      ownerUserId: latestInvite.from_user_id
+    });
+  }
+
+  if (pathname === '/api/training/share/events' && req.method === 'GET') {
+    const result = await db.query(
+      `
+        SELECT e.id,
+               e.created_at,
+               e.event_type,
+               e.meta,
+               e.actor_user_id,
+               u.username AS actor_username,
+               u.display_name AS actor_display_name
+        FROM app_training_share_events e
+        LEFT JOIN app_users u ON u.id = e.actor_user_id
+        WHERE e.user_id = $1
+          AND e.read_at IS NULL
+        ORDER BY e.created_at DESC
+        LIMIT 30;
+      `,
+      [user.id]
+    );
+    const rows = result.rows || [];
+    const ids = rows.map((row) => row.id).filter((id) => isUuid(id));
+    if (ids.length) {
+      await db.query(
+        'UPDATE app_training_share_events SET read_at = now() WHERE id = ANY($1::uuid[]);',
+        [ids]
+      );
+    }
+    const events = rows.map((row) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      eventType: String(row.event_type || '').trim().toLowerCase(),
+      actorUserId: row.actor_user_id || null,
+      actorUsername: row.actor_username || null,
+      actorDisplayName: row.actor_display_name || row.actor_username || 'Account',
+      meta: row.meta && typeof row.meta === 'object' ? row.meta : {}
+    }));
+    return sendJson(res, 200, { ok: true, events });
   }
 
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {

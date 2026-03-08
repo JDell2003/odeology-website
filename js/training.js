@@ -681,6 +681,7 @@
     bootstrapRequested: false,
     accounts: [],
     accountIndex: new Map(),
+    connectedMembers: [],
     status: '',
     requesting: new Set(),
     kicking: new Set(),
@@ -764,6 +765,7 @@
   }
 
   let pendingTrainingWelcome = consumeTrainingWelcomePayload();
+  let shareEventsCheckedUserId = '';
 
   function maybeShowTrainingWelcomeModal() {
     if (trainingWelcomeShown) return;
@@ -834,6 +836,90 @@
 
     trainingWelcomeShown = true;
     pendingTrainingWelcome = null;
+  }
+
+  function showShareSystemToast(title, subText) {
+    const existing = document.getElementById('training-share-system-toast');
+    if (existing) existing.remove();
+    const toast = el('div', { class: 'workout-saved-toast', id: 'training-share-system-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '!'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, String(title || 'Share update')),
+        el('div', { class: 'workout-saved-sub' }, String(subText || ''))
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 280);
+      }, 3400);
+    });
+  }
+
+  function showOwnerRemovedModal({ actorName, whenText }) {
+    const existing = document.getElementById('training-share-removed-modal');
+    if (existing) existing.remove();
+    const close = () => {
+      const node = document.getElementById('training-share-removed-modal');
+      if (node) node.remove();
+    };
+    const overlay = el('div', {
+      class: 'schedule-modal',
+      id: 'training-share-removed-modal',
+      role: 'dialog',
+      'aria-modal': 'true'
+    },
+    el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close notice' }),
+    el('div', { class: 'schedule-modal-card' },
+      el('div', { class: 'schedule-modal-head' },
+        el('div', { class: 'schedule-modal-title' }, 'Share update'),
+        el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close notice' }, '×')
+      ),
+      el('div', { class: 'schedule-modal-body' },
+        el('div', { class: 'training-share-welcome-line' }, `${actorName} removed you from the shared workout.`),
+        el('div', { class: 'training-share-welcome-line' }, `At ${whenText}.`),
+        el('div', { class: 'training-share-welcome-line' }, 'Your copied workout is still yours on your account.')
+      ),
+      el('div', { class: 'schedule-modal-actions' },
+        el('button', { type: 'button', class: 'btn btn-share-workout' }, 'OK')
+      )
+    ));
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', close);
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', close);
+    overlay.querySelector('.schedule-modal-actions button')?.addEventListener('click', close);
+    document.body.appendChild(overlay);
+  }
+
+  async function checkShareEventsOnce() {
+    const uid = String(state.auth.user?.id || '').trim();
+    if (!uid) return;
+    if (shareEventsCheckedUserId === uid) return;
+    shareEventsCheckedUserId = uid;
+    const resp = await api('/api/training/share/events?fresh=1', { method: 'GET' });
+    if (!resp.ok || !resp.json?.ok) return;
+    const events = Array.isArray(resp.json?.events) ? resp.json.events : [];
+    if (!events.length) return;
+    events
+      .slice()
+      .reverse()
+      .forEach((evt) => {
+        const actorName = String(evt?.actorDisplayName || evt?.actorUsername || 'Owner').trim() || 'Owner';
+        const whenText = (() => {
+          const d = new Date(evt?.createdAt || Date.now());
+          if (!Number.isFinite(d.getTime())) return new Date().toLocaleString();
+          return d.toLocaleString();
+        })();
+        const type = String(evt?.eventType || '').trim().toLowerCase();
+        if (type === 'owner_removed') {
+          showOwnerRemovedModal({ actorName, whenText });
+          return;
+        }
+        if (type === 'recipient_left') {
+          showShareSystemToast('Share update', `${actorName} removed themselves at ${whenText}.`);
+        }
+      });
   }
 
   const shareDebugEnabled = (() => {
@@ -958,6 +1044,49 @@
         lastSeen: row?.lastSeen || prev?.lastSeen || null
       });
     }
+
+    const joinedFromUsers = Array.isArray(payload?.joinedFromUsers) ? payload.joinedFromUsers : [];
+    for (const row of joinedFromUsers) {
+      const id = String(row?.id || '').trim();
+      if (!id) continue;
+      const prev = shareUi.accountIndex.get(id) || {};
+      shareUi.accountIndex.set(id, {
+        ...prev,
+        id,
+        username: row?.username != null ? String(row.username) : (prev?.username || null),
+        displayName: row?.displayName != null ? String(row.displayName) : (prev?.displayName || prev?.username || 'Account'),
+        photoDataUrl: row?.photoDataUrl || prev?.photoDataUrl || null,
+        isOnline: row?.isOnline === true,
+        lastSeen: row?.lastSeen || prev?.lastSeen || null
+      });
+    }
+
+    const connectedById = new Map();
+    for (const row of acceptedUsers) {
+      const id = String(row?.id || '').trim();
+      if (!id) continue;
+      connectedById.set(`out:${id}`, {
+        id,
+        username: row?.username || null,
+        displayName: row?.displayName || row?.username || 'Account',
+        photoDataUrl: row?.photoDataUrl || null,
+        isOnline: row?.isOnline === true,
+        relation: 'outgoing'
+      });
+    }
+    for (const row of joinedFromUsers) {
+      const id = String(row?.id || '').trim();
+      if (!id) continue;
+      connectedById.set(`in:${id}`, {
+        id,
+        username: row?.username || null,
+        displayName: row?.displayName || row?.username || 'Account',
+        photoDataUrl: row?.photoDataUrl || null,
+        isOnline: row?.isOnline === true,
+        relation: 'incoming'
+      });
+    }
+    shareUi.connectedMembers = Array.from(connectedById.values());
 
     return pendingSet;
   }
@@ -3156,7 +3285,7 @@ function toFreeExerciseDbRemotePath(src) {
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
-      const btn = target.closest('.share-workout-add-btn, .share-workout-add, .share-workout-kick-btn');
+      const btn = target.closest('.share-workout-add-btn, .share-workout-add, .share-workout-kick-btn, .share-workout-member-btn');
       if (!btn) return;
       try {
         const row = btn.closest('.share-workout-item');
@@ -3512,6 +3641,53 @@ function toFreeExerciseDbRemotePath(src) {
     }
   }
 
+  async function leaveSharedWorkoutFromOwner(account) {
+    const key = String(account?.id || '').trim();
+    if (!key) return;
+    if (shareUi.kicking.has(key)) return;
+
+    const ownerName = String(account?.displayName || account?.username || 'owner').trim();
+    const traceId = `share-leave-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+    shareUi.kicking.add(key);
+    shareUi.status = `Leaving ${ownerName}'s shared workout...`;
+    try {
+      shareDebugLog(`[${traceId}] Leave clicked`, {
+        ownerUserId: key,
+        ownerName
+      });
+    } catch {
+      // ignore
+    }
+    render();
+
+    try {
+      const resp = await api('/api/training/share/leave', {
+        method: 'POST',
+        body: JSON.stringify({ ownerUserId: key })
+      });
+      try {
+        shareDebugLog(`[${traceId}] POST /api/training/share/leave`, {
+          ok: resp?.ok,
+          status: resp?.status,
+          json: resp?.json || null
+        });
+      } catch {
+        // ignore console failures
+      }
+      if (!resp.ok || !resp.json?.ok) {
+        shareUi.status = resp?.json?.error || 'Could not leave shared workout.';
+        return;
+      }
+
+      await refreshShareOutgoingState({ rerender: false });
+      shareUi.status = `You left ${ownerName}'s shared workout.`;
+    } finally {
+      shareUi.kicking.delete(key);
+      render();
+    }
+  }
+
 function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
@@ -3684,6 +3860,7 @@ function toggleSharePopover(force) {
     if (next === 'plan') {
       window.setTimeout(() => {
         try { maybeShowTrainingWelcomeModal(); } catch { /* ignore */ }
+        checkShareEventsOnce().catch(() => {});
       }, 80);
     }
   }
@@ -3770,6 +3947,7 @@ function toggleSharePopover(force) {
       me = await api('/api/auth/me', { method: 'GET' });
     } catch {
       state.auth.user = null;
+      shareEventsCheckedUserId = '';
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -3778,6 +3956,7 @@ function toggleSharePopover(force) {
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
       shareUi.accountIndex.clear();
+      shareUi.connectedMembers = [];
       shareUi.status = '';
       shareUi.requesting.clear();
       shareUi.kicking.clear();
@@ -3793,6 +3972,7 @@ function toggleSharePopover(force) {
     const meUser = me.ok ? (me.json?.user || null) : null;
     if (!me.ok || !meUser) {
       state.auth.user = null;
+      shareEventsCheckedUserId = '';
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -3801,6 +3981,7 @@ function toggleSharePopover(force) {
       shareUi.bootstrapRequested = false;
       shareUi.accounts = [];
       shareUi.accountIndex.clear();
+      shareUi.connectedMembers = [];
       shareUi.status = '';
       shareUi.requesting.clear();
       shareUi.kicking.clear();
@@ -3813,11 +3994,15 @@ function toggleSharePopover(force) {
       return;
     }
     state.auth.user = meUser;
+    if (shareEventsCheckedUserId && shareEventsCheckedUserId !== String(meUser?.id || '').trim()) {
+      shareEventsCheckedUserId = '';
+    }
     shareUi.open = false;
     shareUi.loaded = false;
     shareUi.bootstrapRequested = false;
     shareUi.accounts = [];
     shareUi.accountIndex.clear();
+    shareUi.connectedMembers = [];
     shareUi.status = '';
     shareUi.requesting.clear();
     shareUi.kicking.clear();
@@ -3837,6 +4022,7 @@ function toggleSharePopover(force) {
     if (!s.ok) {
       if (s.status === 401) {
         state.auth.user = null;
+        shareEventsCheckedUserId = '';
         state.profile = null;
         state.planRow = null;
         state.logs = [];
@@ -3845,6 +4031,7 @@ function toggleSharePopover(force) {
         shareUi.bootstrapRequested = false;
         shareUi.accounts = [];
         shareUi.accountIndex.clear();
+        shareUi.connectedMembers = [];
         shareUi.status = '';
         shareUi.requesting.clear();
         shareUi.kicking.clear();
@@ -6255,26 +6442,16 @@ function toggleSharePopover(force) {
           });
       }
     }
-    const acceptedShareMembers = [];
-    for (const [rawId, status] of shareUi.latestStatus.entries()) {
-      if (String(status || '').toLowerCase() !== 'accepted') continue;
-      const id = String(rawId || '').trim();
-      if (!id) continue;
-      const account = shareUi.accountIndex.get(id)
-        || (shareUi.accounts || []).find((item) => String(item?.id || '').trim() === id)
-        || null;
-      if (!account) continue;
-      acceptedShareMembers.push(account);
-    }
-    const acceptedShareVisible = acceptedShareMembers.slice(0, 6);
-    const acceptedShareOverflow = Math.max(0, acceptedShareMembers.length - acceptedShareVisible.length);
-    const shareMembersStrip = acceptedShareMembers.length
+    const connectedMembers = Array.isArray(shareUi.connectedMembers) ? shareUi.connectedMembers : [];
+    const connectedVisible = connectedMembers.slice(0, 6);
+    const connectedOverflow = Math.max(0, connectedMembers.length - connectedVisible.length);
+    const shareMembersStrip = connectedMembers.length
       ? el('div', {
         class: 'share-workout-members',
-        'aria-label': `${acceptedShareMembers.length} account${acceptedShareMembers.length === 1 ? '' : 's'} on this workout`
+        'aria-label': `${connectedMembers.length} connected account${connectedMembers.length === 1 ? '' : 's'}`
       },
       el('div', { class: 'share-workout-members-list' },
-        acceptedShareVisible.map((member) => {
+        connectedVisible.map((member) => {
           const memberName = String(member?.displayName || member?.username || 'Account').trim() || 'Account';
           const memberId = String(member?.id || '').trim();
           const isKickingMember = Boolean(memberId) && shareUi.kicking.has(memberId);
@@ -6299,11 +6476,17 @@ function toggleSharePopover(force) {
             class: `share-workout-member-avatar share-workout-member-btn${isKickingMember ? ' is-kicking' : ''}`,
             title: member?.username ? `${memberName} (@${member.username})` : memberName,
             disabled: isKickingMember ? 'disabled' : null,
-            'aria-label': `Kick ${memberName} from workout`,
+            'aria-label': member?.relation === 'incoming'
+              ? `Leave ${memberName}'s shared workout`
+              : `Kick ${memberName} from workout`,
             onclick: async (e) => {
               e.preventDefault();
               e.stopPropagation();
               if (isKickingMember) return;
+              if (member?.relation === 'incoming') {
+                await leaveSharedWorkoutFromOwner(member);
+                return;
+              }
               await removeAcceptedShareForAccount(member);
             }
           },
@@ -6312,8 +6495,8 @@ function toggleSharePopover(force) {
             : (initials || 'O'),
           el('span', { class: 'share-workout-member-kick', 'aria-hidden': 'true' }, '×'));
         }),
-        acceptedShareOverflow > 0
-          ? el('div', { class: 'share-workout-member-avatar extra', title: `${acceptedShareOverflow} more` }, `+${acceptedShareOverflow}`)
+        connectedOverflow > 0
+          ? el('div', { class: 'share-workout-member-avatar extra', title: `${connectedOverflow} more` }, `+${connectedOverflow}`)
           : null
       )
       )
