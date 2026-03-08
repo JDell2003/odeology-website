@@ -12484,6 +12484,7 @@ function initAuthUi() {
     let loadRequests = () => {};
     let loadWarnings = () => {};
     let requestsNotifyTimer = 0;
+    let messagesNotifyTimer = 0;
     let requestCountBaselineReady = false;
     let lastKnownRequestTotal = 0;
     let requestToastHideTimer = 0;
@@ -12545,6 +12546,31 @@ function initAuthUi() {
         } else {
             btn.setAttribute('aria-label', signedIn ? 'Account' : 'Sign in');
         }
+    };
+
+    const ensureControlMessagesBadge = () => {
+        const link = document.querySelector('#control-panel a.control-link[href="friends.html"]');
+        if (!link) return { link: null, badge: null };
+        let badge = link.querySelector('.control-msg-notif-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'control-notif-badge control-msg-notif-badge hidden';
+            badge.id = 'control-messages-notif-badge';
+            badge.setAttribute('aria-hidden', 'true');
+            link.appendChild(badge);
+        }
+        return { link, badge };
+    };
+
+    const updateControlMessagesBadge = (totalRaw, { signedIn = Boolean(currentUser) } = {}) => {
+        const { link, badge } = ensureControlMessagesBadge();
+        if (!link || !badge) return;
+        const total = Math.max(0, Number(totalRaw || 0));
+        const show = Boolean(signedIn) && total > 0;
+        badge.textContent = String(total > 99 ? '99+' : total);
+        badge.classList.toggle('hidden', !show);
+        link.classList.toggle('has-notif', show);
+        link.setAttribute('aria-label', show ? `Messages (${total} unread)` : 'Messages');
     };
 
     const clearRequestToast = () => {
@@ -12614,6 +12640,26 @@ function initAuthUi() {
         }
     };
 
+    const fetchUnreadMessageCount = async () => {
+        if (!currentUser) return { total: 0, ok: false };
+        try {
+            const resp = await fetch('/api/messages/threads?fresh=1', {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            if (resp.status === 401) return { total: 0, ok: false };
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) return { total: 0, ok: false };
+            const threads = Array.isArray(json?.threads) ? json.threads : [];
+            const total = threads.reduce((sum, row) => (
+                sum + Math.max(0, Number(row?.unreadCount || 0))
+            ), 0);
+            return { total, ok: true };
+        } catch {
+            return { total: 0, ok: false };
+        }
+    };
+
     const pollIncomingRequestNotifications = async ({ bootstrap = false } = {}) => {
         if (!currentUser) return;
         const counts = await fetchIncomingRequestCounts();
@@ -12662,6 +12708,41 @@ function initAuthUi() {
         }
         clearRequestToast();
         updateControlSigninBadge(0, { signedIn: Boolean(currentUser) });
+    };
+
+    const pollMessageNotifications = async () => {
+        if (!currentUser) return;
+        const counts = await fetchUnreadMessageCount();
+        if (!counts.ok) return;
+        updateControlMessagesBadge(counts.total, { signedIn: true });
+    };
+
+    const startMessagePolling = () => {
+        if (messagesNotifyTimer) return;
+        pollMessageNotifications();
+        messagesNotifyTimer = window.setInterval(() => {
+            pollMessageNotifications();
+        }, 10000);
+    };
+
+    const stopMessagePolling = () => {
+        if (messagesNotifyTimer) {
+            window.clearInterval(messagesNotifyTimer);
+            messagesNotifyTimer = 0;
+        }
+        updateControlMessagesBadge(0, { signedIn: Boolean(currentUser) });
+    };
+
+    window.__odeSetMessageUnreadCount = (totalRaw) => {
+        updateControlMessagesBadge(totalRaw, { signedIn: Boolean(currentUser) });
+    };
+
+    window.__odeRefreshMessageUnreadCount = () => {
+        if (!currentUser) {
+            updateControlMessagesBadge(0, { signedIn: false });
+            return;
+        }
+        pollMessageNotifications();
     };
 
 
@@ -12794,6 +12875,7 @@ function initAuthUi() {
         syncOwnerWorkoutDbLink(null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
+        stopMessagePolling();
         updateControlSigninBadge(0, { signedIn: false });
         emitAuthChanged(null);
     };
@@ -12859,6 +12941,7 @@ function initAuthUi() {
 
         emitAuthChanged(user);
         startIncomingRequestPolling();
+        startMessagePolling();
         queueFriendsPrefetch();
         fetchIncomingRequestCounts()
             .then((counts) => {
@@ -14362,13 +14445,14 @@ function initFriendsPage() {
             if (!friendId) return;
             state.summaries.set(friendId, {
                 lastMessage: String(row?.lastMessage || ''),
-                lastMessageAt: row?.lastMessageAt || null
+                lastMessageAt: row?.lastMessageAt || null,
+                unreadCount: Math.max(0, Number(row?.unreadCount || 0))
             });
         });
     }
 
     function getSummary(friendId) {
-        return state.summaries.get(String(friendId || '')) || { lastMessage: '', lastMessageAt: null };
+        return state.summaries.get(String(friendId || '')) || { lastMessage: '', lastMessageAt: null, unreadCount: 0 };
     }
 
     function renderAccounts() {
@@ -14558,9 +14642,19 @@ function initFriendsPage() {
         const resp = await api('/api/messages/threads');
         if (!resp.ok) {
             mergeThreadSummaries([]);
+            if (typeof window.__odeSetMessageUnreadCount === 'function') {
+                window.__odeSetMessageUnreadCount(0);
+            }
             return;
         }
-        mergeThreadSummaries(Array.isArray(resp.json?.threads) ? resp.json.threads : []);
+        const rows = Array.isArray(resp.json?.threads) ? resp.json.threads : [];
+        mergeThreadSummaries(rows);
+        if (typeof window.__odeSetMessageUnreadCount === 'function') {
+            const unreadTotal = rows.reduce((sum, row) => (
+                sum + Math.max(0, Number(row?.unreadCount || 0))
+            ), 0);
+            window.__odeSetMessageUnreadCount(unreadTotal);
+        }
     }
 
     async function loadFriendRequests() {
@@ -14698,7 +14792,9 @@ function initFriendsPage() {
 
         state.messages = Array.isArray(resp.json?.messages) ? resp.json.messages : [];
         state.isThreadLoading = false;
+        await loadThreadSummaries();
         renderThread();
+        renderAccounts();
         setStatus('');
     }
 
@@ -14741,8 +14837,6 @@ function initFriendsPage() {
         setMessageText('');
         setStatus('Sent.', 'ok');
         await loadThread(state.selectedFriendId);
-        await loadThreadSummaries();
-        renderAccounts();
     }
 
     searchEl?.addEventListener('input', () => {

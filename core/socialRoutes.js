@@ -320,6 +320,7 @@ async function ensureSchema() {
             sender_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
             receiver_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
             body text NOT NULL DEFAULT '',
+            read_at timestamptz,
             created_at timestamptz NOT NULL DEFAULT now()
           );
         `);
@@ -328,6 +329,7 @@ async function ensureSchema() {
         await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS receiver_id uuid;`);
         await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS body text NOT NULL DEFAULT '';`);
         await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS image_data_url text NOT NULL DEFAULT '';`);
+        await db.query(`ALTER TABLE app_messages ADD COLUMN IF NOT EXISTS read_at timestamptz;`);
         await db.query(`
           DO $$
           BEGIN
@@ -340,6 +342,7 @@ async function ensureSchema() {
         await db.query('CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON app_messages(thread_id, created_at);');
         await db.query('CREATE INDEX IF NOT EXISTS idx_messages_sender_receiver_created ON app_messages(sender_id, receiver_id, created_at DESC);');
         await db.query('CREATE INDEX IF NOT EXISTS idx_messages_receiver_sender_created ON app_messages(receiver_id, sender_id, created_at DESC);');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_messages_receiver_unread ON app_messages(receiver_id, read_at, created_at DESC);');
 
         await db.query(`
           CREATE TABLE IF NOT EXISTS app_message_groups (
@@ -889,10 +892,18 @@ async function socialRoutes(req, res, url) {
                CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END AS friend_id,
                u.username,
                u.display_name,
-               p.profile->'profile'->>'photoDataUrl' AS photo
+               p.profile->'profile'->>'photoDataUrl' AS photo,
+               COALESCE(unread.unread_count, 0)::int AS unread_count
         FROM app_message_threads t
         JOIN app_users u ON u.id = CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS unread_count
+          FROM app_messages m
+          WHERE m.thread_id = t.id
+            AND m.receiver_id = $1
+            AND m.read_at IS NULL
+        ) unread ON true
         WHERE t.user_a = $1 OR t.user_b = $1
         ORDER BY t.last_message_at DESC NULLS LAST, t.created_at DESC
         LIMIT 200;
@@ -908,7 +919,8 @@ async function socialRoutes(req, res, url) {
         displayName: row.display_name || row.username || 'Account',
         photoDataUrl: row.photo || null,
         lastMessage: row.last_message_text || null,
-        lastMessageAt: row.last_message_at
+        lastMessageAt: row.last_message_at,
+        unreadCount: Number(row.unread_count || 0)
       }))
     });
   }
@@ -930,6 +942,16 @@ async function socialRoutes(req, res, url) {
     const threadId = threadRow.rows?.[0]?.id || null;
     let messages = [];
     if (threadId) {
+      await db.query(
+        `
+          UPDATE app_messages
+          SET read_at = now()
+          WHERE thread_id = $1
+            AND receiver_id = $2
+            AND read_at IS NULL;
+        `,
+        [threadId, user.id]
+      );
       const msgRows = await db.query(
         `
           SELECT id, sender_id, receiver_id, body, image_data_url, created_at
