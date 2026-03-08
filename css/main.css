@@ -17543,13 +17543,57 @@ html[data-theme="light"] .ode-tour-btn.primary {
 
 .training-page .plan-topbar-actions {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    width: 100%;
+    position: relative;
+    z-index: 2100;
+}
+
+.training-page .plan-topbar-actions-mainrow {
+    width: 100%;
+    display: flex;
     align-items: center;
     justify-content: flex-start;
     gap: 0.6rem;
     flex-wrap: wrap;
+}
+
+.training-page .plan-topbar-actions-toggle-row {
     width: 100%;
-    position: relative;
-    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.training-page .plan-topbar-actions-toggle {
+    min-width: 2.5rem;
+    padding-inline: 0.7rem;
+    font-size: 0.96rem;
+    line-height: 1;
+}
+
+.training-page .plan-topbar-actions-dropdown {
+    width: 100%;
+    display: grid;
+    gap: 0.55rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+    transition: max-height 240ms ease, opacity 180ms ease, transform 240ms ease;
+}
+
+.training-page .plan-topbar-actions-dropdown.open {
+    max-height: 140px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.training-page .plan-topbar-actions-dropdown .btn {
+    justify-content: flex-start;
 }
 
 .training-page .plan-topbar-actions .btn {

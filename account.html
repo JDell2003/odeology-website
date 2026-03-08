@@ -360,30 +360,36 @@
       font-size: 0.85rem;
     }
     .account-warning-contacts {
-      margin-top: 4px;
-      display: flex;
+      margin-top: 6px;
+      width: 100%;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
     }
     .account-warning-contact {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      border: 1px solid rgba(120, 80, 38, 0.35);
-      background: rgba(255, 255, 255, 0.72);
+      position: relative;
+      display: block;
+      text-align: center;
       color: #5a3b1e;
-      padding: 2px 8px;
-      font-size: 11px;
+      padding: 1px 0;
+      font-size: 12px;
       font-weight: 700;
       text-decoration: none;
       line-height: 1.2;
     }
+    .account-warning-contact + .account-warning-contact::before {
+      content: "|";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(90, 59, 30, 0.55);
+      pointer-events: none;
+    }
     .account-warning-contact:hover {
-      border-color: rgba(120, 80, 38, 0.55);
-      background: rgba(255, 255, 255, 0.9);
       color: #3f2812;
+      text-decoration: underline;
     }
     .account-warning-severity {
       border: 1px solid rgba(0, 0, 0, 0.12);

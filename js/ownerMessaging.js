@@ -36,6 +36,17 @@
     const body = document.body;
     if (!body) return;
     body.classList.toggle('owner-thread-active', Boolean(active));
+    if (active && isMobileThreadUi()) {
+      try {
+        if (typeof window.collapseControlPanel === 'function') {
+          window.collapseControlPanel();
+        } else if (typeof collapseControlPanel === 'function') {
+          collapseControlPanel();
+        }
+      } catch {
+        // ignore
+      }
+    }
   }
 
   function getDirectMessageText() {

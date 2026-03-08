@@ -6784,6 +6784,57 @@ function toggleSharePopover(force) {
 
       const todayStart = dayStart(today);
       const isToday = dayStart(activeDate).getTime() === todayStart.getTime();
+      const activeDayPlan = activeDayIndex ? (days[activeDayIndex - 1] || null) : null;
+      const activeDayFocus = String(activeDayPlan?.focus || '').trim() || (activeDayIndex ? `Day ${activeDayIndex}` : 'today');
+      const findNextScheduledWorkoutDate = (fromDate) => {
+        const start = dayStart(fromDate);
+        for (let offset = 1; offset <= 120; offset += 1) {
+          const probe = new Date(start);
+          probe.setDate(start.getDate() + offset);
+          const candidate = dayStart(probe);
+          const candidateWeekdays = scheduleWeekdays(daysPerWeek, candidate);
+          if (Array.isArray(candidateWeekdays) && candidateWeekdays.includes(candidate.getDay())) {
+            return candidate;
+          }
+        }
+        return null;
+      };
+      const skipToNextWorkoutDay = () => {
+        const firstPrompt = window.confirm(`Skip ${activeDayFocus} and move to the next workout day?`);
+        if (!firstPrompt) return;
+        const reasonRaw = window.prompt(`Why are you skipping ${activeDayFocus}?`);
+        if (reasonRaw === null) return;
+        const reason = String(reasonRaw || '').trim();
+        if (!reason) {
+          window.alert('Please type a reason to skip this day.');
+          return;
+        }
+        const finalPrompt = window.confirm(`Confirm skip for ${activeDayFocus}?\nReason: ${reason}`);
+        if (!finalPrompt) return;
+        const nextDate = findNextScheduledWorkoutDate(activeDate);
+        if (!nextDate) {
+          state.planError = 'Could not find the next scheduled workout day.';
+          render();
+          return;
+        }
+        try {
+          const raw = sessionStorage.getItem('ode_training_skip_log_v1');
+          const existing = raw ? JSON.parse(raw) : [];
+          const list = Array.isArray(existing) ? existing : [];
+          list.push({
+            fromDate: toISODateLocal(activeDate),
+            toDate: toISODateLocal(nextDate),
+            fromDay: activeDayFocus,
+            reason,
+            skippedAt: new Date().toISOString()
+          });
+          sessionStorage.setItem('ode_training_skip_log_v1', JSON.stringify(list.slice(-40)));
+        } catch {
+          // ignore
+        }
+        state.planError = '';
+        setActiveDate(nextDate);
+      };
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
       el('div', { class: 'plan-topbar-share-row' },
@@ -6849,12 +6900,34 @@ function toggleSharePopover(force) {
         pendingLabel ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, pendingLabel) : null
       ),
       shareBox,
-      el('div', { class: 'plan-topbar-actions' },
-        el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
-        el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
-        rulesDetails,
-        el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF')
-      )
+      (() => {
+        const dropdown = el('div', { class: 'plan-topbar-actions-dropdown', 'aria-hidden': 'true' },
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping'),
+          rulesDetails
+        );
+        const toggle = el('button', {
+          type: 'button',
+          class: 'btn btn-ghost plan-topbar-actions-toggle',
+          'aria-expanded': 'false',
+          'aria-label': 'More workout options',
+          onclick: (e) => {
+            e.preventDefault();
+            const isOpen = dropdown.classList.toggle('open');
+            dropdown.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            toggle.textContent = isOpen ? '▲' : '▼';
+          }
+        }, '▼');
+        return el('div', { class: 'plan-topbar-actions' },
+          el('div', { class: 'plan-topbar-actions-mainrow' },
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF')
+          ),
+          el('div', { class: 'plan-topbar-actions-toggle-row' }, toggle),
+          dropdown
+        );
+      })()
     );
 
     const shell = el('div', { class: 'plan-shell' }, header);
