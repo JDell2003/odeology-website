@@ -1061,29 +1061,89 @@
       });
     }
 
+    const currentUserId = String(state.auth.user?.id || '').trim();
+    const currentUsername = String(
+      state.auth.user?.username
+      || state.auth.user?.user_name
+      || state.auth.user?.handle
+      || ''
+    ).trim() || null;
+    const currentDisplayName = String(
+      state.auth.user?.displayName
+      || state.auth.user?.display_name
+      || currentUsername
+      || 'You'
+    ).trim() || 'You';
+    const currentPhotoDataUrl =
+      state.auth.user?.photoDataUrl
+      || state.auth.user?.profile_image
+      || state.auth.user?.profileImage
+      || getActivePhotoDataUrl()
+      || null;
+
     const connectedById = new Map();
-    for (const row of acceptedUsers) {
+    const addConnectedMember = (key, member) => {
+      if (!key || !member || connectedById.has(key)) return;
+      connectedById.set(key, member);
+    };
+    const buildMemberTitle = (row) => {
       const id = String(row?.id || '').trim();
-      if (!id) continue;
-      connectedById.set(`out:${id}`, {
+      const indexed = id ? (shareUi.accountIndex.get(id) || {}) : {};
+      const username = row?.username || indexed?.username || null;
+      const displayName = row?.displayName || indexed?.displayName || username || 'Account';
+      return {
         id,
-        username: row?.username || null,
-        displayName: row?.displayName || row?.username || 'Account',
-        photoDataUrl: row?.photoDataUrl || null,
-        isOnline: row?.isOnline === true,
-        relation: 'outgoing'
+        username,
+        displayName,
+        photoDataUrl: row?.photoDataUrl || indexed?.photoDataUrl || null,
+        isOnline: row?.isOnline === true
+      };
+    };
+
+    if (acceptedUsers.length > 0) {
+      addConnectedMember(`self:owner:${currentUserId || 'current'}`, {
+        id: currentUserId || 'self',
+        username: currentUsername,
+        displayName: currentDisplayName,
+        photoDataUrl: currentPhotoDataUrl,
+        isOnline: true,
+        relation: 'self-owner',
+        canRemove: false
+      });
+    }
+
+    for (const row of acceptedUsers) {
+      const member = buildMemberTitle(row);
+      if (!member.id) continue;
+      addConnectedMember(`out:${member.id}`, {
+        ...member,
+        relation: 'outgoing',
+        canRemove: true,
+        action: 'kick',
+        actionTargetId: member.id,
+        operationKey: member.id
       });
     }
     for (const row of joinedFromUsers) {
-      const id = String(row?.id || '').trim();
-      if (!id) continue;
-      connectedById.set(`in:${id}`, {
-        id,
-        username: row?.username || null,
-        displayName: row?.displayName || row?.username || 'Account',
-        photoDataUrl: row?.photoDataUrl || null,
-        isOnline: row?.isOnline === true,
-        relation: 'incoming'
+      const owner = buildMemberTitle(row);
+      if (!owner.id) continue;
+      addConnectedMember(`in:${owner.id}`, {
+        ...owner,
+        relation: 'incoming-owner',
+        canRemove: false
+      });
+      addConnectedMember(`self:incoming:${owner.id}`, {
+        id: currentUserId || 'self',
+        username: currentUsername,
+        displayName: currentDisplayName,
+        photoDataUrl: currentPhotoDataUrl,
+        isOnline: true,
+        relation: 'incoming-self',
+        canRemove: true,
+        action: 'leave',
+        actionTargetId: owner.id,
+        operationKey: owner.id,
+        ownerDisplayName: owner.displayName
       });
     }
     shareUi.connectedMembers = Array.from(connectedById.values());
@@ -3560,18 +3620,19 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   async function removeAcceptedShareForAccount(account) {
-    const key = String(account?.id || '').trim();
-    if (!key) return;
-    if (shareUi.kicking.has(key)) return;
+    const targetUserId = String(account?.actionTargetId || account?.id || '').trim();
+    if (!targetUserId) return;
+    const opKey = String(account?.operationKey || targetUserId).trim();
+    if (shareUi.kicking.has(opKey)) return;
 
     const displayName = String(account?.displayName || account?.username || 'friend').trim();
     const traceId = `share-kick-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-    shareUi.kicking.add(key);
+    shareUi.kicking.add(opKey);
     shareUi.status = `Removing ${displayName}...`;
     try {
       shareDebugLog(`[${traceId}] Kick clicked`, {
-        targetUserId: key,
+        targetUserId,
         displayName
       });
     } catch {
@@ -3582,7 +3643,7 @@ function toFreeExerciseDbRemotePath(src) {
     try {
       const resp = await api('/api/training/share/remove', {
         method: 'POST',
-        body: JSON.stringify({ targetUserId: key, targetUserIds: [key] })
+        body: JSON.stringify({ targetUserId, targetUserIds: [targetUserId] })
       });
       try {
         shareDebugLog(`[${traceId}] POST /api/training/share/remove`, {
@@ -3600,13 +3661,13 @@ function toFreeExerciseDbRemotePath(src) {
       }
 
       // Optimistic clear; we still refresh from server.
-      shareUi.requested.delete(key);
-      shareUi.latestStatus.delete(key);
+      shareUi.requested.delete(targetUserId);
+      shareUi.latestStatus.delete(targetUserId);
 
       const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
       if (outgoing.ok && outgoing.json?.ok) {
         syncShareOutgoingState(outgoing.json);
-        const latestRaw = String(outgoing.json?.latestStatusByUserId?.[key] || '').trim().toLowerCase();
+        const latestRaw = String(outgoing.json?.latestStatusByUserId?.[targetUserId] || '').trim().toLowerCase();
         const confirmed = latestRaw === 'removed' || latestRaw === '';
         try {
           shareDebugLog(`[${traceId}] GET /api/training/share/outgoing`, {
@@ -3636,24 +3697,25 @@ function toFreeExerciseDbRemotePath(src) {
 
       shareUi.status = `${displayName} removed from shared workout.`;
     } finally {
-      shareUi.kicking.delete(key);
+      shareUi.kicking.delete(opKey);
       render();
     }
   }
 
   async function leaveSharedWorkoutFromOwner(account) {
-    const key = String(account?.id || '').trim();
-    if (!key) return;
-    if (shareUi.kicking.has(key)) return;
+    const ownerUserId = String(account?.actionTargetId || account?.id || '').trim();
+    if (!ownerUserId) return;
+    const opKey = String(account?.operationKey || ownerUserId).trim();
+    if (shareUi.kicking.has(opKey)) return;
 
-    const ownerName = String(account?.displayName || account?.username || 'owner').trim();
+    const ownerName = String(account?.ownerDisplayName || account?.displayName || account?.username || 'owner').trim();
     const traceId = `share-leave-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-    shareUi.kicking.add(key);
+    shareUi.kicking.add(opKey);
     shareUi.status = `Leaving ${ownerName}'s shared workout...`;
     try {
       shareDebugLog(`[${traceId}] Leave clicked`, {
-        ownerUserId: key,
+        ownerUserId,
         ownerName
       });
     } catch {
@@ -3664,7 +3726,7 @@ function toFreeExerciseDbRemotePath(src) {
     try {
       const resp = await api('/api/training/share/leave', {
         method: 'POST',
-        body: JSON.stringify({ ownerUserId: key })
+        body: JSON.stringify({ ownerUserId })
       });
       try {
         shareDebugLog(`[${traceId}] POST /api/training/share/leave`, {
@@ -3683,7 +3745,7 @@ function toFreeExerciseDbRemotePath(src) {
       await refreshShareOutgoingState({ rerender: false });
       shareUi.status = `You left ${ownerName}'s shared workout.`;
     } finally {
-      shareUi.kicking.delete(key);
+      shareUi.kicking.delete(opKey);
       render();
     }
   }
@@ -6454,7 +6516,9 @@ function toggleSharePopover(force) {
         connectedVisible.map((member) => {
           const memberName = String(member?.displayName || member?.username || 'Account').trim() || 'Account';
           const memberId = String(member?.id || '').trim();
-          const isKickingMember = Boolean(memberId) && shareUi.kicking.has(memberId);
+          const canRemoveMember = member?.canRemove === true;
+          const operationKey = String(member?.operationKey || memberId).trim();
+          const isKickingMember = canRemoveMember && Boolean(operationKey) && shareUi.kicking.has(operationKey);
           const initials = memberName
             .split(/\s+/)
             .filter(Boolean)
@@ -6462,7 +6526,7 @@ function toggleSharePopover(force) {
             .map((part) => part.charAt(0))
             .join('')
             .toUpperCase();
-          if (!memberId) {
+          if (!memberId || !canRemoveMember) {
             return el('div', {
               class: 'share-workout-member-avatar',
               title: member?.username ? `${memberName} (@${member.username})` : memberName
@@ -6471,19 +6535,21 @@ function toggleSharePopover(force) {
               ? el('img', { src: member.photoDataUrl, alt: memberName })
               : (initials || 'O'));
           }
+          const action = String(member?.action || '').trim().toLowerCase();
+          const actionLabel = action === 'leave'
+            ? 'Leave shared workout'
+            : `Kick ${memberName} from workout`;
           return el('button', {
             type: 'button',
             class: `share-workout-member-avatar share-workout-member-btn${isKickingMember ? ' is-kicking' : ''}`,
             title: member?.username ? `${memberName} (@${member.username})` : memberName,
             disabled: isKickingMember ? 'disabled' : null,
-            'aria-label': member?.relation === 'incoming'
-              ? `Leave ${memberName}'s shared workout`
-              : `Kick ${memberName} from workout`,
+            'aria-label': actionLabel,
             onclick: async (e) => {
               e.preventDefault();
               e.stopPropagation();
               if (isKickingMember) return;
-              if (member?.relation === 'incoming') {
+              if (action === 'leave') {
                 await leaveSharedWorkoutFromOwner(member);
                 return;
               }
