@@ -11801,6 +11801,36 @@ function initAuthUi() {
         }
     };
 
+    const ensureControlSigninBadge = () => {
+        const btn = controlAuth?.signInBtn || document.getElementById('control-signin');
+        if (!btn) return null;
+        let badge = btn.querySelector('.control-notif-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'control-notif-badge hidden';
+            badge.id = 'control-signin-notif-badge';
+            badge.setAttribute('aria-hidden', 'true');
+            btn.appendChild(badge);
+        }
+        return badge;
+    };
+
+    const updateControlSigninBadge = (totalRaw, { signedIn = Boolean(currentUser) } = {}) => {
+        const badge = ensureControlSigninBadge();
+        const btn = controlAuth?.signInBtn || document.getElementById('control-signin');
+        if (!badge || !btn) return;
+        const total = Math.max(0, Number(totalRaw || 0));
+        const show = Boolean(signedIn) && total > 0;
+        badge.textContent = String(total > 99 ? '99+' : total);
+        badge.classList.toggle('hidden', !show);
+        btn.classList.toggle('has-notif', show);
+        if (show) {
+            btn.setAttribute('aria-label', `Account (${total} notifications)`);
+        } else {
+            btn.setAttribute('aria-label', signedIn ? 'Account' : 'Sign in');
+        }
+    };
+
     const clearRequestToast = () => {
         const existing = document.getElementById('site-request-toast');
         if (!existing) return;
@@ -11873,6 +11903,7 @@ function initAuthUi() {
         const counts = await fetchIncomingRequestCounts();
         if (!counts.ok) return;
         const total = Math.max(0, Number(counts.total || 0));
+        updateControlSigninBadge(total, { signedIn: true });
         if (!requestCountBaselineReady || bootstrap) {
             requestCountBaselineReady = true;
             lastKnownRequestTotal = total;
@@ -11914,6 +11945,7 @@ function initAuthUi() {
             requestToastHideTimer = 0;
         }
         clearRequestToast();
+        updateControlSigninBadge(0, { signedIn: Boolean(currentUser) });
     };
 
 
@@ -12045,6 +12077,7 @@ function initAuthUi() {
         syncOwnerWorkoutDbLink(null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
+        updateControlSigninBadge(0, { signedIn: false });
         emitAuthChanged(null);
     };
 
@@ -12093,6 +12126,17 @@ function initAuthUi() {
         emitAuthChanged(user);
         startIncomingRequestPolling();
         queueFriendsPrefetch();
+        fetchIncomingRequestCounts()
+            .then((counts) => {
+                if (!counts?.ok) {
+                    updateControlSigninBadge(0, { signedIn: true });
+                    return;
+                }
+                updateControlSigninBadge(counts.total, { signedIn: true });
+            })
+            .catch(() => {
+                updateControlSigninBadge(0, { signedIn: true });
+            });
     };
 
     const redirectToTrainingAfterAuth = () => {

@@ -18913,6 +18913,34 @@ html[data-theme="light"] .ode-tour-btn.primary {
     white-space: nowrap;
 }
 
+.control-notif-badge {
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    min-width: 1.22rem;
+    height: 1.22rem;
+    border-radius: 999px;
+    padding: 0 0.28rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: #d62828;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    box-shadow: 0 6px 14px rgba(214, 40, 40, 0.35);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.control-link.has-notif {
+    border-color: rgba(214, 40, 40, 0.4);
+}
+
 .site-request-toast-link:hover {
     background: rgba(231, 163, 77, 0.3);
 }
