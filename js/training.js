@@ -1860,10 +1860,33 @@
   }
 
   function planStartDate(plan) {
-    const raw = plan?.meta?.createdAt;
-    const parsed = raw ? new Date(raw) : null;
-    if (!parsed || Number.isNaN(parsed.getTime())) return dayStart(new Date());
-    return dayStart(parsed);
+    const timestamps = [];
+    const pushTimestamp = (raw) => {
+      const text = String(raw || '').trim();
+      if (!text) return;
+      const ts = Date.parse(text);
+      if (Number.isFinite(ts)) timestamps.push(ts);
+    };
+
+    pushTimestamp(plan?.meta?.startDate);
+    pushTimestamp(plan?.meta?.createdAt);
+    pushTimestamp(state.planRow?.created_at);
+    pushTimestamp(state.planRow?.createdAt);
+
+    if (Array.isArray(state.logs) && state.logs.length) {
+      for (const row of state.logs) {
+        pushTimestamp(row?.performed_at || row?.updated_at);
+      }
+    }
+
+    if (timestamps.length) {
+      return dayStart(new Date(Math.min(...timestamps)));
+    }
+
+    const weeks = Math.max(1, Array.isArray(plan?.weeks) ? plan.weeks.length : 1);
+    const fallback = dayStart(new Date());
+    fallback.setDate(fallback.getDate() - Math.max(0, (weeks * 7) - 1));
+    return fallback;
   }
 
   function weekIndexForDate(date, plan) {
@@ -7317,7 +7340,7 @@ function toggleSharePopover(force) {
         );
         const toggle = el('button', {
           type: 'button',
-          class: 'btn btn-ghost plan-topbar-actions-toggle',
+          class: 'plan-topbar-actions-toggle',
           'aria-expanded': 'false',
           'aria-label': 'More workout options',
           onclick: (e) => {

@@ -2991,7 +2991,7 @@ async function resolveUserFromSession(req) {
 async function getActivePlan(userId) {
   const result = await db.query(
     `
-      SELECT id, version, discipline, days_per_week, plan, updated_at
+      SELECT id, version, discipline, days_per_week, plan, created_at, updated_at
       FROM app_training_plans
       WHERE user_id = $1 AND active = true
       ORDER BY created_at DESC
