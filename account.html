@@ -85,9 +85,28 @@
       letter-spacing: 0.02em;
       cursor: pointer;
       flex: 0 0 auto;
+      transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, transform 140ms ease;
     }
     .account-requests-btn:hover {
       background: rgba(15, 36, 53, 0.09);
+      transform: translateY(-1px);
+    }
+    .account-requests-btn:focus-visible {
+      outline: 2px solid rgba(19, 92, 152, 0.45);
+      outline-offset: 1px;
+    }
+    .account-requests-btn.has-pending {
+      border-color: rgba(214, 40, 40, 0.45);
+    }
+    .account-requests-btn.is-pinging {
+      border-color: rgba(214, 40, 40, 0.75);
+      box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.16);
+      animation: accountReqPing 700ms ease-out 2;
+    }
+    @keyframes accountReqPing {
+      0% { transform: translateY(0) scale(1); }
+      45% { transform: translateY(-1px) scale(1.03); }
+      100% { transform: translateY(0) scale(1); }
     }
     .account-requests-count {
       min-width: 18px;
@@ -205,6 +224,18 @@
       font-weight: 900;
       padding: 0.34rem 0.46rem;
       cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+    }
+    .account-req-action:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+      box-shadow: 0 8px 16px rgba(12, 36, 53, 0.12);
+    }
+    .account-req-action:disabled {
+      opacity: 0.55;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
     }
     .account-req-action.accept {
       border-color: rgba(35, 134, 54, 0.35);
@@ -225,6 +256,40 @@
       color: rgba(13, 34, 50, 0.72);
       background: rgba(255, 255, 255, 0.92);
     }
+    .account-requests-ping {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 60;
+      border: 1px solid rgba(10, 35, 54, 0.24);
+      border-left: 4px solid rgba(214, 40, 40, 0.86);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.98);
+      color: #0e2738;
+      min-width: min(360px, calc(100vw - 28px));
+      text-align: left;
+      padding: 0.58rem 0.72rem;
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .account-requests-ping.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .account-requests-ping-title {
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+    .account-requests-ping-sub {
+      margin-top: 0.12rem;
+      font-size: 0.74rem;
+      color: rgba(13, 34, 50, 0.76);
+      font-weight: 700;
+    }
     @media (max-width: 640px) {
       .account-row {
         align-items: flex-start;
@@ -238,6 +303,11 @@
         left: 10px;
         top: 88px;
         width: auto;
+      }
+      .account-requests-ping {
+        right: 10px;
+        left: 10px;
+        min-width: 0;
       }
     }
     .account-grid {
@@ -429,7 +499,7 @@
     </div>
   </main>
 
-  <script src="js/main.js?v=2026-03-07-live-requests-1"></script>
-  <script src="js/account.js?v=2026-03-07-requests-in-card-3"></script>
+  <script src="js/main.js?v=2026-03-08-a11y-debug-2"></script>
+  <script src="js/account.js?v=2026-03-08-requests-in-card-4"></script>
 </body>
 </html>

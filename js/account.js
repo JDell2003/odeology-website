@@ -161,9 +161,36 @@
     };
     let requestsRefreshInFlight = false;
     let requestsRefreshTimer = 0;
+    let pingHideTimer = 0;
+    let pingRemoveTimer = 0;
+    let requestBaselineReady = false;
+    const knownFriendIds = new Set();
+    const knownWorkoutIds = new Set();
 
     const setStatus = (text) => {
       if (statusEl) statusEl.textContent = String(text || '');
+    };
+
+    const replaceSet = (target, nextValues) => {
+      target.clear();
+      nextValues.forEach((value) => target.add(value));
+    };
+
+    const clearPingToast = () => {
+      const existing = $('#account-requests-ping');
+      if (!existing) return;
+      existing.classList.remove('show');
+      if (pingRemoveTimer) window.clearTimeout(pingRemoveTimer);
+      pingRemoveTimer = window.setTimeout(() => {
+        try { existing.remove(); } catch { /* ignore */ }
+      }, 180);
+    };
+
+    const setActionsDisabled = (disabled) => {
+      const actionButtons = listEl?.querySelectorAll('[data-req-kind][data-req-id][data-req-action]');
+      actionButtons?.forEach((node) => {
+        if (node instanceof HTMLButtonElement) node.disabled = Boolean(disabled);
+      });
     };
 
     const updateCounts = () => {
@@ -172,6 +199,7 @@
       const total = friendCount + workoutCount;
       if (workoutTabCount) workoutTabCount.textContent = String(workoutCount);
       if (friendsTabCount) friendsTabCount.textContent = String(friendCount);
+      if (btn) btn.classList.toggle('has-pending', total > 0);
       if (badge) {
         badge.textContent = String(total);
         badge.classList.toggle('hidden', total <= 0);
@@ -210,7 +238,7 @@
         const handle = escapeHtml(invite?.username ? `@${invite.username}` : '');
         const discipline = escapeHtml(invite?.discipline ? String(invite.discipline).toUpperCase() : 'TRAINING');
         const days = Number(invite?.daysPerWeek || 0);
-        const detail = days ? `${discipline} • ${days} days/week` : discipline;
+        const detail = days ? `${discipline} - ${days} days/week` : discipline;
         const id = escapeHtml(invite?.id || '');
         return `
           <article class="account-req-item">
@@ -257,6 +285,54 @@
       await refreshRequests(true);
     };
 
+    const showIncomingPing = ({ workoutDelta = 0, friendDelta = 0, total = 0, initial = false } = {}) => {
+      if (!btn) return;
+      btn.classList.add('is-pinging');
+      if (pingHideTimer) window.clearTimeout(pingHideTimer);
+      pingHideTimer = window.setTimeout(() => {
+        btn.classList.remove('is-pinging');
+      }, 2600);
+
+      clearPingToast();
+      const ping = document.createElement('button');
+      ping.type = 'button';
+      ping.id = 'account-requests-ping';
+      ping.className = 'account-requests-ping';
+      ping.setAttribute('aria-label', 'Open requests');
+
+      const title = document.createElement('div');
+      title.className = 'account-requests-ping-title';
+      const sub = document.createElement('div');
+      sub.className = 'account-requests-ping-sub';
+      if (initial) {
+        title.textContent = total === 1 ? 'You have 1 pending request' : `You have ${total} pending requests`;
+        sub.textContent = 'Open Requests to accept or decline.';
+      } else {
+        const newTotal = Math.max(0, Number(workoutDelta || 0)) + Math.max(0, Number(friendDelta || 0));
+        title.textContent = newTotal === 1 ? 'New request received' : `${newTotal} new requests received`;
+        const bits = [];
+        if (workoutDelta > 0) bits.push(`${workoutDelta} workout`);
+        if (friendDelta > 0) bits.push(`${friendDelta} friend`);
+        sub.textContent = bits.length ? `${bits.join(' + ')} request${newTotal === 1 ? '' : 's'}` : 'Open Requests to review.';
+      }
+      ping.appendChild(title);
+      ping.appendChild(sub);
+      ping.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveTab(workoutDelta > 0 ? 'workout' : 'friends');
+        openPopover();
+        clearPingToast();
+        btn.classList.remove('is-pinging');
+      });
+
+      document.body.appendChild(ping);
+      requestAnimationFrame(() => ping.classList.add('show'));
+      if (pingRemoveTimer) window.clearTimeout(pingRemoveTimer);
+      pingRemoveTimer = window.setTimeout(() => {
+        clearPingToast();
+      }, 4800);
+    };
+
     const refreshRequests = async (showLoading = false) => {
       if (!btn) return;
       if (requestsRefreshInFlight) return;
@@ -267,10 +343,48 @@
           api('/api/friends/requests?fresh=1'),
           api('/api/training/share/requests?fresh=1')
         ]);
-        state.friendRequests = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
-        state.workoutInvites = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
+        const friendRequests = friendResp.ok && Array.isArray(friendResp.json?.requests) ? friendResp.json.requests : [];
+        const workoutInvites = workoutResp.ok && Array.isArray(workoutResp.json?.invites) ? workoutResp.json.invites : [];
+        state.friendRequests = friendRequests;
+        state.workoutInvites = workoutInvites;
+
+        const friendIds = new Set(friendRequests.map((item) => String(item?.id || '').trim()).filter(Boolean));
+        const workoutIds = new Set(workoutInvites.map((item) => String(item?.id || '').trim()).filter(Boolean));
+        const total = friendIds.size + workoutIds.size;
+        if (!requestBaselineReady) {
+          requestBaselineReady = true;
+          replaceSet(knownFriendIds, friendIds);
+          replaceSet(knownWorkoutIds, workoutIds);
+          if (total > 0 && !document.hidden) {
+            showIncomingPing({
+              workoutDelta: workoutIds.size,
+              friendDelta: friendIds.size,
+              total,
+              initial: true
+            });
+          }
+        } else {
+          const newFriend = Array.from(friendIds).filter((id) => !knownFriendIds.has(id)).length;
+          const newWorkout = Array.from(workoutIds).filter((id) => !knownWorkoutIds.has(id)).length;
+          replaceSet(knownFriendIds, friendIds);
+          replaceSet(knownWorkoutIds, workoutIds);
+          if ((newFriend + newWorkout) > 0) {
+            if (popover?.classList.contains('hidden')) {
+              if (!document.hidden) {
+                showIncomingPing({
+                  workoutDelta: newWorkout,
+                  friendDelta: newFriend,
+                  total
+                });
+              }
+            } else {
+              setStatus('New request received.');
+            }
+          }
+        }
+
         updateCounts();
-        setStatus('');
+        if (showLoading) setStatus('');
         renderList();
       } finally {
         requestsRefreshInFlight = false;
@@ -286,19 +400,35 @@
         const ok = window.confirm('Joining this plan will replace your current training plan. Continue?');
         if (!ok) return;
       }
+
+      setActionsDisabled(true);
       setStatus('Updating...');
+      let resp = null;
       if (kind === 'friend') {
-        await api('/api/friends/respond', {
+        resp = await api('/api/friends/respond', {
           method: 'POST',
           body: JSON.stringify({ requestId: id, action })
         });
       } else if (kind === 'workout') {
-        await api('/api/training/share/respond', {
+        resp = await api('/api/training/share/respond', {
           method: 'POST',
           body: JSON.stringify({ inviteId: id, action })
         });
       }
+
+      if (!resp?.ok || !resp?.json?.ok) {
+        setStatus(resp?.json?.error || 'Could not update request.');
+        setActionsDisabled(false);
+        return;
+      }
+
       await refreshRequests();
+      setStatus(action === 'accept' ? 'Accepted.' : 'Declined.');
+      window.setTimeout(() => {
+        const text = String(statusEl?.textContent || '');
+        if (text === 'Accepted.' || text === 'Declined.') setStatus('');
+      }, 1100);
+      setActionsDisabled(false);
     };
 
     if (btn) {
@@ -306,6 +436,8 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        clearPingToast();
+        btn.classList.remove('is-pinging');
         if (popover?.classList.contains('hidden')) openPopover();
         else closePopover();
       });
@@ -347,7 +479,16 @@
     window.addEventListener('focus', triggerRefreshSoon);
     requestsRefreshTimer = window.setInterval(() => {
       triggerRefreshSoon();
-    }, 8000);
+    }, 5000);
+
+    window.addEventListener('beforeunload', () => {
+      if (requestsRefreshTimer) window.clearInterval(requestsRefreshTimer);
+      requestsRefreshTimer = 0;
+      if (pingHideTimer) window.clearTimeout(pingHideTimer);
+      pingHideTimer = 0;
+      if (pingRemoveTimer) window.clearTimeout(pingRemoveTimer);
+      pingRemoveTimer = 0;
+    });
 
     setActiveTab('workout');
     refreshRequests();

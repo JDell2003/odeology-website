@@ -17,6 +17,21 @@ const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 const INVITE_CACHE_TTL_MS = 20000;
 const trainingInviteCache = new Map();
 const ONLINE_WINDOW_MS = Math.max(30_000, Number(process.env.ONLINE_WINDOW_MS || 180_000));
+const SHARE_ROUTE_DEBUG = String(process.env.TRAINING_SHARE_DEBUG || '').trim() === '1'
+  || String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
+
+function logShareRoute(event, payload = {}) {
+  if (!SHARE_ROUTE_DEBUG) return;
+  try {
+    console.log('[share-route]', {
+      at: new Date().toISOString(),
+      event,
+      ...payload
+    });
+  } catch {
+    // ignore logging failures
+  }
+}
 
 function getInviteCache(userId) {
   const cached = trainingInviteCache.get(userId);
@@ -3716,13 +3731,16 @@ async function trainingRoutes(req, res, url) {
   }
 
   if (pathname === '/api/training/share' && req.method === 'POST') {
+    logShareRoute('share.request.received', { method: req.method, pathname, fromUserId: user.id });
     let payload;
     try {
       payload = await readJsonBody(req);
     } catch (err) {
       return sendJson(res, 400, { ok: false, error: err.message });
     }
-    const rawIds = Array.isArray(payload?.targetUserIds) ? payload.targetUserIds : [];
+    const rawIds = [];
+    if (Array.isArray(payload?.targetUserIds)) rawIds.push(...payload.targetUserIds);
+    if (payload?.targetUserId != null) rawIds.push(payload.targetUserId);
     const targetIds = Array.from(new Set(rawIds.map((id) => String(id || '').trim()).filter(isUuid))).slice(0, 20);
     if (!targetIds.length) return sendJson(res, 400, { ok: false, error: 'Select at least one account.' });
 
@@ -3746,15 +3764,46 @@ async function trainingRoutes(req, res, url) {
 
     const snapshotJson = JSON.stringify(planSnapshot || {});
     for (const targetId of recipients) {
-      await db.query(
-        `
-          INSERT INTO app_training_share_invites (from_user_id, to_user_id, plan_id, plan_snapshot, status)
-          VALUES ($1, $2, $3, $4::jsonb, 'pending')
-          ON CONFLICT ON CONSTRAINT uq_training_share_invites_pending
-          DO UPDATE SET updated_at = now(), plan_id = $3, plan_snapshot = $4::jsonb, status = 'pending', responded_at = null;
-        `,
-        [user.id, targetId, planRow.id, snapshotJson]
-      );
+      try {
+        await db.query(
+          `
+            INSERT INTO app_training_share_invites (from_user_id, to_user_id, plan_id, plan_snapshot, status)
+            VALUES ($1, $2, $3, $4::jsonb, 'pending')
+            ON CONFLICT (from_user_id, to_user_id) WHERE (status = 'pending')
+            DO UPDATE SET updated_at = now(), plan_id = $3, plan_snapshot = $4::jsonb, status = 'pending', responded_at = null;
+          `,
+          [user.id, targetId, planRow.id, snapshotJson]
+        );
+      } catch (err) {
+        const code = String(err?.code || '').trim();
+        const msg = String(err?.message || '');
+        const canFallback = code === '42P10' || /no unique or exclusion constraint matching the ON CONFLICT specification/i.test(msg);
+        if (!canFallback) throw err;
+
+        const updated = await db.query(
+          `
+            UPDATE app_training_share_invites
+            SET updated_at = now(),
+                plan_id = $3,
+                plan_snapshot = $4::jsonb,
+                status = 'pending',
+                responded_at = null
+            WHERE from_user_id = $1
+              AND to_user_id = $2
+              AND status = 'pending';
+          `,
+          [user.id, targetId, planRow.id, snapshotJson]
+        );
+        if (!Number(updated.rowCount || 0)) {
+          await db.query(
+            `
+              INSERT INTO app_training_share_invites (from_user_id, to_user_id, plan_id, plan_snapshot, status)
+              VALUES ($1, $2, $3, $4::jsonb, 'pending');
+            `,
+            [user.id, targetId, planRow.id, snapshotJson]
+          );
+        }
+      }
       clearInviteCache(targetId);
     }
 
@@ -3766,6 +3815,7 @@ async function trainingRoutes(req, res, url) {
   }
 
   if (pathname === '/api/training/share/outgoing' && req.method === 'GET') {
+    logShareRoute('share.outgoing.requested', { method: req.method, pathname, fromUserId: user.id });
     const result = await db.query(
       `
         SELECT to_user_id
@@ -3780,10 +3830,12 @@ async function trainingRoutes(req, res, url) {
     const targetUserIds = Array.from(new Set(
       (result.rows || []).map((row) => String(row.to_user_id || '').trim()).filter(Boolean)
     ));
+    logShareRoute('share.outgoing.result', { fromUserId: user.id, pendingCount: targetUserIds.length });
     return sendJson(res, 200, { ok: true, targetUserIds });
   }
 
   if (pathname === '/api/training/share/requests' && req.method === 'GET') {
+    logShareRoute('share.requests.requested', { method: req.method, pathname, toUserId: user.id });
     const forceFresh = String(url.searchParams.get('fresh') || '').trim() === '1';
     if (!forceFresh) {
       const cached = getInviteCache(user.id);
@@ -3836,11 +3888,13 @@ async function trainingRoutes(req, res, url) {
     });
 
     const payload = { ok: true, invites };
+    logShareRoute('share.requests.result', { toUserId: user.id, inviteCount: invites.length, forceFresh });
     if (!forceFresh) setInviteCache(user.id, payload);
     return sendJson(res, 200, payload);
   }
 
   if (pathname === '/api/training/share/respond' && req.method === 'POST') {
+    logShareRoute('share.respond.request.received', { method: req.method, pathname, toUserId: user.id });
     let payload;
     try {
       payload = await readJsonBody(req);
@@ -3870,6 +3924,7 @@ async function trainingRoutes(req, res, url) {
         ['rejected', inviteId]
       );
       clearInviteCache(user.id);
+      logShareRoute('share.respond.rejected', { toUserId: user.id, inviteId });
       return sendJson(res, 200, { ok: true, action: 'rejected' });
     }
 
@@ -3902,6 +3957,7 @@ async function trainingRoutes(req, res, url) {
       ['accepted', inviteId]
     );
     clearInviteCache(user.id);
+    logShareRoute('share.respond.accepted', { toUserId: user.id, inviteId, planId: inserted.rows?.[0]?.id || null });
 
     return sendJson(res, 200, { ok: true, action: 'accepted', planId: inserted.rows?.[0]?.id || null });
   }

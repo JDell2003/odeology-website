@@ -17671,13 +17671,11 @@ html[data-theme="light"] .ode-tour-btn.primary {
     border: 1px solid var(--training-border);
     background: color-mix(in srgb, var(--training-surface-2) 86%, transparent);
     padding: 0.45rem 0.55rem;
-    cursor: pointer;
     text-align: left;
-    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .share-workout-item:hover {
-    transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--training-accent) 35%, var(--training-border));
 }
 
@@ -17688,7 +17686,7 @@ html[data-theme="light"] .ode-tour-btn.primary {
 
 .share-workout-item.requesting,
 .share-workout-item.requested {
-    cursor: default;
+    border-color: color-mix(in srgb, #2d9f58 35%, var(--training-border));
 }
 
 .share-workout-item.requesting {
@@ -17701,9 +17699,12 @@ html[data-theme="light"] .ode-tour-btn.primary {
     background: color-mix(in srgb, #2d9f58 12%, var(--training-surface-2));
 }
 
-.share-workout-item.requesting:hover,
+.share-workout-item.requesting:hover {
+    border-color: color-mix(in srgb, #f39c12 45%, var(--training-border));
+}
+
 .share-workout-item.requested:hover {
-    transform: none;
+    border-color: color-mix(in srgb, #2d9f58 45%, var(--training-border));
 }
 
 .share-workout-avatar {
@@ -17743,18 +17744,39 @@ html[data-theme="light"] .ode-tour-btn.primary {
     color: var(--training-muted);
 }
 
-.share-workout-add {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--training-accent);
+.share-workout-add-btn {
+    border: 1px solid color-mix(in srgb, var(--training-accent) 40%, var(--training-border));
+    background: color-mix(in srgb, var(--training-accent) 14%, #ffffff);
+    color: color-mix(in srgb, var(--training-accent) 80%, #0b1420);
+    border-radius: 999px;
+    padding: 0.35rem 0.68rem;
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, border-color 0.14s ease;
 }
 
-.share-workout-item.requesting .share-workout-add {
-    color: #b36d00;
+.share-workout-add-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.14);
 }
 
-.share-workout-item.requested .share-workout-add {
-    color: #1f7a42;
+.share-workout-add-btn.requesting {
+    border-color: color-mix(in srgb, #f39c12 55%, var(--training-border));
+    background: color-mix(in srgb, #f39c12 18%, #ffffff);
+    color: #8f5800;
+}
+
+.share-workout-add-btn.requested {
+    border-color: color-mix(in srgb, #2d9f58 52%, var(--training-border));
+    background: color-mix(in srgb, #2d9f58 18%, #ffffff);
+    color: #1c6f3d;
+}
+
+.share-workout-add-btn:disabled {
+    cursor: default;
+    box-shadow: none;
+    transform: none;
 }
 
 .share-workout-actions {

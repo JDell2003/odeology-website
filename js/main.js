@@ -8846,10 +8846,192 @@ function setupTrainingNavRouting() {
 }
 
 /* ============================================
+   FORM A11Y HARDENING
+   ============================================ */
+
+function setupFormFieldAccessibilityGuard() {
+    if (window.__odeFormFieldA11yGuardBound) return;
+    window.__odeFormFieldA11yGuardBound = true;
+
+    let generatedIdSeq = 0;
+
+    const makeLabelText = (field) => {
+        const placeholder = String(field.getAttribute('placeholder') || '').trim();
+        if (placeholder) return placeholder;
+        const fromName = String(field.getAttribute('name') || '').trim() || String(field.id || '').trim();
+        if (!fromName) return 'Field';
+        return fromName
+            .replace(/[_-]+/g, ' ')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+
+    const isVisibleField = (field) => {
+        const type = String(field.getAttribute('type') || '').toLowerCase();
+        return type !== 'hidden';
+    };
+
+    const ensureFieldBasics = (field) => {
+        if (!isVisibleField(field)) return;
+        if (!field.id) {
+            generatedIdSeq += 1;
+            field.id = `ode-field-auto-${generatedIdSeq}`;
+        }
+        if (!field.getAttribute('name')) {
+            field.setAttribute('name', field.id);
+        }
+    };
+
+    const findCandidateFieldForLabel = (label) => {
+        if (label.querySelector('input, select, textarea')) return null;
+        const next = label.nextElementSibling;
+        if (next && next.matches('input, select, textarea') && isVisibleField(next)) return next;
+        const parent = label.parentElement;
+        if (!parent) return null;
+        const fields = Array.from(parent.querySelectorAll('input, select, textarea'))
+            .filter((field) => isVisibleField(field));
+        if (fields.length === 1) return fields[0];
+        return null;
+    };
+
+    const wireLabels = (root) => {
+        const labels = root.querySelectorAll ? root.querySelectorAll('label') : [];
+        labels.forEach((label) => {
+            const htmlFor = String(label.getAttribute('for') || '').trim();
+            if (htmlFor) return;
+            const field = findCandidateFieldForLabel(label);
+            if (!field) return;
+            ensureFieldBasics(field);
+            label.setAttribute('for', field.id);
+        });
+    };
+
+    const patchFieldA11y = (root) => {
+        if (!root || !root.querySelectorAll) return;
+        wireLabels(root);
+        const fields = root.querySelectorAll('input, select, textarea');
+        fields.forEach((field) => {
+            if (!isVisibleField(field)) return;
+            ensureFieldBasics(field);
+            const hasLabel = field.labels && field.labels.length > 0;
+            const hasAria = Boolean(field.getAttribute('aria-label') || field.getAttribute('aria-labelledby'));
+            if (!hasLabel && !hasAria) {
+                field.setAttribute('aria-label', makeLabelText(field));
+            }
+        });
+    };
+
+    let scheduled = false;
+    const schedulePatch = () => {
+        if (scheduled) return;
+        scheduled = true;
+        window.requestAnimationFrame(() => {
+            scheduled = false;
+            patchFieldA11y(document);
+        });
+    };
+
+    patchFieldA11y(document);
+
+    const observer = new MutationObserver(() => {
+        schedulePatch();
+    });
+    if (document.documentElement) {
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+    window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
+}
+
+/* ============================================
+   SHARE FLOW DEBUG (GLOBAL FALLBACK)
+   ============================================ */
+
+function setupShareFlowGlobalDebug() {
+    if (window.__odeShareFlowDebugBound) return;
+    window.__odeShareFlowDebugBound = true;
+
+    const onTrainingPage = /\/training(?:\.html)?$/i.test(String(window.location.pathname || '')) || /training\.html/i.test(String(window.location.href || ''));
+    if (!onTrainingPage) return;
+
+    const debugEnabled = (() => {
+        try {
+            const params = new URLSearchParams(String(window.location.search || ''));
+            const flag = String(params.get('shareDebug') || '').trim();
+            if (flag === '1') return true;
+            if (flag === '0') return false;
+            const saved = String(localStorage.getItem('ode_share_debug') || '').trim();
+            if (saved === '1') return true;
+            if (saved === '0') return false;
+            return true;
+        } catch {
+            return true;
+        }
+    })();
+    if (!debugEnabled) return;
+
+    const debug = (msg, payload) => {
+        try {
+            if (payload === undefined) console.log(`[share-fallback] ${msg}`);
+            else console.log(`[share-fallback] ${msg}`, payload);
+        } catch {
+            // ignore
+        }
+    };
+
+    debug('global debug attached', {
+        path: String(window.location.pathname || ''),
+        href: String(window.location.href || '')
+    });
+
+    document.addEventListener('click', (e) => {
+        const target = e.target instanceof Element ? e.target : null;
+        if (!target) return;
+        const addNode = target.closest('.share-workout-add, .share-workout-add-btn');
+        const itemNode = target.closest('.share-workout-item');
+        if (!addNode && !itemNode) return;
+        const row = itemNode || addNode?.closest('.share-workout-item');
+        const name = String(row?.querySelector?.('.share-workout-name')?.textContent || '').trim();
+        const handle = String(row?.querySelector?.('.share-workout-handle')?.textContent || '').trim();
+        debug('click captured', {
+            clickedClass: addNode?.className || itemNode?.className || null,
+            name: name || null,
+            handle: handle || null
+        });
+    }, true);
+
+    if (window.__odeShareDebugFetchWrapped) return;
+    window.__odeShareDebugFetchWrapped = true;
+
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async function shareDebugFetch(input, init) {
+        const urlRaw = typeof input === 'string' ? input : (input && typeof input === 'object' && 'url' in input ? String(input.url || '') : '');
+        const method = String((init && init.method) || (typeof input === 'object' && input && 'method' in input ? input.method : 'GET') || 'GET').toUpperCase();
+        const isShareUrl = /\/api\/training\/share(?:\/|$|\?)/i.test(urlRaw);
+        if (isShareUrl) {
+            debug('fetch -> request', { method, url: urlRaw });
+        }
+        const resp = await originalFetch(input, init);
+        if (isShareUrl) {
+            let body = null;
+            try {
+                body = await resp.clone().json();
+            } catch {
+                body = null;
+            }
+            debug('fetch <- response', { method, url: urlRaw, ok: resp.ok, status: resp.status, json: body });
+        }
+        return resp;
+    };
+}
+
+/* ============================================
    INIT
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupShareFlowGlobalDebug();
+    setupFormFieldAccessibilityGuard();
     initThemeToggle();
     initTracking();
     setupPreloader();

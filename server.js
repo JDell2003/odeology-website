@@ -1624,8 +1624,8 @@ const serveStatic = (req, res, pathname) => {
             'Cache-Control': cacheControlForStatic(filePath, ext)
         };
         res.writeHead(200, responseHeaders);
-        if (pathname === '/js/main.js') {
-            console.log('[asset] /js/main.js', {
+        if (pathname === '/js/main.js' || pathname === '/js/training.js') {
+            console.log(`[asset] ${pathname}`, {
                 filePath,
                 headers: responseHeaders
             });

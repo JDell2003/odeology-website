@@ -686,51 +686,85 @@
     query: ''
   };
 
-  const SHARE_REQUESTED_STORAGE_PREFIX = 'ode_training_share_requested_v1';
   const SHARE_CONFIRM_TOAST_DELAY_MS = 10_000;
-
-  function getShareRequestedStorageKey(userId) {
-    const uid = String(userId || state?.auth?.user?.id || '').trim();
-    if (!uid) return '';
-    return `${SHARE_REQUESTED_STORAGE_PREFIX}:${uid}`;
-  }
-
-  function readShareRequestedIds(userId) {
-    const key = getShareRequestedStorageKey(userId);
-    if (!key) return [];
+  const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-5';
+  const shareDebugEnabled = (() => {
     try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      const ids = Array.isArray(parsed)
-        ? parsed
-        : (parsed && typeof parsed === 'object' && Array.isArray(parsed.ids) ? parsed.ids : []);
-      return ids.map((id) => String(id || '').trim()).filter(Boolean);
+      const params = new URLSearchParams(String(window.location.search || ''));
+      const param = String(params.get('shareDebug') || '').trim();
+      if (param === '1') return true;
+      if (param === '0') return false;
+      const stored = String(localStorage.getItem('ode_share_debug') || '').trim();
+      if (stored === '1') return true;
+      if (stored === '0') return false;
+      const host = String(window.location.hostname || '').toLowerCase();
+      return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local');
     } catch {
-      return [];
+      return true;
+    }
+  })();
+  let shareDebugPanel = null;
+  function ensureShareDebugPanel() {
+    if (!shareDebugEnabled) return null;
+    if (shareDebugPanel && document.body && document.body.contains(shareDebugPanel)) return shareDebugPanel;
+    const panel = document.createElement('div');
+    panel.id = 'share-debug-panel';
+    panel.setAttribute('aria-live', 'polite');
+    panel.style.position = 'fixed';
+    panel.style.left = '10px';
+    panel.style.bottom = '10px';
+    panel.style.zIndex = '99999';
+    panel.style.width = 'min(460px, calc(100vw - 20px))';
+    panel.style.maxHeight = '42vh';
+    panel.style.overflow = 'auto';
+    panel.style.padding = '8px 10px';
+    panel.style.borderRadius = '10px';
+    panel.style.background = 'rgba(8, 17, 27, 0.92)';
+    panel.style.color = '#b8f3c5';
+    panel.style.font = '12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    panel.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.35)';
+    panel.style.pointerEvents = 'none';
+    panel.style.whiteSpace = 'pre-wrap';
+    const title = document.createElement('div');
+    title.textContent = `[share-debug] v=${SHARE_DEBUG_VERSION}`;
+    title.style.color = '#f8f8f8';
+    title.style.fontWeight = '700';
+    title.style.marginBottom = '6px';
+    panel.appendChild(title);
+    const lines = document.createElement('div');
+    lines.id = 'share-debug-lines';
+    panel.appendChild(lines);
+    document.body.appendChild(panel);
+    shareDebugPanel = panel;
+    return panel;
+  }
+  function shareDebugLog(message, payload) {
+    if (!shareDebugEnabled) return;
+    try {
+      if (payload === undefined) console.log(`[share-debug] ${message}`);
+      else console.log(`[share-debug] ${message}`, payload);
+    } catch {
+      // ignore console failures
+    }
+    try {
+      const panel = ensureShareDebugPanel();
+      const lines = panel?.querySelector('#share-debug-lines');
+      if (!lines) return;
+      const row = document.createElement('div');
+      const ts = new Date().toLocaleTimeString();
+      row.textContent = payload === undefined
+        ? `${ts} ${message}`
+        : `${ts} ${message} ${JSON.stringify(payload)}`;
+      lines.appendChild(row);
+      while (lines.childElementCount > 34) {
+        lines.removeChild(lines.firstChild);
+      }
+      panel.scrollTop = panel.scrollHeight;
+    } catch {
+      // ignore debug panel failures
     }
   }
-
-  function writeShareRequestedIds(ids, userId) {
-    const key = getShareRequestedStorageKey(userId);
-    if (!key) return;
-    try {
-      const clean = Array.from(new Set((Array.isArray(ids) ? ids : []).map((id) => String(id || '').trim()).filter(Boolean)));
-      localStorage.setItem(key, JSON.stringify({ ids: clean, updatedAt: new Date().toISOString() }));
-    } catch {
-      // ignore
-    }
-  }
-
-  function hydrateShareRequestedIds(userId) {
-    shareUi.requested.clear();
-    const ids = readShareRequestedIds(userId);
-    ids.forEach((id) => shareUi.requested.add(id));
-  }
-
-  function persistShareRequestedIds() {
-    writeShareRequestedIds(Array.from(shareUi.requested), state?.auth?.user?.id || null);
-  }
+  shareDebugLog('training.js loaded', { version: SHARE_DEBUG_VERSION });
 
   function clearShareConfirmToastTimer() {
     if (!shareUi.confirmToastTimer) return;
@@ -1434,6 +1468,8 @@
     return counts;
   }
 
+  let autoFormFieldSeq = 0;
+
   function el(tag, attrs, ...children) {
     const node = document.createElement(tag);
     if (attrs && typeof attrs === 'object') {
@@ -1448,6 +1484,19 @@
           node.innerHTML = String(v);
         } else {
           node.setAttribute(k, String(v));
+        }
+      }
+    }
+    const tagLower = String(tag || '').toLowerCase();
+    if (tagLower === 'input' || tagLower === 'select' || tagLower === 'textarea') {
+      const type = tagLower === 'input' ? String(node.getAttribute('type') || '').toLowerCase() : '';
+      if (type !== 'hidden') {
+        if (!node.id) {
+          autoFormFieldSeq += 1;
+          node.id = `training-field-${autoFormFieldSeq}`;
+        }
+        if (!node.getAttribute('name')) {
+          node.setAttribute('name', node.id);
         }
       }
     }
@@ -2855,6 +2904,100 @@ function toFreeExerciseDbRemotePath(src) {
     if (shareCloseBound) return;
     shareCloseBound = true;
 
+    document.addEventListener('pointerdown', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest('.share-workout-item');
+      if (!row) return;
+      const name = String(row.querySelector('.share-workout-name')?.textContent || '').trim();
+      const handle = String(row.querySelector('.share-workout-handle')?.textContent || '').trim();
+      const button = row.querySelector('.share-workout-add-btn');
+      const label = String(button?.textContent || '').trim();
+      const disabled = button instanceof HTMLButtonElement ? button.disabled : null;
+      shareDebugLog('pointerdown row', {
+        name: name || null,
+        handle: handle || null,
+        buttonLabel: label || null,
+        disabled
+      });
+    }, true);
+
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest('.share-workout-add-btn, .share-workout-add');
+      if (!btn) return;
+      try {
+        const row = btn.closest('.share-workout-item');
+        const name = String(row?.querySelector('.share-workout-name')?.textContent || '').trim();
+        const handle = String(row?.querySelector('.share-workout-handle')?.textContent || '').trim();
+        shareDebugLog('click captured on share button', {
+          version: SHARE_DEBUG_VERSION,
+          label: String(btn.textContent || '').trim(),
+          name: name || null,
+          handle: handle || null,
+          disabled: btn instanceof HTMLButtonElement ? btn.disabled : null
+        });
+      } catch {
+        // ignore console failures
+      }
+    }, true);
+
+    // Legacy fallback: support old markup
+    // <button class="share-workout-item"><span class="share-workout-add">Add</span></button>
+    document.addEventListener('click', async (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('.share-workout-add-btn')) return;
+      const legacyRow = target.closest('button.share-workout-item');
+      if (!legacyRow) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rowId = String(legacyRow.getAttribute('data-user-id') || '').trim();
+      const handleText = String(legacyRow.querySelector('.share-workout-handle')?.textContent || '').trim();
+      const username = handleText.startsWith('@') ? handleText.slice(1).trim().toLowerCase() : handleText.toLowerCase();
+      const displayName = String(legacyRow.querySelector('.share-workout-name')?.textContent || '').trim();
+      const addLabel = String(legacyRow.querySelector('.share-workout-add')?.textContent || '').trim();
+
+      shareDebugLog('legacy share click path hit', {
+        rowTag: legacyRow.tagName,
+        rowId: rowId || null,
+        username: username || null,
+        displayName: displayName || null,
+        addLabel: addLabel || null,
+        accountsLoaded: Array.isArray(shareUi.accounts) ? shareUi.accounts.length : 0
+      });
+
+      let account = null;
+      if (rowId) {
+        account = (shareUi.accounts || []).find((item) => String(item?.id || '').trim() === rowId) || null;
+      }
+      if (!account && username) {
+        account = (shareUi.accounts || []).find((item) => String(item?.username || '').trim().toLowerCase() === username) || null;
+      }
+      if (!account && displayName) {
+        account = (shareUi.accounts || []).find((item) => String(item?.displayName || '').trim().toLowerCase() === displayName.toLowerCase()) || null;
+      }
+
+      if (!account) {
+        shareDebugLog('legacy share click: account lookup failed', {
+          rowId: rowId || null,
+          username: username || null,
+          displayName: displayName || null
+        });
+        return;
+      }
+
+      shareDebugLog('legacy share click: resolved account', {
+        id: String(account?.id || '').trim() || null,
+        username: String(account?.username || '').trim() || null
+      });
+
+      await sendShareRequestToAccount(account);
+    }, true);
+
     document.addEventListener('click', (e) => {
       if (!shareUi.open) return;
       const target = e.target;
@@ -2913,13 +3056,20 @@ function toFreeExerciseDbRemotePath(src) {
       const pendingFromServer = outgoingResp.ok && outgoingResp.json?.ok && Array.isArray(outgoingResp.json?.targetUserIds)
         ? outgoingResp.json.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean)
         : [];
-      const fallbackPending = pendingFromServer.length ? [] : readShareRequestedIds(state?.auth?.user?.id || null);
-      const pendingSet = new Set([...pendingFromServer, ...fallbackPending]);
+      const pendingSet = new Set(pendingFromServer);
       shareUi.requested.clear();
       pendingSet.forEach((id) => shareUi.requested.add(id));
-      if (pendingFromServer.length) persistShareRequestedIds();
 
       shareUi.accounts = filtered;
+      try {
+        shareDebugLog('loaded share targets', filtered.map((item) => ({
+          id: String(item?.id || '').trim() || null,
+          username: item?.username || null,
+          displayName: item?.displayName || null
+        })));
+      } catch {
+        // ignore console failures
+      }
       const count = filtered.length;
       shareUi.status = q
         ? `Results for "${query}" (${count})`
@@ -2939,19 +3089,37 @@ function toFreeExerciseDbRemotePath(src) {
     if (!key) return;
     if (shareUi.requesting.has(key) || shareUi.requested.has(key)) return;
     const displayName = String(account?.displayName || account?.username || 'friend').trim();
+    const traceId = `share-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
     shareUi.requesting.add(key);
     shareUi.status = `Requesting ${displayName}...`;
+    try {
+      shareDebugLog(`[${traceId}] Add clicked`, {
+        targetUserId: key,
+        displayName
+      });
+    } catch {
+      // ignore console failures
+    }
     render();
 
     const resp = await api('/api/training/share', {
       method: 'POST',
-      body: JSON.stringify({ targetUserIds: [key] })
+      body: JSON.stringify({ targetUserIds: [key], targetUserId: key })
     });
+    try {
+      shareDebugLog(`[${traceId}] POST /api/training/share`, {
+        ok: resp?.ok,
+        status: resp?.status,
+        json: resp?.json || null
+      });
+    } catch {
+      // ignore console failures
+    }
 
     if (!resp.ok || !resp.json?.ok) {
       shareUi.requesting.delete(key);
-      shareUi.status = resp.json?.error || 'Could not send request.';
+      shareUi.status = resp.json?.error || 'Could not send workout request.';
       render();
       return;
     }
@@ -2959,12 +3127,63 @@ function toFreeExerciseDbRemotePath(src) {
     const sent = Math.max(0, Number(resp.json?.invited || 0));
     shareUi.requesting.delete(key);
     if (sent > 0) {
-      shareUi.requested.add(key);
-      persistShareRequestedIds();
+      let confirmed = false;
+      const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+      if (outgoing.ok && outgoing.json?.ok && Array.isArray(outgoing.json?.targetUserIds)) {
+        const pending = new Set(outgoing.json.targetUserIds.map((id) => String(id || '').trim()).filter(Boolean));
+        shareUi.requested.clear();
+        pending.forEach((id) => shareUi.requested.add(id));
+        confirmed = pending.has(key);
+        try {
+          shareDebugLog(`[${traceId}] GET /api/training/share/outgoing`, {
+            ok: outgoing?.ok,
+            status: outgoing?.status,
+            pendingCount: pending.size,
+            containsTarget: confirmed
+          });
+        } catch {
+          // ignore console failures
+        }
+      } else {
+        try {
+          shareDebugLog(`[${traceId}] GET /api/training/share/outgoing failed`, {
+            ok: outgoing?.ok,
+            status: outgoing?.status,
+            json: outgoing?.json || null
+          });
+        } catch {
+          // ignore console failures
+        }
+      }
+
+      if (!confirmed) {
+        shareUi.status = 'Request was not confirmed. Try Add again.';
+        try {
+          shareDebugLog(`[${traceId}] Invite not confirmed in outgoing list`, { targetUserId: key });
+        } catch {
+          // ignore console failures
+        }
+        render();
+        return;
+      }
+
       scheduleShareRequestSentToast(sent);
-      shareUi.status = `Requested ${displayName}.`;
+      shareUi.status = `Workout request sent to ${displayName}.`;
+      try {
+        shareDebugLog(`[${traceId}] Invite confirmed`, {
+          targetUserId: key,
+          invited: sent
+        });
+      } catch {
+        // ignore console failures
+      }
     } else {
       shareUi.status = 'No valid recipient.';
+      try {
+        shareDebugLog(`[${traceId}] Invite API returned invited=0`, { targetUserId: key });
+      } catch {
+        // ignore console failures
+      }
     }
     render();
   }
@@ -3261,7 +3480,7 @@ function toggleSharePopover(force) {
     shareUi.accounts = [];
     shareUi.status = '';
     shareUi.requesting.clear();
-    hydrateShareRequestedIds(meUser.id);
+    shareUi.requested.clear();
     clearShareConfirmToastTimer();
 
     let s;
@@ -5696,21 +5915,15 @@ function toggleSharePopover(force) {
             const isRequesting = Boolean(key) && shareUi.requesting.has(key);
             const isRequested = Boolean(key) && shareUi.requested.has(key);
             const isLocked = isRequesting || isRequested;
-            const addLabel = isRequested
+            const actionLabel = isRequested
               ? 'Requested'
               : isRequesting
                 ? 'Requesting...'
                 : 'Add';
-            return el('button', {
-              type: 'button',
+            return el('div', {
               class: `share-workout-item${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}`,
-              'aria-disabled': isLocked ? 'true' : 'false',
-              onclick: async (e) => {
-                e.preventDefault();
-                if (!key) return;
-                if (isLocked) return;
-                await sendShareRequestToAccount(acct);
-              }
+              'data-user-id': key || null,
+              'data-username': acct?.username ? String(acct.username) : null
             },
               el('div', { class: 'share-workout-avatar' },
                 acct?.photoDataUrl
@@ -5725,7 +5938,42 @@ function toggleSharePopover(force) {
                 el('div', { class: 'share-workout-name' }, name),
                 el('div', { class: 'share-workout-handle' }, username || ' ')
               ),
-              el('span', { class: 'share-workout-add' }, addLabel)
+              el('button', {
+                type: 'button',
+                class: `share-workout-add-btn${isRequesting ? ' requesting' : ''}${isRequested ? ' requested' : ''}`,
+                disabled: isLocked ? 'disabled' : null,
+                'aria-label': isRequested
+                  ? `${name} already requested`
+                  : `Send workout request to ${name}`,
+                onclick: async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!key) {
+                    try {
+                      shareDebugLog('Add ignored: missing friend id', {
+                        username: acct?.username || null,
+                        displayName: acct?.displayName || null
+                      });
+                    } catch {
+                      // ignore console failures
+                    }
+                    return;
+                  }
+                  if (isLocked) {
+                    try {
+                      shareDebugLog('Add ignored: row locked', {
+                        id: key,
+                        isRequesting,
+                        isRequested
+                      });
+                    } catch {
+                      // ignore console failures
+                    }
+                    return;
+                  }
+                  await sendShareRequestToAccount(acct);
+                }
+              }, actionLabel)
             );
           })
         : [el('div', { class: 'share-workout-empty' }, 'No friends found.')]);
