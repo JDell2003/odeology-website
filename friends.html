@@ -1,16 +1,31 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages � odeology_</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-03-08-checkin-rings-1">
+    <title>Messages · odeology_</title>
+    <link rel="stylesheet" href="css/main.css?v=2026-03-08-friends-redesign-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body.friends-page {
+        :root {
+            --ios-blue: #1ba1f6;
+            --ios-blue-dark: #0a90e8;
+            --ios-bg: #f2f2f7;
+            --ios-incoming: #e5e5ea;
+            --ios-text: #1c1c1e;
+            --ios-muted: #8e8e93;
+            --ios-white: #ffffff;
+        }
+
+        body.user-messaging-page {
+            background: #ffffff !important;
             overflow: auto !important;
+        }
+
+        body.user-messaging-page .grain {
+            display: none !important;
         }
 
         .user-msg-wrap {
@@ -20,7 +35,8 @@
             display: grid;
             grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
             gap: 12px;
-            align-items: start;
+            align-items: stretch;
+            min-height: calc(100dvh - var(--navbar-height, 72px) - 34px);
         }
 
         .user-msg-head {
@@ -32,10 +48,10 @@
             margin-bottom: 2px;
         }
 
-        .user-msg-head-right {
+        .user-msg-head-actions {
             display: grid;
-            justify-items: end;
             gap: 8px;
+            justify-items: end;
         }
 
         .user-msg-switch {
@@ -45,7 +61,7 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 999px;
             padding: 4px;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
         }
 
         .user-msg-switch-btn {
@@ -86,6 +102,14 @@
             display: none;
         }
 
+        .user-msg-mobile-only {
+            display: none;
+        }
+
+        .user-msg-desktop-only {
+            display: inline-flex;
+        }
+
         .user-msg-card {
             background: rgba(255, 255, 255, 0.93);
             border: 1px solid rgba(0, 0, 0, 0.08);
@@ -99,11 +123,15 @@
             color: #666;
         }
 
+        .user-msg-hidden {
+            display: none !important;
+        }
+
         .user-msg-list {
             margin-top: 10px;
             display: grid;
             gap: 8px;
-            max-height: calc(100vh - var(--navbar-height, 72px) - 230px);
+            max-height: calc(100vh - var(--navbar-height, 72px) - 190px);
             overflow: auto;
             padding-right: 2px;
         }
@@ -139,13 +167,16 @@
             color: #666;
             font-size: 12px;
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
             gap: 8px;
+            justify-content: space-between;
         }
 
         .user-msg-thread {
             display: grid;
             gap: 10px;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            min-height: calc(100dvh - var(--navbar-height, 72px) - 120px);
         }
 
         .user-msg-thread-head {
@@ -157,13 +188,102 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         }
 
+        .user-msg-thread-head-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .user-msg-thread-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 20%, #f6dfba 0%, #d5ab75 55%, #b7884e 100%);
+            border: 2px solid rgba(255, 255, 255, 0.92);
+            box-shadow: 0 4px 12px rgba(56, 35, 10, 0.22);
+            color: #2b1d11;
+            font-size: 13px;
+            font-weight: 800;
+            display: grid;
+            place-items: center;
+            text-transform: uppercase;
+            flex: 0 0 auto;
+        }
+
+        .user-msg-thread-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .user-msg-thread-title {
+            min-width: 0;
+            display: grid;
+            gap: 2px;
+        }
+
+        .user-msg-thread-title #user-msg-thread-name {
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-msg-thread-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-msg-icon-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            background: #fff;
+            color: #3a3a3a;
+            display: grid;
+            place-items: center;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .user-msg-mobile-back {
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 999px;
+            background: #fff;
+            color: #2a2a2a;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
         .user-msg-thread-list {
             min-height: 220px;
-            max-height: calc(100vh - var(--navbar-height, 72px) - 380px);
+            max-height: none;
+            height: 100%;
             overflow: auto;
             display: grid;
             gap: 8px;
             padding-right: 2px;
+        }
+
+        .user-msg-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .user-msg-row.me {
+            justify-content: flex-end;
         }
 
         .user-msg-bubble {
@@ -176,7 +296,6 @@
         }
 
         .user-msg-bubble.me {
-            margin-left: auto;
             border-color: rgba(197, 141, 79, 0.45);
             background: rgba(197, 141, 79, 0.08);
         }
@@ -185,6 +304,34 @@
             margin-top: 6px;
             font-size: 11px;
             color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .user-msg-empty-state {
+            height: 100%;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 8px;
+            padding: 10px 14px;
+        }
+
+        .user-msg-empty-icon {
+            font-size: 40px;
+            line-height: 1;
+        }
+
+        .user-msg-empty-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #4f5562;
+            letter-spacing: -0.01em;
         }
 
         .user-msg-image {
@@ -200,14 +347,37 @@
         .user-msg-compose {
             border-top: 1px solid rgba(0, 0, 0, 0.08);
             padding-top: 10px;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
             display: grid;
             gap: 8px;
+            align-self: end;
+            background: #fff;
+        }
+
+        #user-msg-body {
+            min-height: 86px;
+            resize: vertical;
+        }
+
+        .user-msg-desktop-send {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .user-msg-status {
             min-height: 18px;
             font-size: 13px;
             color: #555;
+        }
+
+        .user-msg-error {
+            color: #8f1d1d;
+        }
+
+        .user-msg-ok {
+            color: #1f6c2f;
         }
 
         .user-msg-loading {
@@ -230,18 +400,6 @@
 
         @keyframes userMsgSpin {
             to { transform: rotate(360deg); }
-        }
-
-        .user-msg-error {
-            color: #8f1d1d;
-        }
-
-        .user-msg-ok {
-            color: #1f6c2f;
-        }
-
-        .user-msg-hidden {
-            display: none !important;
         }
 
         .user-msg-requests {
@@ -321,19 +479,317 @@
             background: rgba(183, 54, 50, 0.08);
         }
 
+        .user-msg-mobile-compose {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding-top: 10px;
+        }
+
+        .user-msg-mobile-input-wrap {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 999px;
+            background: #fff;
+            padding: 4px 8px 6px;
+        }
+
+        .user-msg-mobile-input {
+            border: 0;
+            background: transparent;
+            width: 100%;
+            min-width: 0;
+            color: #1f1f1f;
+            font-size: 15px;
+            outline: none;
+            line-height: 1.28;
+            resize: none;
+            overflow-y: hidden;
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 24px;
+            max-height: 90px;
+            padding: 7px 4px 5px;
+        }
+
+        .user-msg-compose-mobile-meta {
+            font-size: 12px;
+            color: #666;
+            padding: 0 2px;
+            display: none;
+        }
+
+        .user-msg-compose-mobile-status {
+            font-size: 12px;
+            color: #666;
+            padding: 0 2px;
+            display: none;
+        }
+
         @media (max-width: 980px) {
             .user-msg-wrap {
+                margin: calc(var(--navbar-height, 72px) + 14px) auto 28px;
+                padding: 0 10px 16px;
                 grid-template-columns: 1fr;
+            }
+
+            .user-msg-head {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .user-msg-head-actions {
+                justify-items: stretch;
+                gap: 8px;
+            }
+
+            .user-msg-card {
+                border-radius: 12px;
+                padding: 12px;
             }
 
             .user-msg-list,
             .user-msg-thread-list {
                 max-height: none;
             }
+
+            .user-msg-list {
+                max-height: 34vh;
+            }
+
+            .user-msg-thread-list {
+                min-height: 38vh;
+            }
+
+            .user-msg-bubble {
+                max-width: 92%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .user-msg-mobile-only {
+                display: inline-flex;
+            }
+
+            .user-msg-desktop-only {
+                display: none !important;
+            }
+
+            .user-msg-head {
+                display: none !important;
+            }
+
+            .user-msg-wrap {
+                margin: 6px auto 14px;
+                padding: 0 6px 10px;
+                min-height: calc(100dvh - var(--navbar-height, 72px) - 8px);
+            }
+
+            body.user-mobile-thread .user-msg-head,
+            body.user-mobile-thread #user-msg-pane-messages-left {
+                display: none !important;
+            }
+
+            body.user-mobile-thread #user-msg-pane-messages-right {
+                display: grid !important;
+                margin-top: 0;
+                min-height: calc(100dvh - var(--navbar-height, 72px) - 14px);
+                height: calc(100dvh - var(--navbar-height, 72px) - 14px);
+                grid-template-rows: auto minmax(0, 1fr) auto;
+            }
+
+            body.user-messaging-page:not(.user-mobile-thread) #user-msg-pane-messages-right {
+                display: none;
+            }
+
+            body.user-mobile-thread #control-panel,
+            body.user-mobile-thread #control-mobile-fab {
+                display: none !important;
+            }
+
+            .user-msg-account {
+                border: 0;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+                border-radius: 0;
+                background: transparent;
+                padding: 12px 8px;
+            }
+
+            .user-msg-account:last-child {
+                border-bottom: 0;
+            }
+
+            .user-msg-thread-head {
+                border-bottom: 0;
+                border-radius: 14px 14px 12px 12px;
+                padding: 11px 10px 10px;
+                background: linear-gradient(135deg, var(--ios-blue-dark), #4ab9ff 64%);
+                color: #fff;
+                position: relative;
+                overflow: visible;
+                z-index: 20;
+            }
+
+            .user-msg-thread-head::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(115deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.07) 30%, transparent 32%);
+                pointer-events: none;
+            }
+
+            .user-msg-thread-avatar {
+                background: rgba(255, 255, 255, 0.22);
+                border-color: rgba(255, 255, 255, 0.45);
+                color: #fff;
+            }
+
+            .user-msg-thread-title #user-msg-thread-name,
+            .user-msg-thread-title #user-msg-thread-sub {
+                color: #fff;
+            }
+
+            .user-msg-thread-title #user-msg-thread-sub {
+                opacity: 0.86;
+                font-size: 11px;
+            }
+
+            .user-msg-thread-actions .user-msg-icon-btn,
+            .user-msg-mobile-back {
+                background: transparent;
+                border-color: transparent;
+                color: #fff;
+                box-shadow: none;
+                font-size: 20px;
+            }
+
+            .user-msg-thread-list {
+                background: var(--ios-bg);
+                border-radius: 16px;
+                padding: 10px 10px 2px;
+                gap: 10px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                min-height: 0 !important;
+                max-height: none !important;
+                height: 100% !important;
+            }
+
+            .user-msg-row {
+                align-items: flex-end;
+            }
+
+            .user-msg-bubble {
+                position: relative;
+                border: 0;
+                border-radius: 18px;
+                background: var(--ios-incoming);
+                color: var(--ios-text);
+                padding: 9px 12px;
+                max-width: 86%;
+                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+            }
+
+            .user-msg-bubble::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: -5px;
+                width: 12px;
+                height: 12px;
+                background: radial-gradient(circle at 100% 0, transparent 52%, var(--ios-incoming) 54%);
+            }
+
+            .user-msg-bubble.me {
+                background: var(--ios-blue);
+                color: #fff;
+            }
+
+            .user-msg-bubble.me::after {
+                left: auto;
+                right: -5px;
+                background: radial-gradient(circle at 0 0, transparent 52%, var(--ios-blue) 54%);
+            }
+
+            .user-msg-bubble.me .user-msg-bubble-meta {
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+            .user-msg-bubble .user-msg-bubble-meta {
+                color: var(--ios-muted);
+            }
+
+            .user-msg-compose > #user-msg-body,
+            .user-msg-compose > .user-msg-desktop-send {
+                display: none !important;
+            }
+
+            .user-msg-compose {
+                border-top: 0;
+                gap: 4px;
+                padding-top: 0;
+                margin-top: 0;
+            }
+
+            .user-msg-mobile-compose {
+                display: flex;
+                gap: 8px;
+                border-top: 0;
+                padding-top: 0;
+                margin-top: 0;
+            }
+
+            .user-msg-mobile-input-wrap {
+                border: 1px solid #d7d7dc;
+                background: #fff;
+                min-height: 40px;
+                max-height: none;
+                padding: 2px 8px 6px;
+            }
+
+            .user-msg-mobile-input {
+                color: var(--ios-text);
+                min-height: 24px;
+                max-height: 92px;
+            }
+
+            #user-msg-mobile-attach.user-msg-icon-btn,
+            #user-msg-mobile-camera.user-msg-icon-btn {
+                width: 24px;
+                height: 24px;
+                border: 0;
+                background: transparent;
+                color: var(--ios-muted);
+                font-size: 16px;
+            }
+
+            #user-msg-mobile-camera.user-msg-icon-btn.is-send {
+                width: auto;
+                min-width: 54px;
+                padding: 0 10px;
+                border-radius: 999px;
+                background: var(--ios-blue);
+                color: #fff;
+                font-weight: 800;
+                font-size: 12px;
+                letter-spacing: 0.02em;
+            }
+
+            input,
+            textarea,
+            select {
+                font-size: 16px !important;
+            }
         }
     </style>
 </head>
-<body class="friends-page" data-require-auth="1">
+<body class="friends-page user-messaging-page" data-require-auth="1">
     <div class="grain"></div>
 
     <svg aria-hidden="true" class="icon-sprite">
@@ -402,7 +858,7 @@
         <div class="control-section">
             <p class="section-label">COMMUNITY</p>
             <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
-            <a class="control-link active" href="friends.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+            <a class="control-link active" href="friends.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span><span class="control-link-close" aria-hidden="true">×</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
         </div>
     </aside>
@@ -410,10 +866,10 @@
     <main class="user-msg-wrap" id="friends-page">
         <header class="user-msg-head">
             <div>
-                <h1 style="margin: 0;">Messages</h1>
-                <div class="user-msg-muted">Your private conversations with mutual friends.</div>
+                <h1 style="margin:0;">Messages</h1>
+                <div class="user-msg-muted">Click any friend to message directly.</div>
             </div>
-            <div class="user-msg-head-right">
+            <div class="user-msg-head-actions">
                 <div class="user-msg-switch" role="tablist" aria-label="Messages view">
                     <button type="button" class="user-msg-switch-btn active" data-user-tab-btn="messages" role="tab" aria-selected="true">Messages</button>
                     <button type="button" class="user-msg-switch-btn" data-user-tab-btn="requests" role="tab" aria-selected="false">Requests <span class="user-msg-request-badge hidden" id="user-msg-request-badge">0</span></button>
@@ -429,24 +885,40 @@
 
         <section class="user-msg-card user-msg-thread" id="user-msg-pane-messages-right">
             <div class="user-msg-thread-head">
-                <div>
-                    <div id="user-msg-thread-name" style="font-weight:700;">Select a friend</div>
-                    <div id="user-msg-thread-sub" class="user-msg-muted">No conversation selected.</div>
+                <div class="user-msg-thread-head-main">
+                    <button type="button" class="user-msg-mobile-back user-msg-mobile-only" id="user-msg-mobile-back" aria-label="Back to friends">&#x2039;</button>
+                    <div id="user-msg-thread-avatar" class="user-msg-thread-avatar">UF</div>
+                    <div class="user-msg-thread-title">
+                        <div id="user-msg-thread-name">Select a friend</div>
+                        <div id="user-msg-thread-sub" class="user-msg-muted">No conversation selected.</div>
+                    </div>
+                </div>
+                <div class="user-msg-thread-actions user-msg-desktop-only">
+                    <button type="button" class="user-msg-icon-btn" id="user-msg-desktop-attach" aria-label="Attach image" title="Attach image">&#x1F4CE;</button>
                 </div>
             </div>
             <div id="user-msg-thread-list" class="user-msg-thread-list">
                 <div class="user-msg-muted">Select a friend to load messages.</div>
             </div>
             <form id="user-msg-send-form" class="user-msg-compose">
-                <textarea id="user-msg-body" class="auth-input" rows="4" maxlength="2000" placeholder="Write a message..."></textarea>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <input id="user-msg-image" class="auth-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:320px;" />
+                <textarea id="user-msg-body" class="auth-input" rows="4" maxlength="2000" placeholder="Write a message... (Enter to send, Shift+Enter for newline)" autocomplete="off"></textarea>
+                <div class="user-msg-desktop-send">
+                    <input id="user-msg-image" class="auth-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
                     <span id="user-msg-image-meta" class="user-msg-muted">Optional image (max 900KB)</span>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <button type="submit" id="user-msg-send" class="btn btn-primary">Send</button>
+                    <button type="button" id="user-msg-send" class="btn btn-primary">Send</button>
                     <span id="user-msg-status" class="user-msg-status"></span>
                 </div>
+                <div id="user-msg-mobile-status" class="user-msg-compose-mobile-status"></div>
+                <div id="user-msg-mobile-file-meta" class="user-msg-compose-mobile-meta"></div>
+                <div class="user-msg-mobile-compose user-msg-mobile-only">
+                    <div class="user-msg-mobile-input-wrap">
+                        <button type="button" id="user-msg-mobile-attach" class="user-msg-icon-btn" aria-label="Attach image">&#x1F4CE;</button>
+                        <textarea id="user-msg-mobile-input" class="user-msg-mobile-input" rows="1" maxlength="2000" placeholder="Type a message" autocomplete="off"></textarea>
+                        <button type="button" id="user-msg-mobile-camera" class="user-msg-icon-btn" aria-label="Use camera" data-mode="camera">&#x1F4F7;</button>
+                    </div>
+                </div>
+                <input id="user-msg-mobile-attach-input" type="file" accept="image/*" style="display:none;" />
+                <input id="user-msg-mobile-camera-input" type="file" accept="image/*" capture="environment" style="display:none;" />
             </form>
         </section>
 
@@ -464,7 +936,7 @@
         </section>
     </main>
 
-    <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-03-08-checkin-rings-1"></script>
+    <script src="data/dri-targets.js?v=2026-03-08-friends-redesign-1"></script>
+    <script src="js/main.js?v=2026-03-08-friends-redesign-1"></script>
 </body>
 </html>

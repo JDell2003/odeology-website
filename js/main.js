@@ -14066,7 +14066,9 @@ function initFriendsPage() {
         pendingWorkoutInvites: 0,
         workoutInvites: [],
         search: '',
-        summaries: new Map()
+        summaries: new Map(),
+        pendingImageDataUrl: null,
+        pendingImageLabel: ''
     };
 
     const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
@@ -14115,6 +14117,9 @@ function initFriendsPage() {
     const threadNameEl = root.querySelector('#user-msg-thread-name');
     const threadSubEl = root.querySelector('#user-msg-thread-sub');
     const threadListEl = root.querySelector('#user-msg-thread-list');
+    const threadAvatarEl = root.querySelector('#user-msg-thread-avatar');
+    const mobileBackBtn = root.querySelector('#user-msg-mobile-back');
+    const desktopAttachBtn = root.querySelector('#user-msg-desktop-attach');
 
     const sendForm = root.querySelector('#user-msg-send-form');
     const bodyEl = root.querySelector('#user-msg-body');
@@ -14122,6 +14127,13 @@ function initFriendsPage() {
     const imageMetaEl = root.querySelector('#user-msg-image-meta');
     const sendBtn = root.querySelector('#user-msg-send');
     const statusEl = root.querySelector('#user-msg-status');
+    const mobileStatusEl = root.querySelector('#user-msg-mobile-status');
+    const mobileFileMetaEl = root.querySelector('#user-msg-mobile-file-meta');
+    const mobileInputEl = root.querySelector('#user-msg-mobile-input');
+    const mobileAttachBtn = root.querySelector('#user-msg-mobile-attach');
+    const mobileCameraBtn = root.querySelector('#user-msg-mobile-camera');
+    const mobileAttachInputEl = root.querySelector('#user-msg-mobile-attach-input');
+    const mobileCameraInputEl = root.querySelector('#user-msg-mobile-camera-input');
     const tabButtons = Array.from(root.querySelectorAll('[data-user-tab-btn]'));
     const requestBadgeEl = root.querySelector('#user-msg-request-badge');
     const messagesPaneLeftEl = root.querySelector('#user-msg-pane-messages-left');
@@ -14133,6 +14145,32 @@ function initFriendsPage() {
     const friendReqListEl = root.querySelector('#user-msg-friend-requests-list');
 
     const myId = String(window.__odeCurrentUser?.id || '');
+
+    const isMobileThreadUi = () => {
+        try {
+            return window.matchMedia('(max-width: 640px)').matches;
+        } catch {
+            return window.innerWidth <= 640;
+        }
+    };
+
+    const setMobileView = (mode) => {
+        const showThread = mode === 'thread' && isMobileThreadUi() && state.activeTab === 'messages';
+        document.body.classList.toggle('user-mobile-thread', showThread);
+    };
+
+    const setThreadSelectionUi = (active) => {
+        const on = Boolean(active) && state.activeTab === 'messages';
+        document.body.classList.toggle('user-thread-active', on);
+        if (on && isMobileThreadUi()) {
+            try {
+                if (typeof window.collapseControlPanel === 'function') window.collapseControlPanel();
+                else if (typeof collapseControlPanel === 'function') collapseControlPanel();
+            } catch {
+                // ignore
+            }
+        }
+    };
 
     const escapeHtml = (raw) => String(raw || '')
         .replace(/&/g, '&amp;')
@@ -14158,12 +14196,60 @@ function initFriendsPage() {
 
     const bytesToKb = (n) => `${Math.max(1, Math.round((Number(n) || 0) / 1000))}KB`;
 
+    const syncMobileInputHeight = () => {
+        if (!mobileInputEl) return;
+        mobileInputEl.style.height = 'auto';
+        const maxHeight = 92;
+        const nextHeight = Math.min(maxHeight, Math.max(24, Number(mobileInputEl.scrollHeight) || 24));
+        mobileInputEl.style.height = `${nextHeight}px`;
+        mobileInputEl.style.overflowY = (Number(mobileInputEl.scrollHeight) || 0) > maxHeight ? 'auto' : 'hidden';
+    };
+
+    const getMessageTextRaw = () => {
+        if (isMobileThreadUi() && mobileInputEl) return String(mobileInputEl.value || '');
+        return String(bodyEl?.value || '');
+    };
+
+    const getMessageText = () => String(getMessageTextRaw() || '').trim();
+
+    const setMessageText = (value) => {
+        const v = String(value || '');
+        if (bodyEl) bodyEl.value = v;
+        if (mobileInputEl) mobileInputEl.value = v;
+        syncMobileInputHeight();
+    };
+
+    const updateMobileActionUi = () => {
+        if (!mobileCameraBtn) return;
+        const hasPayload = getMessageText().length > 0 || Boolean(state.pendingImageDataUrl);
+        if (hasPayload) {
+            mobileCameraBtn.textContent = 'Send';
+            mobileCameraBtn.setAttribute('aria-label', 'Send message');
+            mobileCameraBtn.setAttribute('title', 'Send message');
+            mobileCameraBtn.dataset.mode = 'send';
+            mobileCameraBtn.classList.add('is-send');
+            return;
+        }
+        mobileCameraBtn.textContent = '📷';
+        mobileCameraBtn.setAttribute('aria-label', 'Use camera');
+        mobileCameraBtn.setAttribute('title', 'Use camera');
+        mobileCameraBtn.dataset.mode = 'camera';
+        mobileCameraBtn.classList.remove('is-send');
+    };
+
     const setStatus = (text, kind = '') => {
         if (!statusEl) return;
         statusEl.textContent = String(text || '');
         statusEl.classList.remove('user-msg-error', 'user-msg-ok');
         if (kind === 'error') statusEl.classList.add('user-msg-error');
         if (kind === 'ok') statusEl.classList.add('user-msg-ok');
+        if (mobileStatusEl) {
+            mobileStatusEl.textContent = String(text || '');
+            mobileStatusEl.classList.remove('user-msg-error', 'user-msg-ok');
+            if (kind === 'error') mobileStatusEl.classList.add('user-msg-error');
+            if (kind === 'ok') mobileStatusEl.classList.add('user-msg-ok');
+            mobileStatusEl.style.display = (isMobileThreadUi() && String(text || '').trim()) ? 'block' : 'none';
+        }
     };
 
     const setCount = (text) => {
@@ -14190,6 +14276,8 @@ function initFriendsPage() {
         messagesPaneLeftEl?.classList.toggle('user-msg-hidden', showRequests);
         messagesPaneRightEl?.classList.toggle('user-msg-hidden', showRequests);
         requestsPaneEl?.classList.toggle('user-msg-hidden', !showRequests);
+        setMobileView(showRequests ? 'list' : (state.selectedFriend ? 'thread' : 'list'));
+        setThreadSelectionUi(!showRequests && Boolean(state.selectedFriend));
 
         if (showRequests) {
             loadIncomingRequests();
@@ -14197,13 +14285,14 @@ function initFriendsPage() {
     };
 
     const updateImageMeta = () => {
-        if (!imageMetaEl) return;
-        const file = imageEl?.files?.[0] || null;
-        if (!file) {
-            imageMetaEl.textContent = `Optional image (max ${bytesToKb(MAX_IMAGE_BYTES)})`;
-            return;
+        const base = `Optional image (max ${bytesToKb(MAX_IMAGE_BYTES)})`;
+        const label = String(state.pendingImageLabel || '').trim();
+        if (imageMetaEl) imageMetaEl.textContent = label || base;
+        if (mobileFileMetaEl) {
+            mobileFileMetaEl.textContent = label || '';
+            mobileFileMetaEl.style.display = label ? 'block' : 'none';
         }
-        imageMetaEl.textContent = `${file.name} - ${bytesToKb(file.size)}`;
+        updateMobileActionUi();
     };
 
     const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
@@ -14213,8 +14302,7 @@ function initFriendsPage() {
         reader.readAsDataURL(file);
     });
 
-    const collectImageDataUrl = async () => {
-        const file = imageEl?.files?.[0] || null;
+    const readChosenImage = async (file) => {
         if (!file) return { ok: true, dataUrl: null };
         const mime = String(file.type || '').toLowerCase();
         if (!mime.startsWith('image/')) return { ok: false, error: 'Selected file is not an image.' };
@@ -14227,6 +14315,27 @@ function initFriendsPage() {
         } catch (err) {
             return { ok: false, error: err?.message || 'Could not read image.' };
         }
+    };
+
+    const clearPendingImage = () => {
+        state.pendingImageDataUrl = null;
+        state.pendingImageLabel = '';
+        if (imageEl) imageEl.value = '';
+        if (mobileAttachInputEl) mobileAttachInputEl.value = '';
+        if (mobileCameraInputEl) mobileCameraInputEl.value = '';
+        updateImageMeta();
+    };
+
+    const chooseImageFromFile = async (file) => {
+        const res = await readChosenImage(file);
+        if (!res.ok) {
+            setStatus(res.error || 'Could not read image.', 'error');
+            return;
+        }
+        state.pendingImageDataUrl = res.dataUrl || null;
+        state.pendingImageLabel = file ? `${file.name} - ${bytesToKb(file.size)}` : '';
+        updateImageMeta();
+        setStatus(state.pendingImageDataUrl ? 'Image attached.' : '');
     };
 
     async function api(path, options = {}) {
@@ -14303,11 +14412,14 @@ function initFriendsPage() {
             const preview = escapeHtml(summary.lastMessage ? String(summary.lastMessage).slice(0, 70) : 'No messages yet');
             const stamp = escapeHtml(formatDate(summary.lastMessageAt) || '');
             return `
-                <button type="button" class="user-msg-account${active}" data-friend-id="${escapeHtml(friend.id)}">
+                <article class="user-msg-account${active}" data-friend-id="${escapeHtml(friend.id)}">
                     <div class="user-msg-account-name">${display}</div>
-                    <div class="user-msg-account-meta"><span>${handle}</span><span>${stamp}</span></div>
+                    <div class="user-msg-account-meta">
+                        <span>${handle}</span>
+                        <span>${stamp}</span>
+                    </div>
                     <div class="user-msg-account-meta"><span>${preview}</span></div>
-                </button>
+                </article>
             `;
         }).join('');
     }
@@ -14316,23 +14428,45 @@ function initFriendsPage() {
         if (!threadNameEl || !threadSubEl || !threadListEl) return;
 
         if (!state.selectedFriend) {
+            setThreadSelectionUi(false);
             threadNameEl.textContent = 'Select a friend';
             threadSubEl.textContent = 'No conversation selected.';
             threadListEl.innerHTML = '<div class="user-msg-muted">Select a friend to load messages.</div>';
+            if (threadAvatarEl) {
+                threadAvatarEl.innerHTML = '';
+                threadAvatarEl.textContent = 'UF';
+            }
+            updateMobileActionUi();
             return;
         }
 
+        setThreadSelectionUi(true);
         const name = state.selectedFriend.displayName || state.selectedFriend.username || 'Friend';
         threadNameEl.textContent = name;
         threadSubEl.textContent = state.selectedFriend.username ? `@${state.selectedFriend.username}` : '';
+        if (threadAvatarEl) {
+            threadAvatarEl.innerHTML = '';
+            if (state.selectedFriend.photoDataUrl) {
+                threadAvatarEl.innerHTML = `<img src="${escapeHtml(state.selectedFriend.photoDataUrl)}" alt="${escapeHtml(name)} avatar">`;
+            } else {
+                threadAvatarEl.textContent = initials(name);
+            }
+        }
 
         if (state.isThreadLoading) {
             threadListEl.innerHTML = '<div class="user-msg-muted">Loading messages...</div>';
+            updateMobileActionUi();
             return;
         }
 
         if (!state.messages.length) {
-            threadListEl.innerHTML = '<div class="user-msg-muted">No messages yet. Send the first one.</div>';
+            threadListEl.innerHTML = `
+                <div class="user-msg-empty-state" role="status" aria-live="polite">
+                    <div class="user-msg-empty-icon" aria-hidden="true">🏋️</div>
+                    <div class="user-msg-empty-text">Start a conversation with your teammate.</div>
+                </div>
+            `;
+            updateMobileActionUi();
             return;
         }
 
@@ -14348,15 +14482,18 @@ function initFriendsPage() {
                 : '';
             const stamp = escapeHtml(formatDate(msg?.createdAt) || '');
             return `
-                <article class="user-msg-bubble${mine ? ' me' : ''}">
-                    ${bodyHtml}
-                    ${imageHtml}
-                    <div class="user-msg-bubble-meta">${mine ? 'You' : 'Friend'} · ${stamp}</div>
-                </article>
+                <div class="user-msg-row${mine ? ' me' : ''}">
+                    <article class="user-msg-bubble${mine ? ' me' : ''}">
+                        ${bodyHtml}
+                        ${imageHtml}
+                        <div class="user-msg-bubble-meta">${mine ? 'You' : 'Friend'} · ${stamp}</div>
+                    </article>
+                </div>
             `;
         }).join('');
 
         threadListEl.scrollTop = threadListEl.scrollHeight;
+        updateMobileActionUi();
     }
 
     function renderFriendRequests(items, statusText) {
@@ -14544,9 +14681,12 @@ function initFriendsPage() {
         state.selectedFriend = state.friends.find((f) => String(f.id) === id) || null;
         state.messages = [];
         state.isThreadLoading = true;
+        clearPendingImage();
+        setMessageText('');
         renderAccounts();
         renderThread();
         setStatus('Loading conversation...');
+        setMobileView('thread');
 
         const resp = await api(`/api/messages/thread?friendId=${encodeURIComponent(id)}`);
         if (!resp.ok) {
@@ -14570,14 +14710,10 @@ function initFriendsPage() {
             return;
         }
 
-        const body = String(bodyEl?.value || '').trim();
-        const image = await collectImageDataUrl();
-        if (!image.ok) {
-            setStatus(image.error || 'Invalid image.', 'error');
-            return;
-        }
+        const body = getMessageText();
+        const imageDataUrl = state.pendingImageDataUrl || null;
 
-        if (!body && !image.dataUrl) {
+        if (!body && !imageDataUrl) {
             setStatus('Message is empty.', 'error');
             return;
         }
@@ -14590,7 +14726,7 @@ function initFriendsPage() {
             body: JSON.stringify({
                 toUserId: state.selectedFriendId,
                 body,
-                imageDataUrl: image.dataUrl
+                imageDataUrl
             })
         });
 
@@ -14601,9 +14737,8 @@ function initFriendsPage() {
             return;
         }
 
-        if (bodyEl) bodyEl.value = '';
-        if (imageEl) imageEl.value = '';
-        updateImageMeta();
+        clearPendingImage();
+        setMessageText('');
         setStatus('Sent.', 'ok');
         await loadThread(state.selectedFriendId);
         await loadThreadSummaries();
@@ -14651,10 +14786,85 @@ function initFriendsPage() {
         });
     });
 
-    imageEl?.addEventListener('change', updateImageMeta);
+    bodyEl?.addEventListener('input', () => {
+        if (mobileInputEl && mobileInputEl.value !== bodyEl.value) mobileInputEl.value = bodyEl.value;
+        syncMobileInputHeight();
+        updateMobileActionUi();
+    });
+    mobileInputEl?.addEventListener('input', () => {
+        if (bodyEl && bodyEl.value !== mobileInputEl.value) bodyEl.value = mobileInputEl.value;
+        syncMobileInputHeight();
+        updateMobileActionUi();
+    });
+
+    sendBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof sendForm?.requestSubmit === 'function') sendForm.requestSubmit();
+        else sendForm?.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+
+    desktopAttachBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        imageEl?.click();
+    });
+    imageEl?.addEventListener('change', () => {
+        const file = imageEl?.files?.[0] || null;
+        if (!file) {
+            clearPendingImage();
+            setStatus('');
+            return;
+        }
+        void chooseImageFromFile(file);
+    });
+    mobileAttachBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        mobileAttachInputEl?.click();
+    });
+    mobileAttachInputEl?.addEventListener('change', () => {
+        const file = mobileAttachInputEl?.files?.[0] || null;
+        if (!file) {
+            setStatus('');
+            return;
+        }
+        void chooseImageFromFile(file);
+    });
+    mobileCameraBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (String(mobileCameraBtn?.dataset.mode || '') === 'send') {
+            if (typeof sendForm?.requestSubmit === 'function') sendForm.requestSubmit();
+            else sendForm?.dispatchEvent(new Event('submit', { cancelable: true }));
+            return;
+        }
+        mobileCameraInputEl?.click();
+    });
+    mobileCameraInputEl?.addEventListener('change', () => {
+        const file = mobileCameraInputEl?.files?.[0] || null;
+        if (!file) {
+            setStatus('');
+            return;
+        }
+        void chooseImageFromFile(file);
+    });
+
+    mobileBackBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        setMobileView('list');
+    });
+
+    window.addEventListener('resize', () => {
+        syncMobileInputHeight();
+        updateMobileActionUi();
+        if (!isMobileThreadUi()) {
+            document.body.classList.remove('user-mobile-thread');
+        } else if (state.selectedFriend && state.activeTab === 'messages') {
+            setMobileView('thread');
+        }
+    });
+
     sendForm?.addEventListener('submit', sendDirectMessage);
 
     updateImageMeta();
+    syncMobileInputHeight();
     setActiveTab('messages');
     loadFriends();
     loadIncomingRequests();
