@@ -9258,7 +9258,6 @@ function ensureBasicCheckinModal() {
             <div class="checkin-actions">
                 <div class="checkin-actions-left">
                     <div class="checkin-autosave-status ns-muted tiny" id="checkin-autosave-status">Autosave is on.</div>
-                    <button class="btn btn-ghost" type="button" id="checkin-load">Load last</button>
                     <button class="btn btn-ghost" type="button" id="checkin-clear">Clear</button>
                 </div>
                 <div class="checkin-actions-right">
@@ -10545,7 +10544,6 @@ function setupBasicCheckin() {
         clear();
         showAlert('');
     });
-    byId('checkin-load')?.addEventListener('click', loadCheckin);
     byId('checkin-save')?.addEventListener('click', () => {
         void saveCheckin({ silent: false, reason: 'manual' });
     });
