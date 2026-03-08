@@ -3981,7 +3981,7 @@ async function trainingRoutes(req, res, url) {
     const latestInviteResult = await db.query(
       `
         SELECT id, status
-        FROM app_training_share_invites
+        FROM app_training_share_invites i
         WHERE from_user_id = $1
           AND to_user_id = $2
         ORDER BY updated_at DESC
@@ -4086,7 +4086,7 @@ async function trainingRoutes(req, res, url) {
                i.plan_snapshot,
                u.username AS from_username,
                u.display_name AS from_display_name
-        FROM app_training_share_invites
+        FROM app_training_share_invites i
         JOIN app_users u ON u.id = i.from_user_id
         WHERE i.id = $1 AND i.to_user_id = $2 AND i.status = 'pending'
         LIMIT 1;
