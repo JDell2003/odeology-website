@@ -14992,6 +14992,17 @@ async function authSignup({ username, email, phone, displayName, password }) {
         });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok) return { ok: false, error: data?.error || 'Sign up failed' };
+        try {
+            localStorage.setItem('ode_onboarding_force_v1', '1');
+            localStorage.removeItem('ode_onboarding_done_v1');
+        } catch {
+            // ignore
+        }
+        try {
+            window.dispatchEvent(new CustomEvent('ode:tour:force-start'));
+        } catch {
+            // ignore
+        }
         return { ok: true, user: data?.user };
     } catch (err) {
         return { ok: false, error: err?.message || 'Sign up failed' };
@@ -15253,6 +15264,7 @@ function setupControlPanel() {
 function setupOnboardingTour() {
     const TOUR_DONE_KEY = 'ode_onboarding_done_v1';
     const TOUR_STATE_KEY = 'ode_onboarding_state_v1';
+    const TOUR_FORCE_KEY = 'ode_onboarding_force_v1';
     const TOUR_PROMPT_KEY = 'ode_tour_prompted_v1';
     const SIGNUP_PROMPT_KEY = 'ode_signup_prompted_v1';
     const SIGNUP_AFTER_TOUR_KEY = 'ode_signup_after_tour_v1';
@@ -15263,36 +15275,172 @@ function setupOnboardingTour() {
         return parts.length ? parts[parts.length - 1] : 'index.html';
     };
 
-    const steps = [
-        {
-            key: 'blueprint',
-            url: 'index.html',
-            selector: '#mission .offer-save-card',
-            title: 'Build your blueprint',
-            body: 'Brief expo: answer this and it will show you what you are looking for.'
-        },
-        {
-            key: 'macros',
-            url: 'index.html',
-            selector: '#ns-entry',
-            title: 'Macro calculator',
-            body: 'Here is the macro calculator.'
-        },
-        {
-            key: 'signin',
-            url: 'index.html',
-            selector: '#auth-wrap',
-            title: 'Make a free account',
-            body: 'Save your custom meal plan and customize meals.'
-        },
-        {
-            key: 'overview',
-            url: 'overview.html',
-            selector: '#overview-actions',
-            title: 'Go to overview',
-            body: 'This is where you see your saved data. Training will be added here soon.'
+    const buildTourSteps = ({ signedIn = false } = {}) => {
+        if (!signedIn) {
+            return [
+                {
+                    key: 'welcome',
+                    url: 'index.html',
+                    selector: '.navbar',
+                    title: 'Welcome to ODEOLOGY',
+                    body: 'This tour shows exactly where your plan, training, progress, and team features live. Use Next to move fast.'
+                },
+                {
+                    key: 'panel',
+                    url: 'index.html',
+                    selector: '#control-panel',
+                    title: 'Control panel basics',
+                    body: 'This panel is your app map. From here you open Dash, Overview, Training Program, Grocery Calendar, and Messages.'
+                },
+                {
+                    key: 'macros',
+                    url: 'index.html',
+                    selector: '#ns-entry',
+                    title: 'Macro calculator',
+                    body: 'Start here: enter body stats, training schedule, and goals. The app calculates calories/macros and builds your food plan.'
+                },
+                {
+                    key: 'signin',
+                    url: 'index.html',
+                    selector: '#auth-wrap',
+                    title: 'Create account',
+                    body: 'Create your account to save plans, daily logs, progress photos, workout sharing, and messages across devices.'
+                }
+            ];
         }
-    ];
+
+        return [
+            {
+                key: 'welcome',
+                url: 'index.html',
+                selector: '.navbar',
+                title: 'Welcome to your dashboard',
+                body: 'This is a guided map of each major tab and what it controls so you know exactly where to update your plan.'
+            },
+            {
+                key: 'panel',
+                url: 'index.html',
+                selector: '#control-panel',
+                title: 'Control panel map',
+                body: 'Use this as your command center for Dash, Overview, Training Program, Grocery Calendar, Messages, and Account.'
+            },
+            {
+                key: 'macros',
+                url: 'index.html',
+                selector: '#ns-entry',
+                title: 'Macro + grocery generator',
+                body: 'Plan setup lives here. Updating this section refreshes your calorie targets, meal layout, and grocery output.'
+            },
+            {
+                key: 'overviewTabs',
+                url: 'overview.html',
+                selector: '#overview-mini-nav',
+                title: 'Overview tabs',
+                body: 'Use these tabs to jump directly to Meals, Restock, Training, Photos, and Community sections.'
+            },
+            {
+                key: 'overviewGrocery',
+                url: 'overview.html',
+                selector: '#grocery-list',
+                title: 'Grocery list card',
+                body: 'This tracks your current grocery plan, spend estimate, and alternate views like list, weekly, and PDF.'
+            },
+            {
+                key: 'overviewMeals',
+                url: 'overview.html',
+                selector: '#meal-plan',
+                title: 'Meal plan card',
+                body: 'Review meal slots and macro split here. This is the same plan you log against during daily check-ins.'
+            },
+            {
+                key: 'overviewTraining',
+                url: 'overview.html',
+                selector: '#overview-training-card',
+                title: 'Training summary',
+                body: 'Shows your latest workout, weekly consistency trend, and upcoming training day at a glance.'
+            },
+            {
+                key: 'overviewRestock',
+                url: 'overview.html',
+                selector: '#overview-tracker',
+                title: 'Restock tracker',
+                body: 'Forecasts what food runs out next so shopping timing stays aligned with your meal plan.'
+            },
+            {
+                key: 'overviewPhotos',
+                url: 'overview.html',
+                selector: '#overview-progress-photos',
+                title: 'Progress photos',
+                body: 'Use front/side/back uploads to verify body composition changes that scale weight alone can hide.'
+            },
+            {
+                key: 'dash',
+                url: 'overview.html',
+                selector: '#control-checkin',
+                title: 'Daily Dash check-in',
+                body: 'Daily logging lives here: weight, nutrition, sleep, stress, water, and photos. Data saves into your trend history.'
+            },
+            {
+                key: 'calendar',
+                url: 'grocery-calendar.html',
+                selector: '#food-calendar',
+                title: 'Grocery Calendar',
+                body: 'Calendar view for restock timing. Use it to plan buy days before inventory drops too low.'
+            },
+            {
+                key: 'training',
+                url: 'training.html',
+                selector: '#training-root',
+                title: 'Training program',
+                body: 'This is your live workout workspace. Log sets/reps, navigate days, and run your split in one place.'
+            },
+            {
+                key: 'trainingActions',
+                url: 'training.html',
+                selector: '.plan-topbar-actions',
+                title: 'Training actions',
+                body: 'Top controls let you make a new workout, export PDF, change workout days, and use skip-day tools when needed.'
+            },
+            {
+                key: 'trainingShare',
+                url: 'training.html',
+                selector: '[data-share-workout=\"1\"]',
+                title: 'Share workout',
+                body: 'Share sends invites to teammates. Once accepted, both users can track linked participation from their own accounts.'
+            },
+            {
+                key: 'messages',
+                url: 'friends.html',
+                selector: '.user-msg-wrap',
+                title: 'Messages + requests',
+                body: 'Manage friend requests, workout invites, and direct conversations from this hub.'
+            },
+            {
+                key: 'accountRequests',
+                url: 'account.html',
+                selector: '#account-requests-btn',
+                title: 'Account requests',
+                body: 'Incoming workout invites appear here. Accept or decline from this panel and status syncs back to the sender.'
+            },
+            {
+                key: 'leaderboard',
+                url: 'overview.html',
+                selector: '#overview-lb-box',
+                title: 'Community leaderboard',
+                body: 'Leaderboard points update from activity and consistency. Use it as accountability with your community.'
+            },
+            {
+                key: 'complete',
+                url: 'overview.html',
+                selector: '#overview-tour-btn',
+                title: 'Tour complete',
+                body: 'You can relaunch this Quick Tour from the control panel any time if you want a refresher.'
+            }
+        ];
+    };
+
+    let steps = [];
+    let signedInCache = null;
 
     const prefersReducedMotion = (() => {
         try {
@@ -15309,7 +15457,11 @@ function setupOnboardingTour() {
             if (!parsed || typeof parsed !== 'object') return null;
             if (!parsed.active) return null;
             const idx = Number(parsed.index);
-            return { active: true, index: Number.isFinite(idx) ? idx : 0 };
+            return {
+                active: true,
+                index: Number.isFinite(idx) ? idx : 0,
+                forced: parsed.forced === true
+            };
         } catch {
             return null;
         }
@@ -15339,12 +15491,45 @@ function setupOnboardingTour() {
         }
     };
 
+    const clearForceRequired = () => {
+        try {
+            localStorage.removeItem(TOUR_FORCE_KEY);
+        } catch {
+            // ignore
+        }
+    };
+
     const isDone = () => {
         try {
             return localStorage.getItem(TOUR_DONE_KEY) === '1';
         } catch {
             return false;
         }
+    };
+
+    const isForceRequired = () => {
+        try {
+            return localStorage.getItem(TOUR_FORCE_KEY) === '1';
+        } catch {
+            return false;
+        }
+    };
+
+    const resolveSignedIn = async ({ fresh = false } = {}) => {
+        if (!fresh && typeof signedInCache === 'boolean') return signedInCache;
+        try {
+            const me = await odeFetchMe();
+            signedInCache = Boolean(me);
+        } catch {
+            signedInCache = false;
+        }
+        return signedInCache;
+    };
+
+    const refreshSteps = async ({ freshAuth = false } = {}) => {
+        const signedIn = await resolveSignedIn({ fresh: freshAuth });
+        steps = buildTourSteps({ signedIn });
+        return signedIn;
     };
 
     const ensureControlTourButton = () => {
@@ -15385,6 +15570,7 @@ function setupOnboardingTour() {
     let tourPromptTimer = null;
     let tourPromptEl = null;
     let signupPromptEl = null;
+    let tourForcedMode = false;
 
     const teardown = () => {
         document.body?.classList?.remove('ode-tour-active');
@@ -15513,6 +15699,21 @@ function setupOnboardingTour() {
         ensureSignupPrompt();
     };
 
+    const syncSkipUi = () => {
+        if (!popoverEl) return;
+        const skipBtn = popoverEl.querySelector('#ode-tour-skip');
+        if (!skipBtn) return;
+        if (tourForcedMode) {
+            skipBtn.style.display = 'none';
+            skipBtn.setAttribute('aria-hidden', 'true');
+            skipBtn.disabled = true;
+        } else {
+            skipBtn.style.display = '';
+            skipBtn.removeAttribute('aria-hidden');
+            skipBtn.disabled = false;
+        }
+    };
+
     const ensureUi = () => {
         if (overlayEl && popoverEl) return;
 
@@ -15545,8 +15746,12 @@ function setupOnboardingTour() {
         document.body.appendChild(overlayEl);
         document.body.appendChild(popoverEl);
 
-        popoverEl.querySelector('#ode-tour-skip')?.addEventListener('click', () => finish({ skipped: true }));
+        popoverEl.querySelector('#ode-tour-skip')?.addEventListener('click', () => {
+            if (tourForcedMode) return;
+            void finish({ skipped: true });
+        });
         popoverEl.querySelector('#ode-tour-next')?.addEventListener('click', () => next());
+        syncSkipUi();
 
         window.addEventListener('resize', onReposition);
         window.addEventListener('scroll', onReposition, true);
@@ -15669,8 +15874,9 @@ function setupOnboardingTour() {
 
     function onKeydown(e) {
         if (e.key === 'Escape') {
+            if (tourForcedMode) return;
             e.preventDefault();
-            finish({ skipped: true });
+            void finish({ skipped: true });
         }
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
@@ -15678,11 +15884,23 @@ function setupOnboardingTour() {
         }
     }
 
-    const finish = ({ skipped } = {}) => {
+    const finish = async ({ skipped } = {}) => {
+        if (skipped && tourForcedMode) return;
         teardown();
         clearState();
-        if (!skipped) markDone();
-        if (skipped) markDone();
+        const wasForced = tourForcedMode;
+        tourForcedMode = false;
+
+        if (!skipped) {
+            markDone();
+            clearForceRequired();
+            return;
+        }
+        if (wasForced) return;
+
+        const signedIn = await resolveSignedIn({ fresh: true });
+        if (signedIn) return;
+
         const current = pageName();
         if (current !== 'index.html') {
             try {
@@ -15696,20 +15914,38 @@ function setupOnboardingTour() {
         showSignupPrompt();
     };
 
+    const isRenderableTarget = (el) => {
+        if (!el || !el.isConnected) return false;
+        try {
+            const style = window.getComputedStyle(el);
+            if (!style) return false;
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            if (Number(style.opacity) === 0) return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width >= 6 && rect.height >= 6;
+        } catch {
+            return false;
+        }
+    };
+
     const goToStep = async (idx) => {
+        if (!Array.isArray(steps) || !steps.length) {
+            await finish({ skipped: false });
+            return;
+        }
         if (idx >= steps.length) {
-            finish({ skipped: false });
+            await finish({ skipped: false });
             return;
         }
 
         const step = steps[idx];
         if (!step) {
-            finish({ skipped: false });
+            await finish({ skipped: false });
             return;
         }
 
         activeIndex = Math.max(0, idx);
-        writeState({ active: true, index: activeIndex });
+        writeState({ active: true, index: activeIndex, forced: tourForcedMode });
 
         const current = pageName();
         const stepUrl = step.url ? String(step.url) : '';
@@ -15724,12 +15960,13 @@ function setupOnboardingTour() {
         }
 
         const el = document.querySelector(step.selector);
-        if (!el) {
+        if (!isRenderableTarget(el)) {
             await goToStep(idx + 1);
             return;
         }
 
         ensureUi();
+        syncSkipUi();
         document.body?.classList?.add('ode-tour-active');
         popoverEl?.classList?.remove('show');
         setHighlight(el);
@@ -15747,7 +15984,10 @@ function setupOnboardingTour() {
 
         if (titleEl) titleEl.textContent = step.title;
         if (bodyEl) bodyEl.textContent = step.body;
-        if (stepEl) stepEl.textContent = `${activeIndex + 1} of ${steps.length}`;
+        if (stepEl) {
+            const suffix = tourForcedMode ? ' - required setup' : '';
+            stepEl.textContent = `${activeIndex + 1} of ${steps.length}${suffix}`;
+        }
         if (nextBtn) nextBtn.textContent = activeIndex >= steps.length - 1 ? 'Done' : 'Next';
 
         setTimeout(() => positionPopover(el), 50);
@@ -15755,45 +15995,52 @@ function setupOnboardingTour() {
 
     const next = () => {
         if (activeIndex >= steps.length - 1) {
-            finish({ skipped: false });
+            void finish({ skipped: false });
             return;
         }
-        goToStep(activeIndex + 1);
+        void goToStep(activeIndex + 1);
     };
 
-    const start = () => {
+    const start = async ({ forced = false } = {}) => {
         clearTourPromptTimer();
         closePrompt(tourPromptEl);
         tourPromptEl = null;
+        closePrompt(signupPromptEl);
+        signupPromptEl = null;
         teardown();
         clearState();
-        writeState({ active: true, index: 0 });
-        goToStep(0);
+        await refreshSteps({ freshAuth: true });
+        if (!Array.isArray(steps) || !steps.length) return;
+        tourForcedMode = Boolean(forced || (isForceRequired() && !isDone()));
+        writeState({ active: true, index: 0, forced: tourForcedMode });
+        void goToStep(0);
     };
 
     // Entry points (button + overview header).
     const panelBtn = ensureControlTourButton();
-    panelBtn?.addEventListener('click', start);
-    document.getElementById('overview-tour-btn')?.addEventListener('click', start);
+    panelBtn?.addEventListener('click', () => { void start({ forced: false }); });
+    document.getElementById('overview-tour-btn')?.addEventListener('click', () => { void start({ forced: false }); });
+    window.addEventListener('ode:tour:force-start', () => {
+        void start({ forced: true });
+    });
 
-    // Resume (multi-page) if already active.
-    const state = readState();
-    if (state?.active) {
-        goToStep(state.index || 0);
-        return;
-    }
+    void refreshSteps()
+        .then(async (signedIn) => {
+            const state = readState();
+            if (state?.active) {
+                tourForcedMode = Boolean(state.forced || (isForceRequired() && !isDone()));
+                writeState({ active: true, index: Number(state.index) || 0, forced: tourForcedMode });
+                await goToStep(Number(state.index) || 0);
+                return;
+            }
 
-    // Auto-prompt after 10s on first visit (only if not signed in).
-    const current = pageName();
-    if (isDone()) return;
+            if (isForceRequired() && !isDone() && signedIn) {
+                await start({ forced: true });
+                return;
+            }
 
-    Promise.resolve()
-        .then(async () => {
-            const me = await odeFetchMe();
-            return !!me;
-        })
-        .then((signedIn) => {
-            if (signedIn) return;
+            // Auto-prompt after 10s on first visit (only if not signed in).
+            if (isDone() || signedIn) return;
             try {
                 if (sessionStorage.getItem(SIGNUP_AFTER_TOUR_KEY) === '1') {
                     sessionStorage.removeItem(SIGNUP_AFTER_TOUR_KEY);
