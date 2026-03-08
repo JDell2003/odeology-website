@@ -73,16 +73,18 @@
 
   function updateMobileActionUi() {
     const cameraBtn = $('#owner-msg-mobile-camera');
-    const hasTypedText = getDirectMessageText().length > 0;
+    const hasSendablePayload = getDirectMessageText().length > 0 || Boolean(state.pendingDirectImageDataUrl) || Boolean(state.pendingDirectAttachmentNote);
     if (cameraBtn) {
-      if (hasTypedText) {
-        cameraBtn.textContent = '↑';
+      if (hasSendablePayload) {
+        cameraBtn.textContent = 'Send';
         cameraBtn.setAttribute('aria-label', 'Send message');
+        cameraBtn.setAttribute('title', 'Send message');
         cameraBtn.dataset.mode = 'send';
         cameraBtn.classList.add('is-send');
       } else {
         cameraBtn.textContent = '📷';
         cameraBtn.setAttribute('aria-label', 'Use camera');
+        cameraBtn.setAttribute('title', 'Use camera');
         cameraBtn.dataset.mode = 'camera';
         cameraBtn.classList.remove('is-send');
       }
