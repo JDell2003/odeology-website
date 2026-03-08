@@ -801,6 +801,7 @@
         quadriceps: 'Quadriceps',
         shoulders: 'Shoulders',
         traps: 'Traps',
+        triceps: 'Triceps',
         hipflexors: 'Hip Flexors',
         serratus: 'Serratus'
       };
@@ -1051,13 +1052,35 @@
         return 'free_weights';
       }
 
-      function subMuscleLabelFromRow(row) {
-        const first = Array.isArray(row?.primaryMuscles) && row.primaryMuscles.length
-          ? String(row.primaryMuscles[0] || '')
-          : (Array.isArray(row?.secondaryMuscles) && row.secondaryMuscles.length ? String(row.secondaryMuscles[0] || '') : '');
-        const token = normalizeToken(first);
-        if (!token) return { key: 'general', label: 'General' };
-        return { key: token, label: SUB_MUSCLE_LABELS[token] || toTitleCase(first) || 'General' };
+      function resolvePrimaryGroupKey(row) {
+        const primary = Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : [];
+        const secondary = Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [];
+        const pick = (list) => {
+          for (const raw of list) {
+            const token = normalizeToken(raw);
+            if (!token) continue;
+            const major = majorGroupFromToken(token);
+            if (major !== 'other') return major;
+          }
+          return null;
+        };
+        return pick(primary) || pick(secondary) || 'other';
+      }
+
+      function subMuscleLabelFromRow(row, groupKey) {
+        const primary = Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : [];
+        const secondary = Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [];
+        const candidates = [...primary, ...secondary];
+        for (const raw of candidates) {
+          const token = normalizeToken(raw);
+          if (!token) continue;
+          if (majorGroupFromToken(token) !== groupKey) continue;
+          return { key: token, label: SUB_MUSCLE_LABELS[token] || toTitleCase(raw) || 'General' };
+        }
+        const fallbackRaw = candidates[0] || '';
+        const fallbackToken = normalizeToken(fallbackRaw);
+        if (!fallbackToken) return { key: 'general', label: 'General' };
+        return { key: fallbackToken, label: SUB_MUSCLE_LABELS[fallbackToken] || toTitleCase(fallbackRaw) || 'General' };
       }
 
       function buildFolderTree(rows) {
@@ -1075,10 +1098,7 @@
           const section = sections.get(sectionKey);
           section.count += 1;
 
-          const primary = Array.isArray(row?.primaryMuscles) && row.primaryMuscles.length
-            ? String(row.primaryMuscles[0] || '')
-            : (Array.isArray(row?.secondaryMuscles) && row.secondaryMuscles.length ? String(row.secondaryMuscles[0] || '') : '');
-          const groupKey = majorGroupFromToken(primary);
+          const groupKey = resolvePrimaryGroupKey(row);
           if (!section.groups.has(groupKey)) {
             section.groups.set(groupKey, {
               key: groupKey,
@@ -1090,7 +1110,7 @@
           const group = section.groups.get(groupKey);
           group.count += 1;
 
-          const sub = subMuscleLabelFromRow(row);
+          const sub = subMuscleLabelFromRow(row, groupKey);
           if (!group.subs.has(sub.key)) {
             group.subs.set(sub.key, {
               key: sub.key,
@@ -1464,6 +1484,10 @@
                 <div class="builder-folder-items"></div>
               `;
               subDetails.__rows = sub.rows;
+              subDetails.addEventListener('toggle', () => {
+                if (!subDetails.open) return;
+                ensureFolderLeafRendered(subDetails);
+              });
               groupBody.appendChild(subDetails);
               if (subDetails.open) ensureFolderLeafRendered(subDetails);
             });
