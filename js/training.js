@@ -6112,7 +6112,7 @@ function toggleSharePopover(force) {
       }
     }
 
-    function stashIntakeForRestart() {
+  function stashIntakeForRestart() {
       const key = TRAINING_INTAKE_KEY;
       let intake = null;
       try {
@@ -6148,9 +6148,45 @@ function toggleSharePopover(force) {
       }
     }
 
+    async function resolveJoinedSharedOwnersForReset() {
+      const out = [];
+      const seen = new Set();
+
+      const pushOwner = (row) => {
+        const id = String(row?.id || '').trim();
+        if (!id || seen.has(id)) return;
+        seen.add(id);
+        out.push({
+          id,
+          displayName: String(row?.displayName || row?.username || 'owner').trim() || 'owner',
+          username: String(row?.username || '').trim() || null
+        });
+      };
+
+      // Local state first (fast path).
+      const localMembers = Array.isArray(shareUi.connectedMembers) ? shareUi.connectedMembers : [];
+      for (const member of localMembers) {
+        if (String(member?.relation || '').trim() !== 'incoming-owner') continue;
+        pushOwner(member);
+      }
+
+      // Server truth for correctness.
+      try {
+        const outgoing = await api('/api/training/share/outgoing', { method: 'GET' });
+        if (outgoing.ok && outgoing.json?.ok) {
+          syncShareOutgoingState(outgoing.json);
+          const joinedFromUsers = Array.isArray(outgoing.json?.joinedFromUsers) ? outgoing.json.joinedFromUsers : [];
+          for (const owner of joinedFromUsers) pushOwner(owner);
+        }
+      } catch {
+        // ignore; local state fallback still works
+      }
+
+      return out;
+    }
+
     async function resetTrainingPlanAndRestart() {
       const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
-      if (!confirmFn) return;
 
       if (isPreview || !state.auth.user) {
         stashIntakeForRestart();
@@ -6164,14 +6200,38 @@ function toggleSharePopover(force) {
         return;
       }
 
-      const ok = await confirmFn({
-        title: 'Make a new workout?',
-        message: 'This will archive your current training plan so it no longer shows.\nYour logged workouts and weights stay saved, but you will run Setup again.',
-        confirmText: 'Continue',
-        cancelText: 'Cancel',
-        danger: true
-      });
-      if (!ok) return;
+      const joinedOwners = await resolveJoinedSharedOwnersForReset();
+      if (joinedOwners.length > 0) {
+        const ownerName = String(joinedOwners[0]?.displayName || joinedOwners[0]?.username || 'the owner').trim() || 'the owner';
+        const confirmMessage = `Are you sure?\nYou will be removed from ${ownerName}'s current workout if you continue.\nThen you will start your own new workout setup.`;
+        let ok = false;
+        if (confirmFn) {
+          ok = await confirmFn({
+            title: 'Leave current shared workout?',
+            message: confirmMessage,
+            confirmText: 'Continue',
+            cancelText: 'Cancel',
+            danger: true
+          });
+        } else {
+          ok = window.confirm(confirmMessage);
+        }
+        if (!ok) return;
+
+        for (const owner of joinedOwners) {
+          const ownerUserId = String(owner?.id || '').trim();
+          if (!ownerUserId) continue;
+          const leaveResp = await api('/api/training/share/leave', {
+            method: 'POST',
+            body: JSON.stringify({ ownerUserId })
+          });
+          if (!leaveResp.ok && leaveResp.status !== 404) {
+            state.planError = leaveResp.json?.error || 'Could not leave current shared workout.';
+            setView('plan');
+            return;
+          }
+        }
+      }
 
       const resp = await api('/api/training/reset', { method: 'POST', body: JSON.stringify({}) });
       if (!resp.ok) {
