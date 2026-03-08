@@ -3257,6 +3257,19 @@ function normalizeCustomWorkoutImageUrl(raw) {
   return value;
 }
 
+function normalizeCustomWorkoutCategory(raw) {
+  const key = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ');
+  if (!key) return 'free_weights';
+  if (key.includes('calisthenic')) return 'calisthenics';
+  if (key.includes('free weight') || key.includes('freeweight') || key === 'free') return 'free_weights';
+  if (key.includes('stretch')) return 'stretching';
+  if (key.includes('plyometric')) return 'plyometrics';
+  return normalizeWorkoutCategory(raw);
+}
+
 function normalizeUserCustomWorkoutEntry(payload, { fixedExerciseId = null } = {}) {
   const name = safeText(payload?.name, 160);
   if (!name) return { ok: false, error: 'Workout name is required' };
@@ -3290,7 +3303,7 @@ function normalizeUserCustomWorkoutEntry(payload, { fixedExerciseId = null } = {
   const entry = {
     exerciseId: baseExerciseId,
     name,
-    category: normalizeWorkoutCategory(payload?.category),
+    category: normalizeCustomWorkoutCategory(payload?.category || payload?.section),
     equipment: safeText(payload?.equipment, 80) || '',
     level: normalizeCustomWorkoutLevel(payload?.level),
     primaryMuscles,

@@ -95,39 +95,33 @@
 
     .builder-db-toolbar {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 8px;
       margin-bottom: 8px;
     }
 
-    .builder-custom-section {
-      border: 1px solid #e3d4bf;
-      background: linear-gradient(150deg, #fffaf3 0%, #f8eedf 100%);
-      border-radius: 14px;
-      padding: 10px;
-      margin-bottom: 10px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .builder-custom-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      color: #5f4a31;
-      font-size: 0.85rem;
-    }
-
     .builder-custom-toggle {
       font-size: 0.76rem;
-      padding: 4px 9px;
-      min-height: 30px;
+      min-height: 36px;
+      padding: 6px 11px;
+      white-space: nowrap;
     }
 
     .builder-custom-form {
       display: grid;
       gap: 7px;
+      margin-bottom: 8px;
+      border: 1px solid #e3d4bf;
+      background: linear-gradient(150deg, #fffaf3 0%, #f8eedf 100%);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .builder-custom-form-head {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #665138;
+      margin-bottom: 2px;
     }
 
     .builder-custom-grid {
@@ -161,51 +155,6 @@
 
     .builder-custom-status.error { color: #a62f22; }
     .builder-custom-status.ok { color: #146f43; }
-
-    .builder-custom-list {
-      display: grid;
-      gap: 6px;
-      max-height: 150px;
-      overflow: auto;
-      padding-right: 2px;
-    }
-
-    .builder-custom-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid #e3d4bf;
-      border-radius: 10px;
-      background: #fff7eb;
-      padding: 7px 8px;
-    }
-
-    .builder-custom-item-name {
-      font-size: 0.79rem;
-      color: #352819;
-      font-weight: 800;
-      line-height: 1.2;
-    }
-
-    .builder-custom-item-meta {
-      font-size: 0.7rem;
-      color: #7b664b;
-      line-height: 1.2;
-      margin-top: 2px;
-    }
-
-    .builder-custom-item-remove {
-      border: 1px solid #d9b6b2;
-      background: #fde9e7;
-      color: #8f3025;
-      border-radius: 8px;
-      min-width: 28px;
-      min-height: 28px;
-      line-height: 1;
-      font-weight: 800;
-      cursor: pointer;
-    }
 
     .builder-db-count {
       font-size: 0.82rem;
@@ -269,6 +218,32 @@
       color: #2b2116;
       line-height: 1.25;
       margin-bottom: 2px;
+    }
+
+    .builder-db-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .builder-db-card-top .builder-db-name {
+      margin-bottom: 0;
+      min-width: 0;
+    }
+
+    .builder-db-custom-delete {
+      border: 1px solid #d9b6b2;
+      background: #fde9e7;
+      color: #8f3025;
+      border-radius: 8px;
+      min-width: 26px;
+      min-height: 26px;
+      line-height: 1;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
     }
 
     .builder-db-meta {
@@ -729,31 +704,32 @@
         <div class="builder-db-toolbar">
           <input id="builder-search" class="auth-input" type="text" placeholder="Search exercises" autocomplete="off" />
           <button type="button" class="btn btn-ghost" id="builder-search-btn">Search</button>
+          <button type="button" class="btn btn-ghost builder-custom-toggle" id="builder-custom-toggle" aria-expanded="false">+ Add custom workout</button>
         </div>
-        <section class="builder-custom-section" id="builder-custom-section">
-          <div class="builder-custom-head">
-            <strong>My custom workouts</strong>
-            <button type="button" class="btn btn-ghost builder-custom-toggle" id="builder-custom-toggle" aria-expanded="false">+ Add custom</button>
+        <form id="builder-custom-form" class="builder-custom-form" style="display:none;">
+          <div class="builder-custom-form-head">Custom workouts save to your account and appear in folders below.</div>
+          <div class="builder-custom-grid">
+            <input id="builder-custom-name" class="auth-input" type="text" maxlength="160" placeholder="Workout name (required)" name="builder-custom-name" aria-label="Workout name (required)" />
+            <input id="builder-custom-primary" class="auth-input" type="text" maxlength="60" placeholder="Primary muscle (required)" name="builder-custom-primary" aria-label="Primary muscle (required)" />
           </div>
-          <form id="builder-custom-form" class="builder-custom-form" style="display:none;">
-            <input id="builder-custom-name" class="auth-input" type="text" maxlength="160" placeholder="Workout name (required)" />
-            <div class="builder-custom-grid">
-              <input id="builder-custom-primary" class="auth-input" type="text" maxlength="60" placeholder="Primary muscle (required)" />
-              <input id="builder-custom-equipment" class="auth-input" type="text" maxlength="80" placeholder="Equipment (optional)" />
-            </div>
-            <div class="builder-custom-grid">
-              <input id="builder-custom-category" class="auth-input" type="text" maxlength="60" placeholder="Category (strength/cardio/etc.)" />
-              <input id="builder-custom-level" class="auth-input" type="text" maxlength="24" placeholder="Level (beginner/intermediate/expert)" />
-            </div>
-            <input id="builder-custom-image" class="auth-input" type="url" maxlength="480" placeholder="Image URL (optional)" />
-            <textarea id="builder-custom-notes" class="auth-input" rows="2" maxlength="600" placeholder="Notes/instructions (optional)"></textarea>
-            <div class="builder-custom-actions">
-              <button type="submit" class="btn btn-primary">Save custom workout</button>
-            </div>
-          </form>
-          <div id="builder-custom-status" class="builder-custom-status"></div>
-          <div id="builder-custom-list" class="builder-custom-list"></div>
-        </section>
+          <div class="builder-custom-grid">
+            <input id="builder-custom-equipment" class="auth-input" type="text" maxlength="80" placeholder="Equipment (optional)" name="builder-custom-equipment" aria-label="Equipment (optional)" />
+            <select id="builder-custom-section" class="auth-input" name="builder-custom-section" aria-label="Workout section">
+              <option value="free_weights">Free Weights</option>
+              <option value="calisthenics">Calisthenics</option>
+              <option value="stretching">Stretching</option>
+            </select>
+          </div>
+          <div class="builder-custom-grid">
+            <input id="builder-custom-level" class="auth-input" type="text" maxlength="24" placeholder="Level (beginner/intermediate/expert)" name="builder-custom-level" aria-label="Level (beginner/intermediate/expert)" />
+            <input id="builder-custom-image" class="auth-input" type="url" maxlength="480" placeholder="Image URL (optional)" name="builder-custom-image" aria-label="Image URL (optional)" />
+          </div>
+          <textarea id="builder-custom-notes" class="auth-input" rows="2" maxlength="600" placeholder="Notes/instructions (optional)" name="builder-custom-notes" aria-label="Notes/instructions (optional)"></textarea>
+          <div class="builder-custom-actions">
+            <button type="submit" class="btn btn-primary">Save custom workout</button>
+          </div>
+        </form>
+        <div id="builder-custom-status" class="builder-custom-status"></div>
         <div id="builder-db-count" class="builder-db-count">Loading database...</div>
         <div id="builder-db-list" class="builder-db-list" aria-live="polite"></div>
       </aside>
@@ -844,11 +820,10 @@
       const customToggleBtn = $('builder-custom-toggle');
       const customFormEl = $('builder-custom-form');
       const customStatusEl = $('builder-custom-status');
-      const customListEl = $('builder-custom-list');
       const customNameEl = $('builder-custom-name');
       const customPrimaryEl = $('builder-custom-primary');
       const customEquipmentEl = $('builder-custom-equipment');
-      const customCategoryEl = $('builder-custom-category');
+      const customSectionEl = $('builder-custom-section');
       const customLevelEl = $('builder-custom-level');
       const customImageEl = $('builder-custom-image');
       const customNotesEl = $('builder-custom-notes');
@@ -901,7 +876,7 @@
         state.customFormOpen = Boolean(open);
         if (customFormEl) customFormEl.style.display = state.customFormOpen ? 'grid' : 'none';
         if (customToggleBtn) {
-          customToggleBtn.textContent = state.customFormOpen ? 'Hide form' : '+ Add custom';
+          customToggleBtn.textContent = state.customFormOpen ? 'Hide custom form' : '+ Add custom workout';
           customToggleBtn.setAttribute('aria-expanded', state.customFormOpen ? 'true' : 'false');
         }
       }
@@ -1059,6 +1034,9 @@
         const equipment = normalizeToken(row?.equipment);
         const name = String(row?.name || '').toLowerCase();
 
+        if (category.includes('calisthenics')) return 'calisthenics';
+        if (category.includes('freeweights') || category.includes('freeweight')) return 'free_weights';
+        if (category.includes('stretch')) return 'stretching';
         if (category.includes('plyometric')) return 'plyometrics';
         if (
           category.includes('stretch')
@@ -1403,7 +1381,12 @@
               : escapeHtml(initialsFromName(name))}
           </div>
           <div>
-            <div class="builder-db-name">${escapeHtml(name)}</div>
+            <div class="builder-db-card-top">
+              <div class="builder-db-name">${escapeHtml(name)}</div>
+              ${row?.isCustom
+                ? `<button type="button" class="builder-db-custom-delete" data-custom-delete="${escapeHtml(String(row?.id || ''))}" aria-label="Delete custom workout">x</button>`
+                : ''}
+            </div>
             <div class="builder-db-meta">${escapeHtml(primary)}</div>
             <div class="builder-db-tags">
               ${tags.map((tag) => `<span class="builder-db-tag">${escapeHtml(tag)}</span>`).join('')}
@@ -1537,39 +1520,9 @@
         };
       }
 
-      function renderCustomList() {
-        if (!customListEl) return;
-        customListEl.innerHTML = '';
-        if (!state.user?.id) {
-          customListEl.innerHTML = '<div class="builder-day-empty">Log in to save account-only custom workouts.</div>';
-          return;
-        }
-        if (!Array.isArray(state.customRows) || !state.customRows.length) {
-          customListEl.innerHTML = '<div class="builder-day-empty">No custom workouts yet.</div>';
-          return;
-        }
-        state.customRows.forEach((row) => {
-          const item = document.createElement('article');
-          item.className = 'builder-custom-item';
-          item.innerHTML = `
-            <div>
-              <div class="builder-custom-item-name">${escapeHtml(row?.name || row?.id || 'Custom workout')}</div>
-              <div class="builder-custom-item-meta">${escapeHtml(listToText(row?.primaryMuscles, row?.equipment || 'General'))}</div>
-            </div>
-            <button
-              type="button"
-              class="builder-custom-item-remove"
-              data-custom-delete="${escapeHtml(String(row?.id || ''))}"
-              aria-label="Delete custom workout"
-            >x</button>
-          `;
-          customListEl.appendChild(item);
-        });
-      }
-
       function setCustomFormEnabled(enabled) {
         if (!customFormEl) return;
-        const controls = customFormEl.querySelectorAll('input, textarea, button');
+        const controls = customFormEl.querySelectorAll('input, textarea, button, select');
         controls.forEach((el) => {
           el.disabled = !enabled;
         });
@@ -1578,10 +1531,10 @@
       async function loadCustomWorkouts() {
         if (!state.user?.id) {
           state.customRows = [];
-          setCustomStatus('Log in to create your own workouts.');
-          renderCustomList();
+          setCustomStatus('Log in to add custom workouts to your database folders.');
           renderDatabaseList();
           setCustomFormEnabled(false);
+          setCustomFormOpen(false);
           return;
         }
 
@@ -1595,7 +1548,6 @@
           if (!resp.ok) {
             state.customRows = [];
             setCustomStatus(json?.error || 'Could not load custom workouts.', 'error');
-            renderCustomList();
             renderDatabaseList();
             return;
           }
@@ -1603,15 +1555,14 @@
             .map((row) => normalizeCustomRow(row))
             .filter(Boolean);
           if (state.customRows.length) {
-            setCustomStatus(`${state.customRows.length} custom workout${state.customRows.length === 1 ? '' : 's'} ready.`, 'ok');
+            setCustomStatus(`${state.customRows.length} custom workout${state.customRows.length === 1 ? '' : 's'} loaded in your folders.`, 'ok');
           } else {
-            setCustomStatus('Create custom workouts and drag them into your plan.');
+            setCustomStatus('Add a custom workout to place it into your folders.');
           }
         } catch {
           state.customRows = [];
           setCustomStatus('Could not load custom workouts.', 'error');
         }
-        renderCustomList();
         renderDatabaseList();
       }
 
@@ -1631,7 +1582,7 @@
           name,
           primaryMuscles: [primary],
           equipment: String(customEquipmentEl?.value || '').trim(),
-          category: String(customCategoryEl?.value || '').trim(),
+          category: String(customSectionEl?.value || 'free_weights').trim(),
           level: String(customLevelEl?.value || '').trim(),
           imageUrl: String(customImageEl?.value || '').trim(),
           instructions: String(customNotesEl?.value || '').trim()
@@ -1652,7 +1603,10 @@
             setCustomStatus(json?.error || 'Could not save custom workout.', 'error');
             return;
           }
-          if (customFormEl) customFormEl.reset();
+          if (customFormEl) {
+            customFormEl.reset();
+            if (customSectionEl) customSectionEl.value = 'free_weights';
+          }
           setCustomStatus('Custom workout saved. Drag it into any day.', 'ok');
           await loadCustomWorkouts();
         } catch {
@@ -1678,7 +1632,6 @@
           }
           state.customRows = state.customRows.filter((row) => String(row?.id || '').toLowerCase() !== id.toLowerCase());
           setCustomStatus('Custom workout removed.', 'ok');
-          renderCustomList();
           renderDatabaseList();
         } catch {
           setCustomStatus('Could not delete custom workout.', 'error');
@@ -1870,7 +1823,7 @@
         state.user = await fetchAuthUser();
         setAuthGate(!state.user);
         setCustomFormOpen(false);
-        renderCustomList();
+        if (customSectionEl) customSectionEl.value = 'free_weights';
 
         syncSelectedDays(state.selectedWeekdays);
         renderWeekdayChips();
@@ -1895,9 +1848,11 @@
           setCustomFormOpen(!state.customFormOpen);
         });
         customFormEl?.addEventListener('submit', createCustomWorkout);
-        customListEl?.addEventListener('click', (e) => {
+        dbListEl?.addEventListener('click', (e) => {
           const btn = e.target.closest('[data-custom-delete]');
           if (!btn) return;
+          e.preventDefault();
+          e.stopPropagation();
           const id = String(btn.getAttribute('data-custom-delete') || '').trim();
           if (!id) return;
           deleteCustomWorkout(id);
