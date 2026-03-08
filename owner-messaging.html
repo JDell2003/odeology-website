@@ -662,11 +662,11 @@
       }
 
       body.owner-messaging-page.owner-thread-active #owner-msg-send-form {
-        position: fixed;
-        left: 8px;
-        right: 8px;
-        bottom: 30px;
-        z-index: 85;
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        z-index: auto;
         background: transparent;
         padding-top: 0;
         padding-bottom: max(4px, env(safe-area-inset-bottom));
@@ -982,13 +982,13 @@
       body.owner-mobile-thread #owner-msg-thread-card {
         min-height: calc(100dvh - var(--navbar-height, 72px) - 14px);
         height: calc(100dvh - var(--navbar-height, 72px) - 14px);
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
       }
 
       body.owner-mobile-thread #owner-msg-thread-list {
         min-height: 0 !important;
-        max-height: calc(100dvh - var(--navbar-height, 72px) - 250px) !important;
-        height: calc(100dvh - var(--navbar-height, 72px) - 250px) !important;
+        max-height: none !important;
+        height: 100% !important;
       }
 
       body.owner-messaging-page:not(.owner-mobile-thread) #owner-msg-thread-card {
