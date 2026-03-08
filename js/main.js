@@ -9286,6 +9286,7 @@ function ensureBasicCheckinModal() {
                                         <span class="checkin-pp-slot-image-wrap">
                                             <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="front" alt="Front progress photo">
                                         </span>
+                                        <span class="checkin-pp-slot-plus" aria-hidden="true">+</span>
                                         <span class="checkin-pp-slot-label">Front</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>
@@ -9293,6 +9294,7 @@ function ensureBasicCheckinModal() {
                                         <span class="checkin-pp-slot-image-wrap">
                                             <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="side" alt="Side progress photo">
                                         </span>
+                                        <span class="checkin-pp-slot-plus" aria-hidden="true">+</span>
                                         <span class="checkin-pp-slot-label">Side</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>
@@ -9300,6 +9302,7 @@ function ensureBasicCheckinModal() {
                                         <span class="checkin-pp-slot-image-wrap">
                                             <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="back" alt="Back progress photo">
                                         </span>
+                                        <span class="checkin-pp-slot-plus" aria-hidden="true">+</span>
                                         <span class="checkin-pp-slot-label">Back</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>

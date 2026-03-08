@@ -12712,6 +12712,26 @@ html[data-theme="light"] .avatar-cropper-viewport {
     object-fit: cover;
 }
 
+.checkin-pp-slot-plus {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -56%);
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(128, 128, 128, 0.24);
+    border: 1px solid rgba(176, 176, 176, 0.58);
+    color: rgba(110, 110, 110, 0.96);
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+    z-index: 1;
+    pointer-events: none;
+}
+
 .checkin-pp-slot.has-photo {
     border-style: solid;
     border-color: rgba(231, 163, 77, 0.72);
@@ -12732,6 +12752,10 @@ html[data-theme="light"] .avatar-cropper-viewport {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
+.checkin-pp-slot.has-photo .checkin-pp-slot-plus {
+    opacity: 0;
+}
+
 .checkin-pp-slot.is-saving {
     opacity: 0.78;
 }
@@ -12739,6 +12763,12 @@ html[data-theme="light"] .avatar-cropper-viewport {
 :root[data-theme="light"] .checkin-pp-slot {
     border-color: rgba(193, 132, 44, 0.46);
     background: rgba(225, 170, 91, 0.12);
+}
+
+:root[data-theme="light"] .checkin-pp-slot-plus {
+    background: rgba(186, 186, 186, 0.22);
+    border-color: rgba(144, 144, 144, 0.48);
+    color: rgba(122, 122, 122, 0.95);
 }
 
 .checkin-meals-field {
