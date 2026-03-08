@@ -56,6 +56,29 @@
       transform:translateY(0) scale(.995);
       filter:brightness(.98);
     }
+    .hero-track-own{
+      margin-top:.25rem;
+      width:auto;
+      max-width:94%;
+      padding:.58rem 1.1rem;
+      font-size:.93rem;
+      font-weight:700;
+      border-radius:12px;
+      border:1px solid rgba(173,218,246,.45);
+      background:rgba(8,27,44,.62);
+      color:#dff3ff;
+      box-shadow:0 10px 22px rgba(0,0,0,.28);
+      transition:transform .16s ease,filter .2s ease,box-shadow .2s ease;
+    }
+    .hero-track-own:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.06);
+      box-shadow:0 14px 26px rgba(0,0,0,.34);
+    }
+    .hero-track-own:active{
+      transform:translateY(0);
+      filter:brightness(.98);
+    }
     #start-top,
     #ns-start{
       display:inline-flex !important;
@@ -645,6 +668,7 @@
             <span>✓ Built by lifters, for lifters</span>
           </div>
           <button class="btn btn-primary" id="ns-start">Get My Free Workout Plan</button>
+          <button class="hero-track-own" id="ns-track-own" type="button">I have my own workout, Track my lifts</button>
         </div>
       </div>
       <div class="hero-down">?</div>
@@ -847,9 +871,47 @@
           onPrimary:restartIntake
         });
       };
+      const openTrackOwnBuilder=async()=>{
+        let user=null;
+        try{
+          const res=await fetch('/api/auth/me',{method:'GET',credentials:'include',cache:'no-store'});
+          const json=await res.json().catch(()=>({}));
+          user=json?.user||null;
+        }catch{
+          user=null;
+        }
+        if(user&&user.id){
+          window.location.href='training-custom-builder.html';
+          return;
+        }
+        openDecision({
+          title:'Track your own workout',
+          body:'Log in or sign up so we can start tracking your lifts and save your custom program.',
+          primaryLabel:'Log in',
+          secondaryLabel:'Sign up',
+          onPrimary:()=>{
+            try{
+              sessionStorage.setItem('ode_auth_return_to','training-custom-builder.html');
+              sessionStorage.removeItem('ode_auth_no_redirect');
+            }catch{}
+            if(typeof odeOpenAuthModal==='function')odeOpenAuthModal('login');
+            else window.location.href='index.html';
+          },
+          onSecondary:()=>{
+            try{
+              sessionStorage.setItem('ode_auth_return_to','training-custom-builder.html');
+              sessionStorage.removeItem('ode_auth_no_redirect');
+            }catch{}
+            if(typeof odeOpenAuthModal==='function')odeOpenAuthModal('signup');
+            else window.location.href='index.html';
+          }
+        });
+      };
       const startTop=document.getElementById('start-top') || document.getElementById('ns-start');
+      const trackOwnBtn=document.getElementById('ns-track-own');
       const intakeClose=document.getElementById('intake-close');
       if(startTop)startTop.addEventListener('click',openIntake);
+      if(trackOwnBtn)trackOwnBtn.addEventListener('click',openTrackOwnBuilder);
       if(intakeClose)intakeClose.addEventListener('click',closeIntake);
       document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&document.body.classList.contains('intake-open'))closeIntake();if(e.key==='Escape')closeZoom()});
       document.addEventListener('click',(e)=>{

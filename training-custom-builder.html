@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Workout Builder | odeology_</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    body.custom-builder-page {
+      background: radial-gradient(circle at 10% 8%, rgba(62, 137, 211, 0.16), transparent 34%),
+        radial-gradient(circle at 88% 18%, rgba(245, 200, 75, 0.14), transparent 30%),
+        linear-gradient(130deg, #061523 0%, #0b2338 45%, #0a1f33 100%);
+      min-height: 100vh;
+      color: #e8f2ff;
+    }
+
+    .builder-wrap {
+      width: min(1200px, calc(100% - 28px));
+      margin: 88px auto 28px;
+    }
+
+    .builder-head,
+    .builder-panel {
+      background: rgba(8, 28, 47, 0.78);
+      border: 1px solid rgba(137, 182, 230, 0.28);
+      border-radius: 16px;
+    }
+
+    .builder-head {
+      padding: 18px;
+      margin-bottom: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .builder-head h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2.2vw, 1.9rem);
+      letter-spacing: -0.01em;
+    }
+
+    .builder-head p {
+      margin: 0;
+      color: #c7ddf3;
+      line-height: 1.45;
+    }
+
+    .builder-head-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .builder-status {
+      min-height: 20px;
+      font-size: 0.9rem;
+      color: #c9ddf4;
+    }
+
+    .builder-status.error { color: #ffb4b4; }
+    .builder-status.ok { color: #b8ffd2; }
+
+    .builder-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .builder-panel { padding: 14px; }
+
+    .builder-db-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .builder-db-count {
+      font-size: 0.82rem;
+      color: #a7c0d8;
+      margin-bottom: 8px;
+    }
+
+    .builder-db-list {
+      max-height: 66vh;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .builder-db-card {
+      border: 1px solid rgba(137, 182, 230, 0.24);
+      background: rgba(9, 35, 58, 0.74);
+      border-radius: 12px;
+      padding: 10px;
+      cursor: grab;
+      display: grid;
+      gap: 6px;
+    }
+
+    .builder-db-card:active { cursor: grabbing; }
+
+    .builder-db-name {
+      font-weight: 800;
+      color: #e9f5ff;
+      line-height: 1.25;
+    }
+
+    .builder-db-meta {
+      font-size: 0.78rem;
+      color: #aec7de;
+      line-height: 1.2;
+    }
+
+    .builder-plan-top {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .builder-days-select {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .builder-weekdays {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .builder-weekday {
+      border: 1px solid rgba(137, 182, 230, 0.28);
+      background: rgba(8, 30, 49, 0.62);
+      color: #d8ebfc;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .builder-weekday.active {
+      border-color: rgba(242, 196, 78, 0.62);
+      background: rgba(242, 196, 78, 0.16);
+      color: #ffecbe;
+    }
+
+    .builder-day-columns {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .builder-day {
+      border: 1px solid rgba(137, 182, 230, 0.26);
+      background: rgba(8, 30, 49, 0.68);
+      border-radius: 14px;
+      min-height: 210px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    .builder-day.is-drop {
+      border-color: rgba(242, 196, 78, 0.76);
+      box-shadow: 0 0 0 2px rgba(242, 196, 78, 0.2) inset;
+    }
+
+    .builder-day-head {
+      padding: 10px;
+      border-bottom: 1px solid rgba(137, 182, 230, 0.18);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: #f0f8ff;
+    }
+
+    .builder-day-list {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      min-height: 120px;
+    }
+
+    .builder-day-empty {
+      border: 1px dashed rgba(137, 182, 230, 0.3);
+      border-radius: 10px;
+      padding: 10px;
+      color: #9fb8d0;
+      font-size: 0.82rem;
+      text-align: center;
+      background: rgba(5, 21, 36, 0.35);
+    }
+
+    .builder-plan-item {
+      border: 1px solid rgba(137, 182, 230, 0.25);
+      background: rgba(7, 24, 40, 0.72);
+      border-radius: 10px;
+      padding: 8px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-plan-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: #e6f3ff;
+      line-height: 1.25;
+    }
+
+    .builder-plan-remove {
+      border: 1px solid rgba(255, 132, 132, 0.4);
+      background: rgba(100, 18, 18, 0.5);
+      color: #ffd9d9;
+      border-radius: 8px;
+      padding: 2px 7px;
+      cursor: pointer;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .builder-plan-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .builder-plan-grid label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.72rem;
+      color: #a9c3db;
+    }
+
+    .builder-plan-grid input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(137, 182, 230, 0.32);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef7ff;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+    }
+
+    .builder-auth-gate {
+      border: 1px solid rgba(242, 196, 78, 0.42);
+      background: rgba(41, 30, 8, 0.48);
+      border-radius: 12px;
+      padding: 12px;
+      color: #ffe7ac;
+      display: none;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .builder-auth-gate.show { display: grid; }
+
+    @media (max-width: 980px) {
+      .builder-grid { grid-template-columns: 1fr; }
+      .builder-db-list { max-height: 300px; }
+    }
+
+    @media (max-width: 640px) {
+      .builder-wrap { width: calc(100% - 18px); margin-top: 78px; }
+      .builder-plan-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="custom-builder-page">
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a class="navbar-brand" href="index.html">odeology_<span class="brand-dot"></span></a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="overview.html">Overview</a></li>
+        <li><a href="training.html" class="active">Training</a></li>
+        <li><a href="friends.html">Messages</a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="builder-wrap">
+    <section class="builder-head">
+      <h1>Build your own workout and track lifts</h1>
+      <p>Search the exercise database, drag exercises into specific training days, tune sets/reps/rest, then save directly to your Training program.</p>
+      <div id="builder-auth-gate" class="builder-auth-gate" role="status" aria-live="polite">
+        <div>Log in or sign up to save and track your custom workout.</div>
+        <div class="row">
+          <button type="button" class="btn btn-primary" id="builder-login-btn">Log in</button>
+          <button type="button" class="btn btn-ghost" id="builder-signup-btn">Sign up</button>
+        </div>
+      </div>
+      <div class="builder-head-actions">
+        <a href="training.html" class="btn btn-ghost">Back to Training</a>
+        <button type="button" class="btn btn-primary" id="builder-save-btn">Save to My Workout</button>
+      </div>
+      <div id="builder-status" class="builder-status"></div>
+    </section>
+
+    <section class="builder-grid">
+      <aside class="builder-panel">
+        <div class="builder-db-toolbar">
+          <input id="builder-search" class="auth-input" type="text" placeholder="Search exercises" autocomplete="off" />
+          <button type="button" class="btn btn-ghost" id="builder-search-btn">Search</button>
+        </div>
+        <div id="builder-db-count" class="builder-db-count">Loading database...</div>
+        <div id="builder-db-list" class="builder-db-list" aria-live="polite"></div>
+      </aside>
+
+      <section class="builder-panel">
+        <div class="builder-plan-top">
+          <div class="builder-days-select">
+            <label for="builder-days-select">Days per week</label>
+            <select id="builder-days-select" class="auth-input" style="max-width:110px;">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+          <div id="builder-weekdays" class="builder-weekdays" aria-label="Select workout days"></div>
+        </div>
+        <div id="builder-day-columns" class="builder-day-columns"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-03-08-dash-live-1"></script>
+  <script>
+    (function () {
+      const WEEKDAYS = [
+        { i: 0, label: 'Sunday', short: 'Sun' },
+        { i: 1, label: 'Monday', short: 'Mon' },
+        { i: 2, label: 'Tuesday', short: 'Tue' },
+        { i: 3, label: 'Wednesday', short: 'Wed' },
+        { i: 4, label: 'Thursday', short: 'Thu' },
+        { i: 5, label: 'Friday', short: 'Fri' },
+        { i: 6, label: 'Saturday', short: 'Sat' }
+      ];
+
+      const $ = (id) => document.getElementById(id);
+      const statusEl = $('builder-status');
+      const authGateEl = $('builder-auth-gate');
+      const dbCountEl = $('builder-db-count');
+      const dbListEl = $('builder-db-list');
+      const searchEl = $('builder-search');
+      const searchBtn = $('builder-search-btn');
+      const daysSelectEl = $('builder-days-select');
+      const weekdaysEl = $('builder-weekdays');
+      const dayColumnsEl = $('builder-day-columns');
+      const saveBtn = $('builder-save-btn');
+      const loginBtn = $('builder-login-btn');
+      const signupBtn = $('builder-signup-btn');
+
+      const state = {
+        user: null,
+        dbRows: [],
+        query: '',
+        daysPerWeek: 4,
+        selectedWeekdays: [1, 2, 4, 5],
+        planByWeekday: new Map(),
+        saving: false
+      };
+
+      function setStatus(text, kind) {
+        if (!statusEl) return;
+        statusEl.textContent = String(text || '');
+        statusEl.classList.remove('error', 'ok');
+        if (kind === 'error') statusEl.classList.add('error');
+        if (kind === 'ok') statusEl.classList.add('ok');
+      }
+
+      function defaultPattern(days) {
+        const n = Math.max(2, Math.min(6, Number(days) || 4));
+        if (n === 2) return [1, 4];
+        if (n === 3) return [1, 3, 5];
+        if (n === 4) return [1, 2, 4, 5];
+        if (n === 5) return [1, 2, 3, 5, 6];
+        return [1, 2, 3, 4, 5, 6];
+      }
+
+      function openAuth(mode) {
+        try {
+          sessionStorage.setItem('ode_auth_return_to', 'training-custom-builder.html');
+          sessionStorage.removeItem('ode_auth_no_redirect');
+        } catch {
+          // ignore
+        }
+        if (typeof window.odeOpenAuthModal === 'function') {
+          window.odeOpenAuthModal(mode === 'signup' ? 'signup' : 'login');
+          return;
+        }
+        window.location.href = 'index.html';
+      }
+
+      function setAuthGate(show) {
+        if (!authGateEl) return;
+        authGateEl.classList.toggle('show', Boolean(show));
+      }
+
+      async function fetchAuthUser() {
+        try {
+          const resp = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+          const json = await resp.json().catch(() => ({}));
+          return json?.user || null;
+        } catch {
+          return null;
+        }
+      }
+
+      function syncSelectedDays(next) {
+        const normalized = Array.from(new Set((Array.isArray(next) ? next : []).map((v) => Number(v))))
+          .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6)
+          .slice(0, state.daysPerWeek);
+
+        if (normalized.length < state.daysPerWeek) {
+          for (const w of defaultPattern(state.daysPerWeek)) {
+            if (normalized.length >= state.daysPerWeek) break;
+            if (!normalized.includes(w)) normalized.push(w);
+          }
+        }
+
+        state.selectedWeekdays = normalized;
+        for (const weekday of normalized) {
+          if (!state.planByWeekday.has(weekday)) state.planByWeekday.set(weekday, []);
+        }
+        for (const key of Array.from(state.planByWeekday.keys())) {
+          if (!normalized.includes(key)) state.planByWeekday.delete(key);
+        }
+      }
+
+      function renderWeekdayChips() {
+        if (!weekdaysEl) return;
+        weekdaysEl.innerHTML = '';
+        WEEKDAYS.forEach((day) => {
+          const selected = state.selectedWeekdays.includes(day.i);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `builder-weekday${selected ? ' active' : ''}`;
+          btn.textContent = day.short;
+          btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+          btn.addEventListener('click', () => {
+            const active = state.selectedWeekdays.includes(day.i);
+            if (active) {
+              if (state.selectedWeekdays.length <= 2) {
+                setStatus('Minimum is 2 training days.', 'error');
+                return;
+              }
+              syncSelectedDays(state.selectedWeekdays.filter((v) => v !== day.i));
+            } else {
+              if (state.selectedWeekdays.length >= state.daysPerWeek) {
+                setStatus(`Select exactly ${state.daysPerWeek} days.`, 'error');
+                return;
+              }
+              syncSelectedDays([...state.selectedWeekdays, day.i]);
+            }
+            setStatus('');
+            renderWeekdayChips();
+            renderDayColumns();
+          });
+          weekdaysEl.appendChild(btn);
+        });
+      }
+
+      function exerciseCardMarkup(weekday, ex, exIdx) {
+        const wrapper = document.createElement('article');
+        wrapper.className = 'builder-plan-item';
+        wrapper.innerHTML = `
+          <div class="builder-plan-item-head">
+            <span>${String(ex.name || 'Exercise')}</span>
+            <button type="button" class="builder-plan-remove" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+          </div>
+          <div class="builder-plan-grid">
+            <label>Sets
+              <input type="number" min="1" max="8" step="1" value="${Number(ex.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+            <label>Reps
+              <input type="text" maxlength="16" value="${String(ex.reps || '8-12')}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+            <label>Rest (sec)
+              <input type="number" min="30" max="300" step="5" value="${Number(ex.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+          </div>
+        `;
+        return wrapper;
+      }
+
+      function renderDayColumns() {
+        if (!dayColumnsEl) return;
+        dayColumnsEl.innerHTML = '';
+
+        state.selectedWeekdays.forEach((weekday) => {
+          const dayName = WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`;
+          const dayWrap = document.createElement('section');
+          dayWrap.className = 'builder-day';
+          dayWrap.dataset.weekday = String(weekday);
+          dayWrap.innerHTML = `<div class="builder-day-head">${dayName}</div><div class="builder-day-list"></div>`;
+          const list = dayWrap.querySelector('.builder-day-list');
+          const exercises = state.planByWeekday.get(weekday) || [];
+
+          if (!exercises.length) {
+            const empty = document.createElement('div');
+            empty.className = 'builder-day-empty';
+            empty.textContent = 'Drag exercises here';
+            list.appendChild(empty);
+          } else {
+            exercises.forEach((ex, exIdx) => {
+              list.appendChild(exerciseCardMarkup(weekday, ex, exIdx));
+            });
+          }
+
+          dayWrap.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dayWrap.classList.add('is-drop');
+          });
+          dayWrap.addEventListener('dragleave', () => dayWrap.classList.remove('is-drop'));
+          dayWrap.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dayWrap.classList.remove('is-drop');
+            const raw = e.dataTransfer?.getData('application/json') || '';
+            if (!raw) return;
+            let parsed = null;
+            try { parsed = JSON.parse(raw); } catch { parsed = null; }
+            if (!parsed || !parsed.id) return;
+            const cur = state.planByWeekday.get(weekday) || [];
+            cur.push({
+              exerciseId: String(parsed.id),
+              name: String(parsed.name || parsed.id),
+              sets: 3,
+              reps: '8-12',
+              restSec: 90
+            });
+            state.planByWeekday.set(weekday, cur);
+            renderDayColumns();
+          });
+
+          dayColumnsEl.appendChild(dayWrap);
+        });
+      }
+
+      function filteredRows() {
+        const q = String(state.query || '').trim().toLowerCase();
+        if (!q) return state.dbRows.slice(0, 250);
+        return state.dbRows.filter((row) => {
+          const hay = [
+            row?.name,
+            row?.id,
+            row?.equipment,
+            ...(Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : []),
+            ...(Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [])
+          ]
+            .map((v) => String(v || '').toLowerCase())
+            .join(' ');
+          return hay.includes(q);
+        }).slice(0, 250);
+      }
+
+      function renderDatabaseList() {
+        if (!dbListEl || !dbCountEl) return;
+        const rows = filteredRows();
+        dbCountEl.textContent = `${rows.length} shown (${state.dbRows.length} loaded)`;
+        dbListEl.innerHTML = '';
+        if (!rows.length) {
+          dbListEl.innerHTML = '<div class="builder-day-empty">No exercises found.</div>';
+          return;
+        }
+        rows.forEach((row) => {
+          const card = document.createElement('article');
+          card.className = 'builder-db-card';
+          card.draggable = true;
+          card.innerHTML = `
+            <div class="builder-db-name">${String(row?.name || row?.id || 'Exercise')}</div>
+            <div class="builder-db-meta">${String((Array.isArray(row?.primaryMuscles) ? row.primaryMuscles.join(', ') : row?.equipment || 'General') || 'General')}</div>
+          `;
+          card.addEventListener('dragstart', (e) => {
+            const payload = {
+              id: String(row?.id || ''),
+              name: String(row?.name || row?.id || 'Exercise')
+            };
+            e.dataTransfer?.setData('application/json', JSON.stringify(payload));
+            e.dataTransfer.effectAllowed = 'copy';
+          });
+          dbListEl.appendChild(card);
+        });
+      }
+
+      async function loadWorkoutDatabase() {
+        dbCountEl.textContent = 'Loading database...';
+        try {
+          const resp = await fetch('/api/training/workout-database?limit=2000', {
+            credentials: 'include',
+            cache: 'no-store'
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (resp.status === 401) {
+            setAuthGate(true);
+            setStatus('Log in to build and save your workout.', 'error');
+            dbCountEl.textContent = 'Sign in required';
+            return;
+          }
+          if (!resp.ok) {
+            dbCountEl.textContent = json?.error || 'Could not load workout database';
+            setStatus(json?.error || 'Could not load workout database.', 'error');
+            return;
+          }
+          state.dbRows = Array.isArray(json?.items) ? json.items : [];
+          renderDatabaseList();
+          setStatus('');
+        } catch {
+          dbCountEl.textContent = 'Could not load workout database';
+          setStatus('Could not load workout database.', 'error');
+        }
+      }
+
+      function bindPlanInputEvents() {
+        dayColumnsEl?.addEventListener('click', (e) => {
+          const removeBtn = e.target.closest('[data-remove-day][data-remove-idx]');
+          if (!removeBtn) return;
+          const day = Number(removeBtn.getAttribute('data-remove-day'));
+          const idx = Number(removeBtn.getAttribute('data-remove-idx'));
+          const cur = state.planByWeekday.get(day) || [];
+          cur.splice(idx, 1);
+          state.planByWeekday.set(day, cur);
+          renderDayColumns();
+        });
+
+        dayColumnsEl?.addEventListener('input', (e) => {
+          const input = e.target.closest('input[data-field][data-day][data-idx]');
+          if (!input) return;
+          const field = String(input.getAttribute('data-field') || '');
+          const day = Number(input.getAttribute('data-day'));
+          const idx = Number(input.getAttribute('data-idx'));
+          const cur = state.planByWeekday.get(day) || [];
+          const row = cur[idx];
+          if (!row) return;
+
+          if (field === 'sets') {
+            const n = Math.max(1, Math.min(8, Number(input.value) || 3));
+            row.sets = n;
+            input.value = String(n);
+            return;
+          }
+          if (field === 'restSec') {
+            const n = Math.max(30, Math.min(300, Number(input.value) || 90));
+            row.restSec = n;
+            input.value = String(n);
+            return;
+          }
+          if (field === 'reps') {
+            const text = String(input.value || '').trim().slice(0, 16);
+            row.reps = text || '8-12';
+          }
+        });
+      }
+
+      async function saveCustomPlan() {
+        if (state.saving) return;
+        if (!state.user?.id) {
+          setStatus('Log in or sign up first so we can save your workout.', 'error');
+          setAuthGate(true);
+          return;
+        }
+
+        if (state.selectedWeekdays.length !== state.daysPerWeek) {
+          setStatus(`Select exactly ${state.daysPerWeek} days.`, 'error');
+          return;
+        }
+
+        const days = state.selectedWeekdays.map((weekday) => ({
+          weekday,
+          label: WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`,
+          exercises: (state.planByWeekday.get(weekday) || []).map((ex) => ({
+            exerciseId: String(ex.exerciseId || ''),
+            name: String(ex.name || ''),
+            sets: Number(ex.sets) || 3,
+            reps: String(ex.reps || '8-12'),
+            restSec: Number(ex.restSec) || 90
+          }))
+        }));
+
+        if (days.some((d) => !d.exercises.length)) {
+          setStatus('Each selected day needs at least one exercise.', 'error');
+          return;
+        }
+
+        state.saving = true;
+        saveBtn.disabled = true;
+        setStatus('Saving custom workout...', '');
+        try {
+          const resp = await fetch('/api/training/custom-plan', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days })
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok || !json?.ok) {
+            setStatus(json?.error || 'Could not save custom workout.', 'error');
+            return;
+          }
+          setStatus('Workout saved. Opening Training...', 'ok');
+          window.setTimeout(() => {
+            window.location.href = 'training.html?from=custom-builder#training';
+          }, 420);
+        } catch {
+          setStatus('Could not save custom workout.', 'error');
+        } finally {
+          state.saving = false;
+          saveBtn.disabled = false;
+        }
+      }
+
+      async function init() {
+        state.user = await fetchAuthUser();
+        setAuthGate(!state.user);
+
+        syncSelectedDays(state.selectedWeekdays);
+        renderWeekdayChips();
+        renderDayColumns();
+        bindPlanInputEvents();
+
+        if (daysSelectEl) {
+          daysSelectEl.value = String(state.daysPerWeek);
+          daysSelectEl.addEventListener('change', () => {
+            state.daysPerWeek = Math.max(2, Math.min(6, Number(daysSelectEl.value) || 4));
+            syncSelectedDays(defaultPattern(state.daysPerWeek));
+            setStatus('');
+            renderWeekdayChips();
+            renderDayColumns();
+          });
+        }
+
+        searchEl?.addEventListener('input', () => {
+          state.query = String(searchEl.value || '');
+          renderDatabaseList();
+        });
+        searchBtn?.addEventListener('click', () => {
+          state.query = String(searchEl?.value || '');
+          renderDatabaseList();
+        });
+
+        saveBtn?.addEventListener('click', saveCustomPlan);
+        loginBtn?.addEventListener('click', () => openAuth('login'));
+        signupBtn?.addEventListener('click', () => openAuth('signup'));
+
+        window.addEventListener('odeauth', async (e) => {
+          state.user = e?.detail?.user || await fetchAuthUser();
+          setAuthGate(!state.user);
+          if (state.user) setStatus('Signed in. You can save your workout now.', 'ok');
+        });
+
+        await loadWorkoutDatabase();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

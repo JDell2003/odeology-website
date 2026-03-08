@@ -3175,6 +3175,106 @@ async function createNewOblueprintPlan(userId, { discipline, daysPerWeek, plan }
   return inserted.rows?.[0] || null;
 }
 
+const WEEKDAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function parseRepsTargetFromText(raw) {
+  const text = String(raw || '').trim();
+  const range = text.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (range) return clampInt(range[2], 1, 30, null);
+  const single = clampInt(text, 1, 30, null);
+  return single || null;
+}
+
+function normalizeCustomPlanDays(rawDays, dbRowsById) {
+  const out = [];
+  const seenWeekdays = new Set();
+  const days = Array.isArray(rawDays) ? rawDays : [];
+  for (const dayRaw of days) {
+    const weekday = clampInt(dayRaw?.weekday, 0, 6, null);
+    if (weekday == null || seenWeekdays.has(weekday)) continue;
+    seenWeekdays.add(weekday);
+    const exercisesRaw = Array.isArray(dayRaw?.exercises) ? dayRaw.exercises : [];
+    const exercises = [];
+    for (const exRaw of exercisesRaw) {
+      const rawId = safeText(exRaw?.exerciseId || exRaw?.id, 180);
+      const key = String(rawId || '').trim().toLowerCase();
+      const dbRow = key ? dbRowsById.get(key) : null;
+      const exerciseId = safeText(dbRow?.id || rawId, 180);
+      if (!exerciseId) continue;
+      const name = safeText(exRaw?.name || dbRow?.name || exerciseId, 180) || exerciseId;
+      const sets = clampInt(exRaw?.sets, 1, 8, 3) || 3;
+      const reps = safeText(exRaw?.reps, 24) || '8-12';
+      const restSec = clampInt(exRaw?.restSec, 30, 300, 90) || 90;
+      exercises.push({
+        exerciseId,
+        name,
+        sets,
+        reps,
+        restSec
+      });
+      if (exercises.length >= 40) break;
+    }
+    out.push({
+      weekday,
+      label: WEEKDAY_LABELS[weekday] || `Day ${weekday}`,
+      exercises
+    });
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+
+function buildCustomWorkoutPlan({ discipline, experience, templateDays, preferredWeekdays }) {
+  const nowIso = new Date().toISOString();
+  const safeDays = Array.isArray(templateDays) ? templateDays : [];
+  const dayTemplates = safeDays.map((day, dayIdx) => ({
+    index: dayIdx + 1,
+    dayType: String(day?.label || `Day ${dayIdx + 1}`).toLowerCase(),
+    focus: `${String(day?.label || `Day ${dayIdx + 1}`)} session`,
+    exercises: (Array.isArray(day?.exercises) ? day.exercises : []).map((ex, exIdx) => {
+      const reps = String(ex?.reps || '8-12');
+      const repsTarget = parseRepsTargetFromText(reps);
+      const baseId = String(ex?.exerciseId || `exercise_${dayIdx + 1}_${exIdx + 1}`);
+      const exerciseId = `${baseId}__d${dayIdx + 1}__e${exIdx + 1}`;
+      return {
+        id: exerciseId,
+        baseId,
+        name: String(ex?.name || baseId),
+        displayName: String(ex?.name || baseId),
+        sets: clampInt(ex?.sets, 1, 8, 3) || 3,
+        reps,
+        restSec: clampInt(ex?.restSec, 30, 300, 90) || 90,
+        rest: clampInt(ex?.restSec, 30, 300, 90) || 90,
+        substitutions: [],
+        progression: repsTarget ? { repsTarget } : {}
+      };
+    })
+  }));
+
+  const weeks = Array.from({ length: 12 }, (_, idx) => ({
+    index: idx + 1,
+    days: dayTemplates.map((day) => ({
+      ...day,
+      exercises: day.exercises.map((ex) => ({ ...ex, progression: { ...(ex.progression || {}) } }))
+    }))
+  }));
+
+  return {
+    meta: {
+      discipline,
+      experience,
+      timeline: '12+ weeks',
+      daysPerWeek: safeDays.length,
+      source: 'custom_builder',
+      customBuilder: true,
+      preferredWeekdays: Array.isArray(preferredWeekdays) ? preferredWeekdays : [],
+      createdAt: nowIso,
+      startDate: nowIso
+    },
+    weeks
+  };
+}
+
 async function upsertWorkoutLog({ userId, planId, weekIndex, dayIndex, performedAt, entries, notes, readiness }) {
   const perfDate = performedAt ? String(performedAt).slice(0, 10) : null;
   const safeEntries = Array.isArray(entries) ? entries : [];
@@ -4671,6 +4771,71 @@ async function trainingRoutes(req, res, url) {
       return sendJson(res, 200, { ok: true, plan, logs });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-onboarding', 'Failed to save onboarding');
+    }
+  }
+
+  if (pathname === '/api/training/custom-plan' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+
+    const dbRows = readWorkoutDatabase();
+    const dbRowsById = new Map(
+      (Array.isArray(dbRows) ? dbRows : []).map((row) => [String(row?.id || '').trim().toLowerCase(), row])
+    );
+    const templateDays = normalizeCustomPlanDays(payload?.days, dbRowsById);
+    const daysPerWeek = clampInt(templateDays.length, 2, 6, null);
+    if (!daysPerWeek) {
+      return sendJson(res, 400, { ok: false, error: 'Select between 2 and 6 workout days.' });
+    }
+    if (templateDays.some((day) => !Array.isArray(day?.exercises) || !day.exercises.length)) {
+      return sendJson(res, 400, { ok: false, error: 'Each selected day needs at least one exercise.' });
+    }
+
+    try {
+      const profile = await getProfile(user.id);
+      const profileDiscipline = normalizeDiscipline(profile?.discipline) || 'powerbuilding';
+      const profileExperience = normalizeExperience(profile?.experience || '6-24m');
+      const preferredWeekdays = templateDays.map((day) => day.weekday);
+      const planObj = buildCustomWorkoutPlan({
+        discipline: profileDiscipline,
+        experience: profileExperience,
+        templateDays,
+        preferredWeekdays
+      });
+
+      await upsertProfile(user.id, {
+        discipline: profileDiscipline,
+        experience: profileExperience,
+        daysPerWeek,
+        strength: profile?.strength || {},
+        equipmentAccess: profile?.equipment_access || {},
+        profile: { firstName: profile?.first_name || '' }
+      });
+
+      const plan = await createNewOblueprintPlan(user.id, {
+        discipline: profileDiscipline,
+        daysPerWeek,
+        plan: planObj
+      });
+      if (!plan) return sendJson(res, 500, { ok: false, error: 'Could not save plan.' });
+
+      try {
+        queuePlanMediaEnrichment({
+          planId: plan.id,
+          planObj: plan.plan && typeof plan.plan === 'object' ? plan.plan : JSON.parse(String(plan.plan || '{}')),
+          equipmentAccess: profile?.equipment_access || null
+        });
+      } catch {
+        // ignore background enrichment failures
+      }
+
+      return sendJson(res, 200, { ok: true, plan });
+    } catch (err) {
+      return handleTrainingDbFailure(res, err, 'training-custom-plan', 'Failed to save custom plan');
     }
   }
 
