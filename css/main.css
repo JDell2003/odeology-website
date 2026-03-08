@@ -17704,7 +17704,8 @@ html[data-theme="light"] .ode-tour-btn.primary {
     display: grid;
     gap: 0.45rem;
     max-height: 220px;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 0.15rem;
 }
 
@@ -17713,6 +17714,7 @@ html[data-theme="light"] .ode-tour-btn.primary {
     align-items: center;
     gap: 0.65rem;
     width: 100%;
+    box-sizing: border-box;
     border-radius: 12px;
     border: 1px solid var(--training-border);
     background: color-mix(in srgb, var(--training-surface-2) 86%, transparent);
@@ -17801,11 +17803,17 @@ html[data-theme="light"] .ode-tour-btn.primary {
 .share-workout-name {
     font-weight: 700;
     font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .share-workout-handle {
     font-size: 0.78rem;
     color: var(--training-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .share-workout-add-btn {
@@ -17817,6 +17825,9 @@ html[data-theme="light"] .ode-tour-btn.primary {
     font-size: 0.74rem;
     font-weight: 800;
     cursor: pointer;
+    flex: 0 0 auto;
+    min-width: 5.15rem;
+    text-align: center;
     transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, border-color 0.14s ease;
 }
 
@@ -17894,6 +17905,43 @@ html[data-theme="light"] .ode-tour-btn.primary {
     transform: none;
     box-shadow: none;
     opacity: 0.66;
+}
+
+@media (max-width: 520px) {
+    .share-workout-item {
+        gap: 0.45rem;
+        padding: 0.4rem 0.45rem;
+    }
+
+    .share-workout-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .share-workout-name {
+        font-size: 0.9rem;
+    }
+
+    .share-workout-handle {
+        font-size: 0.74rem;
+    }
+
+    .share-workout-add-btn {
+        min-width: 4.8rem;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .share-workout-row-actions {
+        gap: 0.28rem;
+    }
+
+    .share-workout-kick-btn {
+        width: 1.18rem;
+        height: 1.18rem;
+        min-width: 1.18rem;
+        min-height: 1.18rem;
+    }
 }
 
 .share-workout-actions {
