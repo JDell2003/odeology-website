@@ -8840,8 +8840,10 @@ function setupTrainingNavRouting() {
     if (!links.length) return;
 
     const routeToTraining = () => {
+        const hasSignedInUser = Boolean(window.__odeCurrentUser?.id || readAuthUserHint()?.id);
+        const targetHref = hasSignedInUser ? 'training.html' : 'training-coming-soon.html?start=1';
         try { sessionStorage.setItem('ode_training_nav_loading', '1'); } catch { /* ignore */ }
-        window.location.href = 'training.html';
+        window.location.href = targetHref;
     };
 
     links.forEach((link) => {
