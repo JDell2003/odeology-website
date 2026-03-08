@@ -12655,8 +12655,8 @@ html[data-theme="light"] .avatar-cropper-viewport {
 
 .checkin-pp-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-top: 10px;
 }
 
@@ -12664,14 +12664,18 @@ html[data-theme="light"] .avatar-cropper-viewport {
     border: 1px dashed rgba(231, 163, 77, 0.45);
     border-radius: 14px;
     background: rgba(231, 163, 77, 0.08);
-    min-height: 86px;
-    padding: 10px;
+    min-height: 132px;
+    padding: 14px;
     display: grid;
-    place-content: center;
-    text-align: center;
-    gap: 4px;
+    grid-template-rows: 1fr auto auto;
+    align-items: end;
+    justify-items: start;
+    text-align: left;
+    gap: 6px;
     color: inherit;
     cursor: pointer;
+    overflow: hidden;
+    position: relative;
     transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 
@@ -12684,10 +12688,52 @@ html[data-theme="light"] .avatar-cropper-viewport {
 .checkin-pp-slot-label {
     font-weight: 900;
     letter-spacing: -0.02em;
+    z-index: 1;
+    position: relative;
 }
 
 .checkin-pp-slot-sub {
     opacity: 0.82;
+    z-index: 1;
+    position: relative;
+}
+
+.checkin-pp-slot-image-wrap {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.checkin-pp-slot-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.checkin-pp-slot.has-photo {
+    border-style: solid;
+    border-color: rgba(231, 163, 77, 0.72);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.checkin-pp-slot.has-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 20%, rgba(0, 0, 0, 0.62) 100%);
+    pointer-events: none;
+}
+
+.checkin-pp-slot.has-photo .checkin-pp-slot-label,
+.checkin-pp-slot.has-photo .checkin-pp-slot-sub {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.checkin-pp-slot.is-saving {
+    opacity: 0.78;
 }
 
 :root[data-theme="light"] .checkin-pp-slot {
@@ -12740,7 +12786,6 @@ html[data-theme="light"] .avatar-cropper-viewport {
     .checkin-unified-grid .checkin-unified-block:nth-child(4),
     .checkin-unified-grid .checkin-unified-block:nth-child(5) { grid-column: auto; }
     .checkin-macro-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .checkin-pp-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {

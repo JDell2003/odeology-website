@@ -9280,22 +9280,33 @@ function ensureBasicCheckinModal() {
                         <div class="checkin-grid">
                             <div class="ns-field checkin-pp-field">
                                 <span>Front, side, back</span>
-                                <div class="ns-muted tiny">Tap a pose to upload or take a photo for that angle.</div>
+                                <div class="ns-muted tiny">Tap a pose to upload from camera roll, take a photo, or pick from files.</div>
                                 <div class="checkin-pp-grid" role="group" aria-label="Progress photo poses">
                                     <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="front">
+                                        <span class="checkin-pp-slot-image-wrap">
+                                            <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="front" alt="Front progress photo">
+                                        </span>
                                         <span class="checkin-pp-slot-label">Front</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>
                                     <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="side">
+                                        <span class="checkin-pp-slot-image-wrap">
+                                            <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="side" alt="Side progress photo">
+                                        </span>
                                         <span class="checkin-pp-slot-label">Side</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>
                                     <button class="checkin-pp-slot" type="button" data-checkin-pp-pose="back">
+                                        <span class="checkin-pp-slot-image-wrap">
+                                            <img class="checkin-pp-slot-image hidden" data-checkin-pp-img="back" alt="Back progress photo">
+                                        </span>
                                         <span class="checkin-pp-slot-label">Back</span>
                                         <span class="checkin-pp-slot-sub ns-muted tiny">Tap to upload</span>
                                     </button>
                                 </div>
-                                <button class="btn btn-ghost" type="button" id="checkin-progress-photos">Open photo manager</button>
+                                <input class="hidden" type="file" accept="image/*" data-checkin-pp-input="front">
+                                <input class="hidden" type="file" accept="image/*" data-checkin-pp-input="side">
+                                <input class="hidden" type="file" accept="image/*" data-checkin-pp-input="back">
                             </div>
                         </div>
                     </section>
@@ -9574,8 +9585,9 @@ function setupBasicCheckin() {
     const mealsOkEl = byId('checkin-meals-ok');
     const mealsSummaryEl = byId('checkin-meals-summary');
     const mealButtonsEl = byId('checkin-meal-buttons');
-    const progressPhotosBtn = byId('checkin-progress-photos');
     const progressPhotoPoseBtns = Array.from(modal.querySelectorAll('[data-checkin-pp-pose]'));
+    const progressPhotoInputs = Array.from(modal.querySelectorAll('[data-checkin-pp-input]'));
+    const progressPhotoImgEls = Array.from(modal.querySelectorAll('[data-checkin-pp-img]'));
     const completionTextEl = byId('checkin-complete-text');
     const completionFillEl = byId('checkin-complete-fill');
     const autosaveStatusEl = byId('checkin-autosave-status');
@@ -10567,6 +10579,7 @@ function setupBasicCheckin() {
 
         setLocked(!isEditableDay(selectedDayIso));
         renderWeekStrip(currentWeekStartIso);
+        await refreshProgressPhotoSlots();
 
         if (load) await loadCheckin();
     };
@@ -10616,6 +10629,79 @@ function setupBasicCheckin() {
         window.location.href = `index.html?${resetPlan ? 'reset=grocery&' : ''}ns=start#ns-entry`;
     };
 
+    const normalizeProgressPose = (value) => {
+        const v = String(value || '').trim().toLowerCase();
+        if (v === 'side' || v === 'back') return v;
+        return 'front';
+    };
+
+    const progressPoseTitle = (pose) => {
+        const safe = normalizeProgressPose(pose);
+        if (safe === 'side') return 'Side';
+        if (safe === 'back') return 'Back';
+        return 'Front';
+    };
+
+    const fmtProgressPhotoDate = (iso) => {
+        const d = new Date(`${String(iso || '').slice(0, 10)}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return String(iso || '');
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
+
+    const setProgressSlotState = (pose, { imageDataUrl = '', status = 'Tap to upload', saving = false } = {}) => {
+        const safePose = normalizeProgressPose(pose);
+        const slotBtn = progressPhotoPoseBtns.find((el) => normalizeProgressPose(el.getAttribute('data-checkin-pp-pose')) === safePose) || null;
+        const imgEl = progressPhotoImgEls.find((el) => normalizeProgressPose(el.getAttribute('data-checkin-pp-img')) === safePose) || null;
+        const subEl = slotBtn?.querySelector('.checkin-pp-slot-sub');
+
+        if (imgEl) {
+            if (imageDataUrl) {
+                imgEl.src = String(imageDataUrl);
+                imgEl.classList.remove('hidden');
+            } else {
+                imgEl.removeAttribute('src');
+                imgEl.classList.add('hidden');
+            }
+        }
+        if (slotBtn) {
+            slotBtn.classList.toggle('has-photo', Boolean(imageDataUrl));
+            slotBtn.classList.toggle('is-saving', Boolean(saving));
+        }
+        if (subEl) subEl.textContent = String(status || '');
+    };
+
+    const refreshProgressPhotoSlots = async () => {
+        try {
+            if (typeof window.odeProgressPhotos?.list !== 'function') {
+                ['front', 'side', 'back'].forEach((pose) => {
+                    setProgressSlotState(pose, { imageDataUrl: '', status: 'Tap to upload', saving: false });
+                });
+                return;
+            }
+            const res = await window.odeProgressPhotos.list();
+            const photos = Array.isArray(res?.photos) ? res.photos : [];
+            ['front', 'side', 'back'].forEach((pose) => {
+                const exact = photos.find((p) =>
+                    normalizeProgressPose(p?.pose) === pose &&
+                    String(p?.day || '').slice(0, 10) === selectedDayIso
+                ) || null;
+                if (exact?.imageDataUrl) {
+                    setProgressSlotState(pose, {
+                        imageDataUrl: exact.imageDataUrl,
+                        status: `Saved ${fmtProgressPhotoDate(selectedDayIso)}`,
+                        saving: false
+                    });
+                    return;
+                }
+                setProgressSlotState(pose, { imageDataUrl: '', status: 'Tap to upload', saving: false });
+            });
+        } catch {
+            ['front', 'side', 'back'].forEach((pose) => {
+                setProgressSlotState(pose, { imageDataUrl: '', status: 'Tap to upload', saving: false });
+            });
+        }
+    };
+
     newMealPlanBtn?.addEventListener('click', async (e) => {
         e.preventDefault();
         if (!hasSavedMealPlan()) {
@@ -10638,27 +10724,48 @@ function setupBasicCheckin() {
         goToMacroCalculatorStart({ resetPlan: true });
     });
 
-    const openProgressPhotos = (pose = 'front') => {
-        if (typeof window.odeProgressPhotos?.open !== 'function') {
-            showAlert('Progress photos are still loading. Try again.');
-            return;
-        }
-        const safePose = (pose === 'side' || pose === 'back') ? pose : 'front';
-        window.odeProgressPhotos.open({ day: selectedDayIso, pose: safePose });
-    };
-
-    progressPhotosBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        openProgressPhotos('front');
-    });
     progressPhotoPoseBtns.forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            openProgressPhotos(btn.getAttribute('data-checkin-pp-pose'));
+            const pose = normalizeProgressPose(btn.getAttribute('data-checkin-pp-pose'));
+            const input = progressPhotoInputs.find((el) => normalizeProgressPose(el.getAttribute('data-checkin-pp-input')) === pose) || null;
+            input?.click();
+        });
+    });
+    progressPhotoInputs.forEach((inputEl) => {
+        inputEl.addEventListener('change', async () => {
+            const pose = normalizeProgressPose(inputEl.getAttribute('data-checkin-pp-input'));
+            const file = inputEl.files?.[0];
+            if (!file) return;
+            if (typeof window.odeProgressPhotos?.saveFromFile !== 'function') {
+                showAlert('Progress photos are still loading. Try again.');
+                inputEl.value = '';
+                return;
+            }
+            setProgressSlotState(pose, { imageDataUrl: '', status: 'Saving...', saving: true });
+            try {
+                const saved = await window.odeProgressPhotos.saveFromFile({ day: selectedDayIso, pose, file });
+                inputEl.value = '';
+                if (!saved?.ok) {
+                    showAlert(saved?.error || 'Could not save photo.');
+                    await refreshProgressPhotoSlots();
+                    return;
+                }
+                showAlert(`${progressPoseTitle(pose)} photo saved for ${fmtProgressPhotoDate(selectedDayIso)}.`);
+                await refreshProgressPhotoSlots();
+                window.setTimeout(() => showAlert(''), 1000);
+            } catch {
+                inputEl.value = '';
+                showAlert('Could not save photo.');
+                await refreshProgressPhotoSlots();
+            }
         });
     });
 
     setSelectedDay(selectedDayIso, { load: false });
+    window.setTimeout(() => {
+        void refreshProgressPhotoSlots();
+    }, 120);
 
     const saveCheckin = async ({ silent = false, reason = 'manual' } = {}) => {
         if (autosaveInFlight) return false;
@@ -10923,6 +11030,14 @@ function setupProgressPhotos() {
         });
         if (!resp.ok) return { ok: false, status: resp.status, error: resp.json?.error || 'Failed to save' };
         return { ok: true, photo: resp.json?.photo || null, mode: 'account' };
+    };
+
+    const saveFromFile = async ({ day = todayIso(), pose = 'front', file } = {}) => {
+        const safeDay = String(day || '').slice(0, 10) || todayIso();
+        const safePose = (pose === 'side' || pose === 'back') ? pose : 'front';
+        const imageDataUrl = await fileToJpegDataUrl(file);
+        if (!imageDataUrl) return { ok: false, error: 'Could not read that image.' };
+        return apiSave({ day: safeDay, pose: safePose, imageDataUrl });
     };
 
     const open = async ({ day = todayIso(), pose = 'front' } = {}) => {
@@ -11233,7 +11348,8 @@ function setupProgressPhotos() {
     window.odeProgressPhotos = {
         open,
         list: apiList,
-        gallery: openGallery
+        gallery: openGallery,
+        saveFromFile
     };
 
     // Overview hook (if present)
