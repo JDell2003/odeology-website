@@ -9056,9 +9056,9 @@ function setupShareFlowGlobalDebug() {
             const saved = String(localStorage.getItem('ode_share_debug') || '').trim();
             if (saved === '1') return true;
             if (saved === '0') return false;
-            return true;
+            return false;
         } catch {
-            return true;
+            return false;
         }
     })();
     if (!debugEnabled) return;
