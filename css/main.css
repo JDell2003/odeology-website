@@ -19121,21 +19121,18 @@ html[data-theme="light"] .ode-tour-btn.primary {
     padding: 0.68rem 0.72rem;
     display: grid;
     gap: 0.38rem;
-}
-
-.training-page .training-explain-exercises .training-exercise-guide-card:not(:last-child) {
     position: relative;
-    margin-bottom: 0.36rem;
 }
 
-.training-page .training-explain-exercises .training-exercise-guide-card:not(:last-child)::after {
+.training-page .training-explain-exercises .training-exercise-guide-card + .training-exercise-guide-card::before {
     content: '';
     position: absolute;
-    left: 0.38rem;
-    right: 0.38rem;
-    bottom: -0.42rem;
-    border-bottom: 1px dashed color-mix(in srgb, var(--training-border) 64%, transparent);
-    opacity: 0.78;
+    left: 0.45rem;
+    right: 0.45rem;
+    top: -0.34rem;
+    border-top: 1px dashed rgba(166, 140, 98, 0.56);
+    opacity: 0.92;
+    z-index: 2;
     pointer-events: none;
 }
 
@@ -19197,14 +19194,10 @@ html[data-theme="light"] .ode-tour-btn.primary {
         gap: 0.3rem;
     }
 
-    .training-page .training-explain-exercises .training-exercise-guide-card:not(:last-child) {
-        margin-bottom: 0.3rem;
-    }
-
-    .training-page .training-explain-exercises .training-exercise-guide-card:not(:last-child)::after {
-        left: 0.24rem;
-        right: 0.24rem;
-        bottom: -0.34rem;
+    .training-page .training-explain-exercises .training-exercise-guide-card + .training-exercise-guide-card::before {
+        left: 0.3rem;
+        right: 0.3rem;
+        top: -0.3rem;
     }
 
     .training-page .training-exercise-guide-title {
