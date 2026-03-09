@@ -427,9 +427,9 @@
       border: 1px solid #dac6a7;
       background: rgba(255, 251, 244, 0.94);
       border-radius: 16px;
-      min-height: 225px;
+      min-height: 0;
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto;
       overflow: hidden;
       box-shadow: 0 10px 24px rgba(80, 51, 22, 0.09);
     }
@@ -504,7 +504,7 @@
       display: grid;
       gap: 9px;
       align-content: start;
-      min-height: 130px;
+      min-height: 0;
     }
 
     .builder-day-empty {
@@ -848,7 +848,7 @@
         align-content: start;
         align-items: start !important;
         justify-items: stretch;
-        flex: 1;
+        flex: 0 0 auto;
         min-height: 0;
         overflow: visible;
         gap: 7px;
