@@ -2262,6 +2262,7 @@
           .replace(/[\u2013\u2014\u2212]/g, '-')
           .replace(/[\u00D7\u2715\u2716]/g, 'x')
           .replace(/[\u2022\u25CF\u00B7]/g, ' ')
+          .replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2')
           .replace(/\s+/g, ' ')
           .trim();
       }
@@ -2335,6 +2336,7 @@
         let reps = '';
         let restSec = null;
         let projectedLb = null;
+        working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
 
         const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
         let restMatch = null;
@@ -2359,7 +2361,7 @@
         }
 
         if (!sets || !reps) {
-          const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?)?\b/i);
+          const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:,|of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?|steps?)?\b/i);
           if (setRepCombinedMatch) {
             if (!sets) {
               const n = Number(setRepCombinedMatch[1]);
@@ -2454,12 +2456,12 @@
         if (!/[a-zA-Z]/.test(text)) return false;
         const lowerText = text.toLowerCase();
         const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
-        if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target)\b/.test(lowerText)) return false;
+        if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target|main work|accessory work|arm finisher|load and pacing guidance|guidance|session|emphasis|purpose)\b/.test(lowerText)) return false;
         if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
-        if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day)\b/.test(lowerText)) return false;
+        if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day|no lifting|focus on food|focus on sleep|focus on recovery)\b/.test(lowerText)) return false;
         const normalized = normalizeImportToken(text);
         if (!normalized) return false;
-        if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
+        if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?|main work|accessory work|arm finisher|core)$/.test(normalized)) return false;
         if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)$/.test(normalized)) return false;
         return true;
       }
@@ -2492,6 +2494,13 @@
         const ordinal = lower.match(/^\s*day\s*([1-7])\b/i);
         if (ordinal) {
           const dayOrdinal = Number(ordinal[1]);
+          if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
+            return { dayOrdinal };
+          }
+        }
+        const sessionOrdinal = lower.match(/^\s*session\s*([1-7])\b/i);
+        if (sessionOrdinal) {
+          const dayOrdinal = Number(sessionOrdinal[1]);
           if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
             return { dayOrdinal };
           }

@@ -19,6 +19,7 @@ function normalizeOcrLineText(raw) {
     .replace(/[\u2013\u2014\u2212]/g, '-')
     .replace(/[\u00D7\u2715\u2716]/g, 'x')
     .replace(/[\u2022\u25CF\u00B7]/g, ' ')
+    .replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -56,12 +57,12 @@ function isLikelyExerciseName(raw) {
   if (!/[a-zA-Z]/.test(text)) return false;
   const lowerText = text.toLowerCase();
   const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
-  if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target)\b/.test(lowerText)) return false;
+  if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target|main work|accessory work|arm finisher|load and pacing guidance|guidance|session|emphasis|purpose)\b/.test(lowerText)) return false;
   if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
-  if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day)\b/.test(lowerText)) return false;
+  if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day|no lifting|focus on food|focus on sleep|focus on recovery)\b/.test(lowerText)) return false;
   const normalized = normalizeImportToken(text);
   if (!normalized) return false;
-  if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
+  if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?|main work|accessory work|arm finisher|core)$/.test(normalized)) return false;
   if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)$/.test(normalized)) return false;
   return true;
 }
@@ -95,6 +96,11 @@ function inferImportDayHeader(rawLine) {
     const dayOrdinal = Number(ordinal[1]);
     if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) return { dayOrdinal };
   }
+  const sessionOrdinal = lower.match(/^\s*session\s*([1-7])\b/i);
+  if (sessionOrdinal) {
+    const dayOrdinal = Number(sessionOrdinal[1]);
+    if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) return { dayOrdinal };
+  }
   return null;
 }
 
@@ -115,6 +121,7 @@ function parseImportedLineDetail(rawLine) {
   let sets = null;
   let reps = '';
   let restSec = null;
+  working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
 
   const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
   let restMatch = null;
@@ -139,7 +146,7 @@ function parseImportedLineDetail(rawLine) {
   }
 
   if (!sets || !reps) {
-    const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?)?\b/i);
+    const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:,|of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?|steps?)?\b/i);
     if (setRepCombinedMatch) {
       if (!sets) {
         const n = Number(setRepCombinedMatch[1]);
@@ -299,6 +306,19 @@ const SHORTHAND_EXPECTED = [
   { weekday: 3, name: 'Leg Ext', sets: 3, reps: '12-15' }
 ];
 
+const SESSION_EXPECTED = [
+  { dayOrdinal: 1, name: 'Barbell Bench Press', sets: 4, reps: '6-8' },
+  { dayOrdinal: 1, name: 'Machine Shoulder Press', sets: 3, reps: '8-10' },
+  { dayOrdinal: 1, name: 'Overhead Cable Triceps Extension', sets: 2, reps: '12-15' },
+  { dayOrdinal: 2, name: 'Lat Pulldown', sets: 4, reps: '8-12' },
+  { dayOrdinal: 2, name: 'Straight-Arm Pulldown', sets: 2, reps: '12-15' },
+  { dayOrdinal: 2, name: 'Hammer Curl', sets: 2, reps: '12-15' },
+  { dayOrdinal: 3, name: 'Back Squat', sets: 4, reps: '6-8' },
+  { dayOrdinal: 3, name: 'Standing Calf Raise', sets: 4, reps: '12-20' },
+  { dayOrdinal: 5, name: 'Pull-Ups or Assisted Pull-Ups', sets: 3, reps: '6-10' },
+  { dayOrdinal: 6, name: 'Hack Squat or Front Squat', sets: 4, reps: '8-10' }
+];
+
 function mutateLine(line, rand) {
   let out = line;
   if (rand() < 0.35) out = out.replace(/ \u2014 /g, ' - ');
@@ -400,6 +420,47 @@ function buildShorthandDoc(seed) {
   return lines.join('\n');
 }
 
+function buildSessionDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    'Session 1: Chest / Delts / Triceps',
+    'Primary emphasis: pressing muscles',
+    'Main work',
+    mutateLine('• Barbell Bench Press — 4 sets, 6 to 8 reps', rand),
+    mutateLine('• Incline Dumbbell Press — 3 sets, 8 to 10 reps', rand),
+    mutateLine('• Seated Chest Press Machine — 3 sets, 10 to 12 reps', rand),
+    'Accessory work',
+    mutateLine('• Machine Shoulder Press — 3 sets, 8 to 10 reps', rand),
+    mutateLine('• Cable Lateral Raise — 3 sets, 12 to 15 reps', rand),
+    'Arm finisher',
+    mutateLine('• Triceps Pushdown — 3 sets, 10 to 15 reps', rand),
+    mutateLine('• Overhead Cable Triceps Extension — 2 sets, 12 to 15 reps', rand),
+    '',
+    'Session 2: Back / Biceps',
+    'Primary emphasis: lats, upper back, arm flexors',
+    mutateLine('• Lat Pulldown — 4 sets, 8 to 12 reps', rand),
+    mutateLine('• Seated Cable Row — 3 sets, 8 to 12 reps', rand),
+    mutateLine('• Chest-Supported Row — 3 sets, 10 to 12 reps', rand),
+    mutateLine('• Straight-Arm Pulldown — 2 sets, 12 to 15 reps', rand),
+    mutateLine('• Hammer Curl — 2 sets, 12 to 15 reps', rand),
+    '',
+    'Session 3: Lower Body',
+    mutateLine('• Back Squat — 4 sets, 6 to 8 reps', rand),
+    mutateLine('• Standing Calf Raise — 4 sets, 12 to 20 reps', rand),
+    '',
+    'Session 4: Recovery / Low Output Day',
+    'No lifting.',
+    'Focus on food, sleep, and recovery.',
+    '',
+    'Session 5: Upper Body Combination',
+    mutateLine('• Pull-Ups or Assisted Pull-Ups — 3 sets, 6 to 10 reps', rand),
+    '',
+    'Session 6: Lower Body Variation',
+    mutateLine('• Hack Squat or Front Squat — 4 sets, 8 to 10 reps', rand)
+  ];
+  return lines.join('\n');
+}
+
 function similarityScore(a, b) {
   const aa = normalizeImportToken(a);
   const bb = normalizeImportToken(b);
@@ -454,7 +515,8 @@ function run() {
     { expected: SIMPLE_EXPECTED, build: buildSimpleDoc },
     { expected: MULTI_DAY_EXPECTED, build: buildMultiDoc },
     { expected: DAY_ORDINAL_EXPECTED, build: buildDayOrdinalDoc },
-    { expected: SHORTHAND_EXPECTED, build: buildShorthandDoc }
+    { expected: SHORTHAND_EXPECTED, build: buildShorthandDoc },
+    { expected: SESSION_EXPECTED, build: buildSessionDoc }
   ];
 
   let attempts = 0;
