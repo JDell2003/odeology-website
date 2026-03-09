@@ -15342,6 +15342,15 @@ function ensureAuthModal() {
                 <input id="auth-login-username" class="auth-input" autocomplete="username" required>
                 <label class="auth-label">Password</label>
                 <input id="auth-login-password" class="auth-input" type="password" autocomplete="current-password" required>
+                <div class="auth-help-row">
+                    <button type="button" class="auth-link-btn" id="auth-forgot-btn">Forgot password?</button>
+                </div>
+                <div class="auth-forgot hidden" id="auth-forgot-box">
+                    <label class="auth-label">Account email / username / phone</label>
+                    <input id="auth-forgot-identifier" class="auth-input" autocomplete="email" placeholder="Enter your account email">
+                    <button type="button" class="btn btn-ghost auth-forgot-submit" id="auth-forgot-submit">Send reset link</button>
+                    <p class="auth-muted hidden" id="auth-forgot-status"></p>
+                </div>
                 <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
             </form>
 
@@ -15373,6 +15382,13 @@ function wireAuthModal(modal, { onSignedIn } = {}) {
         modal.classList.add('hidden');
         document.body.classList.remove('modal-open');
         clearAuthModalError(modal);
+        modal.querySelector('#auth-forgot-box')?.classList.add('hidden');
+        const forgotStatus = modal.querySelector('#auth-forgot-status');
+        if (forgotStatus) {
+            forgotStatus.textContent = '';
+            forgotStatus.classList.add('hidden');
+            forgotStatus.classList.remove('error');
+        }
     };
 
     modal.querySelectorAll('[data-auth-close]').forEach((el) => {
@@ -15388,6 +15404,42 @@ function wireAuthModal(modal, { onSignedIn } = {}) {
     });
 
     const loginForm = modal.querySelector('#auth-login-form');
+    const forgotBtn = modal.querySelector('#auth-forgot-btn');
+    const forgotBox = modal.querySelector('#auth-forgot-box');
+    const forgotInput = modal.querySelector('#auth-forgot-identifier');
+    const forgotSubmit = modal.querySelector('#auth-forgot-submit');
+    const forgotStatus = modal.querySelector('#auth-forgot-status');
+    const setForgotStatus = (message, isError = false) => {
+        if (!forgotStatus) return;
+        forgotStatus.textContent = String(message || '');
+        forgotStatus.classList.toggle('hidden', !message);
+        forgotStatus.classList.toggle('error', Boolean(isError));
+    };
+    forgotBtn?.addEventListener('click', () => {
+        const open = Boolean(forgotBox && !forgotBox.classList.contains('hidden'));
+        if (forgotBox) forgotBox.classList.toggle('hidden', open);
+        setForgotStatus('');
+        if (!open) window.setTimeout(() => forgotInput?.focus(), 10);
+    });
+    forgotSubmit?.addEventListener('click', async () => {
+        setForgotStatus('');
+        const identifier = String(forgotInput?.value || '').trim();
+        if (!identifier) {
+            setForgotStatus('Enter your account email, username, or phone first.', true);
+            return;
+        }
+        forgotSubmit.disabled = true;
+        try {
+            const result = await authRequestPasswordReset({ identifier });
+            if (result?.ok) {
+                setForgotStatus('If your account exists, we sent a reset link to your email.');
+            } else {
+                setForgotStatus(result?.error || 'Could not request reset link.', true);
+            }
+        } finally {
+            forgotSubmit.disabled = false;
+        }
+    });
     loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearAuthModalError(modal);
@@ -15440,12 +15492,20 @@ function setAuthModalMode(modal, mode) {
     const signupTab = modal.querySelector('[data-auth-tab="signup"]');
     const loginForm = modal.querySelector('#auth-login-form');
     const signupForm = modal.querySelector('#auth-signup-form');
+    const forgotBox = modal.querySelector('#auth-forgot-box');
+    const forgotStatus = modal.querySelector('#auth-forgot-status');
 
     const isSignup = mode === 'signup';
     loginTab?.classList.toggle('active', !isSignup);
     signupTab?.classList.toggle('active', isSignup);
     loginForm?.classList.toggle('hidden', isSignup);
     signupForm?.classList.toggle('hidden', !isSignup);
+    forgotBox?.classList.add('hidden');
+    if (forgotStatus) {
+        forgotStatus.textContent = '';
+        forgotStatus.classList.add('hidden');
+        forgotStatus.classList.remove('error');
+    }
     clearAuthModalError(modal);
 }
 
@@ -15520,6 +15580,22 @@ async function authSignup({ username, email, phone, displayName, password }) {
         return { ok: true, user: data?.user };
     } catch (err) {
         return { ok: false, error: err?.message || 'Sign up failed' };
+    }
+}
+
+async function authRequestPasswordReset({ identifier }) {
+    try {
+        const resp = await fetch('/api/auth/password/forgot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ identifier })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) return { ok: false, error: data?.error || 'Reset request failed' };
+        return { ok: true, message: data?.message || '' };
+    } catch (err) {
+        return { ok: false, error: err?.message || 'Reset request failed' };
     }
 }
 

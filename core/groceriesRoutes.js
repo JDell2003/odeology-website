@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const db = require('./db');
+const { emitUserEvent } = require('./emailEvents');
 
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.GROCERIES_MAX_BODY_BYTES || 400_000));
 
@@ -277,6 +278,32 @@ function scaleNumber(value, factor) {
   return Math.round(value * factor * 100) / 100;
 }
 
+function buildGroceryForecast(items, createdAtIso) {
+  const startTs = Date.parse(String(createdAtIso || ''));
+  const nowTs = Date.now();
+  const rows = Array.isArray(items) ? items : [];
+  const forecast = [];
+  for (const item of rows) {
+    const name = cleanText(item?.name, 140);
+    const daysPerContainer = Number(item?.daysPerContainer);
+    if (!name || !Number.isFinite(daysPerContainer) || daysPerContainer <= 0) continue;
+    const baseTs = Number.isFinite(startTs) ? startTs : nowTs;
+    const runoutTs = baseTs + (daysPerContainer * 24 * 60 * 60 * 1000);
+    if (!Number.isFinite(runoutTs)) continue;
+    const daysUntil = Math.ceil((runoutTs - nowTs) / (24 * 60 * 60 * 1000));
+    forecast.push({
+      name,
+      runoutDate: new Date(runoutTs).toISOString().slice(0, 10),
+      daysUntil
+    });
+  }
+  forecast.sort((a, b) => Number(a.daysUntil) - Number(b.daysUntil));
+  return {
+    nextRunouts: forecast.slice(0, 12),
+    next7DaysCount: forecast.filter((x) => Number(x.daysUntil) >= 0 && Number(x.daysUntil) <= 7).length
+  };
+}
+
 module.exports = async function groceriesRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/groceries/')) return false;
 
@@ -455,6 +482,21 @@ module.exports = async function groceriesRoutes(req, res, url) {
         `,
         [userId, source, JSON.stringify(totals), JSON.stringify(items), JSON.stringify(metaSafe)]
       );
+      const createdAt = result.rows?.[0]?.created_at || null;
+      const forecast = buildGroceryForecast(items, createdAt);
+      emitUserEvent({
+        userId,
+        eventName: 'Grocery Forecast Updated',
+        eventProps: {
+          source,
+          listId: result.rows?.[0]?.id || null,
+          next7DaysCount: forecast.next7DaysCount,
+          nextRunouts: forecast.nextRunouts
+        },
+        profileProps: {
+          ode_grocery_next7_count: forecast.next7DaysCount
+        }
+      }).catch(() => {});
       return sendJson(res, 200, { ok: true, id: result.rows?.[0]?.id || null, createdAt: result.rows?.[0]?.created_at || null });
     } catch (err) {
       console.error('[groceries-save]', err?.message || err);
@@ -571,6 +613,22 @@ module.exports = async function groceriesRoutes(req, res, url) {
       const deltaWeekly = (Number.isFinite(updatedWeekly) && Number.isFinite(currentWeekly))
         ? Math.round((updatedWeekly - currentWeekly) * 100) / 100
         : null;
+
+      const forecast = buildGroceryForecast(adjustedItems, inserted.rows?.[0]?.created_at || null);
+      emitUserEvent({
+        userId,
+        eventName: 'Grocery Forecast Updated',
+        eventProps: {
+          source: 'training_adjustment',
+          listId: inserted.rows?.[0]?.id || null,
+          next7DaysCount: forecast.next7DaysCount,
+          nextRunouts: forecast.nextRunouts,
+          deltaWeeklyCost: deltaWeekly
+        },
+        profileProps: {
+          ode_grocery_next7_count: forecast.next7DaysCount
+        }
+      }).catch(() => {});
 
       return sendJson(res, 200, {
         ok: true,

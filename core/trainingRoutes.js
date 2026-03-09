@@ -7,6 +7,7 @@ const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildi
 const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
+const { emitUserEvent } = require('./emailEvents');
 const enrichPlanWithExerciseMedia = async () => {};
 
 const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYTES || 1_500_000));
@@ -4318,6 +4319,15 @@ async function trainingRoutes(req, res, url) {
         }
       }
       clearInviteCache(targetId);
+      emitUserEvent({
+        userId: targetId,
+        eventName: 'Workout Share Invite Received',
+        eventProps: {
+          fromUserId: user.id,
+          fromDisplayName: String(user.displayName || user.username || 'Your teammate'),
+          inviteStatus: 'pending'
+        }
+      }).catch(() => {});
     }
 
     return sendJson(res, 200, {
@@ -4468,6 +4478,14 @@ async function trainingRoutes(req, res, url) {
       eventType: 'owner_removed',
       meta: { removedBy: 'owner' }
     });
+    emitUserEvent({
+      userId: targetUserId,
+      eventName: 'Shared Workout Removed',
+      eventProps: {
+        ownerUserId: user.id,
+        inviteId: latestInvite.id
+      }
+    }).catch(() => {});
     logShareRoute('share.remove.success', { fromUserId: user.id, targetUserId, inviteId: latestInvite.id });
     return sendJson(res, 200, { ok: true, targetUserId, action: 'removed' });
   }
@@ -4512,6 +4530,14 @@ async function trainingRoutes(req, res, url) {
       eventType: 'recipient_left',
       meta: { removedBy: 'recipient' }
     });
+    emitUserEvent({
+      userId: latestInvite.from_user_id,
+      eventName: 'Shared Workout Left',
+      eventProps: {
+        recipientUserId: user.id,
+        inviteId: latestInvite.id
+      }
+    }).catch(() => {});
     logShareRoute('share.leave.success', {
       toUserId: user.id,
       ownerUserId: latestInvite.from_user_id,
@@ -4639,6 +4665,7 @@ async function trainingRoutes(req, res, url) {
     const inviteResult = await db.query(
       `
         SELECT i.id,
+               i.from_user_id,
                i.plan_snapshot,
                u.username AS from_username,
                u.display_name AS from_display_name
@@ -4658,6 +4685,15 @@ async function trainingRoutes(req, res, url) {
         ['rejected', inviteId]
       );
       clearInviteCache(user.id);
+      emitUserEvent({
+        userId: invite.from_user_id,
+        eventName: 'Workout Share Invite Declined',
+        eventProps: {
+          inviteId,
+          respondedByUserId: user.id,
+          action: 'rejected'
+        }
+      }).catch(() => {});
       logShareRoute('share.respond.rejected', { toUserId: user.id, inviteId });
       return sendJson(res, 200, { ok: true, action: 'rejected' });
     }
@@ -4691,6 +4727,16 @@ async function trainingRoutes(req, res, url) {
       ['accepted', inviteId]
     );
     clearInviteCache(user.id);
+    clearInviteCache(invite.from_user_id);
+    emitUserEvent({
+      userId: invite.from_user_id,
+      eventName: 'Workout Share Invite Accepted',
+      eventProps: {
+        inviteId,
+        respondedByUserId: user.id,
+        action: 'accepted'
+      }
+    }).catch(() => {});
     const welcome = buildShareWelcomePayload({
       snapshot,
       fromDisplayName: invite?.from_display_name,
@@ -4782,6 +4828,14 @@ async function trainingRoutes(req, res, url) {
         [user.id, day, serialized]
       );
       const row = result.rows?.[0] || null;
+      emitUserEvent({
+        userId: user.id,
+        eventName: 'Daily Check-In Saved',
+        eventProps: {
+          day,
+          updatedAt: row?.updated_at || null
+        }
+      }).catch(() => {});
       return sendJson(res, 200, { ok: true, checkin: row });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-checkin-post', 'Failed to save check-in');
@@ -4801,6 +4855,14 @@ async function trainingRoutes(req, res, url) {
     try {
       const result = await upsertWeighin({ userId: user.id, weightLb, goalMode });
       if (!result.ok) return sendJson(res, 400, { error: result.error || 'Invalid weigh-in' });
+      emitUserEvent({
+        userId: user.id,
+        eventName: 'Weekly Weigh-In Logged',
+        eventProps: {
+          weightLb: Number(weightLb),
+          goalMode: goalMode || null
+        }
+      }).catch(() => {});
       return sendJson(res, 200, result);
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-weighin', 'Failed to save weigh-in');
@@ -4881,6 +4943,14 @@ async function trainingRoutes(req, res, url) {
         [user.id, day, pose, imageDataUrl]
       );
       const row = result.rows?.[0] || null;
+      emitUserEvent({
+        userId: user.id,
+        eventName: 'Progress Photo Saved',
+        eventProps: {
+          day,
+          pose
+        }
+      }).catch(() => {});
       return sendJson(res, 200, {
         ok: true,
         photo: row ? {
@@ -5101,6 +5171,15 @@ async function trainingRoutes(req, res, url) {
           readiness
         }
       });
+      emitUserEvent({
+        userId: user.id,
+        eventName: 'Workout Logged',
+        eventProps: {
+          planId,
+          weekIndex,
+          dayIndex
+        }
+      }).catch(() => {});
       return sendJson(res, 200, { ok: true, plan: updatedPlan });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-log', 'Failed to save log');
@@ -5122,6 +5201,28 @@ async function trainingRoutes(req, res, url) {
         `INSERT INTO app_training_events (user_id, event_type, payload) VALUES ($1, $2, $3::jsonb);`,
         [user.id, eventType, JSON.stringify(data)]
       );
+      if (eventType === 'pain_report') {
+        const severity = Number(data?.severity);
+        const high = Number.isFinite(severity) && severity >= 7;
+        emitUserEvent({
+          userId: user.id,
+          eventName: high ? 'High Pain Report Submitted' : 'Pain Report Submitted',
+          eventProps: {
+            severity: Number.isFinite(severity) ? severity : null,
+            location: data?.location || '',
+            action: data?.action || ''
+          }
+        }).catch(() => {});
+      }
+      if (eventType === 'pain_followup') {
+        emitUserEvent({
+          userId: user.id,
+          eventName: 'Pain Follow-Up Submitted',
+          eventProps: {
+            status: data?.status || ''
+          }
+        }).catch(() => {});
+      }
       return sendJson(res, 200, { ok: true });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-event', 'Failed to log event');

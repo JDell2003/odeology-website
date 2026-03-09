@@ -2,12 +2,17 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
+const {
+  emitKlaviyoEvent,
+  buildOnboardingEmailPayload
+} = require('./emailEvents');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const OWNER_BACKUP_COOKIE_NAME = process.env.OWNER_BACKUP_COOKIE_NAME || `${COOKIE_NAME}_owner_backup`;
 const SESSION_TTL_DAYS = Math.max(1, Number(process.env.SESSION_TTL_DAYS || 30));
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.AUTH_MAX_BODY_BYTES || 200_000));
 const ONLINE_WINDOW_MS = Math.max(30_000, Number(process.env.ONLINE_WINDOW_MS || 180_000));
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = Math.max(10, Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 60));
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
@@ -91,6 +96,73 @@ function safeReturnTo(raw) {
   if (!value.startsWith('/')) return '/';
   if (value.startsWith('//')) return '/';
   return value;
+}
+
+function requestProto(req) {
+  const forwarded = String(req?.headers?.['x-forwarded-proto'] || '').trim().toLowerCase();
+  if (forwarded === 'https' || forwarded === 'http') return forwarded;
+  return isSecureRequest(req) ? 'https' : 'http';
+}
+
+function requestHost(req) {
+  return String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').trim();
+}
+
+function resolveAppBaseUrl(req) {
+  const configured = String(
+    process.env.APP_BASE_URL
+    || process.env.PUBLIC_APP_URL
+    || process.env.SITE_URL
+    || ''
+  ).trim();
+  if (configured) return configured.replace(/\/+$/, '');
+  const host = requestHost(req);
+  if (!host) return '';
+  return `${requestProto(req)}://${host}`.replace(/\/+$/, '');
+}
+
+function buildPasswordResetUrl(req, token) {
+  const base = resolveAppBaseUrl(req);
+  const safeToken = encodeURIComponent(String(token || '').trim());
+  if (!safeToken) return '';
+  if (!base) return `/reset-password.html?token=${safeToken}`;
+  return `${base}/reset-password.html?token=${safeToken}`;
+}
+
+function queueOnboardingEmails(userLike, source = 'signup_local') {
+  const email = normalizeEmail(userLike?.email);
+  if (!email) return;
+  const displayName = String(userLike?.display_name || userLike?.displayName || userLike?.username || '').trim();
+  const onboarding = buildOnboardingEmailPayload({ displayName });
+  const profileProps = {
+    ode_lifecycle_stage: 'member_free',
+    ode_nurture_channel: 'self_paced_to_coaching',
+    ode_signup_source: String(source || 'signup_local')
+  };
+  const eventProps = {
+    source: String(source || 'signup_local'),
+    onboarding
+  };
+  emitKlaviyoEvent({
+    eventName: 'Account Created',
+    email,
+    phone: userLike?.phone || '',
+    displayName,
+    eventProps,
+    profileProps
+  }).catch(() => {});
+  emitKlaviyoEvent({
+    eventName: 'Lead Nurture Channel Enrolled',
+    email,
+    phone: userLike?.phone || '',
+    displayName,
+    eventProps: {
+      channel: 'self_paced_to_coaching',
+      lifecycleStage: 'member_free',
+      source: String(source || 'signup_local')
+    },
+    profileProps
+  }).catch(() => {});
 }
 
 function parseCookies(header) {
@@ -810,9 +882,21 @@ async function ensureSchema(options = {}) {
       created_at timestamptz NOT NULL DEFAULT now(),
       expires_at timestamptz NOT NULL
     );
-  `,
+    `,
     'CREATE INDEX IF NOT EXISTS idx_app_sessions_user_id ON app_sessions(user_id);',
     'CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at);',
+    `
+    CREATE TABLE IF NOT EXISTS app_password_reset_tokens (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      token_hash text NOT NULL UNIQUE,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      expires_at timestamptz NOT NULL,
+      used_at timestamptz
+    );
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_password_reset_tokens_user_id ON app_password_reset_tokens(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_password_reset_tokens_expires_at ON app_password_reset_tokens(expires_at);',
     `
     CREATE TABLE IF NOT EXISTS app_oauth_states (
       state_hash text PRIMARY KEY,
@@ -925,6 +1009,169 @@ async function deleteSessionByToken(token) {
   await db.query('DELETE FROM app_sessions WHERE session_token_hash = $1;', [tokenHash]);
 }
 
+async function findUserByIdentifier(identifierRaw) {
+  const identifier = String(identifierRaw || '').trim();
+  if (!identifier) return null;
+  const username = identifier.toLowerCase();
+  const email = normalizeEmail(identifier);
+  const phone = normalizePhone(identifier);
+  const result = await db.query(
+    `
+      SELECT id, username, email, phone, display_name
+      FROM app_users
+      WHERE username = $1
+         OR email = $2
+         OR phone = $3
+      LIMIT 1;
+    `,
+    [username, email, phone]
+  );
+  return result.rows?.[0] || null;
+}
+
+async function handlePasswordForgot(req, res) {
+  if (!db.isConfigured()) return sendJson(res, 200, { ok: true });
+  await ensureSchema();
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const identifier = String(payload?.email || payload?.identifier || '').trim();
+  if (!identifier) {
+    return sendJson(res, 200, {
+      ok: true,
+      message: 'If an account matches, we sent a password reset link.'
+    });
+  }
+
+  const user = await findUserByIdentifier(identifier);
+  if (!user || !normalizeEmail(user.email)) {
+    return sendJson(res, 200, {
+      ok: true,
+      message: 'If an account matches, we sent a password reset link.'
+    });
+  }
+
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = sha256Hex(rawToken);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000).toISOString();
+  await db.query(
+    `
+      INSERT INTO app_password_reset_tokens (user_id, token_hash, expires_at)
+      VALUES ($1, $2, $3);
+    `,
+    [user.id, tokenHash, expiresAt]
+  );
+
+  const resetUrl = buildPasswordResetUrl(req, rawToken);
+  emitKlaviyoEvent({
+    eventName: 'Password Reset Requested',
+    email: user.email,
+    phone: user.phone || '',
+    displayName: user.display_name || user.username || '',
+    eventProps: {
+      resetUrl,
+      expiresInMinutes: PASSWORD_RESET_TOKEN_TTL_MINUTES
+    },
+    profileProps: {
+      ode_password_reset_pending: true
+    }
+  }).catch(() => {});
+
+  return sendJson(res, 200, {
+    ok: true,
+    message: 'If an account matches, we sent a password reset link.'
+  });
+}
+
+async function handlePasswordReset(req, res) {
+  if (!db.isConfigured()) return sendJson(res, 501, { ok: false, error: 'Database not configured' });
+  await ensureSchema();
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const token = String(payload?.token || '').trim();
+  const password = String(payload?.password || '');
+  if (!token) return sendJson(res, 400, { ok: false, error: 'Missing token' });
+  if (!password || password.length < 8) return sendJson(res, 400, { ok: false, error: 'Password must be at least 8 characters' });
+  if (password.length > 128) return sendJson(res, 400, { ok: false, error: 'Password is too long' });
+
+  const tokenHash = sha256Hex(token);
+  const tokenResult = await db.query(
+    `
+      SELECT t.id, t.user_id, u.email, u.phone, u.display_name, u.username
+      FROM app_password_reset_tokens t
+      JOIN app_users u ON u.id = t.user_id
+      WHERE t.token_hash = $1
+        AND t.used_at IS NULL
+        AND t.expires_at > now()
+      LIMIT 1;
+    `,
+    [tokenHash]
+  );
+  const row = tokenResult.rows?.[0] || null;
+  if (!row) return sendJson(res, 400, { ok: false, error: 'Invalid or expired reset link' });
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  try {
+    await db.query('BEGIN');
+    await db.query(
+      `
+        UPDATE app_users
+        SET password_hash = $2,
+            auth_provider = 'local'
+        WHERE id = $1;
+      `,
+      [row.user_id, passwordHash]
+    );
+    await db.query('DELETE FROM app_sessions WHERE user_id = $1;', [row.user_id]);
+    await db.query(
+      `
+        UPDATE app_password_reset_tokens
+        SET used_at = now()
+        WHERE id = $1;
+      `,
+      [row.id]
+    );
+    await db.query(
+      `
+        DELETE FROM app_password_reset_tokens
+        WHERE user_id = $1
+          AND id <> $2;
+      `,
+      [row.user_id, row.id]
+    );
+    await db.query('COMMIT');
+  } catch (err) {
+    try { await db.query('ROLLBACK'); } catch {}
+    return sendJson(res, 500, { ok: false, error: 'Could not reset password' });
+  }
+
+  emitKlaviyoEvent({
+    eventName: 'Password Reset Completed',
+    email: row.email,
+    phone: row.phone || '',
+    displayName: row.display_name || row.username || '',
+    eventProps: {
+      status: 'success'
+    },
+    profileProps: {
+      ode_password_reset_pending: false
+    }
+  }).catch(() => {});
+
+  return sendJson(res, 200, { ok: true });
+}
+
 async function handleLocalSignup(req, res) {
   if (!db.isConfigured()) return sendJson(res, 501, { error: 'Database not configured' });
   await ensureSchema();
@@ -962,6 +1209,7 @@ async function handleLocalSignup(req, res) {
       [username, email, phone, displayName, passwordHash]
     );
     const user = created.rows[0];
+    queueOnboardingEmails(user, 'signup_local');
     const token = await createSession(user.id);
     return sendJson(
       res,
@@ -1163,6 +1411,7 @@ async function handleGoogleCallback(req, res, url) {
   }
 
   let userId = null;
+  let createdNewUser = false;
 
   const existingIdentity = await db.query(
     `
@@ -1192,6 +1441,7 @@ async function handleGoogleCallback(req, res, url) {
       [email, displayName]
     );
     userId = created.rows?.[0]?.id || null;
+    createdNewUser = Boolean(userId);
   }
 
   if (!userId) {
@@ -1208,6 +1458,14 @@ async function handleGoogleCallback(req, res, url) {
     [userId, providerUserId, email]
   );
 
+  if (createdNewUser) {
+    queueOnboardingEmails({
+      id: userId,
+      email,
+      display_name: displayName
+    }, 'signup_google');
+  }
+
   const token = await createSession(userId);
   res.writeHead(302, {
     'Set-Cookie': setCookieHeader(token, req),
@@ -1221,6 +1479,13 @@ async function cleanupExpired() {
   await ensureSchema();
   await db.query('DELETE FROM app_sessions WHERE expires_at <= now();');
   await db.query('DELETE FROM app_oauth_states WHERE expires_at <= now();');
+  await db.query(
+    `
+      DELETE FROM app_password_reset_tokens
+      WHERE expires_at <= now()
+         OR used_at <= now() - interval '2 days';
+    `
+  );
 }
 
 let lastCleanupAt = 0;
@@ -1294,6 +1559,16 @@ module.exports = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/owner/impersonation/exit' && req.method === 'GET') {
       return await handleOwnerImpersonateExit(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/password/forgot' && req.method === 'POST') {
+      await handlePasswordForgot(req, res);
+      return true;
+    }
+
+    if (url.pathname === '/api/auth/password/reset' && req.method === 'POST') {
+      await handlePasswordReset(req, res);
+      return true;
     }
 
     if (url.pathname === '/api/auth/signup' && req.method === 'POST') {

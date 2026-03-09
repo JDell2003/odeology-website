@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
+const { emitUserEvent } = require('./emailEvents');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
@@ -164,6 +165,13 @@ function normalizeGroupName(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
   return s.slice(0, 80);
+}
+
+function buildMessagePreview(body, hasImage) {
+  const text = String(body || '').trim();
+  if (text) return text.slice(0, 160);
+  if (hasImage) return '[Image]';
+  return '';
 }
 
 function daysBetweenIso(aIso, bIso) {
@@ -731,6 +739,23 @@ async function socialRoutes(req, res, url) {
         warnings,
         status: warnings.length ? `${warnings.length} warning${warnings.length === 1 ? '' : 's'}` : 'No warnings right now.'
       };
+      if (warnings.length) {
+        const highCount = warnings.filter((w) => String(w?.severity || '').toLowerCase() === 'high').length;
+        const topWarnings = warnings.slice(0, 5).map((w) => String(w?.message || '').trim()).filter(Boolean);
+        emitUserEvent({
+          userId: user.id,
+          eventName: 'Compliance Warnings Updated',
+          eventProps: {
+            totalWarnings: warnings.length,
+            highSeverityWarnings: highCount,
+            topWarnings
+          },
+          profileProps: {
+            ode_last_warning_count: warnings.length,
+            ode_last_warning_high_count: highCount
+          }
+        }).catch(() => {});
+      }
       setCache(warningsCache, user.id, payload);
       return sendJson(res, 200, payload);
     } catch {
@@ -776,6 +801,13 @@ async function socialRoutes(req, res, url) {
       `,
       [user.id, targetUserId]
     );
+    emitUserEvent({
+      userId: targetUserId,
+      eventName: 'Friend Request Received',
+      eventProps: {
+        fromUserId: user.id
+      }
+    }).catch(() => {});
     clearCachesForUser(user.id);
     clearCachesForUser(targetUserId);
     return sendJson(res, 200, { ok: true });
@@ -878,6 +910,13 @@ async function socialRoutes(req, res, url) {
       `,
       [user.id, row.from_user_id]
     );
+    emitUserEvent({
+      userId: row.from_user_id,
+      eventName: 'Friend Request Accepted',
+      eventProps: {
+        acceptedByUserId: user.id
+      }
+    }).catch(() => {});
     clearCachesForUser(user.id);
     clearCachesForUser(row.from_user_id);
     return sendJson(res, 200, { ok: true });
@@ -1035,6 +1074,15 @@ async function socialRoutes(req, res, url) {
       'UPDATE app_message_threads SET last_message_at = now(), last_message_text = $1 WHERE id = $2;',
       [previewText, threadId]
     );
+
+    emitUserEvent({
+      userId: toUserId,
+      eventName: 'Message Received',
+      eventProps: {
+        fromUserId: user.id,
+        preview: buildMessagePreview(body, Boolean(imageDataUrl))
+      }
+    }).catch(() => {});
 
     return sendJson(res, 200, { ok: true });
   }
@@ -1387,6 +1435,15 @@ async function socialRoutes(req, res, url) {
       [threadId, user.id, toUserId, finalBody, imageDataUrl || '']
     );
 
+    emitUserEvent({
+      userId: toUserId,
+      eventName: 'Owner Message Received',
+      eventProps: {
+        fromOwner: true,
+        preview: buildMessagePreview(finalBody, Boolean(imageDataUrl))
+      }
+    }).catch(() => {});
+
     return sendJson(res, 200, { ok: true });
   }
 
@@ -1429,6 +1486,7 @@ async function socialRoutes(req, res, url) {
     if (!recipients.length) return sendJson(res, 200, { ok: true, sent: 0, recipients: 0 });
 
     let sent = 0;
+    const deliveredUserIds = [];
     try {
       await db.query('BEGIN');
       for (const toUserId of recipients) {
@@ -1453,11 +1511,23 @@ async function socialRoutes(req, res, url) {
           [threadId, user.id, toUserId, finalBody, imageDataUrl || '']
         );
         sent += 1;
+        deliveredUserIds.push(toUserId);
       }
       await db.query('COMMIT');
     } catch (err) {
       try { await db.query('ROLLBACK'); } catch {}
       return sendJson(res, 500, { ok: false, error: 'Failed to send mass message.' });
+    }
+
+    for (const toUserId of deliveredUserIds) {
+      emitUserEvent({
+        userId: toUserId,
+        eventName: 'Owner Broadcast Received',
+        eventProps: {
+          fromOwner: true,
+          preview: buildMessagePreview(finalBody, Boolean(imageDataUrl))
+        }
+      }).catch(() => {});
     }
 
     return sendJson(res, 200, { ok: true, sent, recipients: recipients.length });

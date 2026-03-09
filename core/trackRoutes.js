@@ -522,7 +522,9 @@ async function syncLeadToKlaviyo(lead) {
       properties: {
         ode_source: source,
         ode_email_optin: emailOptIn,
-        ode_wants: wants
+        ode_wants: wants,
+        ode_lifecycle_stage: 'lead',
+        ode_nurture_channel: 'self_paced_to_coaching'
       }
     });
   } catch (err) {
@@ -543,6 +545,23 @@ async function syncLeadToKlaviyo(lead) {
     });
   } catch (err) {
     logKlaviyoError(err, 'syncLeadToKlaviyo:event');
+  }
+
+  try {
+    await createKlaviyoEvent({
+      eventName: 'Lead Nurture Channel Enrolled',
+      email,
+      phone,
+      properties: {
+        channel: 'self_paced_to_coaching',
+        lifecycle_stage: 'lead',
+        source,
+        wants
+      },
+      time: new Date().toISOString()
+    });
+  } catch (err) {
+    logKlaviyoError(err, 'syncLeadToKlaviyo:nurture');
   }
 }
 
@@ -623,6 +642,29 @@ module.exports = async function trackRoutes(req, res, url) {
         `,
         ['contact_message', path, userId, guestId, JSON.stringify({ name, email, subject })]
       );
+
+      if (isKlaviyoConfigured() && email) {
+        try {
+          await createOrUpdateKlaviyoProfile({
+            email,
+            properties: {
+              ode_lifecycle_stage: 'lead',
+              ode_nurture_channel: 'self_paced_to_coaching'
+            }
+          });
+          await createKlaviyoEvent({
+            eventName: 'Support Request Received',
+            email,
+            properties: {
+              subject: subject || '',
+              source: String(path || '/contact')
+            },
+            time: new Date().toISOString()
+          });
+        } catch (err) {
+          logKlaviyoError(err, 'trackRoutes:contactSupport');
+        }
+      }
 
       return sendJson(res, 200, { ok: true }, setCookie ? { 'Set-Cookie': setCookie } : {});
     } catch (err) {
