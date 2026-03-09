@@ -928,11 +928,11 @@
 
       .builder-plan-item {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         grid-template-areas:
-          'head head head'
-          'sets reps rest'
-          'detail detail detail';
+          'top'
+          'main'
+          'detail';
         align-items: stretch;
         border-radius: 12px;
         padding: 8px;
@@ -940,17 +940,28 @@
       }
 
       .builder-plan-compact-head {
-        grid-area: head;
+        grid-area: top;
         display: grid;
-        grid-template-columns: 42px minmax(0, 1fr) auto;
-        align-items: center;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
         gap: 8px;
       }
 
-      .builder-plan-compact-actions {
-        display: inline-flex;
-        align-items: center;
+      .builder-plan-compact-main {
+        grid-area: main;
+        display: grid;
+        grid-template-columns: 46px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .builder-plan-compact-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.2fr auto;
         gap: 6px;
+        align-items: stretch;
+        min-width: 0;
       }
 
       .builder-plan-item-head {
@@ -986,10 +997,9 @@
       }
 
       .builder-plan-compact-thumb {
-        grid-area: thumb;
-        width: 42px;
-        height: 42px;
-        border-radius: 11px;
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
         border: 1px solid #d2ba97;
         background: linear-gradient(145deg, #efd6ab 0%, #dcb06b 100%);
         color: #4e3618;
@@ -1015,9 +1025,11 @@
         font-size: 0.82rem;
         font-weight: 800;
         color: #2e2114;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.22;
+        word-break: break-word;
       }
 
       .builder-plan-compact-field {
@@ -1039,18 +1051,20 @@
         font-weight: 800;
         color: #72583b;
         line-height: 1.15;
+        white-space: nowrap;
+        text-align: center;
       }
 
       .builder-plan-compact-field-sets {
-        grid-area: sets;
+        min-width: 0;
       }
 
       .builder-plan-compact-field-reps {
-        grid-area: reps;
+        min-width: 0;
       }
 
       .builder-plan-compact-field-rest {
-        grid-area: rest;
+        min-width: 0;
       }
 
       .builder-plan-compact-field > input {
@@ -1074,6 +1088,8 @@
       }
 
       .builder-plan-toggle.builder-plan-toggle-compact {
+        align-self: stretch;
+        justify-self: end;
         min-width: 28px;
         width: 28px;
         min-height: 28px;
@@ -1089,6 +1105,8 @@
       }
 
       .builder-plan-remove.builder-plan-remove-compact {
+        align-self: start;
+        justify-self: end;
         min-width: 28px;
         width: 28px;
         min-height: 28px;
@@ -1814,13 +1832,28 @@
         if (mobile) {
           wrapper.innerHTML = `
             <div class="builder-plan-compact-head">
+              <div class="builder-plan-compact-title" title="${escapeHtml(ex?.name || 'Exercise')}">${escapeHtml(ex?.name || 'Exercise')}</div>
+              <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+            </div>
+            <div class="builder-plan-compact-main">
               <div class="builder-plan-compact-thumb${imageUrl ? '' : ' is-empty'}">
                 ${imageUrl
                   ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(String(ex?.name || 'Exercise'))}" loading="lazy">`
                   : `<span>${escapeHtml(initialsFromName(ex?.name || 'Exercise'))}</span>`}
               </div>
-              <div class="builder-plan-compact-title" title="${escapeHtml(ex?.name || 'Exercise')}">${escapeHtml(ex?.name || 'Exercise')}</div>
-              <div class="builder-plan-compact-actions">
+              <div class="builder-plan-compact-fields">
+                <label class="builder-plan-compact-field builder-plan-compact-field-sets">
+                  <span>Sets</span>
+                  <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+                </label>
+                <label class="builder-plan-compact-field builder-plan-compact-field-reps">
+                  <span>Reps</span>
+                  <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+                </label>
+                <label class="builder-plan-compact-field builder-plan-compact-field-rest">
+                  <span>Rest time</span>
+                  <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+                </label>
                 <button
                   type="button"
                   class="builder-plan-toggle builder-plan-toggle-compact"
@@ -1830,21 +1863,8 @@
                   aria-controls="${detailId}"
                   aria-label="${ex?.expanded ? 'Hide details' : 'Show details'}"
                 >${ex?.expanded ? '^' : 'v'}</button>
-                <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
               </div>
             </div>
-            <label class="builder-plan-compact-field builder-plan-compact-field-sets">
-              <span>Sets</span>
-              <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
-            </label>
-            <label class="builder-plan-compact-field builder-plan-compact-field-reps">
-              <span>Reps</span>
-              <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
-            </label>
-            <label class="builder-plan-compact-field builder-plan-compact-field-rest">
-              <span>Rest time</span>
-              <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
-            </label>
             <div id="${detailId}" class="builder-plan-compact-detail" aria-hidden="${ex?.expanded ? 'false' : 'true'}">
               <div class="builder-plan-compact-meta">
                 <div><b>Primary:</b>${escapeHtml(primary)}</div>
