@@ -4627,23 +4627,81 @@ function toFreeExerciseDbRemotePath(src) {
       );
     };
 
+    const buildExerciseGuideCard = (guide, idx) => {
+      const detailsId = `training-explain-steps-${idx + 1}`;
+      const detailsWrap = el('div', {
+        class: 'training-exercise-guide-details',
+        id: detailsId,
+        hidden: 'true',
+        style: 'max-height:0;opacity:0;overflow:hidden;transition:max-height 180ms ease, opacity 160ms ease'
+      });
+      if (guide.instructions.length) {
+        detailsWrap.appendChild(
+          el('ol', { class: 'training-exercise-guide-steps' },
+            guide.instructions.map((line) => el('li', null, line))
+          )
+        );
+      } else {
+        detailsWrap.appendChild(
+          el('div', { class: 'training-muted' }, 'No linked instruction steps found for this exercise yet.')
+        );
+      }
+
+      const arrow = el('span', {
+        class: 'training-exercise-guide-arrow',
+        'aria-hidden': 'true',
+        style: 'font-size:1rem;line-height:1;opacity:0.78;min-width:1.1rem;text-align:center'
+      }, '▾');
+      let isOpen = false;
+      let closeTimer = null;
+      const setExpanded = (next) => {
+        isOpen = Boolean(next);
+        if (closeTimer) {
+          clearTimeout(closeTimer);
+          closeTimer = null;
+        }
+        toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        arrow.textContent = isOpen ? '▴' : '▾';
+        if (isOpen) {
+          detailsWrap.hidden = false;
+          requestAnimationFrame(() => {
+            const target = Math.max(24, detailsWrap.scrollHeight + 6);
+            detailsWrap.style.maxHeight = `${target}px`;
+            detailsWrap.style.opacity = '1';
+          });
+          return;
+        }
+        detailsWrap.style.maxHeight = '0px';
+        detailsWrap.style.opacity = '0';
+        closeTimer = setTimeout(() => {
+          if (!isOpen) detailsWrap.hidden = true;
+        }, 190);
+      };
+
+      const toggleBtn = el('button', {
+        type: 'button',
+        class: 'training-exercise-guide-toggle',
+        'aria-expanded': 'false',
+        'aria-controls': detailsId,
+        style: 'width:100%;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;background:none;border:none;padding:0;margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit',
+        onclick: () => setExpanded(!isOpen)
+      },
+      el('div', { style: 'display:flex;flex-direction:column;align-items:flex-start;gap:0.22rem' },
+        el('div', { class: 'training-exercise-guide-title' }, guide.name),
+        guide.prescription
+          ? el('div', { class: 'training-exercise-guide-prescription' }, guide.prescription)
+          : null
+      ),
+      arrow);
+
+      return el('div', { class: 'training-exercise-guide-card' }, toggleBtn, detailsWrap);
+    };
+
     const renderExercises = () => {
       panel.replaceChildren(
         exerciseGuides.length
           ? el('div', { class: 'training-explain-exercises' },
-            exerciseGuides.map((guide) =>
-              el('div', { class: 'training-exercise-guide-card' },
-                el('div', { class: 'training-exercise-guide-title' }, guide.name),
-                guide.prescription
-                  ? el('div', { class: 'training-exercise-guide-prescription' }, guide.prescription)
-                  : null,
-                guide.instructions.length
-                  ? el('ol', { class: 'training-exercise-guide-steps' },
-                    guide.instructions.map((line) => el('li', null, line))
-                  )
-                  : el('div', { class: 'training-muted' }, 'No linked instruction steps found for this exercise yet.')
-              )
-            )
+            exerciseGuides.map((guide, idx) => buildExerciseGuideCard(guide, idx))
           )
           : el('div', { class: 'training-muted' }, 'No workout exercises found for this day.')
       );
