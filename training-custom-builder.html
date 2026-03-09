@@ -378,6 +378,10 @@
       margin-bottom: 10px;
     }
 
+    .builder-mobile-top-actions {
+      display: none;
+    }
+
     .builder-days-select {
       display: flex;
       gap: 10px;
@@ -862,6 +866,20 @@
         overflow: visible;
       }
 
+      .builder-mobile-top-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .builder-mobile-top-actions .btn {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+      }
+
       .builder-plan-top {
         gap: 8px;
         margin-bottom: 8px;
@@ -1272,6 +1290,10 @@
       </aside>
 
       <section class="builder-panel builder-plan-panel">
+        <div class="builder-mobile-top-actions" aria-label="Builder quick actions">
+          <a href="index.html" class="btn btn-ghost">Home</a>
+          <a href="training.html?from=intake#training" class="btn btn-primary" id="builder-make-for-me">Make Workout For me</a>
+        </div>
         <div class="builder-plan-top">
           <div class="builder-days-select">
             <span class="builder-days-label">Select workout days</span>
@@ -1357,6 +1379,7 @@
       const weekdaysEl = $('builder-weekdays');
       const dayColumnsEl = $('builder-day-columns');
       const saveBtn = $('builder-save-btn');
+      const makeForMeBtn = $('builder-make-for-me');
       const loginBtn = $('builder-login-btn');
       const signupBtn = $('builder-signup-btn');
       const customToggleBtn = $('builder-custom-toggle');
@@ -2609,6 +2632,14 @@
         searchBtn?.addEventListener('click', () => {
           state.query = String(searchEl?.value || '');
           renderDatabaseList();
+        });
+
+        makeForMeBtn?.addEventListener('click', () => {
+          try {
+            sessionStorage.setItem('ode_training_force_autostart', '1');
+          } catch {
+            // ignore
+          }
         });
 
         customToggleBtn?.addEventListener('click', () => {
