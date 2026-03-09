@@ -5,6 +5,7 @@
   const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
   const TRAINING_BUILDER_PREFILL_KEY = 'ode_training_builder_prefill_v1';
   const TRAINING_OPEN_WIZARD_ONLY_KEY = 'ode_training_open_wizard_only';
+  const TRAINING_CONSTRUCTING_KEY = 'ode_training_constructing_v1';
 
   function readLocalIntake() {
     try {
@@ -48,6 +49,22 @@
     }
   }
 
+  function shouldBootIntoConstructing() {
+    try {
+      return sessionStorage.getItem(TRAINING_CONSTRUCTING_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function clearConstructingBootFlag() {
+    try {
+      sessionStorage.removeItem(TRAINING_CONSTRUCTING_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
   function clearOpenWizardOnlyFlag() {
     try {
       sessionStorage.removeItem(TRAINING_OPEN_WIZARD_ONLY_KEY);
@@ -63,6 +80,7 @@
     } catch {
       // ignore
     }
+    clearConstructingBootFlag();
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.get('from') === 'intake') {
@@ -661,7 +679,7 @@
     planError: null,
     generating: {
       startedAt: 0,
-      minMs: 38_000,
+      minMs: 9_000,
       raf: 0
     },
     mealService: {
@@ -3980,7 +3998,8 @@ function toggleSharePopover(force) {
     const tick = () => {
       if (state.view !== 'generating') return;
       const elapsed = Math.max(0, Date.now() - (state.generating.startedAt || Date.now()));
-      const minMs = Number(state.generating.minMs) || 38_000;
+      const minMs = Math.max(2500, Number(state.generating.minMs) || 9_000);
+      const estimateSec = Math.max(3, Math.round(minMs / 1000));
       const pct = Math.min(100, Math.round((elapsed / minMs) * 100));
 
       const bar = document.getElementById('training-gen-bar');
@@ -3990,7 +4009,7 @@ function toggleSharePopover(force) {
 
       if (bar) bar.style.width = `${pct}%`;
       if (prog) prog.setAttribute('aria-valuenow', String(pct));
-      if (meta) meta.textContent = `${pct}% · This takes ~40 seconds.`;
+      if (meta) meta.textContent = `${pct}% - This takes ~${estimateSec} seconds.`;
 
       const idx = Math.min(messages.length - 1, Math.floor(elapsed / 6500));
       if (msg) msg.textContent = messages[idx] || messages[messages.length - 1] || 'Working...';
@@ -4012,7 +4031,7 @@ function toggleSharePopover(force) {
         if (force) clearForceAutostart();
         const autoOnboarded = await tryAutoOnboardFromIntake(force);
         if (autoOnboarded) return;
-        const ready = await pollForPlanReady({ maxMs: 25000, intervalMs: 1800 });
+        const ready = await pollForPlanReady({ maxMs: 12000, intervalMs: 1200 });
         if (ready) return;
         const hasIntake = !!readLocalIntake();
         state.planError = hasIntake
@@ -4027,6 +4046,7 @@ function toggleSharePopover(force) {
 
   function setView(next) {
     if (next === 'upsell') next = 'plan';
+    if (next !== 'generating') clearConstructingBootFlag();
     const wizardOnlyRequested = next === 'wizard' && shouldOpenWizardOnly();
     if (DISABLE_WIZARD_FLOW && next === 'wizard' && !wizardOnlyRequested) {
       const hasIntake = !!readLocalIntake();
@@ -5568,10 +5588,12 @@ function toggleSharePopover(force) {
   }
 
   function renderGenerating() {
+    const minMs = Math.max(2500, Number(state.generating.minMs) || 9_000);
+    const estimateSec = Math.max(3, Math.round(minMs / 1000));
     return el('div', { class: 'training-card training-center' },
       el('div', { class: 'training-loading' },
-        el('div', { style: 'font-weight:800' }, 'Building your plan'),
-        el('div', { class: 'training-muted', id: 'training-gen-msg' }, 'Starting...'),
+        el('div', { style: 'font-weight:800' }, 'Constructing your workout'),
+        el('div', { class: 'training-muted', id: 'training-gen-msg' }, 'Starting construction...'),
         el('div', {
           class: 'training-progressbar',
           id: 'training-gen-progress',
@@ -5582,7 +5604,7 @@ function toggleSharePopover(force) {
         },
         el('div', { class: 'training-progressbar-bar', id: 'training-gen-bar', style: 'width:0%' })
         ),
-        el('div', { class: 'training-muted', id: 'training-gen-meta', style: 'font-size:12px;' }, '0% · This takes ~40 seconds.')
+        el('div', { class: 'training-muted', id: 'training-gen-meta', style: 'font-size:12px;' }, `0% - This takes ~${estimateSec} seconds.`)
       )
     );
   }
@@ -5733,10 +5755,10 @@ function toggleSharePopover(force) {
     const prevPlanId = state.planRow?.id || null;
     const requestStartedAt = Date.now();
     const isAuthed = Boolean(state.auth.user);
-    const minMs = isAuthed ? (Number(state.generating?.minMs) || 38_000) : 1400;
+    const minMs = isAuthed ? Math.max(2500, Number(state.generating?.minMs) || 9_000) : 1200;
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
-    const totalTimeoutMs = isAuthed ? (minMs + 7000) : (minMs + 3000);
+    const totalTimeoutMs = isAuthed ? Math.max(minMs + 5000, 12_000) : (minMs + 2800);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), totalTimeoutMs);
     let resp;
@@ -8387,7 +8409,14 @@ function toggleSharePopover(force) {
       return false;
     }
   })();
-  loadAuthAndState({ silent: !navLoading }).catch(() => setView('wizard'));
+  const bootToConstructing = shouldForceAutostart() || shouldBootIntoConstructing();
+  if (bootToConstructing) {
+    setView('generating');
+  }
+  loadAuthAndState({ silent: bootToConstructing ? true : !navLoading }).catch(() => {
+    clearConstructingBootFlag();
+    setView('wizard');
+  });
 })();
 
 

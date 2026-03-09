@@ -2942,6 +2942,7 @@
           try {
             sessionStorage.setItem('ode_training_open_wizard_only', '1');
             sessionStorage.removeItem('ode_training_force_autostart');
+            sessionStorage.removeItem('ode_training_constructing_v1');
           } catch {
             // ignore
           }
@@ -2951,6 +2952,8 @@
           try {
             sessionStorage.setItem('ode_training_force_autostart', '1');
             sessionStorage.removeItem('ode_training_open_wizard_only');
+            sessionStorage.setItem('ode_training_constructing_v1', '1');
+            sessionStorage.removeItem('ode_training_nav_loading');
           } catch {
             // ignore
           }
