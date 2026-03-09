@@ -670,6 +670,10 @@
 
   lockControlPanelOpen();
 
+  function hasRenderablePlanRow(planRow) {
+    return !!(planRow?.plan && Array.isArray(planRow.plan.weeks) && planRow.plan.weeks.length > 0);
+  }
+
   const state = {
     auth: { user: null },
     profile: null,
@@ -5411,9 +5415,11 @@ function toggleSharePopover(force) {
 
     // Signed in on another tab/window? Refresh when the user returns.
     window.addEventListener('focus', () => {
+      if (workoutTimer.running || workoutTimer.paused) return;
       if (state.view !== 'generating') refresh({ silent: true });
     });
     document.addEventListener('visibilitychange', () => {
+      if (workoutTimer.running || workoutTimer.paused) return;
       if (!document.hidden && state.view !== 'generating') refresh({ silent: true });
     });
   }
@@ -5621,14 +5627,17 @@ function toggleSharePopover(force) {
   }
 
   async function loadAuthAndState({ silent = false } = {}) {
-    if (!silent) setView('loading');
+    const hadRenderablePlan = hasRenderablePlanRow(state.planRow);
+    const previousPlanRow = state.planRow;
+    const previousLogs = Array.isArray(state.logs) ? state.logs.slice() : [];
+    if (!silent && !hadRenderablePlan) setView('loading');
     const forceAutostart = shouldForceAutostart();
 
     let me;
     try {
       me = await api('/api/auth/me', { method: 'GET', timeoutMs: 7000 });
     } catch {
-      if (silent && state.auth.user) return;
+      if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
       shareEventsInFlight = false;
       state.profile = null;
@@ -5654,7 +5663,7 @@ function toggleSharePopover(force) {
 
     const meUser = me.ok ? (me.json?.user || null) : null;
     if (!me.ok || !meUser) {
-      if (silent && state.auth.user && me.status !== 401) return;
+      if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
       shareEventsInFlight = false;
       state.profile = null;
@@ -5696,12 +5705,14 @@ function toggleSharePopover(force) {
     try {
       s = await api('/api/training/state', { method: 'GET', timeoutMs: 9000 });
     } catch {
+      if (silent && hadRenderablePlan) return;
       state.planError = 'Failed to load training state. Please refresh.';
       setView('plan');
       return;
     }
 
     if (!s.ok) {
+      if (silent && hadRenderablePlan) return;
       if (s.status === 401) {
         state.auth.user = null;
         shareEventsInFlight = false;
@@ -5727,8 +5738,18 @@ function toggleSharePopover(force) {
       setView('plan');
       return;
     }
-    state.profile = s.json?.profile || null;
-    state.planRow = s.json?.plan || null;
+    const fetchedProfile = s.json?.profile || null;
+    const fetchedPlanRow = s.json?.plan || null;
+    if (silent && hadRenderablePlan && !hasRenderablePlanRow(fetchedPlanRow)) {
+      state.profile = fetchedProfile || state.profile;
+      state.planRow = previousPlanRow;
+      state.logs = previousLogs;
+      return;
+    }
+
+    state.profile = fetchedProfile;
+    state.planRow = fetchedPlanRow;
+    if (hasRenderablePlanRow(state.planRow)) state.planError = null;
     if (forceAutostart) {
       const autoOnboarded = await tryAutoOnboardFromIntake(true);
       if (autoOnboarded) return;
