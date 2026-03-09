@@ -1,11 +1,8 @@
 const crypto = require('crypto');
 const db = require('./db');
 const { isTransientPgError } = require('./dbErrors');
-const {
-  isKlaviyoConfigured,
-  createOrUpdateKlaviyoProfile,
-  createKlaviyoEvent
-} = require('./klaviyoClient');
+const { isKlaviyoConfigured } = require('./klaviyoClient');
+const { emitKlaviyoEvent } = require('./emailEvents');
 
 const GUEST_COOKIE_NAME = process.env.GUEST_COOKIE_NAME || 'gid';
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES || 400_000));
@@ -512,53 +509,49 @@ async function syncLeadToKlaviyo(lead) {
     ? lead.wants.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 24)
     : [];
   const emailOptIn = lead?.emailOptIn === false ? false : true;
+  const displayName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  const sharedProfileProps = {
+    ode_source: source,
+    ode_email_optin: emailOptIn,
+    ode_wants: wants,
+    ode_lifecycle_stage: 'lead',
+    ode_nurture_channel: 'self_paced_to_coaching'
+  };
 
   try {
-    await createOrUpdateKlaviyoProfile({
-      email,
-      phone,
-      firstName,
-      lastName,
-      properties: {
-        ode_source: source,
-        ode_email_optin: emailOptIn,
-        ode_wants: wants,
-        ode_lifecycle_stage: 'lead',
-        ode_nurture_channel: 'self_paced_to_coaching'
-      }
-    });
-  } catch (err) {
-    logKlaviyoError(err, 'syncLeadToKlaviyo:profile');
-  }
-
-  try {
-    await createKlaviyoEvent({
+    await emitKlaviyoEvent({
       eventName: 'Lead Submitted',
       email,
       phone,
-      properties: {
+      displayName,
+      firstName,
+      lastName,
+      eventProps: {
         source,
         wants,
-        email_optin: emailOptIn
+        emailOptIn
       },
-      time: new Date().toISOString()
+      profileProps: sharedProfileProps
     });
   } catch (err) {
-    logKlaviyoError(err, 'syncLeadToKlaviyo:event');
+    logKlaviyoError(err, 'syncLeadToKlaviyo:lead');
   }
 
   try {
-    await createKlaviyoEvent({
+    await emitKlaviyoEvent({
       eventName: 'Lead Nurture Channel Enrolled',
       email,
       phone,
-      properties: {
+      displayName,
+      firstName,
+      lastName,
+      eventProps: {
         channel: 'self_paced_to_coaching',
-        lifecycle_stage: 'lead',
+        lifecycleStage: 'lead',
         source,
         wants
       },
-      time: new Date().toISOString()
+      profileProps: sharedProfileProps
     });
   } catch (err) {
     logKlaviyoError(err, 'syncLeadToKlaviyo:nurture');
@@ -645,21 +638,20 @@ module.exports = async function trackRoutes(req, res, url) {
 
       if (isKlaviyoConfigured() && email) {
         try {
-          await createOrUpdateKlaviyoProfile({
+          await emitKlaviyoEvent({
+            eventName: 'Support Request Received',
             email,
-            properties: {
+            displayName: name || '',
+            eventProps: {
+              name: name || '',
+              subject: subject || '',
+              messagePreview: String(message || '').slice(0, 240),
+              source: String(path || '/contact')
+            },
+            profileProps: {
               ode_lifecycle_stage: 'lead',
               ode_nurture_channel: 'self_paced_to_coaching'
             }
-          });
-          await createKlaviyoEvent({
-            eventName: 'Support Request Received',
-            email,
-            properties: {
-              subject: subject || '',
-              source: String(path || '/contact')
-            },
-            time: new Date().toISOString()
           });
         } catch (err) {
           logKlaviyoError(err, 'trackRoutes:contactSupport');

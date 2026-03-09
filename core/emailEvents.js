@@ -4,10 +4,13 @@ const {
   createOrUpdateKlaviyoProfile,
   createKlaviyoEvent
 } = require('./klaviyoClient');
+const { buildKlaviyoEmailTemplate } = require('./klaviyoEmailTemplates');
 
 const FREE_PLAN_EVENT_ALLOWLIST = new Set([
   'Account Created',
+  'Lead Submitted',
   'Lead Nurture Channel Enrolled',
+  'Support Request Received',
   'Password Reset Requested',
   'Password Reset Completed',
   'Friend Request Received',
@@ -78,6 +81,33 @@ function logEmailEventError(err, context) {
   console.warn('[email-events]', context, err?.message || err);
 }
 
+function buildTemplateBackedProps({
+  metric = '',
+  displayName = '',
+  baseEventProps = {}
+} = {}) {
+  const safeProps = baseEventProps && typeof baseEventProps === 'object' && !Array.isArray(baseEventProps)
+    ? { ...baseEventProps }
+    : {};
+  const template = buildKlaviyoEmailTemplate({
+    eventName: metric,
+    displayName,
+    eventProps: safeProps
+  });
+  if (!template) return safeProps;
+  return {
+    ...safeProps,
+    ode_email_template_key: template.key,
+    ode_email_template_version: template.version,
+    ode_email_subject: template.subject,
+    ode_email_preheader: template.preheader,
+    ode_email_cta_label: template.ctaLabel,
+    ode_email_cta_url: template.ctaUrl,
+    ode_email_html: template.html,
+    ode_email_text: template.text
+  };
+}
+
 async function emitKlaviyoEvent({
   eventName,
   email,
@@ -99,6 +129,12 @@ async function emitKlaviyoEvent({
   const metric = String(eventName || '').trim();
   if (!metric) return { ok: false, skipped: 'no_event_name' };
   if (!isEventAllowedByPlan(metric)) return { ok: false, skipped: 'event_not_enabled_for_profile' };
+  const fullDisplayName = String(displayName || `${fName} ${lName}`).trim();
+  const finalEventProps = buildTemplateBackedProps({
+    metric,
+    displayName: fullDisplayName,
+    baseEventProps: eventProps
+  });
 
   try {
     await createOrUpdateKlaviyoProfile({
@@ -117,7 +153,7 @@ async function emitKlaviyoEvent({
       eventName: metric,
       email: safeEmail || undefined,
       phone: safePhone || undefined,
-      properties: eventProps && typeof eventProps === 'object' ? eventProps : {},
+      properties: finalEventProps,
       time: new Date().toISOString()
     });
     return { ok: true };

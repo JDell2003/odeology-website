@@ -5,7 +5,9 @@ By default, backend Klaviyo emission now runs in `free` mode (`KLAVIYO_EVENT_PRO
 Only these events are sent:
 
 - `Account Created`
+- `Lead Submitted`
 - `Lead Nurture Channel Enrolled`
+- `Support Request Received`
 - `Password Reset Requested`
 - `Password Reset Completed`
 - `Friend Request Received`
