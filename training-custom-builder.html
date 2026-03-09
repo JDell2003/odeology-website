@@ -1475,6 +1475,8 @@
       const customLevelEl = $('builder-custom-level');
       const customImageEl = $('builder-custom-image');
       const customNotesEl = $('builder-custom-notes');
+      const TRAINING_QUICK_TOUR_PENDING_PREFIX = 'ode_training_quick_tour_pending_v1';
+      const TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX = 'ode_training_custom_plan_first_saved_v1';
 
       const state = {
         user: null,
@@ -1495,6 +1497,30 @@
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
+
+      function perUserStorageKey(prefix) {
+        const uid = String(state?.user?.id || '').trim() || 'anon';
+        return `${prefix}:${uid}`;
+      }
+
+      function hasSavedCustomPlanBefore() {
+        if (!state?.user?.id) return true;
+        try {
+          return localStorage.getItem(perUserStorageKey(TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX)) === '1';
+        } catch {
+          return true;
+        }
+      }
+
+      function markFirstCustomPlanSavedAndArmTour() {
+        if (!state?.user?.id) return;
+        try {
+          localStorage.setItem(perUserStorageKey(TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX), '1');
+          localStorage.setItem(perUserStorageKey(TRAINING_QUICK_TOUR_PENDING_PREFIX), '1');
+        } catch {
+          // ignore storage errors
+        }
+      }
 
       function isMobileLayout() {
         return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
@@ -2884,6 +2910,7 @@
         state.saving = true;
         saveBtn.disabled = true;
         setStatus('Saving custom workout...', '');
+        const isFirstCustomPlanSave = !hasSavedCustomPlanBefore();
         try {
           const resp = await fetch('/api/training/custom-plan', {
             method: 'POST',
@@ -2895,6 +2922,9 @@
           if (!resp.ok || !json?.ok) {
             setStatus(json?.error || 'Could not save custom workout.', 'error');
             return;
+          }
+          if (isFirstCustomPlanSave) {
+            markFirstCustomPlanSavedAndArmTour();
           }
           setStatus('Workout saved. Opening Training...', 'ok');
           window.setTimeout(() => {

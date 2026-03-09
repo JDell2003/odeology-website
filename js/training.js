@@ -893,30 +893,42 @@
   function buildTrainingQuickTourSteps() {
     return [
       {
-        selector: '.plan-topbar-actions-mainrow',
-        title: 'Top controls',
-        body: 'Use these buttons to Make New Workout, export PDF, or Modify Current Workout.'
+        selector: '.workout-today-bar',
+        title: 'Today view',
+        body: 'This card is your daily command center. It shows today\'s split, date navigation, and where you log the session.'
       },
       {
         selector: '.btn-start-workout',
-        fallbackSelector: '.plan-topbar-share-row',
-        title: 'Start workout',
-        body: 'Tap Start workout to begin today\'s session and unlock set/rep logging.'
+        fallbackSelector: '.workout-today-bar',
+        title: 'Start the session',
+        body: 'Tap Start workout to open today\'s exercise list and begin logging sets, reps, and performance.'
+      },
+      {
+        selector: '.plan-topbar-actions-mainrow',
+        fallbackSelector: '.plan-topbar-actions',
+        title: 'Plan controls',
+        body: 'Manage your plan here: Make New Workout, PDF export, and Modify Current Workout.'
       },
       {
         selector: '#training-day-tabs',
-        title: 'Split days',
-        body: 'These day tabs are your split. Tap any day to switch workouts.'
+        title: 'Your split days',
+        body: 'These tabs are your weekly split. Tap any day to review or train that day\'s workout.'
       },
       {
         selector: '.workout-rel-label',
-        title: 'Jump to today',
-        body: 'Tap this date label any time to jump back to today\'s workout.'
+        title: 'Jump back to today',
+        body: 'If you scroll to other dates, tap this date label to snap back to today\'s workout.'
       },
       {
         selector: '[data-share-workout="1"]',
-        title: 'Share workout',
-        body: 'Use Share Workout to invite a friend into your plan.'
+        title: 'Share with a teammate',
+        body: 'Use Share Workout to invite a friend to join your plan and train together.'
+      },
+      {
+        selector: '.exercise-action-row',
+        fallbackSelector: '.exercise-row',
+        title: 'Swap or report pain',
+        body: 'Each exercise has quick actions to Swap exercise or Report pain and get a safer adjustment.'
       }
     ];
   }
