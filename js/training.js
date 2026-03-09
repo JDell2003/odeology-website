@@ -3851,9 +3851,7 @@ function toFreeExerciseDbRemotePath(src) {
   function movementFamilyCompatible(sourceProfile, candidateProfile) {
     const src = String(sourceProfile?.movementFamily || '').trim();
     const cand = String(candidateProfile?.movementFamily || '').trim();
-    if (!src && !cand) return true;
-    if (src && !cand) return false;
-    if (!src && cand) return true;
+    if (!src || !cand) return false;
     if (src === cand) return true;
     const compat = {
       chest_press: ['chest_press'],
@@ -3878,7 +3876,7 @@ function toFreeExerciseDbRemotePath(src) {
     return Array.isArray(compat[src]) ? compat[src].includes(cand) : false;
   }
 
-  function subgroupCompatible(sourceProfile, candidateProfile) {
+  function majorCompatible(sourceProfile, candidateProfile) {
     const srcMajor = String(sourceProfile?.major || '');
     const candMajor = String(candidateProfile?.major || '');
     if (!srcMajor || srcMajor === 'other') return false;
@@ -3889,27 +3887,81 @@ function toFreeExerciseDbRemotePath(src) {
   function forceCompatible(sourceProfile, candidateProfile) {
     const srcForce = String(sourceProfile?.force || '').trim();
     const candForce = String(candidateProfile?.force || '').trim();
-    if (!srcForce) return true;
-    if (!candForce) return false;
+    if (!srcForce || !candForce) return false;
     return srcForce === candForce;
   }
 
-  function capacityCompatible(sourceProfile, candidateProfile) {
-    const srcFamily = String(sourceProfile?.movementFamily || '').trim();
-    const candFamily = String(candidateProfile?.movementFamily || '').trim();
-    if (srcFamily) {
-      if (!candFamily) return false;
-      return movementFamilyCompatible(sourceProfile, candidateProfile);
-    }
-
+  function subgroupSimilarityScore(sourceProfile, candidateProfile) {
     const srcSubgroup = String(sourceProfile?.subgroup || '').trim();
     const candSubgroup = String(candidateProfile?.subgroup || '').trim();
-    if (sourceProfile?.subgroupSpecific && srcSubgroup) {
-      if (!candSubgroup) return false;
-      if (srcSubgroup !== candSubgroup) return false;
-    }
+    if (!srcSubgroup || !candSubgroup) return 0.28;
+    if (srcSubgroup === candSubgroup) return 1;
+    return 0.6;
+  }
 
-    return forceCompatible(sourceProfile, candidateProfile);
+  function movementFamilySimilarityScore(sourceProfile, candidateProfile) {
+    const srcFamily = String(sourceProfile?.movementFamily || '').trim();
+    const candFamily = String(candidateProfile?.movementFamily || '').trim();
+    if (!srcFamily || !candFamily) return 0.25;
+    if (srcFamily === candFamily) return 1;
+    if (movementFamilyCompatible(sourceProfile, candidateProfile)) return 0.72;
+    return 0.2;
+  }
+
+  function forceSimilarityScore(sourceProfile, candidateProfile) {
+    const srcForce = String(sourceProfile?.force || '').trim();
+    const candForce = String(candidateProfile?.force || '').trim();
+    if (!srcForce || !candForce) return 0.2;
+    if (srcForce === candForce) return 1;
+    return 0.25;
+  }
+
+  function swapTierFromProfiles(sourceProfile, candidateProfile) {
+    const srcSubgroup = String(sourceProfile?.subgroup || '').trim();
+    const candSubgroup = String(candidateProfile?.subgroup || '').trim();
+    const subgroupExact = Boolean(srcSubgroup && candSubgroup && srcSubgroup === candSubgroup);
+    const familyMatch = movementFamilyCompatible(sourceProfile, candidateProfile);
+    const forceMatch = forceCompatible(sourceProfile, candidateProfile);
+
+    if (subgroupExact && familyMatch) return 1;
+    if (subgroupExact) return 2;
+    if (familyMatch || forceMatch) return 3;
+    return 4;
+  }
+
+  function compareSwapScores(a, b) {
+    const tierA = Number(a?.tier || 99);
+    const tierB = Number(b?.tier || 99);
+    if (tierA !== tierB) return tierA - tierB;
+    const scoreA = Number(a?.score || 0);
+    const scoreB = Number(b?.score || 0);
+    if (scoreA !== scoreB) return scoreB - scoreA;
+    return String(a?.name || '').localeCompare(String(b?.name || ''));
+  }
+
+  function scoreSwapCandidate({
+    sourceProfile,
+    candidateProfile,
+    candidateEntry,
+    wantMuscles,
+    wantTokens
+  }) {
+    const muscles = Array.isArray(candidateProfile?.muscleKeys) ? candidateProfile.muscleKeys : [];
+    const muscleOverlap = wantMuscles.length
+      ? wantMuscles.filter((m) => muscles.includes(m)).length / wantMuscles.length
+      : 0;
+    const nameTokens = normalizeTextForMatch(candidateEntry?.name || '').split(' ').filter(Boolean);
+    const tokenOverlap = nameTokens.filter((t) => wantTokens.includes(t)).length / Math.max(1, wantTokens.length);
+    const subgroupScore = subgroupSimilarityScore(sourceProfile, candidateProfile);
+    const familyScore = movementFamilySimilarityScore(sourceProfile, candidateProfile);
+    const forceScore = forceSimilarityScore(sourceProfile, candidateProfile);
+    const eqScore = sourceProfile?.equipmentClass && sourceProfile.equipmentClass === candidateProfile?.equipmentClass ? 1 : 0.5;
+    const score = (subgroupScore * 0.4) + (familyScore * 0.3) + (forceScore * 0.15) + (eqScore * 0.1) + (tokenOverlap * 0.05) + (muscleOverlap * 0.05);
+
+    return {
+      score,
+      tier: swapTierFromProfiles(sourceProfile, candidateProfile)
+    };
   }
 
   function mapExerciseMuscles(entry) {
@@ -3961,8 +4013,7 @@ function toFreeExerciseDbRemotePath(src) {
     if (!swapCategoryCompatible({ sourceCategory, candidateCategory })) return false;
     if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
     if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
-    if (!subgroupCompatible(sourceProfile, candidateProfile)) return false;
-    if (!capacityCompatible(sourceProfile, candidateProfile)) return false;
+    if (!majorCompatible(sourceProfile, candidateProfile)) return false;
     return true;
   }
 
@@ -3975,7 +4026,12 @@ function toFreeExerciseDbRemotePath(src) {
     const sourceCategory = classifySwapCategory(sourceEntry, ex);
     if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
     const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
-    const out = [];
+    const sourceName = String(ex?.displayName || ex?.name || ex?.intentKey || '');
+    const wantTokens = normalizeTextForMatch(sourceName).split(' ').filter(Boolean);
+    const wantMuscles = sourceProfile.muscleKeys.length
+      ? sourceProfile.muscleKeys
+      : (Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []);
+    const scored = [];
 
     for (const rawId of ids) {
       const id = String(rawId || '').trim();
@@ -3997,9 +4053,23 @@ function toFreeExerciseDbRemotePath(src) {
         allowedClasses,
         equipmentAccess
       })) continue;
-      out.push(id);
+      const candidateProfile = buildSwapProfile(entry);
+      const scoreData = scoreSwapCandidate({
+        sourceProfile,
+        candidateProfile,
+        candidateEntry: entry,
+        wantMuscles,
+        wantTokens
+      });
+      scored.push({
+        id,
+        name: String(entry?.name || id),
+        score: scoreData.score,
+        tier: scoreData.tier
+      });
     }
-    return Array.from(new Set(out));
+    scored.sort(compareSwapScores);
+    return scored.map((item) => item.id);
   }
 
   function computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) {
@@ -4025,44 +4095,41 @@ function toFreeExerciseDbRemotePath(src) {
     const badCategory = /(stretch|mobility|warmup)/;
     const badMechanic = /(stretch|mobility|warmup)/;
     const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
-    const collectScored = () => {
-      const scored = [];
-      for (const entry of exerciseCatalog) {
-        const id = String(entry?.id || '').trim();
-        if (!id || usedIds.has(id)) continue;
-        if (sourceId && id === sourceId) continue;
-        if (isBandName(entry?.name)) continue;
-        const nameNorm = normalizeTextForMatch(entry?.name || '');
-        const catNorm = normalizeTextForMatch(entry?.category || '');
-        const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
-        if (badName.test(nameNorm) || badCategory.test(catNorm) || badMechanic.test(mechNorm)) continue;
-        if (!isSwapCandidateCompatible({
-          sourceProfile,
-          sourceCategory,
-          candidateEntry: entry,
-          allowedClasses,
-          equipmentAccess
-        })) continue;
+    const scored = [];
+    for (const entry of exerciseCatalog) {
+      const id = String(entry?.id || '').trim();
+      if (!id || usedIds.has(id)) continue;
+      if (sourceId && id === sourceId) continue;
+      if (isBandName(entry?.name)) continue;
+      const nameNorm = normalizeTextForMatch(entry?.name || '');
+      const catNorm = normalizeTextForMatch(entry?.category || '');
+      const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
+      if (badName.test(nameNorm) || badCategory.test(catNorm) || badMechanic.test(mechNorm)) continue;
+      if (!isSwapCandidateCompatible({
+        sourceProfile,
+        sourceCategory,
+        candidateEntry: entry,
+        allowedClasses,
+        equipmentAccess
+      })) continue;
 
-        const candidateProfile = buildSwapProfile(entry);
-        const eqClass = candidateProfile.equipmentClass;
-        const muscles = candidateProfile.muscleKeys;
-        const muscleOverlap = wantMuscles.length
-          ? wantMuscles.filter((m) => muscles.includes(m)).length / wantMuscles.length
-          : 0;
-        const nameTokens = normalizeTextForMatch(entry?.name || '').split(' ').filter(Boolean);
-        const tokenOverlap = nameTokens.filter((t) => wantTokens.includes(t)).length / Math.max(1, wantTokens.length);
-        const subgroupScore = sourceProfile.subgroup && candidateProfile.subgroup && sourceProfile.subgroup === candidateProfile.subgroup ? 1 : 0;
-        const familyScore = sourceProfile.movementFamily && candidateProfile.movementFamily && sourceProfile.movementFamily === candidateProfile.movementFamily ? 1 : 0;
-        const eqScore = sourceProfile.equipmentClass && sourceProfile.equipmentClass === eqClass ? 1 : 0;
-        const score = (subgroupScore * 0.45) + (familyScore * 0.27) + (muscleOverlap * 0.18) + (tokenOverlap * 0.06) + (eqScore * 0.04);
-        scored.push({ id, score, name: entry?.name || '' });
-      }
-      scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-      return scored;
-    };
+      const candidateProfile = buildSwapProfile(entry);
+      const scoreData = scoreSwapCandidate({
+        sourceProfile,
+        candidateProfile,
+        candidateEntry: entry,
+        wantMuscles,
+        wantTokens
+      });
+      scored.push({
+        id,
+        name: String(entry?.name || id),
+        score: scoreData.score,
+        tier: scoreData.tier
+      });
+    }
 
-    const scored = collectScored();
+    scored.sort(compareSwapScores);
     return scored.slice(0, 6).map((c) => c.id);
   }
 
@@ -4196,7 +4263,7 @@ function toFreeExerciseDbRemotePath(src) {
                 }, getExerciseNameById(id) || id)
               )
             )
-            : el('div', { class: 'training-muted' }, 'No swap options available.')
+            : el('div', { class: 'training-muted' }, 'No same-muscle swap options available.')
         ),
         el('div', { class: 'schedule-modal-actions' },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
