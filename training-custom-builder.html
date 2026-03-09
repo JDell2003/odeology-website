@@ -2302,6 +2302,9 @@
         if (!Number.isInteger(merged.weekday) && Number.isInteger(next.weekday)) {
           merged.weekday = Number(next.weekday);
         }
+        if (!Number.isInteger(merged.dayOrdinal) && Number.isInteger(next.dayOrdinal)) {
+          merged.dayOrdinal = Number(next.dayOrdinal);
+        }
         if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) {
           merged.sets = next.sets;
         }
@@ -2353,6 +2356,20 @@
           const n = Number(setMatch[1]);
           if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
           working = working.replace(setMatch[0], ' ');
+        }
+
+        if (!sets || !reps) {
+          const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?)?\b/i);
+          if (setRepCombinedMatch) {
+            if (!sets) {
+              const n = Number(setRepCombinedMatch[1]);
+              if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+            }
+            if (!reps) {
+              reps = String(setRepCombinedMatch[2] || '').replace(/\s+/g, '');
+            }
+            working = working.replace(setRepCombinedMatch[0], ' ');
+          }
         }
 
         const repRangeMatch = working.match(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\s*reps?\b/i);
@@ -2436,14 +2453,14 @@
         if (text.length < 3 || text.length > 80) return false;
         if (!/[a-zA-Z]/.test(text)) return false;
         const lowerText = text.toLowerCase();
-        const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|crunch|fly|lunge|extension|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge)/.test(lowerText);
-        if (!hasExerciseKeyword && /\b(goal|time|rule|rest|workout|equipment)\b/.test(lowerText)) return false;
+        const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
+        if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target)\b/.test(lowerText)) return false;
         if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
-        if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation)\b/.test(lowerText)) return false;
+        if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day)\b/.test(lowerText)) return false;
         const normalized = normalizeImportToken(text);
         if (!normalized) return false;
         if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
-        if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/.test(normalized)) return false;
+        if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)$/.test(normalized)) return false;
         return true;
       }
 
@@ -2460,18 +2477,26 @@
         return null;
       }
 
-      function inferWeekdayFromImportHeader(rawLine) {
+      function inferImportDayHeader(rawLine) {
         const line = normalizeOcrLineText(rawLine);
         if (!line) return null;
         const lower = line.toLowerCase();
         // Don't treat normal exercise lines as headers.
         if (/\b\d+\s*(?:sets?|x)\b/i.test(lower)) return null;
         if (/\bset\s*x\s*\d+\b/i.test(lower)) return null;
-        const m = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
-        if (!m) return null;
-        const weekday = weekdayFromImportToken(m[1]);
-        if (!Number.isInteger(weekday)) return null;
-        return weekday;
+        const named = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
+        if (named) {
+          const weekday = weekdayFromImportToken(named[1]);
+          if (Number.isInteger(weekday)) return { weekday };
+        }
+        const ordinal = lower.match(/^\s*day\s*([1-7])\b/i);
+        if (ordinal) {
+          const dayOrdinal = Number(ordinal[1]);
+          if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
+            return { dayOrdinal };
+          }
+        }
+        return null;
       }
 
       function parseImportedEntries(raw) {
@@ -2483,21 +2508,31 @@
           .filter(Boolean);
         const chunks = [];
         let currentWeekday = null;
+        let currentDayOrdinal = null;
         lines.forEach((line) => {
-          const headerWeekday = inferWeekdayFromImportHeader(line);
-          if (Number.isInteger(headerWeekday)) {
-            currentWeekday = headerWeekday;
+          const header = inferImportDayHeader(line);
+          if (header && typeof header === 'object') {
+            if (Number.isInteger(header.weekday)) {
+              currentWeekday = Number(header.weekday);
+              currentDayOrdinal = null;
+            } else if (Number.isInteger(header.dayOrdinal)) {
+              currentDayOrdinal = Number(header.dayOrdinal);
+              currentWeekday = null;
+            }
             return;
           }
           const parsed = parseImportedLineDetail(line);
           if (!parsed || !isLikelyExerciseName(parsed.name)) return;
           if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
+          if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
           chunks.push(parsed);
         });
         const unique = [];
         const seen = new Map();
         chunks.forEach((entry) => {
-          const dayKey = Number.isInteger(entry?.weekday) ? String(entry.weekday) : 'x';
+          const dayKey = Number.isInteger(entry?.weekday)
+            ? `w${entry.weekday}`
+            : (Number.isInteger(entry?.dayOrdinal) ? `d${entry.dayOrdinal}` : 'x');
           const key = `${dayKey}:${normalizeImportToken(entry.name)}`;
           if (!key) return;
           if (seen.has(key)) {
@@ -2523,6 +2558,31 @@
           .map((v) => normalizeImportToken(v))
           .filter(Boolean)
           .join(' ');
+      }
+
+      function normalizeImportQueryForMatching(rawQuery) {
+        let text = normalizeImportToken(rawQuery);
+        if (!text) return '';
+        text = ` ${text} `;
+        text = text
+          .replace(/\brdl\b/g, ' romanian deadlift ')
+          .replace(/\boh\b/g, ' overhead ')
+          .replace(/\bdb\b/g, ' dumbbell ')
+          .replace(/\bbb\b/g, ' barbell ')
+          .replace(/\bext\b/g, ' extension ')
+          .replace(/\blaterals?\b/g, ' lateral raise ')
+          .replace(/\bpushdowns?\b/g, ' triceps pushdown ')
+          .replace(/\bleg ext\b/g, ' leg extension ')
+          .replace(/\bleg curl\b/g, ' hamstring curl ')
+          .replace(/\bham curl\b/g, ' hamstring curl ')
+          .replace(/\bsupported row\b/g, ' chest supported row ')
+          .replace(/\bpullups?\b/g, ' pull up ')
+          .replace(/\boh triceps ext\b/g, ' overhead triceps extension ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (text === 'bench') return 'bench press';
+        if (text === 'squat') return 'barbell squat';
+        return text;
       }
 
       function matchExerciseCandidates(rawQuery, maxResults = 6) {
@@ -2600,11 +2660,26 @@
 
       function buildImportCandidateList(rawQuery, maxResults = 7) {
         const queryText = String(rawQuery || '').trim();
-        const matches = matchExerciseCandidates(queryText, maxResults)
-          .map((entry) => ({
-            row: entry.row,
-            score: Number(entry.score) || 0
-          }));
+        const expanded = normalizeImportQueryForMatching(queryText);
+        const queries = Array.from(new Set([queryText, expanded].map((q) => String(q || '').trim()).filter(Boolean)));
+        const byId = new Map();
+        queries.forEach((q, qIdx) => {
+          matchExerciseCandidates(q, Math.max(8, maxResults + 4)).forEach((entry) => {
+            const id = String(entry?.row?.id || '').trim().toLowerCase();
+            if (!id) return;
+            const nextScore = Math.max(0, Number(entry.score) || 0) - (qIdx * 0.02);
+            const prev = byId.get(id);
+            if (!prev || nextScore > Number(prev.score || 0)) {
+              byId.set(id, {
+                row: entry.row,
+                score: nextScore
+              });
+            }
+          });
+        });
+        const matches = Array.from(byId.values())
+          .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
+          .slice(0, Math.max(1, Number(maxResults) || 7));
         const customFallback = buildImportCustomCandidate(queryText);
         matches.push({
           row: customFallback,
@@ -3013,11 +3088,26 @@
             .map((entry) => Number(entry?.parsed?.weekday))
             .filter((weekday) => Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)
         )).sort((a, b) => a - b);
+        const explicitOrdinals = Array.from(new Set(
+          validRows
+            .map((entry) => Number(entry?.parsed?.dayOrdinal))
+            .filter((n) => Number.isInteger(n) && n >= 1 && n <= 7)
+        )).sort((a, b) => a - b);
+        const baseWeekdayOrder = (Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length)
+          ? state.selectedWeekdays.slice()
+          : [1, 2, 3, 4, 5, 6, 0];
+        const ordinalToWeekday = new Map();
+        explicitOrdinals.forEach((ord, idx) => {
+          const weekday = baseWeekdayOrder[idx % baseWeekdayOrder.length];
+          if (Number.isInteger(weekday)) ordinalToWeekday.set(ord, weekday);
+        });
         const selectedWeekdays = explicitDays.length
           ? explicitDays
-          : (Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
-            ? state.selectedWeekdays.slice()
-            : [1, 2, 3, 4, 5]);
+          : (explicitOrdinals.length
+            ? Array.from(new Set(explicitOrdinals.map((ord) => ordinalToWeekday.get(ord)).filter((v) => Number.isInteger(v))))
+            : (Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
+              ? state.selectedWeekdays.slice()
+              : [1, 2, 3, 4, 5]));
         syncSelectedDays(selectedWeekdays);
 
         const nextPlan = new Map();
@@ -3027,9 +3117,12 @@
         validRows.forEach((src, idx) => {
           const parsedWeekday = Number(src?.parsed?.weekday);
           const hasParsedWeekday = Number.isInteger(parsedWeekday) && selectedWeekdays.includes(parsedWeekday);
+          const parsedOrdinal = Number(src?.parsed?.dayOrdinal);
+          const ordinalWeekday = Number.isInteger(parsedOrdinal) ? ordinalToWeekday.get(parsedOrdinal) : null;
+          const hasOrdinalWeekday = Number.isInteger(ordinalWeekday) && selectedWeekdays.includes(ordinalWeekday);
           const weekday = hasParsedWeekday
             ? parsedWeekday
-            : selectedWeekdays[fallbackIdx++ % selectedWeekdays.length];
+            : (hasOrdinalWeekday ? ordinalWeekday : selectedWeekdays[fallbackIdx++ % selectedWeekdays.length]);
           const projected = resolveHistoryProjectedForRow(src?.row, src?.parsed);
           nextPlan.get(weekday).push(toDbExerciseState(src?.row, {
             parsed: src?.parsed,

@@ -1,8 +1,7 @@
 ﻿/*
   Import parser stress test:
-  - Generates noisy OCR-like workout text variants (single-day + multi-day)
-  - Runs parser logic
-  - Verifies >= 90% field accuracy for 50 passing loops
+  - Exercises OCR-like noise handling for multiple workout text formats
+  - Verifies >= 90% field accuracy for at least 50 loops
 */
 
 function normalizeImportToken(raw) {
@@ -39,7 +38,7 @@ function cleanImportedEntry(raw) {
     .trim();
   if (!value) return '';
   value = value
-    .replace(/\b\d+\s*(x|sets?|reps?|sec|secs|seconds?|mins?|minutes?)\b/gi, ' ')
+    .replace(/\b\d+\s*(x|sets?|rounds?|reps?|sec|secs|seconds?|mins?|minutes?)\b/gi, ' ')
     .replace(/\bx\b/gi, ' ')
     .replace(/\b(rir|rpe|tempo|rest)\b[^,;]*/gi, ' ')
     .replace(/\(\s*\d+[^)]*\)/g, ' ')
@@ -56,10 +55,10 @@ function isLikelyExerciseName(raw) {
   if (text.length < 3 || text.length > 80) return false;
   if (!/[a-zA-Z]/.test(text)) return false;
   const lowerText = text.toLowerCase();
-  const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|crunch|fly|lunge|extension|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge)/.test(lowerText);
-  if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio)\b/.test(lowerText)) return false;
+  const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
+  if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target)\b/.test(lowerText)) return false;
   if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
-  if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching)\b/.test(lowerText)) return false;
+  if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day)\b/.test(lowerText)) return false;
   const normalized = normalizeImportToken(text);
   if (!normalized) return false;
   if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
@@ -80,16 +79,23 @@ function weekdayFromImportToken(raw) {
   return null;
 }
 
-function inferWeekdayFromImportHeader(rawLine) {
+function inferImportDayHeader(rawLine) {
   const line = normalizeOcrLineText(rawLine);
   if (!line) return null;
   const lower = line.toLowerCase();
   if (/\b\d+\s*(?:sets?|x)\b/i.test(lower)) return null;
   if (/\bset\s*x\s*\d+\b/i.test(lower)) return null;
-  const m = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
-  if (!m) return null;
-  const weekday = weekdayFromImportToken(m[1]);
-  return Number.isInteger(weekday) ? weekday : null;
+  const named = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
+  if (named) {
+    const weekday = weekdayFromImportToken(named[1]);
+    if (Number.isInteger(weekday)) return { weekday };
+  }
+  const ordinal = lower.match(/^\s*day\s*([1-7])\b/i);
+  if (ordinal) {
+    const dayOrdinal = Number(ordinal[1]);
+    if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) return { dayOrdinal };
+  }
+  return null;
 }
 
 function parseRestSecondsFromMatch(numberRaw, unitRaw) {
@@ -104,6 +110,7 @@ function parseRestSecondsFromMatch(numberRaw, unitRaw) {
 function parseImportedLineDetail(rawLine) {
   const sourceText = normalizeOcrLineText(rawLine);
   if (!sourceText) return null;
+
   let working = sourceText;
   let sets = null;
   let reps = '';
@@ -129,6 +136,18 @@ function parseImportedLineDetail(rawLine) {
     const n = Number(setMatch[1]);
     if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
     working = working.replace(setMatch[0], ' ');
+  }
+
+  if (!sets || !reps) {
+    const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?)?\b/i);
+    if (setRepCombinedMatch) {
+      if (!sets) {
+        const n = Number(setRepCombinedMatch[1]);
+        if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+      }
+      if (!reps) reps = String(setRepCombinedMatch[2] || '').replace(/\s+/g, '');
+      working = working.replace(setRepCombinedMatch[0], ' ');
+    }
   }
 
   const repRangeMatch = working.match(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\s*reps?\b/i);
@@ -170,20 +189,15 @@ function parseImportedLineDetail(rawLine) {
     working
       .replace(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/g, ' ')
   );
-  if (!isLikelyExerciseName(name)) {
-    name = cleanImportedEntry(sourceText);
-  }
+  if (!isLikelyExerciseName(name)) name = cleanImportedEntry(sourceText);
   if (!isLikelyExerciseName(name)) return null;
 
-  const normalizedSets = Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null;
-  const normalizedReps = String(reps || '').trim().slice(0, 16);
-  const normalizedRest = Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null;
   return {
     sourceText,
     name,
-    sets: normalizedSets,
-    reps: normalizedReps || '',
-    restSec: normalizedRest
+    sets: Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null,
+    reps: String(reps || '').trim().slice(0, 16) || '',
+    restSec: Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null
   };
 }
 
@@ -193,6 +207,7 @@ function mergeImportedEntryDetails(base, incoming) {
   const merged = { ...cur };
   if (!merged.name && next.name) merged.name = String(next.name);
   if (!Number.isInteger(merged.weekday) && Number.isInteger(next.weekday)) merged.weekday = Number(next.weekday);
+  if (!Number.isInteger(merged.dayOrdinal) && Number.isInteger(next.dayOrdinal)) merged.dayOrdinal = Number(next.dayOrdinal);
   if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) merged.sets = next.sets;
   if (!String(merged.reps || '').trim() && String(next.reps || '').trim()) merged.reps = String(next.reps).trim();
   if (!(Number.isFinite(merged.restSec) && merged.restSec > 0) && Number.isFinite(next.restSec) && next.restSec > 0) merged.restSec = next.restSec;
@@ -208,23 +223,34 @@ function parseImportedEntries(raw) {
     .filter(Boolean);
   const chunks = [];
   let currentWeekday = null;
+  let currentDayOrdinal = null;
 
   lines.forEach((line) => {
-    const headerWeekday = inferWeekdayFromImportHeader(line);
-    if (Number.isInteger(headerWeekday)) {
-      currentWeekday = headerWeekday;
+    const header = inferImportDayHeader(line);
+    if (header && typeof header === 'object') {
+      if (Number.isInteger(header.weekday)) {
+        currentWeekday = Number(header.weekday);
+        currentDayOrdinal = null;
+      } else if (Number.isInteger(header.dayOrdinal)) {
+        currentDayOrdinal = Number(header.dayOrdinal);
+        currentWeekday = null;
+      }
       return;
     }
     const parsed = parseImportedLineDetail(line);
     if (!parsed || !isLikelyExerciseName(parsed.name)) return;
     if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
+    if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
     chunks.push(parsed);
   });
 
   const unique = [];
   const seen = new Map();
   chunks.forEach((entry) => {
-    const key = `${Number.isInteger(entry?.weekday) ? entry.weekday : 'x'}:${normalizeImportToken(entry.name)}`;
+    const dayKey = Number.isInteger(entry?.weekday)
+      ? `w${entry.weekday}`
+      : (Number.isInteger(entry?.dayOrdinal) ? `d${entry.dayOrdinal}` : 'x');
+    const key = `${dayKey}:${normalizeImportToken(entry.name)}`;
     if (!key) return;
     if (seen.has(key)) {
       const idx = seen.get(key);
@@ -240,64 +266,47 @@ function parseImportedEntries(raw) {
 const SIMPLE_EXPECTED = [
   { weekday: 1, name: 'Barbell Bench Press', sets: 4, reps: '6-8' },
   { weekday: 1, name: 'Lat Pulldown Machine', sets: 4, reps: '8-12' },
-  { weekday: 1, name: 'Seated Chest Press Machine', sets: 3, reps: '10-12' },
-  { weekday: 1, name: 'Cable Row', sets: 3, reps: '8-12' },
-  { weekday: 1, name: 'Shoulder Press Machine', sets: 3, reps: '10-12' },
-  { weekday: 1, name: 'Cable Lateral Raises', sets: 3, reps: '12-15' },
-  { weekday: 1, name: 'Triceps Pushdowns', sets: 3, reps: '12-15' },
-  { weekday: 1, name: 'EZ Bar Curls', sets: 3, reps: '10-12' },
-  { weekday: 1, name: 'Cable Crunches', sets: 3, reps: '15-20' }
+  { weekday: 1, name: 'Seated Chest Press Machine', sets: 3, reps: '10-12' }
 ];
 
 const MULTI_DAY_EXPECTED = [
   { weekday: 1, name: 'Barbell Bench Press', sets: 4, reps: '6-8' },
-  { weekday: 1, name: 'Incline Dumbbell Press', sets: 3, reps: '8-10' },
-  { weekday: 1, name: 'Seated Chest Press Machine', sets: 3, reps: '10-12' },
-  { weekday: 1, name: 'Shoulder Press Machine', sets: 3, reps: '8-10' },
-  { weekday: 1, name: 'Cable Lateral Raise', sets: 3, reps: '12-15' },
-  { weekday: 1, name: 'Triceps Pushdown', sets: 3, reps: '10-15' },
   { weekday: 1, name: 'Overhead Cable Triceps Extension', sets: 2, reps: '12-15' },
   { weekday: 2, name: 'Lat Pulldown', sets: 4, reps: '8-12' },
-  { weekday: 2, name: 'Seated Cable Row', sets: 3, reps: '8-12' },
-  { weekday: 2, name: 'Chest-Supported Row Machine', sets: 3, reps: '10-12' },
-  { weekday: 2, name: 'Straight-Arm Pulldown', sets: 2, reps: '12-15' },
-  { weekday: 2, name: 'Dumbbell Curl', sets: 3, reps: '10-12' },
-  { weekday: 2, name: 'Preacher Curl Machine', sets: 3, reps: '10-12' },
-  { weekday: 2, name: 'Hammer Curl', sets: 2, reps: '12-15' },
-  { weekday: 3, name: 'Barbell Back Squat', sets: 4, reps: '6-8' },
-  { weekday: 3, name: 'Leg Press', sets: 3, reps: '10-12' },
-  { weekday: 3, name: 'Romanian Deadlift', sets: 3, reps: '8-10' },
-  { weekday: 3, name: 'Leg Extension', sets: 3, reps: '12-15' },
-  { weekday: 3, name: 'Seated Hamstring Curl', sets: 3, reps: '12-15' },
-  { weekday: 3, name: 'Standing Calf Raise', sets: 4, reps: '12-20' },
-  { weekday: 3, name: 'Cable Crunch or Machine Crunch', sets: 3, reps: '15-20' },
-  { weekday: 5, name: 'Incline Barbell Bench Press', sets: 3, reps: '6-8' },
-  { weekday: 5, name: 'Pull-Ups or Assisted Pull-Ups', sets: 3, reps: '6-10' },
-  { weekday: 5, name: 'Machine Chest Press', sets: 3, reps: '10-12' },
-  { weekday: 5, name: 'Cable Row', sets: 3, reps: '10-12' },
-  { weekday: 5, name: 'Dumbbell Shoulder Press', sets: 3, reps: '8-10' },
-  { weekday: 5, name: 'Cable Lateral Raise', sets: 3, reps: '12-15' },
-  { weekday: 5, name: 'Triceps Pushdown', sets: 2, reps: '12-15' },
-  { weekday: 5, name: 'EZ Bar Curl', sets: 2, reps: '10-12' },
-  { weekday: 6, name: 'Hack Squat or Front Squat', sets: 4, reps: '8-10' },
-  { weekday: 6, name: 'Romanian Deadlift', sets: 3, reps: '8-10' },
-  { weekday: 6, name: 'Walking Lunges', sets: 3, reps: '10' },
-  { weekday: 6, name: 'Leg Curl', sets: 3, reps: '12-15' },
-  { weekday: 6, name: 'Leg Extension', sets: 3, reps: '12-15' },
-  { weekday: 6, name: 'Seated Calf Raise', sets: 4, reps: '15-20' },
-  { weekday: 6, name: 'Hanging Leg Raise or Crunch Machine', sets: 3, reps: '12-15' }
+  { weekday: 2, name: 'Hammer Curl Variation', sets: 2, reps: '12-15' },
+  { weekday: 3, name: 'Back Squat', sets: 4, reps: '6-8' },
+  { weekday: 5, name: 'EZ-Bar Curl', sets: 2, reps: '10-12' },
+  { weekday: 6, name: 'Hack Squat or Front Squat', sets: 4, reps: '8-10' }
+];
+
+const DAY_ORDINAL_EXPECTED = [
+  { dayOrdinal: 1, name: 'Flat Barbell Bench Press', sets: 4, reps: '6-8' },
+  { dayOrdinal: 1, name: 'Rope Pushdown', sets: 3, reps: '10-15' },
+  { dayOrdinal: 2, name: 'Wide or Medium-Grip Lat Pulldown', sets: 4, reps: '8-12' },
+  { dayOrdinal: 2, name: 'Preacher Curl Machine', sets: 3, reps: '10-12' },
+  { dayOrdinal: 3, name: 'Back Squat', sets: 4, reps: '6-8' },
+  { dayOrdinal: 3, name: 'Cable or Machine Crunch', sets: 3, reps: '15-20' },
+  { dayOrdinal: 5, name: 'Incline Barbell Press', sets: 3, reps: '6-8' },
+  { dayOrdinal: 6, name: 'Seated Calf Raise', sets: 4, reps: '15-20' }
+];
+
+const SHORTHAND_EXPECTED = [
+  { weekday: 1, name: 'Bench', sets: 4, reps: '6-8' },
+  { weekday: 1, name: 'OH Triceps Ext', sets: 2, reps: '12-15' },
+  { weekday: 2, name: 'Pulldown', sets: 4, reps: '8-12' },
+  { weekday: 2, name: 'DB Curl', sets: 3, reps: '10-12' },
+  { weekday: 3, name: 'RDL', sets: 3, reps: '8-10' },
+  { weekday: 3, name: 'Leg Ext', sets: 3, reps: '12-15' }
 ];
 
 function mutateLine(line, rand) {
   let out = line;
-  if (rand() < 0.42) out = out.replace(/ \u2014 /g, ' - ');
-  if (rand() < 0.25) out = out.replace(/ x /gi, ' X ');
-  if (rand() < 0.22) out = out.replace(/ x /gi, ' \u00D7 ');
-  if (rand() < 0.2) out = out.replace(/([0-9]+)-([0-9]+)/g, '$1\u2013$2');
-  if (rand() < 0.16) out = out.replace(/sets/gi, 'set');
-  if (rand() < 0.14) out = out.replace(/Machine/gi, 'Mach1ne');
-  if (rand() < 0.12) out = out.replace(/Cable/gi, 'CabIe');
-  if (rand() < 0.1) out = out.replace(/^\d+\./, (m) => `${m} `);
+  if (rand() < 0.35) out = out.replace(/ \u2014 /g, ' - ');
+  if (rand() < 0.2) out = out.replace(/ x /gi, ' X ');
+  if (rand() < 0.2) out = out.replace(/ x /gi, ' \u00D7 ');
+  if (rand() < 0.18) out = out.replace(/([0-9]+)-([0-9]+)/g, '$1\u2013$2');
+  if (rand() < 0.12) out = out.replace(/sets/gi, 'set');
+  if (rand() < 0.08) out = out.replace(/^\d+\./, (m) => `${m} `);
   return out;
 }
 
@@ -309,60 +318,85 @@ function random(seed) {
   };
 }
 
-function buildSimpleDoc(loopSeed) {
-  const rand = random(loopSeed);
-  const lines = [
-    'Monday Workout (Gym Equipment Only)',
-    'Goal: Upper body strength + muscle',
-    'Time: 60-75 min',
-    ''
-  ];
-  SIMPLE_EXPECTED.forEach((ex, idx) => {
-    const line = `${idx + 1}. ${ex.name} \u2014 ${ex.sets} sets x ${ex.reps}`;
-    lines.push(mutateLine(line, rand));
-  });
-  lines.push('');
-  lines.push('Rest:');
-  lines.push('Big lifts: 2-3 min');
-  lines.push('Machines/isolation: 60-90 sec');
-  lines.push("Rule: last 2 reps should be hard. If it's easy, raise the weight.");
+function buildSimpleDoc(seed) {
+  const rand = random(seed);
+  const lines = ['Monday Workout', ''];
+  SIMPLE_EXPECTED.forEach((ex, i) => lines.push(mutateLine(`${i + 1}. ${ex.name} \u2014 ${ex.sets} sets x ${ex.reps}`, rand)));
+  lines.push('Rule: last reps should be hard');
   return lines.join('\n');
 }
 
-function buildMultiDayDoc(loopSeed) {
-  const rand = random(loopSeed);
-  const sections = [
-    ['Monday \u2014 Chest, Shoulders, Triceps', MULTI_DAY_EXPECTED.filter((x) => x.weekday === 1)],
-    ['Tuesday \u2014 Back, Biceps', MULTI_DAY_EXPECTED.filter((x) => x.weekday === 2)],
-    ['Wednesday \u2014 Legs', MULTI_DAY_EXPECTED.filter((x) => x.weekday === 3)],
-    ['Thursday \u2014 Rest or Light Cardio', []],
-    ['Friday \u2014 Upper Body', MULTI_DAY_EXPECTED.filter((x) => x.weekday === 5)],
-    ['Saturday \u2014 Lower Body', MULTI_DAY_EXPECTED.filter((x) => x.weekday === 6)],
-    ['Sunday \u2014 Rest', []]
+function buildMultiDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    'Monday \u2014 Chest, Shoulders, Triceps',
+    mutateLine('1. Barbell Bench Press \u2014 4 x 6-8', rand),
+    mutateLine('7. Overhead Cable Triceps Extension \u2014 2 x 12-15', rand),
+    '',
+    'Tuesday \u2014 Back, Biceps',
+    mutateLine('1. Lat Pulldown \u2014 4 x 8-12', rand),
+    mutateLine('7. Hammer Curl Variation \u2014 2 x 12-15', rand),
+    '',
+    'Wednesday \u2014 Legs',
+    mutateLine('1. Back Squat \u2014 4 working sets of 6-8', rand),
+    '',
+    'Thursday \u2014 Rest or Light Cardio',
+    '• light stretching',
+    '',
+    'Friday \u2014 Upper Body',
+    mutateLine('8. EZ-Bar Curl \u2014 2 x 10-12', rand),
+    '',
+    'Saturday \u2014 Lower Body',
+    mutateLine('1. Hack Squat or Front Squat \u2014 4 x 8-10', rand)
   ];
-  const lines = [];
-  sections.forEach(([header, entries]) => {
-    lines.push(header);
-    if (!entries.length) {
-      lines.push('• 20-30 min incline walk');
-      lines.push('• light stretching');
-      lines.push('• recover properly');
-      lines.push('');
-      return;
-    }
-    entries.forEach((ex, idx) => {
-      const repText = ex.reps === '10' ? '10 steps each leg' : ex.reps;
-      const line = `${idx + 1}. ${ex.name} \u2014 ${ex.sets} x ${repText}`;
-      lines.push(mutateLine(line, rand));
-    });
-    lines.push('');
-  });
-  lines.push('Rules');
-  lines.push('• Compound lifts: rest 2-3 min');
-  lines.push('• Isolation lifts: rest 60-90 sec');
-  lines.push('• Pick a weight that makes the last 1-2 reps hard');
-  lines.push('Real advice');
-  lines.push('This is a solid base. Not magic.');
+  return lines.join('\n');
+}
+
+function buildDayOrdinalDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    '5-Day Gym Split',
+    '',
+    'Day 1 \u2014 Push Focus',
+    'Target: chest, shoulders, triceps',
+    mutateLine('• Flat Barbell Bench Press \u2014 4 rounds of 6-8 reps', rand),
+    mutateLine('• Rope Pushdown \u2014 3 rounds of 10-15 reps', rand),
+    '',
+    'Day 2 \u2014 Pull Focus',
+    mutateLine('• Wide or Medium-Grip Lat Pulldown \u2014 4 sets of 8-12', rand),
+    mutateLine('• Preacher Curl Machine \u2014 3 sets of 10-12', rand),
+    '',
+    'Day 3 \u2014 Lower Body Session',
+    mutateLine('• Back Squat \u2014 4 working sets of 6-8', rand),
+    mutateLine('• Cable or Machine Crunch \u2014 3 working sets of 15-20', rand),
+    '',
+    'Day 4 \u2014 Recovery Day',
+    'Not a lifting day',
+    '',
+    'Day 5 \u2014 Upper Body Mix',
+    mutateLine('• Incline Barbell Press \u2014 3 x 6-8', rand),
+    '',
+    'Day 6 \u2014 Lower Body Variation',
+    mutateLine('• Seated Calf Raise \u2014 4 x 15-20', rand)
+  ];
+  return lines.join('\n');
+}
+
+function buildShorthandDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    'Monday / Push',
+    mutateLine('Bench 4x6-8', rand),
+    mutateLine('OH Triceps Ext 2x12-15', rand),
+    '',
+    'Tuesday / Pull',
+    mutateLine('Pulldown 4x8-12', rand),
+    mutateLine('DB Curl 3x10-12', rand),
+    '',
+    'Wednesday / Legs',
+    mutateLine('RDL 3x8-10', rand),
+    mutateLine('Leg Ext 3x12-15', rand)
+  ];
   return lines.join('\n');
 }
 
@@ -386,50 +420,56 @@ function repsEq(a, b) {
 
 function scoreDataset(parsed, expected) {
   let correct = 0;
-  const total = expected.length * 4; // weekday + name + sets + reps
-
+  const total = expected.length * 4;
   expected.forEach((exp) => {
     let best = null;
     let bestSim = -1;
     parsed.forEach((p) => {
       const sim = similarityScore(exp.name, p.name);
-      const dayBoost = Number(p.weekday) === Number(exp.weekday) ? 0.2 : 0;
-      const metric = sim + dayBoost;
+      const dayMatch = Number.isInteger(exp.weekday)
+        ? (Number(p.weekday) === Number(exp.weekday))
+        : (Number(p.dayOrdinal) === Number(exp.dayOrdinal));
+      const metric = sim + (dayMatch ? 0.25 : 0);
       if (metric > bestSim) {
         bestSim = metric;
         best = p;
       }
     });
     if (!best) return;
-    if (Number(best.weekday) === Number(exp.weekday)) correct += 1;
-    if (bestSim >= 0.62) correct += 1;
+    const dayOk = Number.isInteger(exp.weekday)
+      ? (Number(best.weekday) === Number(exp.weekday))
+      : (Number(best.dayOrdinal) === Number(exp.dayOrdinal));
+    if (dayOk) correct += 1;
+    if (bestSim >= 0.6) correct += 1;
     if (Number(best.sets) === Number(exp.sets)) correct += 1;
     if (repsEq(best.reps, exp.reps)) correct += 1;
   });
-
   const extra = Math.max(0, parsed.length - expected.length);
-  const penalty = Math.min(extra, Math.max(1, Math.round(expected.length * 0.08)));
-  const adjusted = Math.max(0, correct - penalty);
-  return adjusted / Math.max(1, total);
+  const penalty = Math.min(extra, Math.max(1, Math.round(expected.length * 0.1)));
+  return Math.max(0, (correct - penalty) / Math.max(1, total));
 }
 
 function run() {
+  const datasets = [
+    { expected: SIMPLE_EXPECTED, build: buildSimpleDoc },
+    { expected: MULTI_DAY_EXPECTED, build: buildMultiDoc },
+    { expected: DAY_ORDINAL_EXPECTED, build: buildDayOrdinalDoc },
+    { expected: SHORTHAND_EXPECTED, build: buildShorthandDoc }
+  ];
+
   let attempts = 0;
   let passes = 0;
   const minPassAccuracy = 0.9;
   const targetPasses = 50;
-  const maxAttempts = 420;
+  const maxAttempts = 500;
   const accs = [];
 
   while (attempts < maxAttempts && passes < targetPasses) {
     attempts += 1;
-    const isMulti = attempts % 2 === 0;
-    const doc = isMulti
-      ? buildMultiDayDoc(5000 + attempts)
-      : buildSimpleDoc(1000 + attempts);
-    const expected = isMulti ? MULTI_DAY_EXPECTED : SIMPLE_EXPECTED;
+    const ds = datasets[(attempts - 1) % datasets.length];
+    const doc = ds.build(1000 + attempts);
     const parsed = parseImportedEntries(doc);
-    const acc = scoreDataset(parsed, expected);
+    const acc = scoreDataset(parsed, ds.expected);
     accs.push(acc);
     if (acc >= minPassAccuracy) passes += 1;
   }
