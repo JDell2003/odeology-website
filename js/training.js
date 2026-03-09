@@ -139,7 +139,7 @@
     let last = null;
     for (let i = 0; i < tries; i += 1) {
       try {
-        const resp = await api('/api/training/state', { method: 'GET' });
+        const resp = await api('/api/training/state', { method: 'GET', timeoutMs: 4500 });
         last = resp;
         if (resp.ok && resp.json?.plan?.id) return resp;
       } catch {
@@ -4152,7 +4152,7 @@ function toggleSharePopover(force) {
 
     let me;
     try {
-      me = await api('/api/auth/me', { method: 'GET' });
+      me = await api('/api/auth/me', { method: 'GET', timeoutMs: 7000 });
     } catch {
       state.auth.user = null;
       shareEventsInFlight = false;
@@ -4218,7 +4218,7 @@ function toggleSharePopover(force) {
 
     let s;
     try {
-      s = await api('/api/training/state', { method: 'GET' });
+      s = await api('/api/training/state', { method: 'GET', timeoutMs: 9000 });
     } catch {
       state.planError = 'Failed to load training state. Please refresh.';
       setView('plan');

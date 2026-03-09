@@ -9042,15 +9042,48 @@ function setupShareFlowGlobalDebug() {
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupShareFlowGlobalDebug();
-    setupFormFieldAccessibilityGuard();
+    const body = document.body;
+    const isTrainingPage = Boolean(body?.classList?.contains('training-page'));
+
+    const runIdle = (fn, timeout = 1200) => {
+        if (typeof fn !== 'function') return;
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => {
+                try { fn(); } catch { /* ignore */ }
+            }, { timeout });
+            return;
+        }
+        window.setTimeout(() => {
+            try { fn(); } catch { /* ignore */ }
+        }, 60);
+    };
+
     initThemeToggle();
     initTracking();
     setupPreloader();
     setupNav();
-    setupMacroNavLink();
+    setupTrainingNavRouting();
     initAuthUi();
     initAuthGate();
+    setupControlPanel();
+
+    if (isTrainingPage) {
+        setupTrialBadge();
+        setupComingSoonLinks();
+        setupBasicCheckin();
+        setupProgressPhotos();
+        setupOnboardingTour();
+        setupSmoothScroll();
+        runIdle(setupShareFlowGlobalDebug, 1000);
+        runIdle(setupFormFieldAccessibilityGuard, 1600);
+        runIdle(initTrainingHandoffOneOnOne, 1800);
+        console.log('odeology_ site initialized');
+        return;
+    }
+
+    setupShareFlowGlobalDebug();
+    setupFormFieldAccessibilityGuard();
+    setupMacroNavLink();
     initFriendsPage();
     setupTrialBadge();
     setupComingSoonLinks();
@@ -9059,7 +9092,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initNutritionFunnel();
     runNutritionEngineSelfTests();
     setupNsNextBoxTyping();
-    setupTrainingNavRouting();
     // Run plan setup first so shared planner functions can be exposed for
     // pre-final budget simulation on grocery-final.
     setupGroceryPlanPage();
@@ -9075,7 +9107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGetStartedIntake();
     setupReveal();
     setupCounters();
-    setupControlPanel();
     setupBasicCheckin();
     setupProgressPhotos();
     setupOnboardingTour();
@@ -12886,6 +12917,7 @@ function initAuthUi() {
 
     let friendsPrefetchTimer = null;
     function queueFriendsPrefetch() {
+        if (document.body?.classList?.contains('training-page')) return;
         if (friendsPrefetchTimer) return;
         friendsPrefetchTimer = setTimeout(() => {
             friendsPrefetchTimer = null;
