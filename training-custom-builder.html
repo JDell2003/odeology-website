@@ -395,6 +395,27 @@
       background: rgba(255, 252, 247, 0.75);
     }
 
+    .builder-import-day-group {
+      display: grid;
+      gap: 8px;
+      border-top: 1px dashed #e2d2bb;
+      padding-top: 8px;
+    }
+
+    .builder-import-day-group:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .builder-import-day-head {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #7a5b34;
+      padding: 0 2px;
+    }
+
     .builder-import-row {
       border: 1px solid #e0cfb6;
       border-radius: 12px;
@@ -2700,6 +2721,8 @@
       function formatImportParsedDetails(parsed) {
         const meta = parsed && typeof parsed === 'object' ? parsed : {};
         const parts = [];
+        const dayLabel = formatImportDayLabel(meta);
+        if (dayLabel) parts.push(dayLabel);
         if (Number.isFinite(meta?.sets) && Number(meta.sets) > 0) {
           parts.push(`${Math.round(Number(meta.sets))} set${Number(meta.sets) === 1 ? '' : 's'}`);
         }
@@ -2712,6 +2735,40 @@
           parts.push(`~${Number(meta.projected.value)} lb`);
         }
         return parts.length ? parts.join(' | ') : '';
+      }
+
+      function formatImportDayLabel(parsed) {
+        const meta = parsed && typeof parsed === 'object' ? parsed : {};
+        const weekdayNum = Number(meta?.weekday);
+        if (Number.isInteger(weekdayNum) && weekdayNum >= 0 && weekdayNum <= 6) {
+          return weekdayLabel(weekdayNum);
+        }
+        const dayOrdinal = Number(meta?.dayOrdinal);
+        if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
+          const selected = Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
+            ? state.selectedWeekdays
+            : [1, 2, 3, 4, 5, 6, 0];
+          const mapped = Number(selected[(dayOrdinal - 1) % selected.length]);
+          if (Number.isInteger(mapped) && mapped >= 0 && mapped <= 6) {
+            return `Session ${dayOrdinal} (${weekdayLabel(mapped)})`;
+          }
+          return `Session ${dayOrdinal}`;
+        }
+        return '';
+      }
+
+      function getImportRowGroupInfo(row) {
+        const parsed = row?.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+        const weekdayNum = Number(parsed?.weekday);
+        if (Number.isInteger(weekdayNum) && weekdayNum >= 0 && weekdayNum <= 6) {
+          return { key: `weekday-${weekdayNum}`, label: weekdayLabel(weekdayNum) };
+        }
+        const dayOrdinal = Number(parsed?.dayOrdinal);
+        if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
+          const label = formatImportDayLabel(parsed) || `Session ${dayOrdinal}`;
+          return { key: `ordinal-${dayOrdinal}`, label };
+        }
+        return { key: 'unassigned', label: 'Unassigned' };
       }
 
       function buildImportPasteSignature(files, text = '') {
@@ -2941,7 +2998,7 @@
           return;
         }
 
-        importReviewBodyEl.innerHTML = rows.map((row) => {
+        const renderImportRowCard = (row) => {
           const options = row.candidateList.map((entry) => {
             const id = String(entry?.row?.id || '');
             const name = String(entry?.row?.name || id || 'Unknown');
@@ -2982,7 +3039,31 @@
               <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
             </article>
           `;
-        }).join('');
+        };
+
+        const grouped = [];
+        const groupedByKey = new Map();
+        rows.forEach((row) => {
+          const info = getImportRowGroupInfo(row);
+          const key = String(info?.key || 'unassigned');
+          if (!groupedByKey.has(key)) {
+            const bucket = {
+              key,
+              label: String(info?.label || 'Unassigned'),
+              rows: []
+            };
+            groupedByKey.set(key, bucket);
+            grouped.push(bucket);
+          }
+          groupedByKey.get(key).rows.push(row);
+        });
+
+        importReviewBodyEl.innerHTML = grouped.map((group) => `
+          <section class="builder-import-day-group" data-import-group="${escapeHtml(group.key)}">
+            <div class="builder-import-day-head">${escapeHtml(group.label)}</div>
+            ${group.rows.map((row) => renderImportRowCard(row)).join('')}
+          </section>
+        `).join('');
       }
 
       function openImportReview(rows) {
