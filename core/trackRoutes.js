@@ -1,6 +1,11 @@
 const crypto = require('crypto');
 const db = require('./db');
 const { isTransientPgError } = require('./dbErrors');
+const {
+  isKlaviyoConfigured,
+  createOrUpdateKlaviyoProfile,
+  createKlaviyoEvent
+} = require('./klaviyoClient');
 
 const GUEST_COOKIE_NAME = process.env.GUEST_COOKIE_NAME || 'gid';
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES || 400_000));
@@ -12,6 +17,7 @@ let lastSchemaTransientError = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 const TRACK_SCHEMA_BACKOFF_MS = Math.max(1000, Number(process.env.TRACK_SCHEMA_BACKOFF_MS || 15_000));
 let lastTransientTrackLogAt = 0;
+let lastKlaviyoErrorLogAt = 0;
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -85,6 +91,18 @@ function logTransientTrackError(err, context) {
       message: err?.message || String(err)
     });
   }
+}
+
+function logKlaviyoError(err, context) {
+  const now = Date.now();
+  if (now - lastKlaviyoErrorLogAt < 60_000) return;
+  lastKlaviyoErrorLogAt = now;
+  console.warn('[track][klaviyo]', {
+    context,
+    code: err?.code || null,
+    status: err?.status || null,
+    message: err?.message || String(err)
+  });
 }
 
 async function readJsonBody(req) {
@@ -482,6 +500,52 @@ async function createOrUpdateLead({ lead, userId, guestId }) {
   );
 }
 
+async function syncLeadToKlaviyo(lead) {
+  if (!isKlaviyoConfigured()) return;
+  const email = normalizeEmail(lead?.email);
+  const phone = normalizePhone(lead?.phone);
+  if (!email && !phone) return;
+  const firstName = lead?.firstName ? String(lead.firstName).trim().slice(0, 120) : '';
+  const lastName = lead?.lastName ? String(lead.lastName).trim().slice(0, 120) : '';
+  const source = normalizeLeadSource(lead?.source) || 'intake';
+  const wants = Array.isArray(lead?.wants)
+    ? lead.wants.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 24)
+    : [];
+  const emailOptIn = lead?.emailOptIn === false ? false : true;
+
+  try {
+    await createOrUpdateKlaviyoProfile({
+      email,
+      phone,
+      firstName,
+      lastName,
+      properties: {
+        ode_source: source,
+        ode_email_optin: emailOptIn,
+        ode_wants: wants
+      }
+    });
+  } catch (err) {
+    logKlaviyoError(err, 'syncLeadToKlaviyo:profile');
+  }
+
+  try {
+    await createKlaviyoEvent({
+      eventName: 'Lead Submitted',
+      email,
+      phone,
+      properties: {
+        source,
+        wants,
+        email_optin: emailOptIn
+      },
+      time: new Date().toISOString()
+    });
+  } catch (err) {
+    logKlaviyoError(err, 'syncLeadToKlaviyo:event');
+  }
+}
+
 module.exports = async function trackRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/track')) return false;
   const isNonCriticalTrackRoute = (
@@ -614,6 +678,7 @@ module.exports = async function trackRoutes(req, res, url) {
     try {
       await createOrUpdateLead({ lead: payload, userId, guestId });
       await insertEvent({ eventName: 'lead_submitted', path: payload?.path || url.pathname, userId, guestId, props: { wants: payload?.wants || [] } });
+      await syncLeadToKlaviyo(payload);
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to save lead' }, setCookie ? { 'Set-Cookie': setCookie } : {});
     }
