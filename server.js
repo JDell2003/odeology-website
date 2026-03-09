@@ -42,6 +42,7 @@ const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
 const IS_DEV = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
 const DEV_SERVER_ID = 'jasons-web-dev-server';
 const SERVER_STARTED_AT = new Date().toISOString();
+const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
 
 const mime = {
     '.html': 'text/html',
@@ -1603,6 +1604,42 @@ const cacheControlForStatic = (filePath, ext) => {
     return 'public, max-age=86400';
 };
 
+const mapExerciseAssetPath = (pathname) => {
+    const raw = String(pathname || '');
+    if (raw.startsWith('/free-exercise-db/exercises/')) {
+        return raw.slice('/free-exercise-db/exercises/'.length);
+    }
+    if (raw.startsWith('/exercise-db/exercises/')) {
+        return raw.slice('/exercise-db/exercises/'.length);
+    }
+    return '';
+};
+
+const maybeRedirectExerciseAsset = (req, res, pathname) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+    const relative = mapExerciseAssetPath(pathname);
+    if (!relative) return false;
+    const safeRelative = relative
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => {
+            try {
+                return encodeURIComponent(decodeURIComponent(segment));
+            } catch {
+                return encodeURIComponent(segment);
+            }
+        })
+        .join('/');
+    if (!safeRelative) return false;
+    const location = `${EXERCISE_CDN_BASE}/${safeRelative}`;
+    res.writeHead(302, {
+        Location: location,
+        'Cache-Control': 'public, max-age=86400'
+    });
+    res.end();
+    return true;
+};
+
 const serveStatic = (req, res, pathname) => {
     let filePath = path.join(PUBLIC_DIR, pathname);
     if (pathname === '/' || pathname === '') {
@@ -1675,6 +1712,10 @@ const server = http.createServer(async (req, res) => {
         }
     } catch {
         // ignore
+    }
+
+    if (maybeRedirectExerciseAsset(req, res, url.pathname)) {
+        return;
     }
 
     if (await trackRoutes(req, res, url)) {
