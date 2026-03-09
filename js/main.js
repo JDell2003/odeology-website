@@ -15750,13 +15750,26 @@ function setupOnboardingTour() {
     const SIGNUP_PROMPT_KEY = 'ode_signup_prompted_v1';
     const SIGNUP_AFTER_TOUR_KEY = 'ode_signup_after_tour_v1';
     const TOUR_PROMPT_DELAY = 10000;
-    const TOUR_SEAMLESS_MODE = true;
+    const TOUR_SEAMLESS_MODE = false;
+    const TOUR_SIGNED_IN_CACHE_KEY = 'ode_tour_signed_in_v1';
 
     const pageName = () => {
         const parts = String(location.pathname || '').split('/').filter(Boolean);
         return parts.length ? parts[parts.length - 1] : 'index.html';
     };
     const hasTourHash = () => String(location.hash || '').toLowerCase() === '#tour';
+    const buildTourHref = (rawUrl) => {
+        const src = String(rawUrl || '').trim();
+        if (!src) return '';
+        try {
+            const u = new URL(src, window.location.href);
+            u.searchParams.set('tour', '1');
+            u.hash = '#tour';
+            return `${u.pathname}${u.search}${u.hash}`;
+        } catch {
+            return src.includes('#') ? src : `${src}#tour`;
+        }
+    };
     const humanizePageLabel = (rawPage) => {
         const page = String(rawPage || '').trim().toLowerCase();
         if (page === 'index.html') return 'Home';
@@ -15779,7 +15792,7 @@ function setupOnboardingTour() {
                     url: 'index.html',
                     selector: '.navbar',
                     title: 'Welcome to ODEOLOGY',
-                    body: 'This tour shows exactly where your plan, training, progress, and team features live. Use Next to move fast.'
+                    body: 'Fast tour mode is on. Next jumps page-to-page quickly and shows the real core elements for plan, training, progress, and messaging.'
                 },
                 {
                     key: 'panel',
@@ -15811,7 +15824,7 @@ function setupOnboardingTour() {
                 url: 'index.html',
                 selector: '.navbar',
                 title: 'Welcome to your dashboard',
-                body: 'This is a guided map of each major tab and what it controls so you know exactly where to update your plan.'
+                body: 'Fast tour mode is on. Next moves page-to-page quickly so you see the actual controls across the full website.'
             },
             {
                 key: 'panel',
@@ -16046,12 +16059,34 @@ function setupOnboardingTour() {
     };
 
     const resolveSignedIn = async ({ fresh = false } = {}) => {
+        if (!fresh) {
+            try {
+                const cached = sessionStorage.getItem(TOUR_SIGNED_IN_CACHE_KEY);
+                if (cached === '1') {
+                    signedInCache = true;
+                    return true;
+                }
+                if (cached === '0') {
+                    signedInCache = false;
+                    return false;
+                }
+            } catch {
+                // ignore
+            }
+            if (window.__odeCurrentUser && typeof window.__odeCurrentUser === 'object') {
+                signedInCache = true;
+                try { sessionStorage.setItem(TOUR_SIGNED_IN_CACHE_KEY, '1'); } catch { /* ignore */ }
+                return true;
+            }
+        }
         if (!fresh && typeof signedInCache === 'boolean') return signedInCache;
         try {
             const me = await odeFetchMe();
             signedInCache = Boolean(me);
+            try { sessionStorage.setItem(TOUR_SIGNED_IN_CACHE_KEY, signedInCache ? '1' : '0'); } catch { /* ignore */ }
         } catch {
             signedInCache = false;
+            try { sessionStorage.setItem(TOUR_SIGNED_IN_CACHE_KEY, '0'); } catch { /* ignore */ }
         }
         return signedInCache;
     };
@@ -16138,7 +16173,7 @@ function setupOnboardingTour() {
             <div class="ode-prompt-card" role="dialog" aria-modal="true" aria-label="Quick tour">
                 <button type="button" class="ode-prompt-close" data-prompt-close aria-label="Close">&times;</button>
                 <h3 class="ode-prompt-title">Take a quick tour?</h3>
-                <p class="ode-prompt-body">Get a 60-second walkthrough of the core tools.</p>
+                <p class="ode-prompt-body">Get a fast walkthrough of the full site. Next moves instantly to the next page/element.</p>
                 <div class="ode-prompt-actions">
                     <button type="button" class="btn btn-ghost" data-tour-no>Not now</button>
                     <button type="button" class="btn btn-primary" data-tour-yes>Yes, show me</button>
@@ -16477,6 +16512,18 @@ function setupOnboardingTour() {
         return { element: document.body || document.documentElement, virtual: true, page: stepPage || currentPage };
     };
 
+    const waitForRenderableTarget = async (selector, { timeoutMs = 1800, intervalMs = 90 } = {}) => {
+        const sel = String(selector || '').trim();
+        if (!sel) return null;
+        const started = Date.now();
+        while (Date.now() - started < timeoutMs) {
+            const found = document.querySelector(sel);
+            if (isRenderableTarget(found)) return found;
+            await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        }
+        return null;
+    };
+
     const goToStep = async (idx) => {
         if (!Array.isArray(steps) || !steps.length) {
             await finish({ skipped: false });
@@ -16500,7 +16547,8 @@ function setupOnboardingTour() {
         const stepUrl = step.url ? String(step.url) : '';
         const stepPage = stepUrl.split('#')[0];
         if (!TOUR_SEAMLESS_MODE && stepPage && current !== stepPage) {
-            location.href = `${stepPage}#tour`;
+            teardown();
+            location.href = buildTourHref(stepPage);
             return;
         }
         const samePageStep = !stepPage || current === stepPage;
@@ -16527,7 +16575,16 @@ function setupOnboardingTour() {
             await new Promise((resolve) => setTimeout(resolve, 120));
         }
 
-        const target = resolveStepTarget({ step, currentPage: current, stepPage });
+        let target = resolveStepTarget({ step, currentPage: current, stepPage });
+        if (samePageStep) {
+            const waited = await waitForRenderableTarget(step.selector, {
+                timeoutMs: step.key === 'trainingShareList' ? 2600 : 1800,
+                intervalMs: 90
+            });
+            if (waited) {
+                target = { element: waited, virtual: false, page: stepPage || current };
+            }
+        }
         const el = target?.element || null;
         const isVirtualStep = Boolean(target?.virtual);
         const virtualPageLabel = humanizePageLabel(target?.page || stepPage || current);
@@ -16561,7 +16618,7 @@ function setupOnboardingTour() {
                 previewEl.classList.remove('hidden');
                 previewEl.innerHTML = `
                     <div class="ode-tour-preview-chip">${escapeHtml(virtualPageLabel)}</div>
-                    <div class="ode-tour-preview-note">Seamless mode: this step is shown instantly without leaving your current page.</div>
+                    <div class="ode-tour-preview-note">Loading nearest section while this page finishes rendering.</div>
                 `.trim();
             } else {
                 previewEl.classList.add('hidden');
