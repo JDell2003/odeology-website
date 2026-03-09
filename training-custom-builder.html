@@ -196,6 +196,9 @@
       backdrop-filter: blur(3px);
       padding: 14px;
     }
+    .builder-import-loading[hidden] {
+      display: none !important;
+    }
 
     .builder-import-loading-card {
       width: min(520px, 96vw);
@@ -253,6 +256,9 @@
       background: rgba(18, 11, 5, 0.62);
       backdrop-filter: blur(3px);
       padding: 14px;
+    }
+    .builder-import-review[hidden] {
+      display: none !important;
     }
 
     .builder-import-review-card {
@@ -2315,6 +2321,11 @@
         if (importReviewEl) importReviewEl.hidden = true;
       }
 
+      function resetImportOverlays() {
+        closeImportReview();
+        setImportLoadingVisible(false);
+      }
+
       function getImportReviewRow(rowId) {
         return (Array.isArray(state.importReviewRows) ? state.importReviewRows : [])
           .find((row) => String(row?.id || '') === String(rowId || '')) || null;
@@ -4033,6 +4044,7 @@
 
       async function init() {
         let lastMobileLayout = isMobileLayout();
+        resetImportOverlays();
         state.user = await fetchAuthUser();
         setAuthGate(!state.user);
         setCustomFormOpen(false);
@@ -4142,6 +4154,10 @@
 
         applyBuilderPrefillSnapshot(readBuilderPrefillSnapshot());
       }
+
+      window.addEventListener('pageshow', () => {
+        resetImportOverlays();
+      });
 
       init();
     })();
