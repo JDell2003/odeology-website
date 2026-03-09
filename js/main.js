@@ -15824,6 +15824,42 @@ function setupControlPanel() {
     const isMobileControl = (() => {
         try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
     })();
+    const placeQuickTourPill = (mobileMode) => {
+        const tourBtn = document.getElementById('control-tour');
+        if (!tourBtn) return;
+
+        if (!tourBtn.__odeOriginParent) {
+            tourBtn.__odeOriginParent = tourBtn.parentElement || null;
+            tourBtn.__odeOriginNext = tourBtn.nextSibling || null;
+        }
+        const originParent = tourBtn.__odeOriginParent;
+        const header = controlPanel.querySelector('.control-panel-header');
+
+        // Tour pill should not show the trailing mobile close glyph.
+        const tourCloseGlyph = tourBtn.querySelector('.control-link-close');
+        if (tourCloseGlyph) tourCloseGlyph.remove();
+
+        if (mobileMode) {
+            if (header && tourBtn.parentElement !== header) {
+                header.insertBefore(tourBtn, header.firstChild);
+            }
+            tourBtn.classList.add('control-tour-pill');
+            if (originParent && originParent.classList?.contains('control-section')) {
+                originParent.classList.add('control-tour-host-hidden');
+            }
+            return;
+        }
+
+        tourBtn.classList.remove('control-tour-pill');
+        if (originParent && originParent.isConnected) {
+            const next = tourBtn.__odeOriginNext;
+            const anchor = next && next.parentElement === originParent ? next : null;
+            if (tourBtn.parentElement !== originParent) {
+                originParent.insertBefore(tourBtn, anchor);
+            }
+            originParent.classList.remove('control-tour-host-hidden');
+        }
+    };
 
     if (isHomePage) {
         document.body.classList.remove('has-control-panel', 'control-pinned', 'control-open', 'control-collapsed');
@@ -15888,9 +15924,11 @@ function setupControlPanel() {
         if (controlCloseBtn) controlCloseBtn.remove();
         document.getElementById('control-mobile-fab')?.remove();
     }
+    placeQuickTourPill(isMobileControl);
 
     if (isMobileControl) {
         controlPanel.querySelectorAll('.control-link').forEach((controlLink) => {
+            if (controlLink.id === 'control-tour') return;
             if (!controlLink.querySelector('.control-link-close')) {
                 const closeIcon = document.createElement('span');
                 closeIcon.className = 'control-link-close';
