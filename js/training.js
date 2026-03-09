@@ -3,6 +3,7 @@
   if (!root) return;
 
   const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
+  const TRAINING_BUILDER_PREFILL_KEY = 'ode_training_builder_prefill_v1';
   const TRAINING_OPEN_WIZARD_ONLY_KEY = 'ode_training_open_wizard_only';
 
   function readLocalIntake() {
@@ -6658,6 +6659,94 @@ function toggleSharePopover(force) {
       }, 250);
     };
 
+    const openWorkoutEditorFromPlan = () => {
+      const activePlan = state.planRow?.plan;
+      const week = activePlan?.weeks?.find((w) => Number(w?.index) === Number(activeWeek)) || activePlan?.weeks?.[0];
+      const days = Array.isArray(week?.days) ? week.days : [];
+      if (!days.length) {
+        state.planError = 'No workout days found to edit.';
+        render();
+        return;
+      }
+
+      const weekdayByName = new Map(
+        WEEKDAYS.map((label, idx) => [String(label || '').trim().toLowerCase(), idx])
+      );
+      const daysPerWeek = Number(activePlan?.meta?.daysPerWeek) || days.length || 1;
+      const scheduledWeekdays = scheduleWeekdays(daysPerWeek, activeDate);
+      const fallbackWeekdays = Array.isArray(scheduledWeekdays) && scheduledWeekdays.length
+        ? scheduledWeekdays
+        : [1, 2, 3, 4, 5, 6, 0];
+      const slug = (raw) =>
+        String(raw || 'exercise')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 48) || 'exercise';
+      const normalizeWeekday = (day, dayIdx) => {
+        const rawWeekday = Number(day?.weekday);
+        if (Number.isInteger(rawWeekday) && rawWeekday >= 0 && rawWeekday <= 6) return rawWeekday;
+        const name = String(day?.name || '').trim().toLowerCase();
+        if (name && weekdayByName.has(name)) return weekdayByName.get(name);
+        const firstToken = name.split(/\s+/).filter(Boolean)[0] || '';
+        if (firstToken && weekdayByName.has(firstToken)) return weekdayByName.get(firstToken);
+        const fallback = Number(fallbackWeekdays[dayIdx % fallbackWeekdays.length]);
+        return Number.isInteger(fallback) && fallback >= 0 && fallback <= 6 ? fallback : ((dayIdx + 1) % 7);
+      };
+
+      const snapshotDays = days.map((day, dayIdx) => {
+        const exercises = (Array.isArray(day?.exercises) ? day.exercises : []).map((ex, exIdx) => {
+          const name = String(ex?.displayName || ex?.name || `Exercise ${exIdx + 1}`).trim() || `Exercise ${exIdx + 1}`;
+          const fallbackId = `${slug(name)}_${dayIdx}_${exIdx}`;
+          const exerciseId = String(ex?.baseId || ex?.exerciseId || ex?.id || fallbackId).trim() || fallbackId;
+          const primary = Array.isArray(ex?.primaryMuscles) ? ex.primaryMuscles : [];
+          const secondary = Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [];
+          const instructions = Array.isArray(ex?.instructions) ? ex.instructions.filter(Boolean).slice(0, 8) : [];
+          return {
+            exerciseId,
+            name,
+            sets: Math.max(1, Math.min(8, Number(ex?.sets) || 3)),
+            reps: String(ex?.reps || '8-12'),
+            restSec: Math.max(30, Math.min(300, Number(ex?.restSec || ex?.rest) || 90)),
+            category: String(ex?.category || ''),
+            equipment: String(ex?.equipment || ''),
+            level: String(ex?.level || ''),
+            primaryMuscles: primary,
+            secondaryMuscles: secondary,
+            instructions,
+            imageUrl: String(ex?.imageUrl || '')
+          };
+        });
+
+        return {
+          weekday: normalizeWeekday(day, dayIdx),
+          label: String(day?.name || '').trim(),
+          exercises
+        };
+      }).filter((day) => Array.isArray(day?.exercises) && day.exercises.length);
+
+      if (!snapshotDays.length) {
+        state.planError = 'No exercises found to edit.';
+        render();
+        return;
+      }
+
+      try {
+        sessionStorage.setItem(TRAINING_BUILDER_PREFILL_KEY, JSON.stringify({
+          createdAt: new Date().toISOString(),
+          source: 'training-plan',
+          planId: state.planRow?.id || null,
+          activeWeek: Number(activeWeek) || 1,
+          days: snapshotDays
+        }));
+      } catch {
+        // ignore storage failures
+      }
+
+      window.location.href = 'training-custom-builder.html?from=edit-workout';
+    };
+
     const normalizeSmsPhone = (raw) => {
       const src = String(raw || '').trim();
       if (!src) return '';
@@ -7374,7 +7463,8 @@ function toggleSharePopover(force) {
         return el('div', { class: 'plan-topbar-actions' },
           el('div', { class: 'plan-topbar-actions-mainrow' },
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
-            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF')
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: openWorkoutEditorFromPlan }, 'Edit Workout')
           ),
           el('div', { class: 'plan-topbar-actions-toggle-row' }, toggle),
           dropdown

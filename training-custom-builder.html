@@ -1344,6 +1344,7 @@
       const MOBILE_BREAKPOINT_QUERY = '(max-width: 700px)';
       const MOBILE_WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
       const AUTO_SAVE_DEBOUNCE_MS = 850;
+      const BUILDER_PREFILL_STORAGE_KEY = 'ode_training_builder_prefill_v1';
       const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
       const SECTION_ORDER = ['calisthenics', 'free_weights', 'plyometrics', 'stretching'];
       const SECTION_LABELS = {
@@ -1471,6 +1472,65 @@
         statusEl.classList.remove('error', 'ok');
         if (kind === 'error') statusEl.classList.add('error');
         if (kind === 'ok') statusEl.classList.add('ok');
+      }
+
+      function readBuilderPrefillSnapshot() {
+        try {
+          const raw = sessionStorage.getItem(BUILDER_PREFILL_STORAGE_KEY);
+          if (!raw) return null;
+          sessionStorage.removeItem(BUILDER_PREFILL_STORAGE_KEY);
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function applyBuilderPrefillSnapshot(snapshot) {
+        const incomingDays = Array.isArray(snapshot?.days) ? snapshot.days : [];
+        if (!incomingDays.length) return false;
+
+        const weekdayLookup = new Map();
+        WEEKDAYS.forEach((day) => {
+          weekdayLookup.set(String(day.label || '').trim().toLowerCase(), day.i);
+          weekdayLookup.set(String(day.short || '').trim().toLowerCase(), day.i);
+        });
+        const fallbackOrder = Array.isArray(MOBILE_WEEKDAY_ORDER) && MOBILE_WEEKDAY_ORDER.length
+          ? MOBILE_WEEKDAY_ORDER
+          : [1, 2, 3, 4, 5, 6, 0];
+        const byWeekday = new Map();
+
+        incomingDays.forEach((day, idx) => {
+          const fromNum = Number(day?.weekday);
+          const fromLabel = String(day?.label || day?.name || '').trim().toLowerCase();
+          let weekday = Number.isInteger(fromNum) && fromNum >= 0 && fromNum <= 6
+            ? fromNum
+            : (weekdayLookup.get(fromLabel));
+          if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
+            const fallback = Number(fallbackOrder[idx % fallbackOrder.length]);
+            weekday = Number.isInteger(fallback) && fallback >= 0 && fallback <= 6
+              ? fallback
+              : ((idx + 1) % 7);
+          }
+          const mappedExercises = (Array.isArray(day?.exercises) ? day.exercises : [])
+            .map((payload) => planExerciseFromPayload(payload))
+            .filter(Boolean);
+          if (!mappedExercises.length) return;
+          byWeekday.set(weekday, mappedExercises);
+        });
+
+        if (!byWeekday.size) return false;
+
+        const selected = Array.from(byWeekday.keys()).sort((a, b) => a - b);
+        syncSelectedDays(selected);
+        byWeekday.forEach((rows, weekday) => {
+          state.planByWeekday.set(weekday, rows);
+        });
+        state.mobileActiveWeekday = selected[0] ?? state.mobileActiveWeekday ?? 1;
+        setStatus('Loaded your current workout. Edit it and save when ready.', 'ok');
+        renderWeekdayChips();
+        renderDayColumns();
+        return true;
       }
 
       function setCustomStatus(text, kind) {
@@ -2893,6 +2953,8 @@
           loadWorkoutDatabase(),
           loadCustomWorkouts()
         ]);
+
+        applyBuilderPrefillSnapshot(readBuilderPrefillSnapshot());
       }
 
       init();
