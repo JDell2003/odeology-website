@@ -4071,13 +4071,31 @@ function toFreeExerciseDbRemotePath(src) {
 
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close explanation' }),
-      el('div', { class: 'schedule-modal-card' },
+      el('div', { class: 'schedule-modal-card training-explain-card' },
         el('div', { class: 'schedule-modal-head' },
           el('div', { class: 'schedule-modal-title' }, 'Explain the lifts'),
           el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close explanation' }, '×')
         ),
-        el('div', { class: 'schedule-modal-body', id: 'explain-body' },
-          el('div', { class: 'training-muted' }, quoteBankLoadingPromise ? 'Loading...' : 'Preparing explanation...')
+        el('div', { class: 'schedule-modal-body training-explain-body', id: 'explain-body' },
+          el('div', { class: 'training-explain-tabs', role: 'tablist', 'aria-label': 'Explain mode' },
+            el('button', {
+              type: 'button',
+              class: 'training-explain-tab is-active',
+              role: 'tab',
+              'aria-selected': 'true',
+              'data-explain-tab': 'how'
+            }, 'How to lift'),
+            el('button', {
+              type: 'button',
+              class: 'training-explain-tab',
+              role: 'tab',
+              'aria-selected': 'false',
+              'data-explain-tab': 'exercise'
+            }, 'Exercises')
+          ),
+          el('div', { class: 'training-explain-panel', id: 'explain-panel' },
+            el('div', { class: 'training-muted' }, quoteBankLoadingPromise ? 'Loading...' : 'Preparing explanation...')
+          )
         ),
         el('div', { class: 'schedule-modal-actions' },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
@@ -4089,6 +4107,7 @@ function toFreeExerciseDbRemotePath(src) {
     document.body.appendChild(overlay);
 
     await ensureQuoteBankLoaded();
+    await ensureExerciseCatalogLoaded();
     const phaseTag = phase ? `phase_${phase}` : null;
     const withPhase = quoteBankCache.filter((q) => Array.isArray(q.tags) && phaseTag && q.tags.includes(phaseTag));
     const general = quoteBankCache.filter((q) => Array.isArray(q.tags) && q.tags.includes('all'));
@@ -4105,22 +4124,115 @@ function toFreeExerciseDbRemotePath(src) {
     }
 
     const body = overlay.querySelector('#explain-body');
-    if (!body) return;
-    body.replaceChildren(
-      el('div', { class: 'training-muted' }, `Phase: ${String(plan?.meta?.phase || '').toUpperCase()}`),
-      el('div', { class: 'training-muted' }, `Focus: ${emphasis.join(', ') || 'Full body'}`),
-      el('div', { class: 'training-divider' }),
-      snippets.length
-        ? el('div', null,
-          snippets.map((s) =>
-            el('div', { class: 'training-subcard', style: 'margin-bottom:0.6rem' },
-              el('div', { style: 'font-weight:800' }, s.sourceName),
-              el('div', { class: 'training-muted' }, s.principleSummary)
+    const panel = overlay.querySelector('#explain-panel');
+    if (!body || !panel) return;
+
+    const tabButtons = Array.from(body.querySelectorAll('[data-explain-tab]'));
+    let activeTab = 'how';
+
+    const normalizeInstructionList = (raw) => {
+      if (Array.isArray(raw)) {
+        return raw
+          .map((line) => String(line || '').trim())
+          .filter(Boolean)
+          .slice(0, 10);
+      }
+      const src = String(raw || '').trim();
+      if (!src) return [];
+      return src
+        .split(/\r?\n+/)
+        .map((line) => String(line || '').trim())
+        .filter(Boolean)
+        .slice(0, 10);
+    };
+
+    const exerciseGuides = (Array.isArray(day?.exercises) ? day.exercises : []).map((ex, idx) => {
+      const resolved = resolveSwapCatalogEntry(ex);
+      const exerciseId = String(ex?.exerciseId || ex?.baseId || '').trim();
+      const catalogEx = exerciseId ? (exerciseIndexById.get(exerciseId) || null) : null;
+      const source = resolved || catalogEx || null;
+      const name = String(
+        ex?.displayName
+        || ex?.name
+        || source?.name
+        || `Exercise ${idx + 1}`
+      ).trim();
+      const instructions = normalizeInstructionList(ex?.instructions).length
+        ? normalizeInstructionList(ex?.instructions)
+        : normalizeInstructionList(source?.instructions);
+      const sets = Number(ex?.sets);
+      const reps = String(ex?.reps || '').trim();
+      const rest = Number(ex?.restSec || ex?.rest || 0);
+      const prescriptionBits = [];
+      if (Number.isFinite(sets) && sets > 0) prescriptionBits.push(`${sets} sets`);
+      if (reps) prescriptionBits.push(`${reps} reps`);
+      if (rest > 0) prescriptionBits.push(`rest ${fmtRest(rest)}`);
+      return {
+        name,
+        instructions,
+        prescription: prescriptionBits.join(' · ')
+      };
+    });
+
+    const renderHowToLift = () => {
+      panel.replaceChildren(
+        el('div', { class: 'training-muted' }, `Phase: ${String(plan?.meta?.phase || '').toUpperCase() || 'N/A'}`),
+        el('div', { class: 'training-muted' }, `Focus: ${emphasis.join(', ') || 'Full body'}`),
+        el('div', { class: 'training-divider' }),
+        snippets.length
+          ? el('div', { class: 'training-explain-principles' },
+            snippets.map((s) =>
+              el('div', { class: 'training-subcard training-explain-principle-card' },
+                el('div', { style: 'font-weight:800' }, s.sourceName),
+                el('div', { class: 'training-muted' }, s.principleSummary)
+              )
             )
           )
-        )
-        : el('div', { class: 'training-muted' }, `No snippets matched tags: ${tagsList.join(', ')}`)
-    );
+          : el('div', { class: 'training-muted' }, `No snippets matched tags: ${tagsList.join(', ')}`)
+      );
+    };
+
+    const renderExercises = () => {
+      panel.replaceChildren(
+        exerciseGuides.length
+          ? el('div', { class: 'training-explain-exercises' },
+            exerciseGuides.map((guide) =>
+              el('div', { class: 'training-exercise-guide-card' },
+                el('div', { class: 'training-exercise-guide-title' }, guide.name),
+                guide.prescription
+                  ? el('div', { class: 'training-exercise-guide-prescription' }, guide.prescription)
+                  : null,
+                guide.instructions.length
+                  ? el('ol', { class: 'training-exercise-guide-steps' },
+                    guide.instructions.map((line) => el('li', null, line))
+                  )
+                  : el('div', { class: 'training-muted' }, 'No linked instruction steps found for this exercise yet.')
+              )
+            )
+          )
+          : el('div', { class: 'training-muted' }, 'No workout exercises found for this day.')
+      );
+    };
+
+    const renderTab = (nextTab) => {
+      activeTab = nextTab === 'exercise' ? 'exercise' : 'how';
+      tabButtons.forEach((btn) => {
+        const key = String(btn.dataset.explainTab || '').trim();
+        const isActive = key === activeTab;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      if (activeTab === 'exercise') renderExercises();
+      else renderHowToLift();
+    };
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        renderTab(String(btn.dataset.explainTab || 'how'));
+      });
+    });
+
+    renderTab('how');
   }
 
   let exerciseMediaObserver = null;
