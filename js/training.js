@@ -1854,8 +1854,11 @@
       const parsedDate = parseISODateLocal(rec.skipDate || rec.fromDate);
       if (!parsedDate) continue;
       const skipDate = toISODateLocal(parsedDate);
+      const modeRaw = String(rec.mode || '').trim().toLowerCase();
+      const mode = modeRaw === 'rest_skip' ? 'rest_skip' : 'workout_skip';
       dedup.set(skipDate, {
         skipDate,
+        mode,
         reason: String(rec.reason || '').trim(),
         loggedAt: String(rec.loggedAt || rec.skippedAt || '').trim() || new Date().toISOString(),
         sourceDate: String(rec.sourceDate || '').trim() || null,
@@ -7983,6 +7986,10 @@ function toggleSharePopover(force) {
       const skipCountByDate = new Map();
       const dayStartByDate = new Map();
       const dayMs = 24 * 60 * 60 * 1000;
+      const skipModeOf = (entry) => {
+        const modeRaw = String(entry?.mode || '').trim().toLowerCase();
+        return modeRaw === 'rest_skip' ? 'rest_skip' : 'workout_skip';
+      };
       const toStartForIso = (iso) => {
         const key = String(iso || '').trim();
         if (!key) return null;
@@ -8008,31 +8015,44 @@ function toggleSharePopover(force) {
         sessionOrdinalByDate.set(key, count);
         return count;
       };
-      const countLoggedSkipsThrough = (date) => {
+      const countLoggedSkipsThrough = (date, mode) => {
+        const modeKey = mode === 'rest_skip' ? 'rest_skip' : 'workout_skip';
         const target = dayStart(date);
         const key = toISODateLocal(target);
-        if (skipCountByDate.has(key)) return skipCountByDate.get(key);
+        const cacheKey = `${modeKey}:${key}`;
+        if (skipCountByDate.has(cacheKey)) return skipCountByDate.get(cacheKey);
         let count = 0;
         for (const entry of skipLogEntries) {
+          if (skipModeOf(entry) !== modeKey) continue;
           const skipIso = String(entry?.skipDate || '').trim();
           if (!skipIso || skipIso > key) continue;
           const skipDate = toStartForIso(skipIso);
           if (!skipDate) continue;
           if (skipDate.getTime() < dayStart(minDate).getTime()) continue;
-          if (!isScheduledWorkoutDate(skipDate)) continue;
           count += 1;
         }
-        skipCountByDate.set(key, count);
+        skipCountByDate.set(cacheKey, count);
         return count;
       };
-      const dayIndexForDate = (date) => {
+      const baseDayIndexForDate = (date) => {
         const target = dayStart(date);
         if (!isScheduledWorkoutDate(target)) return null;
         const baseSessionOrdinal = countScheduledSessionsThrough(target);
         if (!baseSessionOrdinal) return null;
-        const skipCount = countLoggedSkipsThrough(target);
-        const shiftedOrdinal = Math.max(1, baseSessionOrdinal - skipCount);
-        return ((shiftedOrdinal - 1) % daysPerWeek) + 1;
+        return ((baseSessionOrdinal - 1) % daysPerWeek) + 1;
+      };
+      const dayIndexForDate = (date) => {
+        const target = dayStart(date);
+        const targetIso = toISODateLocal(target);
+        const sameDayLog = skipLogByDate.get(targetIso);
+        if (sameDayLog && skipModeOf(sameDayLog) === 'workout_skip') return null;
+        const workoutSkips = countLoggedSkipsThrough(target, 'workout_skip');
+        const restSkips = countLoggedSkipsThrough(target, 'rest_skip');
+        const offsetDays = workoutSkips - restSkips;
+        const mappedDate = new Date(target);
+        mappedDate.setDate(mappedDate.getDate() - offsetDays);
+        if (mappedDate.getTime() < dayStart(minDate).getTime()) return null;
+        return baseDayIndexForDate(mappedDate);
       };
       const weekdayToDayIndex = new Map();
       WEEKDAY_ORDER.forEach((weekday) => {
@@ -8090,14 +8110,16 @@ function toggleSharePopover(force) {
         }
         return reason;
       };
-      const recordSkipLog = ({ skipDate, reason, sourceDate, retroactive }) => {
+      const recordSkipLog = ({ skipDate, reason, sourceDate, retroactive, mode }) => {
         const skipIso = toISODateLocal(skipDate);
         if (!skipIso) return { ok: false, error: 'Invalid skip date.' };
         if (skipLogByDate.has(skipIso)) return { ok: false, error: `A skip is already logged for ${skipIso}.` };
+        const modeKey = String(mode || '').trim().toLowerCase() === 'rest_skip' ? 'rest_skip' : 'workout_skip';
         writeTrainingSkipLog([
           ...skipLogEntries,
           {
             skipDate: skipIso,
+            mode: modeKey,
             reason: String(reason || '').trim(),
             sourceDate: sourceDate ? toISODateLocal(sourceDate) : null,
             retroactive: retroactive === true,
@@ -8108,91 +8130,42 @@ function toggleSharePopover(force) {
       };
       const skipToNextWorkoutDay = () => {
         const activeIso = toISODateLocal(activeDate);
-        const runRetroactiveSkip = () => {
-          const previousScheduled = findPreviousScheduledWorkoutDate(activeDate);
-          const suggestedIso = previousScheduled ? toISODateLocal(previousScheduled) : '';
-          const pickedRaw = window.prompt(
-            `Log a skipped workout you forgot to mark.\nEnter the workout date (YYYY-MM-DD) before ${activeIso}.`,
-            suggestedIso || ''
-          );
-          if (pickedRaw === null) return;
-          const pickedDate = parseISODateLocal(pickedRaw);
-          if (!pickedDate) {
-            window.alert('Use a valid date in YYYY-MM-DD format.');
-            return;
-          }
-          const skipDate = dayStart(pickedDate);
-          if (skipDate.getTime() >= dayStart(activeDate).getTime()) {
-            window.alert('Skipped day must be before your current day.');
-            return;
-          }
-          if (skipDate.getTime() < dayStart(minDate).getTime()) {
-            window.alert(`Skipped day must be on or after ${toISODateLocal(minDate)}.`);
-            return;
-          }
-          if (!isScheduledWorkoutDate(skipDate)) {
-            window.alert('That date is not a scheduled workout day.');
-            return;
-          }
-          const skipIso = toISODateLocal(skipDate);
-          const reason = askSkipReason(`the workout on ${skipIso}`);
-          if (!reason) return;
-          const confirmRetro = window.confirm(
-            `Confirm skipped workout for ${skipIso}?\nThis will shift your split forward.\nReason: ${reason}`
-          );
-          if (!confirmRetro) return;
-          const logged = recordSkipLog({
-            skipDate,
-            reason,
-            sourceDate: activeDate,
-            retroactive: true
-          });
-          if (!logged.ok) {
-            window.alert(logged.error || 'Could not log skipped day.');
-            return;
-          }
-          state.planError = '';
-          render();
-        };
+        const isWorkoutToday = Number.isFinite(Number(activeDayIndex)) && Number(activeDayIndex) > 0;
+        const skipMode = isWorkoutToday ? 'workout_skip' : 'rest_skip';
+        const skipLabel = isWorkoutToday
+          ? `Skip ${activeDayFocus} today and push your split 1 day later?`
+          : `Skip rest today and pull your split 1 day earlier?`;
+        const proceed = window.confirm(skipLabel);
+        if (!proceed) return;
 
-        if (!isScheduledWorkoutDate(activeDate)) {
-          window.alert('Skipping applies only to scheduled workout days. You can log a previous skipped workout instead.');
-          runRetroactiveSkip();
-          return;
-        }
-
-        const currentMode = window.confirm(
-          `Skip ${activeDayFocus} today and move to the next workout day?\nPress Cancel to log a previous skipped day you forgot to mark.`
-        );
-        if (!currentMode) {
-          runRetroactiveSkip();
-          return;
-        }
-
-        const reason = askSkipReason(activeDayFocus);
+        const reason = askSkipReason(isWorkoutToday ? activeDayFocus : 'rest day');
         if (!reason) return;
-        const finalPrompt = window.confirm(`Confirm skip for ${activeDayFocus} on ${activeIso}?\nReason: ${reason}`);
+        const finalPrompt = window.confirm(
+          `Confirm ${isWorkoutToday ? 'workout' : 'rest'} skip on ${activeIso}?\nReason: ${reason}`
+        );
         if (!finalPrompt) return;
 
         const logged = recordSkipLog({
           skipDate: activeDate,
           reason,
           sourceDate: activeDate,
-          retroactive: false
+          retroactive: false,
+          mode: skipMode
         });
         if (!logged.ok) {
           window.alert(logged.error || 'Could not log skipped day.');
           return;
         }
 
-        const nextDate = findNextScheduledWorkoutDate(activeDate);
-        if (!nextDate) {
-          state.planError = 'Could not find the next scheduled workout day.';
-          render();
+        if (skipMode === 'workout_skip') {
+          const nextDay = new Date(activeDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          state.planError = '';
+          setActiveDate(nextDay);
           return;
         }
         state.planError = '';
-        setActiveDate(nextDate);
+        render();
       };
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
