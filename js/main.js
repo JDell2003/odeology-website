@@ -15888,8 +15888,8 @@ function setupControlPanel() {
             if (header) {
                 const closeBtn = header.querySelector('#control-close');
                 if (closeBtn) {
-                    if (tourBtn.parentElement !== header || tourBtn.previousSibling !== closeBtn) {
-                        closeBtn.insertAdjacentElement('afterend', tourBtn);
+                    if (tourBtn.parentElement !== header || tourBtn.nextSibling !== closeBtn) {
+                        header.insertBefore(tourBtn, closeBtn);
                     }
                 } else if (tourBtn.parentElement !== header) {
                     header.insertBefore(tourBtn, header.firstChild);
