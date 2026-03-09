@@ -1806,14 +1806,14 @@
     </div>
   </div>
 
-  <div id="builder-import-review" class="builder-import-review" hidden>
+  <div id="builder-import-review" class="builder-import-review" hidden aria-hidden="true">
     <div class="builder-import-review-card">
       <div class="builder-import-review-head">
         <div>
           <h3>We came across a few errors. Confirm these workouts.</h3>
           <p>Use ✓ if correct. Use X if it is wrong, then type what it should be and re-match.</p>
         </div>
-        <button type="button" class="btn btn-ghost" id="builder-import-review-close">Close</button>
+        <button type="button" class="btn btn-ghost" id="builder-import-review-close" onclick="document.getElementById('builder-import-review').hidden=true;document.getElementById('builder-import-review').setAttribute('aria-hidden','true');document.getElementById('builder-import-review').style.display='none';">Close</button>
       </div>
       <div id="builder-import-review-body" class="builder-import-review-body"></div>
       <div class="builder-import-review-foot">
@@ -2314,11 +2314,20 @@
         state.importReviewRows = Array.isArray(rows) ? rows : [];
         renderImportReviewRows();
         setImportReviewStatus('');
-        if (importReviewEl) importReviewEl.hidden = false;
+        if (importReviewEl) {
+          importReviewEl.hidden = false;
+          importReviewEl.removeAttribute('hidden');
+          importReviewEl.setAttribute('aria-hidden', 'false');
+          importReviewEl.style.display = 'grid';
+        }
       }
 
       function closeImportReview() {
-        if (importReviewEl) importReviewEl.hidden = true;
+        if (!importReviewEl) return;
+        importReviewEl.hidden = true;
+        importReviewEl.setAttribute('hidden', 'hidden');
+        importReviewEl.setAttribute('aria-hidden', 'true');
+        importReviewEl.style.display = 'none';
       }
 
       function resetImportOverlays() {
@@ -3878,6 +3887,11 @@
         importReviewCloseBtn?.addEventListener('click', closeImportReview);
         importReviewEl?.addEventListener('click', (e) => {
           if (e.target === importReviewEl) closeImportReview();
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && importReviewEl && !importReviewEl.hidden) {
+            closeImportReview();
+          }
         });
 
         importReviewBodyEl?.addEventListener('change', (e) => {
