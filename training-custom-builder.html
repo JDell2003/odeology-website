@@ -843,26 +843,31 @@
         flex: 1;
         min-height: 0;
         overflow: auto;
-        gap: 10px;
+        gap: 7px;
         margin-top: 0 !important;
       }
 
       .builder-day {
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        grid-template-rows: none;
-        min-height: 0 !important;
-        border-radius: 14px;
-        border-color: #d9c6a8;
-        background: linear-gradient(180deg, #fffdf9 0%, #fbf2e3 100%);
-        box-shadow: 0 8px 18px rgba(80, 51, 22, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        min-height: 0;
+        border-radius: 12px;
+        border: 1px solid #ddc6a3;
+        background: #fffdf9;
+        box-shadow: 0 4px 10px rgba(62, 38, 14, 0.07);
       }
 
       .builder-day-head {
-        order: 0;
-        padding: 12px 14px;
-        border-bottom: 1px solid #e6d5bb;
+        padding: 8px 10px;
+        min-height: 0;
+        line-height: 1.1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid #ead8bc;
+        background: linear-gradient(180deg, #fff5e2 0%, #f6e7cc 100%);
         margin: 0;
       }
 
@@ -871,29 +876,75 @@
       }
 
       .builder-day-head-title {
-        font-size: 0.98rem;
-        color: #332516;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #2e2114;
+        letter-spacing: 0;
       }
 
       .builder-day-head-count {
-        min-width: 28px;
-        height: 24px;
-        border-color: #d2b58f;
+        min-width: 24px;
+        height: 20px;
+        border-color: #cbac82;
         background: #fff;
         color: #5d472e;
         font-weight: 800;
+        font-size: 0.68rem;
+        padding: 0 5px;
       }
 
       .builder-day-head-caret {
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         opacity: 0.82;
       }
 
       .builder-day-list {
-        order: 1;
-        min-height: 0 !important;
+        min-height: 0;
         margin: 0;
-        padding-top: 8px;
+        padding: 7px;
+        gap: 7px;
+      }
+
+      .builder-day-empty {
+        border-radius: 10px;
+        padding: 10px 8px;
+        font-size: 0.76rem;
+        line-height: 1.25;
+      }
+
+      .builder-plan-item {
+        border-radius: 10px;
+        padding: 7px;
+        gap: 6px;
+      }
+
+      .builder-plan-item-head {
+        font-size: 0.8rem;
+        gap: 6px;
+      }
+
+      .builder-plan-item-controls {
+        gap: 4px;
+      }
+
+      .builder-plan-toggle,
+      .builder-plan-remove {
+        min-height: 24px;
+        padding: 2px 6px;
+      }
+
+      .builder-plan-grid {
+        gap: 5px;
+      }
+
+      .builder-plan-grid label {
+        gap: 3px;
+        font-size: 0.68rem;
+      }
+
+      .builder-plan-grid input {
+        padding: 5px 7px;
+        font-size: 0.78rem;
       }
 
       .builder-db-card {
