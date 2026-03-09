@@ -11118,6 +11118,9 @@ body.friends-page main.friends-main {
         font-size: 0.7rem;
         letter-spacing: 0.06em;
     }
+    .section-label.section-label-help {
+        display: none;
+    }
 
     .control-link,
     .side-link-btn {
