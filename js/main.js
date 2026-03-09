@@ -21272,9 +21272,16 @@ async function setupGroceryPlanPage() {
         if (ran) planTierSimulationReady = true;
         return ran;
     };
+    const runTierSimulationDoublePass = (modeKeyRaw) => {
+        if (typeof runSingleTierPriceSimulation !== 'function') return false;
+        const modeKey = normalizeBudgetModeKey(modeKeyRaw);
+        const first = Boolean(runSingleTierPriceSimulation(modeKey));
+        const second = Boolean(runSingleTierPriceSimulation(modeKey));
+        return first || second;
+    };
     const consumePendingTierAutoSim = () => {
-        if (!pendingTierAutoSimKey || typeof runSingleTierPriceSimulation !== 'function') return false;
-        const ran = runSingleTierPriceSimulation(pendingTierAutoSimKey);
+        if (!pendingTierAutoSimKey) return false;
+        const ran = runTierSimulationDoublePass(pendingTierAutoSimKey);
         if (ran) {
             try { sessionStorage.removeItem('planTierAutoSimKey'); } catch {}
             pendingTierAutoSimKey = null;
@@ -22228,7 +22235,7 @@ async function setupGroceryPlanPage() {
             );
             if (manualTierSimulationOnly && !planTierSimulatedKeys.has(modeKey)) {
                 if (typeof runSingleTierPriceSimulation === 'function') {
-                    runSingleTierPriceSimulation(modeKey);
+                    runTierSimulationDoublePass(modeKey);
                     applyPlanBudgetBanner(getCurrentPlanBudgetMode());
                 }
                 if (!planTierSimulatedKeys.has(modeKey)) return;
