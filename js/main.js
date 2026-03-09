@@ -15894,12 +15894,11 @@ function setupControlPanel() {
         if (mobileMode) {
             if (header) {
                 const closeBtn = header.querySelector('#control-close');
-                if (closeBtn) {
-                    if (tourBtn.parentElement !== header || tourBtn.nextSibling !== closeBtn) {
-                        header.insertBefore(tourBtn, closeBtn);
-                    }
-                } else if (tourBtn.parentElement !== header) {
+                if (tourBtn.parentElement !== header || tourBtn !== header.firstElementChild) {
                     header.insertBefore(tourBtn, header.firstChild);
+                }
+                if (closeBtn && closeBtn.parentElement === header && closeBtn !== header.lastElementChild) {
+                    header.appendChild(closeBtn);
                 }
             }
             tourBtn.classList.add('control-tour-pill');
@@ -15983,7 +15982,13 @@ function setupControlPanel() {
         if (controlCloseBtn) controlCloseBtn.remove();
         document.getElementById('control-mobile-fab')?.remove();
     }
-    placeQuickTourPill(isMobileControl);
+    const syncQuickTourPillPlacement = () => {
+        let mobile = false;
+        try { mobile = window.matchMedia('(max-width: 640px)').matches; } catch { mobile = false; }
+        placeQuickTourPill(mobile);
+    };
+    syncQuickTourPillPlacement();
+    window.addEventListener('resize', syncQuickTourPillPlacement);
 
     if (isMobileControl) {
         controlPanel.querySelectorAll('.control-link').forEach((controlLink) => {
