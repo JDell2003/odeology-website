@@ -2165,9 +2165,6 @@
         if (!importDropzoneEl) return;
         const hasFiles = Array.isArray(state.importFiles) && state.importFiles.length > 0;
         const hasText = Boolean(String(importTextEl?.value || '').trim());
-        if (!hasText && !hasFiles && document.activeElement !== importTextEl) {
-          importDropzoneEl.classList.remove('is-text-entry');
-        }
         const isTextEntry = importDropzoneEl.classList.contains('is-text-entry');
         importDropzoneEl.classList.toggle('has-files', hasFiles);
         importDropzoneEl.classList.toggle('has-text', hasText);
@@ -3983,20 +3980,36 @@
           if (!importDropzoneEl || !importTextEl) return;
           importDropzoneEl.classList.add('is-text-entry');
           syncImportDropzoneState();
-          window.setTimeout(() => {
+          const focusTextInput = () => {
             try {
-              importTextEl.focus();
+              importTextEl.focus({ preventScroll: true });
               const len = String(importTextEl.value || '').length;
               importTextEl.setSelectionRange(len, len);
+              syncImportDropzoneState();
             } catch {
               // ignore focus errors
             }
-          }, 0);
+          };
+          focusTextInput();
+          window.requestAnimationFrame(() => {
+            if (document.activeElement !== importTextEl) focusTextInput();
+          });
+          window.setTimeout(() => {
+            if (document.activeElement !== importTextEl) focusTextInput();
+          }, 32);
         };
+
+        importDropzoneEl?.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('[data-import-remove]')) return;
+          if (e.target === importTextEl) return;
+          e.preventDefault();
+          enterImportTextMode();
+        });
 
         importDropzoneEl?.addEventListener('click', (e) => {
           if (e.target.closest('[data-import-remove]')) return;
           if (e.target === importTextEl) return;
+          e.preventDefault();
           enterImportTextMode();
         });
 
