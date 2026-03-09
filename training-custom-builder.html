@@ -846,6 +846,7 @@
       .builder-day-columns {
         grid-template-columns: 1fr;
         align-content: start;
+        align-items: start !important;
         justify-items: stretch;
         flex: 1;
         min-height: 0;
@@ -858,8 +859,10 @@
         display: grid !important;
         grid-template-rows: auto auto !important;
         align-content: start !important;
+        align-self: start !important;
         justify-items: stretch;
         min-height: 0 !important;
+        height: fit-content !important;
         height: auto !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -917,7 +920,7 @@
         align-self: start !important;
         width: 100%;
         min-height: 0 !important;
-        height: auto !important;
+        height: fit-content !important;
         display: grid;
         align-content: start;
         margin: 0;
