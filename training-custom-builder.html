@@ -764,15 +764,20 @@
       }
 
       .builder-weekdays {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 2px;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        overflow: visible;
+        padding-bottom: 0;
       }
 
       .builder-weekday {
-        flex: 0 0 auto;
+        width: 100%;
+        min-width: 0;
+        padding: 6px 0;
+        font-size: 0.72rem;
+        line-height: 1.1;
+        text-align: center;
         white-space: nowrap;
       }
 
