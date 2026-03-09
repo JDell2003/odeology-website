@@ -232,16 +232,16 @@
 
     .builder-import-text {
       width: 100%;
-      min-height: 92px;
-      resize: vertical;
-      border: 1px solid #d9c5a8;
-      border-radius: 12px;
-      padding: 9px 11px;
+      min-height: 150px;
+      resize: none;
+      border: 0;
+      border-radius: 0;
+      padding: 10px 8px;
       font-size: 0.9rem;
       line-height: 1.35;
-      background: #fffdfa;
-      color: #2f2418;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      background: transparent;
+      color: #5f4b33;
+      box-shadow: none;
       display: none;
     }
 
@@ -252,8 +252,8 @@
 
     .builder-import-text:focus {
       outline: none;
-      border-color: #b8833a;
-      box-shadow: 0 0 0 3px rgba(184, 131, 58, 0.18);
+      border: 0;
+      box-shadow: none;
     }
 
     .builder-import-actions {
@@ -1210,7 +1210,7 @@
       }
 
       .builder-import-text {
-        min-height: 80px;
+        min-height: 120px;
       }
 
       .builder-import-actions {
@@ -1804,7 +1804,7 @@
             <span class="builder-import-drop-title">Drag and drop screenshots or Paste text of workout.</span>
           </div>
           <div id="builder-import-files" class="builder-import-files"></div>
-          <textarea id="builder-import-text" class="builder-import-text" placeholder="Paste workout text..." aria-label="Paste workout text"></textarea>
+          <textarea id="builder-import-text" class="builder-import-text" aria-label="Paste workout text"></textarea>
         </div>
         <div class="builder-import-actions">
           <button type="button" class="btn btn-primary" id="builder-import-generate">Generate</button>
@@ -2165,6 +2165,9 @@
         if (!importDropzoneEl) return;
         const hasFiles = Array.isArray(state.importFiles) && state.importFiles.length > 0;
         const hasText = Boolean(String(importTextEl?.value || '').trim());
+        if (!hasText && !hasFiles && document.activeElement !== importTextEl) {
+          importDropzoneEl.classList.remove('is-text-entry');
+        }
         const isTextEntry = importDropzoneEl.classList.contains('is-text-entry');
         importDropzoneEl.classList.toggle('has-files', hasFiles);
         importDropzoneEl.classList.toggle('has-text', hasText);
@@ -4052,6 +4055,15 @@
 
         importTextEl?.addEventListener('input', () => {
           importDropzoneEl?.classList.add('is-text-entry');
+          syncImportDropzoneState();
+        });
+
+        importTextEl?.addEventListener('blur', () => {
+          const hasText = Boolean(String(importTextEl?.value || '').trim());
+          const hasFiles = Array.isArray(state.importFiles) && state.importFiles.length > 0;
+          if (!hasText && !hasFiles) {
+            importDropzoneEl?.classList.remove('is-text-entry');
+          }
           syncImportDropzoneState();
         });
 
