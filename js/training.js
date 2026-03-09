@@ -736,6 +736,7 @@
     confirmToastTimer: 0,
     query: ''
   };
+  let planTopbarActionsDropdownOpen = false;
 
   function normalizeShareMode(raw) {
     const key = String(raw || '').trim().toLowerCase();
@@ -8311,23 +8312,27 @@ function toggleSharePopover(force) {
       ),
       shareBox,
       (() => {
-        const dropdown = el('div', { class: 'plan-topbar-actions-dropdown', 'aria-hidden': 'true' },
+        const dropdown = el('div', {
+          class: `plan-topbar-actions-dropdown${planTopbarActionsDropdownOpen ? ' open' : ''}`,
+          'aria-hidden': planTopbarActionsDropdownOpen ? 'false' : 'true'
+        },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping')
         );
         const toggle = el('button', {
           type: 'button',
           class: 'plan-topbar-actions-toggle',
-          'aria-expanded': 'false',
+          'aria-expanded': planTopbarActionsDropdownOpen ? 'true' : 'false',
           'aria-label': 'More workout options',
           onclick: (e) => {
             e.preventDefault();
-            const isOpen = dropdown.classList.toggle('open');
-            dropdown.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            toggle.textContent = isOpen ? '^' : 'v';
+            planTopbarActionsDropdownOpen = !planTopbarActionsDropdownOpen;
+            dropdown.classList.toggle('open', planTopbarActionsDropdownOpen);
+            dropdown.setAttribute('aria-hidden', planTopbarActionsDropdownOpen ? 'false' : 'true');
+            toggle.setAttribute('aria-expanded', planTopbarActionsDropdownOpen ? 'true' : 'false');
+            toggle.textContent = planTopbarActionsDropdownOpen ? '^' : 'v';
           }
-        }, 'v');
+        }, planTopbarActionsDropdownOpen ? '^' : 'v');
         return el('div', { class: 'plan-topbar-actions' },
           el('div', { class: 'plan-topbar-actions-mainrow' },
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
