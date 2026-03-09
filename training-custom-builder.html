@@ -524,6 +524,12 @@
       padding: 9px;
       display: grid;
       gap: 8px;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+      touch-action: pan-y;
+    }
+
+    .builder-plan-item.is-swiping {
+      transition: none;
     }
 
     .builder-plan-item.is-open {
@@ -707,16 +713,20 @@
       }
 
       .builder-db-panel {
-        display: none;
+        display: flex;
+        flex-direction: column;
+        min-height: 42svh;
+        max-height: 48svh;
+        overflow: hidden;
       }
 
       .builder-head {
-        padding: 16px;
-        gap: 10px;
+        padding: 14px;
+        gap: 8px;
       }
 
       .builder-head p {
-        font-size: 0.92rem;
+        display: none;
       }
 
       .builder-head-actions .btn {
@@ -728,7 +738,9 @@
       }
 
       .builder-panel {
-        padding: 12px;
+        padding: 10px;
+        border-radius: 14px;
+        box-shadow: 0 6px 14px rgba(60, 40, 18, 0.08);
       }
 
       .builder-weekdays {
@@ -744,8 +756,19 @@
         white-space: nowrap;
       }
 
+      .builder-weekday.is-target {
+        border-color: #a26e2b;
+        background: linear-gradient(145deg, #e9c389 0%, #cf9a4f 100%);
+        color: #241a10;
+      }
+
       .builder-db-toolbar {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr auto;
+        margin-bottom: 6px;
+      }
+
+      .builder-custom-toggle {
+        grid-column: 1 / -1;
       }
 
       .builder-custom-grid {
@@ -765,8 +788,31 @@
         height: 140px;
       }
 
+      .builder-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .builder-plan-panel {
+        order: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 42svh;
+        max-height: 48svh;
+        overflow: hidden;
+      }
+
+      .builder-plan-top {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
       .builder-day-columns {
         grid-template-columns: 1fr;
+        align-content: start;
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
         gap: 10px;
       }
 
@@ -812,26 +858,19 @@
         min-height: 0;
       }
 
-      .builder-day.is-collapsed {
-        min-height: 0;
-      }
-
-      .builder-day.is-collapsed .builder-day-head {
-        border-bottom: none;
-        background: linear-gradient(180deg, #fff5e3 0%, #f5e3c5 100%);
-      }
-
-      .builder-day.is-collapsed .builder-day-list {
-        display: none;
-      }
-
-      .builder-day.is-collapsed .builder-day-head-caret {
-        transform: rotate(-90deg);
-      }
-
       .builder-db-card {
         grid-template-columns: 50px 1fr;
         gap: 8px;
+      }
+
+      .builder-db-card.is-mobile-addable {
+        cursor: pointer;
+      }
+
+      .builder-db-list {
+        max-height: none;
+        flex: 1;
+        min-height: 0;
       }
 
       .builder-db-thumb {
@@ -946,6 +985,7 @@
       ];
       const MAX_FILTERED_RESULTS = 220;
       const MOBILE_BREAKPOINT_QUERY = '(max-width: 700px)';
+      const AUTO_SAVE_DEBOUNCE_MS = 850;
       const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
       const SECTION_ORDER = ['calisthenics', 'free_weights', 'plyometrics', 'stretching'];
       const SECTION_LABELS = {
@@ -1024,25 +1064,17 @@
           stretching: true
         },
         selectedWeekdays: [1, 2, 3, 4, 5],
-        mobileDayOpenByWeekday: {},
+        mobileActiveWeekday: 1,
         planByWeekday: new Map(),
         saving: false,
         customFormOpen: false,
         customSaving: false
       };
+      let autoSaveTimer = null;
+      let autoSaveInFlight = false;
 
       function isMobileLayout() {
         return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
-      }
-
-      function syncMobileDayOpenState() {
-        const next = {};
-        state.selectedWeekdays.forEach((weekday) => {
-          const key = String(weekday);
-          const current = state.mobileDayOpenByWeekday[key];
-          next[key] = typeof current === 'boolean' ? current : false;
-        });
-        state.mobileDayOpenByWeekday = next;
       }
 
       function setStatus(text, kind) {
@@ -1408,26 +1440,88 @@
           .sort((a, b) => a - b);
 
         state.selectedWeekdays = normalized;
+        if (!normalized.includes(state.mobileActiveWeekday)) {
+          state.mobileActiveWeekday = normalized[0] ?? null;
+        }
         for (const weekday of normalized) {
           if (!state.planByWeekday.has(weekday)) state.planByWeekday.set(weekday, []);
         }
         for (const key of Array.from(state.planByWeekday.keys())) {
           if (!normalized.includes(key)) state.planByWeekday.delete(key);
         }
-        syncMobileDayOpenState();
+      }
+
+      function weekdayLabel(weekday) {
+        return WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`;
+      }
+
+      function serializePlanDays({ filledOnly = false } = {}) {
+        return state.selectedWeekdays
+          .map((weekday) => ({
+            weekday,
+            label: weekdayLabel(weekday),
+            exercises: (state.planByWeekday.get(weekday) || []).map((ex) => ({
+              exerciseId: String(ex.exerciseId || ''),
+              name: String(ex.name || ''),
+              sets: Number(ex.sets) || 3,
+              reps: String(ex.reps || '8-12'),
+              restSec: Number(ex.restSec) || 90
+            }))
+          }))
+          .filter((day) => !filledOnly || day.exercises.length > 0);
+      }
+
+      async function runAutoSave() {
+        if (!state.user?.id || autoSaveInFlight || state.saving) return;
+        const days = serializePlanDays({ filledOnly: true });
+        if (!days.length) return;
+        autoSaveInFlight = true;
+        try {
+          await fetch('/api/training/custom-plan', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days })
+          });
+        } catch {
+          // ignore autosave failures
+        } finally {
+          autoSaveInFlight = false;
+        }
+      }
+
+      function queueAutoSave() {
+        if (!isMobileLayout()) return;
+        if (autoSaveTimer) window.clearTimeout(autoSaveTimer);
+        autoSaveTimer = window.setTimeout(runAutoSave, AUTO_SAVE_DEBOUNCE_MS);
       }
 
       function renderWeekdayChips() {
         if (!weekdaysEl) return;
         weekdaysEl.innerHTML = '';
-        WEEKDAYS.forEach((day) => {
+        const mobile = isMobileLayout();
+        const chipDays = mobile
+          ? state.selectedWeekdays
+            .map((idx) => WEEKDAYS.find((d) => d.i === idx))
+            .filter(Boolean)
+          : WEEKDAYS;
+
+        chipDays.forEach((day) => {
           const selected = state.selectedWeekdays.includes(day.i);
+          const activeTarget = state.mobileActiveWeekday === day.i;
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = `builder-weekday${selected ? ' active' : ''}`;
+          btn.className = `builder-weekday${selected ? ' active' : ''}${mobile && activeTarget ? ' is-target' : ''}`;
           btn.textContent = day.short;
-          btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+          btn.setAttribute('aria-pressed', mobile ? (activeTarget ? 'true' : 'false') : (selected ? 'true' : 'false'));
           btn.addEventListener('click', () => {
+            if (mobile) {
+              if (!selected) return;
+              state.mobileActiveWeekday = day.i;
+              renderWeekdayChips();
+              renderDayColumns();
+              return;
+            }
             const active = state.selectedWeekdays.includes(day.i);
             if (active) syncSelectedDays(state.selectedWeekdays.filter((v) => v !== day.i));
             else syncSelectedDays([...state.selectedWeekdays, day.i]);
@@ -1465,6 +1559,8 @@
       function exerciseCardMarkup(weekday, ex, exIdx) {
         const wrapper = document.createElement('article');
         wrapper.className = `builder-plan-item${ex?.expanded ? ' is-open' : ''}`;
+        wrapper.dataset.planDay = String(weekday);
+        wrapper.dataset.planIdx = String(exIdx);
         const detailId = `builder-plan-detail-${weekday}-${exIdx}`;
         const options = swapOptionsForExercise(ex);
         const optionMarkup = options.map((row) => {
@@ -1543,23 +1639,24 @@
         }
 
         const mobile = isMobileLayout();
-        state.selectedWeekdays.forEach((weekday) => {
-          const dayName = WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`;
+        const mobileTarget = mobile && state.selectedWeekdays.includes(state.mobileActiveWeekday)
+          ? state.mobileActiveWeekday
+          : state.selectedWeekdays[0];
+        if (mobile) state.mobileActiveWeekday = mobileTarget;
+        const renderDays = mobile ? [mobileTarget] : state.selectedWeekdays.slice();
+
+        renderDays.forEach((weekday) => {
+          const dayName = weekdayLabel(weekday);
           const exercises = state.planByWeekday.get(weekday) || [];
-          const mobileKey = String(weekday);
-          const isOpen = !mobile || Boolean(state.mobileDayOpenByWeekday[mobileKey]);
           const dayWrap = document.createElement('section');
-          dayWrap.className = `builder-day${mobile && !isOpen ? ' is-collapsed' : ''}`;
+          dayWrap.className = 'builder-day';
           dayWrap.dataset.weekday = String(weekday);
           dayWrap.innerHTML = mobile
             ? `
-              <button type="button" class="builder-day-head builder-day-toggle" data-day-collapse-toggle="${weekday}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-label="Toggle ${escapeHtml(dayName)} workout">
+              <div class="builder-day-head">
                 <span class="builder-day-head-title">${escapeHtml(dayName)}</span>
-                <span class="builder-day-head-right">
-                  <span class="builder-day-head-count">${exercises.length}</span>
-                  <span class="builder-day-head-caret">▾</span>
-                </span>
-              </button>
+                <span class="builder-day-head-right"><span class="builder-day-head-count">${exercises.length}</span></span>
+              </div>
               <div class="builder-day-list"></div>
             `
             : `<div class="builder-day-head">${escapeHtml(dayName)}</div><div class="builder-day-list"></div>`;
@@ -1568,7 +1665,7 @@
           if (!exercises.length) {
             const empty = document.createElement('div');
             empty.className = 'builder-day-empty';
-            empty.textContent = 'Drag exercises here';
+            empty.textContent = mobile ? 'Tap workouts below to add them here.' : 'Drag exercises here';
             list.appendChild(empty);
           } else {
             exercises.forEach((ex, exIdx) => {
@@ -1576,26 +1673,28 @@
             });
           }
 
-          dayWrap.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dayWrap.classList.add('is-drop');
-          });
-          dayWrap.addEventListener('dragleave', () => dayWrap.classList.remove('is-drop'));
-          dayWrap.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dayWrap.classList.remove('is-drop');
-            const raw = e.dataTransfer?.getData('application/json') || '';
-            if (!raw) return;
-            let parsed = null;
-            try { parsed = JSON.parse(raw); } catch { parsed = null; }
-            if (!parsed) return;
-            const dropped = planExerciseFromPayload(parsed);
-            if (!dropped) return;
-            const cur = state.planByWeekday.get(weekday) || [];
-            cur.push(dropped);
-            state.planByWeekday.set(weekday, cur);
-            renderDayColumns();
-          });
+          if (!mobile) {
+            dayWrap.addEventListener('dragover', (e) => {
+              e.preventDefault();
+              dayWrap.classList.add('is-drop');
+            });
+            dayWrap.addEventListener('dragleave', () => dayWrap.classList.remove('is-drop'));
+            dayWrap.addEventListener('drop', (e) => {
+              e.preventDefault();
+              dayWrap.classList.remove('is-drop');
+              const raw = e.dataTransfer?.getData('application/json') || '';
+              if (!raw) return;
+              let parsed = null;
+              try { parsed = JSON.parse(raw); } catch { parsed = null; }
+              if (!parsed) return;
+              const dropped = planExerciseFromPayload(parsed);
+              if (!dropped) return;
+              const cur = state.planByWeekday.get(weekday) || [];
+              cur.push(dropped);
+              state.planByWeekday.set(weekday, cur);
+              renderDayColumns();
+            });
+          }
 
           dayColumnsEl.appendChild(dayWrap);
         });
@@ -1626,6 +1725,7 @@
       function createDatabaseCard(row) {
         const card = document.createElement('article');
         card.className = 'builder-db-card';
+        if (isMobileLayout()) card.classList.add('is-mobile-addable');
         card.draggable = true;
         const name = String(row?.name || row?.id || 'Exercise');
         const imageUrl = exerciseImageUrl(row);
@@ -1659,6 +1759,22 @@
           const payload = toDbExerciseState(row);
           e.dataTransfer?.setData('application/json', JSON.stringify(payload));
           e.dataTransfer.effectAllowed = 'copy';
+        });
+        card.addEventListener('click', (e) => {
+          if (!isMobileLayout()) return;
+          if (e.target.closest('[data-custom-delete]')) return;
+          if (!state.selectedWeekdays.length) return;
+          const targetDay = state.selectedWeekdays.includes(state.mobileActiveWeekday)
+            ? state.mobileActiveWeekday
+            : state.selectedWeekdays[0];
+          if (!Number.isInteger(targetDay)) return;
+          const dropped = toDbExerciseState(row);
+          const cur = state.planByWeekday.get(targetDay) || [];
+          cur.push(dropped);
+          state.planByWeekday.set(targetDay, cur);
+          setStatus(`${dropped.name} added to ${weekdayLabel(targetDay)}.`, 'ok');
+          renderDayColumns();
+          queueAutoSave();
         });
         return card;
       }
@@ -1937,16 +2053,6 @@
 
       function bindPlanInputEvents() {
         dayColumnsEl?.addEventListener('click', (e) => {
-          const collapseBtn = e.target.closest('[data-day-collapse-toggle]');
-          if (collapseBtn) {
-            const day = Number(collapseBtn.getAttribute('data-day-collapse-toggle'));
-            const key = String(day);
-            const current = Boolean(state.mobileDayOpenByWeekday[key]);
-            state.mobileDayOpenByWeekday[key] = !current;
-            renderDayColumns();
-            return;
-          }
-
           const toggleBtn = e.target.closest('[data-toggle-day][data-toggle-idx]');
           if (toggleBtn) {
             const day = Number(toggleBtn.getAttribute('data-toggle-day'));
@@ -1967,6 +2073,7 @@
           cur.splice(idx, 1);
           state.planByWeekday.set(day, cur);
           renderDayColumns();
+          queueAutoSave();
         });
 
         dayColumnsEl?.addEventListener('input', (e) => {
@@ -1983,17 +2090,20 @@
             const n = Math.max(1, Math.min(8, Number(input.value) || 3));
             row.sets = n;
             input.value = String(n);
+            queueAutoSave();
             return;
           }
           if (field === 'restSec') {
             const n = Math.max(30, Math.min(300, Number(input.value) || 90));
             row.restSec = n;
             input.value = String(n);
+            queueAutoSave();
             return;
           }
           if (field === 'reps') {
             const text = String(input.value || '').trim().slice(0, 16);
             row.reps = text || '8-12';
+            queueAutoSave();
           }
         });
 
@@ -2026,6 +2136,7 @@
           state.planByWeekday.set(day, cur);
           setStatus(`${swapped.name} swapped in.`, 'ok');
           renderDayColumns();
+          queueAutoSave();
         });
 
         dayColumnsEl?.addEventListener('error', (e) => {
@@ -2039,6 +2150,61 @@
           wrap.innerHTML = '';
           wrap.appendChild(fallback);
         }, true);
+
+        let swipeState = null;
+        dayColumnsEl?.addEventListener('touchstart', (e) => {
+          if (!isMobileLayout()) return;
+          const item = e.target.closest('.builder-plan-item');
+          if (!item) return;
+          const touch = e.touches?.[0];
+          if (!touch) return;
+          swipeState = {
+            item,
+            startX: touch.clientX,
+            startY: touch.clientY,
+            dx: 0,
+            dragging: false
+          };
+        }, { passive: true });
+
+        dayColumnsEl?.addEventListener('touchmove', (e) => {
+          if (!isMobileLayout() || !swipeState) return;
+          const touch = e.touches?.[0];
+          if (!touch) return;
+          const dx = touch.clientX - swipeState.startX;
+          const dy = touch.clientY - swipeState.startY;
+          if (!swipeState.dragging) {
+            if (Math.abs(dx) < 12 || Math.abs(dx) <= Math.abs(dy)) return;
+            swipeState.dragging = true;
+          }
+          e.preventDefault();
+          swipeState.dx = Math.max(-130, Math.min(130, dx));
+          swipeState.item.classList.add('is-swiping');
+          swipeState.item.style.transform = `translateX(${swipeState.dx}px)`;
+          swipeState.item.style.opacity = String(1 - Math.min(Math.abs(swipeState.dx) / 180, 0.45));
+        }, { passive: false });
+
+        const finishSwipe = () => {
+          if (!swipeState) return;
+          const { item, dx } = swipeState;
+          const remove = Math.abs(dx) >= 88;
+          const day = Number(item.dataset.planDay);
+          const idx = Number(item.dataset.planIdx);
+          item.classList.remove('is-swiping');
+          item.style.transform = '';
+          item.style.opacity = '';
+          swipeState = null;
+          if (!remove || !Number.isInteger(day) || !Number.isInteger(idx)) return;
+          const cur = state.planByWeekday.get(day) || [];
+          if (!cur[idx]) return;
+          cur.splice(idx, 1);
+          state.planByWeekday.set(day, cur);
+          renderDayColumns();
+          queueAutoSave();
+        };
+
+        dayColumnsEl?.addEventListener('touchend', finishSwipe, { passive: true });
+        dayColumnsEl?.addEventListener('touchcancel', finishSwipe, { passive: true });
       }
 
       async function saveCustomPlan() {
@@ -2054,17 +2220,7 @@
           return;
         }
 
-        const days = state.selectedWeekdays.map((weekday) => ({
-          weekday,
-          label: WEEKDAYS.find((d) => d.i === weekday)?.label || `Day ${weekday}`,
-          exercises: (state.planByWeekday.get(weekday) || []).map((ex) => ({
-            exerciseId: String(ex.exerciseId || ''),
-            name: String(ex.name || ''),
-            sets: Number(ex.sets) || 3,
-            reps: String(ex.reps || '8-12'),
-            restSec: Number(ex.restSec) || 90
-          }))
-        }));
+        const days = serializePlanDays({ filledOnly: false });
 
         if (days.some((d) => !d.exercises.length)) {
           setStatus('Each selected day needs at least one exercise.', 'error');
@@ -2172,7 +2328,9 @@
           const mobileNow = isMobileLayout();
           if (mobileNow === lastMobileLayout) return;
           lastMobileLayout = mobileNow;
+          renderWeekdayChips();
           renderDayColumns();
+          renderDatabaseList();
         });
 
         window.addEventListener('odeauth', async (e) => {
@@ -2197,3 +2355,4 @@
   </script>
 </body>
 </html>
+
