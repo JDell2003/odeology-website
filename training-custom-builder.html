@@ -139,12 +139,27 @@
       border-radius: 999px;
       border: 1px solid #c9a06c;
       background: rgba(255, 252, 246, 0.92);
-      color: #8c5f28;
-      display: grid;
-      place-items: center;
-      font-size: 1.95rem;
-      line-height: 1;
-      font-weight: 800;
+      color: transparent;
+      font-size: 0;
+      line-height: 0;
+      display: block;
+    }
+
+    .builder-import-plus::before,
+    .builder-import-plus::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 16px;
+      height: 2.5px;
+      border-radius: 999px;
+      background: #8c5f28;
+      transform: translate(-50%, -50%);
+    }
+
+    .builder-import-plus::after {
+      transform: translate(-50%, -50%) rotate(90deg);
     }
 
     .builder-import-drop-title {
