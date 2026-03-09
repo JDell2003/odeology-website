@@ -80,10 +80,10 @@
     .builder-status.ok { color: #146f43; }
 
     .builder-import-strip {
-      padding: 12px 12px 8px;
-      margin-bottom: 6px;
+      padding: 10px 12px 4px;
+      margin-bottom: 0;
       display: grid;
-      gap: 10px;
+      gap: 6px;
       background: rgba(255, 252, 246, 0.95);
       border: 1px solid #ddcdb4;
       border-radius: 20px;
@@ -92,7 +92,7 @@
 
     .builder-import-grid {
       display: grid;
-      gap: 6px;
+      gap: 4px;
     }
 
     .builder-import-dropzone {
@@ -261,6 +261,10 @@
       justify-content: flex-end;
       margin: 0;
       padding: 0;
+    }
+
+    .builder-import-strip + .builder-grid {
+      margin-top: 2px;
     }
 
     .builder-import-loading {
@@ -1182,14 +1186,14 @@
       }
 
       .builder-import-strip {
-        margin-bottom: 6px;
-        padding: 9px 10px 7px;
+        margin-bottom: 0;
+        padding: 8px 10px 4px;
         border-radius: 14px;
         box-shadow: 0 8px 18px rgba(64, 42, 19, 0.1);
       }
 
       .builder-import-grid {
-        gap: 8px;
+        gap: 5px;
       }
 
       .builder-import-dropzone {
