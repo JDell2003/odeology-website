@@ -759,6 +759,8 @@
   const TRAINING_SKIP_LOG_KEY = 'ode_training_skip_log_v1';
   const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
   const TRAINING_WELCOME_TTL_MS = 6 * 60 * 60 * 1000;
+  const TRAINING_QUICK_TOUR_SEEN_PREFIX = 'ode_training_quick_tour_seen_v1';
+  const TRAINING_QUICK_TOUR_PENDING_PREFIX = 'ode_training_quick_tour_pending_v1';
   const TRAINING_WELCOME_DAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
   const TRAINING_WELCOME_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const TRAINING_WELCOME_DAY_ALIASES = {
@@ -829,6 +831,366 @@
 
   let pendingTrainingWelcome = consumeTrainingWelcomePayload();
   let shareEventsInFlight = false;
+  const trainingQuickTour = {
+    active: false,
+    stepIndex: 0,
+    overlay: null,
+    popover: null,
+    highlighted: null,
+    steps: [],
+    launchTimer: 0
+  };
+
+  function trainingQuickTourStorageKey(prefix) {
+    const uid = String(state?.auth?.user?.id || '').trim() || 'anon';
+    return `${prefix}:${uid}`;
+  }
+
+  function hasTrainingQuickTourSeen() {
+    try {
+      return localStorage.getItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_SEEN_PREFIX)) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function markTrainingQuickTourSeen() {
+    try {
+      localStorage.setItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_SEEN_PREFIX), '1');
+    } catch {
+      // ignore
+    }
+  }
+
+  function hasTrainingQuickTourPending() {
+    try {
+      return localStorage.getItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_PENDING_PREFIX)) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function setTrainingQuickTourPending() {
+    try {
+      localStorage.setItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_PENDING_PREFIX), '1');
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearTrainingQuickTourPending() {
+    try {
+      localStorage.removeItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_PENDING_PREFIX));
+    } catch {
+      // ignore
+    }
+  }
+
+  function buildTrainingQuickTourSteps() {
+    return [
+      {
+        selector: '.plan-topbar-actions-mainrow',
+        title: 'Top controls',
+        body: 'Use these buttons to Make New Workout, export PDF, or Modify Current Workout.'
+      },
+      {
+        selector: '.btn-start-workout',
+        fallbackSelector: '.plan-topbar-share-row',
+        title: 'Start workout',
+        body: 'Tap Start workout to begin today\'s session and unlock set/rep logging.'
+      },
+      {
+        selector: '#training-day-tabs',
+        title: 'Split days',
+        body: 'These day tabs are your split. Tap any day to switch workouts.'
+      },
+      {
+        selector: '.workout-rel-label',
+        title: 'Jump to today',
+        body: 'Tap this date label any time to jump back to today\'s workout.'
+      },
+      {
+        selector: '[data-share-workout="1"]',
+        title: 'Share workout',
+        body: 'Use Share Workout to invite a friend into your plan.'
+      }
+    ];
+  }
+
+  function isTrainingQuickTourTargetVisible(el) {
+    if (!el || !el.isConnected) return false;
+    try {
+      const style = window.getComputedStyle(el);
+      if (!style) return false;
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      if (Number(style.opacity) === 0) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width >= 6 && rect.height >= 6;
+    } catch {
+      return false;
+    }
+  }
+
+  function resolveTrainingQuickTourTarget(step) {
+    const primary = document.querySelector(step?.selector || '');
+    if (isTrainingQuickTourTargetVisible(primary)) return primary;
+    const fallback = document.querySelector(step?.fallbackSelector || '');
+    if (isTrainingQuickTourTargetVisible(fallback)) return fallback;
+    return null;
+  }
+
+  function setTrainingQuickTourHighlight(target) {
+    if (trainingQuickTour.highlighted === target) return;
+    trainingQuickTour.highlighted?.classList?.remove('ode-tour-highlight');
+    trainingQuickTour.highlighted = target;
+    trainingQuickTour.highlighted?.classList?.add('ode-tour-highlight');
+  }
+
+  function positionTrainingQuickTourHole(target) {
+    const overlay = trainingQuickTour.overlay;
+    if (!overlay || !target) return;
+    const rect = target.getBoundingClientRect();
+    const pad = 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const topEl = overlay.querySelector('[data-ode-shade=\"top\"]');
+    const leftEl = overlay.querySelector('[data-ode-shade=\"left\"]');
+    const rightEl = overlay.querySelector('[data-ode-shade=\"right\"]');
+    const bottomEl = overlay.querySelector('[data-ode-shade=\"bottom\"]');
+
+    const topH = Math.max(0, rect.top - pad);
+    const holeTop = Math.max(0, rect.top - pad);
+    const holeLeft = Math.max(0, rect.left - pad);
+    const holeWidth = Math.min(vw, rect.width + pad * 2);
+    const holeHeight = Math.min(vh, rect.height + pad * 2);
+    const holeRight = holeLeft + holeWidth;
+    const holeBottom = holeTop + holeHeight;
+
+    if (topEl) {
+      topEl.style.top = '0px';
+      topEl.style.left = '0px';
+      topEl.style.width = `${vw}px`;
+      topEl.style.height = `${topH}px`;
+    }
+
+    if (leftEl) {
+      leftEl.style.top = `${holeTop}px`;
+      leftEl.style.left = '0px';
+      leftEl.style.width = `${holeLeft}px`;
+      leftEl.style.height = `${holeHeight}px`;
+    }
+
+    if (rightEl) {
+      rightEl.style.top = `${holeTop}px`;
+      rightEl.style.left = `${holeRight}px`;
+      rightEl.style.width = `${Math.max(0, vw - holeRight)}px`;
+      rightEl.style.height = `${holeHeight}px`;
+    }
+
+    if (bottomEl) {
+      bottomEl.style.top = `${holeBottom}px`;
+      bottomEl.style.left = '0px';
+      bottomEl.style.width = `${vw}px`;
+      bottomEl.style.height = `${Math.max(0, vh - holeBottom)}px`;
+    }
+  }
+
+  function positionTrainingQuickTourPopover(target) {
+    const popover = trainingQuickTour.popover;
+    if (!popover || !target) return;
+    const rect = target.getBoundingClientRect();
+    const pad = 12;
+    const gap = 14;
+    const popRect = popover.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+    const candidates = [
+      { left: rect.right + gap, top: rect.top + rect.height / 2 - popRect.height / 2, placement: 'right' },
+      { left: rect.left - popRect.width - gap, top: rect.top + rect.height / 2 - popRect.height / 2, placement: 'left' },
+      { left: rect.left + rect.width / 2 - popRect.width / 2, top: rect.bottom + gap, placement: 'bottom' },
+      { left: rect.left + rect.width / 2 - popRect.width / 2, top: rect.top - popRect.height - gap, placement: 'top' }
+    ];
+    const fits = (pos) => (
+      pos.left >= pad &&
+      pos.top >= pad &&
+      pos.left + popRect.width <= vw - pad &&
+      pos.top + popRect.height <= vh - pad
+    );
+    const chosen = candidates.find(fits) || candidates[2];
+    const left = clamp(chosen.left, pad, vw - popRect.width - pad);
+    const top = clamp(chosen.top, pad, vh - popRect.height - pad);
+
+    popover.dataset.placement = chosen.placement;
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+    popover.classList.add('show');
+    positionTrainingQuickTourHole(target);
+  }
+
+  function onTrainingQuickTourReposition() {
+    if (!trainingQuickTour.active || !trainingQuickTour.highlighted) return;
+    positionTrainingQuickTourHole(trainingQuickTour.highlighted);
+    positionTrainingQuickTourPopover(trainingQuickTour.highlighted);
+  }
+
+  function teardownTrainingQuickTour() {
+    if (trainingQuickTour.launchTimer) {
+      clearTimeout(trainingQuickTour.launchTimer);
+      trainingQuickTour.launchTimer = 0;
+    }
+    document.body?.classList?.remove('ode-tour-active');
+    trainingQuickTour.highlighted?.classList?.remove('ode-tour-highlight');
+    trainingQuickTour.highlighted = null;
+    trainingQuickTour.overlay?.remove();
+    trainingQuickTour.popover?.remove();
+    trainingQuickTour.overlay = null;
+    trainingQuickTour.popover = null;
+    window.removeEventListener('resize', onTrainingQuickTourReposition);
+    window.removeEventListener('scroll', onTrainingQuickTourReposition, true);
+    document.removeEventListener('keydown', onTrainingQuickTourKeydown);
+  }
+
+  function finishTrainingQuickTour() {
+    teardownTrainingQuickTour();
+    trainingQuickTour.active = false;
+    markTrainingQuickTourSeen();
+    clearTrainingQuickTourPending();
+  }
+
+  function onTrainingQuickTourKeydown(e) {
+    if (!trainingQuickTour.active) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      finishTrainingQuickTour();
+      return;
+    }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      showTrainingQuickTourStep(trainingQuickTour.stepIndex + 1);
+    }
+  }
+
+  function ensureTrainingQuickTourUi() {
+    if (trainingQuickTour.overlay && trainingQuickTour.popover) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'ode-tour-overlay ode-training-tour-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class=\"ode-tour-shade\" data-ode-shade=\"top\"></div>
+      <div class=\"ode-tour-shade\" data-ode-shade=\"left\"></div>
+      <div class=\"ode-tour-shade\" data-ode-shade=\"right\"></div>
+      <div class=\"ode-tour-shade\" data-ode-shade=\"bottom\"></div>
+    `.trim();
+
+    const popover = document.createElement('div');
+    popover.className = 'ode-tour-popover';
+    popover.setAttribute('role', 'dialog');
+    popover.setAttribute('aria-modal', 'true');
+    popover.innerHTML = `
+      <div class=\"ode-tour-title\" id=\"ode-training-tour-title\"></div>
+      <div class=\"ode-tour-body\" id=\"ode-training-tour-body\"></div>
+      <div class=\"ode-tour-footer\">
+        <div class=\"ode-tour-step\" id=\"ode-training-tour-step\"></div>
+        <div class=\"ode-tour-actions\">
+          <button type=\"button\" class=\"ode-tour-btn\" id=\"ode-training-tour-skip\">Skip</button>
+          <button type=\"button\" class=\"ode-tour-btn primary\" id=\"ode-training-tour-next\">Next</button>
+        </div>
+      </div>
+    `.trim();
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popover);
+
+    popover.querySelector('#ode-training-tour-skip')?.addEventListener('click', () => {
+      finishTrainingQuickTour();
+    });
+    popover.querySelector('#ode-training-tour-next')?.addEventListener('click', () => {
+      showTrainingQuickTourStep(trainingQuickTour.stepIndex + 1);
+    });
+
+    trainingQuickTour.overlay = overlay;
+    trainingQuickTour.popover = popover;
+    window.addEventListener('resize', onTrainingQuickTourReposition);
+    window.addEventListener('scroll', onTrainingQuickTourReposition, true);
+    document.addEventListener('keydown', onTrainingQuickTourKeydown);
+  }
+
+  function showTrainingQuickTourStep(nextIndex) {
+    if (!trainingQuickTour.active) return;
+    const steps = Array.isArray(trainingQuickTour.steps) ? trainingQuickTour.steps : [];
+    if (!steps.length || nextIndex >= steps.length) {
+      finishTrainingQuickTour();
+      return;
+    }
+
+    let idx = Math.max(0, Number(nextIndex) || 0);
+    let step = steps[idx] || null;
+    let target = step ? resolveTrainingQuickTourTarget(step) : null;
+    while (step && !target && idx < steps.length - 1) {
+      idx += 1;
+      step = steps[idx] || null;
+      target = step ? resolveTrainingQuickTourTarget(step) : null;
+    }
+
+    if (!step || !target) {
+      finishTrainingQuickTour();
+      return;
+    }
+
+    trainingQuickTour.stepIndex = idx;
+    ensureTrainingQuickTourUi();
+    document.body?.classList?.add('ode-tour-active');
+    setTrainingQuickTourHighlight(target);
+    try {
+      target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    } catch {
+      // ignore
+    }
+
+    const titleEl = trainingQuickTour.popover?.querySelector('#ode-training-tour-title');
+    const bodyEl = trainingQuickTour.popover?.querySelector('#ode-training-tour-body');
+    const stepEl = trainingQuickTour.popover?.querySelector('#ode-training-tour-step');
+    const nextBtn = trainingQuickTour.popover?.querySelector('#ode-training-tour-next');
+    if (titleEl) titleEl.textContent = String(step.title || 'Training quick tour');
+    if (bodyEl) bodyEl.textContent = String(step.body || '');
+    if (stepEl) stepEl.textContent = `${idx + 1} of ${steps.length}`;
+    if (nextBtn) nextBtn.textContent = idx >= steps.length - 1 ? 'Done' : 'Next';
+
+    positionTrainingQuickTourPopover(target);
+  }
+
+  function startTrainingQuickTour() {
+    if (trainingQuickTour.active) return;
+    if (!state?.auth?.user?.id || !state?.planRow?.id) return;
+    if (document.querySelector('.ode-tour-overlay') || document.body?.classList?.contains('ode-tour-active')) return;
+    trainingQuickTour.steps = buildTrainingQuickTourSteps();
+    if (!trainingQuickTour.steps.length) {
+      markTrainingQuickTourSeen();
+      clearTrainingQuickTourPending();
+      return;
+    }
+    trainingQuickTour.active = true;
+    showTrainingQuickTourStep(0);
+  }
+
+  function maybeStartTrainingQuickTour() {
+    if (trainingQuickTour.active) return;
+    if (state.view !== 'plan') return;
+    if (!state?.auth?.user?.id || !state?.planRow?.id) return;
+    if (hasTrainingQuickTourSeen()) {
+      clearTrainingQuickTourPending();
+      return;
+    }
+    if (!hasTrainingQuickTourPending()) return;
+    if (trainingQuickTour.launchTimer) clearTimeout(trainingQuickTour.launchTimer);
+    trainingQuickTour.launchTimer = setTimeout(() => {
+      trainingQuickTour.launchTimer = 0;
+      startTrainingQuickTour();
+    }, 220);
+  }
 
   function maybeShowTrainingWelcomeModal() {
     if (trainingWelcomeShown) return;
@@ -5110,6 +5472,7 @@ function toggleSharePopover(force) {
     if (next === 'plan') {
       window.setTimeout(() => {
         try { maybeShowTrainingWelcomeModal(); } catch { /* ignore */ }
+        try { maybeStartTrainingQuickTour(); } catch { /* ignore */ }
         pollShareEvents({ force: true }).catch(() => {});
       }, 80);
     }
@@ -6888,6 +7251,10 @@ function toggleSharePopover(force) {
     }
     clearForceAutostart();
     try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
+    const createdFirstPlan = Boolean(isAuthed && state.planRow?.id && !prevPlanId);
+    if (createdFirstPlan) {
+      setTrainingQuickTourPending();
+    }
     if (state.planRow?.id) {
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       localStorage.removeItem(dismissedKey);
