@@ -1328,6 +1328,40 @@
         if(!Number.isFinite(target)||!Number.isFinite(maint))return null;
         return Math.max(1200,Math.round(maint-(target*500)));
       };
+      const getMacroPlanGoalMode=(macroPlan)=>{
+        const goal=String(macroPlan?.profile?.goal||'').toUpperCase();
+        if(goal==='CUT')return 'cut';
+        if(goal==='BUILD')return 'bulk';
+        if(goal==='RECOMP')return 'recomp';
+        return '';
+      };
+      const getMacroPlanMaintenance=(macroPlan)=>{
+        const fromBlock=Number(macroPlan?.caloriesBlock?.maintenance);
+        if(Number.isFinite(fromBlock)&&fromBlock>0)return fromBlock;
+        const fromTop=Number(macroPlan?.maintenanceCalories);
+        if(Number.isFinite(fromTop)&&fromTop>0)return fromTop;
+        return estimateTdee();
+      };
+      const calcWeeklyTrendFromCalories=(calories,macroPlan)=>{
+        const cal=Number(calories);
+        if(!Number.isFinite(cal)||cal<=0)return null;
+        const maintenance=getMacroPlanMaintenance(macroPlan);
+        if(!Number.isFinite(maintenance)||maintenance<=0)return null;
+        const deltaPerDay=Math.round(maintenance-cal);
+        if(Math.abs(deltaPerDay)<1)return 0;
+        if(deltaPerDay>0)return Number((deltaPerDay/500).toFixed(2));
+        const surplus=Math.abs(deltaPerDay);
+        return -Number(((surplus*7)/3500).toFixed(2));
+      };
+      const getMacroPlanTargetRate=(macroPlan)=>{
+        const mode=getMacroPlanGoalMode(macroPlan);
+        const lossRate=Number(macroPlan?.caloriesBlock?.lossRateLbsPerWeek);
+        const gainRate=Number(macroPlan?.caloriesBlock?.gainRateLbsPerWeek);
+        if(mode==='cut' && Number.isFinite(lossRate)) return lossRate;
+        if(mode==='bulk' && Number.isFinite(gainRate)) return -gainRate;
+        if(mode==='recomp') return 0;
+        return null;
+      };
       const getMealSummary=()=>{
         const list=mealCache;
         if(!list||!list.meta||!list.meta.macroTargets)return null;
@@ -1335,18 +1369,20 @@
         const calories=Number(macros.calories);
         if(!Number.isFinite(calories)||calories<=0)return null;
         const macroPlan=getMacroCalcPlan();
-        const maintenance=Number.isFinite(macroPlan?.maintenanceCalories)
-          ? Number(macroPlan.maintenanceCalories)
-          : estimateTdee();
-        const predicted=Number.isFinite(maintenance)?((maintenance-calories)*7/3500):null;
+        const maintenance=getMacroPlanMaintenance(macroPlan);
+        const predicted=calcWeeklyTrendFromCalories(calories,macroPlan);
         let target=getPhaseTarget();
         if(!Number.isFinite(target)){
-          const mode=getGoalMode();
-          const lossRate=Number(macroPlan?.caloriesBlock?.lossRateLbsPerWeek);
-          const gainRate=Number(macroPlan?.caloriesBlock?.gainRateLbsPerWeek);
-          if(mode === 'cut' && Number.isFinite(lossRate)) target=lossRate;
-          else if(mode === 'bulk' && Number.isFinite(gainRate)) target=-gainRate;
-          else if(mode === 'recomp') target=0;
+          const macroTarget=getMacroPlanTargetRate(macroPlan);
+          if(Number.isFinite(macroTarget)) target=macroTarget;
+          else{
+            const mode=getGoalMode();
+            const lossRate=Number(macroPlan?.caloriesBlock?.lossRateLbsPerWeek);
+            const gainRate=Number(macroPlan?.caloriesBlock?.gainRateLbsPerWeek);
+            if(mode === 'cut' && Number.isFinite(lossRate)) target=lossRate;
+            else if(mode === 'bulk' && Number.isFinite(gainRate)) target=-gainRate;
+            else if(mode === 'recomp') target=0;
+          }
         }
         let deltaCalories=null;
         let deltaLb=null;
@@ -1361,7 +1397,7 @@
         const priceFactor=Number.isFinite(recommendedCalories)?(recommendedCalories/calories):null;
         const newWeeklyCost=Number.isFinite(weeklyCost)&&Number.isFinite(priceFactor)?Math.round(weeklyCost*priceFactor*100)/100:null;
         const deltaWeekly=Number.isFinite(newWeeklyCost)&&Number.isFinite(weeklyCost)?Math.round((newWeeklyCost-weeklyCost)*100)/100:null;
-        return {calories,macros,weeklyCost,newWeeklyCost,deltaWeekly,maintenance,predicted,target,deltaCalories,recommendedCalories,priceFactor,deltaLb};
+        return {calories,macros,weeklyCost,newWeeklyCost,deltaWeekly,maintenance,predicted,target,deltaCalories,recommendedCalories,priceFactor,deltaLb,macroPlan};
       };
       let mealFetchPromise=null;
       const loadMealData=(force=false)=>{
@@ -1748,11 +1784,9 @@
           if(S.mealStatus==='idle')loadMealData();
           const summary=getMealSummary();
           const previewCalories=getPreviewTargetCalories(summary);
-          const maint=Number.isFinite(summary?.maintenance)?summary.maintenance:null;
           const displayCalories=Number.isFinite(previewCalories)?previewCalories:summary?.calories;
-          const displayTrend=Number.isFinite(maint)&&Number.isFinite(displayCalories)
-            ? ((maint-displayCalories)*7/3500)
-            : summary?.predicted;
+          const displayTrend=calcWeeklyTrendFromCalories(displayCalories,summary?.macroPlan)
+            ?? summary?.predicted;
           const trendText=Number.isFinite(displayTrend)
             ? (displayTrend>0.05?`On track to lose ${formatNumber(displayTrend,2)} lb/week`:(displayTrend<-0.05?`On track to gain ${formatNumber(Math.abs(displayTrend),2)} lb/week`:'On track to maintain'))
             : 'Weekly trend unavailable (need meal calories + stats).';
