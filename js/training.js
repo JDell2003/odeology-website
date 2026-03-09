@@ -2735,7 +2735,7 @@ function toFreeExerciseDbRemotePath(src) {
   if (idx < 0) return '';
   const rel = noOrigin.slice(idx + '/free-exercise-db/'.length).replace(/^\/+/, '');
   if (!rel) return '';
-  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/${rel}`;
+  return `https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/${rel}`;
 }
 
   function persistExerciseMediaCacheSoon() {
@@ -2778,7 +2778,7 @@ function toFreeExerciseDbRemotePath(src) {
   };
 
   const LOCAL_EXERCISE_CATALOG_PATH = '/free-exercise-db/dist/exercises.json';
-  const REMOTE_EXERCISE_CATALOG_PATH = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
+  const REMOTE_EXERCISE_CATALOG_PATH = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/dist/exercises.json';
   const isLikelyLocalHost = (() => {
     try {
       const h = String(window.location.hostname || '').toLowerCase();
@@ -2791,25 +2791,89 @@ function toFreeExerciseDbRemotePath(src) {
 
   let exerciseCatalog = [];
   let exerciseIndexById = new Map();
+  let exerciseIndexByIdNorm = new Map();
   let exerciseIndexByNameNorm = new Map();
   let catalogLoading = false;
   let catalogLoadingPromise = null;
   let catalogLoadAttempted = false;
 
+  function normalizeExerciseIdForLookup(raw) {
+    return String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
   function setExerciseCatalog(list) {
     const opts = Array.isArray(list) ? list : [];
     exerciseCatalog = opts;
     exerciseIndexById = new Map();
+    exerciseIndexByIdNorm = new Map();
     exerciseIndexByNameNorm = new Map();
     for (const ex of opts) {
       const id = String(ex?.id || '').trim();
       if (!id) continue;
       exerciseIndexById.set(id, ex);
+      const idNorm = normalizeExerciseIdForLookup(id);
+      if (idNorm && !exerciseIndexByIdNorm.has(idNorm)) {
+        exerciseIndexByIdNorm.set(idNorm, ex);
+      }
       const nameNorm = normalizeTextForMatch(ex?.name || '');
       if (nameNorm && !exerciseIndexByNameNorm.has(nameNorm)) {
         exerciseIndexByNameNorm.set(nameNorm, ex);
       }
     }
+  }
+
+  function findCatalogExerciseById(rawId) {
+    const id = String(rawId || '').trim();
+    if (!id) return null;
+    const byExact = exerciseIndexById.get(id);
+    if (byExact) return byExact;
+    const idNorm = normalizeExerciseIdForLookup(id);
+    if (!idNorm) return null;
+    return exerciseIndexByIdNorm.get(idNorm) || null;
+  }
+
+  function exerciseMediaFromCatalogEntry(ex, displayNameOverride = '') {
+    if (!ex) return { mediaPath: null, mediaPathAlt: null, displayName: String(displayNameOverride || '').trim() };
+    const image0 = ex.images?.[0] ? `/free-exercise-db/exercises/${ex.images[0]}` : null;
+    const image1 = ex.images?.[1] ? `/free-exercise-db/exercises/${ex.images[1]}` : null;
+    return {
+      mediaPath: image0,
+      mediaPathAlt: image1,
+      displayName: String(displayNameOverride || ex.name || '').trim()
+    };
+  }
+
+  function resolveCatalogExerciseForMedia(ex) {
+    if (!ex) return null;
+    const idCandidates = [
+      ex.exerciseId,
+      ex.exercise_id,
+      ex.id,
+      ex.baseId,
+      ex.base_id
+    ];
+    for (const candidate of idCandidates) {
+      const match = findCatalogExerciseById(candidate);
+      if (match) return match;
+    }
+
+    const nameCandidates = [
+      ex.displayName,
+      ex.name,
+      ex.exerciseName,
+      ex.movementName
+    ];
+    for (const candidate of nameCandidates) {
+      const key = normalizeTextForMatch(candidate || '');
+      if (!key) continue;
+      const byName = exerciseIndexByNameNorm.get(key);
+      if (byName) return byName;
+    }
+    return null;
   }
 
   function fetchExerciseCatalog(url) {
@@ -2991,8 +3055,16 @@ function toFreeExerciseDbRemotePath(src) {
 
   function resolveExerciseMedia(ex) {
       const displayName = String(ex?.displayName || ex?.name || ex?.exerciseName || '').trim();
-      const mediaPath = String(ex?.mediaPath || '').trim();
-      const mediaPathAlt = String(ex?.mediaPathAlt || '').trim();
+      const catalogEx = resolveCatalogExerciseForMedia(ex);
+      const catalogMedia = exerciseMediaFromCatalogEntry(catalogEx, displayName);
+      let mediaPath = String(ex?.mediaPath || '').trim();
+      let mediaPathAlt = String(ex?.mediaPathAlt || '').trim();
+      const mediaPathNorm = mediaPath.replace(/\\/g, '/');
+      const isFreeDbMediaPath = /(?:^|\/)(?:free-exercise-db|exercise-db)\/exercises\//i.test(mediaPathNorm);
+      if (catalogMedia.mediaPath && (!mediaPath || isFreeDbMediaPath)) {
+        mediaPath = catalogMedia.mediaPath;
+        mediaPathAlt = catalogMedia.mediaPathAlt || '';
+      }
       if (mediaPath) {
         const localSrc0 = rewriteLegacyLocalMediaPath(mediaPath);
         const localSrc1 = rewriteLegacyLocalMediaPath(mediaPathAlt || (mediaPath.includes('/0.') ? mediaPath.replace('/0.', '/1.') : mediaPath));
@@ -3006,7 +3078,7 @@ function toFreeExerciseDbRemotePath(src) {
         };
       }
 
-      const name = String(ex?.movementName || displayName || '').trim();
+      const name = String(ex?.movementName || catalogMedia.displayName || displayName || '').trim();
       const folder = name ? (matchLocalExerciseFolder(name) || guessFolderFromName(name)) : null;
       if (folder) {
         const safeFolder = encodeURIComponent(folder);
@@ -3118,16 +3190,13 @@ function toFreeExerciseDbRemotePath(src) {
 
   function getExerciseNameById(id) {
     if (!id) return '';
-    const ex = exerciseIndexById.get(String(id)) || null;
+    const ex = findCatalogExerciseById(id);
     return ex ? String(ex.name || '') : '';
   }
 
   function exerciseMediaFromId(id) {
-    const ex = exerciseIndexById.get(String(id)) || null;
-    if (!ex) return { mediaPath: null, mediaPathAlt: null, displayName: '' };
-    const image0 = ex.images?.[0] ? `/free-exercise-db/exercises/${ex.images[0]}` : null;
-    const image1 = ex.images?.[1] ? `/free-exercise-db/exercises/${ex.images[1]}` : null;
-    return { mediaPath: image0, mediaPathAlt: image1, displayName: ex.name || '' };
+    const ex = findCatalogExerciseById(id);
+    return exerciseMediaFromCatalogEntry(ex);
   }
 
   async function logTrainingEvent(eventType, payload) {
