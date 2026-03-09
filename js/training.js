@@ -7464,7 +7464,7 @@ function toggleSharePopover(force) {
           el('div', { class: 'plan-topbar-actions-mainrow' },
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF'),
-            el('button', { type: 'button', class: 'btn btn-ghost', onclick: openWorkoutEditorFromPlan }, 'Edit Workout')
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: openWorkoutEditorFromPlan }, 'Modify Current Workout')
           ),
           el('div', { class: 'plan-topbar-actions-toggle-row' }, toggle),
           dropdown
