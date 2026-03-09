@@ -79,6 +79,380 @@
     .builder-status.error { color: #a72e21; }
     .builder-status.ok { color: #146f43; }
 
+    .builder-import-strip {
+      padding: 18px;
+      margin-bottom: 14px;
+      display: grid;
+      gap: 12px;
+      background: rgba(255, 252, 246, 0.95);
+      border: 1px solid #ddcdb4;
+      border-radius: 20px;
+      box-shadow: 0 16px 34px rgba(84, 52, 19, 0.12);
+    }
+
+    .builder-import-head h2 {
+      margin: 0;
+      font-size: clamp(1rem, 1.8vw, 1.3rem);
+      color: #2b2014;
+      letter-spacing: -0.01em;
+    }
+
+    .builder-import-head p {
+      margin: 4px 0 0;
+      color: #5f5240;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .builder-import-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 340px) 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .builder-import-dropzone {
+      border: 1px dashed #cfae7f;
+      border-radius: 14px;
+      background: linear-gradient(160deg, #fffaf1 0%, #f4e8d4 100%);
+      min-height: 150px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 12px;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .builder-import-dropzone.is-drag {
+      border-color: #b27a31;
+      box-shadow: 0 0 0 3px rgba(178, 122, 49, 0.2);
+      background: linear-gradient(160deg, #fff3e3 0%, #efd9b5 100%);
+    }
+
+    .builder-import-drop-title {
+      font-weight: 800;
+      color: #3a2d1f;
+      line-height: 1.2;
+    }
+
+    .builder-import-drop-sub {
+      font-size: 0.8rem;
+      color: #735f44;
+      line-height: 1.3;
+    }
+
+    .builder-import-text-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-import-text {
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+      border: 1px solid #d9c5a8;
+      border-radius: 12px;
+      padding: 10px 11px;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      background: #fffdfa;
+      color: #2f2418;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .builder-import-text:focus {
+      outline: none;
+      border-color: #b8833a;
+      box-shadow: 0 0 0 3px rgba(184, 131, 58, 0.18);
+    }
+
+    .builder-import-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .builder-import-files {
+      min-height: 18px;
+      font-size: 0.8rem;
+      color: #6f5c43;
+    }
+
+    .builder-import-files strong {
+      color: #3e301f;
+      font-weight: 800;
+    }
+
+    .builder-import-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      display: grid;
+      place-items: center;
+      background: rgba(21, 14, 7, 0.58);
+      backdrop-filter: blur(3px);
+      padding: 14px;
+    }
+
+    .builder-import-loading-card {
+      width: min(520px, 96vw);
+      border-radius: 18px;
+      border: 1px solid #dfc8a7;
+      background: linear-gradient(160deg, #fff9ef 0%, #f5e5cb 100%);
+      box-shadow: 0 22px 40px rgba(33, 21, 9, 0.28);
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .builder-import-loading-title {
+      margin: 0;
+      font-size: 1.04rem;
+      font-weight: 850;
+      color: #2d2216;
+    }
+
+    .builder-import-loading-msg {
+      margin: 0;
+      color: #634f36;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .builder-import-loading-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(90, 66, 37, 0.14);
+      overflow: hidden;
+    }
+
+    .builder-import-loading-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #d09545 0%, #b7792f 100%);
+      transition: width 0.18s ease;
+    }
+
+    .builder-import-loading-meta {
+      font-size: 0.79rem;
+      color: #755e3f;
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .builder-import-review {
+      position: fixed;
+      inset: 0;
+      z-index: 1210;
+      display: grid;
+      place-items: center;
+      background: rgba(18, 11, 5, 0.62);
+      backdrop-filter: blur(3px);
+      padding: 14px;
+    }
+
+    .builder-import-review-card {
+      width: min(940px, 96vw);
+      max-height: 90vh;
+      border-radius: 18px;
+      border: 1px solid #dbc6a7;
+      background: linear-gradient(165deg, #fffaf1 0%, #f4e6ce 100%);
+      box-shadow: 0 28px 46px rgba(34, 22, 9, 0.32);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .builder-import-review-head {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #e3d3bd;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .builder-import-review-head h3 {
+      margin: 0;
+      font-size: 1.02rem;
+      color: #2c2116;
+      font-weight: 850;
+    }
+
+    .builder-import-review-head p {
+      margin: 4px 0 0;
+      color: #6a563d;
+      font-size: 0.85rem;
+      line-height: 1.3;
+    }
+
+    .builder-import-review-body {
+      overflow: auto;
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      background: rgba(255, 252, 247, 0.75);
+    }
+
+    .builder-import-row {
+      border: 1px solid #e0cfb6;
+      border-radius: 12px;
+      background: #fffaf2;
+      padding: 9px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-import-row-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .builder-import-row-source {
+      font-size: 0.84rem;
+      color: #4d3a27;
+      font-weight: 750;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .builder-import-row-state {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid #d0baa0;
+      background: #fff7ea;
+      color: #6b553a;
+      white-space: nowrap;
+    }
+
+    .builder-import-row-state.is-ok {
+      border-color: #9ec7a3;
+      color: #1f6f3e;
+      background: #ecf8ef;
+    }
+
+    .builder-import-row-state.is-fix {
+      border-color: #d4b082;
+      color: #8b5722;
+      background: #fff2de;
+    }
+
+    .builder-import-row-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .builder-import-row-controls select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid #d8c3a5;
+      border-radius: 9px;
+      padding: 6px 8px;
+      background: #fffdfa;
+      color: #2f2418;
+      font-size: 0.84rem;
+    }
+
+    .builder-import-row-actions {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .builder-import-check,
+    .builder-import-x {
+      min-width: 34px;
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid #d3bf9f;
+      background: #fff7eb;
+      color: #5a452d;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .builder-import-check {
+      border-color: #9ec4a2;
+      background: #ebf8ee;
+      color: #236f3f;
+    }
+
+    .builder-import-x {
+      border-color: #d9b1aa;
+      background: #fdecea;
+      color: #8d352b;
+    }
+
+    .builder-import-fix {
+      display: none;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .builder-import-row.is-fixing .builder-import-fix {
+      display: grid;
+    }
+
+    .builder-import-fix input {
+      min-height: 34px;
+      border: 1px solid #d8c3a5;
+      border-radius: 9px;
+      padding: 6px 8px;
+      font-size: 0.84rem;
+      background: #fffdfa;
+      color: #2f2418;
+    }
+
+    .builder-import-fix .btn {
+      min-height: 34px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+
+    .builder-import-row-meta {
+      font-size: 0.74rem;
+      color: #736048;
+      line-height: 1.2;
+    }
+
+    .builder-import-review-foot {
+      border-top: 1px solid #e3d3bd;
+      padding: 10px 14px 12px;
+      display: grid;
+      gap: 8px;
+      background: rgba(255, 250, 241, 0.9);
+    }
+
+    .builder-import-review-status {
+      min-height: 18px;
+      font-size: 0.8rem;
+      color: #6f5a40;
+    }
+
+    .builder-import-review-status.error {
+      color: #a03024;
+      font-weight: 700;
+    }
+
+    .builder-import-review-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
     .builder-grid {
       display: grid;
       grid-template-columns: minmax(320px, 360px) 1fr;
@@ -724,6 +1098,77 @@
         display: none;
       }
 
+      .builder-import-strip {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 14px;
+        box-shadow: 0 8px 18px rgba(64, 42, 19, 0.1);
+      }
+
+      .builder-import-head h2 {
+        font-size: 0.95rem;
+      }
+
+      .builder-import-head p {
+        font-size: 0.79rem;
+      }
+
+      .builder-import-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .builder-import-dropzone,
+      .builder-import-text {
+        min-height: 108px;
+      }
+
+      .builder-import-actions {
+        justify-content: stretch;
+      }
+
+      .builder-import-actions .btn {
+        flex: 1 1 0;
+        min-height: 36px;
+      }
+
+      .builder-import-files {
+        font-size: 0.76rem;
+      }
+
+      .builder-import-review-card {
+        width: 98vw;
+        max-height: 94vh;
+      }
+
+      .builder-import-review-head {
+        padding: 11px 11px 9px;
+      }
+
+      .builder-import-review-body {
+        padding: 8px;
+      }
+
+      .builder-import-row-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-import-row-actions {
+        justify-content: flex-end;
+      }
+
+      .builder-import-fix {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-import-review-foot {
+        padding: 8px 10px 10px;
+      }
+
+      .builder-import-review-actions .btn {
+        flex: 1 1 0;
+      }
+
       .builder-db-panel {
         display: flex;
         flex-direction: column;
@@ -1265,6 +1710,29 @@
       <div id="builder-status" class="builder-status"></div>
     </section>
 
+    <section class="builder-import-strip" id="builder-import-strip" aria-label="Import workouts from screenshots or text">
+      <div class="builder-import-head">
+        <h2>Import workouts from screenshots or text</h2>
+        <p>Drop up to 4 screenshots or paste workouts separated by commas/new lines. We match them to your database, then you confirm each one before building.</p>
+      </div>
+      <div class="builder-import-grid">
+        <label class="builder-import-dropzone" id="builder-import-dropzone" for="builder-import-images">
+          <span class="builder-import-drop-title">Drop screenshots here</span>
+          <span class="builder-import-drop-sub">or tap to upload (max 4 images)</span>
+          <button type="button" class="btn btn-ghost" id="builder-import-browse">Choose images</button>
+        </label>
+        <div class="builder-import-text-wrap">
+          <textarea id="builder-import-text" class="builder-import-text" placeholder="Example: Barbell Bench Press, Incline Dumbbell Press, Cable Row&#10;Or paste raw text from your notes/screenshot." aria-label="Paste workout text"></textarea>
+          <div class="builder-import-actions">
+            <button type="button" class="btn btn-primary" id="builder-import-generate">Generate from import</button>
+            <button type="button" class="btn btn-ghost" id="builder-import-clear">Clear</button>
+          </div>
+        </div>
+      </div>
+      <input id="builder-import-images" type="file" accept="image/*" multiple style="display:none;" />
+      <div id="builder-import-files" class="builder-import-files">No images selected.</div>
+    </section>
+
     <section class="builder-grid">
       <aside class="builder-panel builder-db-panel">
         <div class="builder-db-toolbar">
@@ -1322,6 +1790,36 @@
       <button type="button" class="btn btn-primary" id="builder-make-workout">Save Workout</button>
     </div>
   </main>
+
+  <div id="builder-import-loading" class="builder-import-loading" hidden>
+    <div class="builder-import-loading-card">
+      <h3 class="builder-import-loading-title">Importing workout...</h3>
+      <p id="builder-import-loading-msg" class="builder-import-loading-msg">Reading your input and matching it to the database.</p>
+      <div class="builder-import-loading-bar"><div id="builder-import-loading-fill" class="builder-import-loading-fill"></div></div>
+      <div id="builder-import-loading-meta" class="builder-import-loading-meta">0%</div>
+    </div>
+  </div>
+
+  <div id="builder-import-review" class="builder-import-review" hidden>
+    <div class="builder-import-review-card">
+      <div class="builder-import-review-head">
+        <div>
+          <h3>We came across a few errors. Confirm these workouts.</h3>
+          <p>Use ✓ if correct. Use X if it is wrong, then type what it should be and re-match.</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="builder-import-review-close">Close</button>
+      </div>
+      <div id="builder-import-review-body" class="builder-import-review-body"></div>
+      <div class="builder-import-review-foot">
+        <div id="builder-import-review-status" class="builder-import-review-status"></div>
+        <div class="builder-import-review-actions">
+          <button type="button" class="btn btn-ghost" id="builder-import-use-best">Use best recommendations</button>
+          <button type="button" class="btn btn-primary" id="builder-import-apply">Apply and build workout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <datalist id="builder-sets-options">
     <option value="2"></option>
     <option value="3"></option>
@@ -1475,8 +1973,27 @@
       const customLevelEl = $('builder-custom-level');
       const customImageEl = $('builder-custom-image');
       const customNotesEl = $('builder-custom-notes');
+      const importImagesEl = $('builder-import-images');
+      const importTextEl = $('builder-import-text');
+      const importDropzoneEl = $('builder-import-dropzone');
+      const importBrowseBtn = $('builder-import-browse');
+      const importGenerateBtn = $('builder-import-generate');
+      const importClearBtn = $('builder-import-clear');
+      const importFilesEl = $('builder-import-files');
+      const importLoadingEl = $('builder-import-loading');
+      const importLoadingMsgEl = $('builder-import-loading-msg');
+      const importLoadingFillEl = $('builder-import-loading-fill');
+      const importLoadingMetaEl = $('builder-import-loading-meta');
+      const importReviewEl = $('builder-import-review');
+      const importReviewBodyEl = $('builder-import-review-body');
+      const importReviewStatusEl = $('builder-import-review-status');
+      const importReviewCloseBtn = $('builder-import-review-close');
+      const importUseBestBtn = $('builder-import-use-best');
+      const importApplyBtn = $('builder-import-apply');
       const TRAINING_QUICK_TOUR_PENDING_PREFIX = 'ode_training_quick_tour_pending_v1';
       const TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX = 'ode_training_custom_plan_first_saved_v1';
+      const MAX_IMPORT_IMAGES = 4;
+      const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
 
       const state = {
         user: null,
@@ -1493,10 +2010,14 @@
         planByWeekday: new Map(),
         saving: false,
         customFormOpen: false,
-        customSaving: false
+        customSaving: false,
+        importFiles: [],
+        importReviewRows: [],
+        importBusy: false
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
+      let tesseractLoadPromise = null;
 
       function perUserStorageKey(prefix) {
         const uid = String(state?.user?.id || '').trim() || 'anon';
@@ -1532,6 +2053,421 @@
         statusEl.classList.remove('error', 'ok');
         if (kind === 'error') statusEl.classList.add('error');
         if (kind === 'ok') statusEl.classList.add('ok');
+      }
+
+      function setImportReviewStatus(text, kind) {
+        if (!importReviewStatusEl) return;
+        importReviewStatusEl.textContent = String(text || '');
+        importReviewStatusEl.classList.remove('error');
+        if (kind === 'error') importReviewStatusEl.classList.add('error');
+      }
+
+      function setImportLoadingVisible(visible, message, progress) {
+        if (!importLoadingEl) return;
+        const show = Boolean(visible);
+        importLoadingEl.hidden = !show;
+        if (show) {
+          importLoadingMsgEl && (importLoadingMsgEl.textContent = String(message || 'Importing workout...'));
+          const pct = Math.max(0, Math.min(100, Number(progress) || 0));
+          if (importLoadingFillEl) importLoadingFillEl.style.width = `${pct}%`;
+          if (importLoadingMetaEl) importLoadingMetaEl.textContent = `${Math.round(pct)}%`;
+        }
+      }
+
+      function updateImportFilesLabel() {
+        if (!importFilesEl) return;
+        const files = Array.isArray(state.importFiles) ? state.importFiles : [];
+        if (!files.length) {
+          importFilesEl.textContent = 'No images selected.';
+          return;
+        }
+        const names = files.map((file) => String(file?.name || 'image')).slice(0, MAX_IMPORT_IMAGES);
+        importFilesEl.innerHTML = `<strong>${files.length} image${files.length === 1 ? '' : 's'} selected:</strong> ${escapeHtml(names.join(', '))}`;
+      }
+
+      function normalizeImportToken(raw) {
+        return String(raw || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim()
+          .replace(/\s+/g, ' ');
+      }
+
+      function cleanImportedEntry(raw) {
+        let value = String(raw || '')
+          .replace(/[•|]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!value) return '';
+        value = value
+          .replace(/\b\d+\s*(x|sets?|reps?|sec|secs|seconds?|mins?|minutes?)\b/gi, ' ')
+          .replace(/\b(rir|rpe|tempo|rest)\b[^,;]*/gi, ' ')
+          .replace(/\(\s*\d+[^)]*\)/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!value) return '';
+        value = value.replace(/^[^a-zA-Z]+|[^a-zA-Z0-9]+$/g, '').trim();
+        return value;
+      }
+
+      function isLikelyExerciseName(raw) {
+        const text = String(raw || '').trim();
+        if (!text) return false;
+        if (text.length < 3 || text.length > 80) return false;
+        if (!/[a-zA-Z]/.test(text)) return false;
+        const normalized = normalizeImportToken(text);
+        if (!normalized) return false;
+        if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
+        if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/.test(normalized)) return false;
+        return true;
+      }
+
+      function parseImportedEntries(raw) {
+        const source = String(raw || '').trim();
+        if (!source) return [];
+        const chunks = source
+          .split(/[\n,;]+/g)
+          .map((line) => cleanImportedEntry(line))
+          .filter(Boolean)
+          .filter((line) => isLikelyExerciseName(line));
+        const unique = [];
+        const seen = new Set();
+        chunks.forEach((line) => {
+          const key = normalizeImportToken(line);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          unique.push(line);
+        });
+        return unique;
+      }
+
+      function buildRowSearchString(row) {
+        return [
+          row?.name,
+          row?.id,
+          row?.category,
+          row?.equipment,
+          ...(Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : []),
+          ...(Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [])
+        ]
+          .map((v) => normalizeImportToken(v))
+          .filter(Boolean)
+          .join(' ');
+      }
+
+      function matchExerciseCandidates(rawQuery, maxResults = 6) {
+        const query = normalizeImportToken(rawQuery);
+        if (!query) return [];
+        const queryTokens = query.split(' ').filter(Boolean);
+        const rows = allLibraryRows();
+        const scored = [];
+
+        rows.forEach((row) => {
+          const name = normalizeImportToken(row?.name);
+          const id = normalizeImportToken(row?.id);
+          const hay = buildRowSearchString(row);
+          if (!hay) return;
+          let score = 0;
+          if (query === name || query === id) score += 1.2;
+          if (name.startsWith(query) || id.startsWith(query)) score += 0.62;
+          if (name.includes(query) || id.includes(query)) score += 0.44;
+          if (hay.includes(query)) score += 0.28;
+          if (query.includes(name) && name.length >= 4) score += 0.18;
+
+          if (queryTokens.length) {
+            const hayTokens = new Set(hay.split(' ').filter(Boolean));
+            let hit = 0;
+            queryTokens.forEach((token) => {
+              if (hayTokens.has(token)) hit += 1;
+            });
+            score += (hit / queryTokens.length) * 0.62;
+          }
+
+          if (score <= 0.08) return;
+          scored.push({
+            row,
+            score
+          });
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored.slice(0, Math.max(1, Number(maxResults) || 6));
+      }
+
+      function ensureImportFiles(files) {
+        const list = Array.from(files || []).filter((file) => file && String(file.type || '').startsWith('image/'));
+        state.importFiles = list.slice(0, MAX_IMPORT_IMAGES);
+        if (list.length > MAX_IMPORT_IMAGES) {
+          setStatus(`Only ${MAX_IMPORT_IMAGES} images are allowed. Extra images were ignored.`, 'error');
+        }
+        if (importImagesEl) importImagesEl.value = '';
+        updateImportFilesLabel();
+      }
+
+      async function ensureTesseractLoaded() {
+        if (window.Tesseract && typeof window.Tesseract.recognize === 'function') return window.Tesseract;
+        if (tesseractLoadPromise) return tesseractLoadPromise;
+        tesseractLoadPromise = new Promise((resolve, reject) => {
+          const existing = document.querySelector(`script[src="${OCR_SCRIPT_SRC}"]`);
+          if (existing) {
+            existing.addEventListener('load', () => resolve(window.Tesseract));
+            existing.addEventListener('error', () => reject(new Error('Could not load OCR engine.')));
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = OCR_SCRIPT_SRC;
+          script.async = true;
+          script.onload = () => resolve(window.Tesseract);
+          script.onerror = () => reject(new Error('Could not load OCR engine.'));
+          document.head.appendChild(script);
+        });
+        return tesseractLoadPromise;
+      }
+
+      async function extractTextFromImage(file, fileIndex, totalFiles) {
+        const tesseract = await ensureTesseractLoaded();
+        const label = `Scanning image ${fileIndex + 1} of ${totalFiles}...`;
+        setImportLoadingVisible(true, label, Math.max(6, Math.round((fileIndex / Math.max(1, totalFiles)) * 100)));
+        const result = await tesseract.recognize(file, 'eng', {
+          logger: (progress) => {
+            const value = Number(progress?.progress || 0);
+            const base = (fileIndex / Math.max(1, totalFiles)) * 100;
+            const span = 100 / Math.max(1, totalFiles);
+            const pct = Math.max(0, Math.min(99, base + (value * span)));
+            const statusText = progress?.status ? `${label} ${String(progress.status)}` : label;
+            setImportLoadingVisible(true, statusText, pct);
+          }
+        });
+        return String(result?.data?.text || '');
+      }
+
+      function buildImportReviewRows(entries) {
+        return entries.map((entry, idx) => {
+          const candidates = matchExerciseCandidates(entry, 7);
+          const top = candidates[0] || null;
+          return {
+            id: `import-row-${idx + 1}-${Date.now()}`,
+            sourceText: String(entry || '').trim(),
+            candidateList: candidates,
+            selectedId: top?.row?.id ? String(top.row.id) : '',
+            status: top ? (top.score >= 0.66 ? 'ok' : 'pending') : 'fixing',
+            fixText: '',
+            confidence: top ? Number(top.score) : 0
+          };
+        });
+      }
+
+      function renderImportReviewRows() {
+        if (!importReviewBodyEl) return;
+        const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+        if (!rows.length) {
+          importReviewBodyEl.innerHTML = '<div class="builder-day-empty">No imported workouts to confirm.</div>';
+          return;
+        }
+
+        importReviewBodyEl.innerHTML = rows.map((row) => {
+          const options = row.candidateList.map((entry) => {
+            const id = String(entry?.row?.id || '');
+            const name = String(entry?.row?.name || id || 'Unknown');
+            const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
+            return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)} (${scorePct}%)</option>`;
+          }).join('');
+          const statusLabel = row.status === 'ok'
+            ? 'Confirmed'
+            : (row.status === 'fixing' ? 'Needs fix' : 'Review');
+          const statusClass = row.status === 'ok'
+            ? 'is-ok'
+            : (row.status === 'fixing' ? 'is-fix' : '');
+          const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
+          return `
+            <article class="builder-import-row${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
+              <div class="builder-import-row-head">
+                <div class="builder-import-row-source">${escapeHtml(row.sourceText)}</div>
+                <span class="builder-import-row-state ${statusClass}">${escapeHtml(statusLabel)}</span>
+              </div>
+              <div class="builder-import-row-controls">
+                <select data-import-select="${escapeHtml(row.id)}">
+                  ${options || '<option value="">No matches yet</option>'}
+                </select>
+                <div class="builder-import-row-actions">
+                  <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">✓</button>
+                  <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
+                </div>
+              </div>
+              <div class="builder-import-fix">
+                <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
+                <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
+              </div>
+              <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function openImportReview(rows) {
+        state.importReviewRows = Array.isArray(rows) ? rows : [];
+        renderImportReviewRows();
+        setImportReviewStatus('');
+        if (importReviewEl) importReviewEl.hidden = false;
+      }
+
+      function closeImportReview() {
+        if (importReviewEl) importReviewEl.hidden = true;
+      }
+
+      function getImportReviewRow(rowId) {
+        return (Array.isArray(state.importReviewRows) ? state.importReviewRows : [])
+          .find((row) => String(row?.id || '') === String(rowId || '')) || null;
+      }
+
+      function resolveReviewRowMatch(row, queryText) {
+        if (!row) return;
+        const candidates = matchExerciseCandidates(queryText, 7);
+        row.candidateList = candidates;
+        row.selectedId = candidates[0]?.row?.id ? String(candidates[0].row.id) : '';
+        row.confidence = Number(candidates[0]?.score || 0);
+        row.status = candidates.length ? 'pending' : 'fixing';
+      }
+
+      function applyImportedRowsToPlan(rows) {
+        const validRows = (Array.isArray(rows) ? rows : [])
+          .map((row) => {
+            const selected = String(row?.selectedId || '').trim();
+            if (!selected) return null;
+            const matched = allLibraryRows().find((entry) => String(entry?.id || '').toLowerCase() === selected.toLowerCase());
+            return matched || null;
+          })
+          .filter(Boolean);
+        if (!validRows.length) return false;
+
+        const selectedWeekdays = Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
+          ? state.selectedWeekdays.slice()
+          : [1, 2, 3, 4, 5];
+        syncSelectedDays(selectedWeekdays);
+
+        const nextPlan = new Map();
+        selectedWeekdays.forEach((weekday) => nextPlan.set(weekday, []));
+
+        if (validRows.length < selectedWeekdays.length) {
+          selectedWeekdays.forEach((weekday, idx) => {
+            const row = validRows[idx % validRows.length];
+            nextPlan.get(weekday).push(toDbExerciseState(row));
+          });
+        }
+
+        validRows.forEach((row, idx) => {
+          const weekday = selectedWeekdays[idx % selectedWeekdays.length];
+          nextPlan.get(weekday).push(toDbExerciseState(row));
+        });
+
+        state.planByWeekday = nextPlan;
+        state.mobileActiveWeekday = selectedWeekdays[0];
+        renderWeekdayChips();
+        renderDayColumns();
+        return true;
+      }
+
+      async function saveImportedPlanAndOpenTraining() {
+        if (!state.user?.id) {
+          setStatus('Imported into the builder. Log in, then tap Save Workout.', 'error');
+          setAuthGate(true);
+          return false;
+        }
+        const days = serializePlanDays({ filledOnly: true });
+        if (!days.length) {
+          setStatus('No imported workouts were added.', 'error');
+          return false;
+        }
+
+        state.saving = true;
+        saveBtn && (saveBtn.disabled = true);
+        setStatus('Saving imported workout...', '');
+        try {
+          const resp = await fetch('/api/training/custom-plan', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days })
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok || !json?.ok) {
+            setStatus(json?.error || 'Could not save imported workout.', 'error');
+            return false;
+          }
+          markFirstCustomPlanSavedAndArmTour();
+          setStatus('Imported workout saved. Opening Training...', 'ok');
+          window.setTimeout(() => {
+            window.location.href = 'training.html?from=custom-builder#training';
+          }, 420);
+          return true;
+        } catch {
+          setStatus('Could not save imported workout.', 'error');
+          return false;
+        } finally {
+          state.saving = false;
+          saveBtn && (saveBtn.disabled = false);
+        }
+      }
+
+      async function handleGenerateFromImport() {
+        if (state.importBusy) return;
+        const typedEntries = parseImportedEntries(importTextEl?.value || '');
+        const files = Array.isArray(state.importFiles) ? state.importFiles : [];
+        if (!typedEntries.length && !files.length) {
+          setStatus('Add workout text or up to 4 screenshots first.', 'error');
+          return;
+        }
+
+        state.importBusy = true;
+        importGenerateBtn && (importGenerateBtn.disabled = true);
+        setImportLoadingVisible(true, 'Preparing import...', 4);
+        try {
+          const imported = [];
+          let lowQualityCount = 0;
+          typedEntries.forEach((entry) => imported.push(entry));
+
+          if (files.length) {
+            for (let i = 0; i < files.length; i += 1) {
+              const ocrText = await extractTextFromImage(files[i], i, files.length);
+              const lines = parseImportedEntries(ocrText);
+              if (!lines.length) {
+                lowQualityCount += 1;
+              } else {
+                lines.forEach((entry) => imported.push(entry));
+              }
+            }
+          }
+
+          const clean = [];
+          const seen = new Set();
+          imported.forEach((entry) => {
+            const value = cleanImportedEntry(entry);
+            const key = normalizeImportToken(value);
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            clean.push(value);
+          });
+
+          if (!clean.length) {
+            throw new Error('Could not read workouts from this import. Try clearer screenshots or paste exercise names.');
+          }
+
+          setImportLoadingVisible(true, 'Matching workouts to your database...', 86);
+          const reviewRows = buildImportReviewRows(clean);
+          setImportLoadingVisible(true, 'Launching confirmation...', 100);
+          openImportReview(reviewRows);
+          if (lowQualityCount > 0) {
+            setStatus(`Confirm imported workouts. ${lowQualityCount} image${lowQualityCount === 1 ? '' : 's'} were too low quality to read fully.`, 'error');
+          } else {
+            setStatus('Confirm imported workouts, then apply to build your plan.', 'ok');
+          }
+        } catch (err) {
+          setStatus(err?.message || 'Could not import workouts from your input.', 'error');
+        } finally {
+          state.importBusy = false;
+          importGenerateBtn && (importGenerateBtn.disabled = false);
+          window.setTimeout(() => setImportLoadingVisible(false), 120);
+        }
       }
 
       function readBuilderPrefillSnapshot() {
@@ -2882,6 +3818,151 @@
         dayColumnsEl?.addEventListener('touchcancel', finishSwipe, { passive: true });
       }
 
+      function bindImportEvents() {
+        updateImportFilesLabel();
+
+        importBrowseBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          importImagesEl?.click();
+        });
+
+        importImagesEl?.addEventListener('change', () => {
+          ensureImportFiles(importImagesEl?.files || []);
+        });
+
+        const setDropState = (active) => {
+          if (!importDropzoneEl) return;
+          importDropzoneEl.classList.toggle('is-drag', Boolean(active));
+        };
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+          importDropzoneEl?.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDropState(true);
+          });
+        });
+        ['dragleave', 'drop'].forEach((eventName) => {
+          importDropzoneEl?.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDropState(false);
+          });
+        });
+
+        importDropzoneEl?.addEventListener('drop', (e) => {
+          const files = e.dataTransfer?.files || [];
+          ensureImportFiles(files);
+        });
+
+        importClearBtn?.addEventListener('click', () => {
+          state.importFiles = [];
+          if (importImagesEl) importImagesEl.value = '';
+          if (importTextEl) importTextEl.value = '';
+          updateImportFilesLabel();
+          setStatus('Import input cleared.', '');
+        });
+
+        importGenerateBtn?.addEventListener('click', handleGenerateFromImport);
+        importReviewCloseBtn?.addEventListener('click', closeImportReview);
+        importReviewEl?.addEventListener('click', (e) => {
+          if (e.target === importReviewEl) closeImportReview();
+        });
+
+        importReviewBodyEl?.addEventListener('change', (e) => {
+          const select = e.target.closest('[data-import-select]');
+          if (!select) return;
+          const rowId = String(select.getAttribute('data-import-select') || '').trim();
+          const row = getImportReviewRow(rowId);
+          if (!row) return;
+          row.selectedId = String(select.value || '').trim();
+          row.status = row.selectedId ? 'pending' : 'fixing';
+          renderImportReviewRows();
+        });
+
+        importReviewBodyEl?.addEventListener('click', (e) => {
+          const checkBtn = e.target.closest('[data-import-check]');
+          if (checkBtn) {
+            const row = getImportReviewRow(checkBtn.getAttribute('data-import-check'));
+            if (!row) return;
+            if (!row.selectedId && row.candidateList[0]?.row?.id) {
+              row.selectedId = String(row.candidateList[0].row.id);
+            }
+            row.status = row.selectedId ? 'ok' : 'fixing';
+            renderImportReviewRows();
+            return;
+          }
+
+          const rejectBtn = e.target.closest('[data-import-x]');
+          if (rejectBtn) {
+            const row = getImportReviewRow(rejectBtn.getAttribute('data-import-x'));
+            if (!row) return;
+            row.status = 'fixing';
+            renderImportReviewRows();
+            return;
+          }
+
+          const rematchBtn = e.target.closest('[data-import-rematch]');
+          if (rematchBtn) {
+            const rowId = String(rematchBtn.getAttribute('data-import-rematch') || '').trim();
+            const row = getImportReviewRow(rowId);
+            if (!row) return;
+            const input = importReviewBodyEl.querySelector(`[data-import-fix="${rowId}"]`);
+            const nextText = String(input?.value || '').trim();
+            if (!nextText) {
+              setImportReviewStatus('Type a replacement workout name before re-matching.', 'error');
+              return;
+            }
+            row.fixText = nextText;
+            resolveReviewRowMatch(row, nextText);
+            setImportReviewStatus(row.candidateList.length ? '' : 'No close database match found for one or more rows.', row.candidateList.length ? '' : 'error');
+            renderImportReviewRows();
+          }
+        });
+
+        importUseBestBtn?.addEventListener('click', () => {
+          const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+          rows.forEach((row) => {
+            if (!row.selectedId && row.candidateList[0]?.row?.id) {
+              row.selectedId = String(row.candidateList[0].row.id);
+            }
+            row.status = row.selectedId ? 'ok' : 'fixing';
+          });
+          renderImportReviewRows();
+          setImportReviewStatus('Applied best recommendations where available.');
+        });
+
+        importApplyBtn?.addEventListener('click', async () => {
+          const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+          if (!rows.length) {
+            setImportReviewStatus('Nothing to apply.', 'error');
+            return;
+          }
+
+          rows.forEach((row) => {
+            if (!row.selectedId && row.candidateList[0]?.row?.id) {
+              row.selectedId = String(row.candidateList[0].row.id);
+            }
+          });
+
+          const unresolved = rows.filter((row) => !row.selectedId);
+          if (unresolved.length) {
+            setImportReviewStatus(`Resolve ${unresolved.length} item${unresolved.length === 1 ? '' : 's'} before applying.`, 'error');
+            return;
+          }
+
+          const applied = applyImportedRowsToPlan(rows);
+          if (!applied) {
+            setImportReviewStatus('Could not apply imported matches to your plan.', 'error');
+            return;
+          }
+
+          closeImportReview();
+          setStatus('Imported workouts applied. Saving and opening Training...', 'ok');
+          await saveImportedPlanAndOpenTraining();
+        });
+      }
+
       async function saveCustomPlan() {
         if (state.saving) return;
         if (!state.user?.id) {
@@ -2966,6 +4047,7 @@
         renderDayColumns();
         renderSectionFilterPills();
         bindPlanInputEvents();
+        bindImportEvents();
 
         sectionFiltersEl?.addEventListener('click', (e) => {
           const btn = e.target.closest('[data-filter-section]');
