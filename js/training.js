@@ -3390,6 +3390,32 @@ function toFreeExerciseDbRemotePath(src) {
     return candMajor === srcMajor;
   }
 
+  function forceCompatible(sourceProfile, candidateProfile) {
+    const srcForce = String(sourceProfile?.force || '').trim();
+    const candForce = String(candidateProfile?.force || '').trim();
+    if (!srcForce) return true;
+    if (!candForce) return false;
+    return srcForce === candForce;
+  }
+
+  function capacityCompatible(sourceProfile, candidateProfile) {
+    const srcFamily = String(sourceProfile?.movementFamily || '').trim();
+    const candFamily = String(candidateProfile?.movementFamily || '').trim();
+    if (srcFamily) {
+      if (!candFamily) return false;
+      return movementFamilyCompatible(sourceProfile, candidateProfile);
+    }
+
+    const srcSubgroup = String(sourceProfile?.subgroup || '').trim();
+    const candSubgroup = String(candidateProfile?.subgroup || '').trim();
+    if (sourceProfile?.subgroupSpecific && srcSubgroup) {
+      if (!candSubgroup) return false;
+      if (srcSubgroup !== candSubgroup) return false;
+    }
+
+    return forceCompatible(sourceProfile, candidateProfile);
+  }
+
   function mapExerciseMuscles(entry) {
     const profile = buildSwapProfile(entry);
     return profile.muscleKeys.filter(Boolean);
@@ -3440,6 +3466,7 @@ function toFreeExerciseDbRemotePath(src) {
     if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
     if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
     if (!subgroupCompatible(sourceProfile, candidateProfile)) return false;
+    if (!capacityCompatible(sourceProfile, candidateProfile)) return false;
     return true;
   }
 
