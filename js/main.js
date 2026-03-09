@@ -3597,9 +3597,31 @@ const COST_WINDOW_LABELS = {
 let lastCostWindowSnapshot = null;
 
 function restOfMonthLabel(daysRemaining) {
-    const d = Number(daysRemaining);
-    if (!Number.isFinite(d) || d <= 0) return COST_WINDOW_LABELS[COST_WINDOW_MODES.REST_MONTH];
-    return `Rest of month (${Math.round(d)}d)`;
+    const fallback = Number(daysRemainingInCurrentMonth(new Date()));
+    const dRaw = Number(daysRemaining);
+    const d = Number.isFinite(dRaw) && dRaw > 0 ? dRaw : fallback;
+    if (!Number.isFinite(d) || d <= 0) return `${COST_WINDOW_LABELS[COST_WINDOW_MODES.REST_MONTH]} (-- days left)`;
+    return `Rest of month (${Math.round(d)} days left)`;
+}
+
+function buildCostWindowFallbackSnapshot() {
+    const daysRemaining = Number(daysRemainingInCurrentMonth(new Date()));
+    const overviewValue = String(document.getElementById('overview-month-projected')?.textContent || '');
+    const planValue = String(document.getElementById('p-monthly-cost')?.textContent || '');
+    const sourceText = overviewValue || planValue;
+    const normalized = sourceText
+        .replace(/[^0-9.-]/g, '')
+        .trim();
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return {
+        weeklyCost: parsed / 4,
+        avgMonthly28: parsed,
+        restOfMonth: Number.isFinite(daysRemaining) && daysRemaining > 0
+            ? (parsed * daysRemaining) / 28
+            : null,
+        daysRemaining
+    };
 }
 
 function getCostWindowMode() {
@@ -3707,17 +3729,26 @@ function syncCostWindowToggleUi() {
 }
 
 function renderCostWindowSummary(snapshot) {
-    const data = snapshot && typeof snapshot === 'object' ? snapshot : lastCostWindowSnapshot;
+    const data = snapshot && typeof snapshot === 'object'
+        ? snapshot
+        : (lastCostWindowSnapshot || buildCostWindowFallbackSnapshot());
     if (!data) return;
     lastCostWindowSnapshot = data;
 
     const mode = getCostWindowMode();
     const avgMonthly28 = Number(data.avgMonthly28);
-    const restOfMonth = Number(data.restOfMonth);
-    const weeklyCost = Number(data.weeklyCost);
     const daysRemaining = Number(data.daysRemaining);
+    const daysRemainingClamped = Number.isFinite(daysRemaining) && daysRemaining > 0
+        ? Math.max(1, Math.round(daysRemaining))
+        : Number(daysRemainingInCurrentMonth(new Date())) || null;
+    const restFromSnapshot = Number(data.restOfMonth);
+    const restDerived = Number.isFinite(avgMonthly28) && Number.isFinite(daysRemainingClamped)
+        ? (avgMonthly28 * daysRemainingClamped) / 28
+        : NaN;
+    const restOfMonth = Number.isFinite(restFromSnapshot) ? restFromSnapshot : restDerived;
+    const weeklyCost = Number(data.weeklyCost);
     const value = mode === COST_WINDOW_MODES.REST_MONTH ? restOfMonth : avgMonthly28;
-    const restLabel = restOfMonthLabel(daysRemaining);
+    const restLabel = restOfMonthLabel(daysRemainingClamped);
 
     const monthlyLabelEl = document.getElementById('p-monthly-cost-label');
     if (monthlyLabelEl) monthlyLabelEl.textContent = mode === COST_WINDOW_MODES.REST_MONTH ? restLabel : COST_WINDOW_LABELS[mode];
@@ -3725,8 +3756,8 @@ function renderCostWindowSummary(snapshot) {
     if (monthlyValueEl) monthlyValueEl.textContent = Number.isFinite(value) ? formatCurrency(value) : EM_DASH;
     const topBudgetLabelEl = document.getElementById('p-budget-label');
     if (topBudgetLabelEl) {
-        const restBudgetLabel = Number.isFinite(daysRemaining)
-            ? `Rest Budget (${Math.round(daysRemaining)}d)`
+        const restBudgetLabel = Number.isFinite(daysRemainingClamped)
+            ? `Rest Budget (${Math.round(daysRemainingClamped)}d)`
             : 'Rest Budget';
         topBudgetLabelEl.textContent = mode === COST_WINDOW_MODES.REST_MONTH
             ? restBudgetLabel
@@ -3744,8 +3775,8 @@ function renderCostWindowSummary(snapshot) {
     if (overviewValueEl) overviewValueEl.textContent = Number.isFinite(value) ? formatCurrency(value) : EM_DASH;
     const overviewDaysEl = document.getElementById('overview-month-days');
     if (overviewDaysEl) {
-        if (mode === COST_WINDOW_MODES.REST_MONTH && Number.isFinite(daysRemaining)) {
-            overviewDaysEl.textContent = `${daysRemaining} days remaining`;
+        if (mode === COST_WINDOW_MODES.REST_MONTH && Number.isFinite(daysRemainingClamped)) {
+            overviewDaysEl.textContent = `${daysRemainingClamped} days remaining`;
         } else if (mode === COST_WINDOW_MODES.AVG_28) {
             overviewDaysEl.textContent = '28-day average';
         }
@@ -3807,6 +3838,20 @@ if (!window.__odeCostToggleBound) {
         const input = event.target?.closest?.('[data-cost-window-switch]');
         if (!input) return;
         setCostWindowMode(input.checked ? COST_WINDOW_MODES.REST_MONTH : COST_WINDOW_MODES.AVG_28);
+        renderCostWindowSummary();
+    });
+    document.addEventListener('click', (event) => {
+        const label = event.target?.closest?.('[data-mode-label]');
+        if (!label) return;
+        const modeLabel = String(label.getAttribute('data-mode-label') || '').trim().toLowerCase();
+        if (modeLabel !== COST_WINDOW_MODES.AVG_28 && modeLabel !== COST_WINDOW_MODES.REST_MONTH) return;
+        const row = label.closest('.cost-window-toggle-row');
+        if (!row) return;
+        event.preventDefault();
+        const mode = modeLabel === COST_WINDOW_MODES.REST_MONTH ? COST_WINDOW_MODES.REST_MONTH : COST_WINDOW_MODES.AVG_28;
+        setCostWindowMode(mode);
+        const switchEl = row.querySelector('[data-cost-window-switch]');
+        if (switchEl) switchEl.checked = mode === COST_WINDOW_MODES.REST_MONTH;
         renderCostWindowSummary();
     });
 }
