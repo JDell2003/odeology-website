@@ -21454,6 +21454,27 @@ body.nav-drawer-open .nav-drawer-backdrop {
 @media (max-width: 640px) {
     .nutrition-funnel .ns-height-inline {
         gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-duo {
+        grid-template-columns: minmax(0, 1fr);
+        min-width: 0;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-height-inline .ns-duo {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-height-unit-toggle {
+        margin-left: auto;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-pill-female {
+        white-space: normal;
+        align-items: flex-start;
     }
 
     .nutrition-funnel .ns-height-unit-toggle {
@@ -21494,6 +21515,20 @@ body.nav-drawer-open .nav-drawer-backdrop {
     body {
         max-width: 100%;
         overflow-x: hidden;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-pregnant-toggle {
+        max-width: 170px;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-pregnant-options {
+        gap: 0.2rem;
+        padding: 0.1rem;
+    }
+
+    .nutrition-funnel #ns-step-2 .ns-pregnant-option {
+        padding: 0.18rem 0.38rem;
+        font-size: 0.64rem;
     }
 
     .final-page .mobile-size-control {
