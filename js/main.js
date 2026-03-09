@@ -4200,8 +4200,7 @@ function initNutritionFunnel() {
         budgetTotal: document.getElementById('g-budget-total'),
         wakeTime: document.getElementById('g-wake-time'),
         zip: document.getElementById('g-zip'),
-        allergies: document.getElementById('g-allergies'),
-        tasteCost: document.getElementById('g-taste-cost')
+        allergies: document.getElementById('g-allergies')
     };
 
     // FOOD WIZARD DISABLED - All references permanently removed
@@ -4410,17 +4409,6 @@ function initNutritionFunnel() {
                 .join(',');
             gInputs.allergies.value = selected;
             console.log('Allergies selected:', selected);
-        });
-    });
-
-    // Handle taste vs cost preference buttons
-    document.querySelectorAll('.taste-cost-options .taste-cost-btn')?.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.taste-cost-options .taste-cost-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            gInputs.tasteCost.value = btn.dataset.preference;
-            console.log('Taste vs cost preference selected:', btn.dataset.preference);
         });
     });
 
@@ -19182,25 +19170,7 @@ function setupGroceryFinalPage() {
         });
     });
 
-    // Taste vs cost preference button handlers
-    const tasteCostInput = document.getElementById('g-taste-cost');
     const dietaryPrefInput = document.getElementById('g-dietary-pref');
-    document.querySelectorAll('.taste-cost-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.taste-cost-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const next = String(btn.dataset.preference || '').trim();
-            if (!next) return;
-            if (tasteCostInput) tasteCostInput.value = next;
-            configureDynamicBudgetOptions();
-            try {
-                postTrackEvent('grocery_taste_cost_set', { preference: next });
-            } catch {
-                // ignore
-            }
-        });
-    });
     if (dietaryPrefInput) {
         dietaryPrefInput.addEventListener('change', () => {
             configureDynamicBudgetOptions();
@@ -19529,9 +19499,6 @@ function setupGroceryFinalPage() {
 
         const dietaryPrefInput = document.getElementById('g-dietary-pref');
         if (dietaryPrefInput && savedPrefs.dietaryPref) dietaryPrefInput.value = String(savedPrefs.dietaryPref);
-        const tasteCostInput = document.getElementById('g-taste-cost');
-        if (tasteCostInput && savedPrefs.tasteCost) tasteCostInput.value = String(savedPrefs.tasteCost);
-
         const savedAllergies = Array.isArray(savedPrefs.allergies)
             ? savedPrefs.allergies.map((a) => String(a || '').trim().toLowerCase()).filter(Boolean)
             : [];
@@ -19578,7 +19545,6 @@ function setupGroceryFinalPage() {
         }
         syncChoiceButtonGroup('.meal-btn', 'data-meals', savedPrefs.mealsPerDay);
         syncChoiceButtonGroup('.prep-btn', 'data-prep', savedPrefs.prep);
-        syncChoiceButtonGroup('.taste-cost-btn', 'data-preference', savedPrefs.tasteCost);
     }
 
     if (mealsInput && !mealsInput.dataset.userSet) {
@@ -19909,7 +19875,6 @@ function setupGroceryFinalPage() {
             timing,
             dietaryPref: document.getElementById('g-dietary-pref')?.value || 'no-restrictions',
             allergies: (document.getElementById('g-allergies')?.value || '').split(',').filter(a => a),
-            tasteCost: document.getElementById('g-taste-cost')?.value || 'balance',
             startDate,
             weightLbs, // Store bodyweight for constraint calculations
             goalWeightLbs: Number(
@@ -19971,7 +19936,6 @@ function setupGroceryFinalPage() {
                 minutesPerSession: prefs.minutesPerSession,
                 dietaryPref: prefs.dietaryPref,
                 allergies: prefs.allergies,
-                tasteCost: prefs.tasteCost,
                 startDate: prefs.startDate,
                 weightLbs: prefs.weightLbs,
                 mode: prefs.mode,
@@ -21172,8 +21136,7 @@ async function setupGroceryPlanPage() {
         const daily = 1.6 + (cals * 0.00165) + (protein * 0.010) + (fat * 0.005);
         const modeKey = normalizeBudgetModeKey(modeKeyRaw || prefs?.budgetMode || 'best') || 'best';
         const modeMult = modeKey === 'budget' ? 0.82 : (modeKey === 'balanced' ? 0.92 : 1.0);
-        const tastePref = String(prefs?.tasteCost || 'balance').trim().toLowerCase();
-        const tasteMult = tastePref === 'cheapest' ? 0.94 : (tastePref === 'premium' ? 1.08 : 1.0);
+        const tasteMult = 1.0;
         const priceAdjRaw = Number(prefs?.priceAdjustment ?? 0);
         const priceAdjMult = Number.isFinite(priceAdjRaw) ? (1 + (priceAdjRaw / 100)) : 1.0;
         const adjustedMonthly = daily * 30 * tasteMult * priceAdjMult * modeMult;
