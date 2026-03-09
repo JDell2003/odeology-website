@@ -6,6 +6,7 @@
     "scripts":  {
                     "dev":  "node scripts/dev.js",
                     "start":  "node --env-file .env server.js",
+                    "klaviyo:flows":  "node --env-file .env scripts/klaviyo-setup-flows.js",
                     "serve":  "npx http-server .",
                     "scrape:prices":  "node js/scrape-prices.js",
                     "plan:groceries":  "node js/planner.js",
