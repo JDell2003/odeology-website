@@ -707,9 +707,14 @@
     }
 
     @media (max-width: 700px) {
+      body.custom-builder-page {
+        padding-top: 0 !important;
+      }
+
       .builder-wrap {
         width: calc(100% - 18px);
-        margin-top: 0 !important;
+        margin: calc(var(--navbar-height) + 8px) auto 0 !important;
+        padding-top: 0 !important;
       }
 
       .builder-head {
@@ -820,8 +825,9 @@
       .builder-grid {
         grid-template-columns: 1fr;
         gap: 10px;
-        margin-top: 0 !important;
-      }
+        margin: 0 !important;
+        padding-top: 0 !important;
+        }
 
       .builder-plan-panel {
         order: 1;
