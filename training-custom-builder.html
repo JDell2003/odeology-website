@@ -673,19 +673,6 @@
       padding: 6px 8px;
     }
 
-    .builder-plan-swap-row label {
-      display: grid;
-      gap: 5px;
-      font-size: 0.72rem;
-      color: #725f45;
-      font-weight: 700;
-    }
-
-    .builder-plan-swap-select {
-      width: 100%;
-      min-height: 34px;
-    }
-
     .builder-auth-gate {
       border: 1px solid #d8b075;
       background: linear-gradient(145deg, #fff5e2 0%, #f9e7c8 100%);
@@ -1116,18 +1103,6 @@
       .builder-plan-compact-meta b {
         color: #4b3924;
         margin-right: 4px;
-      }
-
-      .builder-plan-compact-swap {
-        display: grid;
-        gap: 4px;
-        font-size: 0.68rem;
-        font-weight: 700;
-        color: #725f45;
-      }
-
-      .builder-plan-compact-swap .builder-plan-swap-select {
-        min-height: 30px;
       }
 
       .builder-db-card {
@@ -1807,29 +1782,6 @@
         });
       }
 
-      function swapOptionsForExercise(exercise) {
-        const activeId = String(exercise?.exerciseId || '').toLowerCase();
-        const primaryToken = normalizeToken(Array.isArray(exercise?.primaryMuscles) ? exercise.primaryMuscles[0] : '');
-        const categoryToken = normalizeToken(exercise?.category);
-        const pickPool = (rows, token, accessor) => {
-          if (!token) return [];
-          return rows.filter((row) => normalizeToken(accessor(row)) === token);
-        };
-
-        let pool = pickPool(state.dbRows, primaryToken, (row) => Array.isArray(row?.primaryMuscles) ? row.primaryMuscles[0] : '');
-        if (pool.length < 6) {
-          const byCategory = pickPool(state.dbRows, categoryToken, (row) => row?.category || '');
-          if (byCategory.length > pool.length) pool = byCategory;
-        }
-        if (pool.length < 6) pool = state.dbRows.slice();
-
-        return pool
-          .slice()
-          .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
-          .filter((row) => String(row?.id || '').toLowerCase() !== activeId)
-          .slice(0, 32);
-      }
-
       function exerciseCardMarkup(weekday, ex, exIdx) {
         const wrapper = document.createElement('article');
         wrapper.className = `builder-plan-item${ex?.expanded ? ' is-open' : ''}`;
@@ -1837,12 +1789,6 @@
         wrapper.dataset.planIdx = String(exIdx);
         const mobile = isMobileLayout();
         const detailId = `builder-plan-detail-${weekday}-${exIdx}`;
-        const options = swapOptionsForExercise(ex);
-        const optionMarkup = options.map((row) => {
-          const id = String(row?.id || '');
-          const label = String(row?.name || id || 'Exercise');
-          return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
-        }).join('');
         const imageUrl = String(ex?.imageUrl || '').trim();
         const primary = listToText(ex?.primaryMuscles, 'General');
         const secondary = listToText(ex?.secondaryMuscles, '-');
@@ -1877,7 +1823,7 @@
               aria-expanded="${ex?.expanded ? 'true' : 'false'}"
               aria-controls="${detailId}"
               aria-label="${ex?.expanded ? 'Hide details' : 'Show details'}"
-            >${ex?.expanded ? '▴' : '▾'}</button>
+            >${ex?.expanded ? '^' : 'v'}</button>
             <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
             <div id="${detailId}" class="builder-plan-compact-detail" aria-hidden="${ex?.expanded ? 'false' : 'true'}">
               <div class="builder-plan-compact-meta">
@@ -1888,13 +1834,6 @@
                 <div><b>Level:</b>${escapeHtml(toTitleCase(ex?.level || 'Beginner'))}</div>
               </div>
               <div class="builder-plan-instructions">${escapeHtml(instructionsText)}</div>
-              <label class="builder-plan-compact-swap">
-                Swap exercise
-                <select class="auth-input builder-plan-swap-select" data-swap-day="${weekday}" data-swap-idx="${exIdx}">
-                  <option value="">Choose replacement...</option>
-                  ${optionMarkup}
-                </select>
-              </label>
             </div>
           `;
           return wrapper;
@@ -1942,15 +1881,6 @@
               </div>
             </div>
             <div class="builder-plan-instructions">${escapeHtml(instructionsText)}</div>
-            <div class="builder-plan-swap-row">
-              <label>
-                Swap exercise
-                <select class="auth-input builder-plan-swap-select" data-swap-day="${weekday}" data-swap-idx="${exIdx}">
-                  <option value="">Choose replacement...</option>
-                  ${optionMarkup}
-                </select>
-              </label>
-            </div>
           </div>
         `;
         return wrapper;
@@ -2449,38 +2379,6 @@
             row.reps = text || '8-12';
             queueAutoSave();
           }
-        });
-
-        dayColumnsEl?.addEventListener('change', (e) => {
-          const select = e.target.closest('select[data-swap-day][data-swap-idx]');
-          if (!select) return;
-
-          const nextId = String(select.value || '').trim();
-          if (!nextId) return;
-
-          const day = Number(select.getAttribute('data-swap-day'));
-          const idx = Number(select.getAttribute('data-swap-idx'));
-          const cur = state.planByWeekday.get(day) || [];
-          const existing = cur[idx];
-          if (!existing) return;
-
-          const replacementRow = state.dbRows.find((row) => String(row?.id || '').toLowerCase() === nextId.toLowerCase());
-          if (!replacementRow) {
-            setStatus('Could not find replacement exercise.', 'error');
-            select.value = '';
-            return;
-          }
-
-          const swapped = toDbExerciseState(replacementRow);
-          swapped.sets = Number(existing.sets) || 3;
-          swapped.reps = String(existing.reps || '8-12');
-          swapped.restSec = Number(existing.restSec) || 90;
-          swapped.expanded = true;
-          cur[idx] = swapped;
-          state.planByWeekday.set(day, cur);
-          setStatus(`${swapped.name} swapped in.`, 'ok');
-          renderDayColumns();
-          queueAutoSave();
         });
 
         dayColumnsEl?.addEventListener('error', (e) => {
