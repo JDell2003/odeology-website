@@ -1350,22 +1350,50 @@
         abductors: 'Abductors',
         adductors: 'Adductors',
         biceps: 'Biceps',
+        brachialis: 'Brachialis',
         calves: 'Calves',
         chest: 'Chest',
         forearms: 'Forearms',
+        frontdelts: 'Front Delts',
         glutes: 'Glutes',
         hamstrings: 'Hamstrings',
+        innerchest: 'Inner Chest',
         lats: 'Lats',
         lowerback: 'Lower Back',
+        lowerabs: 'Lower Abs',
+        lowerchest: 'Lower Chest',
         middleback: 'Middle Back',
+        middlechest: 'Middle Chest',
         neck: 'Neck',
         obliques: 'Obliques',
         quadriceps: 'Quadriceps',
+        reardelts: 'Rear Delts',
+        rhomboids: 'Rhomboids',
+        rotatorcuff: 'Rotator Cuff',
+        sidedelts: 'Side Delts',
         shoulders: 'Shoulders',
         traps: 'Traps',
         triceps: 'Triceps',
+        transverseabs: 'Transverse Abs',
+        upperabs: 'Upper Abs',
+        upperback: 'Upper Back',
+        upperchest: 'Upper Chest',
         hipflexors: 'Hip Flexors',
-        serratus: 'Serratus'
+        serratus: 'Serratus',
+        fullbody: 'Full Body',
+        general: 'General'
+      };
+
+      const SUBGROUP_ORDER_BY_GROUP = {
+        chest: ['upperchest', 'middlechest', 'lowerchest', 'innerchest'],
+        back: ['upperback', 'lats', 'middleback', 'lowerback', 'rhomboids', 'traps'],
+        shoulders: ['frontdelts', 'sidedelts', 'reardelts', 'rotatorcuff'],
+        arms: ['biceps', 'triceps', 'forearms', 'brachialis'],
+        legs: ['quadriceps', 'hamstrings', 'glutes', 'calves', 'adductors', 'abductors', 'hipflexors'],
+        core: ['upperabs', 'lowerabs', 'abdominals', 'obliques', 'transverseabs', 'serratus'],
+        full_body: ['fullbody'],
+        neck: ['neck'],
+        other: ['general']
       };
 
       const $ = (id) => document.getElementById(id);
@@ -1665,20 +1693,146 @@
         return pick(primary) || pick(secondary) || 'other';
       }
 
+      function defaultSubgroupKeyForGroup(groupKey) {
+        const ordered = SUBGROUP_ORDER_BY_GROUP[groupKey];
+        if (Array.isArray(ordered) && ordered.length) return ordered[0];
+        return 'general';
+      }
+
+      function subgroupFromToken(groupKey, rawToken) {
+        const token = normalizeToken(rawToken);
+        if (!token) return '';
+        if (groupKey === 'chest') {
+          if (token.includes('upperchest') || token.includes('clavicular')) return 'upperchest';
+          if (token.includes('lowerchest')) return 'lowerchest';
+          if (token.includes('innerchest') || token.includes('stern')) return 'innerchest';
+          if (token.includes('chest') || token.includes('pect')) return 'middlechest';
+          return '';
+        }
+        if (groupKey === 'back') {
+          if (token.includes('lat')) return 'lats';
+          if (token.includes('trap')) return 'traps';
+          if (token.includes('rhomboid')) return 'rhomboids';
+          if (token.includes('lowerback') || token.includes('erector')) return 'lowerback';
+          if (token.includes('middleback')) return 'middleback';
+          if (token.includes('upperback') || token.includes('back')) return 'upperback';
+          return '';
+        }
+        if (groupKey === 'shoulders') {
+          if (token.includes('frontdelt') || token.includes('anteriordelt')) return 'frontdelts';
+          if (token.includes('sidedelt') || token.includes('lateraldelt')) return 'sidedelts';
+          if (token.includes('reardelt') || token.includes('posteriordelt')) return 'reardelts';
+          if (token.includes('rotatorcuff')) return 'rotatorcuff';
+          if (token.includes('shoulder') || token.includes('delt')) return 'sidedelts';
+          return '';
+        }
+        if (groupKey === 'arms') {
+          if (token.includes('bicep')) return 'biceps';
+          if (token.includes('tricep')) return 'triceps';
+          if (token.includes('forearm')) return 'forearms';
+          if (token.includes('brach')) return 'brachialis';
+          return '';
+        }
+        if (groupKey === 'legs') {
+          if (token.includes('quad')) return 'quadriceps';
+          if (token.includes('hamstring')) return 'hamstrings';
+          if (token.includes('glute')) return 'glutes';
+          if (token.includes('calf')) return 'calves';
+          if (token.includes('adductor')) return 'adductors';
+          if (token.includes('abductor')) return 'abductors';
+          if (token.includes('hipflexor')) return 'hipflexors';
+          if (token.includes('leg')) return 'quadriceps';
+          return '';
+        }
+        if (groupKey === 'core') {
+          if (token.includes('oblique')) return 'obliques';
+          if (token.includes('serratus')) return 'serratus';
+          if (token.includes('transverse')) return 'transverseabs';
+          if (token.includes('lowerabs')) return 'lowerabs';
+          if (token.includes('upperabs')) return 'upperabs';
+          if (token.includes('abdominal') || token.includes('core')) return 'abdominals';
+          return '';
+        }
+        if (groupKey === 'full_body') return 'fullbody';
+        if (groupKey === 'neck') return 'neck';
+        if (groupKey === 'other') return 'general';
+        return '';
+      }
+
+      function subgroupFromName(groupKey, rawName) {
+        const name = String(rawName || '').toLowerCase();
+        if (!name) return defaultSubgroupKeyForGroup(groupKey);
+        const hasAny = (parts) => parts.some((part) => name.includes(part));
+
+        if (groupKey === 'chest') {
+          if (hasAny(['incline', 'clavicular', 'low-to-high', 'low to high'])) return 'upperchest';
+          if (hasAny(['decline', 'dip', 'high-to-low', 'high to low'])) return 'lowerchest';
+          if (hasAny(['inner', 'squeeze', 'hex press'])) return 'innerchest';
+          return 'middlechest';
+        }
+        if (groupKey === 'back') {
+          if (hasAny(['pull-up', 'pull up', 'chin-up', 'chin up', 'pulldown', 'lat pull'])) return 'lats';
+          if (hasAny(['shrug', 'trap'])) return 'traps';
+          if (hasAny(['rhomboid'])) return 'rhomboids';
+          if (hasAny(['deadlift', 'back extension', 'hyperextension', 'good morning', 'erector'])) return 'lowerback';
+          if (hasAny(['row', 't-bar', 'seated row'])) return 'middleback';
+          return 'upperback';
+        }
+        if (groupKey === 'shoulders') {
+          if (hasAny(['lateral raise', 'side raise'])) return 'sidedelts';
+          if (hasAny(['rear delt', 'reverse fly', 'face pull'])) return 'reardelts';
+          if (hasAny(['external rotation', 'internal rotation', 'rotator cuff'])) return 'rotatorcuff';
+          return 'frontdelts';
+        }
+        if (groupKey === 'arms') {
+          if (hasAny(['wrist', 'grip', 'reverse curl'])) return 'forearms';
+          if (hasAny(['tricep', 'pushdown', 'skull', 'extension', 'kickback'])) return 'triceps';
+          if (hasAny(['hammer curl', 'brachialis'])) return 'brachialis';
+          return 'biceps';
+        }
+        if (groupKey === 'legs') {
+          if (hasAny(['calf'])) return 'calves';
+          if (hasAny(['hamstring', 'leg curl', 'rdl', 'stiff'])) return 'hamstrings';
+          if (hasAny(['glute', 'hip thrust', 'bridge', 'kickback'])) return 'glutes';
+          if (hasAny(['adductor'])) return 'adductors';
+          if (hasAny(['abductor'])) return 'abductors';
+          if (hasAny(['hip flexor'])) return 'hipflexors';
+          return 'quadriceps';
+        }
+        if (groupKey === 'core') {
+          if (hasAny(['oblique', 'side plank', 'russian twist'])) return 'obliques';
+          if (hasAny(['leg raise', 'reverse crunch', 'hanging knee'])) return 'lowerabs';
+          if (hasAny(['crunch', 'sit-up', 'sit up'])) return 'upperabs';
+          if (hasAny(['plank', 'hollow', 'dead bug', 'brace'])) return 'transverseabs';
+          if (hasAny(['serratus'])) return 'serratus';
+          return 'abdominals';
+        }
+        if (groupKey === 'full_body') return 'fullbody';
+        if (groupKey === 'neck') return 'neck';
+        return 'general';
+      }
+
       function subMuscleLabelFromRow(row, groupKey) {
         const primary = Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : [];
         const secondary = Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [];
         const candidates = [...primary, ...secondary];
+
         for (const raw of candidates) {
           const token = normalizeToken(raw);
           if (!token) continue;
           if (majorGroupFromToken(token) !== groupKey) continue;
-          return { key: token, label: SUB_MUSCLE_LABELS[token] || toTitleCase(raw) || 'General' };
+          const mappedKey = subgroupFromToken(groupKey, token);
+          if (!mappedKey) continue;
+          return { key: mappedKey, label: SUB_MUSCLE_LABELS[mappedKey] || toTitleCase(raw) || 'General' };
         }
-        const fallbackRaw = candidates[0] || '';
-        const fallbackToken = normalizeToken(fallbackRaw);
-        if (!fallbackToken) return { key: 'general', label: 'General' };
-        return { key: fallbackToken, label: SUB_MUSCLE_LABELS[fallbackToken] || toTitleCase(fallbackRaw) || 'General' };
+
+        const fromName = subgroupFromName(groupKey, row?.name || '');
+        if (fromName) {
+          return { key: fromName, label: SUB_MUSCLE_LABELS[fromName] || toTitleCase(fromName) || 'General' };
+        }
+
+        const fallbackKey = defaultSubgroupKeyForGroup(groupKey);
+        return { key: fallbackKey, label: SUB_MUSCLE_LABELS[fallbackKey] || 'General' };
       }
 
       function buildFolderTree(rows) {
@@ -1733,14 +1887,32 @@
               })
               .map((group) => ({
                 ...group,
-                subs: Array.from(group.subs.values())
+                subs: (() => {
+                  const orderedSubs = Array.isArray(SUBGROUP_ORDER_BY_GROUP[group.key]) ? SUBGROUP_ORDER_BY_GROUP[group.key] : [];
+                  orderedSubs.forEach((subKey) => {
+                    if (!group.subs.has(subKey)) {
+                      group.subs.set(subKey, {
+                        key: subKey,
+                        label: SUB_MUSCLE_LABELS[subKey] || toTitleCase(subKey) || 'General',
+                        rows: []
+                      });
+                    }
+                  });
+
+                  return Array.from(group.subs.values())
                   .map((sub) => ({
                     ...sub,
                     rows: sub.rows
                       .slice()
                       .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
                   }))
-                  .sort((a, b) => a.label.localeCompare(b.label))
+                  .sort((a, b) => {
+                    const ao = orderedSubs.indexOf(a.key);
+                    const bo = orderedSubs.indexOf(b.key);
+                    if (ao !== bo) return (ao < 0 ? 999 : ao) - (bo < 0 ? 999 : bo);
+                    return a.label.localeCompare(b.label);
+                  });
+                })()
               }))
           }));
       }
@@ -2180,43 +2352,24 @@
             `;
             const groupBody = document.createElement('div');
             groupBody.className = 'builder-folder-body';
-            const hasSingleSub = group.subs.length === 1;
-            const singleSub = hasSingleSub ? group.subs[0] : null;
-            const singleSubMatchesGroup = singleSub
-              ? normalizeToken(singleSub.label) === normalizeToken(group.label)
-              : false;
-
-            // If a group only contains one identical sub-folder (e.g. Chest -> Chest),
-            // render exercises directly so mobile users don't hit an extra hidden layer.
-            if (singleSub && singleSubMatchesGroup) {
-              const list = document.createElement('div');
-              list.className = 'builder-folder-items';
-              if (!singleSub.rows.length) {
-                list.innerHTML = '<div class="builder-day-empty">No workouts in this folder.</div>';
-              } else {
-                singleSub.rows.forEach((row) => list.appendChild(createDatabaseCard(row)));
-              }
-              groupBody.appendChild(list);
-            } else {
-              group.subs.forEach((sub) => {
-                const subDetails = document.createElement('details');
-                subDetails.className = 'builder-folder builder-folder-sub';
-                subDetails.innerHTML = `
-                  <summary>
-                    <span>${escapeHtml(sub.label)}</span>
-                    <span class="builder-folder-badge">${sub.rows.length}</span>
-                  </summary>
-                  <div class="builder-folder-items"></div>
-                `;
-                subDetails.__rows = sub.rows;
-                subDetails.addEventListener('toggle', () => {
-                  if (!subDetails.open) return;
-                  ensureFolderLeafRendered(subDetails);
-                });
-                groupBody.appendChild(subDetails);
-                if (subDetails.open) ensureFolderLeafRendered(subDetails);
+            group.subs.forEach((sub) => {
+              const subDetails = document.createElement('details');
+              subDetails.className = 'builder-folder builder-folder-sub';
+              subDetails.innerHTML = `
+                <summary>
+                  <span>${escapeHtml(sub.label)}</span>
+                  <span class="builder-folder-badge">${sub.rows.length}</span>
+                </summary>
+                <div class="builder-folder-items"></div>
+              `;
+              subDetails.__rows = sub.rows;
+              subDetails.addEventListener('toggle', () => {
+                if (!subDetails.open) return;
+                ensureFolderLeafRendered(subDetails);
               });
-            }
+              groupBody.appendChild(subDetails);
+              if (subDetails.open) ensureFolderLeafRendered(subDetails);
+            });
 
             groupDetails.appendChild(groupBody);
             sectionBody.appendChild(groupDetails);
