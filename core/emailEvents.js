@@ -5,6 +5,47 @@ const {
   createKlaviyoEvent
 } = require('./klaviyoClient');
 
+const FREE_PLAN_EVENT_ALLOWLIST = new Set([
+  'Account Created',
+  'Lead Nurture Channel Enrolled',
+  'Password Reset Requested',
+  'Password Reset Completed',
+  'Friend Request Received',
+  'Message Received',
+  'Workout Share Invite Received',
+  'Daily Check-In Saved',
+  'Weekly Weigh-In Logged',
+  'Workout Logged',
+  'Pain Report Submitted',
+  'High Pain Report Submitted',
+  'Pain Follow-Up Submitted'
+]);
+
+function parseEventList(raw) {
+  const out = new Set();
+  String(raw || '')
+    .split(',')
+    .map((x) => String(x || '').trim())
+    .filter(Boolean)
+    .forEach((name) => out.add(name));
+  return out;
+}
+
+function isEventAllowedByPlan(eventName) {
+  const metric = String(eventName || '').trim();
+  if (!metric) return false;
+
+  const enabledOverride = parseEventList(process.env.KLAVIYO_ENABLED_EVENTS || '');
+  if (enabledOverride.size) return enabledOverride.has(metric);
+
+  const mode = String(process.env.KLAVIYO_EVENT_PROFILE || 'free').trim().toLowerCase();
+  if (mode === 'all' || mode === 'full' || mode === 'unlimited') return true;
+  if (mode === 'none' || mode === 'off' || mode === 'disabled') return false;
+
+  // Default mode is free-plan-safe.
+  return FREE_PLAN_EVENT_ALLOWLIST.has(metric);
+}
+
 function normalizeEmail(raw) {
   const email = String(raw || '').trim().toLowerCase();
   if (!email) return '';
@@ -57,6 +98,7 @@ async function emitKlaviyoEvent({
   const lName = String(lastName || split.lastName || '').trim().slice(0, 120);
   const metric = String(eventName || '').trim();
   if (!metric) return { ok: false, skipped: 'no_event_name' };
+  if (!isEventAllowedByPlan(metric)) return { ok: false, skipped: 'event_not_enabled_for_profile' };
 
   try {
     await createOrUpdateKlaviyoProfile({
@@ -146,5 +188,7 @@ function buildOnboardingEmailPayload({ displayName = '' } = {}) {
 module.exports = {
   emitKlaviyoEvent,
   emitUserEvent,
-  buildOnboardingEmailPayload
+  buildOnboardingEmailPayload,
+  FREE_PLAN_EVENT_ALLOWLIST,
+  isEventAllowedByPlan
 };
