@@ -11697,6 +11697,50 @@ function parseJsonMaybe(value, fallback) {
     }
 }
 
+function inferSavedItemServingsPerContainer(item) {
+    const explicit = Number(item?.servingsPerContainer);
+    if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+    const daily = Number(item?.daily);
+    const daysPerContainer = Number(item?.daysPerContainer);
+    if (Number.isFinite(daily) && daily > 0 && Number.isFinite(daysPerContainer) && daysPerContainer > 0) {
+        return daily * daysPerContainer;
+    }
+    return null;
+}
+
+function buildCostWindowSnapshotFromSavedItems(items, refDate = new Date()) {
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) return null;
+
+    const groceryItems = rows.map((item) => {
+        const daily = Number(item?.daily);
+        const containerPrice = Number(item?.containerPrice);
+        const servingsPerContainer = inferSavedItemServingsPerContainer(item);
+        if (!Number.isFinite(daily) || daily <= 0) return null;
+        if (!Number.isFinite(containerPrice) || containerPrice < 0) return null;
+        if (!Number.isFinite(servingsPerContainer) || servingsPerContainer <= 0) return null;
+        return {
+            daily,
+            servingsPerContainer,
+            container: { price: containerPrice }
+        };
+    }).filter(Boolean);
+
+    if (!groceryItems.length) return null;
+
+    const inventory = calculateInventoryCosts(groceryItems, refDate);
+    const avgMonthly28 = Number(inventory?.avgMonthly28Cost);
+    const restOfMonth = Number(inventory?.thisMonthCost);
+    const daysRemaining = Number(inventory?.daysRemainingInMonth);
+    return {
+        weeklyCost: Number.isFinite(avgMonthly28) ? (avgMonthly28 / 4) : null,
+        avgMonthly28: Number.isFinite(avgMonthly28) ? avgMonthly28 : null,
+        restOfMonth: Number.isFinite(restOfMonth) ? restOfMonth : null,
+        daysRemaining: Number.isFinite(daysRemaining) ? daysRemaining : null
+    };
+}
+
 async function fetchLatestGroceryListFromAccount() {
     try {
         const res = await fetch('/api/groceries/latest', { credentials: 'include' });
@@ -11716,6 +11760,12 @@ function renderSavedGroceryListCards({ listEl, listRow }) {
     const totals = parseJsonMaybe(listRow?.totals, {}) || {};
     const itemsRaw = parseJsonMaybe(listRow?.items, []) || [];
     const items = Array.isArray(itemsRaw) ? itemsRaw : [];
+    const createdAtRaw = listRow?.created_at || listRow?.createdAt || null;
+    const createdAtDate = createdAtRaw ? new Date(String(createdAtRaw)) : null;
+    const isCreatedAtValid = createdAtDate instanceof Date && !Number.isNaN(createdAtDate.getTime());
+    const notesKey = String(meta?.notes || '').trim().toLowerCase();
+    const isBaselinePlanSnapshot = notesKey === 'baseline_plan';
+    const createdDaysRemaining = isCreatedAtValid ? daysRemainingInCurrentMonth(createdAtDate) : null;
 
     const fmtMoney = (n) => (Number.isFinite(Number(n)) ? formatCurrency(Number(n)) : null);
 
@@ -11752,11 +11802,44 @@ function renderSavedGroceryListCards({ listEl, listRow }) {
         ? Number(totals.totalEstimatedCost)
         : computedFromItems.monthlyNum;
 
-    const daysRemaining = daysRemainingInCurrentMonth(new Date());
-    const avgMonthly28Num = Number.isFinite(monthlyNum) ? (monthlyNum * 28) / 30 : null;
-    const restOfMonthNum = Number.isFinite(monthlyNum) && Number.isFinite(daysRemaining)
-        ? (monthlyNum * daysRemaining) / 30
-        : null;
+    const snapshotFromItems = buildCostWindowSnapshotFromSavedItems(items, new Date());
+    const currentDaysRemaining = daysRemainingInCurrentMonth(new Date());
+    const explicitAvg28 = Number(totals?.totalEstimatedCostAvg28);
+    const explicitRest = Number(totals?.totalEstimatedCostRestOfMonth);
+
+    // Legacy baseline saves stored "totalEstimatedCost" as rest-of-month at save time.
+    // Rebuild a per-day estimate from save-date month length so current rest-of-month is accurate.
+    const baselineDailyCost = (() => {
+        if (!isBaselinePlanSnapshot) return null;
+        if (!Number.isFinite(monthlyNum) || monthlyNum < 0) return null;
+        if (!Number.isFinite(createdDaysRemaining) || createdDaysRemaining <= 0) return null;
+        return monthlyNum / createdDaysRemaining;
+    })();
+
+    const daysRemaining = Number.isFinite(snapshotFromItems?.daysRemaining)
+        ? snapshotFromItems.daysRemaining
+        : currentDaysRemaining;
+    const avgMonthly28Num = Number.isFinite(snapshotFromItems?.avgMonthly28)
+        ? snapshotFromItems.avgMonthly28
+        : Number.isFinite(explicitAvg28)
+            ? explicitAvg28
+            : Number.isFinite(baselineDailyCost)
+                ? (baselineDailyCost * 28)
+                : Number.isFinite(monthlyNum)
+                    ? (monthlyNum * 28) / 30
+                    : null;
+    const restOfMonthNum = Number.isFinite(snapshotFromItems?.restOfMonth)
+        ? snapshotFromItems.restOfMonth
+        : Number.isFinite(explicitRest)
+            ? explicitRest
+            : Number.isFinite(baselineDailyCost) && Number.isFinite(daysRemaining)
+                ? (baselineDailyCost * daysRemaining)
+                : Number.isFinite(monthlyNum) && Number.isFinite(daysRemaining)
+                    ? (monthlyNum * daysRemaining) / 30
+                    : null;
+    const weeklyForSummary = Number.isFinite(snapshotFromItems?.weeklyCost)
+        ? snapshotFromItems.weeklyCost
+        : weeklyNum;
 
     // Update shared UI bits when present (plan + overview share some ids).
     try {
@@ -11767,7 +11850,7 @@ function renderSavedGroceryListCards({ listEl, listRow }) {
         if (storeEl) storeEl.textContent = store || EM_DASH;
 
         renderCostWindowSummary({
-            weeklyCost: weeklyNum,
+            weeklyCost: weeklyForSummary,
             avgMonthly28: avgMonthly28Num,
             restOfMonth: restOfMonthNum,
             daysRemaining
@@ -11782,7 +11865,7 @@ function renderSavedGroceryListCards({ listEl, listRow }) {
         // ignore
     }
 
-    const createdAt = listRow?.created_at || listRow?.createdAt || null;
+    const createdAt = createdAtRaw;
     const createdLabel = (() => {
         if (!createdAt) return null;
         const d = new Date(String(createdAt));
@@ -25358,7 +25441,11 @@ async function setupGroceryPlanPage() {
                 items: saveItems,
                 totals: {
                     totalEstimatedWeeklyCost: Number.isFinite(Number(avgWeeklyCost)) ? Number(avgWeeklyCost) : null,
+                    // Legacy field kept for compatibility (rest-of-month snapshot at save time).
                     totalEstimatedCost: Number.isFinite(Number(inventoryCosts?.thisMonthCost)) ? Number(inventoryCosts.thisMonthCost) : null,
+                    // Explicit fields used by the cost-window toggle.
+                    totalEstimatedCostAvg28: Number.isFinite(Number(inventoryCosts?.avgMonthly28Cost)) ? Number(inventoryCosts.avgMonthly28Cost) : null,
+                    totalEstimatedCostRestOfMonth: Number.isFinite(Number(inventoryCosts?.thisMonthCost)) ? Number(inventoryCosts.thisMonthCost) : null,
                     currency: 'USD'
                 },
                 meta: {
