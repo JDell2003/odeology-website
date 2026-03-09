@@ -86,6 +86,18 @@
       align-items: start;
     }
 
+    .builder-bottom-actions {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-bottom-actions .btn {
+      width: 100%;
+      min-height: 38px;
+      justify-content: center;
+    }
+
     .builder-panel {
       padding: 16px;
       backdrop-filter: blur(5px);
@@ -854,6 +866,10 @@
         padding-top: 0 !important;
         }
 
+      .builder-bottom-actions {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      }
+
       .builder-plan-panel {
         order: 1;
         display: flex;
@@ -1292,7 +1308,7 @@
       <section class="builder-panel builder-plan-panel">
         <div class="builder-mobile-top-actions" aria-label="Builder quick actions">
           <a href="index.html" class="btn btn-ghost">Home</a>
-          <a href="training.html?from=intake#training" class="btn btn-primary" id="builder-make-for-me">Make Workout For me</a>
+          <a href="training.html#training" class="btn btn-primary" id="builder-make-for-me">Make Workout For me</a>
         </div>
         <div class="builder-plan-top">
           <div class="builder-days-select">
@@ -1303,6 +1319,9 @@
         <div id="builder-day-columns" class="builder-day-columns"></div>
       </section>
     </section>
+    <div class="builder-bottom-actions">
+      <a href="training.html?from=intake#training" class="btn btn-primary" id="builder-make-workout">Make Workout</a>
+    </div>
   </main>
 
   <script src="js/main.js?v=2026-03-08-dash-live-1"></script>
@@ -1408,6 +1427,7 @@
       const dayColumnsEl = $('builder-day-columns');
       const saveBtn = $('builder-save-btn');
       const makeForMeBtn = $('builder-make-for-me');
+      const makeWorkoutBtn = $('builder-make-workout');
       const loginBtn = $('builder-login-btn');
       const signupBtn = $('builder-signup-btn');
       const customToggleBtn = $('builder-custom-toggle');
@@ -2789,7 +2809,17 @@
 
         makeForMeBtn?.addEventListener('click', () => {
           try {
+            sessionStorage.setItem('ode_training_open_wizard_only', '1');
+            sessionStorage.removeItem('ode_training_force_autostart');
+          } catch {
+            // ignore
+          }
+        });
+
+        makeWorkoutBtn?.addEventListener('click', () => {
+          try {
             sessionStorage.setItem('ode_training_force_autostart', '1');
+            sessionStorage.removeItem('ode_training_open_wizard_only');
           } catch {
             // ignore
           }

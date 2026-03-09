@@ -3,6 +3,7 @@
   if (!root) return;
 
   const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
+  const TRAINING_OPEN_WIZARD_ONLY_KEY = 'ode_training_open_wizard_only';
 
   function readLocalIntake() {
     try {
@@ -35,6 +36,22 @@
       return sessionStorage.getItem('ode_training_force_autostart') === '1';
     } catch {
       return false;
+    }
+  }
+
+  function shouldOpenWizardOnly() {
+    try {
+      return sessionStorage.getItem(TRAINING_OPEN_WIZARD_ONLY_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function clearOpenWizardOnlyFlag() {
+    try {
+      sessionStorage.removeItem(TRAINING_OPEN_WIZARD_ONLY_KEY);
+    } catch {
+      // ignore
     }
   }
 
@@ -583,6 +600,7 @@
 
   async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
+    if (!force && shouldOpenWizardOnly()) return false;
     const intake = await loadSavedIntake();
     if (!intake) return false;
     const forceStart = force || shouldForceAutostart();
@@ -4008,7 +4026,8 @@ function toggleSharePopover(force) {
 
   function setView(next) {
     if (next === 'upsell') next = 'plan';
-    if (DISABLE_WIZARD_FLOW && next === 'wizard') {
+    const wizardOnlyRequested = next === 'wizard' && shouldOpenWizardOnly();
+    if (DISABLE_WIZARD_FLOW && next === 'wizard' && !wizardOnlyRequested) {
       const hasIntake = !!readLocalIntake();
       if (hasIntake || shouldForceAutostart()) {
         keepOnEngineAndRetry({ forceAutostart: shouldForceAutostart() });
@@ -4019,6 +4038,7 @@ function toggleSharePopover(force) {
       }
       return;
     }
+    if (wizardOnlyRequested) clearOpenWizardOnlyFlag();
     const prev = state.view;
     state.view = next;
     render();
