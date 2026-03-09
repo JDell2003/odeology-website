@@ -765,6 +765,7 @@
   const TRAINING_WELCOME_TTL_MS = 6 * 60 * 60 * 1000;
   const TRAINING_QUICK_TOUR_SEEN_PREFIX = 'ode_training_quick_tour_seen_v1';
   const TRAINING_QUICK_TOUR_PENDING_PREFIX = 'ode_training_quick_tour_pending_v1';
+  const TRAINING_QUICK_TOUR_FIRST_PLAN_PREFIX = 'ode_training_quick_tour_first_plan_v1';
   const TRAINING_WELCOME_DAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
   const TRAINING_WELCOME_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const TRAINING_WELCOME_DAY_ALIASES = {
@@ -888,6 +889,31 @@
     } catch {
       // ignore
     }
+  }
+
+  function hasTrainingQuickTourFirstPlanArmed() {
+    try {
+      return localStorage.getItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_FIRST_PLAN_PREFIX)) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function markTrainingQuickTourFirstPlanArmed() {
+    try {
+      localStorage.setItem(trainingQuickTourStorageKey(TRAINING_QUICK_TOUR_FIRST_PLAN_PREFIX), '1');
+    } catch {
+      // ignore
+    }
+  }
+
+  function maybeArmTrainingQuickTourForFirstPlan() {
+    if (!state?.auth?.user?.id || !state?.planRow?.id) return;
+    if (hasTrainingQuickTourSeen()) return;
+    if (hasTrainingQuickTourPending()) return;
+    if (hasTrainingQuickTourFirstPlanArmed()) return;
+    markTrainingQuickTourFirstPlanArmed();
+    setTrainingQuickTourPending();
   }
 
   function buildTrainingQuickTourSteps() {
@@ -1102,10 +1128,11 @@
     `.trim();
 
     const popover = document.createElement('div');
-    popover.className = 'ode-tour-popover';
+    popover.className = 'ode-tour-popover ode-training-tour-popover';
     popover.setAttribute('role', 'dialog');
     popover.setAttribute('aria-modal', 'true');
     popover.innerHTML = `
+      <div class="ode-tour-kicker ode-training-tour-kicker">Training quick tour</div>
       <div class=\"ode-tour-title\" id=\"ode-training-tour-title\"></div>
       <div class=\"ode-tour-body\" id=\"ode-training-tour-body\"></div>
       <div class=\"ode-tour-footer\">
@@ -1173,7 +1200,7 @@
     if (titleEl) titleEl.textContent = String(step.title || 'Training quick tour');
     if (bodyEl) bodyEl.textContent = String(step.body || '');
     if (stepEl) stepEl.textContent = `${idx + 1} of ${steps.length}`;
-    if (nextBtn) nextBtn.textContent = idx >= steps.length - 1 ? 'Done' : 'Next';
+    if (nextBtn) nextBtn.textContent = idx >= steps.length - 1 ? 'Done' : 'Next ›';
 
     positionTrainingQuickTourPopover(target);
   }
@@ -5825,6 +5852,7 @@ function toggleSharePopover(force) {
       if (autoOnboarded) return;
     }
     if (state.planRow?.id) {
+      maybeArmTrainingQuickTourForFirstPlan();
       const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
       state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
@@ -7413,6 +7441,7 @@ function toggleSharePopover(force) {
     try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
     const createdFirstPlan = Boolean(isAuthed && state.planRow?.id && !prevPlanId);
     if (createdFirstPlan) {
+      markTrainingQuickTourFirstPlanArmed();
       setTrainingQuickTourPending();
     }
     if (state.planRow?.id) {
