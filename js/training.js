@@ -8818,6 +8818,28 @@ function toggleSharePopover(force) {
         state.planError = '';
         render();
       };
+      const todayIso = toISODateLocal(todayStart);
+      const undoableSkipEntry = skipLogByDate.get(todayIso) || null;
+      const canUndoSkipToday = Boolean(undoableSkipEntry);
+      const undoTodaySkip = () => {
+        if (!canUndoSkipToday || !undoableSkipEntry) return;
+        const modeLabel = skipModeOf(undoableSkipEntry) === 'rest_skip' ? 'rest' : 'workout';
+        const proceed = window.confirm(`Undo ${modeLabel} skip for ${todayIso}?`);
+        if (!proceed) return;
+        const nextEntries = skipLogEntries.filter((entry) => String(entry?.skipDate || '').trim() !== todayIso);
+        if (nextEntries.length === skipLogEntries.length) {
+          window.alert('No skip found to undo for today.');
+          return;
+        }
+        writeTrainingSkipLog(nextEntries);
+        state.planError = '';
+        const undoDate = parseISODateLocal(todayIso);
+        if (undoDate) {
+          setActiveDate(undoDate);
+          return;
+        }
+        render();
+      };
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
       el('div', { class: 'plan-topbar-share-row' },
@@ -8946,7 +8968,21 @@ function toggleSharePopover(force) {
           'aria-hidden': planTopbarActionsDropdownOpen ? 'false' : 'true'
         },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
-          el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping')
+          el('div', { class: 'plan-topbar-skip-row' },
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping'),
+            el('button', {
+              type: 'button',
+              class: `plan-topbar-skip-undo${canUndoSkipToday ? ' is-active' : ''}`,
+              disabled: canUndoSkipToday ? null : 'disabled',
+              'aria-disabled': canUndoSkipToday ? 'false' : 'true',
+              title: canUndoSkipToday ? 'Undo today\'s skip' : 'Undo is available only for skips logged today',
+              onclick: (e) => {
+                e.preventDefault();
+                if (!canUndoSkipToday) return;
+                undoTodaySkip();
+              }
+            }, 'Undo')
+          )
         );
         const toggle = el('button', {
           type: 'button',

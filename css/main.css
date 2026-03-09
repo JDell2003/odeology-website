@@ -18100,13 +18100,63 @@ html[data-theme="light"] .ode-tour-btn.primary {
 }
 
 .training-page .plan-topbar-actions-dropdown.open {
-    max-height: 140px;
+    max-height: 190px;
     opacity: 1;
     transform: translateY(0);
 }
 
 .training-page .plan-topbar-actions-dropdown .btn {
     justify-content: flex-start;
+}
+
+.training-page .plan-topbar-skip-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.training-page .plan-topbar-skip-row .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.training-page .plan-topbar-skip-undo {
+    margin-left: auto;
+    flex: 0 0 auto;
+    min-width: auto;
+    height: 1.65rem;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(110, 110, 110, 0.58);
+    background: rgba(126, 126, 126, 0.22);
+    color: rgba(36, 36, 36, 0.62);
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.training-page .plan-topbar-skip-undo.is-active {
+    background: rgba(20, 20, 20, 0.92);
+    border-color: rgba(20, 20, 20, 0.96);
+    color: #ffffff;
+}
+
+.training-page .plan-topbar-skip-undo:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.training-page .plan-topbar-skip-undo.is-active:hover,
+.training-page .plan-topbar-skip-undo.is-active:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
 }
 
 .training-page .plan-topbar-actions .btn {
