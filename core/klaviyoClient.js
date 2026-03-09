@@ -8,6 +8,9 @@ function getKlaviyoPrivateApiKey() {
   return String(
     process.env.KLAVIYO_PRIVATE_API_KEY
     || process.env.KLAVIYOPRIVATEAPIKEY
+    || process.env.KLAVIYO_API_KEY
+    || process.env.CHATSFULLACCESS
+    || process.env.ChatsFullAccess
     || ''
   ).trim();
 }
