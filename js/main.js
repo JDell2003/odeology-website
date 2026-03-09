@@ -15718,12 +15718,26 @@ function setupOnboardingTour() {
     const SIGNUP_PROMPT_KEY = 'ode_signup_prompted_v1';
     const SIGNUP_AFTER_TOUR_KEY = 'ode_signup_after_tour_v1';
     const TOUR_PROMPT_DELAY = 10000;
+    const TOUR_SEAMLESS_MODE = true;
 
     const pageName = () => {
         const parts = String(location.pathname || '').split('/').filter(Boolean);
         return parts.length ? parts[parts.length - 1] : 'index.html';
     };
     const hasTourHash = () => String(location.hash || '').toLowerCase() === '#tour';
+    const humanizePageLabel = (rawPage) => {
+        const page = String(rawPage || '').trim().toLowerCase();
+        if (page === 'index.html') return 'Home';
+        if (page === 'overview.html') return 'Overview';
+        if (page === 'training.html') return 'Training';
+        if (page === 'friends.html') return 'Messages';
+        if (page === 'account.html') return 'Account';
+        if (page === 'grocery-calendar.html') return 'Grocery Calendar';
+        if (page === 'owner-messaging.html') return 'Work Outreach';
+        const cleaned = page.replace(/\.html$/i, '').replace(/[-_]+/g, ' ').trim();
+        if (!cleaned) return 'Dashboard';
+        return cleaned.replace(/\b\w/g, (m) => m.toUpperCase());
+    };
 
     const buildTourSteps = ({ signedIn = false } = {}) => {
         if (!signedIn) {
@@ -15933,14 +15947,6 @@ function setupOnboardingTour() {
 
     let steps = [];
     let signedInCache = null;
-
-    const prefersReducedMotion = (() => {
-        try {
-            return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        } catch {
-            return false;
-        }
-    })();
 
     const readState = () => {
         try {
@@ -16226,6 +16232,7 @@ function setupOnboardingTour() {
         popoverEl.innerHTML = `
             <div class="ode-tour-title" id="ode-tour-title"></div>
             <div class="ode-tour-body" id="ode-tour-body"></div>
+            <div class="ode-tour-preview hidden" id="ode-tour-preview"></div>
             <div class="ode-tour-footer">
                 <div class="ode-tour-step" id="ode-tour-step"></div>
                 <div class="ode-tour-actions">
@@ -16420,6 +16427,24 @@ function setupOnboardingTour() {
         }
     };
 
+    const resolveStepTarget = ({ step, currentPage, stepPage }) => {
+        const isSamePage = !stepPage || currentPage === stepPage;
+        const direct = document.querySelector(step.selector);
+        if (isRenderableTarget(direct)) {
+            return { element: direct, virtual: !isSamePage, page: stepPage || currentPage };
+        }
+
+        const fallbackSelectors = ['#control-panel', '.navbar', '#ns-entry', 'main', 'body'];
+        for (const selector of fallbackSelectors) {
+            const node = document.querySelector(selector);
+            if (isRenderableTarget(node)) {
+                return { element: node, virtual: true, page: stepPage || currentPage };
+            }
+        }
+
+        return { element: document.body || document.documentElement, virtual: true, page: stepPage || currentPage };
+    };
+
     const goToStep = async (idx) => {
         if (!Array.isArray(steps) || !steps.length) {
             await finish({ skipped: false });
@@ -16442,15 +16467,16 @@ function setupOnboardingTour() {
         const current = pageName();
         const stepUrl = step.url ? String(step.url) : '';
         const stepPage = stepUrl.split('#')[0];
-        if (stepPage && current !== stepPage) {
+        if (!TOUR_SEAMLESS_MODE && stepPage && current !== stepPage) {
             location.href = `${stepPage}#tour`;
             return;
         }
+        const samePageStep = !stepPage || current === stepPage;
 
-        if (step.selector.startsWith('#control-') || step.selector === '#control-panel') {
+        if (samePageStep && (step.selector.startsWith('#control-') || step.selector === '#control-panel')) {
             try { openControlPanel(); } catch {}
         }
-        if (step.key === 'trainingShareList') {
+        if (samePageStep && step.key === 'trainingShareList') {
             try {
                 const shareBtn = document.querySelector('[data-share-workout="1"]');
                 shareBtn?.click?.();
@@ -16459,7 +16485,7 @@ function setupOnboardingTour() {
             }
             await new Promise((resolve) => setTimeout(resolve, 140));
         }
-        if (step.key === 'messagesRequestsTab' || step.key === 'messagesRequestsPanel') {
+        if (samePageStep && (step.key === 'messagesRequestsTab' || step.key === 'messagesRequestsPanel')) {
             try {
                 const requestsBtn = document.querySelector('[data-user-tab-btn="requests"]');
                 requestsBtn?.click?.();
@@ -16469,7 +16495,10 @@ function setupOnboardingTour() {
             await new Promise((resolve) => setTimeout(resolve, 120));
         }
 
-        const el = document.querySelector(step.selector);
+        const target = resolveStepTarget({ step, currentPage: current, stepPage });
+        const el = target?.element || null;
+        const isVirtualStep = Boolean(target?.virtual);
+        const virtualPageLabel = humanizePageLabel(target?.page || stepPage || current);
         if (!isRenderableTarget(el)) {
             await goToStep(idx + 1);
             return;
@@ -16482,25 +16511,38 @@ function setupOnboardingTour() {
         setHighlight(el);
 
         try {
-            el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center', inline: 'nearest' });
+            el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
         } catch {
             // ignore
         }
 
         const titleEl = popoverEl.querySelector('#ode-tour-title');
         const bodyEl = popoverEl.querySelector('#ode-tour-body');
+        const previewEl = popoverEl.querySelector('#ode-tour-preview');
         const stepEl = popoverEl.querySelector('#ode-tour-step');
         const nextBtn = popoverEl.querySelector('#ode-tour-next');
 
         if (titleEl) titleEl.textContent = step.title;
         if (bodyEl) bodyEl.textContent = step.body;
+        if (previewEl) {
+            if (isVirtualStep) {
+                previewEl.classList.remove('hidden');
+                previewEl.innerHTML = `
+                    <div class="ode-tour-preview-chip">${escapeHtml(virtualPageLabel)}</div>
+                    <div class="ode-tour-preview-note">Seamless mode: this step is shown instantly without leaving your current page.</div>
+                `.trim();
+            } else {
+                previewEl.classList.add('hidden');
+                previewEl.textContent = '';
+            }
+        }
         if (stepEl) {
             const suffix = tourForcedMode ? ' - required setup' : '';
             stepEl.textContent = `${activeIndex + 1} of ${steps.length}${suffix}`;
         }
         if (nextBtn) nextBtn.textContent = activeIndex >= steps.length - 1 ? 'Done' : 'Next';
 
-        setTimeout(() => positionPopover(el), 50);
+        positionPopover(el);
     };
 
     const next = () => {

@@ -17681,7 +17681,7 @@ body.store-page .store-add-btn-gnc:hover {
     pointer-events: none;
     z-index: 10000;
     --tour-overlay: rgba(8, 8, 10, 0.58);
-    animation: odeTourFadeIn 220ms ease-out both;
+    animation: none;
 }
 
 html[data-theme="light"] .ode-tour-overlay {
@@ -17703,7 +17703,7 @@ html[data-theme="light"] .ode-tour-overlay {
     outline: 2px solid rgba(0, 255, 170, 0.55);
     outline-offset: 4px;
     box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
-    animation: odeTourPulse 1.55s ease-in-out infinite;
+    animation: none;
     isolation: isolate;
     filter: none !important;
     transform: translateZ(0);
@@ -17740,7 +17740,7 @@ html[data-theme="light"] .ode-tour-highlight {
     padding: 12px 12px 10px;
     opacity: 0;
     transform: translateY(10px) scale(0.985);
-    transition: opacity 180ms ease, transform 180ms ease;
+    transition: none;
 }
 
 html[data-theme="light"] .ode-tour-popover {
@@ -17772,6 +17772,51 @@ html[data-theme="light"] .ode-tour-popover {
 }
 
 html[data-theme="light"] .ode-tour-body {
+    color: rgba(0, 0, 0, 0.72);
+}
+
+.ode-tour-preview {
+    margin-top: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 8px 10px;
+    display: grid;
+    gap: 6px;
+}
+
+html[data-theme="light"] .ode-tour-preview {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.ode-tour-preview-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 255, 170, 0.28);
+    background: rgba(0, 255, 170, 0.12);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+}
+
+html[data-theme="light"] .ode-tour-preview-chip {
+    border-color: rgba(0, 140, 110, 0.28);
+    background: rgba(0, 140, 110, 0.12);
+}
+
+.ode-tour-preview-note {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+html[data-theme="light"] .ode-tour-preview-note {
     color: rgba(0, 0, 0, 0.72);
 }
 
@@ -17821,7 +17866,7 @@ html[data-theme="light"] .ode-tour-btn.primary {
 }
 
 .ode-tour-btn:hover {
-    transform: translateY(-1px);
+    transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
