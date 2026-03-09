@@ -2175,7 +2175,14 @@
           btn.setAttribute('aria-pressed', mobile ? (activeTarget ? 'true' : 'false') : (selected ? 'true' : 'false'));
           btn.addEventListener('click', () => {
             if (mobile) {
-              if (!selected) return;
+              if (!selected) {
+                syncSelectedDays([...state.selectedWeekdays, day.i]);
+                state.mobileActiveWeekday = day.i;
+                setStatus('');
+                renderWeekdayChips();
+                renderDayColumns();
+                return;
+              }
               state.mobileActiveWeekday = day.i;
               renderWeekdayChips();
               renderDayColumns();
