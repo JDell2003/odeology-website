@@ -833,6 +833,9 @@
         order: 1;
         display: flex;
         flex-direction: column;
+        position: sticky;
+        top: calc(var(--navbar-height) + 6px);
+        z-index: 36;
         min-height: 0;
         max-height: none;
         overflow: visible;
@@ -850,7 +853,8 @@
         justify-items: stretch;
         flex: 0 0 auto;
         min-height: 0;
-        overflow: visible;
+        max-height: min(42svh, 360px);
+        overflow: auto;
         gap: 7px;
         margin-top: 0 !important;
       }
@@ -936,14 +940,16 @@
       }
 
       .builder-plan-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 52px 60px 66px 28px;
+        align-items: center;
         border-radius: 10px;
-        padding: 7px;
+        padding: 6px 8px;
         gap: 6px;
       }
 
       .builder-plan-item-head {
-        font-size: 0.8rem;
-        gap: 6px;
+        display: none;
       }
 
       .builder-plan-item-controls {
@@ -957,7 +963,7 @@
       }
 
       .builder-plan-grid {
-        gap: 5px;
+        display: none;
       }
 
       .builder-plan-grid label {
@@ -968,6 +974,63 @@
       .builder-plan-grid input {
         padding: 5px 7px;
         font-size: 0.78rem;
+      }
+
+      .builder-plan-detail {
+        display: none !important;
+      }
+
+      .builder-plan-compact-title {
+        min-width: 0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #2e2114;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .builder-plan-compact-field {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        border: 1px solid #d8c3a5;
+        border-radius: 999px;
+        background: #fffdf9;
+        padding: 2px 6px;
+      }
+
+      .builder-plan-compact-field > span {
+        font-size: 0.58rem;
+        font-weight: 800;
+        color: #72583b;
+        line-height: 1;
+      }
+
+      .builder-plan-compact-field > input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: #2f2418;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0;
+        text-align: center;
+      }
+
+      .builder-plan-compact-field > input:focus {
+        outline: none;
+      }
+
+      .builder-plan-remove.builder-plan-remove-compact {
+        min-width: 26px;
+        width: 26px;
+        min-height: 26px;
+        height: 26px;
+        padding: 0;
       }
 
       .builder-db-card {
@@ -1675,6 +1738,28 @@
         wrapper.className = `builder-plan-item${ex?.expanded ? ' is-open' : ''}`;
         wrapper.dataset.planDay = String(weekday);
         wrapper.dataset.planIdx = String(exIdx);
+        const mobile = isMobileLayout();
+
+        if (mobile) {
+          wrapper.innerHTML = `
+            <div class="builder-plan-compact-title" title="${escapeHtml(ex?.name || 'Exercise')}">${escapeHtml(ex?.name || 'Exercise')}</div>
+            <label class="builder-plan-compact-field">
+              <span>S</span>
+              <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+            <label class="builder-plan-compact-field">
+              <span>R</span>
+              <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+            <label class="builder-plan-compact-field">
+              <span>Sec</span>
+              <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+            </label>
+            <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+          `;
+          return wrapper;
+        }
+
         const detailId = `builder-plan-detail-${weekday}-${exIdx}`;
         const options = swapOptionsForExercise(ex);
         const optionMarkup = options.map((row) => {
