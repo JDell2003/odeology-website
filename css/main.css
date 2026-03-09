@@ -11062,35 +11062,39 @@ body.friends-page main.friends-main {
 
     .control-panel-header {
         padding: 0.2rem 0.15rem 0.35rem;
-        justify-content: flex-end;
+        justify-content: flex-start;
+        gap: 0.5rem;
     }
     .control-panel .control-section.control-tour-host-hidden {
         display: none;
     }
     .control-panel-header .control-link.control-tour-pill {
-        margin-right: auto;
+        margin-right: 0;
         width: auto;
-        max-width: 190px;
-        padding: 0.42rem 0.8rem;
+        max-width: none;
+        min-height: 32px;
+        height: 32px;
+        padding: 0 0.85rem;
         border-radius: 999px;
         border-color: rgba(201, 163, 90, 0.45);
         background: linear-gradient(135deg, rgba(201, 163, 90, 0.25), rgba(255, 255, 255, 0.06));
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
         opacity: 1;
         transform: none;
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         letter-spacing: 0.02em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
     }
     .control-panel-header .control-link.control-tour-pill .icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        border-color: rgba(201, 163, 90, 0.48);
-        background: rgba(201, 163, 90, 0.14);
+        display: none;
     }
     .control-panel-header .control-link.control-tour-pill .text {
         white-space: nowrap;
-        font-weight: 700;
+        font-weight: 800;
+        line-height: 1;
     }
     .control-panel-header .control-link.control-tour-pill .control-link-close {
         display: none !important;
@@ -20732,7 +20736,9 @@ body.has-control-panel #control-panel {
     }
 
     .control-panel-header {
-        justify-content: flex-end !important;
+        justify-content: flex-start !important;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .control-close {

@@ -15840,8 +15840,15 @@ function setupControlPanel() {
         if (tourCloseGlyph) tourCloseGlyph.remove();
 
         if (mobileMode) {
-            if (header && tourBtn.parentElement !== header) {
-                header.insertBefore(tourBtn, header.firstChild);
+            if (header) {
+                const closeBtn = header.querySelector('#control-close');
+                if (closeBtn) {
+                    if (tourBtn.parentElement !== header || tourBtn.previousSibling !== closeBtn) {
+                        closeBtn.insertAdjacentElement('afterend', tourBtn);
+                    }
+                } else if (tourBtn.parentElement !== header) {
+                    header.insertBefore(tourBtn, header.firstChild);
+                }
             }
             tourBtn.classList.add('control-tour-pill');
             if (originParent && originParent.classList?.contains('control-section')) {
