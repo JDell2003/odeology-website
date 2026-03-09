@@ -846,6 +846,7 @@
       .builder-day-columns {
         grid-template-columns: 1fr;
         align-content: start;
+        justify-items: stretch;
         flex: 1;
         min-height: 0;
         overflow: auto;
@@ -854,10 +855,14 @@
       }
 
       .builder-day {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        min-height: 0;
+        display: grid !important;
+        grid-template-rows: auto auto !important;
+        align-content: start !important;
+        justify-items: stretch;
+        min-height: 0 !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
         border-radius: 12px;
         border: 1px solid #ddc6a3;
         background: #fffdf9;
@@ -865,6 +870,9 @@
       }
 
       .builder-day-head {
+        grid-row: 1 !important;
+        align-self: start !important;
+        width: 100%;
         padding: 8px 10px;
         min-height: 0;
         line-height: 1.1;
@@ -905,7 +913,13 @@
       }
 
       .builder-day-list {
-        min-height: 0;
+        grid-row: 2 !important;
+        align-self: start !important;
+        width: 100%;
+        min-height: 0 !important;
+        height: auto !important;
+        display: grid;
+        align-content: start;
         margin: 0;
         padding: 7px;
         gap: 7px;
