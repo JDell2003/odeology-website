@@ -124,14 +124,16 @@
     .builder-import-empty {
       position: absolute;
       inset: 12px;
-      display: grid;
-      place-items: center;
-      gap: 6px;
+      display: block;
       text-align: center;
       pointer-events: none;
     }
 
     .builder-import-plus {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 44px;
       height: 44px;
       border-radius: 999px;
@@ -146,10 +148,14 @@
     }
 
     .builder-import-drop-title {
+      position: absolute;
+      top: calc(50% + 46px);
+      left: 50%;
+      transform: translateX(-50%);
       font-size: 0.88rem;
       color: #6e5739;
       line-height: 1.3;
-      max-width: 420px;
+      width: min(90%, 470px);
     }
 
     .builder-import-dropzone.has-content .builder-import-empty {
@@ -224,7 +230,8 @@
       display: none;
     }
 
-    .builder-import-dropzone.has-text .builder-import-text {
+    .builder-import-dropzone.has-text .builder-import-text,
+    .builder-import-dropzone.is-text-entry .builder-import-text {
       display: block;
     }
 
@@ -2132,9 +2139,10 @@
         if (!importDropzoneEl) return;
         const hasFiles = Array.isArray(state.importFiles) && state.importFiles.length > 0;
         const hasText = Boolean(String(importTextEl?.value || '').trim());
+        const isTextEntry = importDropzoneEl.classList.contains('is-text-entry');
         importDropzoneEl.classList.toggle('has-files', hasFiles);
         importDropzoneEl.classList.toggle('has-text', hasText);
-        importDropzoneEl.classList.toggle('has-content', hasFiles || hasText);
+        importDropzoneEl.classList.toggle('has-content', hasFiles || hasText || isTextEntry);
       }
 
       function updateImportFilesLabel() {
@@ -2295,6 +2303,7 @@
         if (!importTextEl) return;
         const incoming = String(rawText || '').trim();
         if (!incoming) return;
+        importDropzoneEl?.classList.add('is-text-entry');
         const base = String(importTextEl.value || '').trim();
         importTextEl.value = base ? `${base}\n${incoming}` : incoming;
         syncImportDropzoneState();
@@ -3941,16 +3950,32 @@
           importDropzoneEl.classList.toggle('is-drag', Boolean(active));
         };
 
+        const enterImportTextMode = () => {
+          if (!importDropzoneEl || !importTextEl) return;
+          importDropzoneEl.classList.add('is-text-entry');
+          syncImportDropzoneState();
+          window.setTimeout(() => {
+            try {
+              importTextEl.focus();
+              const len = String(importTextEl.value || '').length;
+              importTextEl.setSelectionRange(len, len);
+            } catch {
+              // ignore focus errors
+            }
+          }, 0);
+        };
+
         importDropzoneEl?.addEventListener('click', (e) => {
           if (e.target.closest('[data-import-remove]')) return;
           if (e.target === importTextEl) return;
-          importImagesEl?.click();
+          enterImportTextMode();
         });
 
         importDropzoneEl?.addEventListener('keydown', (e) => {
+          if (e.target === importTextEl) return;
           if (e.key !== 'Enter' && e.key !== ' ') return;
           e.preventDefault();
-          importImagesEl?.click();
+          enterImportTextMode();
         });
 
         ['dragenter', 'dragover'].forEach((eventName) => {
@@ -3973,6 +3998,7 @@
           ensureImportFiles(files, { append: true });
           const droppedText = String(e.dataTransfer?.getData('text/plain') || '').trim();
           if (droppedText) appendImportText(droppedText);
+          if (droppedText && !files.length) enterImportTextMode();
         });
 
         importDropzoneEl?.addEventListener('paste', (e) => {
@@ -3999,6 +4025,7 @@
         });
 
         importTextEl?.addEventListener('input', () => {
+          importDropzoneEl?.classList.add('is-text-entry');
           syncImportDropzoneState();
         });
 
