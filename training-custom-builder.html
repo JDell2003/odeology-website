@@ -1941,25 +1941,43 @@
             `;
             const groupBody = document.createElement('div');
             groupBody.className = 'builder-folder-body';
+            const hasSingleSub = group.subs.length === 1;
+            const singleSub = hasSingleSub ? group.subs[0] : null;
+            const singleSubMatchesGroup = singleSub
+              ? normalizeToken(singleSub.label) === normalizeToken(group.label)
+              : false;
 
-            group.subs.forEach((sub) => {
-              const subDetails = document.createElement('details');
-              subDetails.className = 'builder-folder builder-folder-sub';
-              subDetails.innerHTML = `
-                <summary>
-                  <span>${escapeHtml(sub.label)}</span>
-                  <span class="builder-folder-badge">${sub.rows.length}</span>
-                </summary>
-                <div class="builder-folder-items"></div>
-              `;
-              subDetails.__rows = sub.rows;
-              subDetails.addEventListener('toggle', () => {
-                if (!subDetails.open) return;
-                ensureFolderLeafRendered(subDetails);
+            // If a group only contains one identical sub-folder (e.g. Chest -> Chest),
+            // render exercises directly so mobile users don't hit an extra hidden layer.
+            if (singleSub && singleSubMatchesGroup) {
+              const list = document.createElement('div');
+              list.className = 'builder-folder-items';
+              if (!singleSub.rows.length) {
+                list.innerHTML = '<div class="builder-day-empty">No workouts in this folder.</div>';
+              } else {
+                singleSub.rows.forEach((row) => list.appendChild(createDatabaseCard(row)));
+              }
+              groupBody.appendChild(list);
+            } else {
+              group.subs.forEach((sub) => {
+                const subDetails = document.createElement('details');
+                subDetails.className = 'builder-folder builder-folder-sub';
+                subDetails.innerHTML = `
+                  <summary>
+                    <span>${escapeHtml(sub.label)}</span>
+                    <span class="builder-folder-badge">${sub.rows.length}</span>
+                  </summary>
+                  <div class="builder-folder-items"></div>
+                `;
+                subDetails.__rows = sub.rows;
+                subDetails.addEventListener('toggle', () => {
+                  if (!subDetails.open) return;
+                  ensureFolderLeafRendered(subDetails);
+                });
+                groupBody.appendChild(subDetails);
+                if (subDetails.open) ensureFolderLeafRendered(subDetails);
               });
-              groupBody.appendChild(subDetails);
-              if (subDetails.open) ensureFolderLeafRendered(subDetails);
-            });
+            }
 
             groupDetails.appendChild(groupBody);
             sectionBody.appendChild(groupDetails);
