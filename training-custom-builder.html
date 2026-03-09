@@ -67,7 +67,7 @@
 
     .builder-save-cta-label {
       white-space: nowrap;
-      pointer-events: none;
+      pointer-events: auto;
     }
 
     .builder-status {
@@ -1258,7 +1258,7 @@
       <div class="builder-head-actions">
         <a href="index.html" class="btn btn-ghost">Back to Home</a>
         <div class="builder-save-cta">
-          <span class="btn btn-ghost builder-save-cta-label" aria-hidden="true">Generate my workout for me</span>
+          <button type="button" class="btn btn-ghost builder-save-cta-label" id="builder-generate-for-me-btn">Generate my workout for me</button>
           <button type="button" class="btn btn-primary" id="builder-save-btn">Save to My Workout</button>
         </div>
       </div>
@@ -1319,7 +1319,7 @@
       </section>
     </section>
     <div class="builder-bottom-actions">
-      <a href="training.html?from=intake#training" class="btn btn-primary" id="builder-make-workout">Make Workout</a>
+      <button type="button" class="btn btn-primary" id="builder-make-workout">Save Workout</button>
     </div>
   </main>
   <datalist id="builder-sets-options">
@@ -1461,6 +1461,7 @@
       const weekdaysEl = $('builder-weekdays');
       const dayColumnsEl = $('builder-day-columns');
       const saveBtn = $('builder-save-btn');
+      const generateForMeBtn = $('builder-generate-for-me-btn');
       const makeWorkoutBtn = $('builder-make-workout');
       const loginBtn = $('builder-login-btn');
       const signupBtn = $('builder-signup-btn');
@@ -2907,6 +2908,18 @@
         }
       }
 
+      function openGenerateWorkoutFlow() {
+        try {
+          sessionStorage.setItem('ode_training_force_autostart', '1');
+          sessionStorage.removeItem('ode_training_open_wizard_only');
+          sessionStorage.setItem('ode_training_constructing_v1', '1');
+          sessionStorage.removeItem('ode_training_nav_loading');
+        } catch {
+          // ignore
+        }
+        window.location.href = 'training.html?from=intake#training';
+      }
+
       async function init() {
         let lastMobileLayout = isMobileLayout();
         state.user = await fetchAuthUser();
@@ -2943,16 +2956,8 @@
           renderDatabaseList();
         });
 
-        makeWorkoutBtn?.addEventListener('click', () => {
-          try {
-            sessionStorage.setItem('ode_training_force_autostart', '1');
-            sessionStorage.removeItem('ode_training_open_wizard_only');
-            sessionStorage.setItem('ode_training_constructing_v1', '1');
-            sessionStorage.removeItem('ode_training_nav_loading');
-          } catch {
-            // ignore
-          }
-        });
+        generateForMeBtn?.addEventListener('click', openGenerateWorkoutFlow);
+        makeWorkoutBtn?.addEventListener('click', saveCustomPlan);
 
         customToggleBtn?.addEventListener('click', () => {
           if (!state.user?.id) {
