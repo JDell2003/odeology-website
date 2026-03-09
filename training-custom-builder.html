@@ -1783,53 +1783,76 @@
         const token = normalizeToken(rawToken);
         if (!token) return '';
         if (groupKey === 'chest') {
-          if (token.includes('upperchest') || token.includes('clavicular')) return 'upperchest';
-          if (token.includes('lowerchest')) return 'lowerchest';
+          if (token.includes('upperchest') || token.includes('clavicular') || token.includes('chestupper')) return 'upperchest';
+          if (
+            token.includes('middlechest')
+            || token.includes('midchest')
+            || token.includes('sternal')
+            || token.includes('chestmid')
+          ) return 'middlechest';
+          if (token.includes('lowerchest') || token.includes('costal') || token.includes('chestlower')) return 'lowerchest';
           if (token.includes('innerchest') || token.includes('stern')) return 'innerchest';
           if (token.includes('chest') || token.includes('pect')) return 'middlechest';
           return '';
         }
         if (groupKey === 'back') {
-          if (token.includes('lat')) return 'lats';
+          if (token.includes('lat') || token.includes('teresmajor') || token.includes('backlatswidth')) return 'lats';
           if (token.includes('trap')) return 'traps';
           if (token.includes('rhomboid')) return 'rhomboids';
-          if (token.includes('lowerback') || token.includes('erector')) return 'lowerback';
-          if (token.includes('middleback')) return 'middleback';
-          if (token.includes('upperback') || token.includes('back')) return 'upperback';
+          if (token.includes('lowerback') || token.includes('erector') || token.includes('spinal') || token.includes('backlower')) return 'lowerback';
+          if (
+            token.includes('middleback')
+            || token.includes('midback')
+            || token.includes('backupperthickness')
+            || token.includes('thickness')
+          ) return 'middleback';
+          if (token.includes('upperback') || token.includes('backupper') || token.includes('back')) return 'upperback';
           return '';
         }
         if (groupKey === 'shoulders') {
-          if (token.includes('frontdelt') || token.includes('anteriordelt')) return 'frontdelts';
-          if (token.includes('sidedelt') || token.includes('lateraldelt')) return 'sidedelts';
-          if (token.includes('reardelt') || token.includes('posteriordelt')) return 'reardelts';
+          if (token.includes('frontdelt') || token.includes('anteriordelt') || token.includes('deltsfront')) return 'frontdelts';
+          if (token.includes('sidedelt') || token.includes('lateraldelt') || token.includes('deltsside')) return 'sidedelts';
+          if (token.includes('reardelt') || token.includes('posteriordelt') || token.includes('deltsrear')) return 'reardelts';
           if (token.includes('rotatorcuff')) return 'rotatorcuff';
           if (token.includes('shoulder') || token.includes('delt')) return 'sidedelts';
           return '';
         }
         if (groupKey === 'arms') {
-          if (token.includes('bicep')) return 'biceps';
-          if (token.includes('tricep')) return 'triceps';
-          if (token.includes('forearm')) return 'forearms';
+          if (token.includes('bicep') || token.includes('bicepslonghead') || token.includes('bicepsshorthead')) return 'biceps';
+          if (token.includes('tricep') || token.includes('tricepslonghead') || token.includes('tricepslateralhead') || token.includes('tricepsmedialhead')) return 'triceps';
+          if (token.includes('forearm') || token.includes('brachioradialis')) return 'forearms';
           if (token.includes('brach')) return 'brachialis';
           return '';
         }
         if (groupKey === 'legs') {
-          if (token.includes('quad')) return 'quadriceps';
-          if (token.includes('hamstring')) return 'hamstrings';
-          if (token.includes('glute')) return 'glutes';
-          if (token.includes('calf')) return 'calves';
+          if (
+            token.includes('quad')
+            || token.includes('vastus')
+            || token.includes('rectusfemoris')
+            || token.includes('outerquads')
+            || token.includes('innerquads')
+          ) return 'quadriceps';
+          if (
+            token.includes('hamstring')
+            || token.includes('bicepsfemoris')
+            || token.includes('semitendinosus')
+            || token.includes('hamstringslateral')
+            || token.includes('hamstringsmedial')
+          ) return 'hamstrings';
+          if (token.includes('glute') || token.includes('glutemax')) return 'glutes';
+          if (token.includes('calf') || token.includes('gastrocnemius') || token.includes('soleus')) return 'calves';
           if (token.includes('adductor')) return 'adductors';
           if (token.includes('abductor')) return 'abductors';
-          if (token.includes('hipflexor')) return 'hipflexors';
+          if (token.includes('hipflexor') || token.includes('iliopsoas')) return 'hipflexors';
           if (token.includes('leg')) return 'quadriceps';
           return '';
         }
         if (groupKey === 'core') {
+          if (token.includes('absupper') || token.includes('upperabs')) return 'upperabs';
+          if (token.includes('abslower') || token.includes('lowerabs')) return 'lowerabs';
           if (token.includes('oblique')) return 'obliques';
           if (token.includes('serratus')) return 'serratus';
           if (token.includes('transverse')) return 'transverseabs';
-          if (token.includes('lowerabs')) return 'lowerabs';
-          if (token.includes('upperabs')) return 'upperabs';
           if (token.includes('abdominal') || token.includes('core')) return 'abdominals';
           return '';
         }
@@ -1893,6 +1916,17 @@
       }
 
       function subMuscleLabelFromRow(row, groupKey) {
+        const taxonomyTokens = [
+          ...(Array.isArray(row?.subMuscleGroups) ? row.subMuscleGroups : []),
+          row?.targetRegion,
+          row?.target_region
+        ];
+        for (const raw of taxonomyTokens) {
+          const mappedKey = subgroupFromToken(groupKey, raw);
+          if (!mappedKey) continue;
+          return { key: mappedKey, label: SUB_MUSCLE_LABELS[mappedKey] || toTitleCase(raw) || 'General' };
+        }
+
         const primary = Array.isArray(row?.primaryMuscles) ? row.primaryMuscles : [];
         const secondary = Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles : [];
         const candidates = [...primary, ...secondary];
