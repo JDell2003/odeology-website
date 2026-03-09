@@ -2,6 +2,54 @@
    CONFIG
    ============================================ */
 
+const KLAVIYO_COMPANY_ID = 'W83QZb';
+
+// Sitewide Klaviyo onsite bootstrap + loader.
+(function initKlaviyoOnsiteTracking() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (window.__odeKlaviyoOnsiteReady) return;
+    window.__odeKlaviyoOnsiteReady = true;
+
+    if (!window.klaviyo) {
+        window._klOnsite = window._klOnsite || [];
+        try {
+            window.klaviyo = new Proxy({}, {
+                get(target, prop) {
+                    if (prop === 'push') {
+                        return function pushWrapper() {
+                            window._klOnsite.push.apply(window._klOnsite, arguments);
+                        };
+                    }
+                    return function klaviyoMethodWrapper() {
+                        const args = Array.prototype.slice.call(arguments);
+                        const maybeCallback = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+                        return new Promise((resolve) => {
+                            window._klOnsite.push([prop].concat(args, [function proxyCb(result) {
+                                if (maybeCallback) maybeCallback(result);
+                                resolve(result);
+                            }]));
+                        });
+                    };
+                }
+            });
+        } catch {
+            window.klaviyo = window.klaviyo || [];
+            window.klaviyo.push = function pushFallback() {
+                window._klOnsite.push.apply(window._klOnsite, arguments);
+            };
+        }
+    }
+
+    const existing = document.querySelector(`script[src*="static.klaviyo.com/onsite/js/${KLAVIYO_COMPANY_ID}/klaviyo.js"]`);
+    if (existing) return;
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.type = 'text/javascript';
+    script.src = `https://static.klaviyo.com/onsite/js/${KLAVIYO_COMPANY_ID}/klaviyo.js?company_id=${KLAVIYO_COMPANY_ID}`;
+    (document.head || document.documentElement).appendChild(script);
+})();
+
 const YOUTUBE_SHORTS_CONFIG = [
     {
         title: "Pull-day: scap control in 30 seconds",
