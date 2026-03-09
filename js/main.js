@@ -13589,6 +13589,7 @@ function initAuthUi() {
             accounts.forEach((acct) => {
                 const item = document.createElement('div');
                 item.className = 'friends-item';
+                const targetUserId = String(acct?.id || '').trim();
                 const name = String(acct?.displayName || acct?.username || 'Account');
                 const username = acct?.username ? `@${acct.username}` : '';
                 const avatar = buildFriendAvatar({
@@ -13612,6 +13613,12 @@ function initAuthUi() {
                 addBtn.type = 'button';
                 addBtn.className = 'btn btn-ghost btn-mini';
                 addBtn.textContent = 'Add';
+                if (!targetUserId) {
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Unavailable';
+                } else {
+                    addBtn.addEventListener('click', () => sendFriendRequest(targetUserId, addBtn));
+                }
 
                 item.appendChild(avatar);
                 item.appendChild(meta);
