@@ -2836,6 +2836,73 @@ function toFreeExerciseDbRemotePath(src) {
     return 'other';
   }
 
+  function isCalisthenicsLikeForSwap({ nameNorm, categoryNorm, mechanicNorm, eqClass }) {
+    if (eqClass === 'bodyweight') return true;
+    if (/(calisthenics|bodyweight|gymnastics)/.test(categoryNorm)) return true;
+    if (/(calisthenics|bodyweight|gymnastics)/.test(mechanicNorm)) return true;
+    return [
+      /\bpull[\s-]*up\b/,
+      /\bchin[\s-]*up\b/,
+      /\bpush[\s-]*up\b/,
+      /\bmuscle[\s-]*up\b/,
+      /\bdips?\b/,
+      /\bburpees?\b/,
+      /\bhandstand\b/,
+      /\binverted\s*row\b/,
+      /\bhuman\s*flag\b/,
+      /\bdragon\s*flag\b/,
+      /\btoes?\s*to\s*bar\b/
+    ].some((rx) => rx.test(nameNorm));
+  }
+
+  function classifySwapCategory(entry, fallbackEx = null) {
+    const source = entry || fallbackEx || {};
+    const nameNorm = normalizeTextForMatch(source?.name || source?.displayName || '');
+    const categoryNorm = normalizeTextForMatch(source?.category || '');
+    const mechanicNorm = normalizeTextForMatch(source?.mechanic || source?.stimulusType || '');
+    const eqClass = equipmentClassFromName(source);
+
+    if (/(plyometric|plyo)/.test(categoryNorm)) return 'plyometrics';
+    if (/(plyometric|plyo|box jump|depth jump|broad jump|jump squat|bounds?)/.test(nameNorm)) return 'plyometrics';
+    if (/(stretch|mobility|warmup|activation|rehab|therapy|prehab)/.test(nameNorm)) return 'stretch';
+    if (/(stretch|mobility|warmup|rehab|therapy)/.test(categoryNorm)) return 'stretch';
+    if (/(stretch|mobility|warmup|rehab|therapy)/.test(mechanicNorm)) return 'stretch';
+    if (isCalisthenicsLikeForSwap({ nameNorm, categoryNorm, mechanicNorm, eqClass })) return 'calisthenics';
+
+    if (eqClass === 'barbell' || eqClass === 'dumbbell') return 'free_weights';
+    if (eqClass === 'machine' || eqClass === 'cable') return 'machines';
+    if (eqClass === 'bodyweight') return 'calisthenics';
+
+    const allow = Array.isArray(fallbackEx?.allowedEquipmentClass)
+      ? fallbackEx.allowedEquipmentClass.map((c) => String(c || '').toLowerCase())
+      : [];
+    const hasFree = allow.includes('barbell') || allow.includes('dumbbell');
+    const hasMachine = allow.includes('machine') || allow.includes('cable');
+    const hasBodyweight = allow.includes('bodyweight');
+
+    if (hasFree && hasMachine) return 'mixed';
+    if (hasFree) return 'free_weights';
+    if (hasMachine) return 'machines';
+    if (hasBodyweight) return 'calisthenics';
+    return 'unknown';
+  }
+
+  function swapCategoryCompatible({ sourceCategory, candidateCategory }) {
+    const blocked = new Set(['calisthenics', 'plyometrics', 'stretch']);
+    const source = String(sourceCategory || '');
+    const candidate = String(candidateCategory || '');
+    if (!candidate || candidate === 'unknown') return false;
+    if (blocked.has(candidate)) return false;
+
+    if (!source || source === 'unknown' || source === 'mixed' || blocked.has(source)) {
+      return candidate === 'free_weights' || candidate === 'machines';
+    }
+    if (source === candidate) return true;
+    if (source === 'free_weights' && candidate === 'machines') return true;
+    if (source === 'machines' && candidate === 'free_weights') return true;
+    return false;
+  }
+
   function normalizeMuscleToken(raw) {
     return normalizeTextForMatch(raw).replace(/\s+/g, '');
   }
@@ -3355,6 +3422,7 @@ function toFreeExerciseDbRemotePath(src) {
 
   function isSwapCandidateCompatible({
     sourceProfile,
+    sourceCategory,
     candidateEntry,
     allowedClasses,
     equipmentAccess
@@ -3363,6 +3431,8 @@ function toFreeExerciseDbRemotePath(src) {
     if (!sourceProfile || !sourceProfile.major || sourceProfile.major === 'other') return false;
     if (!candidateProfile?.major || candidateProfile.major === 'other') return false;
     const eqClass = candidateProfile.equipmentClass;
+    const candidateCategory = classifySwapCategory(candidateEntry);
+    if (!swapCategoryCompatible({ sourceCategory, candidateCategory })) return false;
     if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
     if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
     if (!subgroupCompatible(sourceProfile, candidateProfile)) return false;
@@ -3375,6 +3445,7 @@ function toFreeExerciseDbRemotePath(src) {
     const usedIds = new Set((day?.exercises || []).map((d) => String(d?.exerciseId || '')).filter(Boolean));
     const sourceEntry = resolveSwapCatalogEntry(ex);
     const sourceProfile = buildSwapProfile(sourceEntry, ex);
+    const sourceCategory = classifySwapCategory(sourceEntry, ex);
     if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
     const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
     const out = [];
@@ -3392,7 +3463,13 @@ function toFreeExerciseDbRemotePath(src) {
       const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
       if (/(stretch|mobility|warmup|activation|rehab|therapy|prehab)/.test(nameNorm)) continue;
       if (/(stretch|mobility|warmup)/.test(catNorm) || /(stretch|mobility|warmup)/.test(mechNorm)) continue;
-      if (!isSwapCandidateCompatible({ sourceProfile, candidateEntry: entry, allowedClasses, equipmentAccess })) continue;
+      if (!isSwapCandidateCompatible({
+        sourceProfile,
+        sourceCategory,
+        candidateEntry: entry,
+        allowedClasses,
+        equipmentAccess
+      })) continue;
       out.push(id);
     }
     return Array.from(new Set(out));
@@ -3411,6 +3488,7 @@ function toFreeExerciseDbRemotePath(src) {
 
     const sourceEntry = resolveSwapCatalogEntry(ex);
     const sourceProfile = buildSwapProfile(sourceEntry, ex);
+    const sourceCategory = classifySwapCategory(sourceEntry, ex);
     if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
     const wantMuscles = sourceProfile.muscleKeys.length
       ? sourceProfile.muscleKeys
@@ -3433,6 +3511,7 @@ function toFreeExerciseDbRemotePath(src) {
         if (badName.test(nameNorm) || badCategory.test(catNorm) || badMechanic.test(mechNorm)) continue;
         if (!isSwapCandidateCompatible({
           sourceProfile,
+          sourceCategory,
           candidateEntry: entry,
           allowedClasses,
           equipmentAccess
