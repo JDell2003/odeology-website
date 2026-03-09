@@ -2403,6 +2403,7 @@ function toFreeExerciseDbRemotePath(src) {
 
   let exerciseCatalog = [];
   let exerciseIndexById = new Map();
+  let exerciseIndexByNameNorm = new Map();
   let catalogLoading = false;
   let catalogLoadingPromise = null;
   let catalogLoadAttempted = false;
@@ -2411,10 +2412,15 @@ function toFreeExerciseDbRemotePath(src) {
     const opts = Array.isArray(list) ? list : [];
     exerciseCatalog = opts;
     exerciseIndexById = new Map();
+    exerciseIndexByNameNorm = new Map();
     for (const ex of opts) {
       const id = String(ex?.id || '').trim();
       if (!id) continue;
       exerciseIndexById.set(id, ex);
+      const nameNorm = normalizeTextForMatch(ex?.name || '');
+      if (nameNorm && !exerciseIndexByNameNorm.has(nameNorm)) {
+        exerciseIndexByNameNorm.set(nameNorm, ex);
+      }
     }
   }
 
@@ -2830,27 +2836,511 @@ function toFreeExerciseDbRemotePath(src) {
     return 'other';
   }
 
-  function mapExerciseMuscles(entry) {
-    const prim = Array.isArray(entry?.primaryMuscles) ? entry.primaryMuscles : [];
-    const sec = Array.isArray(entry?.secondaryMuscles) ? entry.secondaryMuscles : [];
-    const list = [...prim, ...sec].map((m) => String(m || '').toLowerCase());
-    const out = new Set();
-    for (const m of list) {
-      if (m.includes('chest')) out.add('chest');
-      if (m.includes('lats')) out.add('lats');
-      if (m.includes('back')) out.add('upperBack');
-      if (m.includes('front') && m.includes('deltoid')) out.add('deltsFront');
-      if (m.includes('side') && m.includes('deltoid')) out.add('deltsSide');
-      if (m.includes('rear') && m.includes('deltoid')) out.add('deltsRear');
-      if (m.includes('bicep')) out.add('biceps');
-      if (m.includes('tricep')) out.add('triceps');
-      if (m.includes('quadricep') || m.includes('quad')) out.add('quads');
-      if (m.includes('hamstring')) out.add('hamstrings');
-      if (m.includes('glute')) out.add('glutes');
-      if (m.includes('calf')) out.add('calves');
-      if (m.includes('abdom')) out.add('abs');
+  function normalizeMuscleToken(raw) {
+    return normalizeTextForMatch(raw).replace(/\s+/g, '');
+  }
+
+  function swapMajorFromToken(rawToken) {
+    const token = normalizeMuscleToken(rawToken);
+    if (!token) return '';
+    if (token.includes('chest') || token.includes('pectoral') || token.includes('pec')) return 'chest';
+    if (token.includes('lat') || token.includes('back') || token.includes('trap') || token.includes('rhomboid') || token.includes('erector') || token.includes('upperback')) return 'back';
+    if (token.includes('shoulder') || token.includes('deltoid') || token.includes('rotator') || token.includes('delt')) return 'shoulders';
+    if (token.includes('bicep') || token.includes('tricep') || token.includes('forearm') || token.includes('brachialis') || token.includes('brachioradialis')) return 'arms';
+    if (token.includes('quad') || token.includes('hamstring') || token.includes('glute') || token.includes('calf') || token.includes('adductor') || token.includes('abductor') || token.includes('hipflexor') || token.includes('leg')) return 'legs';
+    if (token === 'abs' || token.includes('abdom') || token.includes('oblique') || token.includes('serratus') || token.includes('transverse') || token.includes('core')) return 'core';
+    if (token.includes('neck')) return 'neck';
+    if (token.includes('fullbody')) return 'full_body';
+    return '';
+  }
+
+  function swapMajorFromIntentKey(rawIntentKey) {
+    const key = normalizeTextForMatch(rawIntentKey || '');
+    if (!key) return '';
+    if (key.includes('chest') || key.includes('pec')) return 'chest';
+    if (key.includes('row') || key.includes('vertical pull') || key.includes('lat') || key.includes('upper back')) return 'back';
+    if (key.includes('shoulder') || key.includes('overhead press') || key.includes('delts') || key.includes('rotator')) return 'shoulders';
+    if (key.includes('triceps') || key.includes('biceps') || key.includes('forearm') || key.includes('arms')) return 'arms';
+    if (key.includes('quad') || key.includes('hamstring') || key.includes('glute') || key.includes('calves') || key.includes('knee dominant') || key.includes('hip hinge') || key.includes('legs')) return 'legs';
+    if (key.includes('abs') || key.includes('core') || key.includes('oblique') || key.includes('rotation')) return 'core';
+    if (key.includes('neck')) return 'neck';
+    if (key.includes('full body')) return 'full_body';
+    return '';
+  }
+
+  function swapSubgroupFromToken(major, rawToken) {
+    const token = normalizeMuscleToken(rawToken);
+    if (!token || !major) return '';
+    if (major === 'chest') {
+      if (token.includes('upperchest') || token.includes('clavicular')) return 'upperchest';
+      if (token.includes('lowerchest') || token.includes('sternocostal')) return 'lowerchest';
+      if (token.includes('innerchest')) return 'innerchest';
+      if (token.includes('middlechest') || token === 'chest' || token.includes('pectoral')) return 'middlechest';
+      return '';
     }
-    return Array.from(out);
+    if (major === 'back') {
+      if (token.includes('lat')) return 'lats';
+      if (token.includes('upperback')) return 'upperback';
+      if (token.includes('middleback')) return 'middleback';
+      if (token.includes('lowerback') || token.includes('erector')) return 'lowerback';
+      if (token.includes('trap')) return 'traps';
+      if (token.includes('rhomboid')) return 'rhomboids';
+      if (token === 'back') return 'middleback';
+      return '';
+    }
+    if (major === 'shoulders') {
+      if (token.includes('deltsfront') || token.includes('frontdelt')) return 'frontdelts';
+      if (token.includes('deltsside') || token.includes('sidedelt') || token.includes('lateraldelt') || token.includes('medialdelt')) return 'sidedelts';
+      if (token.includes('deltsrear') || token.includes('reardelt') || token.includes('posteriordelt')) return 'reardelts';
+      if (token.includes('frontdelt') || token.includes('anteriordelt') || token.includes('frontdeltoid')) return 'frontdelts';
+      if (token.includes('sidedelt') || token.includes('lateraldelt') || token.includes('medialdelt')) return 'sidedelts';
+      if (token.includes('reardelt') || token.includes('posteriordelt')) return 'reardelts';
+      if (token.includes('rotator')) return 'rotatorcuff';
+      if (token.includes('shoulder') || token.includes('deltoid')) return 'shoulders';
+      return '';
+    }
+    if (major === 'arms') {
+      if (token.includes('bicep')) return 'biceps';
+      if (token.includes('tricep')) return 'triceps';
+      if (token.includes('forearm') || token.includes('brachioradialis')) return 'forearms';
+      if (token.includes('brachialis')) return 'brachialis';
+      return '';
+    }
+    if (major === 'legs') {
+      if (token.includes('quad') || token.includes('rectusfemoris') || token.includes('vastus')) return 'quadriceps';
+      if (token.includes('hamstring') || token.includes('bicepsfemoris') || token.includes('semitendinosus') || token.includes('semimembranosus')) return 'hamstrings';
+      if (token.includes('glute')) return 'glutes';
+      if (token.includes('calf') || token.includes('soleus') || token.includes('gastrocnemius')) return 'calves';
+      if (token.includes('adductor')) return 'adductors';
+      if (token.includes('abductor')) return 'abductors';
+      if (token.includes('hipflexor') || token.includes('iliopsoas')) return 'hipflexors';
+      return '';
+    }
+    if (major === 'core') {
+      if (token.includes('upperabs')) return 'upperabs';
+      if (token.includes('lowerabs')) return 'lowerabs';
+      if (token === 'abs') return 'abdominals';
+      if (token.includes('abdom')) return 'abdominals';
+      if (token.includes('oblique')) return 'obliques';
+      if (token.includes('serratus')) return 'serratus';
+      if (token.includes('transverse')) return 'transverseabs';
+      return '';
+    }
+    if (major === 'neck') return 'neck';
+    if (major === 'full_body') return 'fullbody';
+    return '';
+  }
+
+  function defaultSwapSubgroupForMajor(major) {
+    if (major === 'chest') return 'middlechest';
+    if (major === 'back') return 'middleback';
+    if (major === 'shoulders') return 'shoulders';
+    if (major === 'arms') return 'biceps';
+    if (major === 'legs') return 'quadriceps';
+    if (major === 'core') return 'abdominals';
+    if (major === 'neck') return 'neck';
+    if (major === 'full_body') return 'fullbody';
+    return 'general';
+  }
+
+  function swapSubgroupFromName(major, rawName) {
+    const name = normalizeTextForMatch(rawName || '');
+    if (!name || !major) return { key: '', specific: false };
+    const hasAny = (parts) => parts.some((part) => name.includes(part));
+
+    if (major === 'chest') {
+      if (hasAny(['incline', 'clavicular', 'low to high'])) return { key: 'upperchest', specific: true };
+      if (hasAny(['decline', 'high to low'])) return { key: 'lowerchest', specific: true };
+      if (hasAny(['inner', 'squeeze', 'hex press'])) return { key: 'innerchest', specific: true };
+      return { key: 'middlechest', specific: false };
+    }
+    if (major === 'back') {
+      if (hasAny(['pull-up', 'pull up', 'chin-up', 'chin up', 'pulldown', 'lat pull'])) return { key: 'lats', specific: true };
+      if (hasAny(['shrug', 'trap'])) return { key: 'traps', specific: true };
+      if (hasAny(['rhomboid'])) return { key: 'rhomboids', specific: true };
+      if (hasAny(['deadlift', 'back extension', 'hyperextension', 'good morning', 'erector'])) return { key: 'lowerback', specific: true };
+      if (hasAny(['row', 't-bar', 'seated row'])) return { key: 'middleback', specific: true };
+      return { key: 'upperback', specific: false };
+    }
+    if (major === 'shoulders') {
+      if (hasAny(['lateral raise', 'side raise'])) return { key: 'sidedelts', specific: true };
+      if (hasAny(['rear delt', 'reverse fly', 'face pull'])) return { key: 'reardelts', specific: true };
+      if (hasAny(['external rotation', 'internal rotation', 'rotator cuff'])) return { key: 'rotatorcuff', specific: true };
+      if (hasAny(['front raise'])) return { key: 'frontdelts', specific: true };
+      return { key: 'shoulders', specific: false };
+    }
+    if (major === 'arms') {
+      if (hasAny(['tricep', 'pushdown', 'skull', 'extension', 'kickback', 'close grip bench'])) return { key: 'triceps', specific: true };
+      if (hasAny(['wrist', 'grip', 'reverse curl'])) return { key: 'forearms', specific: true };
+      if (hasAny(['hammer curl', 'brachialis'])) return { key: 'brachialis', specific: true };
+      if (hasAny(['curl', 'bicep', 'chin-up', 'chin up'])) return { key: 'biceps', specific: true };
+      return { key: 'biceps', specific: false };
+    }
+    if (major === 'legs') {
+      if (hasAny(['calf'])) return { key: 'calves', specific: true };
+      if (hasAny(['hamstring', 'leg curl', 'rdl', 'stiff'])) return { key: 'hamstrings', specific: true };
+      if (hasAny(['glute', 'hip thrust', 'bridge', 'kickback'])) return { key: 'glutes', specific: true };
+      if (hasAny(['adductor'])) return { key: 'adductors', specific: true };
+      if (hasAny(['abductor'])) return { key: 'abductors', specific: true };
+      if (hasAny(['hip flexor'])) return { key: 'hipflexors', specific: true };
+      if (hasAny(['squat', 'leg press', 'lunge', 'split squat', 'step-up', 'leg extension', 'quad'])) return { key: 'quadriceps', specific: true };
+      return { key: 'quadriceps', specific: false };
+    }
+    if (major === 'core') {
+      if (hasAny(['oblique', 'side plank', 'russian twist', 'woodchop'])) return { key: 'obliques', specific: true };
+      if (hasAny(['leg raise', 'reverse crunch', 'hanging knee'])) return { key: 'lowerabs', specific: true };
+      if (hasAny(['crunch', 'sit-up', 'sit up'])) return { key: 'upperabs', specific: true };
+      if (hasAny(['plank', 'hollow', 'dead bug', 'brace'])) return { key: 'transverseabs', specific: true };
+      if (hasAny(['serratus'])) return { key: 'serratus', specific: true };
+      return { key: 'abdominals', specific: false };
+    }
+    if (major === 'neck') return { key: 'neck', specific: true };
+    if (major === 'full_body') return { key: 'fullbody', specific: true };
+    return { key: 'general', specific: false };
+  }
+
+  function swapSubgroupFromIntent(major, rawIntentKey) {
+    const key = normalizeTextForMatch(rawIntentKey || '');
+    if (!major || !key) return { key: '', specific: false };
+    if (major === 'chest') {
+      if (key.includes('upper chest') || key.includes('chest incline')) return { key: 'upperchest', specific: true };
+      if (key.includes('lower chest') || key.includes('chest decline')) return { key: 'lowerchest', specific: true };
+      if (key.includes('chest fly')) return { key: 'innerchest', specific: true };
+      if (key.includes('chest')) return { key: 'middlechest', specific: false };
+    }
+    if (major === 'back') {
+      if (key.includes('vertical pull') || key.includes('lats')) return { key: 'lats', specific: true };
+      if (key.includes('row')) return { key: 'middleback', specific: true };
+      if (key.includes('upper back')) return { key: 'upperback', specific: true };
+      if (key.includes('trap')) return { key: 'traps', specific: true };
+      if (key.includes('hinge')) return { key: 'lowerback', specific: true };
+    }
+    if (major === 'shoulders') {
+      if (key.includes('delts side')) return { key: 'sidedelts', specific: true };
+      if (key.includes('delts rear')) return { key: 'reardelts', specific: true };
+      if (key.includes('delts front')) return { key: 'frontdelts', specific: true };
+      if (key.includes('overhead press') || key.includes('shoulder')) return { key: 'shoulders', specific: false };
+    }
+    if (major === 'arms') {
+      if (key.includes('triceps')) return { key: 'triceps', specific: true };
+      if (key.includes('biceps')) return { key: 'biceps', specific: true };
+      if (key.includes('forearm')) return { key: 'forearms', specific: true };
+    }
+    if (major === 'legs') {
+      if (key.includes('quad') || key.includes('knee dominant')) return { key: 'quadriceps', specific: true };
+      if (key.includes('hamstring')) return { key: 'hamstrings', specific: true };
+      if (key.includes('glute')) return { key: 'glutes', specific: true };
+      if (key.includes('calves')) return { key: 'calves', specific: true };
+      if (key.includes('adductor')) return { key: 'adductors', specific: true };
+      if (key.includes('abductor')) return { key: 'abductors', specific: true };
+      if (key.includes('hip hinge')) return { key: 'hamstrings', specific: true };
+    }
+    if (major === 'core') {
+      if (key.includes('oblique') || key.includes('rotation')) return { key: 'obliques', specific: true };
+      if (key.includes('lower abs')) return { key: 'lowerabs', specific: true };
+      if (key.includes('upper abs')) return { key: 'upperabs', specific: true };
+      if (key.includes('core brace')) return { key: 'transverseabs', specific: true };
+      if (key.includes('abs') || key.includes('core')) return { key: 'abdominals', specific: false };
+    }
+    if (major === 'neck' && key.includes('neck')) return { key: 'neck', specific: true };
+    if (major === 'full_body' && key.includes('full body')) return { key: 'fullbody', specific: true };
+    return { key: '', specific: false };
+  }
+
+  function rawMuscleTokens(entry, fallbackEx = null) {
+    const prim = Array.isArray(entry?.primaryMuscles)
+      ? entry.primaryMuscles
+      : (Array.isArray(fallbackEx?.primaryMuscles) ? fallbackEx.primaryMuscles : []);
+    const sec = Array.isArray(entry?.secondaryMuscles)
+      ? entry.secondaryMuscles
+      : (Array.isArray(fallbackEx?.secondaryMuscles) ? fallbackEx.secondaryMuscles : []);
+    const fallbackMuscleKeys = Array.isArray(fallbackEx?.muscleKeys)
+      ? fallbackEx.muscleKeys.map((m) => String(m || '').trim()).filter(Boolean)
+      : [];
+    const explicitGroup = [
+      fallbackEx?.muscle_group,
+      fallbackEx?.muscleGroup,
+      fallbackEx?.muscle
+    ].map((m) => String(m || '').trim()).filter(Boolean);
+    return {
+      primary: Array.from(new Set([
+        ...prim.map((m) => String(m || '')).filter(Boolean),
+        ...explicitGroup,
+        ...fallbackMuscleKeys
+      ])),
+      secondary: sec.map((m) => String(m || '')).filter(Boolean)
+    };
+  }
+
+  function swapMajorFromExercise(entry, fallbackEx = null) {
+    const nameNorm = normalizeTextForMatch(entry?.name || fallbackEx?.displayName || fallbackEx?.name || '');
+    const intentNorm = normalizeTextForMatch(fallbackEx?.intentKey || '');
+    const movementNorm = normalizeTextForMatch(fallbackEx?.movementPattern || '');
+    const { primary, secondary } = rawMuscleTokens(entry, fallbackEx);
+    const scores = new Map([
+      ['chest', 0],
+      ['back', 0],
+      ['shoulders', 0],
+      ['arms', 0],
+      ['legs', 0],
+      ['core', 0],
+      ['neck', 0],
+      ['full_body', 0],
+      ['other', 0]
+    ]);
+    const add = (key, weight) => {
+      if (!key || !Number.isFinite(weight)) return;
+      scores.set(key, (scores.get(key) || 0) + weight);
+    };
+
+    primary.forEach((token) => add(swapMajorFromToken(token), 3));
+    secondary.forEach((token) => add(swapMajorFromToken(token), 1.35));
+    add(swapMajorFromIntentKey(intentNorm), 3.2);
+
+    if (movementNorm === 'press' || movementNorm === 'horizontal press') add('chest', 1.6);
+    if (movementNorm === 'ohp' || movementNorm === 'overhead press') add('shoulders', 1.6);
+    if (movementNorm === 'row' || movementNorm === 'vertical pull' || movementNorm === 'vertical_pull') add('back', 1.7);
+    if (movementNorm === 'squat' || movementNorm === 'hinge') add('legs', 1.8);
+
+    if (/(bench|chest|push up|push-up|dips|crossover|pec deck|fly)/.test(nameNorm)) add('chest', 3.5);
+    if (/(row|pulldown|pull up|pull-up|chin up|chin-up|lat)/.test(nameNorm)) add('back', 3.5);
+    if (/(overhead|shoulder press|military press|arnold|lateral raise|rear delt|front raise)/.test(nameNorm)) add('shoulders', 3.2);
+    if (/(bicep|curl|tricep|pushdown|skull crusher|kickback|forearm)/.test(nameNorm)) add('arms', 3.2);
+    if (/(squat|lunge|leg press|hack squat|leg extension|leg curl|deadlift|rdl|hip thrust|calf)/.test(nameNorm)) add('legs', 3.6);
+    if (/(plank|crunch|sit up|sit-up|oblique|woodchop|hollow|dead bug|ab wheel|ab roller)/.test(nameNorm)) add('core', 3.2);
+    if (/neck/.test(nameNorm)) add('neck', 4);
+    if (/(clean and jerk|snatch|burpee|thruster|man maker)/.test(nameNorm)) add('full_body', 2.8);
+
+    let bestKey = 'other';
+    let bestScore = -1;
+    for (const [key, score] of scores.entries()) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestKey = key;
+      }
+    }
+    return bestScore > 0 ? bestKey : 'other';
+  }
+
+  function swapForceFromExercise(entry, fallbackEx = null, subgroup = '') {
+    const force = normalizeTextForMatch(entry?.force || fallbackEx?.force || '');
+    if (force === 'push' || force === 'pull' || force === 'static') return force;
+    if (subgroup === 'biceps' || subgroup === 'forearms' || subgroup === 'brachialis' || subgroup === 'lats' || subgroup === 'middleback' || subgroup === 'upperback' || subgroup === 'rhomboids' || subgroup === 'traps') {
+      return 'pull';
+    }
+    if (subgroup === 'triceps' || subgroup === 'quadriceps' || subgroup === 'calves' || subgroup === 'upperchest' || subgroup === 'middlechest' || subgroup === 'lowerchest' || subgroup === 'innerchest' || subgroup === 'frontdelts' || subgroup === 'sidedelts') {
+      return 'push';
+    }
+    return '';
+  }
+
+  function swapMovementFamilyFromExercise(entry, major, subgroup, fallbackEx = null) {
+    const name = normalizeTextForMatch(entry?.name || fallbackEx?.displayName || fallbackEx?.name || '');
+    const mechanic = normalizeTextForMatch(entry?.mechanic || fallbackEx?.mechanic || fallbackEx?.stimulusType || '');
+    if (major === 'chest') {
+      if (/(fly|crossover|pec deck)/.test(name)) return 'chest_fly';
+      if (/(bench|press|push up|push-up|dip)/.test(name)) return 'chest_press';
+    }
+    if (major === 'back') {
+      if (/(pulldown|pull up|pull-up|chin up|chin-up|lat pull)/.test(name)) return 'vertical_pull';
+      if (/(row|seal row|t bar|single arm row)/.test(name)) return 'row';
+      if (/(deadlift|good morning|back extension|hyperextension)/.test(name)) return 'hip_hinge';
+    }
+    if (major === 'shoulders') {
+      if (/(overhead|shoulder press|military press|arnold)/.test(name)) return 'shoulder_press';
+      if (/(lateral raise|side raise|front raise|rear delt|reverse fly|face pull)/.test(name)) return 'shoulder_raise';
+    }
+    if (major === 'arms') {
+      if (subgroup === 'triceps' || /(tricep|pushdown|skull|extension|kickback|close grip bench)/.test(name)) return 'triceps_extension';
+      if (subgroup === 'biceps' || subgroup === 'brachialis' || /(curl|chin up|chin-up)/.test(name)) return 'biceps_curl';
+      if (subgroup === 'forearms' || /(wrist curl|grip|reverse curl)/.test(name)) return 'forearm_work';
+    }
+    if (major === 'legs') {
+      if (subgroup === 'quadriceps' && /(leg extension|extension)/.test(name)) return 'leg_extension';
+      if (subgroup === 'hamstrings' && /(leg curl|hamstring curl)/.test(name)) return 'leg_curl';
+      if (/(calf raise)/.test(name) || subgroup === 'calves') return 'calf_raise';
+      if (/(lunge|split squat|step up|step-up|bulgarian)/.test(name)) return 'single_leg';
+      if (/(deadlift|rdl|romanian|good morning|hip thrust|glute bridge|back extension)/.test(name) || subgroup === 'hamstrings' || subgroup === 'glutes') return 'hip_hinge';
+      if (/(squat|leg press|hack squat|front squat|goblet squat)/.test(name) || subgroup === 'quadriceps') return 'knee_dominant';
+    }
+    if (major === 'core') {
+      if (/(plank|hollow|dead bug|ab wheel rollout)/.test(name)) return 'core_brace';
+      if (/(crunch|sit up|sit-up|leg raise|knee raise)/.test(name)) return 'core_flexion';
+      if (/(twist|rotation|woodchop|oblique)/.test(name)) return 'core_rotation';
+    }
+    if (mechanic.includes('isolation')) return `${major}_isolation`;
+    if (mechanic.includes('compound')) return `${major}_compound`;
+    return '';
+  }
+
+  function swapMovementFamilyFromIntent(intentKeyRaw, movementPatternRaw, major, subgroup) {
+    const intentKey = normalizeTextForMatch(intentKeyRaw || '');
+    const movementPattern = normalizeTextForMatch(movementPatternRaw || '');
+    if (major === 'chest') {
+      if (intentKey.includes('chest fly')) return 'chest_fly';
+      if (intentKey.includes('chest press') || movementPattern === 'press') return 'chest_press';
+    }
+    if (major === 'back') {
+      if (intentKey.includes('vertical pull') || movementPattern === 'vertical pull' || movementPattern === 'vertical_pull') return 'vertical_pull';
+      if (intentKey.includes('row') || movementPattern === 'row') return 'row';
+      if (intentKey.includes('hinge') || movementPattern === 'hinge') return 'hip_hinge';
+    }
+    if (major === 'shoulders') {
+      if (intentKey.includes('overhead press') || movementPattern === 'ohp' || movementPattern === 'overhead press') return 'shoulder_press';
+      if (intentKey.includes('delts side') || intentKey.includes('delts rear') || intentKey.includes('delts front')) return 'shoulder_raise';
+    }
+    if (major === 'arms') {
+      if (subgroup === 'triceps' || intentKey.includes('triceps extension')) return 'triceps_extension';
+      if (subgroup === 'biceps' || subgroup === 'brachialis' || intentKey.includes('biceps curl')) return 'biceps_curl';
+      if (subgroup === 'forearms' || intentKey.includes('forearm')) return 'forearm_work';
+    }
+    if (major === 'legs') {
+      if (subgroup === 'quadriceps' && intentKey.includes('knee dominant')) return 'knee_dominant';
+      if (subgroup === 'quadriceps' && intentKey.includes('leg extension')) return 'leg_extension';
+      if (subgroup === 'hamstrings' && intentKey.includes('leg curl')) return 'leg_curl';
+      if (subgroup === 'calves' || intentKey.includes('calves')) return 'calf_raise';
+      if (movementPattern === 'hinge' || intentKey.includes('hip hinge')) return 'hip_hinge';
+      if (movementPattern === 'squat' || intentKey.includes('knee dominant')) return 'knee_dominant';
+    }
+    if (major === 'core') {
+      if (intentKey.includes('rotation') || intentKey.includes('oblique')) return 'core_rotation';
+      if (intentKey.includes('brace')) return 'core_brace';
+      if (intentKey.includes('abs') || intentKey.includes('core')) return 'core_flexion';
+    }
+    return '';
+  }
+
+  function buildSwapProfile(entry, fallbackEx = null) {
+    const fallbackNameFromId = String(fallbackEx?.exerciseId || fallbackEx?.baseId || '').replace(/_/g, ' ');
+    const name = String(entry?.name || fallbackEx?.displayName || fallbackEx?.name || fallbackNameFromId || '').trim();
+    let major = swapMajorFromExercise(entry, fallbackEx);
+    if (!major || major === 'other') {
+      major = swapMajorFromIntentKey(fallbackEx?.intentKey || '') || major;
+    }
+    const { primary, secondary } = rawMuscleTokens(entry, fallbackEx);
+
+    let subgroup = '';
+    let subgroupSpecific = false;
+    for (const token of primary) {
+      const mapped = swapSubgroupFromToken(major, token);
+      if (mapped) {
+        subgroup = mapped;
+        subgroupSpecific = true;
+        break;
+      }
+    }
+    if (!subgroup) {
+      for (const token of secondary) {
+        const mapped = swapSubgroupFromToken(major, token);
+        if (mapped) {
+          subgroup = mapped;
+          subgroupSpecific = true;
+          break;
+        }
+      }
+    }
+    if (!subgroup) {
+      const fromName = swapSubgroupFromName(major, name);
+      subgroup = fromName.key;
+      subgroupSpecific = Boolean(fromName.specific);
+    }
+    if (!subgroup) {
+      const fromIntent = swapSubgroupFromIntent(major, fallbackEx?.intentKey || '');
+      subgroup = fromIntent.key;
+      subgroupSpecific = Boolean(fromIntent.specific);
+    }
+    if (!subgroup) subgroup = defaultSwapSubgroupForMajor(major);
+
+    const force = swapForceFromExercise(entry, fallbackEx, subgroup);
+    const movementFamily = swapMovementFamilyFromExercise(entry, major, subgroup, fallbackEx)
+      || swapMovementFamilyFromIntent(fallbackEx?.intentKey || '', fallbackEx?.movementPattern || '', major, subgroup);
+    const muscleKeys = new Set();
+    if (major && major !== 'other') muscleKeys.add(major);
+    if (subgroup) muscleKeys.add(subgroup);
+
+    return {
+      name,
+      nameNorm: normalizeTextForMatch(name),
+      major,
+      subgroup,
+      subgroupSpecific,
+      force,
+      movementFamily,
+      equipmentClass: equipmentClassFromName(entry || fallbackEx || {}),
+      muscleKeys: Array.from(muscleKeys)
+    };
+  }
+
+  function resolveSwapCatalogEntry(ex) {
+    const byId = String(ex?.exerciseId || ex?.baseId || ex?.id || '').trim();
+    if (byId && exerciseIndexById.has(byId)) return exerciseIndexById.get(byId);
+    const idAsNameNorm = normalizeTextForMatch(byId.replace(/[_-]+/g, ' '));
+    if (idAsNameNorm && exerciseIndexByNameNorm.has(idAsNameNorm)) return exerciseIndexByNameNorm.get(idAsNameNorm);
+    const byNameNorm = normalizeTextForMatch(ex?.displayName || ex?.name || '');
+    if (byNameNorm && exerciseIndexByNameNorm.has(byNameNorm)) return exerciseIndexByNameNorm.get(byNameNorm);
+    return null;
+  }
+
+  function movementFamilyCompatible(sourceProfile, candidateProfile) {
+    const src = String(sourceProfile?.movementFamily || '').trim();
+    const cand = String(candidateProfile?.movementFamily || '').trim();
+    if (!src && !cand) return true;
+    if (src && !cand) return false;
+    if (!src && cand) return true;
+    if (src === cand) return true;
+    const compat = {
+      chest_press: ['chest_press'],
+      chest_fly: ['chest_fly'],
+      vertical_pull: ['vertical_pull'],
+      row: ['row'],
+      shoulder_press: ['shoulder_press'],
+      shoulder_raise: ['shoulder_raise'],
+      triceps_extension: ['triceps_extension'],
+      biceps_curl: ['biceps_curl'],
+      forearm_work: ['forearm_work', 'biceps_curl'],
+      knee_dominant: ['knee_dominant', 'single_leg'],
+      single_leg: ['single_leg', 'knee_dominant'],
+      hip_hinge: ['hip_hinge'],
+      leg_extension: ['leg_extension', 'knee_dominant'],
+      leg_curl: ['leg_curl', 'hip_hinge'],
+      calf_raise: ['calf_raise'],
+      core_brace: ['core_brace'],
+      core_flexion: ['core_flexion'],
+      core_rotation: ['core_rotation']
+    };
+    return Array.isArray(compat[src]) ? compat[src].includes(cand) : false;
+  }
+
+  function subgroupCompatible(sourceProfile, candidateProfile) {
+    const srcMajor = String(sourceProfile?.major || '');
+    const candMajor = String(candidateProfile?.major || '');
+    if (!srcMajor || srcMajor === 'other') return false;
+    if (!candMajor || candMajor === 'other') return false;
+    if (candMajor !== srcMajor) return false;
+
+    const srcSub = String(sourceProfile?.subgroup || '');
+    const candSub = String(candidateProfile?.subgroup || '');
+    if (!srcSub || !candSub) return true;
+    if (srcSub === candSub) return true;
+    if (sourceProfile?.subgroupSpecific) return false;
+    const closeCompat = {
+      upperback: ['middleback', 'rhomboids', 'traps'],
+      middleback: ['upperback', 'rhomboids', 'lats'],
+      lats: ['middleback', 'upperback'],
+      shoulders: ['frontdelts', 'sidedelts', 'reardelts'],
+      frontdelts: ['shoulders'],
+      sidedelts: ['shoulders'],
+      reardelts: ['shoulders'],
+      quadriceps: ['glutes'],
+      hamstrings: ['glutes'],
+      glutes: ['hamstrings', 'quadriceps']
+    };
+    return Array.isArray(closeCompat[srcSub]) ? closeCompat[srcSub].includes(candSub) : false;
+  }
+
+  function mapExerciseMuscles(entry) {
+    const profile = buildSwapProfile(entry);
+    return profile.muscleKeys.filter(Boolean);
   }
 
   function equipmentAllowed(access, eqClass) {
@@ -2882,6 +3372,54 @@ function toFreeExerciseDbRemotePath(src) {
     return true;
   }
 
+  function isSwapCandidateCompatible({
+    sourceProfile,
+    candidateEntry,
+    allowedClasses,
+    equipmentAccess,
+    relaxMovementFamily = false
+  }) {
+    const candidateProfile = buildSwapProfile(candidateEntry);
+    if (!sourceProfile || !sourceProfile.major || sourceProfile.major === 'other') return false;
+    if (!candidateProfile?.major || candidateProfile.major === 'other') return false;
+    const eqClass = candidateProfile.equipmentClass;
+    if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
+    if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
+    if (!subgroupCompatible(sourceProfile, candidateProfile)) return false;
+    if (sourceProfile?.force && candidateProfile?.force && sourceProfile.force !== candidateProfile.force) return false;
+    if (!relaxMovementFamily && !movementFamilyCompatible(sourceProfile, candidateProfile)) return false;
+    return true;
+  }
+
+  function filterSwapCandidatesByCompatibility({ ex, candidateIds, day, equipmentAccess, allowedClasses }) {
+    const ids = Array.isArray(candidateIds) ? candidateIds : [];
+    if (!ids.length) return [];
+    const usedIds = new Set((day?.exercises || []).map((d) => String(d?.exerciseId || '')).filter(Boolean));
+    const sourceEntry = resolveSwapCatalogEntry(ex);
+    const sourceProfile = buildSwapProfile(sourceEntry, ex);
+    if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
+    const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
+    const out = [];
+
+    for (const rawId of ids) {
+      const id = String(rawId || '').trim();
+      if (!id) continue;
+      if (id === sourceId) continue;
+      if (usedIds.has(id)) continue;
+      const entry = exerciseIndexById.get(id);
+      if (!entry) continue;
+      if (isBandName(entry?.name)) continue;
+      const nameNorm = normalizeTextForMatch(entry?.name || '');
+      const catNorm = normalizeTextForMatch(entry?.category || '');
+      const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
+      if (/(stretch|mobility|warmup|activation|rehab|therapy|prehab)/.test(nameNorm)) continue;
+      if (/(stretch|mobility|warmup)/.test(catNorm) || /(stretch|mobility|warmup)/.test(mechNorm)) continue;
+      if (!isSwapCandidateCompatible({ sourceProfile, candidateEntry: entry, allowedClasses, equipmentAccess })) continue;
+      out.push(id);
+    }
+    return Array.from(new Set(out));
+  }
+
   function computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) {
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
@@ -2893,49 +3431,56 @@ function toFreeExerciseDbRemotePath(src) {
     const intentKey = String(ex?.intentKey || '').toLowerCase();
     if (!intentAllowedByInjuryClient(intentKey, injuryProfile)) return [];
 
-    const wantMuscles = Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : [];
-    const wantTokens = normalizeTextForMatch(ex?.intentKey || ex?.displayName || ex?.name || '').split(' ').filter(Boolean);
-    const scored = [];
-
+    const sourceEntry = resolveSwapCatalogEntry(ex);
+    const sourceProfile = buildSwapProfile(sourceEntry, ex);
+    if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
+    const wantMuscles = sourceProfile.muscleKeys.length
+      ? sourceProfile.muscleKeys
+      : (Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []);
+    const wantTokens = normalizeTextForMatch(ex?.displayName || ex?.name || ex?.intentKey || '').split(' ').filter(Boolean);
     const badName = /(stretch|mobility|warmup|activation|rehab|therapy|prehab)/;
     const badCategory = /(stretch|mobility|warmup)/;
     const badMechanic = /(stretch|mobility|warmup)/;
-    const movement = String(ex?.movementPattern || '').toLowerCase();
-    const movementPatternOk = (name) => {
-      const n = normalizeTextForMatch(name);
-      if (movement === 'squat') return /(squat|leg press|hack|lunge|split squat)/.test(n);
-      if (movement === 'hinge') return /(deadlift|rdl|romanian|good morning|hip thrust|back extension)/.test(n);
-      if (movement === 'press') return /(press|bench|incline|decline|chest)/.test(n);
-      if (movement === 'row') return /row/.test(n);
-      if (movement === 'vertical_pull') return /(pulldown|pull up|pull-up|chin up|chin-up|lat pull)/.test(n);
-      return true;
+    const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
+    const collectScored = (relaxMovementFamily = false) => {
+      const scored = [];
+      for (const entry of exerciseCatalog) {
+        const id = String(entry?.id || '').trim();
+        if (!id || usedIds.has(id)) continue;
+        if (sourceId && id === sourceId) continue;
+        if (isBandName(entry?.name)) continue;
+        const nameNorm = normalizeTextForMatch(entry?.name || '');
+        const catNorm = normalizeTextForMatch(entry?.category || '');
+        const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
+        if (badName.test(nameNorm) || badCategory.test(catNorm) || badMechanic.test(mechNorm)) continue;
+        if (!isSwapCandidateCompatible({
+          sourceProfile,
+          candidateEntry: entry,
+          allowedClasses,
+          equipmentAccess,
+          relaxMovementFamily
+        })) continue;
+
+        const candidateProfile = buildSwapProfile(entry);
+        const eqClass = candidateProfile.equipmentClass;
+        const muscles = candidateProfile.muscleKeys;
+        const muscleOverlap = wantMuscles.length
+          ? wantMuscles.filter((m) => muscles.includes(m)).length / wantMuscles.length
+          : 0;
+        const nameTokens = normalizeTextForMatch(entry?.name || '').split(' ').filter(Boolean);
+        const tokenOverlap = nameTokens.filter((t) => wantTokens.includes(t)).length / Math.max(1, wantTokens.length);
+        const subgroupScore = sourceProfile.subgroup && candidateProfile.subgroup && sourceProfile.subgroup === candidateProfile.subgroup ? 1 : 0;
+        const familyScore = sourceProfile.movementFamily && candidateProfile.movementFamily && sourceProfile.movementFamily === candidateProfile.movementFamily ? 1 : 0;
+        const eqScore = sourceProfile.equipmentClass && sourceProfile.equipmentClass === eqClass ? 1 : 0;
+        const score = (subgroupScore * 0.45) + (familyScore * 0.27) + (muscleOverlap * 0.18) + (tokenOverlap * 0.06) + (eqScore * 0.04);
+        scored.push({ id, score, name: entry?.name || '' });
+      }
+      scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      return scored;
     };
 
-    for (const entry of exerciseCatalog) {
-      const id = String(entry?.id || '').trim();
-      if (!id || usedIds.has(id)) continue;
-      if (isBandName(entry?.name)) continue;
-      const nameNorm = normalizeTextForMatch(entry?.name || '');
-      const catNorm = normalizeTextForMatch(entry?.category || '');
-      const mechNorm = normalizeTextForMatch(entry?.mechanic || '');
-      if (badName.test(nameNorm) || badCategory.test(catNorm) || badMechanic.test(mechNorm)) continue;
-      if (!movementPatternOk(entry?.name || '')) continue;
-      const eqClass = equipmentClassFromName(entry);
-      if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) continue;
-      if (!equipmentAllowed(equipmentAccess, eqClass)) continue;
-
-      const muscles = mapExerciseMuscles(entry);
-      const muscleOverlap = wantMuscles.length
-        ? wantMuscles.filter((m) => muscles.includes(m)).length / wantMuscles.length
-        : 0;
-      const nameTokens = normalizeTextForMatch(entry?.name || '').split(' ').filter(Boolean);
-      const tokenOverlap = nameTokens.filter((t) => wantTokens.includes(t)).length / Math.max(1, wantTokens.length);
-      const score = muscleOverlap * 0.6 + tokenOverlap * 0.2;
-
-      scored.push({ id, score, name: entry?.name || '' });
-    }
-
-    scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    let scored = collectScored(false);
+    if (!scored.length) scored = collectScored(true);
     return scored.slice(0, 6).map((c) => c.id);
   }
 
@@ -3022,8 +3567,24 @@ function toFreeExerciseDbRemotePath(src) {
   async function openSwapModal({ ex, dayIndex, weekIndex }) {
     await ensureExerciseCatalogLoaded();
     let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
+    const plan = state.planRow?.plan || null;
+    const weekIdx = Number(weekIndex) || 1;
+    const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
+    const meta = plan?.meta || {};
+    const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
+    const allowedClasses = Array.isArray(ex?.allowedEquipmentClass) ? new Set(ex.allowedEquipmentClass) : null;
+
+    if (candidates.length) {
+      candidates = filterSwapCandidatesByCompatibility({
+        ex,
+        candidateIds: candidates,
+        day,
+        equipmentAccess,
+        allowedClasses
+      });
+    }
+
     if (!candidates.length && exerciseCatalog.length) {
-      const plan = state.planRow?.plan || null;
       candidates = computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) || [];
     }
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
