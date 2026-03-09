@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const KLAVIYO_API_BASE = 'https://a.klaviyo.com/api';
-const KLAVIYO_API_REVISION = String(process.env.KLAVIYO_API_REVISION || '2024-06-15').trim();
+const KLAVIYO_API_REVISION = String(process.env.KLAVIYO_API_REVISION || '2025-07-15').trim();
 const KLAVIYO_TIMEOUT_MS = Math.max(3000, Number(process.env.KLAVIYO_TIMEOUT_MS || 8000));
 
 function getKlaviyoPrivateApiKey() {

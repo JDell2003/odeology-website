@@ -35,7 +35,8 @@ const TARGET_EVENTS = [
 ];
 
 const FLOW_PREFIX = process.env.KLAVIYO_FLOW_NAME_PREFIX || 'ODE -';
-const PROTOTYPE_ID = String(process.env.KLAVIYO_FLOW_PROTOTYPE_ID || '').trim();
+const TEMPLATE_NAME = String(process.env.KLAVIYO_FLOW_TEMPLATE_NAME || 'ODE - Event Email Template').trim();
+const DEFAULT_CTA_URL = String(process.env.KLAVIYO_FLOW_DEFAULT_CTA_URL || 'https://odeology.up.railway.app/').trim();
 
 function normalizeEmail(raw) {
   const email = String(raw || '').trim().toLowerCase();
@@ -73,11 +74,38 @@ function nextFromLinks(links) {
   return '';
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+}
+
+function retryDelayMsFromError(err, attempt) {
+  const raw = String(JSON.stringify(err?.details || err?.message || '') || '');
+  const match = raw.match(/available in (\d+)\s*second/i);
+  if (match) return (Number(match[1]) * 1000) + (attempt * 120);
+  return 600 + (attempt * 450);
+}
+
+async function klaviyoRequestWithRetry(path, opts = {}, maxRetries = 4) {
+  let lastErr = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      return await klaviyoRequest(path, opts);
+    } catch (err) {
+      lastErr = err;
+      const status = Number(err?.status || 0);
+      const retryable = status === 429 || status >= 500;
+      if (!retryable || attempt >= maxRetries) throw err;
+      await sleep(retryDelayMsFromError(err, attempt));
+    }
+  }
+  throw lastErr || new Error('Klaviyo request failed');
+}
+
 async function listAll(path) {
   const out = [];
   let next = path;
   while (next) {
-    const json = await klaviyoRequest(toPath(next));
+    const json = await klaviyoRequestWithRetry(toPath(next));
     const data = Array.isArray(json?.data) ? json.data : [];
     out.push(...data);
     next = nextFromLinks(json?.links);
@@ -90,10 +118,8 @@ function eventToFlowName(eventName) {
 }
 
 async function findMetricByName(metricName) {
-  const escaped = String(metricName || '').replace(/"/g, '\\"');
-  const filter = encodeURIComponent(`equals(name,"${escaped}")`);
-  const json = await klaviyoRequest(`/metrics/?filter=${filter}&page[size]=50`);
-  const rows = Array.isArray(json?.data) ? json.data : [];
+  if (!metricName) return null;
+  const rows = await listAll('/metrics/');
   return rows.find((row) => String(row?.attributes?.name || '').trim() === metricName) || null;
 }
 
@@ -111,87 +137,101 @@ async function ensureMetric(metricName, email) {
         ode_bootstrap_at: new Date().toISOString()
       }
     });
+    await sleep(650);
     metric = await findMetricByName(metricName);
   }
   return metric;
 }
 
-async function getFlow(flowId, includeDefinition = false) {
-  const fields = includeDefinition ? '?additional-fields[flow]=definition' : '';
-  const json = await klaviyoRequest(`/flows/${encodeURIComponent(flowId)}/${fields}`);
+async function getSenderDefaults() {
+  try {
+    const rows = await listAll('/accounts/');
+    const account = rows[0] || null;
+    const ci = account?.attributes?.contact_information || {};
+    const fromEmail = normalizeEmail(ci.default_sender_email || process.env.SUPPORT_EMAIL || process.env.ADMIN_EMAIL || '');
+    const fromLabel = String(ci.default_sender_name || process.env.KLAVIYO_FROM_LABEL || 'ODEOLOGY').trim().slice(0, 120) || 'ODEOLOGY';
+    if (!fromEmail) {
+      throw new Error('No default sender email found in account. Configure a sender in Klaviyo account settings.');
+    }
+    return { fromEmail, fromLabel };
+  } catch (err) {
+    const envEmail = normalizeEmail(process.env.SUPPORT_EMAIL || process.env.ADMIN_EMAIL || '');
+    if (!envEmail) throw err;
+    return {
+      fromEmail: envEmail,
+      fromLabel: String(process.env.KLAVIYO_FROM_LABEL || 'ODEOLOGY').trim().slice(0, 120) || 'ODEOLOGY'
+    };
+  }
+}
+
+async function findTemplateByName(name) {
+  if (!name) return null;
+  const rows = await listAll('/templates/');
+  return rows.find((row) => String(row?.attributes?.name || '').trim() === name) || null;
+}
+
+function buildUniversalTemplateHtml() {
+  return [
+    '<!doctype html>',
+    '<html>',
+    '<head>',
+    '  <meta charset="utf-8"/>',
+    '  <meta name="viewport" content="width=device-width,initial-scale=1"/>',
+    '  <title>ODEOLOGY Update</title>',
+    '</head>',
+    '<body style="margin:0;padding:0;background:#f5f6f8;font-family:Arial,sans-serif;color:#1f2937;">',
+    '  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f5f6f8;padding:24px 10px;">',
+    '    <tr>',
+    '      <td align="center">',
+    '        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">',
+    '          <tr><td style="padding:20px 24px;background:#111827;color:#f9fafb;font-size:22px;font-weight:700;letter-spacing:0.08em;">ODEOLOGY</td></tr>',
+    '          <tr>',
+    '            <td style="padding:24px;">',
+    '              <div style="font-size:21px;line-height:1.3;font-weight:700;margin:0 0 12px 0;">{{ event.ode_email_subject|default:"ODEOLOGY update" }}</div>',
+    '              <div style="font-size:15px;line-height:1.45;color:#4b5563;margin:0 0 18px 0;">{{ event.ode_email_preheader|default:"You have a new update in ODEOLOGY." }}</div>',
+    '              <div style="font-size:15px;line-height:1.55;white-space:pre-line;color:#111827;margin:0 0 20px 0;">{{ event.ode_email_text|default:"Open ODEOLOGY to view your latest update." }}</div>',
+    '              <table role="presentation" cellspacing="0" cellpadding="0" border="0">',
+    '                <tr>',
+    '                  <td style="background:#d38b2c;border-radius:8px;">',
+    `                    <a href="{{ event.ode_email_cta_url|default:"${DEFAULT_CTA_URL}" }}" style="display:inline-block;padding:12px 18px;color:#111827;font-size:15px;font-weight:700;text-decoration:none;">{{ event.ode_email_cta_label|default:"Open ODEOLOGY" }}</a>`,
+    '                  </td>',
+    '                </tr>',
+    '              </table>',
+    `              <div style="margin-top:18px;font-size:12px;line-height:1.45;color:#6b7280;">If the button does not work, copy this link:<br/>{{ event.ode_email_cta_url|default:"${DEFAULT_CTA_URL}" }}</div>`,
+    '            </td>',
+    '          </tr>',
+    '        </table>',
+    '      </td>',
+    '    </tr>',
+    '  </table>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+
+async function createTemplate(name, html) {
+  const payload = {
+    data: {
+      type: 'template',
+      attributes: {
+        name,
+        editor_type: 'CODE',
+        html
+      }
+    }
+  };
+  const json = await klaviyoRequestWithRetry('/templates/', {
+    method: 'POST',
+    body: payload
+  });
   return json?.data || null;
 }
 
-function hasSendEmailAction(flowData) {
-  const actions = flowData?.attributes?.definition?.actions;
-  if (!Array.isArray(actions)) return false;
-  return actions.some((action) => String(action?.type || '').toLowerCase() === 'send-email');
-}
-
-function cloneDefinitionForMetric(definition, metricId) {
-  const next = JSON.parse(JSON.stringify(definition || {}));
-  const triggers = Array.isArray(next?.triggers) ? next.triggers : [];
-  if (!triggers.length) throw new Error('Prototype flow has no trigger definition.');
-
-  const originalMetricId = String(triggers[0]?.id || '').trim();
-  triggers[0] = {
-    ...triggers[0],
-    type: 'metric',
-    id: String(metricId || '').trim(),
-    trigger_filter: null
-  };
-  next.triggers = triggers;
-
-  const idMap = new Map();
-  const actions = Array.isArray(next?.actions) ? next.actions : [];
-  actions.forEach((action, idx) => {
-    const oldId = String(action?.id || '').trim();
-    const oldTemp = String(action?.temporary_id || '').trim();
-    const temp = oldTemp || oldId || `ode_action_${idx + 1}`;
-    if (oldId) idMap.set(oldId, temp);
-    if (oldTemp) idMap.set(oldTemp, temp);
-    action.temporary_id = temp;
-    delete action.id;
-    if (action?.data && typeof action.data === 'object') {
-      if (action.type === 'send-email' || action.type === 'send-sms') {
-        action.data.status = 'live';
-      }
-      if (action.type === 'send-email' && action.data.message && typeof action.data.message === 'object') {
-        action.data.message.subject_line = '{{ event.ode_email_subject|default:"ODEOLOGY update" }}';
-        action.data.message.preview_text = '{{ event.ode_email_preheader|default:"You have a new update in ODEOLOGY." }}';
-      }
-    }
-  });
-
-  actions.forEach((action) => {
-    const links = action?.links;
-    if (!links || typeof links !== 'object') return;
-    Object.keys(links).forEach((key) => {
-      const val = String(links[key] || '').trim();
-      if (!val) return;
-      if (idMap.has(val)) links[key] = idMap.get(val);
-    });
-  });
-  next.actions = actions;
-
-  if (next.entry_action_id && idMap.has(String(next.entry_action_id))) {
-    next.entry_action_id = idMap.get(String(next.entry_action_id));
-  }
-
-  // Remove prototype-specific metric filters if any still reference the old metric.
-  if (originalMetricId) {
-    const walk = (obj) => {
-      if (!obj || typeof obj !== 'object') return;
-      Object.keys(obj).forEach((key) => {
-        const value = obj[key];
-        if (typeof value === 'string' && value === originalMetricId) obj[key] = String(metricId);
-        else if (value && typeof value === 'object') walk(value);
-      });
-    };
-    walk(next);
-  }
-
-  return next;
+async function ensureTemplate() {
+  const existing = await findTemplateByName(TEMPLATE_NAME);
+  if (existing?.id) return existing;
+  const created = await createTemplate(TEMPLATE_NAME, buildUniversalTemplateHtml());
+  return created;
 }
 
 async function createFlow(flowName, definition) {
@@ -204,7 +244,7 @@ async function createFlow(flowName, definition) {
       }
     }
   };
-  const json = await klaviyoRequest('/flows/', {
+  const json = await klaviyoRequestWithRetry('/flows/', {
     method: 'POST',
     body: payload
   });
@@ -213,7 +253,7 @@ async function createFlow(flowName, definition) {
 
 async function patchFlowStatus(flowId, status) {
   if (!flowId) return;
-  await klaviyoRequest(`/flows/${encodeURIComponent(flowId)}/`, {
+  await klaviyoRequestWithRetry(`/flows/${encodeURIComponent(flowId)}/`, {
     method: 'PATCH',
     body: {
       data: {
@@ -227,86 +267,68 @@ async function patchFlowStatus(flowId, status) {
   });
 }
 
-async function setFlowActionsLive(flowId) {
-  if (!flowId) return { ok: false, changed: 0 };
-  const json = await klaviyoRequest(`/flows/${encodeURIComponent(flowId)}/flow-actions/`);
-  const rows = Array.isArray(json?.data) ? json.data : [];
-  let changed = 0;
-  for (const row of rows) {
-    const actionId = String(row?.id || '').trim();
-    if (!actionId) continue;
-    const current = String(row?.attributes?.status || '').toLowerCase();
-    if (current === 'live') continue;
-    try {
-      await klaviyoRequest(`/flow-actions/${encodeURIComponent(actionId)}/`, {
-        method: 'PATCH',
-        body: {
-          data: {
-            type: 'flow-action',
-            id: actionId,
-            attributes: {
-              status: 'live'
-            }
-          }
-        }
-      });
-      changed += 1;
-    } catch {
-      // Continue; some action types may not support live status updates directly.
-    }
-  }
-  return { ok: true, changed };
-}
-
 async function flowIdsForMetric(metricId) {
-  const rows = await listAll(`/metrics/${encodeURIComponent(metricId)}/flow-triggers/?page[size]=50`);
+  const rows = await listAll(`/metrics/${encodeURIComponent(metricId)}/flow-triggers/`);
   return rows
     .map((row) => String(row?.id || '').trim())
     .filter(Boolean);
 }
 
-async function pickPrototypeFlow() {
-  if (PROTOTYPE_ID) {
-    const flow = await getFlow(PROTOTYPE_ID, true);
-    if (!flow) throw new Error(`Prototype flow "${PROTOTYPE_ID}" not found.`);
-    if (!hasSendEmailAction(flow)) throw new Error('Provided prototype flow does not include a send-email action.');
-    return flow;
-  }
-
-  const flows = await listAll('/flows/?page[size]=50');
-  for (const flow of flows) {
-    const flowId = String(flow?.id || '').trim();
-    if (!flowId) continue;
-    try {
-      const detailed = await getFlow(flowId, true);
-      if (hasSendEmailAction(detailed)) return detailed;
-    } catch {
-      // ignore this flow
-    }
-  }
-  return null;
+function buildFlowDefinitionForMetric({ metricId, templateId, fromEmail, fromLabel, eventName }) {
+  return {
+    triggers: [{ type: 'metric', id: String(metricId), trigger_filter: null }],
+    profile_filter: null,
+    actions: [
+      {
+        temporary_id: 'ode_send_email_1',
+        type: 'send-email',
+        links: { next: null },
+        data: {
+          message: {
+            from_email: fromEmail,
+            from_label: fromLabel,
+            reply_to_email: fromEmail,
+            cc_email: null,
+            bcc_email: null,
+            subject_line: '{{ event.ode_email_subject|default:"ODEOLOGY update" }}',
+            preview_text: '{{ event.ode_email_preheader|default:"You have a new ODEOLOGY update." }}',
+            template_id: String(templateId),
+            smart_sending_enabled: true,
+            transactional: false,
+            add_tracking_params: false,
+            custom_tracking_params: null,
+            additional_filters: null,
+            name: `${String(eventName || 'Event').slice(0, 80)} email`
+          },
+          status: 'draft'
+        }
+      }
+    ],
+    entry_action_id: 'ode_send_email_1'
+  };
 }
 
 async function ensureFlowForEvent({
   eventName,
   metricId,
-  prototypeFlow
+  templateId,
+  sender
 }) {
   const matchingFlowIds = await flowIdsForMetric(metricId);
-  const desiredName = eventToFlowName(eventName);
-
   if (matchingFlowIds.length) {
     const flowId = matchingFlowIds[0];
-    try {
-      await patchFlowStatus(flowId, 'live');
-    } catch {
-      // fallback handled below
-    }
-    await setFlowActionsLive(flowId).catch(() => ({}));
+    await patchFlowStatus(flowId, 'live').catch(() => {});
     return { eventName, flowId, mode: 'existing', status: 'live_attempted' };
   }
 
-  const definition = cloneDefinitionForMetric(prototypeFlow?.attributes?.definition, metricId);
+  const desiredName = eventToFlowName(eventName);
+  const definition = buildFlowDefinitionForMetric({
+    metricId,
+    templateId,
+    fromEmail: sender.fromEmail,
+    fromLabel: sender.fromLabel,
+    eventName
+  });
   const created = await createFlow(desiredName, definition);
   const flowId = String(created?.id || '').trim();
   if (!flowId) throw new Error(`Flow creation returned no id for event "${eventName}".`);
@@ -320,7 +342,6 @@ async function ensureFlowForEvent({
       // leave draft if both fail
     }
   }
-  await setFlowActionsLive(flowId).catch(() => ({}));
   return { eventName, flowId, mode: 'created', status: 'live_attempted' };
 }
 
@@ -335,13 +356,14 @@ async function main() {
   }
 
   console.log(`[klaviyo-flow-setup] Starting flow setup for ${TARGET_EVENTS.length} events...`);
-  const prototypeFlow = await pickPrototypeFlow();
-  if (!prototypeFlow) {
-    throw new Error('No existing send-email flow found to use as a prototype. Create one in Klaviyo first, then rerun.');
-  }
-  console.log(`[klaviyo-flow-setup] Using prototype flow ${prototypeFlow.id} (${prototypeFlow?.attributes?.name || 'Unnamed'}).`);
+  const sender = await getSenderDefaults();
+  const template = await ensureTemplate();
+  const templateId = String(template?.id || '').trim();
+  if (!templateId) throw new Error('Could not create/find template for flow emails.');
+  console.log(`[klaviyo-flow-setup] Using template ${templateId} (${template?.attributes?.name || TEMPLATE_NAME}).`);
 
   const summary = {
+    templateId,
     created: 0,
     existing: 0,
     skippedNoMetric: 0,
@@ -363,12 +385,14 @@ async function main() {
       const out = await ensureFlowForEvent({
         eventName,
         metricId,
-        prototypeFlow
+        templateId,
+        sender
       });
       if (out.mode === 'created') summary.created += 1;
       else summary.existing += 1;
       summary.results.push({ eventName, status: out.mode, flowId: out.flowId });
       console.log(`[klaviyo-flow-setup] ${out.mode === 'created' ? 'Created' : 'Updated'} flow for "${eventName}" -> ${out.flowId}`);
+      await sleep(180);
     } catch (err) {
       summary.failed += 1;
       summary.results.push({ eventName, status: 'failed', error: err?.message || String(err) });
@@ -385,4 +409,3 @@ main().catch((err) => {
   console.error('[klaviyo-flow-setup] Fatal:', err?.message || err);
   process.exit(1);
 });
-
