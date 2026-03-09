@@ -16386,19 +16386,45 @@ function setupOnboardingTour() {
         const panel = document.getElementById('control-panel');
         if (!panel) return null;
         const existing = document.getElementById('control-tour');
-        if (existing) return existing;
 
         const sections = Array.from(panel.querySelectorAll('.control-section'));
-        let preferredSection =
-            sections.find((sec) => String(sec.querySelector('.section-label')?.textContent || '').trim().toUpperCase() === 'HELP')
-            || sections.find((sec) => String(sec.querySelector('.section-label')?.textContent || '').trim().toUpperCase() === 'ACCOUNT')
-            || sections[0]
-            || null;
+        const helpSection = sections.find((sec) => {
+            if (!sec) return false;
+            if (String(sec.dataset.controlSection || '').trim().toLowerCase() === 'help_tour') return true;
+            return String(sec.querySelector('.section-label')?.textContent || '').trim().toUpperCase() === 'HELP';
+        }) || null;
+        const accountSection = sections.find((sec) =>
+            String(sec.querySelector('.section-label')?.textContent || '').trim().toUpperCase() === 'ACCOUNT'
+        ) || null;
+
+        let preferredSection = helpSection;
         if (!preferredSection) {
             preferredSection = document.createElement('div');
             preferredSection.className = 'control-section';
-            preferredSection.innerHTML = `<p class="section-label">HELP</p>`;
-            panel.appendChild(preferredSection);
+            preferredSection.dataset.controlSection = 'help_tour';
+            const label = document.createElement('p');
+            label.className = 'section-label';
+            label.textContent = 'HELP';
+            preferredSection.appendChild(label);
+            if (accountSection && accountSection.parentElement === panel) {
+                accountSection.insertAdjacentElement('afterend', preferredSection);
+            } else {
+                panel.appendChild(preferredSection);
+            }
+        } else {
+            preferredSection.dataset.controlSection = 'help_tour';
+            let label = preferredSection.querySelector('.section-label');
+            if (!label) {
+                label = document.createElement('p');
+                label.className = 'section-label';
+                preferredSection.insertBefore(label, preferredSection.firstChild || null);
+            }
+            label.textContent = 'HELP';
+        }
+
+        if (existing) {
+            if (existing.parentElement !== preferredSection) preferredSection.appendChild(existing);
+            return existing;
         }
 
         const btn = document.createElement('button');
