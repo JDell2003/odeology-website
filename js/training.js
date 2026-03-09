@@ -2011,18 +2011,14 @@
         delete node.dataset.timerLock;
       }
     });
+    // Keep + / - set controls interactive so users can adjust planned set count
+    // before or during a workout session.
     const setButtons = rootNode.querySelectorAll('.exercise-set-add, .exercise-set-remove');
     setButtons.forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
-      if (locked) {
-        if (!node.hasAttribute('disabled')) node.dataset.timerDisabled = '1';
-        node.setAttribute('disabled', 'true');
-        return;
-      }
-      if (node.dataset.timerDisabled === '1') {
-        node.removeAttribute('disabled');
-        delete node.dataset.timerDisabled;
-      }
+      node.removeAttribute('disabled');
+      if (node.dataset.timerDisabled) delete node.dataset.timerDisabled;
+      node.setAttribute('aria-disabled', 'false');
     });
   }
 
