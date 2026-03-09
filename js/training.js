@@ -3316,26 +3316,7 @@ function toFreeExerciseDbRemotePath(src) {
     const candMajor = String(candidateProfile?.major || '');
     if (!srcMajor || srcMajor === 'other') return false;
     if (!candMajor || candMajor === 'other') return false;
-    if (candMajor !== srcMajor) return false;
-
-    const srcSub = String(sourceProfile?.subgroup || '');
-    const candSub = String(candidateProfile?.subgroup || '');
-    if (!srcSub || !candSub) return true;
-    if (srcSub === candSub) return true;
-    if (sourceProfile?.subgroupSpecific) return false;
-    const closeCompat = {
-      upperback: ['middleback', 'rhomboids', 'traps'],
-      middleback: ['upperback', 'rhomboids', 'lats'],
-      lats: ['middleback', 'upperback'],
-      shoulders: ['frontdelts', 'sidedelts', 'reardelts'],
-      frontdelts: ['shoulders'],
-      sidedelts: ['shoulders'],
-      reardelts: ['shoulders'],
-      quadriceps: ['glutes'],
-      hamstrings: ['glutes'],
-      glutes: ['hamstrings', 'quadriceps']
-    };
-    return Array.isArray(closeCompat[srcSub]) ? closeCompat[srcSub].includes(candSub) : false;
+    return candMajor === srcMajor;
   }
 
   function mapExerciseMuscles(entry) {
@@ -3376,8 +3357,7 @@ function toFreeExerciseDbRemotePath(src) {
     sourceProfile,
     candidateEntry,
     allowedClasses,
-    equipmentAccess,
-    relaxMovementFamily = false
+    equipmentAccess
   }) {
     const candidateProfile = buildSwapProfile(candidateEntry);
     if (!sourceProfile || !sourceProfile.major || sourceProfile.major === 'other') return false;
@@ -3386,8 +3366,6 @@ function toFreeExerciseDbRemotePath(src) {
     if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
     if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
     if (!subgroupCompatible(sourceProfile, candidateProfile)) return false;
-    if (sourceProfile?.force && candidateProfile?.force && sourceProfile.force !== candidateProfile.force) return false;
-    if (!relaxMovementFamily && !movementFamilyCompatible(sourceProfile, candidateProfile)) return false;
     return true;
   }
 
@@ -3442,7 +3420,7 @@ function toFreeExerciseDbRemotePath(src) {
     const badCategory = /(stretch|mobility|warmup)/;
     const badMechanic = /(stretch|mobility|warmup)/;
     const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
-    const collectScored = (relaxMovementFamily = false) => {
+    const collectScored = () => {
       const scored = [];
       for (const entry of exerciseCatalog) {
         const id = String(entry?.id || '').trim();
@@ -3457,8 +3435,7 @@ function toFreeExerciseDbRemotePath(src) {
           sourceProfile,
           candidateEntry: entry,
           allowedClasses,
-          equipmentAccess,
-          relaxMovementFamily
+          equipmentAccess
         })) continue;
 
         const candidateProfile = buildSwapProfile(entry);
@@ -3479,8 +3456,7 @@ function toFreeExerciseDbRemotePath(src) {
       return scored;
     };
 
-    let scored = collectScored(false);
-    if (!scored.length) scored = collectScored(true);
+    const scored = collectScored();
     return scored.slice(0, 6).map((c) => c.id);
   }
 
