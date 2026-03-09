@@ -3391,7 +3391,7 @@ function toFreeExerciseDbRemotePath(src) {
     const blocked = new Set(['calisthenics', 'plyometrics', 'stretch']);
     const source = String(sourceCategory || '');
     const candidate = String(candidateCategory || '');
-    if (!candidate || candidate === 'unknown') return false;
+    if (!candidate || candidate === 'unknown') return true;
     if (blocked.has(candidate)) return false;
 
     if (!source || source === 'unknown' || source === 'mixed' || blocked.has(source)) {
@@ -3979,6 +3979,39 @@ function toFreeExerciseDbRemotePath(src) {
     return true;
   }
 
+  function normalizeAllowedEquipmentClassSet(rawAllowed) {
+    if (!Array.isArray(rawAllowed) || !rawAllowed.length) return null;
+    const normalized = new Set();
+    rawAllowed.forEach((raw) => {
+      const token = normalizeTextForMatch(raw);
+      if (!token) return;
+      if (token === 'any') {
+        normalized.add('any');
+        return;
+      }
+      if (token === 'free weights' || token === 'freeweights') {
+        normalized.add('barbell');
+        normalized.add('dumbbell');
+        return;
+      }
+      if (token === 'machines' || token === 'machine') {
+        normalized.add('machine');
+        normalized.add('cable');
+        return;
+      }
+      if (token === 'bodyweight' || token === 'calisthenics' || token === 'body only') {
+        normalized.add('bodyweight');
+        return;
+      }
+      if (token === 'barbell') normalized.add('barbell');
+      else if (token === 'dumbbell' || token === 'kettlebell') normalized.add('dumbbell');
+      else if (token === 'cable') normalized.add('cable');
+      else if (token === 'machine' || token === 'smith') normalized.add('machine');
+      else normalized.add(token.replace(/\s+/g, '_'));
+    });
+    return normalized.size ? normalized : null;
+  }
+
   function intentAllowedByInjuryClient(intentKey, injuryProfile) {
     const sev = injuryProfile && typeof injuryProfile === 'object' ? injuryProfile : {};
     const shoulder = Number(sev.shoulder || 0);
@@ -4024,7 +4057,14 @@ function toFreeExerciseDbRemotePath(src) {
     const sourceEntry = resolveSwapCatalogEntry(ex);
     const sourceProfile = buildSwapProfile(sourceEntry, ex);
     const sourceCategory = classifySwapCategory(sourceEntry, ex);
-    if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
+    if (!sourceProfile?.major || sourceProfile.major === 'other') {
+      return Array.from(new Set(ids.filter((rawId) => {
+        const id = String(rawId || '').trim();
+        if (!id) return false;
+        if (usedIds.has(id)) return false;
+        return true;
+      })));
+    }
     const sourceId = String(sourceEntry?.id || ex?.exerciseId || '').trim();
     const sourceName = String(ex?.displayName || ex?.name || ex?.intentKey || '');
     const wantTokens = normalizeTextForMatch(sourceName).split(' ').filter(Boolean);
@@ -4032,14 +4072,18 @@ function toFreeExerciseDbRemotePath(src) {
       ? sourceProfile.muscleKeys
       : (Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []);
     const scored = [];
+    const unresolved = [];
 
     for (const rawId of ids) {
       const id = String(rawId || '').trim();
       if (!id) continue;
       if (id === sourceId) continue;
       if (usedIds.has(id)) continue;
-      const entry = exerciseIndexById.get(id);
-      if (!entry) continue;
+      const entry = findCatalogExerciseById(id);
+      if (!entry) {
+        unresolved.push(id);
+        continue;
+      }
       if (isBandName(entry?.name)) continue;
       const nameNorm = normalizeTextForMatch(entry?.name || '');
       const catNorm = normalizeTextForMatch(entry?.category || '');
@@ -4069,14 +4113,16 @@ function toFreeExerciseDbRemotePath(src) {
       });
     }
     scored.sort(compareSwapScores);
-    return scored.map((item) => item.id);
+    if (scored.length) return scored.map((item) => item.id);
+    if (unresolved.length) return Array.from(new Set(unresolved));
+    return [];
   }
 
   function computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) {
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
     const injuryProfile = meta.injuryProfile || {};
-    const allowedClasses = Array.isArray(ex?.allowedEquipmentClass) ? new Set(ex.allowedEquipmentClass) : null;
+    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
     const weekIdx = Number(weekIndex) || 1;
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const usedIds = new Set((day?.exercises || []).map((d) => String(d?.exerciseId || '')).filter(Boolean));
@@ -4086,7 +4132,14 @@ function toFreeExerciseDbRemotePath(src) {
     const sourceEntry = resolveSwapCatalogEntry(ex);
     const sourceProfile = buildSwapProfile(sourceEntry, ex);
     const sourceCategory = classifySwapCategory(sourceEntry, ex);
-    if (!sourceProfile?.major || sourceProfile.major === 'other') return [];
+    if (!sourceProfile?.major || sourceProfile.major === 'other') {
+      const loose = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
+      return loose
+        .map((id) => String(id || '').trim())
+        .filter(Boolean)
+        .filter((id) => !usedIds.has(id))
+        .slice(0, 6);
+    }
     const wantMuscles = sourceProfile.muscleKeys.length
       ? sourceProfile.muscleKeys
       : (Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []);
@@ -4221,7 +4274,7 @@ function toFreeExerciseDbRemotePath(src) {
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
-    const allowedClasses = Array.isArray(ex?.allowedEquipmentClass) ? new Set(ex.allowedEquipmentClass) : null;
+    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
 
     if (candidates.length) {
       candidates = filterSwapCandidatesByCompatibility({
@@ -4402,7 +4455,7 @@ function toFreeExerciseDbRemotePath(src) {
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
-    const allowedClasses = Array.isArray(ex?.allowedEquipmentClass) ? new Set(ex.allowedEquipmentClass) : null;
+    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
     let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
     if (candidates.length) {
       candidates = filterSwapCandidatesByCompatibility({
@@ -4419,7 +4472,7 @@ function toFreeExerciseDbRemotePath(src) {
     if (!candidates.length) return null;
 
     const scored = candidates.map((id) => {
-      const entry = exerciseIndexById.get(String(id)) || null;
+      const entry = findCatalogExerciseById(String(id)) || null;
       if (!entry) return null;
       const profile = buildSwapProfile(entry);
       return {
