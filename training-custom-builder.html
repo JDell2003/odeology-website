@@ -416,6 +416,146 @@
       padding: 0 2px;
     }
 
+    .builder-import-guide {
+      border: 1px dashed #d7be98;
+      border-radius: 14px;
+      background: #fff7ea;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-import-guide h4 {
+      margin: 0;
+      font-size: 0.96rem;
+      color: #2e2216;
+    }
+
+    .builder-import-guide p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: #67523a;
+    }
+
+    .builder-import-flow-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .builder-import-flow-day {
+      font-size: 0.77rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: #7a5c37;
+    }
+
+    .builder-import-flow-count {
+      font-size: 0.77rem;
+      font-weight: 800;
+      color: #7b6548;
+    }
+
+    .builder-import-flow-card {
+      border: 1px solid #e0cfb6;
+      border-radius: 14px;
+      background: #fffaf2;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 170px minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .builder-import-flow-media {
+      width: 100%;
+      border: 1px solid #dcc39f;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f6ead7;
+      min-height: 130px;
+    }
+
+    .builder-import-flow-media img {
+      width: 100%;
+      height: 100%;
+      min-height: 130px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .builder-import-flow-main {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .builder-import-flow-status {
+      justify-self: start;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid #d0baa0;
+      background: #fff7ea;
+      color: #6b553a;
+      white-space: nowrap;
+    }
+
+    .builder-import-flow-status.is-ok {
+      border-color: #9ec7a3;
+      color: #1f6f3e;
+      background: #ecf8ef;
+    }
+
+    .builder-import-flow-status.is-fix {
+      border-color: #d4b082;
+      color: #8b5722;
+      background: #fff2de;
+    }
+
+    .builder-import-flow-title {
+      margin: 0;
+      font-size: 0.96rem;
+      font-weight: 850;
+      color: #2c2116;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .builder-import-flow-source {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #6a5338;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .builder-import-flow-row {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .builder-import-flow-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .builder-import-flow-nav .btn {
+      min-width: 44px;
+      min-height: 34px;
+      padding: 6px 10px;
+    }
+
     .builder-import-row {
       border: 1px solid #e0cfb6;
       border-radius: 12px;
@@ -516,6 +656,10 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
+    }
+
+    .builder-import-flow-card.is-fixing .builder-import-fix {
+      display: grid;
     }
 
     .builder-import-row.is-fixing .builder-import-fix {
@@ -1286,6 +1430,22 @@
       }
 
       .builder-import-row-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-import-flow-card {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-import-flow-media {
+        min-height: 150px;
+      }
+
+      .builder-import-flow-media img {
+        min-height: 150px;
+      }
+
+      .builder-import-flow-row {
         grid-template-columns: 1fr;
       }
 
@@ -2123,6 +2283,7 @@
       const MAX_IMPORT_IMAGES = 4;
       const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
       const IMPORT_CUSTOM_ID_PREFIX = 'custom_import_';
+      const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
 
       const state = {
         user: null,
@@ -2143,6 +2304,8 @@
         importFiles: [],
         importPreviewUrls: [],
         importReviewRows: [],
+        importReviewGuideStarted: false,
+        importReviewActiveIndex: 0,
         importBusy: false,
         importHistoryById: new Map(),
         importHistoryByName: new Map(),
@@ -2757,18 +2920,44 @@
         return '';
       }
 
-      function getImportRowGroupInfo(row) {
-        const parsed = row?.parsed && typeof row.parsed === 'object' ? row.parsed : {};
-        const weekdayNum = Number(parsed?.weekday);
-        if (Number.isInteger(weekdayNum) && weekdayNum >= 0 && weekdayNum <= 6) {
-          return { key: `weekday-${weekdayNum}`, label: weekdayLabel(weekdayNum) };
+      function getImportReviewRowsOrdered() {
+        return Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+      }
+
+      function clampImportReviewIndex(nextIndex) {
+        const rows = getImportReviewRowsOrdered();
+        if (!rows.length) return 0;
+        const n = Number(nextIndex);
+        const idx = Number.isFinite(n) ? Math.round(n) : 0;
+        return Math.max(0, Math.min(rows.length - 1, idx));
+      }
+
+      function getImportReviewCurrentRow() {
+        const rows = getImportReviewRowsOrdered();
+        if (!rows.length) return null;
+        const idx = clampImportReviewIndex(state.importReviewActiveIndex);
+        state.importReviewActiveIndex = idx;
+        return rows[idx] || null;
+      }
+
+      function getImportReviewCandidateForRow(row) {
+        const source = row && typeof row === 'object' ? row : null;
+        if (!source) return null;
+        const selected = String(source?.selectedId || '').trim().toLowerCase();
+        const list = Array.isArray(source?.candidateList) ? source.candidateList : [];
+        if (selected) {
+          const hit = list.find((entry) => String(entry?.row?.id || '').trim().toLowerCase() === selected);
+          if (hit?.row) return hit.row;
+          const dbHit = allLibraryRows().find((entry) => String(entry?.id || '').trim().toLowerCase() === selected);
+          if (dbHit) return dbHit;
         }
-        const dayOrdinal = Number(parsed?.dayOrdinal);
-        if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
-          const label = formatImportDayLabel(parsed) || `Session ${dayOrdinal}`;
-          return { key: `ordinal-${dayOrdinal}`, label };
-        }
-        return { key: 'unassigned', label: 'Unassigned' };
+        return list[0]?.row || null;
+      }
+
+      function getImportReviewCandidateImage(row) {
+        const candidate = getImportReviewCandidateForRow(row);
+        const image = candidate ? String(exerciseImageUrl(candidate) || '').trim() : '';
+        return image || IMPORT_UNKNOWN_IMAGE_DATA_URI;
       }
 
       function buildImportPasteSignature(files, text = '') {
@@ -2992,38 +3181,72 @@
 
       function renderImportReviewRows() {
         if (!importReviewBodyEl) return;
-        const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+        const rows = getImportReviewRowsOrdered();
         if (!rows.length) {
           importReviewBodyEl.innerHTML = '<div class="builder-day-empty">No imported workouts to confirm.</div>';
           return;
         }
 
-        const renderImportRowCard = (row) => {
-          const options = row.candidateList.map((entry) => {
-            const id = String(entry?.row?.id || '');
-            const name = String(entry?.row?.name || id || 'Unknown');
-            const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
-            const suffix = entry?.row?.isCustom ? ' | Create custom workout' : ` (${scorePct}%)`;
-            return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)}${escapeHtml(suffix)}</option>`;
-          }).join('');
-          const statusLabel = row.status === 'ok'
-            ? 'Confirmed'
-            : (row.status === 'fixing' ? 'Needs fix' : 'Review');
-          const statusClass = row.status === 'ok'
-            ? 'is-ok'
-            : (row.status === 'fixing' ? 'is-fix' : '');
-          const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
-          const parsedLine = formatImportParsedDetails(row?.parsed);
-          return `
-            <article class="builder-import-row${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
-              <div class="builder-import-row-head">
-                <div>
-                  <div class="builder-import-row-source">${escapeHtml(row.sourceText)}</div>
-                  ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
-                </div>
-                <span class="builder-import-row-state ${statusClass}">${escapeHtml(statusLabel)}</span>
+        if (!state.importReviewGuideStarted) {
+          importReviewBodyEl.innerHTML = `
+            <section class="builder-import-guide">
+              <h4>Quick confirm before workout build</h4>
+              <p>Step 1: Check each workout card one by one.</p>
+              <p>Step 2: Press <b>✓</b> if correct, or <b>x</b> if wrong and type a fix.</p>
+              <p>Step 3: Use arrows to move day by day. When all rows are confirmed, press <b>Apply and build workout</b>.</p>
+              <div class="builder-import-flow-nav">
+                <span class="builder-import-flow-count">${rows.length} workout${rows.length === 1 ? '' : 's'} ready to review</span>
+                <button type="button" class="btn btn-primary" data-import-guide-start>Start review</button>
               </div>
-              <div class="builder-import-row-controls">
+            </section>
+          `;
+          return;
+        }
+
+        const activeIndex = clampImportReviewIndex(state.importReviewActiveIndex);
+        state.importReviewActiveIndex = activeIndex;
+        const row = rows[activeIndex];
+        if (!row) {
+          importReviewBodyEl.innerHTML = '<div class="builder-day-empty">No imported workouts to confirm.</div>';
+          return;
+        }
+
+        const options = (Array.isArray(row.candidateList) ? row.candidateList : []).map((entry) => {
+          const id = String(entry?.row?.id || '');
+          const name = String(entry?.row?.name || id || 'Unknown');
+          const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
+          const suffix = entry?.row?.isCustom ? ' | Create custom workout' : ` (${scorePct}%)`;
+          return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)}${escapeHtml(suffix)}</option>`;
+        }).join('');
+
+        const statusLabel = row.status === 'ok'
+          ? 'Confirmed'
+          : (row.status === 'fixing' ? 'Needs fix' : 'Review');
+        const statusClass = row.status === 'ok'
+          ? 'is-ok'
+          : (row.status === 'fixing' ? 'is-fix' : '');
+        const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
+        const parsedLine = formatImportParsedDetails(row?.parsed);
+        const candidate = getImportReviewCandidateForRow(row);
+        const candidateName = String(candidate?.name || row?.parsed?.name || row?.sourceText || 'Unknown workout');
+        const candidateImageUrl = getImportReviewCandidateImage(row);
+        const dayLabel = formatImportDayLabel(row?.parsed) || 'Review day';
+
+        importReviewBodyEl.innerHTML = `
+          <section class="builder-import-flow-top">
+            <span class="builder-import-flow-day">${escapeHtml(dayLabel)}</span>
+            <span class="builder-import-flow-count">${activeIndex + 1} / ${rows.length}</span>
+          </section>
+          <article class="builder-import-flow-card${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
+            <div class="builder-import-flow-media">
+              <img src="${escapeHtml(candidateImageUrl)}" alt="${escapeHtml(candidateName)}" loading="lazy" />
+            </div>
+            <div class="builder-import-flow-main">
+              <span class="builder-import-flow-status ${statusClass}">${escapeHtml(statusLabel)}</span>
+              <h4 class="builder-import-flow-title">${escapeHtml(candidateName)}</h4>
+              <p class="builder-import-flow-source">${escapeHtml(String(row?.sourceText || ''))}</p>
+              ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
+              <div class="builder-import-flow-row">
                 <select data-import-select="${escapeHtml(row.id)}">
                   ${options || '<option value="">No matches yet</option>'}
                 </select>
@@ -3037,37 +3260,19 @@
                 <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
               </div>
               <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
-            </article>
-          `;
-        };
-
-        const grouped = [];
-        const groupedByKey = new Map();
-        rows.forEach((row) => {
-          const info = getImportRowGroupInfo(row);
-          const key = String(info?.key || 'unassigned');
-          if (!groupedByKey.has(key)) {
-            const bucket = {
-              key,
-              label: String(info?.label || 'Unassigned'),
-              rows: []
-            };
-            groupedByKey.set(key, bucket);
-            grouped.push(bucket);
-          }
-          groupedByKey.get(key).rows.push(row);
-        });
-
-        importReviewBodyEl.innerHTML = grouped.map((group) => `
-          <section class="builder-import-day-group" data-import-group="${escapeHtml(group.key)}">
-            <div class="builder-import-day-head">${escapeHtml(group.label)}</div>
-            ${group.rows.map((row) => renderImportRowCard(row)).join('')}
-          </section>
-        `).join('');
+            </div>
+          </article>
+          <div class="builder-import-flow-nav">
+            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>← Prev</button>
+            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (rows.length - 1) ? 'disabled' : ''}>Next →</button>
+          </div>
+        `;
       }
 
       function openImportReview(rows) {
         state.importReviewRows = Array.isArray(rows) ? rows : [];
+        state.importReviewGuideStarted = false;
+        state.importReviewActiveIndex = 0;
         renderImportReviewRows();
         setImportReviewStatus('');
         if (importReviewEl) {
@@ -3084,6 +3289,8 @@
         importReviewEl.setAttribute('hidden', 'hidden');
         importReviewEl.setAttribute('aria-hidden', 'true');
         importReviewEl.style.display = 'none';
+        state.importReviewGuideStarted = false;
+        state.importReviewActiveIndex = 0;
       }
 
       function resetImportOverlays() {
@@ -4948,6 +5155,28 @@
         });
 
         importReviewBodyEl?.addEventListener('click', (e) => {
+          const guideStartBtn = e.target.closest('[data-import-guide-start]');
+          if (guideStartBtn) {
+            state.importReviewGuideStarted = true;
+            state.importReviewActiveIndex = 0;
+            renderImportReviewRows();
+            return;
+          }
+
+          const prevBtn = e.target.closest('[data-import-prev]');
+          if (prevBtn) {
+            state.importReviewActiveIndex = clampImportReviewIndex(Number(state.importReviewActiveIndex || 0) - 1);
+            renderImportReviewRows();
+            return;
+          }
+
+          const nextBtn = e.target.closest('[data-import-next]');
+          if (nextBtn) {
+            state.importReviewActiveIndex = clampImportReviewIndex(Number(state.importReviewActiveIndex || 0) + 1);
+            renderImportReviewRows();
+            return;
+          }
+
           const checkBtn = e.target.closest('[data-import-check]');
           if (checkBtn) {
             const row = getImportReviewRow(checkBtn.getAttribute('data-import-check'));
@@ -4956,6 +5185,9 @@
               row.selectedId = String(row.candidateList[0].row.id);
             }
             row.status = row.selectedId ? 'ok' : 'fixing';
+            if (row.status === 'ok' && state.importReviewActiveIndex < (getImportReviewRowsOrdered().length - 1)) {
+              state.importReviewActiveIndex += 1;
+            }
             renderImportReviewRows();
             return;
           }
