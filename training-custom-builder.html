@@ -1323,6 +1323,41 @@
       <a href="training.html?from=intake#training" class="btn btn-primary" id="builder-make-workout">Make Workout</a>
     </div>
   </main>
+  <datalist id="builder-sets-options">
+    <option value="2"></option>
+    <option value="3"></option>
+    <option value="4"></option>
+    <option value="5"></option>
+    <option value="6"></option>
+    <option value="7"></option>
+    <option value="8"></option>
+  </datalist>
+  <datalist id="builder-reps-options">
+    <option value="4-6"></option>
+    <option value="5-8"></option>
+    <option value="6-8"></option>
+    <option value="6-10"></option>
+    <option value="8-10"></option>
+    <option value="8-12"></option>
+    <option value="10-12"></option>
+    <option value="10-15"></option>
+    <option value="12-15"></option>
+    <option value="12-20"></option>
+    <option value="15-20"></option>
+    <option value="AMRAP"></option>
+  </datalist>
+  <datalist id="builder-rest-options">
+    <option value="30"></option>
+    <option value="45"></option>
+    <option value="60"></option>
+    <option value="75"></option>
+    <option value="90"></option>
+    <option value="120"></option>
+    <option value="150"></option>
+    <option value="180"></option>
+    <option value="210"></option>
+    <option value="240"></option>
+  </datalist>
 
   <script src="js/main.js?v=2026-03-08-dash-live-1"></script>
   <script>
@@ -2187,15 +2222,15 @@
               <div class="builder-plan-compact-fields">
                 <label class="builder-plan-compact-field builder-plan-compact-field-sets">
                   <span>Sets</span>
-                  <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+                  <input type="text" inputmode="numeric" autocomplete="off" list="builder-sets-options" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
                 </label>
                 <label class="builder-plan-compact-field builder-plan-compact-field-reps">
                   <span>Reps</span>
-                  <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+                  <input type="text" maxlength="16" autocomplete="off" list="builder-reps-options" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
                 </label>
                 <label class="builder-plan-compact-field builder-plan-compact-field-rest">
                   <span>Rest time</span>
-                  <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+                  <input type="text" inputmode="numeric" autocomplete="off" list="builder-rest-options" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
                 </label>
                 <button
                   type="button"
@@ -2239,13 +2274,13 @@
           </div>
           <div class="builder-plan-grid">
             <label>Sets
-              <input type="number" min="1" max="8" step="1" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="text" inputmode="numeric" autocomplete="off" list="builder-sets-options" value="${Number(ex?.sets) || 3}" data-field="sets" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
             <label>Reps
-              <input type="text" maxlength="16" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="text" maxlength="16" autocomplete="off" list="builder-reps-options" value="${escapeHtml(String(ex?.reps || '8-12'))}" data-field="reps" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
             <label>Rest (sec)
-              <input type="number" min="30" max="300" step="5" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
+              <input type="text" inputmode="numeric" autocomplete="off" list="builder-rest-options" value="${Number(ex?.restSec) || 90}" data-field="restSec" data-day="${weekday}" data-idx="${exIdx}" />
             </label>
           </div>
           <div id="${detailId}" class="builder-plan-detail" aria-hidden="${ex?.expanded ? 'false' : 'true'}">
@@ -2714,8 +2749,8 @@
           queueAutoSave();
         });
 
-        dayColumnsEl?.addEventListener('input', (e) => {
-          const input = e.target.closest('input[data-field][data-day][data-idx]');
+        const handlePlanFieldEdit = (e) => {
+          const input = e.target.closest('input[data-field][data-day][data-idx], select[data-field][data-day][data-idx]');
           if (!input) return;
           const field = String(input.getAttribute('data-field') || '');
           const day = Number(input.getAttribute('data-day'));
@@ -2743,7 +2778,9 @@
             row.reps = text || '8-12';
             queueAutoSave();
           }
-        });
+        };
+        dayColumnsEl?.addEventListener('input', handlePlanFieldEdit);
+        dayColumnsEl?.addEventListener('change', handlePlanFieldEdit);
 
         dayColumnsEl?.addEventListener('error', (e) => {
           const img = e.target.closest('.builder-plan-image img');
