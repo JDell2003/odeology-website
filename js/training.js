@@ -3602,6 +3602,192 @@ function toFreeExerciseDbRemotePath(src) {
     document.body.appendChild(overlay);
   }
 
+  function normalizePainText(raw) {
+    return normalizeTextForMatch(raw || '');
+  }
+
+  function derivePainTags({ location, trigger, painType }) {
+    const text = [location, trigger, painType].map((v) => normalizePainText(v)).join(' ');
+    const tags = new Set();
+    if (!text) return tags;
+    if (/(shoulder|rotator|delt|ac joint|scap)/.test(text)) tags.add('shoulder');
+    if (/(elbow|tricep tendon|bicep tendon)/.test(text)) tags.add('elbow');
+    if (/(wrist|hand|grip|thumb|forearm)/.test(text)) tags.add('wrist');
+    if (/(neck|cervical|trap)/.test(text)) tags.add('neck');
+    if (/(back|spine|lumbar|thoracic|si joint)/.test(text)) tags.add('back');
+    if (/(hip|glute|groin)/.test(text)) tags.add('hip');
+    if (/(knee|patella|acl|mcl|meniscus)/.test(text)) tags.add('knee');
+    if (/(ankle|achilles|foot|heel|toe|calf)/.test(text)) tags.add('ankle');
+    return tags;
+  }
+
+  function buildPainContext({
+    location,
+    painType,
+    severity,
+    onset,
+    trigger,
+    romNormal,
+    pop
+  }) {
+    const sevRaw = Number(severity);
+    const sev = Number.isFinite(sevRaw) ? Math.max(1, Math.min(10, Math.round(sevRaw))) : 0;
+    const painTypeNorm = normalizePainText(painType);
+    const onsetNorm = normalizePainText(onset);
+    const tags = derivePainTags({ location, trigger, painType });
+    return {
+      severity: sev,
+      painTypeNorm,
+      onsetNorm,
+      tags,
+      romNormal: Boolean(romNormal),
+      pop: Boolean(pop),
+      redFlag: sev >= 8
+        || /numbness|tingling|electric|burning/.test(painTypeNorm)
+        || Boolean(pop)
+        || (!romNormal && sev >= 6)
+    };
+  }
+
+  function painActionFromContext(ctx) {
+    if (!ctx || !Number.isFinite(ctx.severity) || ctx.severity <= 0) return 'invalid';
+    if (ctx.redFlag) return 'stop';
+    if (ctx.severity >= 5) return 'swap';
+    return 'continue';
+  }
+
+  function painGuidanceFromContext(ctx, action) {
+    const tagText = Array.from(ctx?.tags || []).join(', ');
+    const areaText = tagText ? ` around ${tagText}` : '';
+    if (action === 'stop') {
+      return `High-risk pain signal detected${areaText}. Stop this session now and seek medical evaluation if symptoms persist or worsen.`;
+    }
+    if (action === 'swap') {
+      return `Moderate pain detected${areaText}. This exercise should be replaced with a lower-stress option now.`;
+    }
+    return `Low-severity pain detected${areaText}. Continue cautiously and stop if pain increases.`;
+  }
+
+  function painPenaltyForCandidate(candidateProfile, painContext) {
+    const profile = candidateProfile || {};
+    const ctx = painContext || {};
+    const tags = ctx.tags || new Set();
+    const major = String(profile.major || '');
+    const subgroup = String(profile.subgroup || '');
+    const family = String(profile.movementFamily || '');
+    let penalty = 0;
+
+    if (tags.has('shoulder')) {
+      if (major === 'shoulders') penalty += 34;
+      if (family === 'shoulder_press') penalty += 72;
+      if (family === 'shoulder_raise') penalty += 36;
+      if (family === 'chest_press') penalty += 42;
+      if (['frontdelts', 'sidedelts', 'reardelts', 'triceps'].includes(subgroup)) penalty += 36;
+    }
+    if (tags.has('elbow')) {
+      if (family === 'triceps_extension' || family === 'biceps_curl' || family === 'forearm_work') penalty += 56;
+      if (['triceps', 'biceps', 'forearms', 'brachialis'].includes(subgroup)) penalty += 22;
+    }
+    if (tags.has('wrist')) {
+      if (family === 'forearm_work' || family === 'biceps_curl') penalty += 82;
+      if (family === 'chest_press' || family === 'shoulder_press') penalty += 26;
+      if (['forearms', 'biceps', 'triceps'].includes(subgroup)) penalty += 28;
+    }
+    if (tags.has('back')) {
+      if (family === 'hip_hinge') penalty += 96;
+      if (family === 'row') penalty += 60;
+      if (family === 'vertical_pull') penalty += 44;
+      if (major === 'back') penalty += 26;
+    }
+    if (tags.has('hip')) {
+      if (family === 'hip_hinge' || family === 'single_leg') penalty += 92;
+      if (['glutes', 'hamstrings', 'hipflexors', 'adductors', 'abductors'].includes(subgroup)) penalty += 56;
+    }
+    if (tags.has('knee')) {
+      if (family === 'knee_dominant' || family === 'single_leg' || family === 'leg_extension') penalty += 94;
+      if (subgroup === 'quadriceps') penalty += 64;
+    }
+    if (tags.has('ankle')) {
+      if (family === 'calf_raise' || family === 'single_leg') penalty += 88;
+      if (subgroup === 'calves') penalty += 58;
+    }
+    if (tags.has('neck')) {
+      if (family === 'shoulder_press' || family === 'shoulder_raise') penalty += 88;
+      if (subgroup === 'traps' || subgroup === 'upperback') penalty += 44;
+    }
+
+    if (ctx.onsetNorm === 'during this set') penalty += 12;
+    if (!ctx.romNormal) penalty += 18;
+    if (ctx.pop) penalty += 24;
+    if (/numbness|tingling|electric|burning/.test(ctx.painTypeNorm || '')) penalty += 22;
+    return penalty;
+  }
+
+  function selectPainAwareSwapCandidate({ ex, dayIndex, weekIndex, painContext }) {
+    const plan = state.planRow?.plan || null;
+    const weekIdx = Number(weekIndex) || 1;
+    const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
+    const meta = plan?.meta || {};
+    const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
+    const allowedClasses = Array.isArray(ex?.allowedEquipmentClass) ? new Set(ex.allowedEquipmentClass) : null;
+    let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
+    if (candidates.length) {
+      candidates = filterSwapCandidatesByCompatibility({
+        ex,
+        candidateIds: candidates,
+        day,
+        equipmentAccess,
+        allowedClasses
+      });
+    }
+    if (!candidates.length && exerciseCatalog.length) {
+      candidates = computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) || [];
+    }
+    if (!candidates.length) return null;
+
+    const scored = candidates.map((id) => {
+      const entry = exerciseIndexById.get(String(id)) || null;
+      if (!entry) return null;
+      const profile = buildSwapProfile(entry);
+      return {
+        id: String(id),
+        name: getExerciseNameById(id) || String(id),
+        penalty: painPenaltyForCandidate(profile, painContext)
+      };
+    }).filter(Boolean);
+    if (!scored.length) return null;
+
+    scored.sort((a, b) => a.penalty - b.penalty || a.name.localeCompare(b.name));
+    const maxPenalty = painContext?.severity >= 7 ? 18 : painContext?.severity >= 5 ? 48 : 9999;
+    const safe = scored.find((item) => item.penalty <= maxPenalty) || null;
+    if (safe) return { ...safe, usedFallback: false };
+    if ((painContext?.severity || 0) <= 6 && scored[0] && scored[0].penalty <= 90) {
+      return { ...scored[0], usedFallback: true };
+    }
+    return null;
+  }
+
+  function openPainOutcomeModal({ title, message }) {
+    const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
+      el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close pain guidance' }),
+      el('div', { class: 'schedule-modal-card' },
+        el('div', { class: 'schedule-modal-head' },
+          el('div', { class: 'schedule-modal-title' }, title || 'Pain guidance'),
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close pain guidance' }, '×')
+        ),
+        el('div', { class: 'schedule-modal-body' },
+          el('div', { class: 'training-muted' }, String(message || 'Guidance saved.'))
+        ),
+        el('div', { class: 'schedule-modal-actions' },
+          el('button', { type: 'button', class: 'btn btn-primary', onclick: () => overlay.remove() }, 'OK')
+        )
+      )
+    );
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+  }
+
   function openPainModal({ ex, dayIndex, weekIndex }) {
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close pain report' }),
@@ -3637,6 +3823,7 @@ function toFreeExerciseDbRemotePath(src) {
             type: 'button',
             class: 'btn btn-primary',
             onclick: () => {
+              const guidanceNode = qs('#pain-guidance');
               const location = String(qs('#pain-location')?.value || '').trim();
               const painType = String(qs('#pain-type')?.value || '').trim();
               const severity = Number(qs('#pain-sev')?.value || 0);
@@ -3645,17 +3832,54 @@ function toFreeExerciseDbRemotePath(src) {
               const romNormal = Boolean(qs('#pain-rom')?.checked);
               const pop = Boolean(qs('#pain-pop')?.checked);
 
-              const redFlag = severity >= 8 || /numbness/.test(painType) || pop;
-              const action = redFlag ? 'stop' : severity >= 5 ? 'swap' : 'continue';
-              const guidance = redFlag
-                ? 'Stop now and end the session. If symptoms worsen or include sharp pain + loss of movement, consider medical evaluation.'
-                : severity >= 5
-                  ? 'Stop this exercise and swap to a joint-friendly option or reduce load.'
-                  : 'You can continue cautiously; stop if it returns.';
+              if (!Number.isFinite(severity) || severity < 1 || severity > 10) {
+                if (guidanceNode) guidanceNode.textContent = 'Please enter pain severity from 1 to 10.';
+                return;
+              }
+
+              const painContext = buildPainContext({
+                location,
+                painType,
+                severity,
+                onset,
+                trigger,
+                romNormal,
+                pop
+              });
+              const action = painActionFromContext(painContext);
+              const guidance = painGuidanceFromContext(painContext, action);
 
               const painReportId = (window.crypto && typeof window.crypto.randomUUID === 'function')
                 ? window.crypto.randomUUID()
                 : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+              let selectedSwapId = null;
+              let selectedSwapName = '';
+              let guidanceOut = guidance;
+              if (action === 'swap') {
+                const pick = selectPainAwareSwapCandidate({
+                  ex,
+                  dayIndex,
+                  weekIndex,
+                  painContext
+                });
+                if (pick?.id) {
+                  selectedSwapId = pick.id;
+                  selectedSwapName = pick.name || getExerciseNameById(pick.id) || pick.id;
+                  applySwapSelection({
+                    ex,
+                    dayIndex,
+                    weekIndex,
+                    newExerciseId: pick.id,
+                    scope: 'single'
+                  });
+                  guidanceOut = pick.usedFallback
+                    ? `${guidance} Replaced with: ${selectedSwapName}. This is the lowest-stress available match; reduce load and range immediately.`
+                    : `${guidance} Replaced with: ${selectedSwapName}.`;
+                } else {
+                  guidanceOut = `${guidance} No safer same-muscle swap was found. Reduce load/range or stop this exercise.`;
+                }
+              }
 
               if (action === 'stop' || severity >= 5) {
                 try {
@@ -3682,11 +3906,17 @@ function toFreeExerciseDbRemotePath(src) {
                 romNormal,
                 pop,
                 actionTaken: action,
-                guidance,
+                guidance: guidanceOut,
+                suggestedSwapId: selectedSwapId,
+                suggestedSwapName: selectedSwapName,
                 followUpAt: toISODateLocal(new Date(Date.now() + 24 * 60 * 60 * 1000))
               });
               overlay.remove();
               render();
+              openPainOutcomeModal({
+                title: action === 'stop' ? 'Stop session now' : action === 'swap' ? 'Exercise swapped' : 'Continue with caution',
+                message: guidanceOut
+              });
             }
           }, 'Submit')
         )
