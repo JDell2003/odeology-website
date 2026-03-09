@@ -11071,7 +11071,8 @@ body.friends-page main.friends-main {
     .control-panel .control-section.control-tour-host-hidden {
         display: none;
     }
-    .control-panel-header #control-tour.control-link.control-tour-pill {
+    .control-panel-header #control-tour.control-link.control-tour-pill,
+    .control-panel-header > #control-tour.control-link {
         order: 0;
         align-self: center;
         margin-right: 0;
@@ -11093,15 +11094,18 @@ body.friends-page main.friends-main {
         justify-content: center;
         gap: 0;
     }
-    .control-panel-header #control-tour.control-link.control-tour-pill .icon {
+    .control-panel-header #control-tour.control-link.control-tour-pill .icon,
+    .control-panel-header > #control-tour.control-link .icon {
         display: none;
     }
-    .control-panel-header #control-tour.control-link.control-tour-pill .text {
+    .control-panel-header #control-tour.control-link.control-tour-pill .text,
+    .control-panel-header > #control-tour.control-link .text {
         white-space: nowrap;
         font-weight: 800;
         line-height: 1;
     }
-    .control-panel-header #control-tour.control-link.control-tour-pill .control-link-close {
+    .control-panel-header #control-tour.control-link.control-tour-pill .control-link-close,
+    .control-panel-header > #control-tour.control-link .control-link-close {
         display: none !important;
     }
     .control-panel-header #control-close {

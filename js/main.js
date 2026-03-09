@@ -16398,6 +16398,9 @@ function setupOnboardingTour() {
         const panel = document.getElementById('control-panel');
         if (!panel) return null;
         const existing = document.getElementById('control-tour');
+        const isMobileControl = (() => {
+            try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
+        })();
 
         const sections = Array.from(panel.querySelectorAll('.control-section'));
         const helpSection = sections.find((sec) => {
@@ -16435,7 +16438,9 @@ function setupOnboardingTour() {
         }
 
         if (existing) {
-            if (existing.parentElement !== preferredSection) preferredSection.appendChild(existing);
+            // Mobile placement is handled by setupControlPanel() in the header as a pill.
+            // Don't move it back into normal sections here.
+            if (!isMobileControl && existing.parentElement !== preferredSection) preferredSection.appendChild(existing);
             return existing;
         }
 
