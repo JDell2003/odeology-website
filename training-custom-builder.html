@@ -734,13 +734,33 @@
       }
 
       .builder-head-actions .builder-save-cta-label {
-        width: auto;
+        width: 100%;
+        display: inline-flex;
+        justify-content: center;
       }
 
       .builder-panel {
         padding: 10px;
         border-radius: 14px;
         box-shadow: 0 6px 14px rgba(60, 40, 18, 0.08);
+      }
+
+      .builder-wrap {
+        padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .builder-save-cta {
+        width: 100%;
+      }
+
+      #builder-save-btn {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        z-index: 60;
+        box-shadow: 0 10px 22px rgba(104, 61, 14, 0.24);
       }
 
       .builder-weekdays {
@@ -906,7 +926,7 @@
         </div>
       </div>
       <div class="builder-head-actions">
-        <a href="training.html" class="btn btn-ghost">Back to Training</a>
+        <a href="index.html" class="btn btn-ghost">Back to Home</a>
         <div class="builder-save-cta">
           <span class="btn btn-ghost builder-save-cta-label" aria-hidden="true">Generate my workout for me</span>
           <button type="button" class="btn btn-primary" id="builder-save-btn">Save to My Workout</button>
@@ -985,6 +1005,7 @@
       ];
       const MAX_FILTERED_RESULTS = 220;
       const MOBILE_BREAKPOINT_QUERY = '(max-width: 700px)';
+      const MOBILE_WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
       const AUTO_SAVE_DEBOUNCE_MS = 850;
       const EXERCISE_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
       const SECTION_ORDER = ['calisthenics', 'free_weights', 'plyometrics', 'stretching'];
@@ -1501,7 +1522,7 @@
         weekdaysEl.innerHTML = '';
         const mobile = isMobileLayout();
         const chipDays = mobile
-          ? state.selectedWeekdays
+          ? MOBILE_WEEKDAY_ORDER
             .map((idx) => WEEKDAYS.find((d) => d.i === idx))
             .filter(Boolean)
           : WEEKDAYS;
@@ -2220,10 +2241,15 @@
           return;
         }
 
-        const days = serializePlanDays({ filledOnly: false });
+        const mobile = isMobileLayout();
+        const days = serializePlanDays({ filledOnly: mobile });
 
-        if (days.some((d) => !d.exercises.length)) {
+        if (!mobile && days.some((d) => !d.exercises.length)) {
           setStatus('Each selected day needs at least one exercise.', 'error');
+          return;
+        }
+        if (!days.length) {
+          setStatus('Add at least one workout before saving.', 'error');
           return;
         }
 
@@ -2261,6 +2287,10 @@
         setCustomFormOpen(false);
         if (customSectionEl) customSectionEl.value = 'free_weights';
 
+        if (lastMobileLayout) {
+          syncSelectedDays(MOBILE_WEEKDAY_ORDER);
+          state.mobileActiveWeekday = 1;
+        }
         syncSelectedDays(state.selectedWeekdays);
         renderWeekdayChips();
         renderDayColumns();
@@ -2328,6 +2358,12 @@
           const mobileNow = isMobileLayout();
           if (mobileNow === lastMobileLayout) return;
           lastMobileLayout = mobileNow;
+          if (mobileNow) {
+            syncSelectedDays(MOBILE_WEEKDAY_ORDER);
+            if (!Number.isInteger(state.mobileActiveWeekday) || !state.selectedWeekdays.includes(state.mobileActiveWeekday)) {
+              state.mobileActiveWeekday = 1;
+            }
+          }
           renderWeekdayChips();
           renderDayColumns();
           renderDatabaseList();
