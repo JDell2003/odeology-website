@@ -2299,6 +2299,9 @@
         const merged = { ...cur };
         if (!merged.sourceText && next.sourceText) merged.sourceText = String(next.sourceText);
         if (!merged.name && next.name) merged.name = String(next.name);
+        if (!Number.isInteger(merged.weekday) && Number.isInteger(next.weekday)) {
+          merged.weekday = Number(next.weekday);
+        }
         if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) {
           merged.sets = next.sets;
         }
@@ -2444,18 +2447,58 @@
         return true;
       }
 
+      function weekdayFromImportToken(raw) {
+        const token = normalizeImportToken(raw).replace(/\s+/g, '');
+        if (!token) return null;
+        if (token === 'monday' || token === 'mon') return 1;
+        if (token === 'tuesday' || token === 'tues' || token === 'tue') return 2;
+        if (token === 'wednesday' || token === 'wed') return 3;
+        if (token === 'thursday' || token === 'thurs' || token === 'thur' || token === 'thu') return 4;
+        if (token === 'friday' || token === 'fri') return 5;
+        if (token === 'saturday' || token === 'sat') return 6;
+        if (token === 'sunday' || token === 'sun') return 0;
+        return null;
+      }
+
+      function inferWeekdayFromImportHeader(rawLine) {
+        const line = normalizeOcrLineText(rawLine);
+        if (!line) return null;
+        const lower = line.toLowerCase();
+        // Don't treat normal exercise lines as headers.
+        if (/\b\d+\s*(?:sets?|x)\b/i.test(lower)) return null;
+        if (/\bset\s*x\s*\d+\b/i.test(lower)) return null;
+        const m = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
+        if (!m) return null;
+        const weekday = weekdayFromImportToken(m[1]);
+        if (!Number.isInteger(weekday)) return null;
+        return weekday;
+      }
+
       function parseImportedEntries(raw) {
         const source = normalizeOcrDocumentText(raw).trim();
         if (!source) return [];
-        const chunks = source
-          .split(/[\n,;]+/g)
-          .map((line) => parseImportedLineDetail(line))
-          .filter(Boolean)
-          .filter((entry) => isLikelyExerciseName(entry.name));
+        const lines = source
+          .split(/\n+/g)
+          .map((line) => String(line || '').trim())
+          .filter(Boolean);
+        const chunks = [];
+        let currentWeekday = null;
+        lines.forEach((line) => {
+          const headerWeekday = inferWeekdayFromImportHeader(line);
+          if (Number.isInteger(headerWeekday)) {
+            currentWeekday = headerWeekday;
+            return;
+          }
+          const parsed = parseImportedLineDetail(line);
+          if (!parsed || !isLikelyExerciseName(parsed.name)) return;
+          if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
+          chunks.push(parsed);
+        });
         const unique = [];
         const seen = new Map();
         chunks.forEach((entry) => {
-          const key = normalizeImportToken(entry.name);
+          const dayKey = Number.isInteger(entry?.weekday) ? String(entry.weekday) : 'x';
+          const key = `${dayKey}:${normalizeImportToken(entry.name)}`;
           if (!key) return;
           if (seen.has(key)) {
             const idx = seen.get(key);
@@ -2965,27 +3008,28 @@
         }
         if (!validRows.length) return false;
 
-        const selectedWeekdays = Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
-          ? state.selectedWeekdays.slice()
-          : [1, 2, 3, 4, 5];
+        const explicitDays = Array.from(new Set(
+          validRows
+            .map((entry) => Number(entry?.parsed?.weekday))
+            .filter((weekday) => Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)
+        )).sort((a, b) => a - b);
+        const selectedWeekdays = explicitDays.length
+          ? explicitDays
+          : (Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
+            ? state.selectedWeekdays.slice()
+            : [1, 2, 3, 4, 5]);
         syncSelectedDays(selectedWeekdays);
 
         const nextPlan = new Map();
         selectedWeekdays.forEach((weekday) => nextPlan.set(weekday, []));
 
-        if (validRows.length < selectedWeekdays.length) {
-          selectedWeekdays.forEach((weekday, idx) => {
-            const src = validRows[idx % validRows.length];
-            const projected = resolveHistoryProjectedForRow(src?.row, src?.parsed);
-            nextPlan.get(weekday).push(toDbExerciseState(src?.row, {
-              parsed: src?.parsed,
-              projected
-            }));
-          });
-        }
-
+        let fallbackIdx = 0;
         validRows.forEach((src, idx) => {
-          const weekday = selectedWeekdays[idx % selectedWeekdays.length];
+          const parsedWeekday = Number(src?.parsed?.weekday);
+          const hasParsedWeekday = Number.isInteger(parsedWeekday) && selectedWeekdays.includes(parsedWeekday);
+          const weekday = hasParsedWeekday
+            ? parsedWeekday
+            : selectedWeekdays[fallbackIdx++ % selectedWeekdays.length];
           const projected = resolveHistoryProjectedForRow(src?.row, src?.parsed);
           nextPlan.get(weekday).push(toDbExerciseState(src?.row, {
             parsed: src?.parsed,
