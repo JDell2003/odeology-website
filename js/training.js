@@ -1228,6 +1228,28 @@
     return true;
   }
 
+  async function refreshShareAuthSnapshot() {
+    const me = await api('/api/auth/me', { method: 'GET', timeoutMs: 7000 });
+    const meUser = me.ok ? (me.json?.user || null) : null;
+    if (meUser) {
+      state.auth.user = meUser;
+      return { ok: true, status: 200, user: meUser };
+    }
+    if (me.status === 401) {
+      state.auth.user = null;
+      shareEventsInFlight = false;
+    }
+    return { ok: false, status: Number(me.status) || 0, user: null };
+  }
+
+  async function ensureShareAuth({ promptOnFail = false } = {}) {
+    if (state.auth.user) return true;
+    const refreshed = await refreshShareAuthSnapshot();
+    if (refreshed.ok) return true;
+    if (promptOnFail) openAuthModal('login');
+    return false;
+  }
+
   function showShareRequestSentToast(sentCount = 1) {
     const existing = document.getElementById('workout-share-request-toast');
     if (existing) existing.remove();
@@ -4459,15 +4481,31 @@ function toFreeExerciseDbRemotePath(src) {
 
   async function loadShareAccounts(query = '') {
     if (shareUi.loading) return;
+    const canProceed = await ensureShareAuth({ promptOnFail: false });
+    if (!canProceed) {
+      shareUi.accounts = [];
+      shareUi.accountIndex.clear();
+      shareUi.status = 'Sign in to view friends.';
+      shareUi.loading = false;
+      render();
+      return;
+    }
     shareUi.loading = true;
     shareUi.status = 'Loading friends...';
     render();
 
     try {
-      const [resp, outgoingResp] = await Promise.all([
+      const fetchShareData = () => Promise.all([
         api('/api/friends/list', { method: 'GET' }),
         api('/api/training/share/outgoing', { method: 'GET' })
       ]);
+      let [resp, outgoingResp] = await fetchShareData();
+      if (resp.status === 401 || outgoingResp.status === 401) {
+        const refreshed = await refreshShareAuthSnapshot();
+        if (refreshed.ok) {
+          [resp, outgoingResp] = await fetchShareData();
+        }
+      }
       if (resp.status === 401 || outgoingResp.status === 401) {
         shareUi.accounts = [];
         shareUi.accountIndex.clear();
@@ -4539,6 +4577,7 @@ function toFreeExerciseDbRemotePath(src) {
     const key = String(account?.id || '').trim();
     if (!key) return;
     if (shareUi.requesting.has(key) || shareUi.requested.has(key)) return;
+    if (!(await ensureShareAuth({ promptOnFail: true }))) return;
     const displayName = String(account?.displayName || account?.username || 'friend').trim();
     const traceId = `share-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
@@ -4554,10 +4593,19 @@ function toFreeExerciseDbRemotePath(src) {
     }
     render();
 
-    const resp = await api('/api/training/share', {
+    let resp = await api('/api/training/share', {
       method: 'POST',
       body: JSON.stringify({ targetUserIds: [key], targetUserId: key })
     });
+    if (resp.status === 401) {
+      const refreshed = await refreshShareAuthSnapshot();
+      if (refreshed.ok) {
+        resp = await api('/api/training/share', {
+          method: 'POST',
+          body: JSON.stringify({ targetUserIds: [key], targetUserId: key })
+        });
+      }
+    }
     try {
       shareDebugLog(`[${traceId}] POST /api/training/share`, {
         ok: resp?.ok,
@@ -4570,7 +4618,12 @@ function toFreeExerciseDbRemotePath(src) {
 
     if (!resp.ok || !resp.json?.ok) {
       shareUi.requesting.delete(key);
-      shareUi.status = resp.json?.error || 'Could not send workout request.';
+      if (resp.status === 401) {
+        shareUi.status = 'Session expired. Sign in to continue.';
+        openAuthModal('login');
+      } else {
+        shareUi.status = resp.json?.error || 'Could not send workout request.';
+      }
       render();
       return;
     }
@@ -5031,6 +5084,7 @@ function toggleSharePopover(force) {
     try {
       me = await api('/api/auth/me', { method: 'GET', timeoutMs: 7000 });
     } catch {
+      if (silent && state.auth.user) return;
       state.auth.user = null;
       shareEventsInFlight = false;
       state.profile = null;
@@ -5056,6 +5110,7 @@ function toggleSharePopover(force) {
 
     const meUser = me.ok ? (me.json?.user || null) : null;
     if (!me.ok || !meUser) {
+      if (silent && state.auth.user && me.status !== 401) return;
       state.auth.user = null;
       shareEventsInFlight = false;
       state.profile = null;
@@ -8213,11 +8268,16 @@ function toggleSharePopover(force) {
           class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
           dataset: { shareWorkout: '1' },
           'aria-disabled': canShare ? 'false' : 'true',
-          onclick: (e) => {
+          onclick: async (e) => {
             e.preventDefault();
             e.stopPropagation();
             if (!canShare) {
-              openAuthModal('login');
+              const authed = await ensureShareAuth({ promptOnFail: false });
+              if (!authed) {
+                openAuthModal('login');
+                return;
+              }
+              toggleSharePopover(true);
               return;
             }
             toggleSharePopover();
