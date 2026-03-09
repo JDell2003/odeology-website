@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -2239,12 +2239,13 @@
 
       function cleanImportedEntry(raw) {
         let value = String(raw || '')
-          .replace(/[•|]+/g, ' ')
+          .replace(/[\u2022|]+/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
         if (!value) return '';
         value = value
           .replace(/\b\d+\s*(x|sets?|reps?|sec|secs|seconds?|mins?|minutes?)\b/gi, ' ')
+          .replace(/\bx\b/gi, ' ')
           .replace(/\b(rir|rpe|tempo|rest)\b[^,;]*/gi, ' ')
           .replace(/\(\s*\d+[^)]*\)/g, ' ')
           .replace(/\s+/g, ' ')
@@ -2252,6 +2253,25 @@
         if (!value) return '';
         value = value.replace(/^[^a-zA-Z]+|[^a-zA-Z0-9]+$/g, '').trim();
         return value;
+      }
+
+      function normalizeOcrLineText(raw) {
+        let text = String(raw || '');
+        if (!text) return '';
+        return text
+          .replace(/[\u2013\u2014\u2212]/g, '-')
+          .replace(/[\u00D7\u2715\u2716]/g, 'x')
+          .replace(/[\u2022\u25CF\u00B7]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function normalizeOcrDocumentText(raw) {
+        return String(raw || '')
+          .replace(/\r\n?/g, '\n')
+          .split('\n')
+          .map((line) => normalizeOcrLineText(line))
+          .join('\n');
       }
 
       function normalizeImportWeightToLb(value, unitHint = 'lb') {
@@ -2301,7 +2321,7 @@
       }
 
       function parseImportedLineDetail(rawLine) {
-        const sourceText = String(rawLine || '').trim();
+        const sourceText = normalizeOcrLineText(rawLine);
         if (!sourceText) return null;
 
         let working = sourceText;
@@ -2310,13 +2330,13 @@
         let restSec = null;
         let projectedLb = null;
 
-        const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes|s|m)\b/ig;
+        const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
         let restMatch = null;
         while (true) {
           const m = restPattern.exec(working);
           if (!m) break;
           const chunk = String(m[0] || '');
-          if (!/rest|sec|min|second|minute|\bs\b|\bm\b/i.test(chunk)) continue;
+          if (!/rest|sec|min|second|minute/i.test(chunk)) continue;
           restMatch = m;
         }
         if (restMatch) {
@@ -2332,7 +2352,7 @@
           working = working.replace(setMatch[0], ' ');
         }
 
-        const repRangeMatch = working.match(/\b(\d{1,2})\s*[-â€“]\s*(\d{1,2})\s*reps?\b/i);
+        const repRangeMatch = working.match(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\s*reps?\b/i);
         if (repRangeMatch) {
           reps = `${repRangeMatch[1]}-${repRangeMatch[2]}`;
           working = working.replace(repRangeMatch[0], ' ');
@@ -2344,7 +2364,7 @@
           }
         }
 
-        const sxrMatch = working.match(/\b(\d{1,4}(?:\.\d+)?)\s*[xX]\s*(\d{1,2}(?:\s*[-â€“]\s*\d{1,2})?)\b/);
+        const sxrMatch = working.match(/\b(\d{1,4}(?:\.\d+)?)\s*[xX]\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/);
         if (sxrMatch) {
           const left = Number(sxrMatch[1]);
           const rightRaw = String(sxrMatch[2] || '').replace(/\s+/g, '');
@@ -2356,6 +2376,20 @@
             projectedLb = normalizeImportWeightToLb(left, unitHintMatch?.[1] || 'lb');
           }
           working = working.replace(sxrMatch[0], ' ');
+        }
+
+        if (!reps) {
+          const xRangeMatch = working.match(/\b[xX]\s*(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/);
+          if (xRangeMatch) {
+            reps = `${xRangeMatch[1]}-${xRangeMatch[2]}`;
+            working = working.replace(xRangeMatch[0], ' ');
+          } else {
+            const xSingleMatch = working.match(/\b[xX]\s*(\d{1,2})\b/);
+            if (xSingleMatch) {
+              reps = String(xSingleMatch[1]);
+              working = working.replace(xSingleMatch[0], ' ');
+            }
+          }
         }
 
         const weightMatches = Array.from(working.matchAll(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/ig));
@@ -2373,7 +2407,7 @@
           working
             .replace(/\b\d{1,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/gi, ' ')
             .replace(/@\s*\d{1,4}(?:\.\d+)?/g, ' ')
-            .replace(/\b(\d{1,2})\s*[-â€“]\s*(\d{1,2})\b/g, ' ')
+            .replace(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/g, ' ')
         );
         if (!isLikelyExerciseName(name)) {
           name = cleanImportedEntry(sourceText);
@@ -2398,6 +2432,11 @@
         if (!text) return false;
         if (text.length < 3 || text.length > 80) return false;
         if (!/[a-zA-Z]/.test(text)) return false;
+        const lowerText = text.toLowerCase();
+        const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|crunch|fly|lunge|extension|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge)/.test(lowerText);
+        if (!hasExerciseKeyword && /\b(goal|time|rule|rest|workout|equipment)\b/.test(lowerText)) return false;
+        if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
+        if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation)\b/.test(lowerText)) return false;
         const normalized = normalizeImportToken(text);
         if (!normalized) return false;
         if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?)$/.test(normalized)) return false;
@@ -2406,7 +2445,7 @@
       }
 
       function parseImportedEntries(raw) {
-        const source = String(raw || '').trim();
+        const source = normalizeOcrDocumentText(raw).trim();
         if (!source) return [];
         const chunks = source
           .split(/[\n,;]+/g)
@@ -2622,21 +2661,130 @@
         return tesseractLoadPromise;
       }
 
+      async function loadImageElementFromFile(file) {
+        return await new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            try { URL.revokeObjectURL(url); } catch {}
+            resolve(img);
+          };
+          img.onerror = () => {
+            try { URL.revokeObjectURL(url); } catch {}
+            reject(new Error('Could not decode image.'));
+          };
+          img.src = url;
+        });
+      }
+
+      async function buildOcrCanvasVariant(file, options = {}) {
+        const img = await loadImageElementFromFile(file);
+        const baseW = Number(img.naturalWidth || img.width || 0);
+        const baseH = Number(img.naturalHeight || img.height || 0);
+        if (!baseW || !baseH) throw new Error('Invalid image dimensions.');
+
+        const targetMinWidth = Number(options?.targetMinWidth || 1800);
+        const scale = Math.max(1, targetMinWidth / Math.max(1, baseW));
+        const outW = Math.max(1, Math.round(baseW * scale));
+        const outH = Math.max(1, Math.round(baseH * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) throw new Error('Canvas context unavailable.');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, outW, outH);
+
+        const { mode = 'enhanced' } = options;
+        if (mode === 'enhanced' || mode === 'threshold') {
+          const imageData = ctx.getImageData(0, 0, outW, outH);
+          const px = imageData.data;
+          for (let i = 0; i < px.length; i += 4) {
+            const r = px[i];
+            const g = px[i + 1];
+            const b = px[i + 2];
+            const lum = (0.299 * r) + (0.587 * g) + (0.114 * b);
+            let v = lum;
+            if (mode === 'enhanced') {
+              // Contrast stretch around mid-gray for sharper OCR text edges.
+              v = Math.max(0, Math.min(255, ((lum - 127.5) * 1.55) + 127.5));
+            } else {
+              v = lum >= 168 ? 255 : 0;
+            }
+            px[i] = v;
+            px[i + 1] = v;
+            px[i + 2] = v;
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+        return canvas;
+      }
+
+      function scoreOcrTextCandidate(rawText) {
+        const text = normalizeOcrDocumentText(rawText);
+        const parsed = parseImportedEntries(text);
+        if (!parsed.length) return { score: 0, parsedCount: 0 };
+        let confidenceSum = 0;
+        parsed.forEach((entry) => {
+          const q = String(entry?.name || '').trim();
+          const top = buildImportCandidateList(q, 1)[0];
+          confidenceSum += Number(top?.score || 0);
+        });
+        const avgConfidence = confidenceSum / Math.max(1, parsed.length);
+        const score = (parsed.length * 10) + (avgConfidence * 20);
+        return { score, parsedCount: parsed.length };
+      }
+
       async function extractTextFromImage(file, fileIndex, totalFiles) {
         const tesseract = await ensureTesseractLoaded();
         const label = `Scanning image ${fileIndex + 1} of ${totalFiles}...`;
-        setImportLoadingVisible(true, label, Math.max(6, Math.round((fileIndex / Math.max(1, totalFiles)) * 100)));
-        const result = await tesseract.recognize(file, 'eng', {
-          logger: (progress) => {
-            const value = Number(progress?.progress || 0);
-            const base = (fileIndex / Math.max(1, totalFiles)) * 100;
-            const span = 100 / Math.max(1, totalFiles);
-            const pct = Math.max(0, Math.min(99, base + (value * span)));
-            const statusText = progress?.status ? `${label} ${String(progress.status)}` : label;
-            setImportLoadingVisible(true, statusText, pct);
+        const basePct = (fileIndex / Math.max(1, totalFiles)) * 100;
+        const stepPct = 100 / Math.max(1, totalFiles);
+        const runPass = async (source, passLabel, startRatio, spanRatio) => {
+          const result = await tesseract.recognize(source, 'eng', {
+            logger: (progress) => {
+              const value = Number(progress?.progress || 0);
+              const pct = basePct + (stepPct * (startRatio + (Math.max(0, Math.min(1, value)) * spanRatio)));
+              const statusText = progress?.status ? `${label} ${passLabel} ${String(progress.status)}` : `${label} ${passLabel}`;
+              setImportLoadingVisible(true, statusText, Math.max(0, Math.min(99, pct)));
+            }
+          });
+          return String(result?.data?.text || '');
+        };
+
+        setImportLoadingVisible(true, `${label} Pass 1/3`, Math.max(6, Math.round(basePct)));
+        const pass1 = await runPass(file, 'pass 1/3', 0.0, 0.34);
+        const pass1Score = scoreOcrTextCandidate(pass1);
+
+        let bestText = pass1;
+        let bestScore = pass1Score.score;
+
+        try {
+          const enhanced = await buildOcrCanvasVariant(file, { mode: 'enhanced', targetMinWidth: 1800 });
+          const pass2 = await runPass(enhanced, 'pass 2/3', 0.34, 0.33);
+          const pass2Score = scoreOcrTextCandidate(pass2);
+          if (pass2Score.score > bestScore) {
+            bestText = pass2;
+            bestScore = pass2Score.score;
           }
-        });
-        return String(result?.data?.text || '');
+
+          if (Math.max(pass1Score.parsedCount, pass2Score.parsedCount) < 4) {
+            const threshold = await buildOcrCanvasVariant(file, { mode: 'threshold', targetMinWidth: 2000 });
+            const pass3 = await runPass(threshold, 'pass 3/3', 0.67, 0.33);
+            const pass3Score = scoreOcrTextCandidate(pass3);
+            if (pass3Score.score > bestScore) {
+              bestText = pass3;
+              bestScore = pass3Score.score;
+            }
+          }
+        } catch {
+          // Fallback to first pass only if enhancement fails.
+        }
+
+        setImportLoadingVisible(true, `${label} complete`, Math.max(0, Math.min(100, basePct + stepPct)));
+        return normalizeOcrDocumentText(bestText);
       }
 
       function buildImportReviewRows(entries) {
@@ -4848,4 +4996,5 @@
   </script>
 </body>
 </html>
+
 
