@@ -3206,6 +3206,23 @@ function parseRepsTargetFromText(raw) {
   return single || null;
 }
 
+function normalizeProjectedFromInput(rawProjected, fallbackValue = null, fallbackUnit = 'lb') {
+  const source = rawProjected && typeof rawProjected === 'object'
+    ? rawProjected
+    : { value: fallbackValue, unit: fallbackUnit };
+  const unitRaw = String(source?.unit || fallbackUnit || 'lb').trim().toLowerCase();
+  if (unitRaw === 'bw' || unitRaw === 'bodyweight') {
+    return { value: null, unit: 'bw' };
+  }
+  const raw = Number(source?.value ?? source?.weight ?? fallbackValue);
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  const pounds = unitRaw.startsWith('kg') ? (raw * 2.2046226218) : raw;
+  const rounded = Math.round(pounds * 2) / 2;
+  const safe = clampNumber(rounded, 5, 2000, null);
+  if (!Number.isFinite(safe) || safe <= 0) return null;
+  return { value: safe, unit: 'lb' };
+}
+
 function normalizeCustomPlanDays(rawDays, dbRowsById) {
   const out = [];
   const seenWeekdays = new Set();
@@ -3226,12 +3243,18 @@ function normalizeCustomPlanDays(rawDays, dbRowsById) {
       const sets = clampInt(exRaw?.sets, 1, 8, 3) || 3;
       const reps = safeText(exRaw?.reps, 24) || '8-12';
       const restSec = clampInt(exRaw?.restSec, 30, 300, 90) || 90;
+      const projected = normalizeProjectedFromInput(
+        exRaw?.projected,
+        exRaw?.projectedWeight ?? exRaw?.weight ?? null,
+        exRaw?.projectedUnit ?? exRaw?.weightUnit ?? 'lb'
+      );
       exercises.push({
         exerciseId,
         name,
         sets,
         reps,
-        restSec
+        restSec,
+        ...(projected ? { projected } : {})
       });
       if (exercises.length >= 40) break;
     }
@@ -3413,6 +3436,7 @@ function buildCustomWorkoutPlan({ discipline, experience, templateDays, preferre
     exercises: (Array.isArray(day?.exercises) ? day.exercises : []).map((ex, exIdx) => {
       const reps = String(ex?.reps || '8-12');
       const repsTarget = parseRepsTargetFromText(reps);
+      const projected = normalizeProjectedFromInput(ex?.projected);
       const baseId = String(ex?.exerciseId || `exercise_${dayIdx + 1}_${exIdx + 1}`);
       const exerciseId = `${baseId}__d${dayIdx + 1}__e${exIdx + 1}`;
       return {
@@ -3425,7 +3449,8 @@ function buildCustomWorkoutPlan({ discipline, experience, templateDays, preferre
         restSec: clampInt(ex?.restSec, 30, 300, 90) || 90,
         rest: clampInt(ex?.restSec, 30, 300, 90) || 90,
         substitutions: [],
-        progression: repsTarget ? { repsTarget } : {}
+        progression: repsTarget ? { repsTarget } : {},
+        ...(projected ? { projected } : {})
       };
     })
   }));

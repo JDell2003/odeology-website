@@ -2076,6 +2076,7 @@
       const TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX = 'ode_training_custom_plan_first_saved_v1';
       const MAX_IMPORT_IMAGES = 4;
       const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      const IMPORT_CUSTOM_ID_PREFIX = 'custom_import_';
 
       const state = {
         user: null,
@@ -2096,7 +2097,9 @@
         importFiles: [],
         importPreviewUrls: [],
         importReviewRows: [],
-        importBusy: false
+        importBusy: false,
+        importHistoryById: new Map(),
+        importHistoryByName: new Map()
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
@@ -2224,6 +2227,145 @@
         return value;
       }
 
+      function normalizeImportWeightToLb(value, unitHint = 'lb') {
+        const raw = Number(value);
+        if (!Number.isFinite(raw) || raw <= 0) return null;
+        const unit = String(unitHint || '').trim().toLowerCase();
+        const lb = unit.startsWith('kg') ? (raw * 2.2046226218) : raw;
+        const rounded = Math.round(lb * 2) / 2;
+        if (!Number.isFinite(rounded) || rounded <= 0) return null;
+        return Math.max(5, Math.min(2000, rounded));
+      }
+
+      function parseRestSecondsFromMatch(numberRaw, unitRaw) {
+        const n = Number(numberRaw);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        const unit = String(unitRaw || '').toLowerCase();
+        const sec = unit.startsWith('m') ? (n * 60) : n;
+        if (!Number.isFinite(sec) || sec <= 0) return null;
+        return Math.max(30, Math.min(300, Math.round(sec)));
+      }
+
+      function mergeImportedEntryDetails(base, incoming) {
+        const cur = base && typeof base === 'object' ? base : {};
+        const next = incoming && typeof incoming === 'object' ? incoming : {};
+        const merged = { ...cur };
+        if (!merged.sourceText && next.sourceText) merged.sourceText = String(next.sourceText);
+        if (!merged.name && next.name) merged.name = String(next.name);
+        if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) {
+          merged.sets = next.sets;
+        }
+        if (!String(merged.reps || '').trim() && String(next.reps || '').trim()) {
+          merged.reps = String(next.reps).trim();
+        }
+        if (!(Number.isFinite(merged.restSec) && merged.restSec > 0) && Number.isFinite(next.restSec) && next.restSec > 0) {
+          merged.restSec = next.restSec;
+        }
+        const curProjected = merged?.projected && Number.isFinite(Number(merged.projected.value))
+          ? Number(merged.projected.value)
+          : null;
+        const nextProjected = next?.projected && Number.isFinite(Number(next.projected.value))
+          ? Number(next.projected.value)
+          : null;
+        if (nextProjected != null && (curProjected == null || nextProjected > curProjected)) {
+          merged.projected = { value: nextProjected, unit: 'lb' };
+        }
+        return merged;
+      }
+
+      function parseImportedLineDetail(rawLine) {
+        const sourceText = String(rawLine || '').trim();
+        if (!sourceText) return null;
+
+        let working = sourceText;
+        let sets = null;
+        let reps = '';
+        let restSec = null;
+        let projectedLb = null;
+
+        const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes|s|m)\b/ig;
+        let restMatch = null;
+        while (true) {
+          const m = restPattern.exec(working);
+          if (!m) break;
+          const chunk = String(m[0] || '');
+          if (!/rest|sec|min|second|minute|\bs\b|\bm\b/i.test(chunk)) continue;
+          restMatch = m;
+        }
+        if (restMatch) {
+          const sec = parseRestSecondsFromMatch(restMatch[1], restMatch[2]);
+          if (Number.isFinite(sec)) restSec = sec;
+          working = working.replace(restMatch[0], ' ');
+        }
+
+        const setMatch = working.match(/\b([1-8])\s*sets?\b/i);
+        if (setMatch) {
+          const n = Number(setMatch[1]);
+          if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+          working = working.replace(setMatch[0], ' ');
+        }
+
+        const repRangeMatch = working.match(/\b(\d{1,2})\s*[-â€“]\s*(\d{1,2})\s*reps?\b/i);
+        if (repRangeMatch) {
+          reps = `${repRangeMatch[1]}-${repRangeMatch[2]}`;
+          working = working.replace(repRangeMatch[0], ' ');
+        } else {
+          const repSingleMatch = working.match(/\b(\d{1,2})\s*reps?\b/i);
+          if (repSingleMatch) {
+            reps = String(repSingleMatch[1]);
+            working = working.replace(repSingleMatch[0], ' ');
+          }
+        }
+
+        const sxrMatch = working.match(/\b(\d{1,4}(?:\.\d+)?)\s*[xX]\s*(\d{1,2}(?:\s*[-â€“]\s*\d{1,2})?)\b/);
+        if (sxrMatch) {
+          const left = Number(sxrMatch[1]);
+          const rightRaw = String(sxrMatch[2] || '').replace(/\s+/g, '');
+          if (!reps && rightRaw) reps = rightRaw;
+          if (Number.isFinite(left) && left >= 1 && left <= 8 && !sets) {
+            sets = Math.round(left);
+          } else if (Number.isFinite(left) && left >= 20 && !projectedLb) {
+            const unitHintMatch = sourceText.match(new RegExp(`${String(sxrMatch[1]).replace('.', '\\.')}\\s*(kg|kgs|kilograms?|lb|lbs|pounds?)`, 'i'));
+            projectedLb = normalizeImportWeightToLb(left, unitHintMatch?.[1] || 'lb');
+          }
+          working = working.replace(sxrMatch[0], ' ');
+        }
+
+        const weightMatches = Array.from(working.matchAll(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/ig));
+        if (weightMatches.length && !projectedLb) {
+          const hit = weightMatches[weightMatches.length - 1];
+          projectedLb = normalizeImportWeightToLb(hit?.[1], hit?.[2] || 'lb');
+        }
+
+        if (!projectedLb) {
+          const atWeight = working.match(/@\s*(\d{2,4}(?:\.\d+)?)/);
+          if (atWeight) projectedLb = normalizeImportWeightToLb(atWeight[1], 'lb');
+        }
+
+        let name = cleanImportedEntry(
+          working
+            .replace(/\b\d{1,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/gi, ' ')
+            .replace(/@\s*\d{1,4}(?:\.\d+)?/g, ' ')
+            .replace(/\b(\d{1,2})\s*[-â€“]\s*(\d{1,2})\b/g, ' ')
+        );
+        if (!isLikelyExerciseName(name)) {
+          name = cleanImportedEntry(sourceText);
+        }
+        if (!isLikelyExerciseName(name)) return null;
+
+        const normalizedSets = Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null;
+        const normalizedReps = String(reps || '').trim().slice(0, 16);
+        const normalizedRest = Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null;
+        return {
+          sourceText,
+          name,
+          sets: normalizedSets,
+          reps: normalizedReps || '',
+          restSec: normalizedRest,
+          projected: Number.isFinite(projectedLb) ? { value: projectedLb, unit: 'lb' } : null
+        };
+      }
+
       function isLikelyExerciseName(raw) {
         const text = String(raw || '').trim();
         if (!text) return false;
@@ -2241,16 +2383,21 @@
         if (!source) return [];
         const chunks = source
           .split(/[\n,;]+/g)
-          .map((line) => cleanImportedEntry(line))
+          .map((line) => parseImportedLineDetail(line))
           .filter(Boolean)
-          .filter((line) => isLikelyExerciseName(line));
+          .filter((entry) => isLikelyExerciseName(entry.name));
         const unique = [];
-        const seen = new Set();
-        chunks.forEach((line) => {
-          const key = normalizeImportToken(line);
-          if (!key || seen.has(key)) return;
-          seen.add(key);
-          unique.push(line);
+        const seen = new Map();
+        chunks.forEach((entry) => {
+          const key = normalizeImportToken(entry.name);
+          if (!key) return;
+          if (seen.has(key)) {
+            const idx = seen.get(key);
+            unique[idx] = mergeImportedEntryDetails(unique[idx], entry);
+            return;
+          }
+          seen.set(key, unique.length);
+          unique.push(entry);
         });
         return unique;
       }
@@ -2306,6 +2453,72 @@
 
         scored.sort((a, b) => b.score - a.score);
         return scored.slice(0, Math.max(1, Number(maxResults) || 6));
+      }
+
+      function inferPrimaryMusclesFromName(rawName) {
+        const text = String(rawName || '').trim();
+        if (!text) return ['general'];
+        const group = majorGroupFromToken(text);
+        if (group === 'chest') return ['chest'];
+        if (group === 'back') return ['back'];
+        if (group === 'shoulders') return ['shoulders'];
+        if (group === 'arms') return ['biceps'];
+        if (group === 'legs') return ['quadriceps'];
+        if (group === 'core') return ['abdominals'];
+        if (group === 'neck') return ['neck'];
+        if (group === 'full_body') return ['full body'];
+        return ['general'];
+      }
+
+      function buildImportCustomCandidate(rawName) {
+        const safeName = toTitleCase(String(rawName || '').trim()) || 'Custom Exercise';
+        const slug = normalizeImportToken(safeName).replace(/\s+/g, '_').slice(0, 70) || String(Date.now());
+        return {
+          id: `${IMPORT_CUSTOM_ID_PREFIX}${slug}`,
+          name: safeName,
+          category: 'free_weights',
+          equipment: '',
+          level: 'beginner',
+          primaryMuscles: inferPrimaryMusclesFromName(safeName),
+          secondaryMuscles: [],
+          instructions: [],
+          imageUrl: '',
+          images: [],
+          isCustom: true,
+          importCustom: true
+        };
+      }
+
+      function buildImportCandidateList(rawQuery, maxResults = 7) {
+        const queryText = String(rawQuery || '').trim();
+        const matches = matchExerciseCandidates(queryText, maxResults)
+          .map((entry) => ({
+            row: entry.row,
+            score: Number(entry.score) || 0
+          }));
+        const customFallback = buildImportCustomCandidate(queryText);
+        matches.push({
+          row: customFallback,
+          score: 0.14
+        });
+        return matches.slice(0, Math.max(1, Number(maxResults) || 7));
+      }
+
+      function formatImportParsedDetails(parsed) {
+        const meta = parsed && typeof parsed === 'object' ? parsed : {};
+        const parts = [];
+        if (Number.isFinite(meta?.sets) && Number(meta.sets) > 0) {
+          parts.push(`${Math.round(Number(meta.sets))} set${Number(meta.sets) === 1 ? '' : 's'}`);
+        }
+        const repsText = String(meta?.reps || '').trim();
+        if (repsText) parts.push(`${repsText} reps`);
+        if (Number.isFinite(meta?.restSec) && Number(meta.restSec) > 0) {
+          parts.push(`${Math.round(Number(meta.restSec))}s rest`);
+        }
+        if (meta?.projected && Number.isFinite(Number(meta.projected.value))) {
+          parts.push(`~${Number(meta.projected.value)} lb`);
+        }
+        return parts.length ? parts.join(' | ') : '';
       }
 
       function ensureImportFiles(files, options = {}) {
@@ -2378,14 +2591,17 @@
 
       function buildImportReviewRows(entries) {
         return entries.map((entry, idx) => {
-          const candidates = matchExerciseCandidates(entry, 7);
+          const parsed = entry && typeof entry === 'object' ? entry : { sourceText: String(entry || ''), name: String(entry || '') };
+          const queryText = String(parsed?.name || parsed?.sourceText || '').trim();
+          const candidates = buildImportCandidateList(queryText, 7);
           const top = candidates[0] || null;
           return {
             id: `import-row-${idx + 1}-${Date.now()}`,
-            sourceText: String(entry || '').trim(),
+            sourceText: String(parsed?.sourceText || queryText).trim(),
+            parsed,
             candidateList: candidates,
             selectedId: top?.row?.id ? String(top.row.id) : '',
-            status: top ? (top.score >= 0.66 ? 'ok' : 'pending') : 'fixing',
+            status: top ? ((top.score >= 0.66 && !top?.row?.isCustom) ? 'ok' : 'pending') : 'fixing',
             fixText: '',
             confidence: top ? Number(top.score) : 0
           };
@@ -2405,7 +2621,8 @@
             const id = String(entry?.row?.id || '');
             const name = String(entry?.row?.name || id || 'Unknown');
             const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
-            return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)} (${scorePct}%)</option>`;
+            const suffix = entry?.row?.isCustom ? ' | Create custom workout' : ` (${scorePct}%)`;
+            return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)}${escapeHtml(suffix)}</option>`;
           }).join('');
           const statusLabel = row.status === 'ok'
             ? 'Confirmed'
@@ -2414,10 +2631,14 @@
             ? 'is-ok'
             : (row.status === 'fixing' ? 'is-fix' : '');
           const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
+          const parsedLine = formatImportParsedDetails(row?.parsed);
           return `
             <article class="builder-import-row${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
               <div class="builder-import-row-head">
-                <div class="builder-import-row-source">${escapeHtml(row.sourceText)}</div>
+                <div>
+                  <div class="builder-import-row-source">${escapeHtml(row.sourceText)}</div>
+                  ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
+                </div>
                 <span class="builder-import-row-state ${statusClass}">${escapeHtml(statusLabel)}</span>
               </div>
               <div class="builder-import-row-controls">
@@ -2471,22 +2692,79 @@
 
       function resolveReviewRowMatch(row, queryText) {
         if (!row) return;
-        const candidates = matchExerciseCandidates(queryText, 7);
+        const candidates = buildImportCandidateList(queryText, 7);
         row.candidateList = candidates;
         row.selectedId = candidates[0]?.row?.id ? String(candidates[0].row.id) : '';
         row.confidence = Number(candidates[0]?.score || 0);
         row.status = candidates.length ? 'pending' : 'fixing';
       }
 
-      function applyImportedRowsToPlan(rows) {
-        const validRows = (Array.isArray(rows) ? rows : [])
-          .map((row) => {
-            const selected = String(row?.selectedId || '').trim();
-            if (!selected) return null;
-            const matched = allLibraryRows().find((entry) => String(entry?.id || '').toLowerCase() === selected.toLowerCase());
-            return matched || null;
-          })
-          .filter(Boolean);
+      function resolveHistoryProjectedForRow(row, parsedMeta) {
+        const parsedProjected = parsedMeta?.projected && Number.isFinite(Number(parsedMeta.projected.value))
+          ? Number(parsedMeta.projected.value)
+          : null;
+        if (parsedProjected != null) return { value: parsedProjected, unit: 'lb' };
+
+        const idKey = String(row?.id || row?.exerciseId || '').trim().toLowerCase();
+        const byId = idKey ? Number(state.importHistoryById.get(idKey)) : NaN;
+        if (Number.isFinite(byId) && byId > 0) return { value: byId, unit: 'lb' };
+
+        const nameKey = normalizeImportToken(String(row?.name || ''));
+        const byName = nameKey ? Number(state.importHistoryByName.get(nameKey)) : NaN;
+        if (Number.isFinite(byName) && byName > 0) return { value: byName, unit: 'lb' };
+        return null;
+      }
+
+      async function createImportedCustomWorkout(candidateRow, reviewRow) {
+        const row = candidateRow && typeof candidateRow === 'object' ? candidateRow : null;
+        if (!row) return null;
+        if (!state.user?.id) return row;
+        try {
+          const payload = {
+            name: String(row.name || reviewRow?.sourceText || 'Custom Exercise').trim().slice(0, 160),
+            primaryMuscle: String((Array.isArray(row.primaryMuscles) && row.primaryMuscles[0]) || 'general'),
+            category: String(row.category || 'free_weights'),
+            equipment: String(row.equipment || '').slice(0, 80),
+            level: String(row.level || 'beginner'),
+            notes: String(reviewRow?.sourceText || '').slice(0, 220),
+            instructions: []
+          };
+          const resp = await fetch('/api/training/custom-workouts', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok || !json?.ok || !json?.item) return row;
+          return json.item;
+        } catch {
+          return row;
+        }
+      }
+
+      async function applyImportedRowsToPlan(rows) {
+        const sourceRows = Array.isArray(rows) ? rows : [];
+        const validRows = [];
+        for (const row of sourceRows) {
+          const selected = String(row?.selectedId || '').trim();
+          if (!selected) continue;
+          const candidate = (Array.isArray(row?.candidateList) ? row.candidateList : [])
+            .find((entry) => String(entry?.row?.id || '').trim().toLowerCase() === selected.toLowerCase());
+          let matched = candidate?.row || null;
+          if (!matched) {
+            matched = allLibraryRows().find((entry) => String(entry?.id || '').toLowerCase() === selected.toLowerCase()) || null;
+          }
+          if (!matched) continue;
+          if (matched?.isCustom && String(matched?.id || '').startsWith(IMPORT_CUSTOM_ID_PREFIX)) {
+            matched = await createImportedCustomWorkout(matched, row);
+          }
+          if (!matched) continue;
+          validRows.push({
+            row: matched,
+            parsed: row?.parsed || null
+          });
+        }
         if (!validRows.length) return false;
 
         const selectedWeekdays = Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length
@@ -2499,14 +2777,22 @@
 
         if (validRows.length < selectedWeekdays.length) {
           selectedWeekdays.forEach((weekday, idx) => {
-            const row = validRows[idx % validRows.length];
-            nextPlan.get(weekday).push(toDbExerciseState(row));
+            const src = validRows[idx % validRows.length];
+            const projected = resolveHistoryProjectedForRow(src?.row, src?.parsed);
+            nextPlan.get(weekday).push(toDbExerciseState(src?.row, {
+              parsed: src?.parsed,
+              projected
+            }));
           });
         }
 
-        validRows.forEach((row, idx) => {
+        validRows.forEach((src, idx) => {
           const weekday = selectedWeekdays[idx % selectedWeekdays.length];
-          nextPlan.get(weekday).push(toDbExerciseState(row));
+          const projected = resolveHistoryProjectedForRow(src?.row, src?.parsed);
+          nextPlan.get(weekday).push(toDbExerciseState(src?.row, {
+            parsed: src?.parsed,
+            projected
+          }));
         });
 
         state.planByWeekday = nextPlan;
@@ -2588,13 +2874,21 @@
           }
 
           const clean = [];
-          const seen = new Set();
+          const seen = new Map();
           imported.forEach((entry) => {
-            const value = cleanImportedEntry(entry);
-            const key = normalizeImportToken(value);
-            if (!key || seen.has(key)) return;
-            seen.add(key);
-            clean.push(value);
+            const parsed = entry && typeof entry === 'object'
+              ? entry
+              : parseImportedLineDetail(entry);
+            if (!parsed || !isLikelyExerciseName(parsed.name)) return;
+            const key = normalizeImportToken(parsed.name);
+            if (!key) return;
+            if (seen.has(key)) {
+              const idx = seen.get(key);
+              clean[idx] = mergeImportedEntryDetails(clean[idx], parsed);
+              return;
+            }
+            seen.set(key, clean.length);
+            clean.push(parsed);
           });
 
           if (!clean.length) {
@@ -2820,13 +3114,21 @@
         return fallbackCandidates[0] || '';
       }
 
-      function toDbExerciseState(row) {
+      function toDbExerciseState(row, options = {}) {
+        const parsed = options?.parsed && typeof options.parsed === 'object' ? options.parsed : {};
+        const projectedSeed = options?.projected && typeof options.projected === 'object' ? options.projected : null;
+        const parsedSets = Number(parsed?.sets);
+        const parsedRest = Number(parsed?.restSec);
+        const parsedReps = String(parsed?.reps || '').trim().slice(0, 16);
+        const projected = projectedSeed && Number.isFinite(Number(projectedSeed.value))
+          ? { value: Number(projectedSeed.value), unit: String(projectedSeed.unit || 'lb') }
+          : null;
         return {
           exerciseId: String(row?.id || ''),
           name: String(row?.name || row?.id || 'Exercise'),
-          sets: 3,
-          reps: '8-12',
-          restSec: 90,
+          sets: Number.isFinite(parsedSets) ? Math.max(1, Math.min(8, Math.round(parsedSets))) : 3,
+          reps: parsedReps || '8-12',
+          restSec: Number.isFinite(parsedRest) ? Math.max(30, Math.min(300, Math.round(parsedRest))) : 90,
           category: String(row?.category || ''),
           equipment: String(row?.equipment || ''),
           level: String(row?.level || ''),
@@ -2834,6 +3136,7 @@
           secondaryMuscles: Array.isArray(row?.secondaryMuscles) ? row.secondaryMuscles.slice(0, 8) : [],
           instructions: Array.isArray(row?.instructions) ? row.instructions.slice(0, 8) : [],
           imageUrl: exerciseImageUrl(row),
+          ...(projected ? { projected } : {}),
           expanded: false
         };
       }
@@ -2860,6 +3163,18 @@
         base.sets = Math.max(1, Math.min(8, Number(payload?.sets) || Number(base.sets) || 3));
         base.reps = String(payload?.reps || base.reps || '8-12').trim().slice(0, 16) || '8-12';
         base.restSec = Math.max(30, Math.min(300, Number(payload?.restSec) || Number(base.restSec) || 90));
+        if (payload?.projected && typeof payload.projected === 'object') {
+          const value = Number(payload?.projected?.value);
+          const unit = String(payload?.projected?.unit || 'lb').toLowerCase();
+          if (unit === 'bw') {
+            base.projected = { value: null, unit: 'bw' };
+          } else if (Number.isFinite(value) && value > 0) {
+            base.projected = { value: Math.max(5, Math.min(2000, Math.round(value * 2) / 2)), unit: 'lb' };
+          }
+        } else if (Number.isFinite(Number(payload?.projectedWeight)) && Number(payload.projectedWeight) > 0) {
+          const value = Number(payload.projectedWeight);
+          base.projected = { value: Math.max(5, Math.min(2000, Math.round(value * 2) / 2)), unit: 'lb' };
+        }
         base.expanded = Boolean(payload?.expanded);
         return base;
       }
@@ -3205,6 +3520,64 @@
         }
       }
 
+      async function loadImportHistoryWeights() {
+        state.importHistoryById = new Map();
+        state.importHistoryByName = new Map();
+        if (!state.user?.id) return;
+        try {
+          const meResp = await fetch('/api/training/me', { credentials: 'include', cache: 'no-store' });
+          const meJson = await meResp.json().catch(() => ({}));
+          if (!meResp.ok || !meJson?.plan?.id) return;
+          const planRow = meJson.plan;
+          const planObj = planRow?.plan && typeof planRow.plan === 'object' ? planRow.plan : null;
+          const nameByBaseId = new Map();
+          const weeks = Array.isArray(planObj?.weeks) ? planObj.weeks : [];
+          weeks.forEach((week) => {
+            (Array.isArray(week?.days) ? week.days : []).forEach((day) => {
+              (Array.isArray(day?.exercises) ? day.exercises : []).forEach((ex) => {
+                const baseId = String(ex?.baseId || '').trim().toLowerCase();
+                const name = String(ex?.displayName || ex?.name || '').trim();
+                if (baseId && name && !nameByBaseId.has(baseId)) nameByBaseId.set(baseId, name);
+              });
+            });
+          });
+
+          const logsResp = await fetch(`/api/training/logs?planId=${encodeURIComponent(String(planRow.id))}`, {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store'
+          });
+          const logsJson = await logsResp.json().catch(() => ({}));
+          const logs = Array.isArray(logsJson?.logs) ? logsJson.logs : [];
+
+          const byId = new Map();
+          const byName = new Map();
+          logs.forEach((log) => {
+            const entries = Array.isArray(log?.entries) ? log.entries : [];
+            entries.forEach((entry) => {
+              const rawWeight = Number(entry?.actual?.weight);
+              if (!Number.isFinite(rawWeight) || rawWeight <= 0) return;
+              const rounded = Math.max(5, Math.min(2000, Math.round(rawWeight * 2) / 2));
+              const baseId = String(entry?.baseId || '').trim().toLowerCase()
+                || String(entry?.exerciseId || '').split('__d')[0].trim().toLowerCase();
+              if (baseId) {
+                byId.set(baseId, rounded);
+                const knownName = String(nameByBaseId.get(baseId) || '').trim();
+                if (knownName) {
+                  const key = normalizeImportToken(knownName);
+                  if (key) byName.set(key, rounded);
+                }
+              }
+            });
+          });
+          state.importHistoryById = byId;
+          state.importHistoryByName = byName;
+        } catch {
+          state.importHistoryById = new Map();
+          state.importHistoryByName = new Map();
+        }
+      }
+
       function syncSelectedDays(next) {
         const normalized = Array.from(new Set((Array.isArray(next) ? next : []).map((v) => Number(v))))
           .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6)
@@ -3236,7 +3609,10 @@
               name: String(ex.name || ''),
               sets: Number(ex.sets) || 3,
               reps: String(ex.reps || '8-12'),
-              restSec: Number(ex.restSec) || 90
+              restSec: Number(ex.restSec) || 90,
+              ...(ex?.projected && Number.isFinite(Number(ex.projected.value))
+                ? { projected: { value: Number(ex.projected.value), unit: String(ex.projected.unit || 'lb') } }
+                : (ex?.projected?.unit === 'bw' ? { projected: { value: null, unit: 'bw' } } : {}))
             }))
           }))
           .filter((day) => !filledOnly || day.exercises.length > 0);
@@ -4168,6 +4544,7 @@
               return;
             }
             row.fixText = nextText;
+            row.parsed = mergeImportedEntryDetails(row.parsed, { name: nextText, sourceText: row.sourceText });
             resolveReviewRowMatch(row, nextText);
             setImportReviewStatus(row.candidateList.length ? '' : 'No close database match found for one or more rows.', row.candidateList.length ? '' : 'error');
             renderImportReviewRows();
@@ -4205,7 +4582,7 @@
             return;
           }
 
-          const applied = applyImportedRowsToPlan(rows);
+          const applied = await applyImportedRowsToPlan(rows);
           if (!applied) {
             setImportReviewStatus('Could not apply imported matches to your plan.', 'error');
             return;
@@ -4290,6 +4667,7 @@
         resetImportOverlays();
         state.user = await fetchAuthUser();
         setAuthGate(!state.user);
+        await loadImportHistoryWeights();
         setCustomFormOpen(false);
         if (customSectionEl) customSectionEl.value = 'free_weights';
 
@@ -4382,6 +4760,7 @@
         window.addEventListener('odeauth', async (e) => {
           state.user = e?.detail?.user || await fetchAuthUser();
           setAuthGate(!state.user);
+          await loadImportHistoryWeights();
           if (state.user) {
             setStatus('Signed in. You can save your workout now.', 'ok');
           } else {
