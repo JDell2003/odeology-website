@@ -1289,6 +1289,33 @@
       line-height: 1;
     }
 
+    .builder-plan-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .builder-plan-remove-icon {
+      width: 13px;
+      height: 13px;
+      display: block;
+      fill: currentColor;
+      pointer-events: none;
+    }
+
+    .builder-visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .builder-plan-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5019,7 +5046,13 @@
           wrapper.innerHTML = `
             <div class="builder-plan-compact-head">
               <div class="builder-plan-compact-title" title="${escapeHtml(ex?.name || 'Exercise')}">${escapeHtml(ex?.name || 'Exercise')}</div>
-              <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+              <button type="button" class="builder-plan-remove builder-plan-remove-compact" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Delete exercise" title="Delete exercise">
+                <span class="builder-visually-hidden">Delete</span>
+                <svg class="builder-plan-remove-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z"></path>
+                  <path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7z"></path>
+                </svg>
+              </button>
             </div>
             <div class="builder-plan-compact-main">
               <div class="builder-plan-compact-thumb${imageUrl ? '' : ' is-empty'}">
@@ -5077,7 +5110,13 @@
                 aria-expanded="${ex?.expanded ? 'true' : 'false'}"
                 aria-controls="${detailId}"
               >${ex?.expanded ? 'Hide' : 'Details'}</button>
-              <button type="button" class="builder-plan-remove" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Remove exercise">x</button>
+              <button type="button" class="builder-plan-remove" data-remove-day="${weekday}" data-remove-idx="${exIdx}" aria-label="Delete exercise" title="Delete exercise">
+                <span class="builder-visually-hidden">Delete</span>
+                <svg class="builder-plan-remove-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z"></path>
+                  <path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7z"></path>
+                </svg>
+              </button>
             </div>
           </div>
           <div class="builder-plan-grid">
@@ -5551,6 +5590,12 @@
           const day = Number(removeBtn.getAttribute('data-remove-day'));
           const idx = Number(removeBtn.getAttribute('data-remove-idx'));
           const cur = state.planByWeekday.get(day) || [];
+          const row = cur[idx];
+          if (!row) return;
+          const dayName = weekdayLabel(day);
+          const exerciseName = String(row?.name || 'this exercise').trim() || 'this exercise';
+          const shouldDelete = window.confirm(`Are you sure you want to delete "${exerciseName}" from ${dayName}?`);
+          if (!shouldDelete) return;
           cur.splice(idx, 1);
           state.planByWeekday.set(day, cur);
           renderDayColumns();
