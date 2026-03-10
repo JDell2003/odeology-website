@@ -4574,7 +4574,43 @@ Last week: 80 lb</pre>
         return groups;
       }
 
+      function importReviewRowDuplicateKey(row) {
+        const info = getImportRowGroupInfo(row);
+        const parsed = row?.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+        const selectedId = String(row?.selectedId || '').trim().toLowerCase();
+        const sourceName = String(parsed?.name || row?.sourceText || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const sets = Number(parsed?.sets);
+        const reps = String(parsed?.reps || '').trim().toLowerCase();
+        const restSec = Number(parsed?.restSec);
+        const lastWeight = Number(parsed?.lastWeightLb);
+        return [
+          String(info?.key || 'unassigned'),
+          selectedId || sourceName,
+          Number.isFinite(sets) ? `s${sets}` : '',
+          reps ? `r${reps}` : '',
+          Number.isFinite(restSec) ? `t${restSec}` : '',
+          Number.isFinite(lastWeight) ? `w${lastWeight}` : ''
+        ].filter(Boolean).join('|');
+      }
+
+      function removeAdjacentDuplicateImportReviewRows() {
+        const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+        if (rows.length < 2) return false;
+        const filtered = [];
+        let prevKey = '';
+        rows.forEach((row) => {
+          const nextKey = importReviewRowDuplicateKey(row);
+          if (filtered.length && nextKey && nextKey === prevKey) return;
+          filtered.push(row);
+          prevKey = nextKey;
+        });
+        if (filtered.length === rows.length) return false;
+        state.importReviewRows = filtered;
+        return true;
+      }
+
       function normalizeImportReviewRowOrder() {
+        removeAdjacentDuplicateImportReviewRows();
         const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
         rows.forEach((row, idx) => {
           row.sourceOrder = idx;
@@ -5445,6 +5481,7 @@ Last week: 80 lb</pre>
         state.importReviewRows = Array.isArray(rows) ? rows : [];
         state.importReviewGuideStarted = false;
         state.importReviewActiveIndex = 0;
+        normalizeImportReviewRowOrder();
         renderImportReviewRows();
         setImportReviewStatus('');
         if (importReviewEl) {
@@ -5551,6 +5588,7 @@ Last week: 80 lb</pre>
       }
 
       async function applyImportedRowsToPlan(rows) {
+        normalizeImportReviewRowOrder();
         const sourceRows = Array.isArray(rows) ? rows : [];
         const validRows = [];
         const seenImportApplyKeys = new Set();
@@ -8021,6 +8059,7 @@ Last week: 80 lb</pre>
         state.importReviewRows = Array.isArray(rows) ? rows : [];
         state.importReviewGuideStarted = false;
         state.importReviewActiveIndex = 0;
+        normalizeImportReviewRowOrder();
         if (importReviewEl) {
           importReviewEl.hidden = false;
           importReviewEl.removeAttribute('hidden');
