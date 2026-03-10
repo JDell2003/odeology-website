@@ -600,13 +600,19 @@
       line-height: 1.35;
       color: #67523a;
     }
-
     .builder-import-flow-top {
-      display: flex;
-      justify-content: space-between;
+      display: inline-flex;
+      justify-content: flex-start;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
+      width: auto;
+      max-width: 100%;
+      padding: 7px 11px;
+      border: 1px solid #e0cfb6;
+      border-radius: 999px;
+      background: #fff7ea;
+      margin-bottom: 2px;
     }
 
     .builder-import-flow-day {
@@ -621,6 +627,9 @@
       font-size: 0.77rem;
       font-weight: 800;
       color: #7b6548;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(221, 195, 159, 0.36);
     }
 
     .builder-import-flow-card {
@@ -2373,7 +2382,7 @@
         <li>Optional rest: <code>Rest 90 sec</code> or <code>Rest 2 min</code>.</li>
         <li>Optional last weight line: <code>Last week: 140 lb</code>.</li>
       </ul>
-      <pre class="builder-import-example-code">Tuesday — Pull
+      <pre class="builder-import-example-code">Tuesday ï¿½ Pull
 Lat Pulldown
 4 x 10
 Rest 90 sec
@@ -2596,6 +2605,7 @@ Last week: 80 lb</pre>
       const IMPORT_AUTO_SELECT_MIN_SCORE = 0.55;
       const IMPORT_REVIEW_MAX_RUNS = 20;
       const IMPORT_CORRECTIONS_STORAGE_PREFIX = 'ode_import_corrections_v1';
+      const IMPORT_REVIEW_SESSION_KEY = 'ode_import_review_session_v1';
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
       const IMPORT_ALIAS_REPLACERS = [
         [/\bohp\b/g, 'overhead press'],
@@ -7282,9 +7292,107 @@ Last week: 80 lb</pre>
 
         applyBuilderPrefillSnapshot(readBuilderPrefillSnapshot());
       }
+      function saveImportReviewSession() {
+        try {
+          const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
+          const isOpen = Boolean(importReviewEl && !importReviewEl.hidden);
+          if (!rows.length || !isOpen) {
+            sessionStorage.removeItem(IMPORT_REVIEW_SESSION_KEY);
+            return;
+          }
+          sessionStorage.setItem(IMPORT_REVIEW_SESSION_KEY, JSON.stringify({
+            rows,
+            guideStarted: Boolean(state.importReviewGuideStarted),
+            activeIndex: Math.max(0, Number(state.importReviewActiveIndex) || 0),
+            open: true
+          }));
+        } catch {}
+      }
+
+      function clearImportReviewSession() {
+        try {
+          sessionStorage.removeItem(IMPORT_REVIEW_SESSION_KEY);
+        } catch {}
+      }
+
+      function restoreImportReviewSession() {
+        try {
+          const raw = sessionStorage.getItem(IMPORT_REVIEW_SESSION_KEY);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          const rows = Array.isArray(parsed?.rows) ? parsed.rows : [];
+          if (!rows.length || !parsed?.open) {
+            clearImportReviewSession();
+            return false;
+          }
+          state.importReviewRows = rows;
+          state.importReviewGuideStarted = Boolean(parsed?.guideStarted);
+          state.importReviewActiveIndex = Math.max(0, Number(parsed?.activeIndex) || 0);
+          if (importReviewEl) {
+            importReviewEl.hidden = false;
+            importReviewEl.removeAttribute('hidden');
+            importReviewEl.setAttribute('aria-hidden', 'false');
+            importReviewEl.style.display = 'grid';
+          }
+          renderImportReviewRows();
+          return true;
+        } catch {
+          clearImportReviewSession();
+          return false;
+        }
+      }
+
+      function openImportReview(rows) {
+        state.importReviewRows = Array.isArray(rows) ? rows : [];
+        state.importReviewGuideStarted = false;
+        state.importReviewActiveIndex = 0;
+        if (importReviewEl) {
+          importReviewEl.hidden = false;
+          importReviewEl.removeAttribute('hidden');
+          importReviewEl.setAttribute('aria-hidden', 'false');
+          importReviewEl.style.display = 'grid';
+        }
+        renderImportReviewRows();
+        setImportReviewStatus('');
+        saveImportReviewSession();
+      }
+
+      function closeImportReview() {
+        if (!importReviewEl) return;
+        importReviewEl.hidden = true;
+        importReviewEl.setAttribute('hidden', 'hidden');
+        importReviewEl.setAttribute('aria-hidden', 'true');
+        importReviewEl.style.display = 'none';
+        state.importReviewGuideStarted = false;
+        state.importReviewActiveIndex = 0;
+        state.importReviewRows = [];
+        clearImportReviewSession();
+      }
+
+      importReviewBodyEl?.addEventListener('input', (e) => {
+        if (e.target?.closest?.('[data-import-fix], [data-import-last-weight]')) {
+          saveImportReviewSession();
+        }
+      });
+
+      importReviewBodyEl?.addEventListener('change', () => {
+        saveImportReviewSession();
+      });
+
+      importReviewBodyEl?.addEventListener('click', () => {
+        window.setTimeout(() => saveImportReviewSession(), 0);
+      });
+
+      window.addEventListener('beforeunload', () => {
+        saveImportReviewSession();
+      });
 
       window.addEventListener('pageshow', () => {
-        resetImportOverlays();
+        window.setTimeout(() => {
+          if (!restoreImportReviewSession()) {
+            resetImportOverlays();
+          }
+        }, 0);
       });
 
       init();
@@ -7292,5 +7400,6 @@ Last week: 80 lb</pre>
   </script>
 </body>
 </html>
+
 
 
