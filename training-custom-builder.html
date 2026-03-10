@@ -2283,6 +2283,10 @@
       const MAX_IMPORT_IMAGES = 4;
       const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
       const IMPORT_CUSTOM_ID_PREFIX = 'custom_import_';
+      const IMPORT_REVIEW_REQUIRED_PASSES = 3;
+      const IMPORT_REVIEW_PASS_THRESHOLD = 0.90;
+      const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.90;
+      const IMPORT_REVIEW_MAX_RUNS = 9;
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
 
       const state = {
@@ -3187,10 +3191,75 @@
         return normalizeOcrDocumentText(bestText);
       }
 
-      function buildImportReviewRows(entries) {
+      function buildImportQueryVariants(parsed) {
+        const p = parsed && typeof parsed === 'object' ? parsed : {};
+        const sourceText = String(p?.sourceText || '').trim();
+        const cleanedSource = cleanImportedEntry(sourceText);
+        const name = String(p?.name || cleanedSource || sourceText).trim();
+        const expanded = normalizeImportQueryForMatching(name);
+        const stripped = String(name)
+          .replace(/\b(machine|cable|dumbbell|barbell|bodyweight|assisted|weighted)\b/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const variants = [name, expanded, cleanedSource, stripped, sourceText]
+          .map((v) => String(v || '').trim())
+          .filter(Boolean);
+        return Array.from(new Set(variants));
+      }
+
+      function summarizeImportReviewRows(rows, options = {}) {
+        const list = Array.isArray(rows) ? rows : [];
+        const confidenceThreshold = Number.isFinite(Number(options?.confidenceThreshold))
+          ? Number(options.confidenceThreshold)
+          : IMPORT_REVIEW_CONFIDENCE_THRESHOLD;
+        const passThreshold = Number.isFinite(Number(options?.passThreshold))
+          ? Number(options.passThreshold)
+          : IMPORT_REVIEW_PASS_THRESHOLD;
+        if (!list.length) {
+          return {
+            total: 0,
+            confidentCount: 0,
+            confidentRatio: 0,
+            avgConfidence: 0,
+            score: 0,
+            pass: false
+          };
+        }
+        let confidentCount = 0;
+        let confidenceSum = 0;
+        let nonCustomCount = 0;
+        list.forEach((row) => {
+          const conf = Math.max(0, Math.min(1, Number(row?.confidence || 0)));
+          confidenceSum += conf;
+          const candidate = getImportReviewCandidateForRow(row);
+          const isCustom = Boolean(candidate?.isCustom);
+          if (!isCustom) nonCustomCount += 1;
+          if (conf >= confidenceThreshold && !isCustom) confidentCount += 1;
+        });
+        const total = list.length;
+        const confidentRatio = confidentCount / Math.max(1, total);
+        const avgConfidence = confidenceSum / Math.max(1, total);
+        const nonCustomRatio = nonCustomCount / Math.max(1, total);
+        const score = (confidentRatio * 1000) + (avgConfidence * 100) + (nonCustomRatio * 20);
+        return {
+          total,
+          confidentCount,
+          confidentRatio,
+          avgConfidence,
+          nonCustomCount,
+          nonCustomRatio,
+          score,
+          pass: confidentRatio >= passThreshold
+        };
+      }
+
+      function buildImportReviewRows(entries, options = {}) {
+        const runIndex = Math.max(0, Math.round(Number(options?.runIndex) || 0));
         return entries.map((entry, idx) => {
           const parsed = entry && typeof entry === 'object' ? entry : { sourceText: String(entry || ''), name: String(entry || '') };
-          const queryText = String(parsed?.name || parsed?.sourceText || '').trim();
+          const queryVariants = buildImportQueryVariants(parsed);
+          const variantIdx = (runIndex + idx) % Math.max(1, queryVariants.length);
+          const queryText = String(queryVariants[variantIdx] || queryVariants[0] || parsed?.name || parsed?.sourceText || '').trim();
           const candidates = buildImportCandidateList(queryText, 7);
           const top = candidates[0] || null;
           return {
@@ -3204,6 +3273,44 @@
             confidence: top ? Number(top.score) : 0
           };
         });
+      }
+
+      async function runImportReviewFeedbackLoops(entries, options = {}) {
+        const requiredPasses = Math.max(1, Number(options?.requiredPasses || IMPORT_REVIEW_REQUIRED_PASSES));
+        const passThreshold = Math.max(0.5, Math.min(1, Number(options?.passThreshold || IMPORT_REVIEW_PASS_THRESHOLD)));
+        const confidenceThreshold = Math.max(0.5, Math.min(1, Number(options?.confidenceThreshold || IMPORT_REVIEW_CONFIDENCE_THRESHOLD)));
+        const maxRuns = Math.max(requiredPasses, Number(options?.maxRuns || IMPORT_REVIEW_MAX_RUNS));
+        const onProgress = typeof options?.onProgress === 'function' ? options.onProgress : null;
+
+        const allRuns = [];
+        const passingRuns = [];
+
+        for (let runIndex = 0; runIndex < maxRuns; runIndex += 1) {
+          if (onProgress) onProgress({ runIndex, maxRuns });
+          const rows = buildImportReviewRows(entries, { runIndex });
+          const summary = summarizeImportReviewRows(rows, { passThreshold, confidenceThreshold });
+          const record = { runIndex, rows, summary };
+          allRuns.push(record);
+          if (summary.pass) {
+            passingRuns.push(record);
+            if (passingRuns.length >= requiredPasses) break;
+          }
+          await Promise.resolve();
+        }
+
+        const pickFrom = passingRuns.length >= requiredPasses ? passingRuns : allRuns;
+        pickFrom.sort((a, b) => Number(b?.summary?.score || 0) - Number(a?.summary?.score || 0));
+        const best = pickFrom[0] || null;
+        return {
+          bestRows: best?.rows || [],
+          bestSummary: best?.summary || summarizeImportReviewRows([]),
+          metRequirement: passingRuns.length >= requiredPasses,
+          passRuns: passingRuns.length,
+          totalRuns: allRuns.length,
+          requiredPasses,
+          passThreshold,
+          confidenceThreshold
+        };
       }
 
       function renderImportReviewRows() {
@@ -3563,14 +3670,36 @@
             throw new Error('Could not read workouts from this import. Try clearer screenshots or paste exercise names.');
           }
 
-          setImportLoadingVisible(true, 'Matching workouts to your database...', 86);
-          const reviewRows = buildImportReviewRows(clean);
+          setImportLoadingVisible(true, 'Matching workouts to your database...', 82);
+          const reviewLoop = await runImportReviewFeedbackLoops(clean, {
+            requiredPasses: IMPORT_REVIEW_REQUIRED_PASSES,
+            passThreshold: IMPORT_REVIEW_PASS_THRESHOLD,
+            confidenceThreshold: IMPORT_REVIEW_CONFIDENCE_THRESHOLD,
+            maxRuns: IMPORT_REVIEW_MAX_RUNS,
+            onProgress: ({ runIndex, maxRuns }) => {
+              const pct = 82 + Math.round(((runIndex + 1) / Math.max(1, maxRuns)) * 14);
+              setImportLoadingVisible(
+                true,
+                `Verifying workout matches (${runIndex + 1}/${maxRuns})...`,
+                Math.max(82, Math.min(97, pct))
+              );
+            }
+          });
+          if (!reviewLoop.metRequirement) {
+            const ratioPct = Math.round((Number(reviewLoop?.bestSummary?.confidentRatio || 0)) * 100);
+            throw new Error(`Confidence check failed (${ratioPct}% high-confidence). Need 3 verification runs at 90%+. Use clearer screenshots or cleaner text and try again.`);
+          }
+          const reviewRows = Array.isArray(reviewLoop.bestRows) ? reviewLoop.bestRows : [];
+          if (!reviewRows.length) {
+            throw new Error('Could not verify imported workouts. Please retry with clearer input.');
+          }
+
           setImportLoadingVisible(true, 'Launching confirmation...', 100);
           openImportReview(reviewRows);
           if (lowQualityCount > 0) {
             setStatus(`Confirm imported workouts. ${lowQualityCount} image${lowQualityCount === 1 ? '' : 's'} were too low quality to read fully.`, 'error');
           } else {
-            setStatus('Confirm imported workouts, then apply to build your plan.', 'ok');
+            setStatus(`Verified with ${reviewLoop.passRuns} successful confidence runs. Confirm imported workouts, then apply to build your plan.`, 'ok');
           }
         } catch (err) {
           setStatus(err?.message || 'Could not import workouts from your input.', 'error');
