@@ -2286,7 +2286,7 @@
       const IMPORT_REVIEW_REQUIRED_PASSES = 3;
       const IMPORT_REVIEW_PASS_THRESHOLD = 0.90;
       const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.90;
-      const IMPORT_REVIEW_MAX_RUNS = 9;
+      const IMPORT_REVIEW_MAX_RUNS = 20;
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
 
       const state = {
@@ -3298,7 +3298,11 @@
           await Promise.resolve();
         }
 
-        const pickFrom = passingRuns.length >= requiredPasses ? passingRuns : allRuns;
+        const passingRanked = passingRuns
+          .slice()
+          .sort((a, b) => Number(b?.summary?.score || 0) - Number(a?.summary?.score || 0));
+        const topPassingRuns = passingRanked.slice(0, requiredPasses);
+        const pickFrom = passingRuns.length >= requiredPasses ? topPassingRuns : allRuns;
         pickFrom.sort((a, b) => Number(b?.summary?.score || 0) - Number(a?.summary?.score || 0));
         const best = pickFrom[0] || null;
         return {
@@ -3309,7 +3313,8 @@
           totalRuns: allRuns.length,
           requiredPasses,
           passThreshold,
-          confidenceThreshold
+          confidenceThreshold,
+          topPassingRuns
         };
       }
 
@@ -3687,7 +3692,7 @@
           });
           if (!reviewLoop.metRequirement) {
             const ratioPct = Math.round((Number(reviewLoop?.bestSummary?.confidentRatio || 0)) * 100);
-            throw new Error(`Confidence check failed (${ratioPct}% high-confidence). Need 3 verification runs at 90%+. Use clearer screenshots or cleaner text and try again.`);
+            throw new Error(`Confidence check failed after ${reviewLoop.totalRuns}/${IMPORT_REVIEW_MAX_RUNS} runs (${ratioPct}% high-confidence best). Need 3 verification runs at 90%+. Use clearer screenshots or cleaner text and try again.`);
           }
           const reviewRows = Array.isArray(reviewLoop.bestRows) ? reviewLoop.bestRows : [];
           if (!reviewRows.length) {
@@ -3699,7 +3704,11 @@
           if (lowQualityCount > 0) {
             setStatus(`Confirm imported workouts. ${lowQualityCount} image${lowQualityCount === 1 ? '' : 's'} were too low quality to read fully.`, 'error');
           } else {
-            setStatus(`Verified with ${reviewLoop.passRuns} successful confidence runs. Confirm imported workouts, then apply to build your plan.`, 'ok');
+            const topRuns = Array.isArray(reviewLoop.topPassingRuns) ? reviewLoop.topPassingRuns : [];
+            const topRatios = topRuns
+              .map((run, idx) => `#${idx + 1}: ${Math.round((Number(run?.summary?.confidentRatio || 0)) * 100)}%`)
+              .join(', ');
+            setStatus(`Verified (${reviewLoop.passRuns} passes in ${reviewLoop.totalRuns} runs). Top certified runs ${topRatios || 'ready'}. Confirm imported workouts, then apply to build your plan.`, 'ok');
           }
         } catch (err) {
           setStatus(err?.message || 'Could not import workouts from your input.', 'error');
