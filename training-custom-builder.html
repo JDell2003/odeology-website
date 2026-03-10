@@ -916,6 +916,16 @@
       width: 100%;
     }
 
+    .builder-import-add-search {
+      grid-column: 1 / -1;
+    }
+
+    .builder-import-add-search-note {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #7a6141;
+    }
+
     .builder-import-add-actions {
       display: flex;
       align-items: end;
@@ -2893,7 +2903,8 @@ Last week: 80 lb</pre>
         importPasteAt: 0,
         importReviewDragId: '',
         importReviewDropId: '',
-        importReviewDropPlacement: 'before'
+        importReviewDropPlacement: 'before',
+        importAddDraftByGroup: {}
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
@@ -4630,6 +4641,30 @@ Last week: 80 lb</pre>
         return true;
       }
 
+      function getImportAddDraft(groupKey) {
+        const key = String(groupKey || '').trim() || 'group';
+        const allDrafts = state.importAddDraftByGroup && typeof state.importAddDraftByGroup === 'object'
+          ? state.importAddDraftByGroup
+          : {};
+        if (!allDrafts[key] || typeof allDrafts[key] !== 'object') {
+          allDrafts[key] = {
+            query: '',
+            selectedId: '',
+            sets: '3',
+            reps: '8-12',
+            restSec: '90'
+          };
+          state.importAddDraftByGroup = allDrafts;
+        }
+        return allDrafts[key];
+      }
+
+      function setImportAddDraftField(groupKey, field, value) {
+        const draft = getImportAddDraft(groupKey);
+        draft[field] = String(value ?? '');
+        return draft;
+      }
+
       function clampImportReviewIndex(nextIndex) {
         const groups = buildImportReviewDayGroups();
         if (!groups.length) return 0;
@@ -5208,10 +5243,28 @@ Last week: 80 lb</pre>
         }
 
         const dayLabel = String(group?.label || 'Review day');
-        const addWorkoutOptions = allLibraryRows()
+        const addGroupKey = String(group?.key || 'group');
+        const addDraft = getImportAddDraft(addGroupKey);
+        const addQuery = String(addDraft?.query || '').trim().toLowerCase();
+        const filteredAddRows = allLibraryRows()
           .slice()
           .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
-          .map((entry) => `<option value="${escapeHtml(String(entry?.id || ''))}">${escapeHtml(String(entry?.name || 'Workout'))}</option>`)
+          .filter((entry) => {
+            if (!addQuery) return true;
+            const name = String(entry?.name || '').toLowerCase();
+            const primary = String(entry?.primaryMuscles || entry?.primaryMuscle || '').toLowerCase();
+            const secondary = Array.isArray(entry?.secondaryMuscles)
+              ? entry.secondaryMuscles.join(' ').toLowerCase()
+              : String(entry?.secondaryMuscles || '').toLowerCase();
+            return name.includes(addQuery) || primary.includes(addQuery) || secondary.includes(addQuery);
+          });
+        const addWorkoutRows = filteredAddRows.slice(0, 80);
+        const addWorkoutOptions = addWorkoutRows
+          .map((entry) => {
+            const entryId = String(entry?.id || '');
+            const selectedAttr = entryId && entryId === String(addDraft?.selectedId || '').trim() ? ' selected' : '';
+            return `<option value="${escapeHtml(entryId)}"${selectedAttr}>${escapeHtml(String(entry?.name || 'Workout'))}</option>`;
+          })
           .join('');
 
         const renderImportRowCard = (row) => {
@@ -5308,7 +5361,7 @@ Last week: 80 lb</pre>
           <section class="builder-import-day-group" data-import-group="${escapeHtml(String(group?.key || 'group'))}">
             <div class="builder-import-day-head">${escapeHtml(dayLabel)}</div>
             ${(Array.isArray(group?.rows) ? group.rows : []).map((row) => renderImportRowCard(row)).join('')}
-            <article class="builder-import-add-card" data-import-add-card="${escapeHtml(String(group?.key || 'group'))}">
+            <article class="builder-import-add-card" data-import-add-card="${escapeHtml(addGroupKey)}">
               <div class="builder-import-add-head">
                 <div>
                   <h4 class="builder-import-add-title">Add workout</h4>
@@ -5316,27 +5369,32 @@ Last week: 80 lb</pre>
                 </div>
               </div>
               <div class="builder-import-add-grid">
+                <label class="builder-import-add-field builder-import-add-search">
+                  <span>Search workouts</span>
+                  <input type="text" value="${escapeHtml(String(addDraft?.query || ''))}" placeholder="Search by workout or muscle..." data-import-add-search="${escapeHtml(addGroupKey)}" />
+                  <div class="builder-import-add-search-note">${filteredAddRows.length ? `${Math.min(filteredAddRows.length, 80)} shown${filteredAddRows.length > 80 ? ` of ${filteredAddRows.length}` : ''}` : 'No workouts match this search yet.'}</div>
+                </label>
                 <label class="builder-import-add-field">
                   <span>Workout</span>
-                  <select data-import-add-select="${escapeHtml(String(group?.key || 'group'))}">
+                  <select data-import-add-select="${escapeHtml(addGroupKey)}">
                     <option value="">Choose workout...</option>
                     ${addWorkoutOptions}
                   </select>
                 </label>
                 <label class="builder-import-add-field">
                   <span>Sets</span>
-                  <input type="number" min="1" max="8" step="1" value="3" data-import-add-sets="${escapeHtml(String(group?.key || 'group'))}" />
+                  <input type="number" min="1" max="8" step="1" value="${escapeHtml(String(addDraft?.sets || '3'))}" data-import-add-sets="${escapeHtml(addGroupKey)}" />
                 </label>
                 <label class="builder-import-add-field">
                   <span>Reps</span>
-                  <input type="text" value="8-12" maxlength="16" data-import-add-reps="${escapeHtml(String(group?.key || 'group'))}" />
+                  <input type="text" value="${escapeHtml(String(addDraft?.reps || '8-12'))}" maxlength="16" data-import-add-reps="${escapeHtml(addGroupKey)}" />
                 </label>
                 <label class="builder-import-add-field">
                   <span>Rest (sec)</span>
-                  <input type="number" min="30" max="300" step="5" value="90" data-import-add-rest="${escapeHtml(String(group?.key || 'group'))}" />
+                  <input type="number" min="30" max="300" step="5" value="${escapeHtml(String(addDraft?.restSec || '90'))}" data-import-add-rest="${escapeHtml(addGroupKey)}" />
                 </label>
                 <div class="builder-import-add-actions">
-                  <button type="button" class="btn btn-primary" data-import-add-save="${escapeHtml(String(group?.key || 'group'))}">Save workout</button>
+                  <button type="button" class="btn btn-primary" data-import-add-save="${escapeHtml(addGroupKey)}">Save workout</button>
                 </div>
               </div>
             </article>
@@ -7349,6 +7407,34 @@ Last week: 80 lb</pre>
         });
 
         importReviewBodyEl?.addEventListener('change', (e) => {
+          const addSelect = e.target.closest('[data-import-add-select]');
+          if (addSelect) {
+            const groupKey = String(addSelect.getAttribute('data-import-add-select') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'selectedId', addSelect.value || '');
+            return;
+          }
+
+          const addSets = e.target.closest('[data-import-add-sets]');
+          if (addSets) {
+            const groupKey = String(addSets.getAttribute('data-import-add-sets') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'sets', addSets.value || '');
+            return;
+          }
+
+          const addReps = e.target.closest('[data-import-add-reps]');
+          if (addReps) {
+            const groupKey = String(addReps.getAttribute('data-import-add-reps') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'reps', addReps.value || '');
+            return;
+          }
+
+          const addRest = e.target.closest('[data-import-add-rest]');
+          if (addRest) {
+            const groupKey = String(addRest.getAttribute('data-import-add-rest') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'restSec', addRest.value || '');
+            return;
+          }
+
           const dayAssignSelect = e.target.closest('[data-import-day-assign]');
           if (dayAssignSelect) {
             const rowId = String(dayAssignSelect.getAttribute('data-import-day-assign') || '').trim();
@@ -7391,6 +7477,45 @@ Last week: 80 lb</pre>
           row.selectedId = String(select.value || '').trim();
           row.status = row.selectedId ? 'pending' : 'fixing';
           renderImportReviewRows();
+        });
+
+        importReviewBodyEl?.addEventListener('input', (e) => {
+          const addSearch = e.target.closest('[data-import-add-search]');
+          if (addSearch) {
+            const groupKey = String(addSearch.getAttribute('data-import-add-search') || '').trim();
+            if (!groupKey) return;
+            setImportAddDraftField(groupKey, 'query', addSearch.value || '');
+            renderImportReviewRows();
+            const refreshed = importReviewBodyEl.querySelector(`[data-import-add-search="${CSS.escape(groupKey)}"]`);
+            if (refreshed) {
+              refreshed.focus();
+              try {
+                const len = String(addSearch.value || '').length;
+                refreshed.setSelectionRange(len, len);
+              } catch {}
+            }
+            return;
+          }
+
+          const addSets = e.target.closest('[data-import-add-sets]');
+          if (addSets) {
+            const groupKey = String(addSets.getAttribute('data-import-add-sets') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'sets', addSets.value || '');
+            return;
+          }
+
+          const addReps = e.target.closest('[data-import-add-reps]');
+          if (addReps) {
+            const groupKey = String(addReps.getAttribute('data-import-add-reps') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'reps', addReps.value || '');
+            return;
+          }
+
+          const addRest = e.target.closest('[data-import-add-rest]');
+          if (addRest) {
+            const groupKey = String(addRest.getAttribute('data-import-add-rest') || '').trim();
+            if (groupKey) setImportAddDraftField(groupKey, 'restSec', addRest.value || '');
+          }
         });
 
         importReviewBodyEl?.addEventListener('click', (e) => {
