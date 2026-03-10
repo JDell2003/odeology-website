@@ -277,9 +277,17 @@
 
     .builder-import-actions {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       margin: 0;
       padding: 0;
+    }
+
+    .builder-import-example-btn {
+      font-weight: 700;
+      font-size: 0.86rem;
+      border-style: dashed;
     }
 
     .builder-import-strip + .builder-grid {
@@ -396,6 +404,78 @@
     }
     .builder-import-review[hidden] {
       display: none !important;
+    }
+
+    .builder-import-example {
+      position: fixed;
+      inset: 0;
+      z-index: 1220;
+      display: grid;
+      place-items: center;
+      background: rgba(18, 11, 5, 0.62);
+      backdrop-filter: blur(3px);
+      padding: 14px;
+    }
+
+    .builder-import-example[hidden] {
+      display: none !important;
+    }
+
+    .builder-import-example-card {
+      width: min(640px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid #dbc6a7;
+      background: linear-gradient(165deg, #fffaf1 0%, #f4e6ce 100%);
+      box-shadow: 0 28px 46px rgba(34, 22, 9, 0.32);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .builder-import-example-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .builder-import-example-head h3 {
+      margin: 0;
+      color: #2c2116;
+      font-size: 1.02rem;
+      font-weight: 850;
+    }
+
+    .builder-import-example-note {
+      margin: 0;
+      color: #6b563d;
+      font-size: 0.86rem;
+      line-height: 1.35;
+    }
+
+    .builder-import-example-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #5d4a33;
+      font-size: 0.86rem;
+      line-height: 1.4;
+      display: grid;
+      gap: 4px;
+    }
+
+    .builder-import-example-code {
+      margin: 0;
+      border-radius: 12px;
+      border: 1px dashed #d3b185;
+      background: rgba(255, 253, 247, 0.88);
+      padding: 12px;
+      font-size: 0.84rem;
+      line-height: 1.48;
+      color: #4f3f2b;
+      white-space: pre-wrap;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     }
 
     .builder-import-review-card {
@@ -2153,6 +2233,7 @@
           <textarea id="builder-import-text" class="builder-import-text" aria-label="Paste workout text"></textarea>
         </div>
         <div class="builder-import-actions">
+          <button type="button" class="btn btn-ghost builder-import-example-btn" id="builder-import-example-btn">Example format</button>
           <button type="button" class="btn btn-primary" id="builder-import-generate">Generate</button>
         </div>
       </div>
@@ -2225,6 +2306,37 @@
       <div id="builder-import-loading-meta" class="builder-import-loading-meta">0%</div>
       <div id="builder-import-loading-stage" class="builder-import-loading-stage">Initializing analysis...</div>
       <ul id="builder-import-loading-log" class="builder-import-loading-log" aria-live="polite"></ul>
+    </div>
+  </div>
+
+  <div id="builder-import-example" class="builder-import-example" hidden aria-hidden="true">
+    <div class="builder-import-example-card">
+      <div class="builder-import-example-head">
+        <h3>How to format screenshot imports</h3>
+        <button type="button" class="btn btn-ghost" id="builder-import-example-close">Close</button>
+      </div>
+      <p class="builder-import-example-note">Keep text clean and vertical. One workout per block works best.</p>
+      <ul class="builder-import-example-list">
+        <li>Day header first (example: <code>Tuesday</code> or <code>Tuesday - Pull</code>).</li>
+        <li>Exercise name on its own line.</li>
+        <li>Prescription on next line: <code>4 x 10</code> or <code>3 x 8-12</code>.</li>
+        <li>Optional rest: <code>Rest 90 sec</code> or <code>Rest 2 min</code>.</li>
+        <li>Optional last weight line: <code>Last week: 140 lb</code>.</li>
+      </ul>
+      <pre class="builder-import-example-code">Tuesday — Pull
+Lat Pulldown
+4 x 10
+Rest 90 sec
+Last week: 140 lb
+
+Chest Supported Row
+3 x 10
+Rest 90 sec
+Last week: 90 lb
+
+One Arm Dumbbell Row
+3 x 10
+Last week: 80 lb</pre>
     </div>
   </div>
 
@@ -2412,6 +2524,9 @@
       const importLoadingMetaEl = $('builder-import-loading-meta');
       const importLoadingStageEl = $('builder-import-loading-stage');
       const importLoadingLogEl = $('builder-import-loading-log');
+      const importExampleEl = $('builder-import-example');
+      const importExampleBtn = $('builder-import-example-btn');
+      const importExampleCloseBtn = $('builder-import-example-close');
       const importReviewEl = $('builder-import-review');
       const importReviewBodyEl = $('builder-import-review-body');
       const importReviewStatusEl = $('builder-import-review-status');
@@ -2894,10 +3009,15 @@
         const line = normalizeOcrLineText(rawLine);
         if (!line) return null;
         const weightMatch = line.match(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/i);
-        if (!weightMatch) return null;
         const hasLiftHint = /\b(last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b/i.test(line);
         if (!hasLiftHint) return null;
-        return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+        if (weightMatch) {
+          return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+        }
+        // OCR sometimes drops "lb" and leaves "s" (e.g. "Last week: 15s").
+        const looseMatch = line.match(/\b(?:last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b[^0-9]{0,12}(\d{1,4}(?:\.\d+)?)\s*s?\b/i);
+        if (!looseMatch) return null;
+        return normalizeImportWeightToLb(looseMatch[1], 'lb');
       }
 
       function isImportWeightNoteLine(rawLine) {
@@ -2909,6 +3029,126 @@
         if (!/\b(last|last week|previous|prev|prior|working weight|top set|used|weight)\b/.test(lower)) return false;
         if (/\b(sets?|reps?|rest|x\s*\d|day|session)\b/.test(lower)) return false;
         return true;
+      }
+
+      function parseImportPrescriptionHint(rawLine) {
+        const sourceText = normalizeOcrLineText(rawLine);
+        if (!sourceText) return null;
+        let working = sourceText;
+        let sets = null;
+        let reps = '';
+        let restSec = null;
+        working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
+
+        const restClockMatch = working.match(/\b(?:rest\s*[:\-]?\s*)?(\d{1,2})\s*:\s*([0-5]\d)\b/i);
+        if (restClockMatch) {
+          const sec = parseRestSecondsFromClock(restClockMatch[1], restClockMatch[2]);
+          if (Number.isFinite(sec)) restSec = sec;
+          working = working.replace(restClockMatch[0], ' ');
+        }
+
+        if (!restSec) {
+          const restMinuteSecondMatch = working.match(/\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\s*(\d{1,2})\s*(?:s|sec|secs|second|seconds)\b/i);
+          if (restMinuteSecondMatch) {
+            const total = (Number(restMinuteSecondMatch[1]) * 60) + Number(restMinuteSecondMatch[2]);
+            if (Number.isFinite(total) && total > 0) {
+              restSec = Math.max(30, Math.min(300, Math.round(total)));
+            }
+            working = working.replace(restMinuteSecondMatch[0], ' ');
+          }
+        }
+
+        if (!restSec) {
+          const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
+          let restMatch = null;
+          while (true) {
+            const m = restPattern.exec(working);
+            if (!m) break;
+            const chunk = String(m[0] || '');
+            if (!/rest|sec|min|second|minute/i.test(chunk)) continue;
+            restMatch = m;
+          }
+          if (restMatch) {
+            const sec = parseRestSecondsFromMatch(restMatch[1], restMatch[2]);
+            if (Number.isFinite(sec)) restSec = sec;
+            working = working.replace(restMatch[0], ' ');
+          }
+        }
+
+        const setMatch = working.match(/\b([1-8])\s*sets?\b/i);
+        if (setMatch) {
+          const n = Number(setMatch[1]);
+          if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+          working = working.replace(setMatch[0], ' ');
+        }
+
+        if (!sets || !reps) {
+          const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:,|of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?|steps?)?\b/i);
+          if (setRepCombinedMatch) {
+            if (!sets) {
+              const n = Number(setRepCombinedMatch[1]);
+              if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+            }
+            if (!reps) reps = String(setRepCombinedMatch[2] || '').replace(/\s+/g, '');
+            working = working.replace(setRepCombinedMatch[0], ' ');
+          }
+        }
+
+        if (!sets || !reps) {
+          const repsBySetsMatch = working.match(/\b(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*reps?\s*[xX]\s*([1-8])\b/i);
+          if (repsBySetsMatch) {
+            if (!reps) reps = String(repsBySetsMatch[1] || '').replace(/\s+/g, '');
+            if (!sets) sets = Number(repsBySetsMatch[2]);
+            working = working.replace(repsBySetsMatch[0], ' ');
+          }
+        }
+
+        const sxrMatch = working.match(/\b([1-8])\s*[xX]\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/);
+        if (sxrMatch) {
+          if (!sets) sets = Number(sxrMatch[1]);
+          if (!reps) reps = String(sxrMatch[2] || '').replace(/\s+/g, '');
+          working = working.replace(sxrMatch[0], ' ');
+        }
+
+        if (!reps) {
+          const repRangeMatch = working.match(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\s*reps?\b/i);
+          if (repRangeMatch) {
+            reps = `${repRangeMatch[1]}-${repRangeMatch[2]}`;
+            working = working.replace(repRangeMatch[0], ' ');
+          } else {
+            const repSingleMatch = working.match(/\b(\d{1,2})\s*reps?\b/i);
+            if (repSingleMatch) {
+              reps = String(repSingleMatch[1]);
+              working = working.replace(repSingleMatch[0], ' ');
+            }
+          }
+        }
+
+        if (!(Number.isFinite(sets) || String(reps || '').trim() || Number.isFinite(restSec))) {
+          return null;
+        }
+
+        const residue = normalizeImportToken(working);
+        if (residue) {
+          const allowed = new Set(['x', 'set', 'sets', 'rep', 'reps', 'rest', 'sec', 'secs', 'second', 'seconds', 'min', 'mins', 'minute', 'minutes', 'of', 'to', 'working', 'round', 'rounds']);
+          const tokens = residue.split(' ').filter(Boolean);
+          const hasForeignToken = tokens.some((token) => {
+            if (allowed.has(token)) return false;
+            if (/^\d+(?:-\d+)?$/.test(token)) return false;
+            return true;
+          });
+          if (hasForeignToken) return null;
+        }
+
+        return {
+          sets: (sets !== null && sets !== '' && Number.isFinite(Number(sets)))
+            ? Math.max(1, Math.min(8, Math.round(Number(sets))))
+            : null,
+          reps: String(reps || '').trim().slice(0, 16) || '',
+          restSec: (restSec !== null && restSec !== '' && Number.isFinite(Number(restSec)))
+            ? Math.max(30, Math.min(300, Math.round(Number(restSec))))
+            : null
+        };
       }
 
       function mergeImportedEntryDetails(base, incoming) {
@@ -3118,16 +3358,22 @@
         }
         if (!isLikelyExerciseName(name)) return null;
 
-        const normalizedSets = Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null;
+        const normalizedSets = (sets !== null && sets !== '' && Number.isFinite(Number(sets)))
+          ? Math.max(1, Math.min(8, Math.round(Number(sets))))
+          : null;
         const normalizedReps = String(reps || '').trim().slice(0, 16);
-        const normalizedRest = Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null;
+        const normalizedRest = (restSec !== null && restSec !== '' && Number.isFinite(Number(restSec)))
+          ? Math.max(30, Math.min(300, Math.round(Number(restSec))))
+          : null;
         return {
           sourceText,
           name,
           sets: normalizedSets,
           reps: normalizedReps || '',
           restSec: normalizedRest,
-          projected: Number.isFinite(projectedLb) ? { value: projectedLb, unit: 'lb' } : null
+          projected: (projectedLb !== null && projectedLb !== '' && Number.isFinite(Number(projectedLb)))
+            ? { value: Number(projectedLb), unit: 'lb' }
+            : null
         };
       }
 
@@ -3285,6 +3531,12 @@
               if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
                 last.projected = { value: Number(hintedWeight), unit: 'lb' };
               }
+            }
+            const prescriptionHint = parseImportPrescriptionHint(parseSource);
+            if (prescriptionHint && chunks.length) {
+              const lastIdx = chunks.length - 1;
+              const merged = mergeImportedEntryDetails(chunks[lastIdx], prescriptionHint);
+              chunks[lastIdx] = merged;
             }
             return;
           }
@@ -4398,6 +4650,22 @@
         }
       }
 
+      function openImportExample() {
+        if (!importExampleEl) return;
+        importExampleEl.hidden = false;
+        importExampleEl.removeAttribute('hidden');
+        importExampleEl.setAttribute('aria-hidden', 'false');
+        importExampleEl.style.display = 'grid';
+      }
+
+      function closeImportExample() {
+        if (!importExampleEl) return;
+        importExampleEl.hidden = true;
+        importExampleEl.setAttribute('hidden', 'hidden');
+        importExampleEl.setAttribute('aria-hidden', 'true');
+        importExampleEl.style.display = 'none';
+      }
+
       function closeImportReview() {
         if (!importReviewEl) return;
         importReviewEl.hidden = true;
@@ -4410,6 +4678,7 @@
 
       function resetImportOverlays() {
         closeImportReview();
+        closeImportExample();
         setImportLoadingVisible(false);
       }
 
@@ -6306,11 +6575,26 @@
         });
 
         importGenerateBtn?.addEventListener('click', handleGenerateFromImport);
+        importExampleBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          openImportExample();
+        });
+        importExampleCloseBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeImportExample();
+        });
+        importExampleEl?.addEventListener('click', (e) => {
+          if (e.target === importExampleEl) closeImportExample();
+        });
         importReviewCloseBtn?.addEventListener('click', closeImportReview);
         importReviewEl?.addEventListener('click', (e) => {
           if (e.target === importReviewEl) closeImportReview();
         });
         document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && importExampleEl && !importExampleEl.hidden) {
+            closeImportExample();
+            return;
+          }
           if (e.key === 'Escape' && importReviewEl && !importReviewEl.hidden) {
             closeImportReview();
           }

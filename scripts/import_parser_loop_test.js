@@ -64,10 +64,14 @@ function extractImportLastWeightHint(rawLine) {
   const line = normalizeOcrLineText(rawLine);
   if (!line) return null;
   const weightMatch = line.match(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/i);
-  if (!weightMatch) return null;
   const hasLiftHint = /\b(last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b/i.test(line);
   if (!hasLiftHint) return null;
-  return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+  if (weightMatch) {
+    return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+  }
+  const looseMatch = line.match(/\b(?:last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b[^0-9]{0,12}(\d{1,4}(?:\.\d+)?)\s*s?\b/i);
+  if (!looseMatch) return null;
+  return normalizeImportWeightToLb(looseMatch[1], 'lb');
 }
 
 function isImportWeightNoteLine(rawLine) {
@@ -143,6 +147,125 @@ function parseRestSecondsFromMatch(numberRaw, unitRaw) {
   const sec = unit.startsWith('m') ? (n * 60) : n;
   if (!Number.isFinite(sec) || sec <= 0) return null;
   return Math.max(30, Math.min(300, Math.round(sec)));
+}
+
+function parseRestSecondsFromClock(minRaw, secRaw) {
+  const mins = Number(minRaw);
+  const secs = Number(secRaw);
+  if (!Number.isFinite(mins) || mins < 0) return null;
+  if (!Number.isFinite(secs) || secs < 0 || secs >= 60) return null;
+  const total = (mins * 60) + secs;
+  if (!Number.isFinite(total) || total <= 0) return null;
+  return Math.max(30, Math.min(300, Math.round(total)));
+}
+
+function parseImportPrescriptionHint(rawLine) {
+  const sourceText = normalizeOcrLineText(rawLine);
+  if (!sourceText) return null;
+  let working = sourceText;
+  let sets = null;
+  let reps = '';
+  let restSec = null;
+  working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
+
+  const restClockMatch = working.match(/\b(?:rest\s*[:\-]?\s*)?(\d{1,2})\s*:\s*([0-5]\d)\b/i);
+  if (restClockMatch) {
+    const sec = parseRestSecondsFromClock(restClockMatch[1], restClockMatch[2]);
+    if (Number.isFinite(sec)) restSec = sec;
+    working = working.replace(restClockMatch[0], ' ');
+  }
+
+  if (!restSec) {
+    const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
+    let restMatch = null;
+    while (true) {
+      const m = restPattern.exec(working);
+      if (!m) break;
+      const chunk = String(m[0] || '');
+      if (!/rest|sec|min|second|minute/i.test(chunk)) continue;
+      restMatch = m;
+    }
+    if (restMatch) {
+      const sec = parseRestSecondsFromMatch(restMatch[1], restMatch[2]);
+      if (Number.isFinite(sec)) restSec = sec;
+      working = working.replace(restMatch[0], ' ');
+    }
+  }
+
+  const setMatch = working.match(/\b([1-8])\s*sets?\b/i);
+  if (setMatch) {
+    const n = Number(setMatch[1]);
+    if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+    working = working.replace(setMatch[0], ' ');
+  }
+
+  if (!sets || !reps) {
+    const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:,|of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?|steps?)?\b/i);
+    if (setRepCombinedMatch) {
+      if (!sets) {
+        const n = Number(setRepCombinedMatch[1]);
+        if (Number.isFinite(n) && n >= 1 && n <= 8) sets = n;
+      }
+      if (!reps) reps = String(setRepCombinedMatch[2] || '').replace(/\s+/g, '');
+      working = working.replace(setRepCombinedMatch[0], ' ');
+    }
+  }
+
+  if (!sets || !reps) {
+    const repsBySetsMatch = working.match(/\b(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*reps?\s*[xX]\s*([1-8])\b/i);
+    if (repsBySetsMatch) {
+      if (!reps) reps = String(repsBySetsMatch[1] || '').replace(/\s+/g, '');
+      if (!sets) sets = Number(repsBySetsMatch[2]);
+      working = working.replace(repsBySetsMatch[0], ' ');
+    }
+  }
+
+  const sxrMatch = working.match(/\b([1-8])\s*[xX]\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/);
+  if (sxrMatch) {
+    if (!sets) sets = Number(sxrMatch[1]);
+    if (!reps) reps = String(sxrMatch[2] || '').replace(/\s+/g, '');
+    working = working.replace(sxrMatch[0], ' ');
+  }
+
+  if (!reps) {
+    const repRangeMatch = working.match(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\s*reps?\b/i);
+    if (repRangeMatch) {
+      reps = `${repRangeMatch[1]}-${repRangeMatch[2]}`;
+      working = working.replace(repRangeMatch[0], ' ');
+    } else {
+      const repSingleMatch = working.match(/\b(\d{1,2})\s*reps?\b/i);
+      if (repSingleMatch) {
+        reps = String(repSingleMatch[1]);
+        working = working.replace(repSingleMatch[0], ' ');
+      }
+    }
+  }
+
+  if (!(Number.isFinite(sets) || String(reps || '').trim() || Number.isFinite(restSec))) {
+    return null;
+  }
+
+  const residue = normalizeImportToken(working);
+  if (residue) {
+    const allowed = new Set(['x', 'set', 'sets', 'rep', 'reps', 'rest', 'sec', 'secs', 'second', 'seconds', 'min', 'mins', 'minute', 'minutes', 'of', 'to', 'working', 'round', 'rounds']);
+    const tokens = residue.split(' ').filter(Boolean);
+    const hasForeignToken = tokens.some((token) => {
+      if (allowed.has(token)) return false;
+      if (/^\d+(?:-\d+)?$/.test(token)) return false;
+      return true;
+    });
+    if (hasForeignToken) return null;
+  }
+
+  return {
+    sets: (sets !== null && sets !== '' && Number.isFinite(Number(sets)))
+      ? Math.max(1, Math.min(8, Math.round(Number(sets))))
+      : null,
+    reps: String(reps || '').trim().slice(0, 16) || '',
+    restSec: (restSec !== null && restSec !== '' && Number.isFinite(Number(restSec)))
+      ? Math.max(30, Math.min(300, Math.round(Number(restSec))))
+      : null
+  };
 }
 
 function parseImportedLineDetail(rawLine) {
@@ -242,10 +365,16 @@ function parseImportedLineDetail(rawLine) {
   return {
     sourceText,
     name,
-    sets: Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null,
+    sets: (sets !== null && sets !== '' && Number.isFinite(Number(sets)))
+      ? Math.max(1, Math.min(8, Math.round(Number(sets))))
+      : null,
     reps: String(reps || '').trim().slice(0, 16) || '',
-    restSec: Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null,
-    projected: Number.isFinite(Number(projectedLb)) ? { value: Number(projectedLb), unit: 'lb' } : null
+    restSec: (restSec !== null && restSec !== '' && Number.isFinite(Number(restSec)))
+      ? Math.max(30, Math.min(300, Math.round(Number(restSec))))
+      : null,
+    projected: (projectedLb !== null && projectedLb !== '' && Number.isFinite(Number(projectedLb)))
+      ? { value: Number(projectedLb), unit: 'lb' }
+      : null
   };
 }
 
@@ -302,6 +431,12 @@ function parseImportedEntries(raw) {
         if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
           last.projected = { value: Number(hintedWeight), unit: 'lb' };
         }
+      }
+      const prescriptionHint = parseImportPrescriptionHint(line);
+      if (prescriptionHint && chunks.length) {
+        const lastIdx = chunks.length - 1;
+        const merged = mergeImportedEntryDetails(chunks[lastIdx], prescriptionHint);
+        chunks[lastIdx] = merged;
       }
       return;
     }
@@ -392,6 +527,15 @@ const LAST_WEEK_NOTES_EXPECTED = [
   { weekday: 3, name: 'Back Squat', sets: 4, reps: '6-8', projected: 225 },
   { weekday: 3, name: 'Romanian Deadlift', sets: 3, reps: '8-10', projected: 185 },
   { weekday: 3, name: 'Leg Press', sets: 3, reps: '10-12', projected: 405 }
+];
+
+const TUESDAY_LOG_EXPECTED = [
+  { weekday: 2, name: 'Lat Pulldown', sets: 4, reps: '10', projected: 140 },
+  { weekday: 2, name: 'Chest Supported Row', sets: 3, reps: '10', projected: 90 },
+  { weekday: 2, name: 'One Arm Dumbbell Row', sets: 3, reps: '10', projected: 80 },
+  { weekday: 2, name: 'Rear Delt Fly', sets: 3, reps: '15', projected: 15 },
+  { weekday: 2, name: 'Barbell Curl', sets: 3, reps: '10', projected: 65 },
+  { weekday: 2, name: 'Incline Dumbbell Curl', sets: 2, reps: '12', projected: 25 }
 ];
 
 function mutateLine(line, rand) {
@@ -574,6 +718,38 @@ function buildLastWeekNotesDoc(seed) {
   return lines.join('\n');
 }
 
+function buildTuesdayLogDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    'Tuesday',
+    'Workout Log',
+    mutateLine('Lat Pulldown', rand),
+    mutateLine('4 x 10', rand),
+    mutateLine('Last week: 140 lbs', rand),
+    '',
+    mutateLine('Chest Supported Row', rand),
+    mutateLine('3 x 10', rand),
+    mutateLine('Last week: 90 lbs', rand),
+    '',
+    mutateLine('One Arm Dumbbell Row', rand),
+    mutateLine('3 x 10', rand),
+    mutateLine('Last week: 80 lbs', rand),
+    '',
+    mutateLine('Rear Delt Fly', rand),
+    mutateLine('3 x 15', rand),
+    mutateLine('Last week: 15s', rand),
+    '',
+    mutateLine('Barbell Curl', rand),
+    mutateLine('3 x 10', rand),
+    mutateLine('Last week: 65 lbs', rand),
+    '',
+    mutateLine('Incline Dumbbell Curl', rand),
+    mutateLine('2 x 12', rand),
+    mutateLine('Last week: 25s', rand)
+  ];
+  return lines.join('\n');
+}
+
 function similarityScore(a, b) {
   const aa = normalizeImportToken(a);
   const bb = normalizeImportToken(b);
@@ -643,7 +819,8 @@ function run() {
     { expected: DAY_ORDINAL_EXPECTED, build: buildDayOrdinalDoc },
     { expected: SHORTHAND_EXPECTED, build: buildShorthandDoc },
     { expected: SESSION_EXPECTED, build: buildSessionDoc },
-    { expected: LAST_WEEK_NOTES_EXPECTED, build: buildLastWeekNotesDoc }
+    { expected: LAST_WEEK_NOTES_EXPECTED, build: buildLastWeekNotesDoc },
+    { expected: TUESDAY_LOG_EXPECTED, build: buildTuesdayLogDoc }
   ];
 
   let attempts = 0;
