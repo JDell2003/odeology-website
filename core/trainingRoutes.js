@@ -13,12 +13,14 @@ const enrichPlanWithExerciseMedia = async () => {};
 
 const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYTES || 1_500_000));
 const TRAINING_IMPORT_OCR_SCRIPT_PATH = path.join(__dirname, '..', 'scripts', 'training_import_ocr.py');
-const TRAINING_IMPORT_OCR_TIMEOUT_MS = Math.max(5_000, Number(process.env.TRAINING_IMPORT_OCR_TIMEOUT_MS || 20_000));
+const TRAINING_IMPORT_OCR_TIMEOUT_MS = Math.max(4_000, Number(process.env.TRAINING_IMPORT_OCR_TIMEOUT_MS || 8_000));
 const TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES = Math.max(200_000, Number(process.env.TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES || 4_000_000));
 const TRAINING_IMPORT_OCR_PYTHON_CMD = String(
   process.env.TRAINING_IMPORT_OCR_PYTHON
   || (process.platform === 'win32' ? 'python' : 'python3')
 ).trim();
+const TRAINING_IMPORT_OCRSPACE_ENDPOINT = 'https://api.ocr.space/parse/image';
+const TRAINING_IMPORT_OCRSPACE_API_KEY = String(process.env.TRAINING_IMPORT_OCRSPACE_API_KEY || process.env.OCRSPACE_API_KEY || 'helloworld').trim();
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
@@ -336,6 +338,74 @@ async function runTrainingImportOcr(imageBuffer, filename = 'import.jpg') {
       finish(wrapped);
     }
   });
+}
+
+async function runTrainingImportOcrViaOcrSpace(imageBuffer, filename = 'import.jpg') {
+  const apiKey = String(TRAINING_IMPORT_OCRSPACE_API_KEY || '').trim();
+  if (!apiKey) {
+    const err = new Error('OCR.space API key missing');
+    err.code = 'OCRSPACE_KEY_MISSING';
+    throw err;
+  }
+  const base64Image = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+  const body = new URLSearchParams();
+  body.set('apikey', apiKey);
+  body.set('language', 'eng');
+  body.set('isOverlayRequired', 'false');
+  body.set('scale', 'true');
+  body.set('OCREngine', '2');
+  body.set('filetype', path.extname(String(filename || '')).replace('.', '') || 'jpg');
+  body.set('base64Image', base64Image);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    try { controller.abort(); } catch {}
+  }, TRAINING_IMPORT_OCR_TIMEOUT_MS);
+  try {
+    const resp = await fetch(TRAINING_IMPORT_OCRSPACE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: body.toString(),
+      signal: controller.signal
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const err = new Error(`OCR.space request failed (${resp.status})`);
+      err.code = 'OCRSPACE_HTTP_FAILED';
+      throw err;
+    }
+    if (json?.IsErroredOnProcessing) {
+      const message = Array.isArray(json?.ErrorMessage) ? json.ErrorMessage.join('; ') : String(json?.ErrorMessage || 'OCR.space processing error');
+      const err = new Error(message);
+      err.code = 'OCRSPACE_PROCESSING_FAILED';
+      throw err;
+    }
+    const parsedResults = Array.isArray(json?.ParsedResults) ? json.ParsedResults : [];
+    const text = parsedResults
+      .map((part) => String(part?.ParsedText || ''))
+      .join('\n')
+      .replace(/\r\n?/g, '\n')
+      .trim();
+    if (!text) {
+      const err = new Error('OCR.space returned no readable text');
+      err.code = 'OCRSPACE_NO_TEXT';
+      throw err;
+    }
+    const avgConfidenceRaw = parsedResults.length
+      ? parsedResults.reduce((sum, part) => sum + Number(part?.TextOverlay?.HasOverlay ? 1 : 0.75), 0) / parsedResults.length
+      : 0;
+    return {
+      ok: true,
+      engine: 'ocr.space',
+      text,
+      lineCount: text.split('\n').filter(Boolean).length,
+      avgConfidence: Math.max(0, Math.min(1, Number(avgConfidenceRaw || 0)))
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function clampInt(value, min, max, fallback) {
@@ -4133,12 +4203,32 @@ async function trainingRoutes(req, res, url) {
       });
     }
     try {
-      const result = await runTrainingImportOcr(decoded.buffer, filename);
+      let result = null;
+      let primaryError = null;
+      try {
+        result = await runTrainingImportOcr(decoded.buffer, filename);
+      } catch (err) {
+        primaryError = err;
+      }
+      if (!result) {
+        try {
+          result = await runTrainingImportOcrViaOcrSpace(decoded.buffer, filename);
+        } catch (fallbackErr) {
+          const primaryMsg = String(primaryError?.message || '').trim();
+          const fallbackMsg = String(fallbackErr?.message || '').trim();
+          const detail = [primaryMsg, fallbackMsg].filter(Boolean).join(' | ');
+          const combined = new Error(detail || 'OCR backend unavailable');
+          const fallbackCode = typeof fallbackErr?.code === 'string' ? fallbackErr.code : '';
+          const primaryCode = typeof primaryError?.code === 'string' ? primaryError.code : '';
+          combined.code = fallbackCode || primaryCode || 'OCR_FAILED';
+          throw combined;
+        }
+      }
       const text = String(result?.text || '').trim();
       return sendJson(res, 200, {
         ok: true,
         text,
-        engine: String(result?.engine || 'paddleocr'),
+        engine: String(result?.engine || 'ocr'),
         lineCount: Number(result?.lineCount || 0),
         avgConfidence: Number(result?.avgConfidence || 0)
       });
