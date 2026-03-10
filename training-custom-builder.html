@@ -2781,6 +2781,31 @@
         return null;
       }
 
+      function extractImportInlineDayPrefix(rawLine) {
+        const line = normalizeOcrLineText(rawLine);
+        if (!line) return null;
+        const match = line.match(/^\s*(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b(?:\s*[-:|]\s*|\s+)/i);
+        if (!match) return null;
+        const weekday = weekdayFromImportToken(match[1]);
+        if (!Number.isInteger(weekday)) return null;
+        const remainder = String(line.slice(match[0].length) || '').trim();
+        return {
+          weekday,
+          remainder
+        };
+      }
+
+      function isImportTableHeaderLine(rawLine) {
+        const line = normalizeImportToken(rawLine);
+        if (!line) return false;
+        return (
+          /\bday\b/.test(line)
+          && /\bexercise\b/.test(line)
+          && /\bset\b/.test(line)
+          && /\brep\b/.test(line)
+        );
+      }
+
       function inferDayFocusFromLine(rawLine) {
         const line = normalizeImportToken(rawLine);
         if (!line) return '';
@@ -2852,6 +2877,8 @@
         let currentDayOrdinal = null;
         let currentDayFocus = '';
         lines.forEach((line) => {
+          if (isImportTableHeaderLine(line)) return;
+
           const header = inferImportDayHeader(line);
           if (header && typeof header === 'object') {
             if (Number.isInteger(header.weekday)) {
@@ -2866,9 +2893,16 @@
             }
             return;
           }
-          const parsed = parseImportedLineDetail(line);
+
+          const inlineDay = extractImportInlineDayPrefix(line);
+          const parseSource = inlineDay?.remainder ? inlineDay.remainder : line;
+          const parsed = parseImportedLineDetail(parseSource);
           if (!parsed || !isLikelyExerciseName(parsed.name)) return;
-          if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
+          if (Number.isInteger(inlineDay?.weekday)) {
+            parsed.weekday = Number(inlineDay.weekday);
+          } else if (Number.isInteger(currentWeekday)) {
+            parsed.weekday = currentWeekday;
+          }
           if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
           if (currentDayFocus) parsed.dayFocus = currentDayFocus;
           chunks.push(parsed);
