@@ -1,7 +1,7 @@
 ﻿/*
   Import parser stress test:
   - Exercises OCR-like noise handling for multiple workout text formats
-  - Verifies >= 90% field accuracy for at least 50 loops
+  - Verifies >= 90% field accuracy on at least 80% of runs
 */
 
 function normalizeImportToken(raw) {
@@ -50,6 +50,37 @@ function cleanImportedEntry(raw) {
   return value;
 }
 
+function normalizeImportWeightToLb(value, unitHint = 'lb') {
+  const raw = Number(value);
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  const unit = String(unitHint || '').trim().toLowerCase();
+  const lb = unit.startsWith('kg') ? (raw * 2.2046226218) : raw;
+  const rounded = Math.round(lb * 2) / 2;
+  if (!Number.isFinite(rounded) || rounded <= 0) return null;
+  return Math.max(5, Math.min(2000, rounded));
+}
+
+function extractImportLastWeightHint(rawLine) {
+  const line = normalizeOcrLineText(rawLine);
+  if (!line) return null;
+  const weightMatch = line.match(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/i);
+  if (!weightMatch) return null;
+  const hasLiftHint = /\b(last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b/i.test(line);
+  if (!hasLiftHint) return null;
+  return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+}
+
+function isImportWeightNoteLine(rawLine) {
+  const line = normalizeOcrLineText(rawLine);
+  if (!line) return false;
+  const lower = line.toLowerCase();
+  const hasWeight = /\b\d{2,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/.test(lower);
+  if (!hasWeight) return false;
+  if (!/\b(last|last week|previous|prev|prior|working weight|top set|used|weight)\b/.test(lower)) return false;
+  if (/\b(sets?|reps?|rest|x\s*\d|day|session)\b/.test(lower)) return false;
+  return true;
+}
+
 function isLikelyExerciseName(raw) {
   const text = String(raw || '').trim();
   if (!text) return false;
@@ -58,6 +89,7 @@ function isLikelyExerciseName(raw) {
   const lowerText = text.toLowerCase();
   const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
   if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target|main work|accessory work|arm finisher|load and pacing guidance|guidance|session|emphasis|purpose)\b/.test(lowerText)) return false;
+  if (!hasExerciseKeyword && /\b(last|last week|previous|prev|prior|working weight|top set|used)\b/.test(lowerText) && /\b(lb|lbs|kg|kgs|pounds?|dumbbells?)\b/.test(lowerText)) return false;
   if (!hasExerciseKeyword && /:\s*/.test(text)) return false;
   if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day|no lifting|focus on food|focus on sleep|focus on recovery)\b/.test(lowerText)) return false;
   const normalized = normalizeImportToken(text);
@@ -116,11 +148,13 @@ function parseRestSecondsFromMatch(numberRaw, unitRaw) {
 function parseImportedLineDetail(rawLine) {
   const sourceText = normalizeOcrLineText(rawLine);
   if (!sourceText) return null;
+  if (isImportWeightNoteLine(sourceText)) return null;
 
   let working = sourceText;
   let sets = null;
   let reps = '';
   let restSec = null;
+  let projectedLb = null;
   working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
 
   const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
@@ -175,6 +209,7 @@ function parseImportedLineDetail(rawLine) {
     const rightRaw = String(sxrMatch[2] || '').replace(/\s+/g, '');
     if (!reps && rightRaw) reps = rightRaw;
     if (Number.isFinite(left) && left >= 1 && left <= 8 && !sets) sets = Math.round(left);
+    if (Number.isFinite(left) && left >= 20 && !projectedLb) projectedLb = normalizeImportWeightToLb(left, 'lb');
     working = working.replace(sxrMatch[0], ' ');
   }
 
@@ -192,6 +227,11 @@ function parseImportedLineDetail(rawLine) {
     }
   }
 
+  const hinted = extractImportLastWeightHint(sourceText);
+  if (!projectedLb && Number.isFinite(Number(hinted)) && Number(hinted) > 0) {
+    projectedLb = Number(hinted);
+  }
+
   let name = cleanImportedEntry(
     working
       .replace(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/g, ' ')
@@ -204,7 +244,8 @@ function parseImportedLineDetail(rawLine) {
     name,
     sets: Number.isFinite(Number(sets)) ? Math.max(1, Math.min(8, Math.round(Number(sets)))) : null,
     reps: String(reps || '').trim().slice(0, 16) || '',
-    restSec: Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null
+    restSec: Number.isFinite(Number(restSec)) ? Math.max(30, Math.min(300, Math.round(Number(restSec)))) : null,
+    projected: Number.isFinite(Number(projectedLb)) ? { value: Number(projectedLb), unit: 'lb' } : null
   };
 }
 
@@ -218,6 +259,15 @@ function mergeImportedEntryDetails(base, incoming) {
   if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) merged.sets = next.sets;
   if (!String(merged.reps || '').trim() && String(next.reps || '').trim()) merged.reps = String(next.reps).trim();
   if (!(Number.isFinite(merged.restSec) && merged.restSec > 0) && Number.isFinite(next.restSec) && next.restSec > 0) merged.restSec = next.restSec;
+  const curProjected = merged?.projected && Number.isFinite(Number(merged.projected.value))
+    ? Number(merged.projected.value)
+    : null;
+  const nextProjected = next?.projected && Number.isFinite(Number(next.projected.value))
+    ? Number(next.projected.value)
+    : null;
+  if (nextProjected != null && (curProjected == null || nextProjected > curProjected)) {
+    merged.projected = { value: nextProjected, unit: 'lb' };
+  }
   return merged;
 }
 
@@ -245,7 +295,16 @@ function parseImportedEntries(raw) {
       return;
     }
     const parsed = parseImportedLineDetail(line);
-    if (!parsed || !isLikelyExerciseName(parsed.name)) return;
+    if (!parsed || !isLikelyExerciseName(parsed.name)) {
+      const hintedWeight = extractImportLastWeightHint(line);
+      if (Number.isFinite(Number(hintedWeight)) && Number(hintedWeight) > 0 && chunks.length) {
+        const last = chunks[chunks.length - 1];
+        if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
+          last.projected = { value: Number(hintedWeight), unit: 'lb' };
+        }
+      }
+      return;
+    }
     if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
     if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
     chunks.push(parsed);
@@ -317,6 +376,22 @@ const SESSION_EXPECTED = [
   { dayOrdinal: 3, name: 'Standing Calf Raise', sets: 4, reps: '12-20' },
   { dayOrdinal: 5, name: 'Pull-Ups or Assisted Pull-Ups', sets: 3, reps: '6-10' },
   { dayOrdinal: 6, name: 'Hack Squat or Front Squat', sets: 4, reps: '8-10' }
+];
+
+const LAST_WEEK_NOTES_EXPECTED = [
+  { weekday: 1, name: 'Bench Press', sets: 4, reps: '6-8', projected: 185 },
+  { weekday: 1, name: 'Incline Dumbbell Press', sets: 3, reps: '8-10', projected: 70 },
+  { weekday: 1, name: 'Seated Shoulder Press', sets: 3, reps: '8-12', projected: 55 },
+  { weekday: 1, name: 'Cable Lateral Raise', sets: 3, reps: '12-15', projected: 20 },
+  { weekday: 1, name: 'Rope Triceps Pushdown', sets: 3, reps: '10-15', projected: 50 },
+  { weekday: 2, name: 'Lat Pulldown', sets: 4, reps: '8-10', projected: 140 },
+  { weekday: 2, name: 'Barbell Row', sets: 3, reps: '6-8', projected: 165 },
+  { weekday: 2, name: 'Seated Cable Row', sets: 3, reps: '10-12', projected: 130 },
+  { weekday: 2, name: 'Rear Delt Fly', sets: 3, reps: '12-15', projected: 25 },
+  { weekday: 2, name: 'Dumbbell Curl', sets: 3, reps: '10-12', projected: 35 },
+  { weekday: 3, name: 'Back Squat', sets: 4, reps: '6-8', projected: 225 },
+  { weekday: 3, name: 'Romanian Deadlift', sets: 3, reps: '8-10', projected: 185 },
+  { weekday: 3, name: 'Leg Press', sets: 3, reps: '10-12', projected: 405 }
 ];
 
 function mutateLine(line, rand) {
@@ -461,6 +536,44 @@ function buildSessionDoc(seed) {
   return lines.join('\n');
 }
 
+function buildLastWeekNotesDoc(seed) {
+  const rand = random(seed);
+  const lines = [
+    'Monday — Push',
+    mutateLine('• Bench Press — 4 x 6-8 — Rest 2 min', rand),
+    mutateLine('  Last week: 185 lb', rand),
+    mutateLine('• Incline Dumbbell Press — 3 x 8-10 — Rest 90 sec', rand),
+    mutateLine('  Last week: 70 lb dumbbells', rand),
+    mutateLine('• Seated Shoulder Press — 3 x 8-12 — Rest 90 sec', rand),
+    mutateLine('  Last week: 55 lb dumbbells', rand),
+    mutateLine('• Cable Lateral Raise — 3 x 12-15 — Rest 60 sec', rand),
+    mutateLine('  Last week: 20 lb', rand),
+    mutateLine('• Rope Triceps Pushdown — 3 x 10-15 — Rest 60 sec', rand),
+    mutateLine('  Last week: 50 lb', rand),
+    '',
+    'Tuesday — Pull',
+    mutateLine('• Lat Pulldown — 4 x 8-10 — Rest 90 sec', rand),
+    mutateLine('  Last week: 140 lb', rand),
+    mutateLine('• Barbell Row — 3 x 6-8 — Rest 2 min', rand),
+    mutateLine('  Last week: 165 lb', rand),
+    mutateLine('• Seated Cable Row — 3 x 10-12 — Rest 75 sec', rand),
+    mutateLine('  Last week: 130 lb', rand),
+    mutateLine('• Rear Delt Fly — 3 x 12-15 — Rest 60 sec', rand),
+    mutateLine('  Last week: 25 lb dumbbells', rand),
+    mutateLine('• Dumbbell Curl — 3 x 10-12 — Rest 60 sec', rand),
+    mutateLine('  Last week: 35 lb dumbbells', rand),
+    '',
+    'Wednesday — Legs',
+    mutateLine('• Back Squat — 4 x 6-8 — Rest 2-3 min', rand),
+    mutateLine('  Last week: 225 lb', rand),
+    mutateLine('• Romanian Deadlift — 3 x 8-10 — Rest 2 min', rand),
+    mutateLine('  Last week: 185 lb', rand),
+    mutateLine('• Leg Press — 3 x 10-12 — Rest 90 sec', rand),
+    mutateLine('  Last week: 405 lb', rand)
+  ];
+  return lines.join('\n');
+}
+
 function similarityScore(a, b) {
   const aa = normalizeImportToken(a);
   const bb = normalizeImportToken(b);
@@ -479,10 +592,19 @@ function repsEq(a, b) {
   return na && nb && na === nb;
 }
 
+function projectedEq(a, b) {
+  const aa = Number(a);
+  const bb = Number(b);
+  if (!Number.isFinite(aa) || !Number.isFinite(bb)) return false;
+  return Math.abs(aa - bb) <= 5;
+}
+
 function scoreDataset(parsed, expected) {
   let correct = 0;
-  const total = expected.length * 4;
+  let total = 0;
   expected.forEach((exp) => {
+    total += 4;
+    if (Number.isFinite(Number(exp?.projected))) total += 1;
     let best = null;
     let bestSim = -1;
     parsed.forEach((p) => {
@@ -504,6 +626,10 @@ function scoreDataset(parsed, expected) {
     if (bestSim >= 0.6) correct += 1;
     if (Number(best.sets) === Number(exp.sets)) correct += 1;
     if (repsEq(best.reps, exp.reps)) correct += 1;
+    if (Number.isFinite(Number(exp?.projected))) {
+      const projected = Number(best?.projected?.value);
+      if (projectedEq(projected, Number(exp.projected))) correct += 1;
+    }
   });
   const extra = Math.max(0, parsed.length - expected.length);
   const penalty = Math.min(extra, Math.max(1, Math.round(expected.length * 0.1)));
@@ -516,17 +642,19 @@ function run() {
     { expected: MULTI_DAY_EXPECTED, build: buildMultiDoc },
     { expected: DAY_ORDINAL_EXPECTED, build: buildDayOrdinalDoc },
     { expected: SHORTHAND_EXPECTED, build: buildShorthandDoc },
-    { expected: SESSION_EXPECTED, build: buildSessionDoc }
+    { expected: SESSION_EXPECTED, build: buildSessionDoc },
+    { expected: LAST_WEEK_NOTES_EXPECTED, build: buildLastWeekNotesDoc }
   ];
 
   let attempts = 0;
   let passes = 0;
   const minPassAccuracy = 0.9;
-  const targetPasses = 50;
-  const maxAttempts = 500;
+  const minPassRatio = 0.8;
+  const minAttempts = 120;
+  const maxAttempts = 240;
   const accs = [];
 
-  while (attempts < maxAttempts && passes < targetPasses) {
+  while (attempts < maxAttempts) {
     attempts += 1;
     const ds = datasets[(attempts - 1) % datasets.length];
     const doc = ds.build(1000 + attempts);
@@ -534,21 +662,28 @@ function run() {
     const acc = scoreDataset(parsed, ds.expected);
     accs.push(acc);
     if (acc >= minPassAccuracy) passes += 1;
+    if (attempts >= minAttempts) {
+      const ratio = passes / Math.max(1, attempts);
+      if (ratio >= minPassRatio) break;
+    }
   }
 
   const avg = accs.reduce((a, b) => a + b, 0) / Math.max(1, accs.length);
   const min = accs.length ? Math.min(...accs) : 0;
   const max = accs.length ? Math.max(...accs) : 0;
+  const passRatio = passes / Math.max(1, attempts);
 
   const summary = {
     attempts,
     passes,
-    targetPasses,
+    passRatio: Number(passRatio.toFixed(4)),
+    requiredPassRatio: minPassRatio,
     passThreshold: minPassAccuracy,
+    minimumAttempts: minAttempts,
     averageAccuracy: Number(avg.toFixed(4)),
     minAccuracy: Number(min.toFixed(4)),
     maxAccuracy: Number(max.toFixed(4)),
-    passed: passes >= targetPasses
+    passed: attempts >= minAttempts && passRatio >= minPassRatio
   };
 
   console.log(JSON.stringify(summary, null, 2));
