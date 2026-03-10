@@ -4728,6 +4728,15 @@ Last week: 80 lb</pre>
         state.importReviewPointerDrag = null;
       }
 
+      function scrollImportReviewToTop() {
+        if (!importReviewBodyEl) return;
+        try {
+          importReviewBodyEl.scrollTo({ top: 0, behavior: 'auto' });
+        } catch {
+          importReviewBodyEl.scrollTop = 0;
+        }
+      }
+
       function moveImportReviewRow(dragRowId, targetRowId, placement) {
         const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
         const dragId = String(dragRowId || '').trim();
@@ -7732,6 +7741,7 @@ Last week: 80 lb</pre>
           if (prevBtn) {
             state.importReviewActiveIndex = clampImportReviewIndex(Number(state.importReviewActiveIndex || 0) - 1);
             renderImportReviewRows();
+            scrollImportReviewToTop();
             return;
           }
 
@@ -7739,6 +7749,7 @@ Last week: 80 lb</pre>
           if (nextBtn) {
             state.importReviewActiveIndex = clampImportReviewIndex(Number(state.importReviewActiveIndex || 0) + 1);
             renderImportReviewRows();
+            scrollImportReviewToTop();
             return;
           }
 
