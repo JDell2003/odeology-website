@@ -5217,6 +5217,7 @@ Last week: 80 lb</pre>
               </div>
               <div class="builder-import-flow-main">
                 <span class="builder-import-flow-status ${statusClass}">${escapeHtml(statusLabel)}</span>
+                <span class="builder-import-flow-confidence">Best confidence: ${confPct}%</span>
                 <h4 class="builder-import-flow-title">${escapeHtml(candidateName)}</h4>
                 <p class="builder-import-flow-source">${escapeHtml(String(row?.sourceText || ''))}</p>
                 ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
@@ -5251,7 +5252,7 @@ Last week: 80 lb</pre>
                   <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
                   <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
                 </div>
-                <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
+                
               </div>
             </article>
           `;
