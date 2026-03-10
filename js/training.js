@@ -9836,6 +9836,7 @@ function toggleSharePopover(force) {
           const addSetForExercise = () => {
             const next = Math.min(12, setCount + 1);
             if (next === setCount) return;
+            captureVisibleWorkoutInputDrafts();
             setWorkoutSetCountDraft({
               exId: exerciseKey,
               exSlot: exIdx,
@@ -9848,6 +9849,7 @@ function toggleSharePopover(force) {
           };
           const removeSetForExercise = () => {
             if (setCount <= baseSetCount) return;
+            captureVisibleWorkoutInputDrafts();
             setWorkoutSetCountDraft({
               exId: exerciseKey,
               exSlot: exIdx,
