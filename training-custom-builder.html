@@ -2577,6 +2577,10 @@ Last week: 80 lb</pre>
         [/\blat\s*pulldwon\b/g, 'lat pulldown']
       ];
       const IMPORT_TYPO_REPLACERS = [
+        [/\bdumbel+l\b/g, 'dumbbell'],
+        [/\bdumbel\b/g, 'dumbbell'],
+        [/\bdumbe11\b/g, 'dumbbell'],
+        [/\bdumbbe11\b/g, 'dumbbell'],
         [/\bpulldwon\b/g, 'pulldown'],
         [/\bpulld0wn\b/g, 'pulldown'],
         [/\bpu1ldown\b/g, 'pulldown'],
@@ -3163,6 +3167,13 @@ Last week: 80 lb</pre>
         const cur = base && typeof base === 'object' ? base : {};
         const next = incoming && typeof incoming === 'object' ? incoming : {};
         const merged = { ...cur };
+        const curOrder = Number.isFinite(Number(cur?.sourceOrder)) ? Number(cur.sourceOrder) : null;
+        const nextOrder = Number.isFinite(Number(next?.sourceOrder)) ? Number(next.sourceOrder) : null;
+        if (curOrder == null && nextOrder != null) {
+          merged.sourceOrder = nextOrder;
+        } else if (curOrder != null && nextOrder != null) {
+          merged.sourceOrder = Math.min(curOrder, nextOrder);
+        }
         if (!merged.sourceText && next.sourceText) merged.sourceText = String(next.sourceText);
         if (!merged.name && next.name) merged.name = String(next.name);
         if (!Number.isInteger(merged.weekday) && Number.isInteger(next.weekday)) {
@@ -3538,6 +3549,7 @@ Last week: 80 lb</pre>
           .map((line) => String(line || '').trim())
           .filter(Boolean);
         const chunks = [];
+        let sourceOrder = 0;
         let currentWeekday = null;
         let currentDayOrdinal = null;
         let currentDayFocus = '';
@@ -3596,6 +3608,7 @@ Last week: 80 lb</pre>
           } else if (Number.isInteger(currentWeekday)) {
             parsed.weekday = currentWeekday;
           }
+          parsed.sourceOrder = sourceOrder++;
           if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
           if (currentDayFocus) parsed.dayFocus = currentDayFocus;
           chunks.push(parsed);
@@ -4589,6 +4602,7 @@ Last week: 80 lb</pre>
           return {
             id: `import-row-${idx + 1}-${Date.now()}`,
             sourceText: String(parsed?.sourceText || queryText).trim(),
+            sourceOrder: Number.isFinite(Number(parsed?.sourceOrder)) ? Number(parsed.sourceOrder) : idx,
             parsed,
             candidateList: candidates,
             selectedId: canAutoSelect ? String(top.row.id) : '',
@@ -4900,10 +4914,15 @@ Last week: 80 lb</pre>
           if (!matched) continue;
           validRows.push({
             row: matched,
-            parsed: row?.parsed || null
+            parsed: row?.parsed || null,
+            sourceOrder: Number.isFinite(Number(row?.sourceOrder))
+              ? Number(row.sourceOrder)
+              : (Number.isFinite(Number(row?.parsed?.sourceOrder)) ? Number(row.parsed.sourceOrder) : validRows.length)
           });
         }
         if (!validRows.length) return false;
+
+        validRows.sort((a, b) => Number(a?.sourceOrder || 0) - Number(b?.sourceOrder || 0));
 
         const explicitDays = Array.from(new Set(
           validRows
