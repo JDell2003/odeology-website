@@ -721,6 +721,29 @@
       line-height: 1.2;
     }
 
+    .builder-import-dayassign {
+      display: grid;
+      gap: 5px;
+      max-width: 240px;
+    }
+
+    .builder-import-dayassign-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #6f5538;
+    }
+
+    .builder-import-dayassign select {
+      min-height: 32px;
+      border: 1px solid #d8c3a5;
+      border-radius: 9px;
+      padding: 5px 8px;
+      font-size: 0.82rem;
+      background: #fffdfa;
+      color: #2f2418;
+    }
+
     .builder-import-review-foot {
       border-top: 1px solid #e3d3bd;
       padding: 10px 14px 12px;
@@ -1491,6 +1514,10 @@
       }
 
       .builder-import-lastlift {
+        max-width: none;
+      }
+
+      .builder-import-dayassign {
         max-width: none;
       }
 
@@ -3359,7 +3386,7 @@
           const label = formatImportDayLabel(parsed) || `Session ${dayOrdinal}`;
           return { key: `ordinal-${dayOrdinal}`, label };
         }
-        return { key: 'unassigned', label: 'Unassigned' };
+        return { key: 'unassigned', label: 'Could not find a day for this workout' };
       }
 
       function buildImportReviewDayGroups() {
@@ -3806,6 +3833,19 @@
         const dayLabel = String(group?.label || 'Review day');
 
         const renderImportRowCard = (row) => {
+          const rowGroupInfo = getImportRowGroupInfo(row);
+          const isUnassigned = String(rowGroupInfo?.key || '') === 'unassigned';
+          const dayOptionSource = (Array.isArray(state.selectedWeekdays) && state.selectedWeekdays.length)
+            ? state.selectedWeekdays.slice()
+            : [1, 2, 3, 4, 5, 6, 0];
+          const dayOptions = Array.from(new Set(dayOptionSource))
+            .filter((day) => Number.isInteger(Number(day)))
+            .map((day) => {
+              const weekday = Number(day);
+              const value = String(weekday);
+              return `<option value="${value}">${escapeHtml(weekdayLabel(weekday))}</option>`;
+            })
+            .join('');
           const options = (Array.isArray(row?.candidateList) ? row.candidateList : []).map((entry) => {
             const id = String(entry?.row?.id || '');
             const name = String(entry?.row?.name || id || 'Unknown');
@@ -3848,6 +3888,15 @@
                   <span class="builder-import-lastlift-label">Last lifted weight (lb)</span>
                   <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Optional" />
                 </label>
+                ${isUnassigned ? `
+                  <label class="builder-import-dayassign">
+                    <span class="builder-import-dayassign-label">What day?</span>
+                    <select data-import-day-assign="${escapeHtml(row.id)}">
+                      <option value="">Select a day</option>
+                      ${dayOptions}
+                    </select>
+                  </label>
+                ` : ''}
                 <div class="builder-import-fix">
                   <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
                   <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
@@ -5784,6 +5833,30 @@
         });
 
         importReviewBodyEl?.addEventListener('change', (e) => {
+          const dayAssignSelect = e.target.closest('[data-import-day-assign]');
+          if (dayAssignSelect) {
+            const rowId = String(dayAssignSelect.getAttribute('data-import-day-assign') || '').trim();
+            const row = getImportReviewRow(rowId);
+            if (!row) return;
+            const dayVal = String(dayAssignSelect.value || '').trim();
+            const parsed = row.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+            if (!dayVal) {
+              delete parsed.weekday;
+              row.parsed = parsed;
+              renderImportReviewRows();
+              return;
+            }
+            const weekday = Number(dayVal);
+            if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) return;
+            parsed.weekday = weekday;
+            if (Number.isInteger(Number(parsed.dayOrdinal))) delete parsed.dayOrdinal;
+            row.parsed = parsed;
+            row.status = row.selectedId ? 'pending' : row.status;
+            setImportReviewStatus('');
+            renderImportReviewRows();
+            return;
+          }
+
           const lastWeightInput = e.target.closest('[data-import-last-weight]');
           if (lastWeightInput) {
             const rowId = String(lastWeightInput.getAttribute('data-import-last-weight') || '').trim();
