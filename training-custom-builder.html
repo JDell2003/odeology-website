@@ -3195,6 +3195,26 @@ Last week: 80 lb</pre>
         return merged;
       }
 
+      function buildImportEntryDedupeKey(entry) {
+        const parsed = entry && typeof entry === 'object' ? entry : {};
+        const dayKey = Number.isInteger(parsed?.weekday)
+          ? `w${parsed.weekday}`
+          : (Number.isInteger(parsed?.dayOrdinal) ? `d${parsed.dayOrdinal}` : 'x');
+        const nameKey = normalizeImportToken(parsed?.name || '');
+        const setsKey = Number.isFinite(Number(parsed?.sets)) && Number(parsed.sets) > 0
+          ? String(Math.round(Number(parsed.sets)))
+          : '';
+        const repsKey = normalizeImportToken(parsed?.reps || '');
+        const sourceNameKey = normalizeImportToken(
+          String(parsed?.sourceText || '')
+            .replace(/\b(last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b[^,\n]*/gi, ' ')
+            .replace(/\b\d+(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?|set|sets|rep|reps|sec|secs|seconds?|min|mins|minutes?)\b/gi, ' ')
+            .replace(/\b\d+\s*[xX]\s*\d+(?:\s*[-\u2013\u2014]\s*\d+)?\b/g, ' ')
+        );
+        const sourceKey = sourceNameKey.split(' ').slice(0, 8).join(' ');
+        return `${dayKey}:${nameKey}:${setsKey}:${repsKey}:${sourceKey}`;
+      }
+
       function parseImportedLineDetail(rawLine) {
         const sourceText = normalizeOcrLineText(rawLine);
         if (!sourceText) return null;
@@ -3583,10 +3603,7 @@ Last week: 80 lb</pre>
         const unique = [];
         const seen = new Map();
         chunks.forEach((entry) => {
-          const dayKey = Number.isInteger(entry?.weekday)
-            ? `w${entry.weekday}`
-            : (Number.isInteger(entry?.dayOrdinal) ? `d${entry.dayOrdinal}` : 'x');
-          const key = `${dayKey}:${normalizeImportToken(entry.name)}`;
+          const key = buildImportEntryDedupeKey(entry);
           if (!key) return;
           if (seen.has(key)) {
             const idx = seen.get(key);
@@ -3697,12 +3714,35 @@ Last week: 80 lb</pre>
         return Array.from(new Set(variants.map((x) => String(x || '').trim()).filter(Boolean)));
       }
 
+      function isUnilateralImportPhrase(raw) {
+        const text = normalizeImportToken(raw);
+        if (!text) return false;
+        return /\b(one arm|single arm|singlearm|onearm|unilateral|each arm|one hand|single hand)\b/.test(text);
+      }
+
+      function isIsolationImportPhrase(raw) {
+        const text = normalizeImportToken(raw);
+        if (!text) return false;
+        return /\b(raise|fly|curl|extension|pushdown|kickback|rear delt|lateral)\b/.test(text);
+      }
+
+      function isCompoundImportPhrase(raw) {
+        const text = normalizeImportToken(raw);
+        if (!text) return false;
+        return /\b(press|bench|row|pulldown|pull up|chin up|squat|deadlift|lunge|thrust|hack squat|leg press)\b/.test(text);
+      }
+
       function matchExerciseCandidates(rawQuery, maxResults = 6, options = {}) {
         const query = normalizeImportToken(rawQuery);
         if (!query) return [];
         const queryTokens = query.split(' ').filter(Boolean);
         const queryMajorGroup = String(options?.majorGroup || inferMajorGroupFromImportQuery(query) || '').trim();
         const queryFamily = String(options?.movementFamily || inferMovementFamilyFromText(query) || '').trim();
+        const queryUnilateral = isUnilateralImportPhrase(query);
+        const queryIsolation = isIsolationImportPhrase(query);
+        const queryCompound = isCompoundImportPhrase(query) || ['press', 'pull', 'squat', 'hinge'].includes(queryFamily);
+        const queryIsLatPulldown = /\blat\s+pulldown\b/.test(query);
+        const queryIsSupportedRow = /\b(chest supported row|supported row|t bar row|t bar)\b/.test(query);
         const dayFocusGroups = Array.isArray(options?.dayFocusGroups) ? options.dayFocusGroups : [];
         const rows = allLibraryRows();
         const scored = [];
@@ -3762,7 +3802,38 @@ Last week: 80 lb</pre>
             if (candidateFamily === queryFamily) {
               score += 0.24;
             } else {
-              score -= 0.06;
+              score -= 0.14;
+            }
+          }
+
+          const candidateName = normalizeImportToken(row?.name || '');
+          const candidateUnilateral = isUnilateralImportPhrase(candidateName);
+          if (!queryUnilateral && candidateUnilateral) score -= 0.34;
+          if (queryUnilateral && !candidateUnilateral) score -= 0.18;
+          if (queryUnilateral && candidateUnilateral) score += 0.12;
+
+          const candidateIsolation = isIsolationImportPhrase(candidateName)
+            || ['raise', 'curl', 'extension'].includes(candidateFamily);
+          if (queryCompound && !queryIsolation) {
+            if (candidateIsolation) {
+              score -= 0.28;
+            } else {
+              score += 0.1;
+            }
+          }
+
+          if (queryIsLatPulldown) {
+            const candidateIsLatPulldown = /\blat\s+pulldown\b/.test(candidateName);
+            if (candidateIsLatPulldown) score += 0.2;
+            if (candidateUnilateral && !queryUnilateral) score -= 0.3;
+          }
+
+          if (queryIsSupportedRow) {
+            if (/\b(chest supported row|supported row|t bar row|t bar|machine row)\b/.test(candidateName)) {
+              score += 0.28;
+            }
+            if (/\b(rear delt|fly|face pull)\b/.test(candidateName)) {
+              score -= 0.42;
             }
           }
 
@@ -4932,7 +5003,7 @@ Last week: 80 lb</pre>
               ? entry
               : parseImportedLineDetail(entry);
             if (!parsed || !isLikelyExerciseName(parsed.name)) return;
-            const key = normalizeImportToken(parsed.name);
+            const key = buildImportEntryDedupeKey(parsed);
             if (!key) return;
             if (seen.has(key)) {
               const idx = seen.get(key);
