@@ -8953,12 +8953,9 @@ function toggleSharePopover(force) {
         const targetIso = toISODateLocal(target);
         const sameDayLog = skipLogByDate.get(targetIso);
         if (sameDayLog && skipModeOf(sameDayLog) === 'workout_skip') return null;
-        const workoutSkips = countLoggedSkipsThrough(target, 'workout_skip');
         const restSkips = countLoggedSkipsThrough(target, 'rest_skip');
-        const offsetDays = workoutSkips - restSkips;
         const mappedDate = new Date(target);
-        mappedDate.setDate(mappedDate.getDate() - offsetDays);
-        if (mappedDate.getTime() < dayStart(minDate).getTime()) return null;
+        mappedDate.setDate(mappedDate.getDate() + restSkips);
         return baseDayIndexForDate(mappedDate);
       };
       const weekdayToDayIndex = new Map();
@@ -9046,17 +9043,17 @@ function toggleSharePopover(force) {
           return;
         }
         const isWorkoutDay = Number.isFinite(Number(activeDayIndex)) && Number(activeDayIndex) > 0;
-        const skipMode = 'workout_skip';
+        const skipMode = isWorkoutDay ? 'workout_skip' : 'rest_skip';
         const skipLabel = isWorkoutDay
-          ? `Skip ${activeDayFocus} on ${activeIso} and push your split 1 day later?`
-          : `Skip ${activeIso} and push your split 1 day later?`;
+          ? `Mark ${activeDayFocus} on ${activeIso} as skipped?`
+          : `Skip rest day on ${activeIso} and pull the next workout onto today?`;
         const proceed = window.confirm(skipLabel);
         if (!proceed) return;
 
-        const reason = askSkipReason(isWorkoutDay ? activeDayFocus : activeIso);
+        const reason = askSkipReason(isWorkoutDay ? activeDayFocus : `rest day on ${activeIso}`);
         if (!reason) return;
         const finalPrompt = window.confirm(
-          `${isWorkoutDay ? 'Confirm workout skip' : 'Confirm skip'} on ${activeIso}?\nReason: ${reason}`
+          `${isWorkoutDay ? 'Confirm workout skip' : 'Confirm rest-day skip'} on ${activeIso}?\nReason: ${reason}`
         );
         if (!finalPrompt) return;
 
@@ -9071,11 +9068,8 @@ function toggleSharePopover(force) {
           window.alert(logged.error || 'Could not log skipped day.');
           return;
         }
-
-        const nextDay = new Date(activeDate);
-        nextDay.setDate(nextDay.getDate() + 1);
         state.planError = '';
-        setActiveDate(nextDay);
+        setActiveDate(activeDate);
       };
       const todayIso = toISODateLocal(todayStart);
       const undoableSkipEntry = skipLogByDate.get(todayIso) || null;
