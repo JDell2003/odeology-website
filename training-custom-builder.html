@@ -2581,6 +2581,12 @@ Last week: 80 lb</pre>
         [/\bdumbel\b/g, 'dumbbell'],
         [/\bdumbe11\b/g, 'dumbbell'],
         [/\bdumbbe11\b/g, 'dumbbell'],
+        [/\br0w\b/g, 'row'],
+        [/\brcw\b/g, 'row'],
+        [/\bsupp0rted\b/g, 'supported'],
+        [/\bsuppported\b/g, 'supported'],
+        [/\b0ne\b/g, 'one'],
+        [/\barn\b/g, 'arm'],
         [/\bpulldwon\b/g, 'pulldown'],
         [/\bpulld0wn\b/g, 'pulldown'],
         [/\bpu1ldown\b/g, 'pulldown'],
@@ -3542,7 +3548,16 @@ Last week: 80 lb</pre>
       }
 
       function parseImportedEntries(raw) {
-        const source = normalizeOcrDocumentText(raw).trim();
+        const source = normalizeOcrDocumentText(raw)
+          .replace(
+            /(\b\d{1,4}(?:\.\d+)?\s*(?:kg|kgs|kilograms?|lb|lbs|pounds?|s)\b)\s+(?=[a-z][a-z0-9'\/\-\s]{2,}\b(?:press|row|curl|fly|pulldown|pushdown|squat|deadlift|lunge|extension)\b)/gi,
+            '$1\n'
+          )
+          .replace(
+            /(\b\d{1,2}\s*[xX]\s*\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?\b)\s+(?=[a-z][a-z0-9'\/\-\s]{2,}\b(?:press|row|curl|fly|pulldown|pushdown|squat|deadlift|lunge|extension)\b)/gi,
+            '$1\n'
+          )
+          .trim();
         if (!source) return [];
         const lines = source
           .split(/\n+/g)
