@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -2273,7 +2273,7 @@
         <div class="builder-import-dropzone" id="builder-import-dropzone" tabindex="0" role="button" aria-label="Drag and drop screenshots or paste text of workout">
           <div class="builder-import-beta">
             <span class="builder-import-beta-badge">Beta Phase</span>
-            <span class="builder-import-beta-copy">Import is still in testing and may need a quick manual review.</span>
+            <span class="builder-import-beta-copy">Will very likely need a manual review. Click Generate my workout for me if you want us to make you a quick workout.</span>
           </div>
           <div class="builder-import-empty" id="builder-import-empty">
             <span class="builder-import-plus" aria-hidden="true"></span>
@@ -2373,7 +2373,7 @@
         <li>Optional rest: <code>Rest 90 sec</code> or <code>Rest 2 min</code>.</li>
         <li>Optional last weight line: <code>Last week: 140 lb</code>.</li>
       </ul>
-      <pre class="builder-import-example-code">Tuesday — Pull
+      <pre class="builder-import-example-code">Tuesday � Pull
 Lat Pulldown
 4 x 10
 Rest 90 sec
@@ -2395,7 +2395,7 @@ Last week: 80 lb</pre>
       <div class="builder-import-review-head">
         <div>
           <h3>We came across a few errors. Confirm these workouts.</h3>
-          <p>Use ✓ if correct. Use X if it is wrong, then type what it should be and re-match.</p>
+          <p>Use ? if correct. Use X if it is wrong, then type what it should be and re-match.</p>
         </div>
         <button type="button" class="btn btn-ghost" id="builder-import-review-close" onclick="document.getElementById('builder-import-review').hidden=true;document.getElementById('builder-import-review').setAttribute('aria-hidden','true');document.getElementById('builder-import-review').style.display='none';">Close</button>
       </div>
@@ -4859,7 +4859,7 @@ Last week: 80 lb</pre>
             <section class="builder-import-guide">
               <h4>Quick confirm before workout build</h4>
               <p>Step 1: Review all workout cards for the current day.</p>
-              <p>Step 2: Press <b>✓</b> if correct, or <b>x</b> if wrong and type a fix.</p>
+              <p>Step 2: Press <b>?</b> if correct, or <b>x</b> if wrong and type a fix.</p>
               <p>Step 3: Use Back/Next to move between days. When all cards are confirmed, press <b>Apply and build workout</b>.</p>
               <div class="builder-import-flow-nav">
                 <span class="builder-import-flow-count">${rows.length} workout${rows.length === 1 ? '' : 's'} ready to review</span>
@@ -4929,7 +4929,7 @@ Last week: 80 lb</pre>
                     ${options || '<option value="">No matches yet</option>'}
                   </select>
                   <div class="builder-import-row-actions">
-                    <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">✓</button>
+                    <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">?</button>
                     <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
                   </div>
                 </div>
@@ -4966,8 +4966,8 @@ Last week: 80 lb</pre>
             ${(Array.isArray(group?.rows) ? group.rows : []).map((row) => renderImportRowCard(row)).join('')}
           </section>
           <div class="builder-import-flow-nav">
-            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>← Back day</button>
-            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (groups.length - 1) ? 'disabled' : ''}>Next day →</button>
+            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>? Back day</button>
+            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (groups.length - 1) ? 'disabled' : ''}>Next day ?</button>
           </div>
         `;
       }
