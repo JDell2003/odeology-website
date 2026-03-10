@@ -5460,6 +5460,7 @@ Last week: 80 lb</pre>
       async function applyImportedRowsToPlan(rows) {
         const sourceRows = Array.isArray(rows) ? rows : [];
         const validRows = [];
+        const seenImportApplyKeys = new Set();
         for (const row of sourceRows) {
           const selected = String(row?.selectedId || '').trim();
           if (!selected) continue;
@@ -5474,6 +5475,28 @@ Last week: 80 lb</pre>
             matched = await createImportedCustomWorkout(matched, row);
           }
           if (!matched) continue;
+          const parsedWeekday = Number(row?.parsed?.weekday);
+          const parsedDayOrdinal = Number(row?.parsed?.dayOrdinal);
+          const parsedSets = Number(row?.parsed?.sets);
+          const parsedSourceName = String(row?.parsed?.name || row?.sourceText || matched?.name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+          const parsedReps = String(row?.parsed?.reps || '').trim().toLowerCase();
+          const parsedRest = Number(row?.parsed?.restSec);
+          const parsedWeight = Number(row?.parsed?.lastWeightLb);
+          const applyDedupeKey = [
+            Number.isInteger(parsedWeekday) ? `w${parsedWeekday}` : '',
+            Number.isInteger(parsedDayOrdinal) ? `d${parsedDayOrdinal}` : '',
+            String(matched?.id || '').trim().toLowerCase(),
+            parsedSourceName,
+            Number.isFinite(parsedSets) ? `s${parsedSets}` : '',
+            parsedReps ? `r${parsedReps}` : '',
+            Number.isFinite(parsedRest) ? `t${parsedRest}` : '',
+            Number.isFinite(parsedWeight) ? `p${parsedWeight}` : ''
+          ].filter(Boolean).join('|');
+          if (applyDedupeKey && seenImportApplyKeys.has(applyDedupeKey)) continue;
+          if (applyDedupeKey) seenImportApplyKeys.add(applyDedupeKey);
           validRows.push({
             row: matched,
             parsed: row?.parsed || null,
