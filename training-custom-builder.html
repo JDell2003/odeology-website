@@ -755,10 +755,42 @@
       align-items: center;
     }
 
+    .builder-import-flow-inline {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) 210px;
+      align-items: end;
+    }
+
+    .builder-import-select-wrap {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .builder-import-select-wrap-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #6f5538;
+    }
+
+    .builder-import-select-wrap select {
+      min-height: 32px;
+      border: 1px solid #d8c3a5;
+      border-radius: 9px;
+      padding: 5px 8px;
+      font-size: 0.82rem;
+      background: #fffdfa;
+      color: #2f2418;
+      width: 100%;
+      max-width: 100%;
+    }
+
     .builder-import-lastlift {
       display: grid;
       gap: 5px;
-      max-width: 220px;
+      max-width: 210px;
     }
 
     .builder-import-lastlift-label {
@@ -1823,6 +1855,10 @@
       }
 
       .builder-import-flow-row {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-import-flow-inline {
         grid-template-columns: 1fr;
       }
 
@@ -5184,19 +5220,24 @@ Last week: 80 lb</pre>
                 <h4 class="builder-import-flow-title">${escapeHtml(candidateName)}</h4>
                 <p class="builder-import-flow-source">${escapeHtml(String(row?.sourceText || ''))}</p>
                 ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
+                <div class="builder-import-flow-inline">
+                  <label class="builder-import-select-wrap">
+                    <span class="builder-import-select-wrap-label">Matched workout</span>
+                    <select data-import-select="${escapeHtml(row.id)}">
+                      ${options || '<option value="">No matches yet</option>'}
+                    </select>
+                  </label>
+                  <label class="builder-import-lastlift">
+                    <span class="builder-import-lastlift-label">Last lifted weight (lb)</span>
+                    <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Auto-filled if found" />
+                  </label>
+                </div>
                 <div class="builder-import-flow-row">
-                  <select data-import-select="${escapeHtml(row.id)}">
-                    ${options || '<option value="">No matches yet</option>'}
-                  </select>
                   <div class="builder-import-row-actions">
                     <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">&#10003;</button>
                     <button type="button" class="builder-import-x builder-import-delete" data-import-delete="${escapeHtml(row.id)}" aria-label="Delete workout">&#128465;</button>
                   </div>
                 </div>
-                <label class="builder-import-lastlift">
-                  <span class="builder-import-lastlift-label">Last lifted weight (lb)</span>
-                  <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Auto-filled if found" />
-                </label>
                 ${isUnassigned ? `
                   <label class="builder-import-dayassign">
                     <span class="builder-import-dayassign-label">What day?</span>
