@@ -2395,31 +2395,47 @@
         [/\bohp\b/g, 'overhead press'],
         [/\brdl\b/g, 'romanian deadlift'],
         [/\blat\s*pd\b/g, 'lat pulldown'],
+        [/\blat\s*pull\s*down\b/g, 'lat pulldown'],
+        [/\blat\s*pull\b/g, 'lat pulldown'],
         [/\btri\s*ext\b/g, 'triceps extension'],
+        [/\btri\s*pd\b/g, 'triceps pushdown'],
+        [/\boh\s*ext\b/g, 'overhead extension'],
         [/\boh\s*tri(?:ceps)?\s*ext\b/g, 'overhead triceps extension'],
         [/\bbb\b/g, 'barbell'],
         [/\bdb\b/g, 'dumbbell'],
+        [/\bsupported\s*row\b/g, 'chest supported row'],
+        [/\bchest\s*supported\b/g, 'chest supported'],
         [/\bext\b/g, 'extension'],
         [/\bleg\s*ext\b/g, 'leg extension'],
         [/\bleg\s*curls?\b/g, 'hamstring curl'],
         [/\bham\s*curls?\b/g, 'hamstring curl'],
         [/\blaterals?\b/g, 'lateral raise'],
         [/\bpushdowns?\b/g, 'triceps pushdown'],
+        [/\boh\s*triceps\s*extension\b/g, 'overhead triceps extension'],
+        [/\boverhead\s*cable\s*triceps\s*extension\b/g, 'overhead triceps extension'],
         [/\bpullups?\b/g, 'pull up'],
         [/\bchinups?\b/g, 'chin up'],
+        [/\b45\s*degree\s*leg\s*press\b/g, 'leg press'],
+        [/\bez\s*bar\b/g, 'ez bar'],
         [/\bpec\s*dec\b/g, 'pec deck'],
         [/\blat\s*pulldwon\b/g, 'lat pulldown']
       ];
       const IMPORT_TYPO_REPLACERS = [
         [/\bpulldwon\b/g, 'pulldown'],
+        [/\bpulld0wn\b/g, 'pulldown'],
+        [/\bpu1ldown\b/g, 'pulldown'],
         [/\bshoudler\b/g, 'shoulder'],
+        [/\bshou1der\b/g, 'shoulder'],
         [/\btricepts?\b/g, 'triceps'],
+        [/\btr1ceps\b/g, 'triceps'],
         [/\bbicepts?\b/g, 'biceps'],
         [/\bexntension\b/g, 'extension'],
         [/\bromainian\b/g, 'romanian'],
+        [/\bromanlan\b/g, 'romanian'],
         [/\bdedlift\b/g, 'deadlift'],
         [/\blundge\b/g, 'lunge'],
         [/\bprecher\b/g, 'preacher'],
+        [/\bpreacber\b/g, 'preacher'],
         [/\bhamsting\b/g, 'hamstring']
       ];
 
@@ -3761,61 +3777,113 @@
         return canvas;
       }
 
-      async function buildBackendOcrImageDataUrl(file) {
-        const qualityLevels = [0.86, 0.78, 0.68];
-        const widthLevels = [1700, 1500, 1300];
+      async function buildBackendOcrImageDataUrlCandidates(file) {
+        const qualityLevels = [0.88, 0.8, 0.72];
+        const widthLevels = [1900, 1700, 1500, 1300];
+        const modes = ['enhanced', 'threshold', 'raw'];
         const maxPayloadChars = 1_200_000;
-        for (let i = 0; i < widthLevels.length; i += 1) {
-          const targetMinWidth = widthLevels[i];
-          try {
-            const canvas = await buildOcrCanvasVariant(file, { mode: 'enhanced', targetMinWidth });
+        const seen = new Set();
+        const candidates = [];
+        for (let m = 0; m < modes.length; m += 1) {
+          const mode = modes[m];
+          for (let i = 0; i < widthLevels.length; i += 1) {
+            const targetMinWidth = widthLevels[i];
+            let canvas = null;
+            try {
+              canvas = await buildOcrCanvasVariant(file, { mode, targetMinWidth });
+            } catch {
+              continue;
+            }
+            if (!canvas) continue;
             for (let q = 0; q < qualityLevels.length; q += 1) {
               const quality = qualityLevels[q];
               const dataUrl = canvas.toDataURL('image/jpeg', quality);
-              if (String(dataUrl || '').length > maxPayloadChars) continue;
-              return dataUrl;
+              const size = String(dataUrl || '').length;
+              if (!dataUrl || size > maxPayloadChars) continue;
+              const key = `${mode}:${targetMinWidth}:${quality}:${size}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+              candidates.push({
+                dataUrl,
+                mode,
+                width: targetMinWidth,
+                quality
+              });
+              if (candidates.length >= 10) return candidates;
             }
-          } catch {
-            // Continue and try next width.
           }
         }
-        return null;
+        return candidates;
       }
 
       async function extractTextFromImageBackend(file, fileIndex, totalFiles) {
         const label = `Scanning image ${fileIndex + 1} of ${totalFiles}...`;
         setImportLoadingVisible(true, `${label} Server OCR`, 6);
-        const imageDataUrl = await buildBackendOcrImageDataUrl(file);
-        if (!imageDataUrl) {
+        const candidates = await buildBackendOcrImageDataUrlCandidates(file);
+        if (!candidates.length) {
           throw new Error('Could not prepare image for backend OCR');
         }
-        const { res, json } = await fetchJsonWithTimeout(OCR_BACKEND_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({
-            imageDataUrl,
-            filename: String(file?.name || `import-${fileIndex + 1}.jpg`)
-          })
-        });
-        if (!res.ok || !json?.ok) {
-          const msg = String(json?.error || `Backend OCR failed (${res.status})`).trim();
-          throw new Error(msg || 'Backend OCR failed');
+        const maxAttempts = Math.min(6, candidates.length);
+        let best = null;
+        let lastError = null;
+        for (let i = 0; i < maxAttempts; i += 1) {
+          const candidate = candidates[i];
+          const pct = Math.max(6, Math.min(94, Math.round(((i + 1) / Math.max(1, maxAttempts)) * 92)));
+          setImportLoadingVisible(true, `${label} Server OCR ${i + 1}/${maxAttempts}`, pct);
+          try {
+            const { res, json } = await fetchJsonWithTimeout(OCR_BACKEND_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                imageDataUrl: candidate.dataUrl,
+                filename: String(file?.name || `import-${fileIndex + 1}.jpg`)
+              })
+            });
+            if (!res.ok || !json?.ok) {
+              const msg = String(json?.error || `Backend OCR failed (${res.status})`).trim();
+              throw new Error(msg || 'Backend OCR failed');
+            }
+            const text = normalizeOcrDocumentText(String(json?.text || ''));
+            if (!text.trim()) throw new Error('Backend OCR returned no readable text');
+            const score = scoreOcrTextCandidate(text);
+            const lineCount = Number(json?.lineCount || 0);
+            const avgConfidence = Number(json?.avgConfidence || 0);
+            const composite = Number(score.score || 0) + (lineCount * 0.6) + (Math.max(0, Math.min(1, avgConfidence)) * 10);
+            const current = {
+              text,
+              engine: String(json?.engine || 'ocr'),
+              parsedCount: Number(score.parsedCount || 0),
+              score: Number(score.score || 0),
+              composite,
+              lineCount,
+              avgConfidence,
+              mode: candidate.mode
+            };
+            if (!best || current.composite > best.composite) {
+              best = current;
+            }
+            if (current.parsedCount >= 8 && current.score >= 95) break;
+          } catch (err) {
+            lastError = err;
+          }
         }
-        const text = normalizeOcrDocumentText(String(json?.text || ''));
-        if (!text.trim()) {
-          throw new Error('Backend OCR returned no readable text');
+        if (!best || !String(best.text || '').trim()) {
+          throw (lastError || new Error('Backend OCR failed for this image'));
         }
-        if (shouldLogImportDebug()) {
+        if (isImportDebugEnabled()) {
           console.log('[import-ocr-backend]', {
             file: file?.name || `image-${fileIndex + 1}`,
-            engine: json?.engine || 'paddleocr',
-            lineCount: Number(json?.lineCount || 0),
-            avgConfidence: Number(json?.avgConfidence || 0)
+            engine: best.engine,
+            lineCount: best.lineCount,
+            avgConfidence: best.avgConfidence,
+            parsedCount: best.parsedCount,
+            score: best.score,
+            mode: best.mode
           });
         }
         setImportLoadingVisible(true, `${label} Server OCR complete`, Math.max(0, Math.min(100, Math.round(((fileIndex + 0.88) / Math.max(1, totalFiles)) * 100))));
-        return text;
+        return best.text;
       }
 
       function scoreOcrTextCandidate(rawText) {
@@ -3837,7 +3905,7 @@
         try {
           return await extractTextFromImageBackend(file, fileIndex, totalFiles);
         } catch (backendErr) {
-          if (shouldLogImportDebug()) {
+          if (isImportDebugEnabled()) {
             console.warn('[import-ocr-backend-fallback]', {
               file: file?.name || `image-${fileIndex + 1}`,
               error: backendErr?.message || String(backendErr || 'unknown backend OCR error')
