@@ -4538,7 +4538,7 @@ function toFreeExerciseDbRemotePath(src) {
   function openSwapScopeModal({ ex, dayIndex, weekIndex, newExerciseId, onDone }) {
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close swap options' }),
-      el('div', { class: 'schedule-modal-card' },
+      el('div', { class: 'schedule-modal-card swap-scope-modal-card' },
         el('div', { class: 'schedule-modal-head' },
           el('div', { class: 'schedule-modal-title' }, 'Apply swap'),
           el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close swap options' }, '×')
@@ -4548,10 +4548,10 @@ function toFreeExerciseDbRemotePath(src) {
             'Do you want to swap this exercise permanently, or just for today?'
           )
         ),
-        el('div', { class: 'schedule-modal-actions', style: 'justify-content:flex-start; gap:0.6rem' },
+        el('div', { class: 'schedule-modal-actions swap-scope-modal-actions' },
           el('button', {
             type: 'button',
-            class: 'btn btn-primary',
+            class: 'btn btn-primary swap-scope-modal-btn',
             onclick: () => {
               applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'single' });
               overlay.remove();
@@ -4560,14 +4560,14 @@ function toFreeExerciseDbRemotePath(src) {
           }, 'Just this exercise'),
           el('button', {
             type: 'button',
-            class: 'btn btn-ghost',
+            class: 'btn btn-ghost swap-scope-modal-btn',
             onclick: () => {
               applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'permanent' });
               overlay.remove();
               onDone?.();
             }
           }, 'Swap permanently'),
-          el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Cancel')
+          el('button', { type: 'button', class: 'btn btn-ghost swap-scope-modal-btn swap-scope-modal-cancel', onclick: () => overlay.remove() }, 'Cancel')
         )
       )
     );

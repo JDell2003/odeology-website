@@ -19286,6 +19286,56 @@ html[data-theme="light"] .ode-tour-btn.primary {
     gap: 0.6rem;
 }
 
+.training-page .swap-scope-modal-card {
+    width: min(540px, calc(100vw - 2rem));
+    margin: 0 auto;
+}
+
+.training-page .swap-scope-modal-actions {
+    justify-content: stretch;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.training-page .swap-scope-modal-btn {
+    flex: 1 1 0;
+    min-height: 58px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+.training-page .swap-scope-modal-cancel {
+    flex-basis: 100%;
+}
+
+@media (max-width: 640px) {
+    .training-page .schedule-modal {
+        padding: 1rem;
+    }
+
+    .training-page .swap-scope-modal-card {
+        width: min(420px, calc(100vw - 1.2rem));
+        padding: 1.2rem 1rem;
+        border-radius: 20px;
+    }
+
+    .training-page .swap-scope-modal-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+    }
+
+    .training-page .swap-scope-modal-cancel {
+        grid-column: 1 / -1;
+    }
+}
+
 .training-page .btn-compact {
     padding: 0.35rem 0.6rem;
     font-size: 0.78rem;
