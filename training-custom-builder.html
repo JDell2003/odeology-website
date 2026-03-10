@@ -1801,8 +1801,8 @@
       }
 
       .builder-import-strip {
-        margin-bottom: 0;
-        padding: 8px 10px 4px;
+        margin: 8px 0 0;
+        padding: 8px 10px 6px;
         border-radius: 14px;
         box-shadow: 0 8px 18px rgba(64, 42, 19, 0.1);
       }
@@ -1825,21 +1825,32 @@
       }
 
       .builder-import-beta {
-        gap: 8px;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        gap: 6px;
+        align-items: flex-start;
+      }
+
+      .builder-import-beta-badge {
+        font-size: 0.6rem;
+        padding: 3px 7px;
       }
 
       .builder-import-beta-copy {
-        font-size: 0.68rem;
-        max-width: 220px;
+        font-size: 0.6rem;
+        line-height: 1.25;
+        max-width: none;
       }
 
       .builder-import-plus {
-        top: 47%;
+        top: 49%;
       }
 
       .builder-import-drop-title {
-        top: calc(47% + 34px);
+        top: calc(49% + 30px);
         width: min(90%, 260px);
+        font-size: 0.92rem;
       }
 
       .builder-import-files {
@@ -2787,6 +2798,7 @@ Last week: 80 lb</pre>
       const customNotesEl = $('builder-custom-notes');
       const importImagesEl = $('builder-import-images');
       const importTextEl = $('builder-import-text');
+      const importStripEl = $('builder-import-strip');
       const importDropzoneEl = $('builder-import-dropzone');
       const importGenerateBtn = $('builder-import-generate');
       const importFilesEl = $('builder-import-files');
@@ -2798,6 +2810,10 @@ Last week: 80 lb</pre>
       const importLoadingLogEl = $('builder-import-loading-log');
       const importExampleEl = $('builder-import-example');
       const importExampleBtn = $('builder-import-example-btn');
+      const builderGridEl = document.querySelector('.builder-grid');
+      const builderPlanPanelEl = document.querySelector('.builder-plan-panel');
+      const importStripOriginalParent = importStripEl?.parentNode || null;
+      const importStripOriginalNextSibling = importStripEl?.nextSibling || null;
       const importExampleCloseBtn = $('builder-import-example-close');
       const importReviewEl = $('builder-import-review');
       const importReviewBodyEl = $('builder-import-review-body');
@@ -7805,6 +7821,20 @@ Last week: 80 lb</pre>
         window.location.href = 'training.html?from=intake#training';
       }
 
+      function syncImportStripLayout() {
+        if (!importStripEl) return;
+        const mobileNow = isMobileLayout();
+        if (mobileNow) {
+          if (builderGridEl && builderPlanPanelEl && importStripEl.parentNode !== builderGridEl) {
+            builderGridEl.insertBefore(importStripEl, builderPlanPanelEl.nextSibling);
+          }
+          return;
+        }
+        if (importStripOriginalParent && importStripEl.parentNode !== importStripOriginalParent) {
+          importStripOriginalParent.insertBefore(importStripEl, importStripOriginalNextSibling);
+        }
+      }
+
       async function init() {
         let lastMobileLayout = isMobileLayout();
         resetImportOverlays();
@@ -7825,6 +7855,7 @@ Last week: 80 lb</pre>
         renderWeekdayChips();
         renderDayColumns();
         renderSectionFilterPills();
+        syncImportStripLayout();
         bindPlanInputEvents();
         bindImportEvents();
 
@@ -7901,6 +7932,7 @@ Last week: 80 lb</pre>
           renderWeekdayChips();
           renderDayColumns();
           renderDatabaseList();
+          syncImportStripLayout();
         });
 
         window.addEventListener('odeauth', async (e) => {
