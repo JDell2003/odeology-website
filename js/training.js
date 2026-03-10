@@ -1731,6 +1731,10 @@
     return String(state.workoutReadinessDrafts.get(key) ?? '');
   }
 
+  function resolveWorkoutExerciseKey(ex) {
+    return String(ex?.id || ex?.baseId || ex?.name || '').trim();
+  }
+
   function workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex }) {
     const id = String(exId || '').trim();
     const slot = Number.isFinite(Number(exSlot)) ? String(Math.max(0, Math.round(Number(exSlot)))) : '0';
@@ -1840,11 +1844,12 @@
 
     const planRef = state.planRow?.plan || null;
     const entries = (exercises || []).map((ex, exIdx) => {
+      const exerciseKey = resolveWorkoutExerciseKey(ex);
       const resolvedProjected = resolveProjectedForExercise(ex, planRef);
       const resolvedProjectedValue = Number.isFinite(resolvedProjected?.value) ? resolvedProjected.value : null;
       const resolvedProjectedUnit = resolvedProjected?.unit || null;
       const draftSetCount = getWorkoutSetCountDraft({
-        exId: ex.id,
+        exId: exerciseKey,
         exSlot: exIdx,
         weekIndex,
         dayIndex,
@@ -1853,7 +1858,7 @@
       const setMap = new Map();
       for (let idx = 0; idx < draftSetCount; idx += 1) {
         const weightRaw = getWorkoutInputDraftValue({
-          exId: ex.id,
+          exId: exerciseKey,
           exSlot: exIdx,
           setIdx: idx,
           field: 'setWeight',
@@ -1862,7 +1867,7 @@
           dayIndex
         }).trim();
         const repsRaw = getWorkoutInputDraftValue({
-          exId: ex.id,
+          exId: exerciseKey,
           exSlot: exIdx,
           setIdx: idx,
           field: 'setReps',
@@ -1871,7 +1876,7 @@
           dayIndex
         }).trim();
         const noteRaw = getWorkoutInputDraftValue({
-          exId: ex.id,
+          exId: exerciseKey,
           exSlot: exIdx,
           setIdx: idx,
           field: 'setNote',
@@ -9795,6 +9800,7 @@ function toggleSharePopover(force) {
 
       const list = el('div', { class: 'exercise-list' });
       (day.exercises || []).forEach((ex, exIdx) => {
+        const exerciseKey = resolveWorkoutExerciseKey(ex);
         const loggedEntries = Array.isArray(log?.entries) ? log.entries : [];
         const match = loggedEntries.find((e) => String(e?.exerciseId) === String(ex.id) || String(e?.baseId) === String(ex.baseId)) || null;
 
@@ -9814,7 +9820,7 @@ function toggleSharePopover(force) {
             return 0;
           })();
           const setCount = getWorkoutSetCountDraft({
-            exId: ex.id,
+            exId: exerciseKey,
             exSlot: exIdx,
             weekIndex: activeWeek,
             dayIndex,
@@ -9831,7 +9837,7 @@ function toggleSharePopover(force) {
             const next = Math.min(12, setCount + 1);
             if (next === setCount) return;
             setWorkoutSetCountDraft({
-              exId: ex.id,
+              exId: exerciseKey,
               exSlot: exIdx,
               weekIndex: activeWeek,
               dayIndex,
@@ -9843,7 +9849,7 @@ function toggleSharePopover(force) {
           const removeSetForExercise = () => {
             if (setCount <= baseSetCount) return;
             setWorkoutSetCountDraft({
-              exId: ex.id,
+              exId: exerciseKey,
               exSlot: exIdx,
               weekIndex: activeWeek,
               dayIndex,
@@ -9866,7 +9872,7 @@ function toggleSharePopover(force) {
                 const rValSaved = Number.isFinite(Number(s.reps)) ? String(s.reps) : '';
                 const noteValSaved = s.note ? String(s.note) : '';
                 const wVal = getWorkoutInputDraftValue({
-                  exId: ex.id,
+                  exId: exerciseKey,
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setWeight',
@@ -9875,7 +9881,7 @@ function toggleSharePopover(force) {
                   dayIndex
                 });
                 const rVal = getWorkoutInputDraftValue({
-                  exId: ex.id,
+                  exId: exerciseKey,
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setReps',
@@ -9884,7 +9890,7 @@ function toggleSharePopover(force) {
                   dayIndex
                 });
                 const noteVal = getWorkoutInputDraftValue({
-                  exId: ex.id,
+                  exId: exerciseKey,
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setNote',
@@ -9904,7 +9910,7 @@ function toggleSharePopover(force) {
                     class: 'auth-input',
                     inputmode: 'decimal',
                     value: wVal,
-                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setWeight', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
+                    dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setWeight', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Weight'
                   }),
                   el('input', {
@@ -9912,14 +9918,14 @@ function toggleSharePopover(force) {
                     class: 'auth-input',
                     inputmode: 'numeric',
                     value: rVal,
-                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setReps', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
+                    dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setReps', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Reps'
                   }),
                   el('input', {
                     id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-note`,
                     class: 'auth-input',
                     value: noteVal,
-                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setNote', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
+                    dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setNote', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Notes'
                   })
                 );
