@@ -13,7 +13,7 @@ const enrichPlanWithExerciseMedia = async () => {};
 
 const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYTES || 1_500_000));
 const TRAINING_IMPORT_OCR_SCRIPT_PATH = path.join(__dirname, '..', 'scripts', 'training_import_ocr.py');
-const TRAINING_IMPORT_OCR_TIMEOUT_MS = Math.max(4_000, Number(process.env.TRAINING_IMPORT_OCR_TIMEOUT_MS || 8_000));
+const TRAINING_IMPORT_OCR_TIMEOUT_MS = Math.max(6_000, Number(process.env.TRAINING_IMPORT_OCR_TIMEOUT_MS || 18_000));
 const TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES = Math.max(200_000, Number(process.env.TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES || 4_000_000));
 const TRAINING_IMPORT_OCR_PYTHON_CMD = String(
   process.env.TRAINING_IMPORT_OCR_PYTHON
