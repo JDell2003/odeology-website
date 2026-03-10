@@ -642,16 +642,38 @@
       gap: 10px;
       grid-template-columns: 170px minmax(0, 1fr);
       align-items: start;
+      transition: opacity 160ms ease, transform 180ms ease, box-shadow 180ms ease, border-color 160ms ease;
     }
 
     .builder-import-flow-card.is-dragging {
-      opacity: 0.55;
-      transform: scale(0.995);
+      opacity: 0.42;
+      transform: scale(0.985);
+      box-shadow: 0 12px 24px rgba(69, 45, 14, 0.12);
     }
 
     .builder-import-flow-card.is-drop-target {
       border-color: #bb8643;
       box-shadow: 0 0 0 3px rgba(187, 134, 67, 0.16);
+    }
+
+    .builder-import-flow-card.is-drop-before::before,
+    .builder-import-flow-card.is-drop-after::after {
+      content: '';
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(214, 141, 40, 0.24) 0%, rgba(187, 134, 67, 0.95) 35%, rgba(214, 141, 40, 0.24) 100%);
+      pointer-events: none;
+    }
+
+    .builder-import-flow-card.is-drop-before::before {
+      top: -3px;
+    }
+
+    .builder-import-flow-card.is-drop-after::after {
+      bottom: -3px;
     }
 
     .builder-import-drag {
@@ -670,10 +692,18 @@
       gap: 5px;
       cursor: grab;
       padding: 8px 0;
+      transition: transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .builder-import-flow-card:hover .builder-import-drag,
+    .builder-import-drag:focus-visible {
+      border-color: #bb8643;
+      box-shadow: 0 8px 18px rgba(187, 134, 67, 0.18);
     }
 
     .builder-import-drag:active {
       cursor: grabbing;
+      transform: scale(0.96);
     }
 
     .builder-import-drag-dot {
@@ -2862,7 +2892,8 @@ Last week: 80 lb</pre>
         importPasteSig: '',
         importPasteAt: 0,
         importReviewDragId: '',
-        importReviewDropId: ''
+        importReviewDropId: '',
+        importReviewDropPlacement: 'before'
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
@@ -4505,10 +4536,19 @@ Last week: 80 lb</pre>
         });
       }
 
-      function moveImportReviewRow(dragRowId, targetRowId) {
+      function clearImportReviewDropState() {
+        importReviewBodyEl?.querySelectorAll('.builder-import-flow-card.is-drop-target, .builder-import-flow-card.is-drop-before, .builder-import-flow-card.is-drop-after').forEach((node) => {
+          node.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+        });
+        state.importReviewDropId = '';
+        state.importReviewDropPlacement = 'before';
+      }
+
+      function moveImportReviewRow(dragRowId, targetRowId, placement) {
         const rows = Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
         const dragId = String(dragRowId || '').trim();
         const targetId = String(targetRowId || '').trim();
+        const dropPlacement = String(placement || 'before').trim() === 'after' ? 'after' : 'before';
         if (!dragId || !targetId || dragId === targetId) return false;
         const fromIdx = rows.findIndex((row) => String(row?.id || '') === dragId);
         const toIdx = rows.findIndex((row) => String(row?.id || '') === targetId);
@@ -4518,7 +4558,9 @@ Last week: 80 lb</pre>
         if (String(fromInfo?.key || '') !== String(toInfo?.key || '')) return false;
         const [moved] = rows.splice(fromIdx, 1);
         let insertIdx = toIdx;
+        if (dropPlacement === 'after') insertIdx += 1;
         if (fromIdx < toIdx) insertIdx -= 1;
+        insertIdx = Math.max(0, Math.min(rows.length, insertIdx));
         rows.splice(insertIdx, 0, moved);
         normalizeImportReviewRowOrder();
         return true;
@@ -7438,6 +7480,7 @@ Last week: 80 lb</pre>
           }
           state.importReviewDragId = rowId;
           card.classList.add('is-dragging');
+          clearImportReviewDropState();
           try {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', rowId);
@@ -7451,18 +7494,21 @@ Last week: 80 lb</pre>
           if (!rowId || rowId === String(state.importReviewDragId || '')) return;
           e.preventDefault();
           try { e.dataTransfer.dropEffect = 'move'; } catch {}
-          importReviewBodyEl.querySelectorAll('.builder-import-flow-card.is-drop-target').forEach((node) => {
-            if (node !== card) node.classList.remove('is-drop-target');
-          });
+          const rect = card.getBoundingClientRect();
+          const midY = rect.top + (rect.height / 2);
+          const placement = e.clientY >= midY ? 'after' : 'before';
+          clearImportReviewDropState();
           card.classList.add('is-drop-target');
+          card.classList.add(placement === 'after' ? 'is-drop-after' : 'is-drop-before');
           state.importReviewDropId = rowId;
+          state.importReviewDropPlacement = placement;
         });
 
         importReviewBodyEl?.addEventListener('dragleave', (e) => {
           const card = e.target.closest('[data-import-row]');
           if (!card) return;
           if (card.contains(e.relatedTarget)) return;
-          card.classList.remove('is-drop-target');
+          card.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
         });
 
         importReviewBodyEl?.addEventListener('drop', (e) => {
@@ -7471,23 +7517,23 @@ Last week: 80 lb</pre>
           e.preventDefault();
           const targetId = String(card.getAttribute('data-import-row') || '').trim();
           const dragId = String(state.importReviewDragId || '').trim();
-          importReviewBodyEl.querySelectorAll('.builder-import-flow-card.is-drop-target').forEach((node) => {
-            node.classList.remove('is-drop-target');
-          });
+          const placement = String(state.importReviewDropPlacement || 'before').trim() === 'after' ? 'after' : 'before';
+          clearImportReviewDropState();
           if (!dragId || !targetId) return;
-          if (moveImportReviewRow(dragId, targetId)) {
+          if (moveImportReviewRow(dragId, targetId, placement)) {
             renderImportReviewRows();
           }
           state.importReviewDragId = '';
-          state.importReviewDropId = '';
+          state.importReviewDropPlacement = 'before';
         });
 
         importReviewBodyEl?.addEventListener('dragend', () => {
-          importReviewBodyEl.querySelectorAll('.builder-import-flow-card.is-drop-target, .builder-import-flow-card.is-dragging').forEach((node) => {
-            node.classList.remove('is-drop-target', 'is-dragging');
+          importReviewBodyEl.querySelectorAll('.builder-import-flow-card.is-dragging').forEach((node) => {
+            node.classList.remove('is-dragging');
           });
+          clearImportReviewDropState();
           state.importReviewDragId = '';
-          state.importReviewDropId = '';
+          state.importReviewDropPlacement = 'before';
         });
 
         importUseBestBtn?.addEventListener('click', () => {
