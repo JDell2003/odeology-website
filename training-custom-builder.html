@@ -114,10 +114,46 @@
       display: grid;
       gap: 8px;
       align-content: start;
-      padding: 12px;
+      padding: 52px 12px 12px;
       cursor: pointer;
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
       outline: none;
+    }
+
+    .builder-import-beta {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .builder-import-beta-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(178, 122, 49, 0.42);
+      background: rgba(255, 248, 235, 0.94);
+      color: #7d4f16;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .builder-import-beta-copy {
+      color: #7b6240;
+      font-size: 0.75rem;
+      line-height: 1.25;
+      max-width: 420px;
     }
 
     .builder-import-dropzone.is-drag {
@@ -1580,6 +1616,16 @@
 
       .builder-import-dropzone {
         min-height: 160px;
+        padding-top: 48px;
+      }
+
+      .builder-import-beta {
+        gap: 8px;
+      }
+
+      .builder-import-beta-copy {
+        font-size: 0.68rem;
+        max-width: 220px;
       }
 
       .builder-import-plus {
@@ -2225,6 +2271,10 @@
     <section class="builder-import-strip" id="builder-import-strip" aria-label="Import workouts from screenshots or text">
       <div class="builder-import-grid">
         <div class="builder-import-dropzone" id="builder-import-dropzone" tabindex="0" role="button" aria-label="Drag and drop screenshots or paste text of workout">
+          <div class="builder-import-beta">
+            <span class="builder-import-beta-badge">Beta Phase</span>
+            <span class="builder-import-beta-copy">Import is still in testing and may need a quick manual review.</span>
+          </div>
           <div class="builder-import-empty" id="builder-import-empty">
             <span class="builder-import-plus" aria-hidden="true"></span>
             <span class="builder-import-drop-title">Drag and drop screenshots or Paste text of workout.</span>
