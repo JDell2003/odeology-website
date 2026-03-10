@@ -2684,6 +2684,16 @@
         return Math.max(30, Math.min(300, Math.round(total)));
       }
 
+      function extractImportLastWeightHint(rawLine) {
+        const line = normalizeOcrLineText(rawLine);
+        if (!line) return null;
+        const weightMatch = line.match(/\b(\d{2,4}(?:\.\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/i);
+        if (!weightMatch) return null;
+        const hasLiftHint = /\b(last|last week|previous|prev|prior|lifted|weight|working weight|top set|used)\b/i.test(line);
+        if (!hasLiftHint) return null;
+        return normalizeImportWeightToLb(weightMatch[1], weightMatch[2] || 'lb');
+      }
+
       function mergeImportedEntryDetails(base, incoming) {
         const cur = base && typeof base === 'object' ? base : {};
         const next = incoming && typeof incoming === 'object' ? incoming : {};
@@ -2871,6 +2881,12 @@
           const atWeight = working.match(/@\s*(\d{2,4}(?:\.\d+)?)/);
           if (atWeight) projectedLb = normalizeImportWeightToLb(atWeight[1], 'lb');
         }
+        if (!projectedLb) {
+          const hinted = extractImportLastWeightHint(sourceText);
+          if (Number.isFinite(Number(hinted)) && Number(hinted) > 0) {
+            projectedLb = Number(hinted);
+          }
+        }
 
         let name = cleanImportedEntry(
           working
@@ -3042,7 +3058,16 @@
           const inlineDay = extractImportInlineDayPrefix(line);
           const parseSource = inlineDay?.remainder ? inlineDay.remainder : line;
           const parsed = parseImportedLineDetail(parseSource);
-          if (!parsed || !isLikelyExerciseName(parsed.name)) return;
+          if (!parsed || !isLikelyExerciseName(parsed.name)) {
+            const hintedWeight = extractImportLastWeightHint(parseSource);
+            if (Number.isFinite(Number(hintedWeight)) && Number(hintedWeight) > 0 && chunks.length) {
+              const last = chunks[chunks.length - 1];
+              if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
+                last.projected = { value: Number(hintedWeight), unit: 'lb' };
+              }
+            }
+            return;
+          }
           if (Number.isInteger(inlineDay?.weekday)) {
             parsed.weekday = Number(inlineDay.weekday);
           } else if (Number.isInteger(currentWeekday)) {
@@ -3913,7 +3938,7 @@
                 </div>
                 <label class="builder-import-lastlift">
                   <span class="builder-import-lastlift-label">Last lifted weight (lb)</span>
-                  <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Optional" />
+                  <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Auto-filled if found" />
                 </label>
                 ${isUnassigned ? `
                   <label class="builder-import-dayassign">
