@@ -2385,6 +2385,7 @@
       const IMPORT_REVIEW_REQUIRED_PASSES = 3;
       const IMPORT_REVIEW_PASS_THRESHOLD = 0.70;
       const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.62;
+      const IMPORT_AUTO_SELECT_MIN_SCORE = 0.55;
       const IMPORT_REVIEW_MAX_RUNS = 20;
       const IMPORT_CORRECTIONS_STORAGE_PREFIX = 'ode_import_corrections_v1';
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
@@ -2536,6 +2537,48 @@
         }
       }
 
+      function isImportDebugEnabled() {
+        try {
+          return String(localStorage.getItem('ode_import_debug') || '') === '1';
+        } catch {
+          return false;
+        }
+      }
+
+      function levenshteinDistance(a, b) {
+        const s = String(a || '');
+        const t = String(b || '');
+        if (!s.length) return t.length;
+        if (!t.length) return s.length;
+        const prev = new Array(t.length + 1);
+        const cur = new Array(t.length + 1);
+        for (let j = 0; j <= t.length; j += 1) prev[j] = j;
+        for (let i = 1; i <= s.length; i += 1) {
+          cur[0] = i;
+          for (let j = 1; j <= t.length; j += 1) {
+            const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+            cur[j] = Math.min(
+              cur[j - 1] + 1,
+              prev[j] + 1,
+              prev[j - 1] + cost
+            );
+          }
+          for (let j = 0; j <= t.length; j += 1) prev[j] = cur[j];
+        }
+        return prev[t.length];
+      }
+
+      function textSimilarityScore(a, b) {
+        const x = normalizeImportToken(a);
+        const y = normalizeImportToken(b);
+        if (!x || !y) return 0;
+        if (x === y) return 1;
+        const maxLen = Math.max(x.length, y.length);
+        if (!maxLen) return 0;
+        const dist = levenshteinDistance(x, y);
+        return Math.max(0, 1 - (dist / maxLen));
+      }
+
       function releaseImportPreviewUrls() {
         const urls = Array.isArray(state.importPreviewUrls) ? state.importPreviewUrls : [];
         urls.forEach((url) => {
@@ -2592,6 +2635,14 @@
           .replace(/\b(\d{1,2})\s*x\s*(\d{1,2}(?:\s*-\s*\d{1,2})?)\b/g, '$1x$2')
           .replace(/\s+/g, ' ')
           .trim();
+        // OCR character-noise cleanup for common gym terms.
+        text = text
+          .replace(/([a-z])5([a-z])/g, '$1s$2')
+          .replace(/([a-z])0([a-z])/g, '$1o$2')
+          .replace(/([a-z])1([a-z])/g, '$1l$2')
+          .replace(/([a-z])3([a-z])/g, '$1e$2')
+          .replace(/\b8ench\b/g, 'bench')
+          .replace(/\bpre5s\b/g, 'press');
         IMPORT_TYPO_REPLACERS.forEach(([pattern, value]) => {
           text = text.replace(pattern, value);
         });
@@ -2888,14 +2939,15 @@
           }
         }
 
-        let name = cleanImportedEntry(
-          working
-            .replace(/\b\d{1,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/gi, ' ')
-            .replace(/@\s*\d{1,4}(?:\.\d+)?/g, ' ')
-            .replace(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/g, ' ')
-        );
+        const cleanedWorking = working
+          .replace(/\b\d{1,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/gi, ' ')
+          .replace(/@\s*\d{1,4}(?:\.\d+)?/g, ' ')
+          .replace(/\b(\d{1,2})\s*[-\u2013\u2014]\s*(\d{1,2})\b/g, ' ');
+        const segment = String(cleanedWorking.split(/\s[-\u2013\u2014]\s/)[0] || '').trim();
+        let name = cleanImportedEntry(segment || cleanedWorking);
         if (!isLikelyExerciseName(name)) {
-          name = cleanImportedEntry(sourceText);
+          const sourceSegment = String(sourceText.split(/\s[-\u2013\u2014]\s/)[0] || '').trim();
+          name = cleanImportedEntry(sourceSegment || sourceText);
         }
         if (!isLikelyExerciseName(name)) return null;
 
@@ -3173,6 +3225,27 @@
         return inferMovementFamilyFromText(String(row?.name || ''));
       }
 
+      function rowNameVariants(row) {
+        const base = String(row?.name || '').trim();
+        if (!base) return [];
+        const variants = [base];
+        variants.push(
+          base
+            .replace(/\bbarbell\b/gi, '')
+            .replace(/\bdumbbell\b/gi, '')
+            .replace(/\bcable\b/gi, '')
+            .replace(/\bmachine\b/gi, '')
+            .replace(/\bseated\b/gi, '')
+            .replace(/\bstanding\b/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+        );
+        variants.push(base.replace(/\btriceps\b/gi, 'tri'));
+        variants.push(base.replace(/\bdumbbell\b/gi, 'db'));
+        variants.push(base.replace(/\bbarbell\b/gi, 'bb'));
+        return Array.from(new Set(variants.map((x) => String(x || '').trim()).filter(Boolean)));
+      }
+
       function matchExerciseCandidates(rawQuery, maxResults = 6, options = {}) {
         const query = normalizeImportToken(rawQuery);
         if (!query) return [];
@@ -3202,7 +3275,19 @@
               if (hayTokens.has(token)) hit += 1;
             });
             score += (hit / queryTokens.length) * 0.62;
+
+             // Stage-A retrieve guard: if no token overlap and no strong fuzzy similarity, skip.
+            const baseSimilarity = textSimilarityScore(query, name);
+            if (!hit && baseSimilarity < 0.5) return;
           }
+
+          const variants = rowNameVariants(row);
+          let bestVariantSim = 0;
+          variants.forEach((variant) => {
+            const sim = textSimilarityScore(query, variant);
+            if (sim > bestVariantSim) bestVariantSim = sim;
+          });
+          score += Math.max(0, bestVariantSim) * 0.74;
 
           const candidateGroup = resolvePrimaryGroupKey(row);
           if (queryMajorGroup && queryMajorGroup !== 'other') {
@@ -3793,15 +3878,34 @@
           const queryText = String(queryVariants[variantIdx] || queryVariants[0] || parsed?.name || parsed?.sourceText || '').trim();
           const candidates = buildImportCandidateList(queryText, 7, { parsed });
           const top = candidates[0] || null;
+          const topScore = Number(top?.score || 0);
+          const canAutoSelect = Boolean(top?.row?.id) && !top?.row?.isCustom && topScore >= IMPORT_AUTO_SELECT_MIN_SCORE;
+          if (isImportDebugEnabled()) {
+            console.log('[import-match]', {
+              raw: String(parsed?.sourceText || queryText),
+              extracted: String(parsed?.name || ''),
+              normalized: normalizeImportQueryForMatching(queryText),
+              topCandidates: candidates.slice(0, 5).map((entry) => ({
+                name: String(entry?.row?.name || ''),
+                id: String(entry?.row?.id || ''),
+                score: Number(entry?.score || 0)
+              })),
+              selected: canAutoSelect ? String(top?.row?.name || '') : 'needs_review'
+            });
+          }
           return {
             id: `import-row-${idx + 1}-${Date.now()}`,
             sourceText: String(parsed?.sourceText || queryText).trim(),
             parsed,
             candidateList: candidates,
-            selectedId: top?.row?.id ? String(top.row.id) : '',
-            status: top ? ((top.score >= IMPORT_REVIEW_CONFIDENCE_THRESHOLD && !top?.row?.isCustom) ? 'ok' : 'pending') : 'fixing',
+            selectedId: canAutoSelect ? String(top.row.id) : '',
+            status: top
+              ? (canAutoSelect
+                ? (topScore >= IMPORT_REVIEW_CONFIDENCE_THRESHOLD ? 'ok' : 'pending')
+                : 'fixing')
+              : 'fixing',
             fixText: '',
-            confidence: top ? Number(top.score) : 0
+            confidence: topScore
           };
         });
       }
@@ -4013,9 +4117,14 @@
         if (!row) return;
         const candidates = buildImportCandidateList(queryText, 7, { parsed: row?.parsed });
         row.candidateList = candidates;
-        row.selectedId = candidates[0]?.row?.id ? String(candidates[0].row.id) : '';
-        row.confidence = Number(candidates[0]?.score || 0);
-        row.status = candidates.length ? 'pending' : 'fixing';
+        const top = candidates[0] || null;
+        const topScore = Number(top?.score || 0);
+        const canAutoSelect = Boolean(top?.row?.id) && !top?.row?.isCustom && topScore >= IMPORT_AUTO_SELECT_MIN_SCORE;
+        row.selectedId = canAutoSelect ? String(top.row.id) : '';
+        row.confidence = topScore;
+        row.status = candidates.length
+          ? (canAutoSelect ? 'pending' : 'fixing')
+          : 'fixing';
       }
 
       function resolveHistoryProjectedForRow(row, parsedMeta) {
