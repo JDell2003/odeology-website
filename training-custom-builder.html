@@ -2305,7 +2305,39 @@
       const IMPORT_REVIEW_PASS_THRESHOLD = 0.90;
       const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.90;
       const IMPORT_REVIEW_MAX_RUNS = 20;
+      const IMPORT_CORRECTIONS_STORAGE_PREFIX = 'ode_import_corrections_v1';
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
+      const IMPORT_ALIAS_REPLACERS = [
+        [/\bohp\b/g, 'overhead press'],
+        [/\brdl\b/g, 'romanian deadlift'],
+        [/\blat\s*pd\b/g, 'lat pulldown'],
+        [/\btri\s*ext\b/g, 'triceps extension'],
+        [/\boh\s*tri(?:ceps)?\s*ext\b/g, 'overhead triceps extension'],
+        [/\bbb\b/g, 'barbell'],
+        [/\bdb\b/g, 'dumbbell'],
+        [/\bext\b/g, 'extension'],
+        [/\bleg\s*ext\b/g, 'leg extension'],
+        [/\bleg\s*curls?\b/g, 'hamstring curl'],
+        [/\bham\s*curls?\b/g, 'hamstring curl'],
+        [/\blaterals?\b/g, 'lateral raise'],
+        [/\bpushdowns?\b/g, 'triceps pushdown'],
+        [/\bpullups?\b/g, 'pull up'],
+        [/\bchinups?\b/g, 'chin up'],
+        [/\bpec\s*dec\b/g, 'pec deck'],
+        [/\blat\s*pulldwon\b/g, 'lat pulldown']
+      ];
+      const IMPORT_TYPO_REPLACERS = [
+        [/\bpulldwon\b/g, 'pulldown'],
+        [/\bshoudler\b/g, 'shoulder'],
+        [/\btricepts?\b/g, 'triceps'],
+        [/\bbicepts?\b/g, 'biceps'],
+        [/\bexntension\b/g, 'extension'],
+        [/\bromainian\b/g, 'romanian'],
+        [/\bdedlift\b/g, 'deadlift'],
+        [/\blundge\b/g, 'lunge'],
+        [/\bprecher\b/g, 'preacher'],
+        [/\bhamsting\b/g, 'hamstring']
+      ];
 
       const state = {
         user: null,
@@ -2331,6 +2363,8 @@
         importBusy: false,
         importHistoryById: new Map(),
         importHistoryByName: new Map(),
+        importCorrectionsLoaded: false,
+        importCorrections: {},
         importPasteSig: '',
         importPasteAt: 0
       };
@@ -2341,6 +2375,34 @@
       function perUserStorageKey(prefix) {
         const uid = String(state?.user?.id || '').trim() || 'anon';
         return `${prefix}:${uid}`;
+      }
+
+      function loadImportCorrections() {
+        if (state.importCorrectionsLoaded) return state.importCorrections || {};
+        state.importCorrectionsLoaded = true;
+        try {
+          const raw = localStorage.getItem(perUserStorageKey(IMPORT_CORRECTIONS_STORAGE_PREFIX));
+          const parsed = raw ? JSON.parse(raw) : {};
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            state.importCorrections = parsed;
+          } else {
+            state.importCorrections = {};
+          }
+        } catch {
+          state.importCorrections = {};
+        }
+        return state.importCorrections;
+      }
+
+      function persistImportCorrections() {
+        try {
+          const map = state.importCorrections && typeof state.importCorrections === 'object'
+            ? state.importCorrections
+            : {};
+          localStorage.setItem(perUserStorageKey(IMPORT_CORRECTIONS_STORAGE_PREFIX), JSON.stringify(map));
+        } catch {
+          // ignore storage errors
+        }
       }
 
       function hasSavedCustomPlanBefore() {
@@ -2435,16 +2497,45 @@
         syncImportDropzoneState();
       }
 
-      function normalizeImportToken(raw) {
-        return String(raw || '')
+      function normalizeImportTextForMatching(raw) {
+        let text = String(raw || '')
           .toLowerCase()
+          .replace(/[\u2018\u2019\u2032]/g, "'")
+          .replace(/[\u201C\u201D\u2033]/g, '"')
+          .replace(/[(){}\[\],;:!?.]+/g, ' ')
+          .replace(/[\u2013\u2014\u2212]/g, '-')
+          .replace(/[\u00D7\u2715\u2716]/g, 'x')
+          .replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/g, '$1-$2')
+          .replace(/\b(\d{1,2})\s*sets?\s*of\s*(\d{1,2}(?:\s*-\s*\d{1,2})?)\b/g, '$1x$2')
+          .replace(/\b(\d{1,2})\s*sets?\s*x\s*(\d{1,2}(?:\s*-\s*\d{1,2})?)\b/g, '$1x$2')
+          .replace(/\b(\d{1,2})\s*x\s*(\d{1,2}(?:\s*-\s*\d{1,2})?)\b/g, '$1x$2')
+          .replace(/\s+/g, ' ')
+          .trim();
+        IMPORT_TYPO_REPLACERS.forEach(([pattern, value]) => {
+          text = text.replace(pattern, value);
+        });
+        IMPORT_ALIAS_REPLACERS.forEach(([pattern, value]) => {
+          text = text.replace(pattern, value);
+        });
+        text = text
+          .replace(/\bpushdowns\b/g, 'pushdown')
+          .replace(/\bcurls\b/g, 'curl')
+          .replace(/\bextensions\b/g, 'extension')
+          .replace(/\braises\b/g, 'raise')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return text;
+      }
+
+      function normalizeImportToken(raw) {
+        return normalizeImportTextForMatching(raw)
           .replace(/[^a-z0-9]+/g, ' ')
           .trim()
           .replace(/\s+/g, ' ');
       }
 
       function cleanImportedEntry(raw) {
-        let value = String(raw || '')
+        let value = normalizeImportTextForMatching(raw)
           .replace(/[\u2022|]+/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
@@ -2469,6 +2560,8 @@
           .replace(/[\u00D7\u2715\u2716]/g, 'x')
           .replace(/[\u2022\u25CF\u00B7]/g, ' ')
           .replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2')
+          .replace(/\b(\d{1,2})\s*sets?\s*of\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/gi, '$1x$2')
+          .replace(/\b(\d{1,2})\s*sets?\s*x\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/gi, '$1x$2')
           .replace(/\s+/g, ' ')
           .trim();
       }
@@ -2511,6 +2604,9 @@
         }
         if (!Number.isInteger(merged.dayOrdinal) && Number.isInteger(next.dayOrdinal)) {
           merged.dayOrdinal = Number(next.dayOrdinal);
+        }
+        if (!String(merged.dayFocus || '').trim() && String(next.dayFocus || '').trim()) {
+          merged.dayFocus = String(next.dayFocus).trim();
         }
         if (!(Number.isFinite(merged.sets) && merged.sets > 0) && Number.isFinite(next.sets) && next.sets > 0) {
           merged.sets = next.sets;
@@ -2685,6 +2781,23 @@
         return null;
       }
 
+      function inferDayFocusFromLine(rawLine) {
+        const line = normalizeImportToken(rawLine);
+        if (!line) return '';
+        if (/\bpush\b/.test(line)) return 'push';
+        if (/\bpull\b/.test(line)) return 'pull';
+        if (/\blegs?\b/.test(line)) return 'legs';
+        if (/\bchest\b/.test(line)) return 'chest';
+        if (/\bback\b/.test(line)) return 'back';
+        if (/\bshoulders?\b/.test(line)) return 'shoulders';
+        if (/\bbiceps?\b|\btriceps?\b|\barms?\b/.test(line)) return 'arms';
+        if (/\bupper body\b|\bupperbody\b/.test(line)) return 'upper';
+        if (/\blower body\b|\blowerbody\b/.test(line)) return 'lower';
+        if (/\bcore\b|\babs?\b|\bobliques?\b/.test(line)) return 'core';
+        if (/\brest\b|\brecovery\b|\boff day\b/.test(line)) return 'rest';
+        return '';
+      }
+
       function inferImportDayHeader(rawLine) {
         const line = normalizeOcrLineText(rawLine);
         if (!line) return null;
@@ -2695,22 +2808,35 @@
         const named = lower.match(/^\s*(?:day\s*)?(monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
         if (named) {
           const weekday = weekdayFromImportToken(named[1]);
-          if (Number.isInteger(weekday)) return { weekday };
+          if (Number.isInteger(weekday)) {
+            return {
+              weekday,
+              dayFocus: inferDayFocusFromLine(line)
+            };
+          }
         }
         const ordinal = lower.match(/^\s*day\s*([1-7])\b/i);
         if (ordinal) {
           const dayOrdinal = Number(ordinal[1]);
           if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
-            return { dayOrdinal };
+            return {
+              dayOrdinal,
+              dayFocus: inferDayFocusFromLine(line)
+            };
           }
         }
         const sessionOrdinal = lower.match(/^\s*session\s*([1-7])\b/i);
         if (sessionOrdinal) {
           const dayOrdinal = Number(sessionOrdinal[1]);
           if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
-            return { dayOrdinal };
+            return {
+              dayOrdinal,
+              dayFocus: inferDayFocusFromLine(line)
+            };
           }
         }
+        const focusOnly = inferDayFocusFromLine(line);
+        if (focusOnly) return { dayFocus: focusOnly };
         return null;
       }
 
@@ -2724,6 +2850,7 @@
         const chunks = [];
         let currentWeekday = null;
         let currentDayOrdinal = null;
+        let currentDayFocus = '';
         lines.forEach((line) => {
           const header = inferImportDayHeader(line);
           if (header && typeof header === 'object') {
@@ -2734,12 +2861,16 @@
               currentDayOrdinal = Number(header.dayOrdinal);
               currentWeekday = null;
             }
+            if (String(header.dayFocus || '').trim()) {
+              currentDayFocus = String(header.dayFocus).trim();
+            }
             return;
           }
           const parsed = parseImportedLineDetail(line);
           if (!parsed || !isLikelyExerciseName(parsed.name)) return;
           if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
           if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
+          if (currentDayFocus) parsed.dayFocus = currentDayFocus;
           chunks.push(parsed);
         });
         const unique = [];
@@ -2778,32 +2909,73 @@
       function normalizeImportQueryForMatching(rawQuery) {
         let text = normalizeImportToken(rawQuery);
         if (!text) return '';
-        text = ` ${text} `;
-        text = text
-          .replace(/\brdl\b/g, ' romanian deadlift ')
-          .replace(/\boh\b/g, ' overhead ')
-          .replace(/\bdb\b/g, ' dumbbell ')
-          .replace(/\bbb\b/g, ' barbell ')
-          .replace(/\bext\b/g, ' extension ')
-          .replace(/\blaterals?\b/g, ' lateral raise ')
-          .replace(/\bpushdowns?\b/g, ' triceps pushdown ')
-          .replace(/\bleg ext\b/g, ' leg extension ')
-          .replace(/\bleg curl\b/g, ' hamstring curl ')
-          .replace(/\bham curl\b/g, ' hamstring curl ')
+        text = ` ${text} `
           .replace(/\bsupported row\b/g, ' chest supported row ')
-          .replace(/\bpullups?\b/g, ' pull up ')
-          .replace(/\boh triceps ext\b/g, ' overhead triceps extension ')
           .replace(/\s+/g, ' ')
           .trim();
         if (text === 'bench') return 'bench press';
         if (text === 'squat') return 'barbell squat';
+        if (text === 'ohp') return 'overhead press';
+        if (text === 'rdl') return 'romanian deadlift';
         return text;
       }
 
-      function matchExerciseCandidates(rawQuery, maxResults = 6) {
+      function inferMajorGroupFromImportQuery(rawQuery) {
+        const query = normalizeImportQueryForMatching(rawQuery);
+        if (!query) return '';
+        const token = normalizeToken(query);
+        let group = majorGroupFromToken(token);
+        if (group !== 'other') return group;
+        if (/\bbench\b|\bpress\b|\bfly\b|\bpec\b|\bchest\b/.test(query)) return 'chest';
+        if (/\brow\b|\bpull\b|\bpulldown\b|\blat\b/.test(query)) return 'back';
+        if (/\bshoulder\b|\boverhead\b|\blateral raise\b|\brear delt\b/.test(query)) return 'shoulders';
+        if (/\bcurl\b|\btriceps\b|\bbiceps\b|\bpushdown\b/.test(query)) return 'arms';
+        if (/\bsquat\b|\bdeadlift\b|\blunge\b|\bleg\b|\bcalf\b/.test(query)) return 'legs';
+        if (/\bcrunch\b|\bplank\b|\bcore\b|\babs\b/.test(query)) return 'core';
+        return '';
+      }
+
+      function inferMovementFamilyFromText(rawQuery) {
+        const query = normalizeImportQueryForMatching(rawQuery);
+        if (!query) return '';
+        if (/\bpress\b|\bbench\b|\bpush up\b|\bdips?\b/.test(query)) return 'press';
+        if (/\brow\b|\bpulldown\b|\bpull up\b|\bchin up\b/.test(query)) return 'pull';
+        if (/\bcurl\b/.test(query)) return 'curl';
+        if (/\bextension\b|\bpushdown\b|\bskull\b|\bkickback\b/.test(query)) return 'extension';
+        if (/\braise\b|\bfly\b|\bface pull\b/.test(query)) return 'raise';
+        if (/\bsquat\b|\blunge\b|\bleg press\b|\bhack squat\b/.test(query)) return 'squat';
+        if (/\bdeadlift\b|\bromanian deadlift\b|\bhinge\b|\bgood morning\b/.test(query)) return 'hinge';
+        if (/\bcrunch\b|\bplank\b|\bcore\b|\babs?\b|\btwist\b/.test(query)) return 'core';
+        if (/\bcalf\b/.test(query)) return 'calf';
+        return '';
+      }
+
+      function dayFocusGroupsForContext(dayFocus) {
+        const focus = normalizeImportToken(dayFocus);
+        if (!focus) return [];
+        if (focus === 'push') return ['chest', 'shoulders', 'arms'];
+        if (focus === 'pull') return ['back', 'arms'];
+        if (focus === 'legs' || focus === 'lower') return ['legs'];
+        if (focus === 'upper') return ['chest', 'back', 'shoulders', 'arms'];
+        if (focus === 'chest') return ['chest'];
+        if (focus === 'back') return ['back'];
+        if (focus === 'shoulders') return ['shoulders'];
+        if (focus === 'arms') return ['arms'];
+        if (focus === 'core') return ['core'];
+        return [];
+      }
+
+      function candidateMovementFamily(row) {
+        return inferMovementFamilyFromText(String(row?.name || ''));
+      }
+
+      function matchExerciseCandidates(rawQuery, maxResults = 6, options = {}) {
         const query = normalizeImportToken(rawQuery);
         if (!query) return [];
         const queryTokens = query.split(' ').filter(Boolean);
+        const queryMajorGroup = String(options?.majorGroup || inferMajorGroupFromImportQuery(query) || '').trim();
+        const queryFamily = String(options?.movementFamily || inferMovementFamilyFromText(query) || '').trim();
+        const dayFocusGroups = Array.isArray(options?.dayFocusGroups) ? options.dayFocusGroups : [];
         const rows = allLibraryRows();
         const scored = [];
 
@@ -2826,6 +2998,32 @@
               if (hayTokens.has(token)) hit += 1;
             });
             score += (hit / queryTokens.length) * 0.62;
+          }
+
+          const candidateGroup = resolvePrimaryGroupKey(row);
+          if (queryMajorGroup && queryMajorGroup !== 'other') {
+            if (candidateGroup === queryMajorGroup) {
+              score += 0.34;
+            } else if (candidateGroup !== 'other') {
+              score -= 0.08;
+            }
+          }
+
+          if (dayFocusGroups.length) {
+            if (dayFocusGroups.includes(candidateGroup)) {
+              score += 0.22;
+            } else if (candidateGroup !== 'other') {
+              score -= 0.05;
+            }
+          }
+
+          const candidateFamily = candidateMovementFamily(row);
+          if (queryFamily && candidateFamily) {
+            if (candidateFamily === queryFamily) {
+              score += 0.24;
+            } else {
+              score -= 0.06;
+            }
           }
 
           if (score <= 0.08) return;
@@ -2873,13 +3071,92 @@
         };
       }
 
-      function buildImportCandidateList(rawQuery, maxResults = 7) {
+      function correctionKeysForRawInput(raw) {
+        const base = String(raw || '').trim();
+        if (!base) return [];
+        const keys = [
+          normalizeImportQueryForMatching(base),
+          normalizeImportToken(base),
+          normalizeImportToken(cleanImportedEntry(base))
+        ].filter(Boolean);
+        return Array.from(new Set(keys));
+      }
+
+      function resolveCorrectedImportRow(rawQuery, parsed) {
+        const corrections = loadImportCorrections();
+        const candidates = [
+          String(rawQuery || ''),
+          String(parsed?.name || ''),
+          String(parsed?.sourceText || '')
+        ];
+        for (const raw of candidates) {
+          const keys = correctionKeysForRawInput(raw);
+          for (const key of keys) {
+            const correctedId = String(corrections?.[key] || '').trim().toLowerCase();
+            if (!correctedId) continue;
+            const row = allLibraryRows().find((entry) => String(entry?.id || '').trim().toLowerCase() === correctedId);
+            if (row) return row;
+          }
+        }
+        return null;
+      }
+
+      function rememberImportCorrection(raw, exerciseId) {
+        const exId = String(exerciseId || '').trim();
+        if (!exId || String(exId).startsWith(IMPORT_CUSTOM_ID_PREFIX)) return;
+        const keys = correctionKeysForRawInput(raw);
+        if (!keys.length) return;
+        const map = loadImportCorrections();
+        let changed = false;
+        keys.forEach((key) => {
+          if (!key) return;
+          if (String(map[key] || '') !== exId) {
+            map[key] = exId;
+            changed = true;
+          }
+        });
+        if (changed) {
+          state.importCorrections = map;
+          persistImportCorrections();
+        }
+      }
+
+      function rememberImportCorrectionFromRow(row) {
+        const source = row && typeof row === 'object' ? row : null;
+        if (!source) return;
+        const selectedId = String(source?.selectedId || '').trim();
+        if (!selectedId) return;
+        rememberImportCorrection(source?.sourceText || '', selectedId);
+        rememberImportCorrection(source?.parsed?.name || '', selectedId);
+        rememberImportCorrection(source?.fixText || '', selectedId);
+      }
+
+      function buildImportCandidateList(rawQuery, maxResults = 7, options = {}) {
         const queryText = String(rawQuery || '').trim();
         const expanded = normalizeImportQueryForMatching(queryText);
         const queries = Array.from(new Set([queryText, expanded].map((q) => String(q || '').trim()).filter(Boolean)));
         const byId = new Map();
+
+        const parsed = options?.parsed && typeof options.parsed === 'object' ? options.parsed : null;
+        const dayFocus = String(parsed?.dayFocus || options?.dayFocus || '').trim();
+        const majorGroup = inferMajorGroupFromImportQuery(queryText);
+        const movementFamily = inferMovementFamilyFromText(queryText);
+        const dayFocusGroups = dayFocusGroupsForContext(dayFocus);
+
+        const correctedRow = resolveCorrectedImportRow(queryText, parsed);
+        if (correctedRow?.id) {
+          byId.set(String(correctedRow.id).trim().toLowerCase(), {
+            row: correctedRow,
+            score: 1.85
+          });
+        }
+
         queries.forEach((q, qIdx) => {
-          matchExerciseCandidates(q, Math.max(8, maxResults + 4)).forEach((entry) => {
+          matchExerciseCandidates(q, Math.max(8, maxResults + 4), {
+            majorGroup,
+            movementFamily,
+            dayFocusGroups
+          }).forEach((entry) => {
             const id = String(entry?.row?.id || '').trim().toLowerCase();
             if (!id) return;
             const nextScore = Math.max(0, Number(entry.score) || 0) - (qIdx * 0.02);
@@ -3151,7 +3428,7 @@
         let confidenceSum = 0;
         parsed.forEach((entry) => {
           const q = String(entry?.name || '').trim();
-          const top = buildImportCandidateList(q, 1)[0];
+          const top = buildImportCandidateList(q, 1, { parsed: entry })[0];
           confidenceSum += Number(top?.score || 0);
         });
         const avgConfidence = confidenceSum / Math.max(1, parsed.length);
@@ -3278,7 +3555,7 @@
           const queryVariants = buildImportQueryVariants(parsed);
           const variantIdx = (runIndex + idx) % Math.max(1, queryVariants.length);
           const queryText = String(queryVariants[variantIdx] || queryVariants[0] || parsed?.name || parsed?.sourceText || '').trim();
-          const candidates = buildImportCandidateList(queryText, 7);
+          const candidates = buildImportCandidateList(queryText, 7, { parsed });
           const top = candidates[0] || null;
           return {
             id: `import-row-${idx + 1}-${Date.now()}`,
@@ -3286,7 +3563,7 @@
             parsed,
             candidateList: candidates,
             selectedId: top?.row?.id ? String(top.row.id) : '',
-            status: top ? ((top.score >= 0.66 && !top?.row?.isCustom) ? 'ok' : 'pending') : 'fixing',
+            status: top ? ((top.score >= IMPORT_REVIEW_CONFIDENCE_THRESHOLD && !top?.row?.isCustom) ? 'ok' : 'pending') : 'fixing',
             fixText: '',
             confidence: top ? Number(top.score) : 0
           };
@@ -3471,7 +3748,7 @@
 
       function resolveReviewRowMatch(row, queryText) {
         if (!row) return;
-        const candidates = buildImportCandidateList(queryText, 7);
+        const candidates = buildImportCandidateList(queryText, 7, { parsed: row?.parsed });
         row.candidateList = candidates;
         row.selectedId = candidates[0]?.row?.id ? String(candidates[0].row.id) : '';
         row.confidence = Number(candidates[0]?.score || 0);
@@ -3708,24 +3985,27 @@
               );
             }
           });
-          if (!reviewLoop.metRequirement) {
-            const ratioPct = Math.round((Number(reviewLoop?.bestSummary?.confidentRatio || 0)) * 100);
-            throw new Error(`Confidence check failed after ${reviewLoop.totalRuns}/${IMPORT_REVIEW_MAX_RUNS} runs (${ratioPct}% high-confidence best). Need 3 verification runs at 90%+. Use clearer screenshots or cleaner text and try again.`);
+          let reviewRows = Array.isArray(reviewLoop.bestRows) ? reviewLoop.bestRows : [];
+          if (!reviewRows.length) {
+            reviewRows = buildImportReviewRows(clean, { runIndex: 0 });
           }
-          const reviewRows = Array.isArray(reviewLoop.bestRows) ? reviewLoop.bestRows : [];
           if (!reviewRows.length) {
             throw new Error('Could not verify imported workouts. Please retry with clearer input.');
           }
 
           setImportLoadingVisible(true, 'Launching confirmation...', 100);
           openImportReview(reviewRows);
-          if (lowQualityCount > 0) {
-            setStatus(`Confirm imported workouts. ${lowQualityCount} image${lowQualityCount === 1 ? '' : 's'} were too low quality to read fully.`, 'error');
+          const ratioPct = Math.round((Number(reviewLoop?.bestSummary?.confidentRatio || 0)) * 100);
+          const topRuns = Array.isArray(reviewLoop.topPassingRuns) ? reviewLoop.topPassingRuns : [];
+          const topRatios = topRuns
+            .map((run, idx) => `#${idx + 1}: ${Math.round((Number(run?.summary?.confidentRatio || 0)) * 100)}%`)
+            .join(', ');
+          if (!reviewLoop.metRequirement) {
+            setStatus(`Confidence mixed (${ratioPct}% high-confidence best in ${reviewLoop.totalRuns} runs). Review mode opened: confirm weak rows manually, then apply.`, 'error');
+            setImportReviewStatus('Low-confidence rows were flagged for confirmation. You can still continue.');
+          } else if (lowQualityCount > 0) {
+            setStatus(`Verified and opened review. ${lowQualityCount} image${lowQualityCount === 1 ? '' : 's'} were low quality, so double-check those rows.`, 'error');
           } else {
-            const topRuns = Array.isArray(reviewLoop.topPassingRuns) ? reviewLoop.topPassingRuns : [];
-            const topRatios = topRuns
-              .map((run, idx) => `#${idx + 1}: ${Math.round((Number(run?.summary?.confidentRatio || 0)) * 100)}%`)
-              .join(', ');
             setStatus(`Verified (${reviewLoop.passRuns} passes in ${reviewLoop.totalRuns} runs). Top certified runs ${topRatios || 'ready'}. Confirm imported workouts, then apply to build your plan.`, 'ok');
           }
         } catch (err) {
@@ -5383,6 +5663,7 @@
               row.selectedId = String(row.candidateList[0].row.id);
             }
             row.status = row.selectedId ? 'ok' : 'fixing';
+            if (row.status === 'ok') rememberImportCorrectionFromRow(row);
             renderImportReviewRows();
             return;
           }
@@ -5438,6 +5719,7 @@
             if (!row.selectedId && row.candidateList[0]?.row?.id) {
               row.selectedId = String(row.candidateList[0].row.id);
             }
+            if (row.selectedId) rememberImportCorrectionFromRow(row);
           });
 
           const unresolved = rows.filter((row) => !row.selectedId);
@@ -5530,6 +5812,9 @@
         let lastMobileLayout = isMobileLayout();
         resetImportOverlays();
         state.user = await fetchAuthUser();
+        state.importCorrectionsLoaded = false;
+        state.importCorrections = {};
+        loadImportCorrections();
         setAuthGate(!state.user);
         await loadImportHistoryWeights();
         setCustomFormOpen(false);
@@ -5623,6 +5908,9 @@
 
         window.addEventListener('odeauth', async (e) => {
           state.user = e?.detail?.user || await fetchAuthUser();
+          state.importCorrectionsLoaded = false;
+          state.importCorrections = {};
+          loadImportCorrections();
           setAuthGate(!state.user);
           await loadImportHistoryWeights();
           if (state.user) {
