@@ -4958,7 +4958,7 @@ Last week: 80 lb</pre>
                     ${options || '<option value="">No matches yet</option>'}
                   </select>
                   <div class="builder-import-row-actions">
-                    <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">?</button>
+                    <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">&#10003;</button>
                     <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
                   </div>
                 </div>
@@ -4995,8 +4995,8 @@ Last week: 80 lb</pre>
             ${(Array.isArray(group?.rows) ? group.rows : []).map((row) => renderImportRowCard(row)).join('')}
           </section>
           <div class="builder-import-flow-nav">
-            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>? Back day</button>
-            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (groups.length - 1) ? 'disabled' : ''}>Next day ?</button>
+            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>&larr; Back day</button>
+            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (groups.length - 1) ? 'disabled' : ''}>Next day &rarr;</button>
           </div>
         `;
       }
