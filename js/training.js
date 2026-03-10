@@ -1731,6 +1731,27 @@
     return String(state.workoutInputDrafts.get(key) ?? '');
   }
 
+  function captureVisibleWorkoutInputDrafts() {
+    if (!root) return;
+    const inputs = root.querySelectorAll('.exercise-set-row input[data-field]');
+    if (!inputs || !inputs.length) return;
+    inputs.forEach((node) => {
+      const target = node && node.dataset ? node : null;
+      if (!target) return;
+      const field = target.dataset.field;
+      if (!field) return;
+      setWorkoutInputDraftValue({
+        exId: target.dataset.exId || null,
+        exSlot: target.dataset.exSlot != null ? Number(target.dataset.exSlot) : 0,
+        setIdx: target.dataset.setIdx != null ? Number(target.dataset.setIdx) : null,
+        field,
+        value: target.value,
+        weekIndex: target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null,
+        dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null
+      });
+    });
+  }
+
   function ensureShareOutgoingSyncTimer() {
     if (shareOutgoingSyncTimer) return;
     shareOutgoingSyncTimer = window.setInterval(async () => {
@@ -9999,6 +10020,7 @@ function toggleSharePopover(force) {
   }
 
   function renderApp() {
+    captureVisibleWorkoutInputDrafts();
     const stageBefore = document.querySelector('.training-stage');
     const stageScrollTop = Number(stageBefore?.scrollTop) || 0;
     const windowScrollY = Number(window.scrollY) || Number(document.documentElement?.scrollTop) || 0;
