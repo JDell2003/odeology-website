@@ -681,6 +681,7 @@
     logs: [],
     workoutInputDrafts: new Map(),
     workoutSetCountDrafts: new Map(),
+    workoutReadinessDrafts: new Map(),
     view: 'wizard', // loading | wizard | generating | upsell | plan
     planError: null,
     generating: {
@@ -1706,6 +1707,29 @@
   let workoutInputBound = false;
   let workoutInputGateBound = false;
   let workoutInputGateToastAt = 0;
+  let workoutAutosaveTimer = 0;
+  let workoutAutosaveInFlight = false;
+  let workoutAutosaveQueued = false;
+  let workoutAutosaveContext = null;
+
+  function workoutDayKey({ weekIndex, dayIndex }) {
+    const week = Number.isFinite(Number(weekIndex)) ? String(Math.max(1, Math.round(Number(weekIndex)))) : '';
+    const day = Number.isFinite(Number(dayIndex)) ? String(Math.max(1, Math.round(Number(dayIndex)))) : '';
+    if (!week || !day) return '';
+    return `${week}:${day}`;
+  }
+
+  function setWorkoutReadinessDraft({ weekIndex, dayIndex, value }) {
+    const key = workoutDayKey({ weekIndex, dayIndex });
+    if (!key) return;
+    state.workoutReadinessDrafts.set(key, String(value ?? ''));
+  }
+
+  function getWorkoutReadinessDraft({ weekIndex, dayIndex, fallback = '' }) {
+    const key = workoutDayKey({ weekIndex, dayIndex });
+    if (!key || !state.workoutReadinessDrafts.has(key)) return String(fallback ?? '');
+    return String(state.workoutReadinessDrafts.get(key) ?? '');
+  }
 
   function workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex }) {
     const id = String(exId || '').trim();
@@ -1757,22 +1781,215 @@
   function captureVisibleWorkoutInputDrafts() {
     if (!root) return;
     const inputs = root.querySelectorAll('.exercise-set-row input[data-field]');
-    if (!inputs || !inputs.length) return;
-    inputs.forEach((node) => {
-      const target = node && node.dataset ? node : null;
-      if (!target) return;
-      const field = target.dataset.field;
-      if (!field) return;
-      setWorkoutInputDraftValue({
-        exId: target.dataset.exId || null,
-        exSlot: target.dataset.exSlot != null ? Number(target.dataset.exSlot) : 0,
-        setIdx: target.dataset.setIdx != null ? Number(target.dataset.setIdx) : null,
-        field,
-        value: target.value,
-        weekIndex: target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null,
-        dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null
+    if (inputs && inputs.length) {
+      inputs.forEach((node) => {
+        const target = node && node.dataset ? node : null;
+        if (!target) return;
+        const field = target.dataset.field;
+        if (!field) return;
+        setWorkoutInputDraftValue({
+          exId: target.dataset.exId || null,
+          exSlot: target.dataset.exSlot != null ? Number(target.dataset.exSlot) : 0,
+          setIdx: target.dataset.setIdx != null ? Number(target.dataset.setIdx) : null,
+          field,
+          value: target.value,
+          weekIndex: target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null,
+          dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null
+        });
       });
+    }
+    const readiness = root.querySelector('#workout-readiness');
+    if (readiness && readiness.dataset) {
+      setWorkoutReadinessDraft({
+        weekIndex: readiness.dataset.weekIdx != null ? Number(readiness.dataset.weekIdx) : null,
+        dayIndex: readiness.dataset.dayIdx != null ? Number(readiness.dataset.dayIdx) : null,
+        value: readiness.value
+      });
+    }
+  }
+
+  function upsertLocalWorkoutLog({ weekIndex, dayIndex, performedAt, entries, notes, readiness, updatedAt = null }) {
+    const next = Array.isArray(state.logs) ? state.logs.slice() : [];
+    const idx = next.findIndex((row) => Number(row?.week_index) === Number(weekIndex) && Number(row?.day_index) === Number(dayIndex));
+    const normalized = {
+      week_index: weekIndex,
+      day_index: dayIndex,
+      performed_at: performedAt || null,
+      entries: Array.isArray(entries) ? entries : [],
+      notes: String(notes || ''),
+      readiness: Number.isFinite(Number(readiness)) ? Number(readiness) : null,
+      updated_at: updatedAt || new Date().toISOString()
+    };
+    if (idx >= 0) next[idx] = { ...next[idx], ...normalized };
+    else next.push(normalized);
+    state.logs = next;
+  }
+
+  function buildWorkoutLogPayload({ weekIndex, dayIndex, exercises, dayNotes = '', performedAt = null, requireReadiness = true }) {
+    const planId = state.planRow?.id;
+    if (!planId) return { ok: false, error: state.auth.user ? 'No active plan found.' : 'Sign in to save workouts.' };
+
+    captureVisibleWorkoutInputDrafts();
+
+    const readinessEl = qs('#workout-readiness');
+    const readinessRaw = readinessEl ? Number(readinessEl.value) : Number(getWorkoutReadinessDraft({ weekIndex, dayIndex, fallback: '' }));
+    const readiness = Number.isFinite(readinessRaw) ? Math.max(1, Math.min(10, readinessRaw)) : null;
+    if (requireReadiness && !Number.isFinite(readiness)) {
+      return { ok: false, error: 'Add readiness (1-10) before saving.' };
+    }
+
+    const planRef = state.planRow?.plan || null;
+    const entries = (exercises || []).map((ex, exIdx) => {
+      const resolvedProjected = resolveProjectedForExercise(ex, planRef);
+      const resolvedProjectedValue = Number.isFinite(resolvedProjected?.value) ? resolvedProjected.value : null;
+      const resolvedProjectedUnit = resolvedProjected?.unit || null;
+      const draftSetCount = getWorkoutSetCountDraft({
+        exId: ex.id,
+        exSlot: exIdx,
+        weekIndex,
+        dayIndex,
+        fallback: ex.sets
+      });
+      const setMap = new Map();
+      for (let idx = 0; idx < draftSetCount; idx += 1) {
+        const weightRaw = getWorkoutInputDraftValue({
+          exId: ex.id,
+          exSlot: exIdx,
+          setIdx: idx,
+          field: 'setWeight',
+          fallback: '',
+          weekIndex,
+          dayIndex
+        }).trim();
+        const repsRaw = getWorkoutInputDraftValue({
+          exId: ex.id,
+          exSlot: exIdx,
+          setIdx: idx,
+          field: 'setReps',
+          fallback: '',
+          weekIndex,
+          dayIndex
+        }).trim();
+        const noteRaw = getWorkoutInputDraftValue({
+          exId: ex.id,
+          exSlot: exIdx,
+          setIdx: idx,
+          field: 'setNote',
+          fallback: '',
+          weekIndex,
+          dayIndex
+        }).trim();
+        const entry = {};
+        const weight = Number(weightRaw);
+        const reps = Number(repsRaw);
+        if (Number.isFinite(weight)) entry.weight = weight;
+        if (Number.isFinite(reps)) entry.reps = reps;
+        if (noteRaw) entry.note = noteRaw.slice(0, 140);
+        if (Object.keys(entry).length) setMap.set(idx, entry);
+      }
+      const sets = Array.from(setMap.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([, val]) => ({
+          weight: Number.isFinite(val.weight) ? val.weight : null,
+          reps: Number.isFinite(val.reps) ? val.reps : null,
+          note: typeof val.note === 'string' ? val.note : null
+        }));
+      const lastSet = [...sets].reverse().find((s) => Number.isFinite(s.weight) || Number.isFinite(s.reps)) || null;
+      return {
+        exerciseId: ex.id,
+        baseId: ex.baseId,
+        prescribed: {
+          sets: draftSetCount,
+          reps: ex.reps,
+          repsTarget: Number.isFinite(ex?.progression?.repsTarget) ? ex.progression.repsTarget : parseRepsTarget(ex.reps),
+          restSec: ex.restSec,
+          projectedWeight: resolvedProjectedValue,
+          projectedUnit: resolvedProjectedUnit,
+          rirTarget: Number.isFinite(ex?.rirTarget) ? ex.rirTarget : null
+        },
+        target: { weight: null },
+        actual: {
+          weight: Number.isFinite(lastSet?.weight) ? lastSet.weight : null,
+          reps: Number.isFinite(lastSet?.reps) ? lastSet.reps : null,
+          rpe: null
+        },
+        sets,
+        notes: ''
+      };
     });
+
+    return {
+      ok: true,
+      payload: {
+        planId,
+        weekIndex,
+        dayIndex,
+        performedAt,
+        entries,
+        notes: dayNotes,
+        readiness
+      }
+    };
+  }
+
+  async function persistWorkoutDraftToAccount() {
+    if (workoutAutosaveInFlight) {
+      workoutAutosaveQueued = true;
+      return;
+    }
+    const ctx = workoutAutosaveContext;
+    if (!ctx || !state.auth.user) return;
+    const built = buildWorkoutLogPayload({
+      weekIndex: ctx.weekIndex,
+      dayIndex: ctx.dayIndex,
+      exercises: ctx.exercises,
+      dayNotes: ctx.dayNotes || '',
+      performedAt: ctx.performedAt || null,
+      requireReadiness: false
+    });
+    if (!built.ok) return;
+    workoutAutosaveInFlight = true;
+    try {
+      const resp = await api('/api/training/log-draft', {
+        method: 'POST',
+        body: JSON.stringify(built.payload)
+      });
+      if (resp.ok) {
+        upsertLocalWorkoutLog({
+          weekIndex: built.payload.weekIndex,
+          dayIndex: built.payload.dayIndex,
+          performedAt: built.payload.performedAt,
+          entries: built.payload.entries,
+          notes: built.payload.notes,
+          readiness: built.payload.readiness
+        });
+      }
+    } catch {
+      // ignore autosave failures
+    } finally {
+      workoutAutosaveInFlight = false;
+      if (workoutAutosaveQueued) {
+        workoutAutosaveQueued = false;
+        persistWorkoutDraftToAccount();
+      }
+    }
+  }
+
+  function scheduleWorkoutAutosave() {
+    if (!state.auth.user || !workoutAutosaveContext) return;
+    if (workoutAutosaveTimer) clearTimeout(workoutAutosaveTimer);
+    workoutAutosaveTimer = window.setTimeout(() => {
+      workoutAutosaveTimer = 0;
+      persistWorkoutDraftToAccount();
+    }, 2000);
+  }
+
+  function cancelWorkoutAutosave() {
+    if (workoutAutosaveTimer) {
+      clearTimeout(workoutAutosaveTimer);
+      workoutAutosaveTimer = 0;
+    }
+    workoutAutosaveQueued = false;
   }
 
   function ensureShareOutgoingSyncTimer() {
@@ -1850,10 +2067,19 @@
     if (workoutInputBound) return;
     workoutInputBound = true;
     document.addEventListener('input', (e) => {
-      if (!workoutTimer.running) return;
       if (!document.body.classList.contains('training-page')) return;
       const target = e.target;
-      if (!target || !target.dataset) return;
+      if (!target) return;
+      if (target.id === 'workout-readiness' && target.dataset) {
+        setWorkoutReadinessDraft({
+          weekIndex: target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null,
+          dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null,
+          value: target.value
+        });
+        if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
+        return;
+      }
+      if (!target.dataset) return;
       const field = target.dataset.field;
       if (!field) return;
       const exId = target.dataset.exId || null;
@@ -1878,7 +2104,8 @@
         const num = Number(raw);
         if (Number.isFinite(num)) detail.value = num;
       }
-      recordWorkoutEvent('input', detail);
+      if (workoutTimer.running) recordWorkoutEvent('input', detail);
+      if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
     }, true);
   }
 
@@ -1955,6 +2182,8 @@
 
   function pauseWorkoutTimer({ reason = 'manual' } = {}) {
     if (!workoutTimer.running || !workoutTimer.startedAt) return;
+    captureVisibleWorkoutInputDrafts();
+    persistWorkoutDraftToAccount();
     const now = Date.now();
     workoutTimer.elapsedMs = Math.max(0, now - workoutTimer.startedAt);
     workoutTimer.running = false;
@@ -2036,6 +2265,7 @@
 
   function endWorkoutTimer({ reason = 'manual', showToast = false } = {}) {
     if (!workoutTimer.running) return;
+    cancelWorkoutAutosave();
     const endedAt = Date.now();
     const durationMs = Math.max(0, endedAt - workoutTimer.startedAt);
     if (durationMs > 0) {
@@ -7878,6 +8108,35 @@ function toggleSharePopover(force) {
   }
 
   async function saveWorkout({ weekIndex, dayIndex, exercises, dayNotes, performedAt }) {
+    const built = buildWorkoutLogPayload({
+      weekIndex,
+      dayIndex,
+      exercises,
+      dayNotes,
+      performedAt,
+      requireReadiness: true
+    });
+    if (!built.ok) {
+      state.planError = built.error || 'Failed to save workout.';
+      render();
+      return;
+    }
+    state.planError = null;
+    const resp = await api('/api/training/log', {
+      method: 'POST',
+      body: JSON.stringify(built.payload)
+    });
+    if (!resp.ok) {
+      state.planError = resp.json?.error || 'Failed to save workout.';
+      render();
+      return;
+    }
+    if (resp.json?.plan) state.planRow = resp.json.plan;
+    const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(built.payload.planId)}`, { method: 'GET' });
+    state.logs = logsResp.ok ? (logsResp.json?.logs || []) : state.logs;
+    render();
+    return; /*
+
     const planId = state.planRow?.id;
     if (!planId) {
       state.planError = state.auth.user ? 'No active plan found.' : 'Sign in to save workouts.';
@@ -7988,11 +8247,12 @@ function toggleSharePopover(force) {
     if (resp.json?.plan) state.planRow = resp.json.plan;
     const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(planId)}`, { method: 'GET' });
     state.logs = logsResp.ok ? (logsResp.json?.logs || []) : state.logs;
-    render();
+    render(); */
   }
 
   function renderPlan() {
     const planRow = state.planRow;
+    workoutAutosaveContext = null;
     const sanitizeSummary = sanitizeBodybuildingPlanInPlace(planRow);
     if ((sanitizeSummary.removed > 0 || sanitizeSummary.capped > 0) && !state.planError) {
       state.planError = 'Invalid exercises/sets were removed from display. Regenerate plan for a clean rebuild.';
@@ -9501,7 +9761,15 @@ function toggleSharePopover(force) {
 
       const performedAtValue = log?.performed_at ? String(log.performed_at).slice(0, 10) : new Date().toISOString().slice(0, 10);
       const dayNotesValue = log?.notes || '';
-      const readinessValue = Number.isFinite(Number(log?.readiness)) ? Number(log.readiness) : '';
+      const readinessSavedValue = Number.isFinite(Number(log?.readiness)) ? Number(log.readiness) : '';
+      const readinessValue = getWorkoutReadinessDraft({ weekIndex: activeWeek, dayIndex, fallback: readinessSavedValue });
+      workoutAutosaveContext = {
+        weekIndex: activeWeek,
+        dayIndex,
+        exercises: day.exercises || [],
+        dayNotes: dayNotesValue,
+        performedAt: performedAtValue
+      };
       const readinessInput = el('div', { class: 'training-row', style: 'align-items:center; gap:0.6rem; margin:0.6rem 0 0; flex-wrap:wrap' },
         el('label', { class: 'training-muted', for: 'workout-readiness' }, 'Rest/Readiness (1â€“10)'),
         el('input', {
@@ -9511,6 +9779,7 @@ function toggleSharePopover(force) {
           min: '1',
           max: '10',
           value: readinessValue,
+          dataset: { weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
           placeholder: '1â€“10',
           style: 'max-width:110px'
         })
@@ -9568,6 +9837,7 @@ function toggleSharePopover(force) {
               dayIndex,
               count: next
             });
+            if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
             render();
           };
           const removeSetForExercise = () => {
@@ -9579,6 +9849,7 @@ function toggleSharePopover(force) {
               dayIndex,
               count: Math.max(baseSetCount, setCount - 1)
             });
+            if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
             render();
           };
           const setLog = setCount
@@ -9821,6 +10092,7 @@ function toggleSharePopover(force) {
             )
           ),
           el('div', { class: 'workout-goal' }, goalLine),
+          readinessInput,
           el('div', { class: 'training-section-line' }),
           list,
           el('div', { class: 'training-section-line' })

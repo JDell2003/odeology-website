@@ -5402,6 +5402,36 @@ async function trainingRoutes(req, res, url) {
     }
   }
 
+  if (pathname === '/api/training/log-draft' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    const planId = safeText(payload?.planId, 80);
+    const weekIndex = clampInt(payload?.weekIndex, 1, 52, null);
+    const dayIndex = clampInt(payload?.dayIndex, 1, 7, null);
+    const readiness = clampInt(payload?.readiness, 1, 10, null);
+    if (!planId || !weekIndex || !dayIndex) return sendJson(res, 400, { error: 'Missing plan/week/day' });
+
+    try {
+      await upsertWorkoutLog({
+        userId: user.id,
+        planId,
+        weekIndex,
+        dayIndex,
+        performedAt: payload?.performedAt || null,
+        entries: payload?.entries || [],
+        notes: payload?.notes || '',
+        readiness
+      });
+      return sendJson(res, 200, { ok: true });
+    } catch (err) {
+      return handleTrainingDbFailure(res, err, 'training-log-draft', 'Failed to save workout draft');
+    }
+  }
+
   if (pathname === '/api/training/log' && req.method === 'POST') {
     let payload;
     try {
