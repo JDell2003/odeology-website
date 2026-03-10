@@ -1729,7 +1729,9 @@
       if (!shareUi.bootstrapRequested) return;
       shareOutgoingSyncInFlight = true;
       try {
-        await refreshShareOutgoingState({ rerender: true });
+        // Do not re-render the full training view while users are typing workout inputs.
+        // This background sync should refresh share state silently unless the popover is open.
+        await refreshShareOutgoingState({ rerender: false });
       } finally {
         shareOutgoingSyncInFlight = false;
       }
@@ -8621,7 +8623,8 @@ function toggleSharePopover(force) {
       shareUi.bootstrapRequested = true;
       if (!shareOutgoingSyncInFlight) {
         shareOutgoingSyncInFlight = true;
-        refreshShareOutgoingState({ rerender: true })
+        // Initial share bootstrap should not reset in-progress workout input fields.
+        refreshShareOutgoingState({ rerender: false })
           .catch(() => false)
           .finally(() => {
             shareOutgoingSyncInFlight = false;
