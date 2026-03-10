@@ -33,6 +33,8 @@
       margin-bottom: 14px;
       display: grid;
       gap: 12px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
     }
 
     .builder-head h1 {
@@ -88,6 +90,14 @@
       border: 1px solid #ddcdb4;
       border-radius: 20px;
       box-shadow: 0 16px 34px rgba(84, 52, 19, 0.12);
+    }
+
+    .builder-head + .builder-import-strip {
+      margin-top: -14px;
+      padding-top: 24px;
+      border-top: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
     }
 
     .builder-import-grid {
@@ -1364,6 +1374,14 @@
         padding: 8px 10px 4px;
         border-radius: 14px;
         box-shadow: 0 8px 18px rgba(64, 42, 19, 0.1);
+      }
+
+      .builder-head + .builder-import-strip {
+        margin-top: 0;
+        padding-top: 8px;
+        border-top: 1px solid #ddcdb4;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
       }
 
       .builder-import-grid {
