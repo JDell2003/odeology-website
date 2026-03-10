@@ -3547,7 +3547,111 @@ Last week: 80 lb</pre>
         return null;
       }
 
+      function parseStructuredWorkoutLogEntries(raw) {
+        const source = normalizeOcrDocumentText(raw).trim();
+        if (!source) return [];
+        const lines = source
+          .split(/\n+/g)
+          .map((line) => String(line || '').trim())
+          .filter(Boolean);
+        if (!lines.length) return [];
+        const out = [];
+        let sourceOrder = 0;
+        let currentWeekday = null;
+        let currentDayOrdinal = null;
+        let currentDayFocus = '';
+
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = String(lines[i] || '').trim();
+          if (!line) continue;
+          if (isImportTableHeaderLine(line)) continue;
+
+          const header = inferImportDayHeader(line);
+          if (header && typeof header === 'object') {
+            if (Number.isInteger(header.weekday)) {
+              currentWeekday = Number(header.weekday);
+              currentDayOrdinal = null;
+            } else if (Number.isInteger(header.dayOrdinal)) {
+              currentDayOrdinal = Number(header.dayOrdinal);
+              currentWeekday = null;
+            }
+            if (String(header.dayFocus || '').trim()) {
+              currentDayFocus = String(header.dayFocus).trim();
+            }
+            continue;
+          }
+
+          const inlineDay = extractImportInlineDayPrefix(line);
+          const parseSource = inlineDay?.remainder ? inlineDay.remainder : line;
+          if (isImportLayoutLabelLine(parseSource)) continue;
+          if (isImportWeightNoteLine(parseSource)) {
+            const hinted = extractImportLastWeightHint(parseSource);
+            if (Number.isFinite(Number(hinted)) && Number(hinted) > 0 && out.length) {
+              const last = out[out.length - 1];
+              if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
+                last.projected = { value: Number(hinted), unit: 'lb' };
+              }
+            }
+            continue;
+          }
+
+          const cleanName = cleanImportedEntry(parseSource);
+          const looksLikeName = isLikelyExerciseName(cleanName);
+          if (!looksLikeName) continue;
+
+          let entry = {
+            sourceText: parseSource,
+            name: cleanName,
+            sets: null,
+            reps: '',
+            restSec: null,
+            projected: null
+          };
+          const parsedSelf = parseImportedLineDetail(parseSource);
+          if (parsedSelf && isLikelyExerciseName(parsedSelf.name)) {
+            entry = mergeImportedEntryDetails(entry, parsedSelf);
+          }
+
+          let consumed = 1;
+          const nextLine = String(lines[i + 1] || '').trim();
+          if (nextLine) {
+            const nextHeader = inferImportDayHeader(nextLine);
+            const nextIsWeight = isImportWeightNoteLine(nextLine);
+            const nextLooksLikeName = isLikelyExerciseName(cleanImportedEntry(nextLine));
+            const nextHint = parseImportPrescriptionHint(nextLine);
+            if (!nextHeader && !nextIsWeight && !nextLooksLikeName && nextHint) {
+              entry = mergeImportedEntryDetails(entry, nextHint);
+              consumed += 1;
+            }
+          }
+
+          const weightLine = String(lines[i + consumed] || '').trim();
+          if (weightLine && isImportWeightNoteLine(weightLine)) {
+            const hinted = extractImportLastWeightHint(weightLine);
+            if (Number.isFinite(Number(hinted)) && Number(hinted) > 0) {
+              entry = mergeImportedEntryDetails(entry, {
+                projected: { value: Number(hinted), unit: 'lb' }
+              });
+            }
+            consumed += 1;
+          }
+
+          if (Number.isInteger(inlineDay?.weekday)) {
+            entry.weekday = Number(inlineDay.weekday);
+          } else if (Number.isInteger(currentWeekday)) {
+            entry.weekday = currentWeekday;
+          }
+          if (Number.isInteger(currentDayOrdinal)) entry.dayOrdinal = currentDayOrdinal;
+          if (currentDayFocus) entry.dayFocus = currentDayFocus;
+          entry.sourceOrder = sourceOrder++;
+          out.push(entry);
+          i += (consumed - 1);
+        }
+        return out;
+      }
+
       function parseImportedEntries(raw) {
+        const structuredEntries = parseStructuredWorkoutLogEntries(raw);
         const source = normalizeOcrDocumentText(raw)
           .replace(
             /(\b\d{1,4}(?:\.\d+)?\s*(?:kg|kgs|kilograms?|lb|lbs|pounds?|s)\b)\s+(?=[a-z][a-z0-9'\/\-\s]{2,}\b(?:press|row|curl|fly|pulldown|pushdown|squat|deadlift|lunge|extension)\b)/gi,
@@ -3641,7 +3745,24 @@ Last week: 80 lb</pre>
           seen.set(key, unique.length);
           unique.push(entry);
         });
-        return unique;
+        if (!structuredEntries.length) return unique;
+        const merged = [];
+        const mergedSeen = new Map();
+        const pushMerged = (entry) => {
+          const key = buildImportEntryDedupeKey(entry);
+          if (!key) return;
+          if (mergedSeen.has(key)) {
+            const idx = mergedSeen.get(key);
+            merged[idx] = mergeImportedEntryDetails(merged[idx], entry);
+            return;
+          }
+          mergedSeen.set(key, merged.length);
+          merged.push(entry);
+        };
+        structuredEntries.forEach(pushMerged);
+        unique.forEach(pushMerged);
+        merged.sort((a, b) => Number(a?.sourceOrder || 0) - Number(b?.sourceOrder || 0));
+        return merged;
       }
 
       function buildRowSearchString(row) {
