@@ -552,6 +552,29 @@
       align-items: center;
     }
 
+    .builder-import-lastlift {
+      display: grid;
+      gap: 5px;
+      max-width: 220px;
+    }
+
+    .builder-import-lastlift-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #6f5538;
+    }
+
+    .builder-import-lastlift input {
+      min-height: 32px;
+      border: 1px solid #d8c3a5;
+      border-radius: 9px;
+      padding: 5px 8px;
+      font-size: 0.82rem;
+      background: #fffdfa;
+      color: #2f2418;
+    }
+
     .builder-import-flow-nav {
       display: flex;
       justify-content: space-between;
@@ -1467,6 +1490,10 @@
         grid-template-columns: 1fr;
       }
 
+      .builder-import-lastlift {
+        max-width: none;
+      }
+
       .builder-import-row-actions {
         justify-content: flex-end;
       }
@@ -2302,8 +2329,8 @@
       const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
       const IMPORT_CUSTOM_ID_PREFIX = 'custom_import_';
       const IMPORT_REVIEW_REQUIRED_PASSES = 3;
-      const IMPORT_REVIEW_PASS_THRESHOLD = 0.90;
-      const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.90;
+      const IMPORT_REVIEW_PASS_THRESHOLD = 0.70;
+      const IMPORT_REVIEW_CONFIDENCE_THRESHOLD = 0.62;
       const IMPORT_REVIEW_MAX_RUNS = 20;
       const IMPORT_CORRECTIONS_STORAGE_PREFIX = 'ode_import_corrections_v1';
       const IMPORT_UNKNOWN_IMAGE_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 220\"><defs><linearGradient id=\"g\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f6e5cb\"/><stop offset=\"100%\" stop-color=\"#e4cda9\"/></linearGradient></defs><rect width=\"300\" height=\"220\" rx=\"24\" fill=\"url(#g)\"/><circle cx=\"150\" cy=\"105\" r=\"52\" fill=\"#fff8ed\" stroke=\"#cfaa72\" stroke-width=\"6\"/><text x=\"150\" y=\"123\" text-anchor=\"middle\" font-size=\"66\" font-family=\"Arial, sans-serif\" font-weight=\"700\" fill=\"#8e5f24\">?</text><text x=\"150\" y=\"190\" text-anchor=\"middle\" font-size=\"16\" font-family=\"Arial, sans-serif\" fill=\"#7a5b34\">Confirm exercise image</text></svg>')}`;
@@ -3384,6 +3411,38 @@
         return image || IMPORT_UNKNOWN_IMAGE_DATA_URI;
       }
 
+      function getImportRowProjectedValue(row) {
+        const parsed = row?.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+        const parsedProjected = parsed?.projected && Number.isFinite(Number(parsed.projected.value))
+          ? Number(parsed.projected.value)
+          : null;
+        if (parsedProjected != null) return Math.max(5, Math.min(2000, Math.round(parsedProjected * 2) / 2));
+        const candidate = getImportReviewCandidateForRow(row);
+        const seeded = resolveHistoryProjectedForRow(candidate, parsed);
+        if (seeded && Number.isFinite(Number(seeded.value))) {
+          return Math.max(5, Math.min(2000, Math.round(Number(seeded.value) * 2) / 2));
+        }
+        return null;
+      }
+
+      function setImportRowProjectedValue(row, valueRaw) {
+        if (!row || typeof row !== 'object') return;
+        const parsed = row.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+        const valueText = String(valueRaw ?? '').trim();
+        if (!valueText) {
+          if (parsed.projected) delete parsed.projected;
+          row.parsed = parsed;
+          return;
+        }
+        const value = Number(valueText);
+        if (!Number.isFinite(value) || value <= 0) return;
+        parsed.projected = {
+          value: Math.max(5, Math.min(2000, Math.round(value * 2) / 2)),
+          unit: 'lb'
+        };
+        row.parsed = parsed;
+      }
+
       function buildImportPasteSignature(files, text = '') {
         const fileSig = Array.from(files || [])
           .filter(Boolean)
@@ -3765,6 +3824,7 @@
           const candidate = getImportReviewCandidateForRow(row);
           const candidateName = String(candidate?.name || row?.parsed?.name || row?.sourceText || 'Unknown workout');
           const candidateImageUrl = getImportReviewCandidateImage(row);
+          const projectedValue = getImportRowProjectedValue(row);
           return `
             <article class="builder-import-flow-card${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
               <div class="builder-import-flow-media">
@@ -3784,6 +3844,10 @@
                     <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
                   </div>
                 </div>
+                <label class="builder-import-lastlift">
+                  <span class="builder-import-lastlift-label">Last lifted weight (lb)</span>
+                  <input type="number" min="0" step="0.5" inputmode="decimal" data-import-last-weight="${escapeHtml(row.id)}" value="${projectedValue != null ? escapeHtml(String(projectedValue)) : ''}" placeholder="Optional" />
+                </label>
                 <div class="builder-import-fix">
                   <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
                   <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
@@ -5720,6 +5784,16 @@
         });
 
         importReviewBodyEl?.addEventListener('change', (e) => {
+          const lastWeightInput = e.target.closest('[data-import-last-weight]');
+          if (lastWeightInput) {
+            const rowId = String(lastWeightInput.getAttribute('data-import-last-weight') || '').trim();
+            const row = getImportReviewRow(rowId);
+            if (!row) return;
+            setImportRowProjectedValue(row, lastWeightInput.value);
+            setImportReviewStatus('');
+            return;
+          }
+
           const select = e.target.closest('[data-import-select]');
           if (!select) return;
           const rowId = String(select.getAttribute('data-import-select') || '').trim();
