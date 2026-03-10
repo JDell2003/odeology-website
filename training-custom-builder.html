@@ -1887,16 +1887,17 @@
       }
 
       .builder-import-review-card {
-        width: 98vw;
+        width: min(92vw, 420px);
         max-height: 94vh;
+        margin: 0 auto;
       }
 
       .builder-import-review-head {
-        padding: 11px 11px 9px;
+        padding: 12px 14px 10px;
       }
 
       .builder-import-review-body {
-        padding: 8px;
+        padding: 10px 12px;
       }
 
       .builder-import-row-controls {
@@ -1953,7 +1954,16 @@
       }
 
       .builder-import-review-foot {
-        padding: 8px 10px 10px;
+        padding: 10px 12px 12px;
+        justify-items: stretch;
+      }
+
+      .builder-import-review-status {
+        text-align: center;
+      }
+
+      .builder-import-review-actions {
+        justify-content: stretch;
       }
 
       .builder-import-review-actions .btn {
