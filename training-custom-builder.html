@@ -3292,6 +3292,25 @@ Last week: 80 lb</pre>
         return `${dayKey}:${nameKey}:${setsKey}:${repsKey}:${sourceKey}`;
       }
 
+      function buildImportEntrySemanticKey(entry) {
+        const parsed = entry && typeof entry === 'object' ? entry : {};
+        const dayKey = Number.isInteger(parsed?.weekday)
+          ? `w${parsed.weekday}`
+          : (Number.isInteger(parsed?.dayOrdinal) ? `d${parsed.dayOrdinal}` : 'x');
+        const nameKey = normalizeImportToken(parsed?.name || '');
+        const setsKey = Number.isFinite(Number(parsed?.sets)) && Number(parsed.sets) > 0
+          ? String(Math.round(Number(parsed.sets)))
+          : '';
+        const repsKey = normalizeImportToken(parsed?.reps || '');
+        const restKey = Number.isFinite(Number(parsed?.restSec)) && Number(parsed.restSec) > 0
+          ? String(Math.round(Number(parsed.restSec)))
+          : '';
+        const projectedKey = parsed?.projected && Number.isFinite(Number(parsed.projected.value))
+          ? String(Math.round(Number(parsed.projected.value) * 2) / 2)
+          : '';
+        return `${dayKey}:${nameKey}:${setsKey}:${repsKey}:${restKey}:${projectedKey}`;
+      }
+
       function parseImportedLineDetail(rawLine) {
         const sourceText = normalizeOcrLineText(rawLine);
         if (!sourceText) return null;
@@ -3809,7 +3828,7 @@ Last week: 80 lb</pre>
         const merged = [];
         const mergedSeen = new Map();
         const pushMerged = (entry) => {
-          const key = buildImportEntryDedupeKey(entry);
+          const key = buildImportEntrySemanticKey(entry) || buildImportEntryDedupeKey(entry);
           if (!key) return;
           if (mergedSeen.has(key)) {
             const idx = mergedSeen.get(key);
