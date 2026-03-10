@@ -3732,6 +3732,31 @@ Last week: 80 lb</pre>
         return /\b(press|bench|row|pulldown|pull up|chin up|squat|deadlift|lunge|thrust|hack squat|leg press)\b/.test(text);
       }
 
+      function isDefaultLatPulldownQuery(raw) {
+        const query = normalizeImportQueryForMatching(raw);
+        if (!query) return false;
+        if (!/\blat\s+pulldown\b/.test(query)) return false;
+        return !isUnilateralImportPhrase(query);
+      }
+
+      function isChestSupportedRowQuery(raw) {
+        const query = normalizeImportQueryForMatching(raw);
+        if (!query) return false;
+        return /\b(chest supported row|supported row)\b/.test(query);
+      }
+
+      function isCorrectionCompatibleWithQuery(rawQuery, correctedRow) {
+        const rowName = normalizeImportToken(correctedRow?.name || '');
+        if (!rowName) return false;
+        if (isDefaultLatPulldownQuery(rawQuery)) {
+          return /\blat\s+pulldown\b/.test(rowName) && !isUnilateralImportPhrase(rowName);
+        }
+        if (isChestSupportedRowQuery(rawQuery)) {
+          return /\b(t bar row|chest supported row|machine row)\b/.test(rowName);
+        }
+        return true;
+      }
+
       function matchExerciseCandidates(rawQuery, maxResults = 6, options = {}) {
         const query = normalizeImportToken(rawQuery);
         if (!query) return [];
@@ -3808,6 +3833,9 @@ Last week: 80 lb</pre>
 
           const candidateName = normalizeImportToken(row?.name || '');
           const candidateUnilateral = isUnilateralImportPhrase(candidateName);
+          if (queryIsLatPulldown && !queryUnilateral && /\bone arm lat pulldown\b/.test(candidateName)) return;
+          if (queryIsSupportedRow && /\b(rear delt|fly|face pull)\b/.test(candidateName)) return;
+
           if (!queryUnilateral && candidateUnilateral) score -= 0.34;
           if (queryUnilateral && !candidateUnilateral) score -= 0.18;
           if (queryUnilateral && candidateUnilateral) score += 0.12;
@@ -3825,10 +3853,16 @@ Last week: 80 lb</pre>
           if (queryIsLatPulldown) {
             const candidateIsLatPulldown = /\blat\s+pulldown\b/.test(candidateName);
             if (candidateIsLatPulldown) score += 0.2;
+            if (candidateName === 'lat pulldown') score += 1.1;
             if (candidateUnilateral && !queryUnilateral) score -= 0.3;
           }
 
           if (queryIsSupportedRow) {
+            if (/\bt bar row\b/.test(candidateName)) {
+              score += 1.05;
+            } else if (/\bchest supported row\b/.test(candidateName)) {
+              score += 0.75;
+            }
             if (/\b(chest supported row|supported row|t bar row|t bar|machine row)\b/.test(candidateName)) {
               score += 0.28;
             }
@@ -3955,7 +3989,7 @@ Last week: 80 lb</pre>
         const dayFocusGroups = dayFocusGroupsForContext(dayFocus);
 
         const correctedRow = resolveCorrectedImportRow(queryText, parsed);
-        if (correctedRow?.id) {
+        if (correctedRow?.id && isCorrectionCompatibleWithQuery(queryText, correctedRow)) {
           byId.set(String(correctedRow.id).trim().toLowerCase(), {
             row: correctedRow,
             score: 1.85
