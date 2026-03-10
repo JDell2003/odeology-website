@@ -2593,6 +2593,16 @@
         return Math.max(30, Math.min(300, Math.round(sec)));
       }
 
+      function parseRestSecondsFromClock(minRaw, secRaw) {
+        const mins = Number(minRaw);
+        const secs = Number(secRaw);
+        if (!Number.isFinite(mins) || mins < 0) return null;
+        if (!Number.isFinite(secs) || secs < 0 || secs >= 60) return null;
+        const total = (mins * 60) + secs;
+        if (!Number.isFinite(total) || total <= 0) return null;
+        return Math.max(30, Math.min(300, Math.round(total)));
+      }
+
       function mergeImportedEntryDetails(base, incoming) {
         const cur = base && typeof base === 'object' ? base : {};
         const next = incoming && typeof incoming === 'object' ? incoming : {};
@@ -2640,7 +2650,34 @@
         let projectedLb = null;
         working = working.replace(/\b(\d{1,2})\s+to\s+(\d{1,2})\b/gi, '$1-$2');
 
-        const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/ig;
+        const restClockMatch = working.match(/\b(?:rest\s*[:\-]?\s*)?(\d{1,2})\s*:\s*([0-5]\d)\b/i);
+        if (restClockMatch) {
+          const sec = parseRestSecondsFromClock(restClockMatch[1], restClockMatch[2]);
+          if (Number.isFinite(sec)) restSec = sec;
+          working = working.replace(restClockMatch[0], ' ');
+        }
+
+        if (!restSec) {
+          const restMinuteSecondMatch = working.match(/\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\s*(\d{1,2})\s*(?:s|sec|secs|second|seconds)\b/i);
+          if (restMinuteSecondMatch) {
+            const mins = Number(restMinuteSecondMatch[1]);
+            const secs = Number(restMinuteSecondMatch[2]);
+            const sec = parseRestSecondsFromClock(mins, secs);
+            if (Number.isFinite(sec)) restSec = sec;
+            working = working.replace(restMinuteSecondMatch[0], ' ');
+          }
+        }
+
+        if (!restSec) {
+          const restTrailingMatch = working.match(/\b(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes)\s*rest\b/i);
+          if (restTrailingMatch) {
+            const sec = parseRestSecondsFromMatch(restTrailingMatch[1], restTrailingMatch[2]);
+            if (Number.isFinite(sec)) restSec = sec;
+            working = working.replace(restTrailingMatch[0], ' ');
+          }
+        }
+
+        const restPattern = /\b(?:rest\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes)\b/ig;
         let restMatch = null;
         while (true) {
           const m = restPattern.exec(working);
@@ -2663,6 +2700,24 @@
         }
 
         if (!sets || !reps) {
+          const labeledSetRep = working.match(/\bsets?\s*[:=]\s*([1-8])\s*(?:[|,;/]\s*|\s+)\s*reps?\s*[:=]\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\b/i);
+          if (labeledSetRep) {
+            if (!sets) sets = Number(labeledSetRep[1]);
+            if (!reps) reps = String(labeledSetRep[2] || '').replace(/\s+/g, '');
+            working = working.replace(labeledSetRep[0], ' ');
+          }
+        }
+
+        if (!sets || !reps) {
+          const labeledRepSet = working.match(/\breps?\s*[:=]\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:[|,;/]\s*|\s+)\s*sets?\s*[:=]\s*([1-8])\b/i);
+          if (labeledRepSet) {
+            if (!reps) reps = String(labeledRepSet[1] || '').replace(/\s+/g, '');
+            if (!sets) sets = Number(labeledRepSet[2]);
+            working = working.replace(labeledRepSet[0], ' ');
+          }
+        }
+
+        if (!sets || !reps) {
           const setRepCombinedMatch = working.match(/\b([1-8])\s*(?:working\s*)?(?:sets?|rounds?)\s*(?:,|of)?\s*(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*(?:reps?|steps?)?\b/i);
           if (setRepCombinedMatch) {
             if (!sets) {
@@ -2673,6 +2728,15 @@
               reps = String(setRepCombinedMatch[2] || '').replace(/\s+/g, '');
             }
             working = working.replace(setRepCombinedMatch[0], ' ');
+          }
+        }
+
+        if (!sets || !reps) {
+          const repsBySetsMatch = working.match(/\b(\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?)\s*reps?\s*[xX]\s*([1-8])\b/i);
+          if (repsBySetsMatch) {
+            if (!reps) reps = String(repsBySetsMatch[1] || '').replace(/\s+/g, '');
+            if (!sets) sets = Number(repsBySetsMatch[2]);
+            working = working.replace(repsBySetsMatch[0], ' ');
           }
         }
 
