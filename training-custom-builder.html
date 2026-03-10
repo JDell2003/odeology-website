@@ -3025,10 +3025,18 @@ Last week: 80 lb</pre>
         if (!line) return false;
         const lower = line.toLowerCase();
         const hasWeight = /\b\d{2,4}(?:\.\d+)?\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/.test(lower);
-        if (!hasWeight) return false;
-        if (!/\b(last|last week|previous|prev|prior|working weight|top set|used|weight)\b/.test(lower)) return false;
+        const hasLiftHint = /\b(last|last week|previous|prev|prior|working weight|top set|used|weight)\b/.test(lower);
+        if (!hasLiftHint) return false;
+        const hasLooseWeight = /\b(?:last|last week|previous|prev|prior|working weight|top set|used|weight)\b[^0-9]{0,12}\d{1,4}(?:\.\d+)?\s*s?\b/i.test(line);
+        if (!hasWeight && !hasLooseWeight) return false;
         if (/\b(sets?|reps?|rest|x\s*\d|day|session)\b/.test(lower)) return false;
         return true;
+      }
+
+      function isImportLayoutLabelLine(rawLine) {
+        const token = normalizeImportToken(rawLine);
+        if (!token) return false;
+        return /^(workout log|log|training log|session log|workout)$/.test(token);
       }
 
       function parseImportPrescriptionHint(rawLine) {
@@ -3382,7 +3390,11 @@ Last week: 80 lb</pre>
         if (!text) return false;
         if (text.length < 3 || text.length > 80) return false;
         if (!/[a-zA-Z]/.test(text)) return false;
+        if (/^\s*x\s*\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?\s*$/i.test(text)) return false;
+        if (/^\s*\d{1,2}\s*[xX]\s*\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?\s*$/i.test(text)) return false;
+        if (/^\s*\d{1,2}(?:\s*[-\u2013\u2014]\s*\d{1,2})?\s*(?:reps?)?\s*$/i.test(text)) return false;
         const lowerText = text.toLowerCase();
+        if (/^\s*(last|last week|previous|prev|prior|working weight|top set|used|weight)\b/.test(lowerText)) return false;
         const hasExerciseKeyword = /(press|bench|row|curl|squat|deadlift|raise|pulldown|pushdown|pushdowns|crunch|fly|lunge|extension|ext\b|pullover|dip|pull\s?up|push\s?up|shrug|thrust|hinge|rdl|laterals?|preacher|hamstring curl|leg ext|leg curl)/.test(lowerText);
         if (!hasExerciseKeyword && /\b(goal|time|rule|rules|rest|workout|equipment|advice|cardio|target|main work|accessory work|arm finisher|load and pacing guidance|guidance|session|emphasis|purpose)\b/.test(lowerText)) return false;
         if (!hasExerciseKeyword && /\b(last|last week|previous|prev|prior|working weight|top set|used)\b/.test(lowerText) && /\b(lb|lbs|kg|kgs|pounds?|dumbbells?)\b/.test(lowerText)) return false;
@@ -3390,8 +3402,14 @@ Last week: 80 lb</pre>
         if (/\b(if it'?s easy|if its easy|should be hard|raise the weight|big lifts|machines\/isolation|recover properly|light stretching|not a lifting day|no lifting|focus on food|focus on sleep|focus on recovery)\b/.test(lowerText)) return false;
         const normalized = normalizeImportToken(text);
         if (!normalized) return false;
+        const compact = normalized.replace(/\s+/g, '');
+        if (/^(?:x?\d{1,2}(?:-\d{1,2})?|\d{1,2}x\d{1,2}(?:-\d{1,2})?)$/.test(compact)) return false;
         if (/^(set|sets|rep|reps|rest|tempo|rir|rpe|warmup|cooldown|workout|day|week|notes?|main work|accessory work|arm finisher|core)$/.test(normalized)) return false;
         if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)$/.test(normalized)) return false;
+        if (!hasExerciseKeyword) {
+          const alphaTokens = normalized.split(' ').filter((token) => /[a-z]/.test(token));
+          if (alphaTokens.length < 2) return false;
+        }
         return true;
       }
 
@@ -3523,16 +3541,29 @@ Last week: 80 lb</pre>
 
           const inlineDay = extractImportInlineDayPrefix(line);
           const parseSource = inlineDay?.remainder ? inlineDay.remainder : line;
+          if (isImportLayoutLabelLine(parseSource)) return;
+
+          const hintedWeight = extractImportLastWeightHint(parseSource);
+          if (Number.isFinite(Number(hintedWeight)) && Number(hintedWeight) > 0 && chunks.length) {
+            const last = chunks[chunks.length - 1];
+            if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
+              last.projected = { value: Number(hintedWeight), unit: 'lb' };
+            }
+            return;
+          }
+
+          const quickName = cleanImportedEntry(parseSource);
+          const looksLikeExerciseName = isLikelyExerciseName(quickName);
+          const prescriptionHint = parseImportPrescriptionHint(parseSource);
+          if (prescriptionHint && chunks.length && !looksLikeExerciseName) {
+            const lastIdx = chunks.length - 1;
+            const merged = mergeImportedEntryDetails(chunks[lastIdx], prescriptionHint);
+            chunks[lastIdx] = merged;
+            return;
+          }
+
           const parsed = parseImportedLineDetail(parseSource);
           if (!parsed || !isLikelyExerciseName(parsed.name)) {
-            const hintedWeight = extractImportLastWeightHint(parseSource);
-            if (Number.isFinite(Number(hintedWeight)) && Number(hintedWeight) > 0 && chunks.length) {
-              const last = chunks[chunks.length - 1];
-              if (last && (!last.projected || !Number.isFinite(Number(last.projected.value)))) {
-                last.projected = { value: Number(hintedWeight), unit: 'lb' };
-              }
-            }
-            const prescriptionHint = parseImportPrescriptionHint(parseSource);
             if (prescriptionHint && chunks.length) {
               const lastIdx = chunks.length - 1;
               const merged = mergeImportedEntryDetails(chunks[lastIdx], prescriptionHint);
