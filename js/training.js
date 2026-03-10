@@ -680,6 +680,7 @@
     planRow: null,
     logs: [],
     workoutInputDrafts: new Map(),
+    workoutSetCountDrafts: new Map(),
     view: 'wizard', // loading | wizard | generating | upsell | plan
     planError: null,
     generating: {
@@ -1729,6 +1730,28 @@
     if (!key) return String(fallback ?? '');
     if (!state.workoutInputDrafts.has(key)) return String(fallback ?? '');
     return String(state.workoutInputDrafts.get(key) ?? '');
+  }
+
+  function workoutSetCountKey({ exId, exSlot, weekIndex, dayIndex }) {
+    const id = String(exId || '').trim();
+    const slot = Number.isFinite(Number(exSlot)) ? String(Math.max(0, Math.round(Number(exSlot)))) : '0';
+    const week = Number.isFinite(Number(weekIndex)) ? String(Math.max(1, Math.round(Number(weekIndex)))) : '';
+    const day = Number.isFinite(Number(dayIndex)) ? String(Math.max(1, Math.round(Number(dayIndex)))) : '';
+    if (!id) return '';
+    return `${week}:${day}:${id}:${slot}`;
+  }
+
+  function setWorkoutSetCountDraft({ exId, exSlot, weekIndex, dayIndex, count }) {
+    const key = workoutSetCountKey({ exId, exSlot, weekIndex, dayIndex });
+    if (!key) return;
+    const next = Math.max(0, Math.min(12, Math.round(Number(count) || 0)));
+    state.workoutSetCountDrafts.set(key, next);
+  }
+
+  function getWorkoutSetCountDraft({ exId, exSlot, weekIndex, dayIndex, fallback = 0 }) {
+    const key = workoutSetCountKey({ exId, exSlot, weekIndex, dayIndex });
+    if (!key || !state.workoutSetCountDrafts.has(key)) return Math.max(0, Math.min(12, Math.round(Number(fallback) || 0)));
+    return Math.max(0, Math.min(12, Math.round(Number(state.workoutSetCountDrafts.get(key)) || 0)));
   }
 
   function captureVisibleWorkoutInputDrafts() {
@@ -5777,6 +5800,7 @@ function toggleSharePopover(force) {
   const keepOnEngineAndRetry = ({ forceAutostart = false } = {}) => {
     if (engineRetryInFlight) return;
     engineRetryInFlight = true;
+    state.planError = null;
     setView('generating');
     Promise.resolve().then(async () => {
       try {
@@ -5787,9 +5811,13 @@ function toggleSharePopover(force) {
         const ready = await pollForPlanReady({ maxMs: 12000, intervalMs: 1200 });
         if (ready) return;
         const hasIntake = !!readLocalIntake();
-        state.planError = hasIntake
-          ? 'Could not generate your workout yet. Tap "Generate workout" below.'
-          : 'No saved setup found. Complete setup, then tap Enter Engine.';
+        if (hasIntake) {
+          window.setTimeout(() => {
+            if (state.view === 'generating') keepOnEngineAndRetry();
+          }, 1500);
+          return;
+        }
+        state.planError = 'No saved setup found. Complete setup, then tap Enter Engine.';
         setView('plan');
       } finally {
         engineRetryInFlight = false;
@@ -5814,6 +5842,7 @@ function toggleSharePopover(force) {
     }
     if (wizardOnlyRequested) clearOpenWizardOnlyFlag();
     const prev = state.view;
+    if (next === 'generating') state.planError = null;
     state.view = next;
     render();
     if (prev === 'generating' && next !== 'generating') stopGeneratingTicker();
@@ -7867,7 +7896,7 @@ function toggleSharePopover(force) {
     }
 
     const planRef = state.planRow?.plan || null;
-    const entries = (exercises || []).map((ex) => {
+    const entries = (exercises || []).map((ex, exIdx) => {
       const exId = String(ex.id);
       const findField = (field) => qsa(`[data-field="${field}"]`).find((n) => n?.dataset?.exId === exId) || null;
       const notes = '';
@@ -7906,11 +7935,19 @@ function toggleSharePopover(force) {
         const summaryWeight = lastSet?.weight ?? null;
         const summaryReps = lastSet?.reps ?? null;
 
+      const draftSetCount = getWorkoutSetCountDraft({
+        exId: ex.id,
+        exSlot: exIdx,
+        weekIndex,
+        dayIndex,
+        fallback: ex.sets
+      });
+
       return {
         exerciseId: ex.id,
         baseId: ex.baseId,
         prescribed: {
-          sets: ex.sets,
+          sets: draftSetCount,
           reps: ex.reps,
           repsTarget: Number.isFinite(ex?.progression?.repsTarget) ? ex.progression.repsTarget : parseRepsTarget(ex.reps),
           restSec: ex.restSec,
@@ -9499,10 +9536,7 @@ function toggleSharePopover(force) {
           ? String(ex.progression.technique).trim()
           : '';
 
-
-
-        const setsRepsRest = `${ex.sets} sets \u00D7 ${ex.reps} reps \u00D7 rest ${fmtRest(ex.restSec)}`;
-          const setCount = (() => {
+          const defaultSetCount = (() => {
             const raw = String(ex.sets ?? '').trim();
             const num = Number(raw);
             if (Number.isFinite(num)) return Math.max(0, Math.min(12, Math.round(num)));
@@ -9510,21 +9544,41 @@ function toggleSharePopover(force) {
             if (m) return Math.max(0, Math.min(12, Number(m[1])));
             return 0;
           })();
+          const setCount = getWorkoutSetCountDraft({
+            exId: ex.id,
+            exSlot: exIdx,
+            weekIndex: activeWeek,
+            dayIndex,
+            fallback: defaultSetCount
+          });
+        const setsRepsRest = `${setCount} sets \u00D7 ${ex.reps} reps \u00D7 rest ${fmtRest(ex.restSec)}`;
           const baseSetCount = (() => {
             if (Number.isFinite(ex._baseSets)) return Math.max(0, Math.min(12, Math.round(ex._baseSets)));
-            ex._baseSets = setCount;
-            return setCount;
+            ex._baseSets = defaultSetCount;
+            return defaultSetCount;
           })();
           const loggedSets = Array.isArray(match?.sets) ? match.sets : [];
           const addSetForExercise = () => {
             const next = Math.min(12, setCount + 1);
             if (next === setCount) return;
-            ex.sets = next;
+            setWorkoutSetCountDraft({
+              exId: ex.id,
+              exSlot: exIdx,
+              weekIndex: activeWeek,
+              dayIndex,
+              count: next
+            });
             render();
           };
           const removeSetForExercise = () => {
             if (setCount <= baseSetCount) return;
-            ex.sets = Math.max(baseSetCount, setCount - 1);
+            setWorkoutSetCountDraft({
+              exId: ex.id,
+              exSlot: exIdx,
+              weekIndex: activeWeek,
+              dayIndex,
+              count: Math.max(baseSetCount, setCount - 1)
+            });
             render();
           };
           const setLog = setCount
