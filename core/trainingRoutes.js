@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity } = require('./trainingEngine');
@@ -11,6 +12,13 @@ const { emitUserEvent } = require('./emailEvents');
 const enrichPlanWithExerciseMedia = async () => {};
 
 const MAX_BODY_BYTES = Math.max(50_000, Number(process.env.TRAINING_MAX_BODY_BYTES || 1_500_000));
+const TRAINING_IMPORT_OCR_SCRIPT_PATH = path.join(__dirname, '..', 'scripts', 'training_import_ocr.py');
+const TRAINING_IMPORT_OCR_TIMEOUT_MS = Math.max(5_000, Number(process.env.TRAINING_IMPORT_OCR_TIMEOUT_MS || 20_000));
+const TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES = Math.max(200_000, Number(process.env.TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES || 4_000_000));
+const TRAINING_IMPORT_OCR_PYTHON_CMD = String(
+  process.env.TRAINING_IMPORT_OCR_PYTHON
+  || (process.platform === 'win32' ? 'python' : 'python3')
+).trim();
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
@@ -227,6 +235,106 @@ async function readJsonBody(req) {
         reject(new Error('Invalid JSON'));
       }
     });
+  });
+}
+
+function decodeImageDataUrl(dataUrl) {
+  const raw = String(dataUrl || '').trim();
+  const match = raw.match(/^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\r\n\s]+)$/i);
+  if (!match) {
+    throw new Error('Invalid image payload');
+  }
+  const mimeType = String(match[1] || 'image/jpeg').toLowerCase();
+  const base64Raw = String(match[2] || '').replace(/\s+/g, '');
+  if (!base64Raw) {
+    throw new Error('Missing image content');
+  }
+  const buffer = Buffer.from(base64Raw, 'base64');
+  if (!buffer.length) {
+    throw new Error('Could not decode image data');
+  }
+  return { mimeType, buffer };
+}
+
+async function runTrainingImportOcr(imageBuffer, filename = 'import.jpg') {
+  if (!fs.existsSync(TRAINING_IMPORT_OCR_SCRIPT_PATH)) {
+    const err = new Error('OCR script not found');
+    err.code = 'OCR_SCRIPT_MISSING';
+    throw err;
+  }
+  const payload = {
+    imageBase64: imageBuffer.toString('base64'),
+    filename: String(filename || 'import.jpg').slice(0, 180)
+  };
+  return await new Promise((resolve, reject) => {
+    const child = spawn(TRAINING_IMPORT_OCR_PYTHON_CMD, [TRAINING_IMPORT_OCR_SCRIPT_PATH], {
+      windowsHide: true
+    });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (err, value) => {
+      if (settled) return;
+      settled = true;
+      try {
+        clearTimeout(timer);
+      } catch {}
+      if (err) reject(err);
+      else resolve(value);
+    };
+    const timer = setTimeout(() => {
+      try {
+        child.kill('SIGKILL');
+      } catch {}
+      const err = new Error('OCR timeout');
+      err.code = 'OCR_TIMEOUT';
+      finish(err);
+    }, TRAINING_IMPORT_OCR_TIMEOUT_MS);
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk || '');
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk || '');
+    });
+    child.on('error', (err) => {
+      const wrapped = new Error(`OCR process failed to start: ${err?.message || 'unknown error'}`);
+      wrapped.code = 'OCR_PROCESS_START_FAILED';
+      finish(wrapped);
+    });
+    child.on('close', (code) => {
+      const exitCode = Number(code || 0);
+      const output = String(stdout || '').trim();
+      if (exitCode !== 0) {
+        const detail = String(stderr || output || '').trim();
+        const wrapped = new Error(detail || `OCR process exited with code ${exitCode}`);
+        wrapped.code = 'OCR_PROCESS_FAILED';
+        finish(wrapped);
+        return;
+      }
+      try {
+        const parsed = output ? JSON.parse(output) : {};
+        if (!parsed || parsed.ok !== true) {
+          const msg = String(parsed?.error || parsed?.detail || 'OCR did not return usable text');
+          const wrapped = new Error(msg);
+          wrapped.code = 'OCR_NO_TEXT';
+          finish(wrapped);
+          return;
+        }
+        finish(null, parsed);
+      } catch (err) {
+        const wrapped = new Error(`Invalid OCR response: ${err?.message || 'unknown parse error'}`);
+        wrapped.code = 'OCR_INVALID_RESPONSE';
+        finish(wrapped);
+      }
+    });
+    try {
+      child.stdin.write(JSON.stringify(payload));
+      child.stdin.end();
+    } catch (err) {
+      const wrapped = new Error(`Failed to send OCR payload: ${err?.message || 'unknown error'}`);
+      wrapped.code = 'OCR_PAYLOAD_FAILED';
+      finish(wrapped);
+    }
   });
 }
 
@@ -3997,6 +4105,49 @@ async function trainingRoutes(req, res, url) {
       return sendJson(res, 200, { ok: true, quotes: Array.isArray(json) ? json : [] });
     } catch (err) {
       return sendJson(res, 200, { ok: true, quotes: [] });
+    }
+  }
+
+  if (pathname === '/api/training/import-ocr' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON payload' });
+    }
+    const imageDataUrl = String(payload?.imageDataUrl || '').trim();
+    const filename = String(payload?.filename || 'import.jpg').trim();
+    if (!imageDataUrl) {
+      return sendJson(res, 400, { ok: false, error: 'Missing imageDataUrl' });
+    }
+    let decoded;
+    try {
+      decoded = decodeImageDataUrl(imageDataUrl);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err?.message || 'Invalid image payload' });
+    }
+    if (decoded.buffer.length > TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES) {
+      return sendJson(res, 413, {
+        ok: false,
+        error: `Image too large (${decoded.buffer.length} bytes). Limit is ${TRAINING_IMPORT_OCR_MAX_IMAGE_BYTES} bytes.`
+      });
+    }
+    try {
+      const result = await runTrainingImportOcr(decoded.buffer, filename);
+      const text = String(result?.text || '').trim();
+      return sendJson(res, 200, {
+        ok: true,
+        text,
+        engine: String(result?.engine || 'paddleocr'),
+        lineCount: Number(result?.lineCount || 0),
+        avgConfidence: Number(result?.avgConfidence || 0)
+      });
+    } catch (err) {
+      return sendJson(res, 503, {
+        ok: false,
+        error: err?.message || 'OCR backend unavailable',
+        code: err?.code || 'OCR_FAILED'
+      });
     }
   }
 

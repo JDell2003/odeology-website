@@ -2381,6 +2381,8 @@
       const TRAINING_CUSTOM_PLAN_FIRST_SAVE_PREFIX = 'ode_training_custom_plan_first_saved_v1';
       const MAX_IMPORT_IMAGES = 4;
       const OCR_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      const OCR_BACKEND_ENDPOINT = '/api/training/import-ocr';
+      const OCR_BACKEND_TIMEOUT_MS = 18000;
       const IMPORT_CUSTOM_ID_PREFIX = 'custom_import_';
       const IMPORT_REVIEW_REQUIRED_PASSES = 3;
       const IMPORT_REVIEW_PASS_THRESHOLD = 0.70;
@@ -3661,6 +3663,23 @@
         syncImportDropzoneState();
       }
 
+      async function fetchJsonWithTimeout(url, options = {}, timeoutMs = OCR_BACKEND_TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => {
+          try { controller.abort(); } catch {}
+        }, Math.max(1000, Number(timeoutMs || OCR_BACKEND_TIMEOUT_MS)));
+        try {
+          const res = await fetch(url, {
+            ...options,
+            signal: controller.signal
+          });
+          const json = await res.json().catch(() => ({}));
+          return { res, json };
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
       async function ensureTesseractLoaded() {
         if (window.Tesseract && typeof window.Tesseract.recognize === 'function') return window.Tesseract;
         if (tesseractLoadPromise) return tesseractLoadPromise;
@@ -3742,6 +3761,63 @@
         return canvas;
       }
 
+      async function buildBackendOcrImageDataUrl(file) {
+        const qualityLevels = [0.86, 0.78, 0.68];
+        const widthLevels = [1700, 1500, 1300];
+        const maxPayloadChars = 1_200_000;
+        for (let i = 0; i < widthLevels.length; i += 1) {
+          const targetMinWidth = widthLevels[i];
+          try {
+            const canvas = await buildOcrCanvasVariant(file, { mode: 'enhanced', targetMinWidth });
+            for (let q = 0; q < qualityLevels.length; q += 1) {
+              const quality = qualityLevels[q];
+              const dataUrl = canvas.toDataURL('image/jpeg', quality);
+              if (String(dataUrl || '').length > maxPayloadChars) continue;
+              return dataUrl;
+            }
+          } catch {
+            // Continue and try next width.
+          }
+        }
+        return null;
+      }
+
+      async function extractTextFromImageBackend(file, fileIndex, totalFiles) {
+        const label = `Scanning image ${fileIndex + 1} of ${totalFiles}...`;
+        setImportLoadingVisible(true, `${label} Server OCR`, 6);
+        const imageDataUrl = await buildBackendOcrImageDataUrl(file);
+        if (!imageDataUrl) {
+          throw new Error('Could not prepare image for backend OCR');
+        }
+        const { res, json } = await fetchJsonWithTimeout(OCR_BACKEND_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            imageDataUrl,
+            filename: String(file?.name || `import-${fileIndex + 1}.jpg`)
+          })
+        });
+        if (!res.ok || !json?.ok) {
+          const msg = String(json?.error || `Backend OCR failed (${res.status})`).trim();
+          throw new Error(msg || 'Backend OCR failed');
+        }
+        const text = normalizeOcrDocumentText(String(json?.text || ''));
+        if (!text.trim()) {
+          throw new Error('Backend OCR returned no readable text');
+        }
+        if (shouldLogImportDebug()) {
+          console.log('[import-ocr-backend]', {
+            file: file?.name || `image-${fileIndex + 1}`,
+            engine: json?.engine || 'paddleocr',
+            lineCount: Number(json?.lineCount || 0),
+            avgConfidence: Number(json?.avgConfidence || 0)
+          });
+        }
+        setImportLoadingVisible(true, `${label} Server OCR complete`, Math.max(0, Math.min(100, Math.round(((fileIndex + 0.88) / Math.max(1, totalFiles)) * 100))));
+        return text;
+      }
+
       function scoreOcrTextCandidate(rawText) {
         const text = normalizeOcrDocumentText(rawText);
         const parsed = parseImportedEntries(text);
@@ -3758,10 +3834,21 @@
       }
 
       async function extractTextFromImage(file, fileIndex, totalFiles) {
+        try {
+          return await extractTextFromImageBackend(file, fileIndex, totalFiles);
+        } catch (backendErr) {
+          if (shouldLogImportDebug()) {
+            console.warn('[import-ocr-backend-fallback]', {
+              file: file?.name || `image-${fileIndex + 1}`,
+              error: backendErr?.message || String(backendErr || 'unknown backend OCR error')
+            });
+          }
+        }
         const tesseract = await ensureTesseractLoaded();
         const label = `Scanning image ${fileIndex + 1} of ${totalFiles}...`;
         const basePct = (fileIndex / Math.max(1, totalFiles)) * 100;
         const stepPct = 100 / Math.max(1, totalFiles);
+        setImportLoadingVisible(true, `${label} Browser OCR fallback`, Math.max(6, Math.round(basePct)));
         const runPass = async (source, passLabel, startRatio, spanRatio) => {
           const result = await tesseract.recognize(source, 'eng', {
             logger: (progress) => {
