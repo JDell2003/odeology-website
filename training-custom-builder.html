@@ -3290,6 +3290,7 @@ Last week: 80 lb</pre>
           text = text.replace(pattern, value);
         });
         text = text
+          .replace(/\bbox squat\b/g, 'squat')
           .replace(/\bpushdowns\b/g, 'pushdown')
           .replace(/\bcurls\b/g, 'curl')
           .replace(/\bextensions\b/g, 'extension')
@@ -4162,6 +4163,7 @@ Last week: 80 lb</pre>
         let text = normalizeImportToken(rawQuery);
         if (!text) return '';
         text = ` ${text} `
+          .replace(/\bbox squat\b/g, ' squat ')
           .replace(/\bsupported row\b/g, ' chest supported row ')
           .replace(/\s+/g, ' ')
           .trim();
