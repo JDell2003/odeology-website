@@ -5085,7 +5085,13 @@
 
         importDropzoneEl?.addEventListener('drop', (e) => {
           const files = e.dataTransfer?.files || [];
+          const hasDroppedImages = Array.from(files || []).some((file) => String(file?.type || '').startsWith('image/'));
           ensureImportFiles(files, { append: true });
+          if (hasDroppedImages) {
+            // Some browsers include noisy plain-text payloads when dragging images.
+            // Ignore dropped text whenever image files are present.
+            return;
+          }
           const droppedText = String(e.dataTransfer?.getData('text/plain') || '').trim();
           if (droppedText) appendImportText(droppedText);
           if (droppedText && !files.length) enterImportTextMode();
