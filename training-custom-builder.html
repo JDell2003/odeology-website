@@ -347,6 +347,43 @@
       font-weight: 700;
     }
 
+    .builder-import-loading-stage {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: #6e583e;
+      font-weight: 700;
+    }
+
+    .builder-import-loading-log {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid #e4d2b9;
+      background: rgba(255, 252, 245, 0.82);
+      list-style: none;
+      display: grid;
+      gap: 4px;
+      max-height: 140px;
+      overflow: auto;
+    }
+
+    .builder-import-loading-log li {
+      margin: 0;
+      font-size: 0.77rem;
+      line-height: 1.3;
+      color: #5f4b34;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .builder-import-loading-log-time {
+      font-weight: 800;
+      color: #7a6244;
+      min-width: 50px;
+      letter-spacing: 0.01em;
+    }
+
     .builder-import-review {
       position: fixed;
       inset: 0;
@@ -2186,6 +2223,8 @@
       <p id="builder-import-loading-msg" class="builder-import-loading-msg">Reading your input and matching it to the database.</p>
       <div class="builder-import-loading-bar"><div id="builder-import-loading-fill" class="builder-import-loading-fill"></div></div>
       <div id="builder-import-loading-meta" class="builder-import-loading-meta">0%</div>
+      <div id="builder-import-loading-stage" class="builder-import-loading-stage">Initializing analysis...</div>
+      <ul id="builder-import-loading-log" class="builder-import-loading-log" aria-live="polite"></ul>
     </div>
   </div>
 
@@ -2371,6 +2410,8 @@
       const importLoadingMsgEl = $('builder-import-loading-msg');
       const importLoadingFillEl = $('builder-import-loading-fill');
       const importLoadingMetaEl = $('builder-import-loading-meta');
+      const importLoadingStageEl = $('builder-import-loading-stage');
+      const importLoadingLogEl = $('builder-import-loading-log');
       const importReviewEl = $('builder-import-review');
       const importReviewBodyEl = $('builder-import-review-body');
       const importReviewStatusEl = $('builder-import-review-status');
@@ -2461,6 +2502,12 @@
         importReviewGuideStarted: false,
         importReviewActiveIndex: 0,
         importBusy: false,
+        importLoadingLog: [],
+        importLoadingLastMessage: '',
+        importLoadingLastPct: 0,
+        importLoadingLastAt: 0,
+        importLoadingShownAt: 0,
+        importLoadingHeartbeat: null,
         importHistoryById: new Map(),
         importHistoryByName: new Map(),
         importCorrectionsLoaded: false,
@@ -2543,15 +2590,105 @@
         if (kind === 'error') importReviewStatusEl.classList.add('error');
       }
 
+      function formatImportLoadingElapsedMs(ms) {
+        const totalSec = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+
+      function renderImportLoadingLog() {
+        if (!importLoadingLogEl) return;
+        const logs = Array.isArray(state.importLoadingLog) ? state.importLoadingLog : [];
+        if (!logs.length) {
+          importLoadingLogEl.innerHTML = '';
+          return;
+        }
+        importLoadingLogEl.innerHTML = logs
+          .slice(-7)
+          .map((item) => {
+            const stamp = formatImportLoadingElapsedMs(Number(item?.at || 0) - Number(state.importLoadingShownAt || 0));
+            const msg = escapeHtml(String(item?.message || '').trim() || 'Working...');
+            return `<li><span class="builder-import-loading-log-time">${stamp}</span><span>${msg}</span></li>`;
+          })
+          .join('');
+        importLoadingLogEl.scrollTop = importLoadingLogEl.scrollHeight;
+      }
+
+      function pushImportLoadingLog(message, pct) {
+        const msg = String(message || '').trim();
+        if (!msg) return;
+        const now = Date.now();
+        const lastMsg = String(state.importLoadingLastMessage || '').trim();
+        const lastPct = Number(state.importLoadingLastPct || 0);
+        const nextPct = Number.isFinite(Number(pct)) ? Number(pct) : lastPct;
+        const sameMsg = msg === lastMsg;
+        const pctDelta = Math.abs(nextPct - lastPct);
+        const elapsed = now - Number(state.importLoadingLastAt || 0);
+        if (sameMsg && pctDelta < 8 && elapsed < 1500) return;
+        const logs = Array.isArray(state.importLoadingLog) ? state.importLoadingLog.slice() : [];
+        logs.push({ at: now, message: msg, pct: nextPct });
+        state.importLoadingLog = logs.slice(-10);
+        state.importLoadingLastMessage = msg;
+        state.importLoadingLastPct = nextPct;
+        state.importLoadingLastAt = now;
+        renderImportLoadingLog();
+      }
+
+      function startImportLoadingHeartbeat() {
+        if (state.importLoadingHeartbeat) return;
+        state.importLoadingHeartbeat = window.setInterval(() => {
+          if (!importLoadingEl || importLoadingEl.hidden) return;
+          const elapsed = Date.now() - Number(state.importLoadingShownAt || Date.now());
+          const currentMsg = String(state.importLoadingLastMessage || '').trim() || 'Analyzing image details...';
+          const dots = '.'.repeat(((Math.floor(elapsed / 700) % 3) + 1));
+          if (importLoadingStageEl) {
+            importLoadingStageEl.textContent = `Live analysis ${dots} ${formatImportLoadingElapsedMs(elapsed)}`;
+          }
+          pushImportLoadingLog(currentMsg, state.importLoadingLastPct);
+        }, 700);
+      }
+
+      function stopImportLoadingHeartbeat() {
+        const timer = Number(state.importLoadingHeartbeat || 0);
+        if (timer) {
+          try { window.clearInterval(timer); } catch {}
+        }
+        state.importLoadingHeartbeat = null;
+      }
+
       function setImportLoadingVisible(visible, message, progress) {
         if (!importLoadingEl) return;
         const show = Boolean(visible);
         importLoadingEl.hidden = !show;
         if (show) {
+          if (!state.importLoadingShownAt) {
+            state.importLoadingShownAt = Date.now();
+            state.importLoadingLog = [];
+            state.importLoadingLastMessage = '';
+            state.importLoadingLastPct = 0;
+            state.importLoadingLastAt = 0;
+            renderImportLoadingLog();
+          }
           importLoadingMsgEl && (importLoadingMsgEl.textContent = String(message || 'Importing workout...'));
           const pct = Math.max(0, Math.min(100, Number(progress) || 0));
           if (importLoadingFillEl) importLoadingFillEl.style.width = `${pct}%`;
           if (importLoadingMetaEl) importLoadingMetaEl.textContent = `${Math.round(pct)}%`;
+          if (importLoadingStageEl) {
+            const elapsed = Date.now() - Number(state.importLoadingShownAt || Date.now());
+            importLoadingStageEl.textContent = `Live analysis... ${formatImportLoadingElapsedMs(elapsed)}`;
+          }
+          pushImportLoadingLog(String(message || 'Importing workout...'), pct);
+          startImportLoadingHeartbeat();
+        } else {
+          stopImportLoadingHeartbeat();
+          state.importLoadingShownAt = 0;
+          state.importLoadingLog = [];
+          state.importLoadingLastMessage = '';
+          state.importLoadingLastPct = 0;
+          state.importLoadingLastAt = 0;
+          renderImportLoadingLog();
+          if (importLoadingStageEl) importLoadingStageEl.textContent = 'Initializing analysis...';
         }
       }
 
