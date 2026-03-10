@@ -9766,8 +9766,6 @@ function toggleSharePopover(force) {
 
       const performedAtValue = log?.performed_at ? String(log.performed_at).slice(0, 10) : new Date().toISOString().slice(0, 10);
       const dayNotesValue = log?.notes || '';
-      const readinessSavedValue = Number.isFinite(Number(log?.readiness)) ? Number(log.readiness) : '';
-      const readinessValue = getWorkoutReadinessDraft({ weekIndex: activeWeek, dayIndex, fallback: readinessSavedValue });
       workoutAutosaveContext = {
         weekIndex: activeWeek,
         dayIndex,
@@ -9775,20 +9773,6 @@ function toggleSharePopover(force) {
         dayNotes: dayNotesValue,
         performedAt: performedAtValue
       };
-      const readinessInput = el('div', { class: 'training-row', style: 'align-items:center; gap:0.6rem; margin:0.6rem 0 0; flex-wrap:wrap' },
-        el('label', { class: 'training-muted', for: 'workout-readiness' }, 'Rest/Readiness (1â€“10)'),
-        el('input', {
-          id: 'workout-readiness',
-          class: 'auth-input',
-          inputmode: 'numeric',
-          min: '1',
-          max: '10',
-          value: readinessValue,
-          dataset: { weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
-          placeholder: '1â€“10',
-          style: 'max-width:110px'
-        })
-      );
 
       ensureExerciseCatalogLoaded();
       applySwapOverridesToDay({
@@ -10100,7 +10084,6 @@ function toggleSharePopover(force) {
             )
           ),
           el('div', { class: 'workout-goal' }, goalLine),
-          readinessInput,
           el('div', { class: 'training-section-line' }),
           list,
           el('div', { class: 'training-section-line' })
