@@ -679,6 +679,7 @@
     profile: null,
     planRow: null,
     logs: [],
+    workoutInputDrafts: new Map(),
     view: 'wizard', // loading | wizard | generating | upsell | plan
     planError: null,
     generating: {
@@ -1705,6 +1706,31 @@
   let workoutInputGateBound = false;
   let workoutInputGateToastAt = 0;
 
+  function workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex }) {
+    const id = String(exId || '').trim();
+    const slot = Number.isFinite(Number(exSlot)) ? String(Math.max(0, Math.round(Number(exSlot)))) : '0';
+    const idx = Number.isFinite(Number(setIdx)) ? String(Math.max(0, Math.round(Number(setIdx)))) : '';
+    const fld = String(field || '').trim();
+    const week = Number.isFinite(Number(weekIndex)) ? String(Math.max(1, Math.round(Number(weekIndex)))) : '';
+    const day = Number.isFinite(Number(dayIndex)) ? String(Math.max(1, Math.round(Number(dayIndex)))) : '';
+    if (!id || !fld || idx === '') return '';
+    return `${week}:${day}:${id}:${slot}::${idx}::${fld}`;
+  }
+
+  function setWorkoutInputDraftValue({ exId, exSlot, setIdx, field, value, weekIndex, dayIndex }) {
+    const key = workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex });
+    if (!key) return;
+    const next = String(value ?? '');
+    state.workoutInputDrafts.set(key, next);
+  }
+
+  function getWorkoutInputDraftValue({ exId, exSlot, setIdx, field, fallback = '', weekIndex, dayIndex }) {
+    const key = workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex });
+    if (!key) return String(fallback ?? '');
+    if (!state.workoutInputDrafts.has(key)) return String(fallback ?? '');
+    return String(state.workoutInputDrafts.get(key) ?? '');
+  }
+
   function ensureShareOutgoingSyncTimer() {
     if (shareOutgoingSyncTimer) return;
     shareOutgoingSyncTimer = window.setInterval(async () => {
@@ -1787,7 +1813,19 @@
       const field = target.dataset.field;
       if (!field) return;
       const exId = target.dataset.exId || null;
+      const exSlot = target.dataset.exSlot != null ? Number(target.dataset.exSlot) : 0;
       const setIdx = target.dataset.setIdx != null ? Number(target.dataset.setIdx) : null;
+      const weekIndex = target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null;
+      const dayIndex = target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null;
+      setWorkoutInputDraftValue({
+        exId,
+        exSlot,
+        setIdx,
+        field,
+        value: target.value,
+        weekIndex,
+        dayIndex
+      });
       const raw = String(target.value || '').trim();
       const detail = { field, exId, setIdx };
       if (field === 'setNote') {
@@ -9437,7 +9475,7 @@ function toggleSharePopover(force) {
       });
 
       const list = el('div', { class: 'exercise-list' });
-      (day.exercises || []).forEach((ex) => {
+      (day.exercises || []).forEach((ex, exIdx) => {
         const loggedEntries = Array.isArray(log?.entries) ? log.entries : [];
         const match = loggedEntries.find((e) => String(e?.exerciseId) === String(ex.id) || String(e?.baseId) === String(ex.baseId)) || null;
 
@@ -9486,29 +9524,64 @@ function toggleSharePopover(force) {
               ),
               ...Array.from({ length: setCount }, (_, idx) => {
                 const s = loggedSets[idx] && typeof loggedSets[idx] === 'object' ? loggedSets[idx] : {};
-                const wVal = Number.isFinite(Number(s.weight)) ? s.weight : '';
-                const rVal = Number.isFinite(Number(s.reps)) ? s.reps : '';
-                const noteVal = s.note ? String(s.note) : '';
+                const wValSaved = Number.isFinite(Number(s.weight)) ? String(s.weight) : '';
+                const rValSaved = Number.isFinite(Number(s.reps)) ? String(s.reps) : '';
+                const noteValSaved = s.note ? String(s.note) : '';
+                const wVal = getWorkoutInputDraftValue({
+                  exId: ex.id,
+                  exSlot: exIdx,
+                  setIdx: idx,
+                  field: 'setWeight',
+                  fallback: wValSaved,
+                  weekIndex: activeWeek,
+                  dayIndex
+                });
+                const rVal = getWorkoutInputDraftValue({
+                  exId: ex.id,
+                  exSlot: exIdx,
+                  setIdx: idx,
+                  field: 'setReps',
+                  fallback: rValSaved,
+                  weekIndex: activeWeek,
+                  dayIndex
+                });
+                const noteVal = getWorkoutInputDraftValue({
+                  exId: ex.id,
+                  exSlot: exIdx,
+                  setIdx: idx,
+                  field: 'setNote',
+                  fallback: noteValSaved,
+                  weekIndex: activeWeek,
+                  dayIndex
+                });
+                const inputIdBase = String(ex.id || ex.baseId || ex.name || 'exercise')
+                  .toLowerCase()
+                  .replace(/[^a-z0-9_-]+/g, '-')
+                  .replace(/^-+|-+$/g, '')
+                  .slice(0, 60) || 'exercise';
                 return el('div', { class: 'exercise-set-row' },
                   el('span', { class: 'exercise-set-label' }, `Set ${idx + 1}`),
                   el('input', {
+                    id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-weight`,
                     class: 'auth-input',
                     inputmode: 'decimal',
                     value: wVal,
-                    dataset: { exId: ex.id, field: 'setWeight', setIdx: String(idx) },
+                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setWeight', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Weight'
                   }),
                   el('input', {
+                    id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-reps`,
                     class: 'auth-input',
                     inputmode: 'numeric',
                     value: rVal,
-                    dataset: { exId: ex.id, field: 'setReps', setIdx: String(idx) },
+                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setReps', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Reps'
                   }),
                   el('input', {
+                    id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-note`,
                     class: 'auth-input',
                     value: noteVal,
-                    dataset: { exId: ex.id, field: 'setNote', setIdx: String(idx) },
+                    dataset: { exId: ex.id, exSlot: String(exIdx), field: 'setNote', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
                     placeholder: 'Notes'
                   })
                 );
