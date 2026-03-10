@@ -9046,19 +9046,17 @@ function toggleSharePopover(force) {
           return;
         }
         const isWorkoutDay = Number.isFinite(Number(activeDayIndex)) && Number(activeDayIndex) > 0;
-        if (!isWorkoutDay) {
-          window.alert('You can only log a skip for a workout day (today or a previous day).');
-          return;
-        }
         const skipMode = 'workout_skip';
-        const skipLabel = `Skip ${activeDayFocus} on ${activeIso} and push your split 1 day later?`;
+        const skipLabel = isWorkoutDay
+          ? `Skip ${activeDayFocus} on ${activeIso} and push your split 1 day later?`
+          : `Skip ${activeIso} and push your split 1 day later?`;
         const proceed = window.confirm(skipLabel);
         if (!proceed) return;
 
-        const reason = askSkipReason(activeDayFocus);
+        const reason = askSkipReason(isWorkoutDay ? activeDayFocus : activeIso);
         if (!reason) return;
         const finalPrompt = window.confirm(
-          `Confirm workout skip on ${activeIso}?\nReason: ${reason}`
+          `${isWorkoutDay ? 'Confirm workout skip' : 'Confirm skip'} on ${activeIso}?\nReason: ${reason}`
         );
         if (!finalPrompt) return;
 
