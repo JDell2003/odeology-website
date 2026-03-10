@@ -1150,6 +1150,46 @@
       justify-content: center;
     }
 
+    .builder-field-preset-popover {
+      position: fixed;
+      z-index: 1200;
+      min-width: 188px;
+      max-width: min(92vw, 260px);
+      border: 1px solid #d8c3a5;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fffdf8 0%, #f6ead5 100%);
+      box-shadow: 0 16px 34px rgba(46, 31, 13, 0.18);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .builder-field-preset-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #6f5538;
+      letter-spacing: 0.02em;
+    }
+
+    .builder-field-preset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .builder-field-preset-option {
+      border: 1px solid #d3be9d;
+      border-radius: 999px;
+      background: #fff7ea;
+      color: #46311d;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
     .builder-panel {
       padding: 16px;
       backdrop-filter: blur(5px);
@@ -2328,7 +2368,7 @@
 
       .builder-plan-compact-fields {
         display: grid;
-        grid-template-columns: minmax(58px, 0.9fr) minmax(58px, 0.9fr) minmax(72px, 1.15fr) 28px;
+        grid-template-columns: minmax(58px, 0.84fr) minmax(72px, 1.08fr) minmax(72px, 1.08fr) 28px;
         gap: 5px;
         align-items: stretch;
         min-width: 0;
@@ -2894,6 +2934,13 @@ Last week: 80 lb</pre>
       const builderPlanPanelEl = document.querySelector('.builder-plan-panel');
       const importStripOriginalParent = importStripEl?.parentNode || null;
       const importStripOriginalNextSibling = importStripEl?.nextSibling || null;
+      const FIELD_PRESET_OPTIONS = {
+        sets: ['1', '2', '3', '4', '5'],
+        reps: ['1', '1-3', '4-6', '5-8', '6-8', '6-10', '8-10', '8-12', '10-12', '10-15', '12-15', '12-20', '15-20'],
+        restSec: ['30', '45', '60', '75', '90', '120', '150', '180']
+      };
+      let fieldPresetPopoverEl = null;
+      let fieldPresetAnchorEl = null;
       const importExampleCloseBtn = $('builder-import-example-close');
       const importReviewEl = $('builder-import-review');
       const importReviewBodyEl = $('builder-import-review-body');
@@ -4751,6 +4798,67 @@ Last week: 80 lb</pre>
         } catch {
           importReviewBodyEl.scrollTop = 0;
         }
+      }
+
+      function closeFieldPresetPopover() {
+        if (fieldPresetPopoverEl?.parentNode) fieldPresetPopoverEl.parentNode.removeChild(fieldPresetPopoverEl);
+        fieldPresetPopoverEl = null;
+        fieldPresetAnchorEl = null;
+      }
+
+      function positionFieldPresetPopover(anchorEl, popoverEl) {
+        if (!anchorEl || !popoverEl) return;
+        const rect = anchorEl.getBoundingClientRect();
+        const popRect = popoverEl.getBoundingClientRect();
+        const margin = 10;
+        let left = rect.left;
+        let top = rect.bottom + 8;
+        if (left + popRect.width > window.innerWidth - margin) {
+          left = Math.max(margin, window.innerWidth - popRect.width - margin);
+        }
+        if (top + popRect.height > window.innerHeight - margin) {
+          top = Math.max(margin, rect.top - popRect.height - 8);
+        }
+        popoverEl.style.left = `${Math.round(left)}px`;
+        popoverEl.style.top = `${Math.round(top)}px`;
+      }
+
+      function openFieldPresetPopover(inputEl) {
+        const field = String(inputEl?.getAttribute('data-field') || '').trim();
+        const options = FIELD_PRESET_OPTIONS[field];
+        if (!inputEl || !options?.length) return;
+        if (fieldPresetAnchorEl === inputEl && fieldPresetPopoverEl) {
+          positionFieldPresetPopover(inputEl, fieldPresetPopoverEl);
+          return;
+        }
+        closeFieldPresetPopover();
+        const pop = document.createElement('div');
+        pop.className = 'builder-field-preset-popover';
+        const title = document.createElement('div');
+        title.className = 'builder-field-preset-title';
+        title.textContent = field === 'restSec' ? 'Common rest times' : (field === 'sets' ? 'Common set counts' : 'Common rep ranges');
+        const grid = document.createElement('div');
+        grid.className = 'builder-field-preset-grid';
+        options.forEach((value) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'builder-field-preset-option';
+          btn.textContent = value;
+          btn.addEventListener('click', () => {
+            inputEl.value = value;
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+            closeFieldPresetPopover();
+            inputEl.focus();
+          });
+          grid.appendChild(btn);
+        });
+        pop.appendChild(title);
+        pop.appendChild(grid);
+        document.body.appendChild(pop);
+        fieldPresetPopoverEl = pop;
+        fieldPresetAnchorEl = inputEl;
+        positionFieldPresetPopover(inputEl, pop);
       }
 
       function moveImportReviewRow(dragRowId, targetRowId, placement) {
@@ -7284,7 +7392,23 @@ Last week: 80 lb</pre>
       }
 
       function bindPlanInputEvents() {
+        dayColumnsEl?.addEventListener('focusin', (e) => {
+          const input = e.target.closest('input[data-field][data-day][data-idx]');
+          if (!input) return;
+          openFieldPresetPopover(input);
+        });
+
         dayColumnsEl?.addEventListener('click', (e) => {
+          const presetInput = e.target.closest('input[data-field][data-day][data-idx]');
+          if (presetInput) {
+            openFieldPresetPopover(presetInput);
+            return;
+          }
+
+          if (fieldPresetPopoverEl && !e.target.closest('.builder-field-preset-popover')) {
+            closeFieldPresetPopover();
+          }
+
           const toggleBtn = e.target.closest('[data-toggle-day][data-toggle-idx]');
           if (toggleBtn) {
             const day = Number(toggleBtn.getAttribute('data-toggle-day'));
@@ -7310,6 +7434,7 @@ Last week: 80 lb</pre>
           if (!shouldDelete) return;
           cur.splice(idx, 1);
           state.planByWeekday.set(day, cur);
+          closeFieldPresetPopover();
           renderDayColumns();
           queueAutoSave();
         });
@@ -7346,6 +7471,14 @@ Last week: 80 lb</pre>
         };
         dayColumnsEl?.addEventListener('input', handlePlanFieldEdit);
         dayColumnsEl?.addEventListener('change', handlePlanFieldEdit);
+        document.addEventListener('click', (e) => {
+          if (!fieldPresetPopoverEl) return;
+          if (e.target.closest('.builder-field-preset-popover')) return;
+          if (e.target.closest('input[data-field][data-day][data-idx]')) return;
+          closeFieldPresetPopover();
+        });
+        window.addEventListener('resize', closeFieldPresetPopover);
+        window.addEventListener('scroll', closeFieldPresetPopover, true);
 
         dayColumnsEl?.addEventListener('error', (e) => {
           const img = e.target.closest('.builder-plan-image img');
