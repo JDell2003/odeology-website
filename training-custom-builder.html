@@ -2924,20 +2924,47 @@
         return Array.isArray(state.importReviewRows) ? state.importReviewRows : [];
       }
 
-      function clampImportReviewIndex(nextIndex) {
-        const rows = getImportReviewRowsOrdered();
-        if (!rows.length) return 0;
-        const n = Number(nextIndex);
-        const idx = Number.isFinite(n) ? Math.round(n) : 0;
-        return Math.max(0, Math.min(rows.length - 1, idx));
+      function getImportRowGroupInfo(row) {
+        const parsed = row?.parsed && typeof row.parsed === 'object' ? row.parsed : {};
+        const weekdayNum = Number(parsed?.weekday);
+        if (Number.isInteger(weekdayNum) && weekdayNum >= 0 && weekdayNum <= 6) {
+          return { key: `weekday-${weekdayNum}`, label: weekdayLabel(weekdayNum) };
+        }
+        const dayOrdinal = Number(parsed?.dayOrdinal);
+        if (Number.isInteger(dayOrdinal) && dayOrdinal >= 1 && dayOrdinal <= 7) {
+          const label = formatImportDayLabel(parsed) || `Session ${dayOrdinal}`;
+          return { key: `ordinal-${dayOrdinal}`, label };
+        }
+        return { key: 'unassigned', label: 'Unassigned' };
       }
 
-      function getImportReviewCurrentRow() {
+      function buildImportReviewDayGroups() {
         const rows = getImportReviewRowsOrdered();
-        if (!rows.length) return null;
-        const idx = clampImportReviewIndex(state.importReviewActiveIndex);
-        state.importReviewActiveIndex = idx;
-        return rows[idx] || null;
+        const groups = [];
+        const byKey = new Map();
+        rows.forEach((row) => {
+          const info = getImportRowGroupInfo(row);
+          const key = String(info?.key || 'unassigned');
+          if (!byKey.has(key)) {
+            const bucket = {
+              key,
+              label: String(info?.label || 'Unassigned'),
+              rows: []
+            };
+            byKey.set(key, bucket);
+            groups.push(bucket);
+          }
+          byKey.get(key).rows.push(row);
+        });
+        return groups;
+      }
+
+      function clampImportReviewIndex(nextIndex) {
+        const groups = buildImportReviewDayGroups();
+        if (!groups.length) return 0;
+        const n = Number(nextIndex);
+        const idx = Number.isFinite(n) ? Math.round(n) : 0;
+        return Math.max(0, Math.min(groups.length - 1, idx));
       }
 
       function getImportReviewCandidateForRow(row) {
@@ -3191,9 +3218,9 @@
           importReviewBodyEl.innerHTML = `
             <section class="builder-import-guide">
               <h4>Quick confirm before workout build</h4>
-              <p>Step 1: Check each workout card one by one.</p>
+              <p>Step 1: Review all workout cards for the current day.</p>
               <p>Step 2: Press <b>✓</b> if correct, or <b>x</b> if wrong and type a fix.</p>
-              <p>Step 3: Use arrows to move day by day. When all rows are confirmed, press <b>Apply and build workout</b>.</p>
+              <p>Step 3: Use Back/Next to move between days. When all cards are confirmed, press <b>Apply and build workout</b>.</p>
               <div class="builder-import-flow-nav">
                 <span class="builder-import-flow-count">${rows.length} workout${rows.length === 1 ? '' : 's'} ready to review</span>
                 <button type="button" class="btn btn-primary" data-import-guide-start>Start review</button>
@@ -3203,68 +3230,77 @@
           return;
         }
 
+        const groups = buildImportReviewDayGroups();
         const activeIndex = clampImportReviewIndex(state.importReviewActiveIndex);
         state.importReviewActiveIndex = activeIndex;
-        const row = rows[activeIndex];
-        if (!row) {
+        const group = groups[activeIndex];
+        if (!group) {
           importReviewBodyEl.innerHTML = '<div class="builder-day-empty">No imported workouts to confirm.</div>';
           return;
         }
 
-        const options = (Array.isArray(row.candidateList) ? row.candidateList : []).map((entry) => {
-          const id = String(entry?.row?.id || '');
-          const name = String(entry?.row?.name || id || 'Unknown');
-          const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
-          const suffix = entry?.row?.isCustom ? ' | Create custom workout' : ` (${scorePct}%)`;
-          return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)}${escapeHtml(suffix)}</option>`;
-        }).join('');
+        const dayLabel = String(group?.label || 'Review day');
 
-        const statusLabel = row.status === 'ok'
-          ? 'Confirmed'
-          : (row.status === 'fixing' ? 'Needs fix' : 'Review');
-        const statusClass = row.status === 'ok'
-          ? 'is-ok'
-          : (row.status === 'fixing' ? 'is-fix' : '');
-        const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
-        const parsedLine = formatImportParsedDetails(row?.parsed);
-        const candidate = getImportReviewCandidateForRow(row);
-        const candidateName = String(candidate?.name || row?.parsed?.name || row?.sourceText || 'Unknown workout');
-        const candidateImageUrl = getImportReviewCandidateImage(row);
-        const dayLabel = formatImportDayLabel(row?.parsed) || 'Review day';
+        const renderImportRowCard = (row) => {
+          const options = (Array.isArray(row?.candidateList) ? row.candidateList : []).map((entry) => {
+            const id = String(entry?.row?.id || '');
+            const name = String(entry?.row?.name || id || 'Unknown');
+            const scorePct = Math.max(0, Math.min(100, Math.round(Number(entry?.score || 0) * 100)));
+            const suffix = entry?.row?.isCustom ? ' | Create custom workout' : ` (${scorePct}%)`;
+            return `<option value="${escapeHtml(id)}" ${row.selectedId === id ? 'selected' : ''}>${escapeHtml(name)}${escapeHtml(suffix)}</option>`;
+          }).join('');
+          const statusLabel = row.status === 'ok'
+            ? 'Confirmed'
+            : (row.status === 'fixing' ? 'Needs fix' : 'Review');
+          const statusClass = row.status === 'ok'
+            ? 'is-ok'
+            : (row.status === 'fixing' ? 'is-fix' : '');
+          const confPct = Math.max(0, Math.min(100, Math.round(Number(row.confidence || 0) * 100)));
+          const parsedLine = formatImportParsedDetails(row?.parsed);
+          const candidate = getImportReviewCandidateForRow(row);
+          const candidateName = String(candidate?.name || row?.parsed?.name || row?.sourceText || 'Unknown workout');
+          const candidateImageUrl = getImportReviewCandidateImage(row);
+          return `
+            <article class="builder-import-flow-card${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
+              <div class="builder-import-flow-media">
+                <img src="${escapeHtml(candidateImageUrl)}" alt="${escapeHtml(candidateName)}" loading="lazy" />
+              </div>
+              <div class="builder-import-flow-main">
+                <span class="builder-import-flow-status ${statusClass}">${escapeHtml(statusLabel)}</span>
+                <h4 class="builder-import-flow-title">${escapeHtml(candidateName)}</h4>
+                <p class="builder-import-flow-source">${escapeHtml(String(row?.sourceText || ''))}</p>
+                ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
+                <div class="builder-import-flow-row">
+                  <select data-import-select="${escapeHtml(row.id)}">
+                    ${options || '<option value="">No matches yet</option>'}
+                  </select>
+                  <div class="builder-import-row-actions">
+                    <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">✓</button>
+                    <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
+                  </div>
+                </div>
+                <div class="builder-import-fix">
+                  <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
+                  <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
+                </div>
+                <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
+              </div>
+            </article>
+          `;
+        };
 
         importReviewBodyEl.innerHTML = `
           <section class="builder-import-flow-top">
             <span class="builder-import-flow-day">${escapeHtml(dayLabel)}</span>
-            <span class="builder-import-flow-count">${activeIndex + 1} / ${rows.length}</span>
+            <span class="builder-import-flow-count">Day ${activeIndex + 1} / ${groups.length}</span>
           </section>
-          <article class="builder-import-flow-card${row.status === 'fixing' ? ' is-fixing' : ''}" data-import-row="${escapeHtml(row.id)}">
-            <div class="builder-import-flow-media">
-              <img src="${escapeHtml(candidateImageUrl)}" alt="${escapeHtml(candidateName)}" loading="lazy" />
-            </div>
-            <div class="builder-import-flow-main">
-              <span class="builder-import-flow-status ${statusClass}">${escapeHtml(statusLabel)}</span>
-              <h4 class="builder-import-flow-title">${escapeHtml(candidateName)}</h4>
-              <p class="builder-import-flow-source">${escapeHtml(String(row?.sourceText || ''))}</p>
-              ${parsedLine ? `<div class="builder-import-row-meta">Parsed: ${escapeHtml(parsedLine)}</div>` : ''}
-              <div class="builder-import-flow-row">
-                <select data-import-select="${escapeHtml(row.id)}">
-                  ${options || '<option value="">No matches yet</option>'}
-                </select>
-                <div class="builder-import-row-actions">
-                  <button type="button" class="builder-import-check" data-import-check="${escapeHtml(row.id)}" aria-label="Confirm match">✓</button>
-                  <button type="button" class="builder-import-x" data-import-x="${escapeHtml(row.id)}" aria-label="Reject and edit">x</button>
-                </div>
-              </div>
-              <div class="builder-import-fix">
-                <input type="text" data-import-fix="${escapeHtml(row.id)}" value="${escapeHtml(row.fixText || '')}" placeholder="Type the correct workout name" />
-                <button type="button" class="btn btn-ghost" data-import-rematch="${escapeHtml(row.id)}">Re-match</button>
-              </div>
-              <div class="builder-import-row-meta">Best confidence: ${confPct}%</div>
-            </div>
-          </article>
+          <section class="builder-import-day-group" data-import-group="${escapeHtml(String(group?.key || 'group'))}">
+            <div class="builder-import-day-head">${escapeHtml(dayLabel)}</div>
+            ${(Array.isArray(group?.rows) ? group.rows : []).map((row) => renderImportRowCard(row)).join('')}
+          </section>
           <div class="builder-import-flow-nav">
-            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>← Prev</button>
-            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (rows.length - 1) ? 'disabled' : ''}>Next →</button>
+            <button type="button" class="btn btn-ghost" data-import-prev ${activeIndex <= 0 ? 'disabled' : ''}>← Back day</button>
+            <button type="button" class="btn btn-ghost" data-import-next ${activeIndex >= (groups.length - 1) ? 'disabled' : ''}>Next day →</button>
           </div>
         `;
       }
@@ -5185,9 +5221,6 @@
               row.selectedId = String(row.candidateList[0].row.id);
             }
             row.status = row.selectedId ? 'ok' : 'fixing';
-            if (row.status === 'ok' && state.importReviewActiveIndex < (getImportReviewRowsOrdered().length - 1)) {
-              state.importReviewActiveIndex += 1;
-            }
             renderImportReviewRows();
             return;
           }
