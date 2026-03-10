@@ -693,6 +693,9 @@
       cursor: grab;
       padding: 8px 0;
       transition: transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .builder-import-flow-card:hover .builder-import-drag,
@@ -2994,7 +2997,8 @@ Last week: 80 lb</pre>
         importReviewDragId: '',
         importReviewDropId: '',
         importReviewDropPlacement: 'before',
-        importAddDraftByGroup: {}
+        importAddDraftByGroup: {},
+        importReviewPointerDrag: null
       };
       let autoSaveTimer = null;
       let autoSaveInFlight = false;
@@ -4679,6 +4683,49 @@ Last week: 80 lb</pre>
         });
         state.importReviewDropId = '';
         state.importReviewDropPlacement = 'before';
+      }
+
+      function updateImportReviewDropTargetFromPoint(clientX, clientY) {
+        if (!importReviewBodyEl) return;
+        const dragId = String(state.importReviewDragId || '').trim();
+        if (!dragId) return;
+        const hit = document.elementFromPoint(Number(clientX) || 0, Number(clientY) || 0);
+        const card = hit?.closest?.('[data-import-row]');
+        if (!card) {
+          clearImportReviewDropState();
+          return;
+        }
+        const rowId = String(card.getAttribute('data-import-row') || '').trim();
+        if (!rowId || rowId === dragId) {
+          clearImportReviewDropState();
+          return;
+        }
+        const rect = card.getBoundingClientRect();
+        const midY = rect.top + (rect.height / 2);
+        const placement = clientY >= midY ? 'after' : 'before';
+        clearImportReviewDropState();
+        card.classList.add('is-drop-target');
+        card.classList.add(placement === 'after' ? 'is-drop-after' : 'is-drop-before');
+        state.importReviewDropId = rowId;
+        state.importReviewDropPlacement = placement;
+      }
+
+      function finishImportReviewPointerDrag(cancelled) {
+        const dragState = state.importReviewPointerDrag;
+        const dragId = String(state.importReviewDragId || '').trim();
+        const targetId = String(state.importReviewDropId || '').trim();
+        const placement = String(state.importReviewDropPlacement || 'before').trim() === 'after' ? 'after' : 'before';
+        if (!cancelled && dragState?.moved && dragId && targetId && dragId !== targetId) {
+          if (moveImportReviewRow(dragId, targetId, placement)) {
+            renderImportReviewRows();
+          }
+        }
+        importReviewBodyEl?.querySelectorAll('.builder-import-flow-card.is-dragging').forEach((node) => {
+          node.classList.remove('is-dragging');
+        });
+        clearImportReviewDropState();
+        state.importReviewDragId = '';
+        state.importReviewPointerDrag = null;
       }
 
       function moveImportReviewRow(dragRowId, targetRowId, placement) {
@@ -7808,6 +7855,45 @@ Last week: 80 lb</pre>
           clearImportReviewDropState();
           state.importReviewDragId = '';
           state.importReviewDropPlacement = 'before';
+        });
+
+        importReviewBodyEl?.addEventListener('pointerdown', (e) => {
+          if (e.pointerType !== 'touch') return;
+          const handle = e.target.closest('[data-import-drag-handle]');
+          const card = e.target.closest('[data-import-row]');
+          if (!handle || !card) return;
+          const rowId = String(card.getAttribute('data-import-row') || '').trim();
+          if (!rowId) return;
+          state.importReviewDragId = rowId;
+          state.importReviewPointerDrag = {
+            pointerId: e.pointerId,
+            moved: false
+          };
+          card.classList.add('is-dragging');
+          clearImportReviewDropState();
+          try { handle.setPointerCapture(e.pointerId); } catch {}
+          e.preventDefault();
+        });
+
+        importReviewBodyEl?.addEventListener('pointermove', (e) => {
+          const dragState = state.importReviewPointerDrag;
+          if (!dragState || dragState.pointerId !== e.pointerId) return;
+          dragState.moved = true;
+          updateImportReviewDropTargetFromPoint(e.clientX, e.clientY);
+          e.preventDefault();
+        });
+
+        importReviewBodyEl?.addEventListener('pointerup', (e) => {
+          const dragState = state.importReviewPointerDrag;
+          if (!dragState || dragState.pointerId !== e.pointerId) return;
+          finishImportReviewPointerDrag(false);
+          e.preventDefault();
+        });
+
+        importReviewBodyEl?.addEventListener('pointercancel', (e) => {
+          const dragState = state.importReviewPointerDrag;
+          if (!dragState || dragState.pointerId !== e.pointerId) return;
+          finishImportReviewPointerDrag(true);
         });
 
         importUseBestBtn?.addEventListener('click', () => {
