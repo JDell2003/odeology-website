@@ -2330,11 +2330,15 @@
         delete node.dataset.timerLock;
       }
     });
-    // Keep + / - set controls interactive so users can adjust planned set count
-    // before or during a workout session.
     const setButtons = rootNode.querySelectorAll('.exercise-set-add, .exercise-set-remove');
     setButtons.forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
+      if (locked) {
+        node.setAttribute('disabled', 'true');
+        node.dataset.timerDisabled = '1';
+        node.setAttribute('aria-disabled', 'true');
+        return;
+      }
       node.removeAttribute('disabled');
       if (node.dataset.timerDisabled) delete node.dataset.timerDisabled;
       node.setAttribute('aria-disabled', 'false');
@@ -9818,6 +9822,10 @@ function toggleSharePopover(force) {
           })();
           const loggedSets = Array.isArray(match?.sets) ? match.sets : [];
           const addSetForExercise = () => {
+            if (!workoutTimer.running) {
+              showWorkoutInputGateToast();
+              return;
+            }
             const next = Math.min(12, setCount + 1);
             if (next === setCount) return;
             captureVisibleWorkoutInputDrafts();
@@ -9832,6 +9840,10 @@ function toggleSharePopover(force) {
             render();
           };
           const removeSetForExercise = () => {
+            if (!workoutTimer.running) {
+              showWorkoutInputGateToast();
+              return;
+            }
             if (setCount <= baseSetCount) return;
             captureVisibleWorkoutInputDrafts();
             setWorkoutSetCountDraft({
@@ -9927,6 +9939,8 @@ function toggleSharePopover(force) {
                       class: 'exercise-set-remove',
                       title: 'Remove last set',
                       'aria-label': 'Remove last set',
+                      disabled: workoutTimer.running ? null : 'disabled',
+                      'aria-disabled': workoutTimer.running ? 'false' : 'true',
                       onclick: removeSetForExercise
                     }, '–')
                     : null,
@@ -9935,6 +9949,8 @@ function toggleSharePopover(force) {
                     class: 'exercise-set-add',
                     title: 'Add set',
                     'aria-label': 'Add set',
+                    disabled: workoutTimer.running ? null : 'disabled',
+                    'aria-disabled': workoutTimer.running ? 'false' : 'true',
                     onclick: addSetForExercise
                   }, '+')
                 )
