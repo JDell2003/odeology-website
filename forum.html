@@ -16,63 +16,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body.forum-page {
-            --forum-bg: #eef2f5;
+            --forum-bg: #f7f8f9;
             --forum-surface: #ffffff;
-            --forum-surface-soft: #f7f9fb;
-            --forum-border: #d8e0e7;
-            --forum-border-strong: #bec9d3;
+            --forum-surface-soft: #f4f7f9;
+            --forum-border: #d7dee4;
+            --forum-border-strong: #c4cfd7;
             --forum-text: #18212a;
             --forum-muted: #677482;
             --forum-accent: #27485d;
-            --forum-accent-soft: #dde8ef;
-            --forum-chip: #e7eff5;
-            --forum-shadow: 0 18px 42px rgba(18, 28, 38, 0.08);
-            background:
-                radial-gradient(circle at top left, rgba(75, 112, 140, 0.12), transparent 28%),
-                linear-gradient(180deg, #f6f8fa 0%, #eef2f5 100%);
+            --forum-accent-soft: #dce7ee;
+            --forum-chip: #e6eef4;
+            background: var(--forum-bg);
             color: var(--forum-text);
             min-height: 100vh;
         }
 
         .forum-page .grain {
-            opacity: 0.06;
+            opacity: 0.03;
         }
 
         .forum-shell {
-            width: min(1440px, calc(100vw - 1rem));
-            margin: calc(var(--navbar-height, 72px) + 12px) auto 32px;
+            width: min(100vw, 1600px);
+            margin: calc(var(--navbar-height, 72px) + 1px) auto 0;
             display: grid;
             grid-template-columns: 280px minmax(0, 1fr);
-            gap: 1rem;
+            gap: 0;
         }
 
         .forum-left,
         .forum-topbar,
         .forum-results-shell,
         .forum-right {
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid var(--forum-border);
-            box-shadow: var(--forum-shadow);
-            backdrop-filter: blur(12px);
+            background: var(--forum-surface);
         }
 
         .forum-left {
-            border-radius: 24px;
-            padding: 1rem 0.9rem;
+            padding: 1rem 1rem 0;
             position: sticky;
-            top: calc(var(--navbar-height, 72px) + 12px);
+            top: calc(var(--navbar-height, 72px) + 1px);
             align-self: start;
             display: grid;
             gap: 1rem;
-            max-height: calc(100vh - var(--navbar-height, 72px) - 24px);
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
             overflow: auto;
+            border-right: 1px solid var(--forum-border);
         }
 
         .forum-left-head {
             display: flex;
             gap: 0.8rem;
             align-items: center;
-            padding: 0.15rem 0.2rem 0.75rem;
+            padding: 0.15rem 0.2rem 0.9rem;
             border-bottom: 1px solid rgba(24, 33, 42, 0.08);
         }
 
@@ -119,7 +113,7 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.75rem 0.8rem;
-            border-radius: 16px;
+            border-radius: 999px;
             color: var(--forum-text);
             text-decoration: none;
             font-weight: 700;
@@ -135,11 +129,10 @@
         .forum-nav-icon {
             width: 34px;
             height: 34px;
-            border-radius: 12px;
+            border-radius: 50%;
             display: grid;
             place-items: center;
-            background: var(--forum-surface-soft);
-            border: 1px solid var(--forum-border);
+            background: transparent;
             color: var(--forum-accent);
             font-size: 0.88rem;
             font-weight: 800;
@@ -148,39 +141,36 @@
 
         .forum-left-foot {
             margin-top: auto;
-            padding: 0.8rem;
-            border-radius: 20px;
-            background: linear-gradient(180deg, #132532, #1d3342);
-            color: #f3f8fc;
+            padding: 1rem 0.25rem 1.25rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-text);
         }
 
         .forum-left-foot p {
             margin: 0.3rem 0 0;
             font-size: 0.9rem;
             line-height: 1.55;
-            color: rgba(243, 248, 252, 0.78);
+            color: var(--forum-muted);
         }
 
         .forum-main {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
-            gap: 1rem;
-            align-items: start;
+            display: block;
+            min-width: 0;
         }
 
         .forum-main-stack {
             display: grid;
-            gap: 1rem;
+            gap: 0;
         }
 
         .forum-topbar {
-            border-radius: 24px;
-            padding: 0.95rem 1rem;
+            padding: 0.95rem 1.5rem 0.7rem;
             display: grid;
             gap: 0.8rem;
             position: sticky;
-            top: calc(var(--navbar-height, 72px) + 12px);
+            top: calc(var(--navbar-height, 72px) + 1px);
             z-index: 2;
+            border-bottom: 1px solid var(--forum-border);
         }
 
         .forum-topbar-row {
@@ -192,14 +182,14 @@
 
         .forum-search {
             flex: 1;
-            min-width: 240px;
+            max-width: 560px;
             display: flex;
             align-items: center;
             gap: 0.75rem;
             padding: 0.82rem 1rem;
             border-radius: 999px;
-            border: 1px solid var(--forum-border);
-            background: var(--forum-surface-soft);
+            border: 1px solid var(--forum-border-strong);
+            background: #fbfcfd;
         }
 
         .forum-search svg {
@@ -227,8 +217,8 @@
             justify-content: center;
             padding: 0.72rem 1rem;
             border-radius: 999px;
-            border: 1px solid var(--forum-border);
-            background: var(--forum-surface-soft);
+            border: 1px solid transparent;
+            background: transparent;
             color: var(--forum-text);
             text-decoration: none;
             font-weight: 700;
@@ -262,16 +252,14 @@
 
         .forum-tab.is-active {
             background: var(--forum-accent-soft);
-            border: 1px solid var(--forum-border);
         }
 
         .forum-results-shell {
-            border-radius: 28px;
             overflow: hidden;
         }
 
         .forum-results-head {
-            padding: 1.2rem 1.2rem 1rem;
+            padding: 1.35rem 1.5rem 1rem;
             border-bottom: 1px solid rgba(24, 33, 42, 0.08);
             display: grid;
             gap: 0.4rem;
@@ -327,7 +315,7 @@
             grid-template-columns: 56px minmax(0, 1fr) auto;
             gap: 1rem;
             align-items: start;
-            padding: 1rem 1.2rem;
+            padding: 1rem 1.5rem;
             text-decoration: none;
             color: inherit;
             border-top: 1px solid rgba(24, 33, 42, 0.08);
@@ -342,7 +330,6 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            border: 1px solid var(--forum-border);
             overflow: hidden;
             background: var(--forum-surface-soft);
             display: grid;
@@ -409,10 +396,10 @@
             align-items: center;
             justify-content: center;
             align-self: center;
-            padding: 0.72rem 0.95rem;
+            padding: 0.62rem 0.9rem;
             border-radius: 999px;
             border: 1px solid var(--forum-border);
-            background: var(--forum-surface-soft);
+            background: transparent;
             color: var(--forum-text);
             font-size: 0.85rem;
             font-weight: 800;
@@ -426,12 +413,7 @@
         }
 
         .forum-right {
-            border-radius: 24px;
-            padding: 1rem;
-            display: grid;
-            gap: 0.9rem;
-            position: sticky;
-            top: calc(var(--navbar-height, 72px) + 12px);
+            display: none;
         }
 
         .forum-card {
@@ -476,10 +458,6 @@
         }
 
         @media (max-width: 1180px) {
-            .forum-main {
-                grid-template-columns: 1fr;
-            }
-
             .forum-right {
                 position: static;
             }
@@ -493,6 +471,8 @@
             .forum-left {
                 position: static;
                 max-height: none;
+                border-right: 0;
+                border-bottom: 1px solid var(--forum-border);
             }
 
             .forum-topbar {
@@ -502,7 +482,7 @@
 
         @media (max-width: 720px) {
             .forum-shell {
-                width: min(100vw - 0.6rem, 100vw - 0.6rem);
+                width: 100vw;
             }
 
             .forum-result {
@@ -747,41 +727,6 @@
                 </section>
             </div>
 
-            <aside class="forum-right">
-                <div class="forum-card">
-                    <h2>About this forum</h2>
-                    <p>
-                        The point here is not to clone Reddit code. It is to reuse the useful browse patterns: rails, search chrome,
-                        tabs, result density, and scannable metadata.
-                    </p>
-                </div>
-
-                <div class="forum-card">
-                    <div class="forum-moderator">
-                        <img src="assets/bodyfat-male.png" alt="Moderator visual">
-                        <div>
-                            <h3>odeology_ mod view</h3>
-                            <p style="margin:0;">Keep answers direct, searchable, and worth giving their own URL.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="forum-card">
-                    <h3>What changed</h3>
-                    <ul>
-                        <li>Much tighter Reddit-style column structure.</li>
-                        <li>Result rows now read like search results instead of generic cards.</li>
-                        <li>The live biceps thread remains the primary standalone page.</li>
-                    </ul>
-                </div>
-
-                <div class="forum-card">
-                    <h3>Next logical buildout</h3>
-                    <p>
-                        Add more real thread pages so the queued rows stop being placeholders and start behaving like the biceps page.
-                    </p>
-                </div>
-            </aside>
         </section>
     </main>
 
