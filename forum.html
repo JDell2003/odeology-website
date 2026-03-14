@@ -480,18 +480,6 @@
             display: grid;
         }
 
-        .forum-side-status {
-            display: none;
-            margin-top: 0.75rem;
-            color: var(--forum-muted);
-            font-size: 0.86rem;
-            font-weight: 600;
-        }
-
-        .forum-side-status.is-visible {
-            display: block;
-        }
-
         .forum-side-footer {
             display: flex;
             align-items: center;
@@ -906,7 +894,6 @@
                         <div class="forum-side-footer">
                             <div>
                                 <button class="forum-side-more" type="button" id="forum-side-more">See more</button>
-                                <div class="forum-side-status" id="forum-side-status">No more communities</div>
                             </div>
                             <a class="forum-create-community" href="forum-search.html">Create community</a>
                         </div>
@@ -920,19 +907,25 @@
     <script>
         (function () {
             const moreButton = document.getElementById('forum-side-more');
-            const moreStatus = document.getElementById('forum-side-status');
             const hiddenCommunities = Array.from(document.querySelectorAll('[data-extra-community]'));
 
-            if (!moreButton || !moreStatus || hiddenCommunities.length === 0) return;
+            if (!moreButton || hiddenCommunities.length === 0) return;
 
             moreButton.addEventListener('click', function () {
+                const expanded = moreButton.getAttribute('data-expanded') === 'true';
+
                 hiddenCommunities.forEach(function (community) {
-                    community.classList.remove('is-hidden');
-                    community.classList.add('is-visible');
+                    if (expanded) {
+                        community.classList.add('is-hidden');
+                        community.classList.remove('is-visible');
+                    } else {
+                        community.classList.remove('is-hidden');
+                        community.classList.add('is-visible');
+                    }
                 });
 
-                moreButton.style.display = 'none';
-                moreStatus.classList.add('is-visible');
+                moreButton.setAttribute('data-expanded', expanded ? 'false' : 'true');
+                moreButton.textContent = expanded ? 'See more' : 'Show less';
             });
         }());
     </script>
