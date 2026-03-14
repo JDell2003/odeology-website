@@ -144,7 +144,19 @@
         }
 
         .forum-nav-group .forum-nav-link + .forum-nav-link {
-            border-top: 1px solid var(--forum-border);
+            position: relative;
+            margin-top: 0.35rem;
+            padding-top: 1rem;
+        }
+
+        .forum-nav-group .forum-nav-link + .forum-nav-link::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0.8rem;
+            right: 0.8rem;
+            height: 1px;
+            background: var(--forum-border);
         }
 
         .forum-nav-link:hover,
