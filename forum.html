@@ -406,31 +406,15 @@
             place-items: center;
             background: #ffffff;
             border: 1px solid var(--forum-border);
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-weight: 700;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(24, 33, 42, 0.08);
         }
 
-        .forum-community-badge.is-biceps {
-            background: linear-gradient(160deg, #ff8a5b, #d24f18);
-        }
-
-        .forum-community-badge.is-nutrition {
-            background: linear-gradient(160deg, #7ac943, #2f8f3f);
-        }
-
-        .forum-community-badge.is-training {
-            background: linear-gradient(160deg, #4e7bff, #27485d);
-        }
-
-        .forum-community-badge.is-macro {
-            background: linear-gradient(160deg, #8b5cf6, #5b38c4);
-        }
-
-        .forum-community-badge.is-overview {
-            background: linear-gradient(160deg, #14b8a6, #0f766e);
+        .forum-community-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .forum-community strong {
@@ -773,7 +757,9 @@
                         <h3>Popular Communities</h3>
 
                         <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                            <span class="forum-community-badge is-biceps">Bx</span>
+                            <span class="forum-community-badge">
+                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160" alt="Biceps Growth community image" loading="lazy">
+                            </span>
                             <span>
                                 <strong>Biceps Growth</strong>
                                 <span>7,001 members</span>
@@ -781,7 +767,9 @@
                         </a>
 
                         <a class="forum-community" href="forum-search.html">
-                            <span class="forum-community-badge is-nutrition">Nt</span>
+                            <span class="forum-community-badge">
+                                <img src="https://images.unsplash.com/photo-1762744962625-2bbc69c13cca?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160" alt="Nutrition community image" loading="lazy">
+                            </span>
                             <span>
                                 <strong>Nutrition</strong>
                                 <span>6,825 members</span>
@@ -789,7 +777,9 @@
                         </a>
 
                         <a class="forum-community" href="training-coming-soon.html">
-                            <span class="forum-community-badge is-training">Tr</span>
+                            <span class="forum-community-badge">
+                                <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Training Split community image" loading="lazy">
+                            </span>
                             <span>
                                 <strong>Training Split</strong>
                                 <span>12,481 members</span>
@@ -797,7 +787,9 @@
                         </a>
 
                         <a class="forum-community" href="index.html#resources">
-                            <span class="forum-community-badge is-macro">Mc</span>
+                            <span class="forum-community-badge">
+                                <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Macro Tools community image" loading="lazy">
+                            </span>
                             <span>
                                 <strong>Macro Tools</strong>
                                 <span>4,228 members</span>
@@ -805,7 +797,9 @@
                         </a>
 
                         <a class="forum-community" href="overview.html">
-                            <span class="forum-community-badge is-overview">Ov</span>
+                            <span class="forum-community-badge">
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Overview community image" loading="lazy">
+                            </span>
                             <span>
                                 <strong>Overview</strong>
                                 <span>26,803 readers</span>
