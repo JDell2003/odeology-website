@@ -16,12 +16,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html:has(body.forum-home-page) { background: #eef2f5; }
+        html:has(body.forum-home-page) { background: #ffffff; }
         body.forum-home-page {
-            --bg: #eef2f5;
-            --surface: rgba(255, 255, 255, 0.94);
+            --bg: #ffffff;
+            --surface: #ffffff;
             --surface-alt: #f6f8fa;
-            --border: #d9e0e6;
+            --border: #dde3e8;
             --text: #17212b;
             --muted: #667482;
             --accent: #29495e;
@@ -29,31 +29,41 @@
             --warm: #ffefe6;
             --up: #d24f18;
             --down: #486f96;
-            background:
-                radial-gradient(circle at top left, rgba(41, 73, 94, 0.09), transparent 24rem),
-                linear-gradient(180deg, #f5f7f8 0%, #eef2f5 100%);
+            background: var(--bg);
             color: var(--text);
             min-height: 100vh;
             font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
         }
         .forum-home-page .grain { display: none; }
         .forum-home-wrap {
-            width: min(1440px, calc(100vw - 1.5rem));
-            margin: calc(var(--navbar-height, 72px) + 18px) auto 40px;
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto 0;
             display: grid;
             grid-template-columns: 260px minmax(0, 1fr) 320px;
-            gap: 1rem;
+            gap: 0;
             align-items: start;
+            background: #ffffff;
         }
         .forum-panel {
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            box-shadow: 0 16px 40px rgba(14, 22, 30, 0.08);
-            backdrop-filter: blur(12px);
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
-        .forum-left, .forum-right { position: sticky; top: calc(var(--navbar-height, 72px) + 18px); }
-        .forum-left { padding: 1rem; display: grid; gap: 1rem; }
+        .forum-left, .forum-right { position: sticky; top: calc(var(--navbar-height, 72px) + 1px); }
+        .forum-left {
+            padding: 1rem 1rem 0;
+            display: grid;
+            gap: 1rem;
+            border-right: 1px solid var(--border);
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .forum-left::-webkit-scrollbar { display: none; }
         .forum-brand, .forum-post, .forum-feature-card, .forum-home-hero-grid, .forum-post-grid, .forum-home-actions, .forum-home-hero-top, .forum-feed-header, .forum-post-head, .forum-topic {
             display: flex;
         }
@@ -121,8 +131,9 @@
             gap: 1rem;
         }
         .forum-home-hero {
-            padding: 1.2rem;
-            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242,246,248,0.98));
+            padding: 1.2rem 1.5rem 1rem;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
         }
         .forum-home-hero-top, .forum-feed-header, .forum-post-head, .forum-topic {
             justify-content: space-between;
@@ -162,8 +173,8 @@
         .forum-home-hero-grid { gap: 1rem; align-items: stretch; }
         .forum-feature-card, .forum-hero-side, .forum-post-image, .forum-side-item {
             border: 1px solid var(--border);
-            border-radius: 22px;
-            background: rgba(255,255,255,0.95);
+            border-radius: 18px;
+            background: #ffffff;
         }
         .forum-feature-card {
             color: inherit;
@@ -213,7 +224,7 @@
             letter-spacing: -0.04em;
         }
         .forum-mini-stat span { color: var(--muted); font-size: 0.9rem; }
-        .forum-feed-card { padding: 1rem; }
+        .forum-feed-card { padding: 0 1.5rem 1.5rem; }
         .forum-post {
             gap: 0.9rem;
             padding: 1rem 0;
@@ -244,8 +255,16 @@
         .forum-post-copy { flex: 1 1 auto; min-width: 0; }
         .forum-post-image { width: 160px; aspect-ratio: 4 / 3; overflow: hidden; }
         .forum-post-image img { width: 76%; height: auto; display: block; }
-        .forum-right { gap: 1rem; }
+        .forum-right {
+            gap: 0;
+            border-left: 1px solid var(--border);
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+        }
         .forum-side-card, .forum-right-note { padding: 1rem; }
+        .forum-side-card + .forum-side-card,
+        .forum-side-card + .forum-right-note,
+        .forum-right-note + .forum-side-card { border-top: 1px solid var(--border); }
         .forum-side-item { padding: 0.85rem 0.9rem; background: var(--surface-alt); }
         .forum-side-item strong { display: block; margin-bottom: 0.2rem; }
         .forum-side-item p, .forum-right-note p { margin: 0; line-height: 1.55; font-size: 0.92rem; }
@@ -257,10 +276,12 @@
                 position: static;
                 grid-column: 1 / -1;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
+                border-left: 0;
+                border-top: 1px solid var(--border);
             }
         }
         @media (max-width: 920px) {
-            .forum-home-wrap { width: min(100vw, calc(100vw - 1rem)); grid-template-columns: 1fr; }
+            .forum-home-wrap { width: 100vw; grid-template-columns: 1fr; }
             .forum-left, .forum-right { position: static; }
             .forum-right { grid-template-columns: 1fr; }
             .forum-home-hero-grid, .forum-feature-card, .forum-post-grid, .forum-post { display: grid; }
@@ -268,7 +289,9 @@
             .forum-feature-art, .forum-post-image { width: 100%; }
         }
         @media (max-width: 640px) {
-            .forum-home-wrap { width: min(100vw, calc(100vw - 0.75rem)); }
+            .forum-home-wrap { width: 100vw; }
+            .forum-home-hero,
+            .forum-feed-card { padding-left: 1rem; padding-right: 1rem; }
             .forum-votes {
                 grid-auto-flow: column;
                 justify-content: space-between;
