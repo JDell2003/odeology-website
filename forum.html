@@ -19,8 +19,8 @@
             --forum-bg: #f7f8f9;
             --forum-surface: #ffffff;
             --forum-surface-soft: #f4f7f9;
-            --forum-border: #d7dee4;
-            --forum-border-strong: #c4cfd7;
+            --forum-border: #c8cfd6;
+            --forum-border-strong: #101418;
             --forum-text: #18212a;
             --forum-muted: #677482;
             --forum-accent: #27485d;
@@ -32,7 +32,27 @@
         }
 
         .forum-page .grain {
-            opacity: 0.03;
+            display: none;
+        }
+
+        .forum-page .preloader {
+            background: #ffffff;
+        }
+
+        .forum-page .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--forum-border-strong);
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        .forum-page .navbar::after {
+            display: none;
+        }
+
+        .forum-page .navbar-brand,
+        .forum-page .nav-menu a {
+            color: #111418;
         }
 
         .forum-shell {
@@ -59,7 +79,7 @@
             gap: 1rem;
             max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
             overflow: auto;
-            border-right: 1px solid var(--forum-border);
+            border-right: 1px solid var(--forum-border-strong);
         }
 
         .forum-left-head {
@@ -67,7 +87,7 @@
             gap: 0.8rem;
             align-items: center;
             padding: 0.15rem 0.2rem 0.9rem;
-            border-bottom: 1px solid rgba(24, 33, 42, 0.08);
+            border-bottom: 1px solid var(--forum-border-strong);
         }
 
         .forum-left-logo {
@@ -126,6 +146,11 @@
             transform: translateX(2px);
         }
 
+        .forum-nav-group + .forum-nav-group {
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--forum-border-strong);
+        }
+
         .forum-nav-icon {
             width: 34px;
             height: 34px;
@@ -142,7 +167,7 @@
         .forum-left-foot {
             margin-top: auto;
             padding: 1rem 0.25rem 1.25rem;
-            border-top: 1px solid var(--forum-border);
+            border-top: 1px solid var(--forum-border-strong);
             color: var(--forum-text);
         }
 
@@ -170,7 +195,7 @@
             position: sticky;
             top: calc(var(--navbar-height, 72px) + 1px);
             z-index: 2;
-            border-bottom: 1px solid var(--forum-border);
+            border-bottom: 1px solid var(--forum-border-strong);
         }
 
         .forum-topbar-row {
@@ -260,7 +285,7 @@
 
         .forum-results-head {
             padding: 1.35rem 1.5rem 1rem;
-            border-bottom: 1px solid rgba(24, 33, 42, 0.08);
+            border-bottom: 1px solid var(--forum-border-strong);
             display: grid;
             gap: 0.4rem;
         }
@@ -304,7 +329,7 @@
             padding: 0.38rem 0.68rem;
             border-radius: 999px;
             background: var(--forum-surface-soft);
-            border: 1px solid var(--forum-border);
+            border: 1px solid var(--forum-border-strong);
             color: var(--forum-muted);
             font-size: 0.8rem;
             font-weight: 700;
@@ -318,7 +343,7 @@
             padding: 1rem 1.5rem;
             text-decoration: none;
             color: inherit;
-            border-top: 1px solid rgba(24, 33, 42, 0.08);
+            border-top: 1px solid var(--forum-border-strong);
             transition: background-color 140ms ease;
         }
 
@@ -398,7 +423,7 @@
             align-self: center;
             padding: 0.62rem 0.9rem;
             border-radius: 999px;
-            border: 1px solid var(--forum-border);
+            border: 1px solid var(--forum-border-strong);
             background: transparent;
             color: var(--forum-text);
             font-size: 0.85rem;
@@ -472,7 +497,7 @@
                 position: static;
                 max-height: none;
                 border-right: 0;
-                border-bottom: 1px solid var(--forum-border);
+                border-bottom: 1px solid var(--forum-border-strong);
             }
 
             .forum-topbar {
