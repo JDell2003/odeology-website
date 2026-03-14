@@ -72,6 +72,12 @@
             max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
             overflow: auto;
             border-right: 1px solid var(--forum-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .forum-left::-webkit-scrollbar {
+            display: none;
         }
 
         .forum-left-head {
@@ -108,6 +114,11 @@
         .forum-nav-group {
             display: grid;
             gap: 0.25rem;
+        }
+
+        .forum-nav-group + .forum-nav-group {
+            padding-top: 1rem;
+            border-top: 1px solid var(--forum-border);
         }
 
         .forum-nav-label {
