@@ -404,17 +404,43 @@
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: #ffffff;
             border: 1px solid var(--forum-border);
-            overflow: hidden;
             box-shadow: 0 4px 12px rgba(24, 33, 42, 0.08);
         }
 
-        .forum-community-badge img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+        .forum-community-badge svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .forum-community-badge.is-biceps {
+            background: linear-gradient(160deg, #ffeddc, #ffd2bf);
+            color: #bf4a1d;
+        }
+
+        .forum-community-badge.is-nutrition {
+            background: linear-gradient(160deg, #e8f8df, #c9edb4);
+            color: #3f8a20;
+        }
+
+        .forum-community-badge.is-training {
+            background: linear-gradient(160deg, #e1ecff, #bdd3ff);
+            color: #2d5fcc;
+        }
+
+        .forum-community-badge.is-macro {
+            background: linear-gradient(160deg, #efe7ff, #d8c6ff);
+            color: #6f42c1;
+        }
+
+        .forum-community-badge.is-overview {
+            background: linear-gradient(160deg, #dff7f3, #b8ece4);
+            color: #167d71;
         }
 
         .forum-community strong {
@@ -757,8 +783,12 @@
                         <h3>Popular Communities</h3>
 
                         <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                            <span class="forum-community-badge">
-                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160" alt="Biceps Growth community image" loading="lazy">
+                            <span class="forum-community-badge is-biceps" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M7 14c1.5-3 3-4.5 5-4.5 1.7 0 2.8 1 3.5 2.5l1 2c.5 1 1.4 1.5 2.5 1.5H20"></path>
+                                    <path d="M5 18c1.5 1 3.1 1.5 5 1.5 4.5 0 7.5-2.5 9-6.5"></path>
+                                    <path d="M9 10V7.5C9 6.1 10.1 5 11.5 5H13"></path>
+                                </svg>
                             </span>
                             <span>
                                 <strong>Biceps Growth</strong>
@@ -767,8 +797,10 @@
                         </a>
 
                         <a class="forum-community" href="forum-search.html">
-                            <span class="forum-community-badge">
-                                <img src="https://images.unsplash.com/photo-1762744962625-2bbc69c13cca?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160" alt="Nutrition community image" loading="lazy">
+                            <span class="forum-community-badge is-nutrition" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 20c4.5-2.5 7-6.1 7-10 0-2.4-1.8-4-4.3-4-1.4 0-2.7.6-3.7 1.8C10 6.6 8.7 6 7.3 6 4.8 6 3 7.6 3 10c0 3.9 2.5 7.5 7 10"></path>
+                                </svg>
                             </span>
                             <span>
                                 <strong>Nutrition</strong>
@@ -777,8 +809,16 @@
                         </a>
 
                         <a class="forum-community" href="training-coming-soon.html">
-                            <span class="forum-community-badge">
-                                <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Training Split community image" loading="lazy">
+                            <span class="forum-community-badge is-training" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 9v6"></path>
+                                    <path d="M18 9v6"></path>
+                                    <path d="M3 10h3"></path>
+                                    <path d="M18 10h3"></path>
+                                    <path d="M3 14h3"></path>
+                                    <path d="M18 14h3"></path>
+                                    <path d="M8 8h8v8H8z"></path>
+                                </svg>
                             </span>
                             <span>
                                 <strong>Training Split</strong>
@@ -787,8 +827,15 @@
                         </a>
 
                         <a class="forum-community" href="index.html#resources">
-                            <span class="forum-community-badge">
-                                <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Macro Tools community image" loading="lazy">
+                            <span class="forum-community-badge is-macro" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+                                    <path d="M8 7h8"></path>
+                                    <path d="M8 11h2"></path>
+                                    <path d="M14 11h2"></path>
+                                    <path d="M8 15h2"></path>
+                                    <path d="M14 15h2"></path>
+                                </svg>
                             </span>
                             <span>
                                 <strong>Macro Tools</strong>
@@ -797,8 +844,13 @@
                         </a>
 
                         <a class="forum-community" href="overview.html">
-                            <span class="forum-community-badge">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160" alt="Overview community image" loading="lazy">
+                            <span class="forum-community-badge is-overview" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M4 19V9"></path>
+                                    <path d="M10 19V5"></path>
+                                    <path d="M16 19v-7"></path>
+                                    <path d="M22 19v-4"></path>
+                                </svg>
                             </span>
                             <span>
                                 <strong>Overview</strong>
