@@ -195,11 +195,17 @@
         .forum-main {
             display: block;
             min-width: 0;
+            padding: 0;
         }
 
         .forum-main-stack {
             display: grid;
             gap: 0;
+        }
+
+        .forum-results-shell {
+            overflow: hidden;
+            padding: 0;
         }
 
         .forum-topbar {
@@ -291,10 +297,6 @@
 
         .forum-tab.is-active {
             background: var(--forum-accent-soft);
-        }
-
-        .forum-results-shell {
-            overflow: hidden;
         }
 
         .forum-results-head {
