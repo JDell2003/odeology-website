@@ -49,7 +49,7 @@
             max-width: none;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 272px minmax(0, 1fr) 304px;
+            grid-template-columns: 272px minmax(0, 1fr);
             gap: 0;
             background: #ffffff;
         }
@@ -264,6 +264,14 @@
             font-weight: 600;
         }
 
+        .forum-content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 286px;
+            gap: 1.25rem;
+            align-items: start;
+            padding-top: 1rem;
+        }
+
         .forum-feed {
             display: grid;
         }
@@ -358,16 +366,10 @@
             font-weight: 600;
         }
 
-        .forum-side {
-            padding: 1.15rem 1rem 0;
-        }
-
         .forum-side-box {
             width: 100%;
-            max-width: 274px;
             position: sticky;
             top: calc(var(--navbar-height, 72px) + 1rem);
-            margin: 14.9rem 0 0;
             padding: 0.95rem 0.95rem 1rem;
             border: 1px solid var(--forum-border);
             border-radius: 10px;
@@ -431,7 +433,7 @@
 
         @media (max-width: 1280px) {
             .forum-page-shell {
-                grid-template-columns: 248px minmax(0, 1fr) 280px;
+                grid-template-columns: 248px minmax(0, 1fr);
             }
 
             .forum-story-row {
@@ -456,13 +458,12 @@
                 border-bottom: 1px solid var(--forum-border);
             }
 
-            .forum-side {
-                padding: 0 1.25rem 1.5rem;
+            .forum-content-grid {
+                grid-template-columns: 1fr;
             }
 
             .forum-side-box {
                 max-width: none;
-                margin: 0;
             }
         }
 
@@ -635,165 +636,165 @@
                     <span class="forum-filter-pill">Today</span>
                 </div>
 
-                <section class="forum-feed">
-                    <article class="forum-post" id="featured-post">
-                        <div class="forum-post-head">
-                            <div class="forum-post-meta">
-                                <span>r/odeology_forum</span>
-                                <span>posted by odeology_</span>
-                                <span>4 hr. ago</span>
+                <div class="forum-content-grid">
+                    <section class="forum-feed">
+                        <article class="forum-post" id="featured-post">
+                            <div class="forum-post-head">
+                                <div class="forum-post-meta">
+                                    <span>r/odeology_forum</span>
+                                    <span>posted by odeology_</span>
+                                    <span>4 hr. ago</span>
+                                </div>
+                                <div class="forum-post-actions">
+                                    <a class="forum-join" href="forum-how-to-get-bigger-biceps.html">Join</a>
+                                    <span class="forum-menu-dot">...</span>
+                                </div>
                             </div>
-                            <div class="forum-post-actions">
-                                <a class="forum-join" href="forum-how-to-get-bigger-biceps.html">Join</a>
-                                <span class="forum-menu-dot">...</span>
-                            </div>
-                        </div>
 
-                        <h1 class="forum-post-title">How to get bigger biceps without turning every pull day into random curls</h1>
-                        <p class="forum-post-copy">
-                            This stays as the main featured thread on the forum home page, but now it sits inside a feed-style layout with larger imagery, separator lines, and the smaller communities box on the right.
-                        </p>
-                        <a class="forum-post-media" href="forum-how-to-get-bigger-biceps.html">
-                            <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
+                            <h1 class="forum-post-title">How to get bigger biceps without turning every pull day into random curls</h1>
+                            <p class="forum-post-copy">
+                                This stays as the main featured thread on the forum home page, but now it sits inside a feed-style layout with larger imagery, separator lines, and the smaller communities box on the right.
+                            </p>
+                            <a class="forum-post-media" href="forum-how-to-get-bigger-biceps.html">
+                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
+                            </a>
+                            <div class="forum-post-stats">
+                                <span>218 upvotes</span>
+                                <span>42 comments</span>
+                                <span>Standalone article page</span>
+                            </div>
+                        </article>
+
+                        <article class="forum-post" id="recovery-post">
+                            <div class="forum-post-head">
+                                <div class="forum-post-meta">
+                                    <span>r/odeology_forum</span>
+                                    <span>queued topic</span>
+                                    <span>recovery</span>
+                                </div>
+                                <div class="forum-post-actions">
+                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <span class="forum-menu-dot">...</span>
+                                </div>
+                            </div>
+
+                            <h2 class="forum-post-title">The recovery mistake that makes chest and shoulder progress look flat</h2>
+                            <p class="forum-post-copy">
+                                This slot behaves like a Reddit feed post visually, but keeps your own site palette and can later branch into another dedicated article page.
+                            </p>
+                            <div class="forum-post-media">
+                                <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
+                            </div>
+                            <div class="forum-post-stats">
+                                <span>167 upvotes</span>
+                                <span>Mobility and sleep</span>
+                                <span>Future article URL</span>
+                            </div>
+                        </article>
+
+                        <article class="forum-post" id="cutting-post">
+                            <div class="forum-post-head">
+                                <div class="forum-post-meta">
+                                    <span>r/odeology_forum</span>
+                                    <span>queued topic</span>
+                                    <span>cutting</span>
+                                </div>
+                                <div class="forum-post-actions">
+                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <span class="forum-menu-dot">...</span>
+                                </div>
+                            </div>
+
+                            <h2 class="forum-post-title">Can you keep building while cutting, or are you only getting better at maintaining</h2>
+                            <p class="forum-post-copy">
+                                The point here is the same as your screenshot: bigger image content in the feed, cleaner lines dividing posts, and a smaller supporting box on the right.
+                            </p>
+                            <div class="forum-post-media">
+                                <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
+                            </div>
+                            <div class="forum-post-stats">
+                                <span>144 upvotes</span>
+                                <span>Calorie deficit strategy</span>
+                                <span>Expectation setting</span>
+                            </div>
+                        </article>
+
+                        <article class="forum-post" id="meal-post">
+                            <div class="forum-post-head">
+                                <div class="forum-post-meta">
+                                    <span>r/odeology_forum</span>
+                                    <span>queued topic</span>
+                                    <span>meal timing</span>
+                                </div>
+                                <div class="forum-post-actions">
+                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <span class="forum-menu-dot">...</span>
+                                </div>
+                            </div>
+
+                            <h2 class="forum-post-title">Meal timing for muscle gain when your schedule is inconsistent all week</h2>
+                            <p class="forum-post-copy">
+                                Another feed post placeholder with a real visual block, ready to turn into a forum article page later without changing the home page structure again.
+                            </p>
+                            <div class="forum-post-media">
+                                <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
+                            </div>
+                            <div class="forum-post-stats">
+                                <span>121 upvotes</span>
+                                <span>Protein distribution</span>
+                                <span>Practical planning</span>
+                            </div>
+                        </article>
+                    </section>
+
+                    <aside class="forum-side-box">
+                        <h3>Popular Communities</h3>
+
+                        <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
+                            <span class="forum-community-badge">Bi</span>
+                            <span>
+                                <strong>Biceps Growth</strong>
+                                <span>7,001 members</span>
+                            </span>
                         </a>
-                        <div class="forum-post-stats">
-                            <span>218 upvotes</span>
-                            <span>42 comments</span>
-                            <span>Standalone article page</span>
-                        </div>
-                    </article>
 
-                    <article class="forum-post" id="recovery-post">
-                        <div class="forum-post-head">
-                            <div class="forum-post-meta">
-                                <span>r/odeology_forum</span>
-                                <span>queued topic</span>
-                                <span>recovery</span>
-                            </div>
-                            <div class="forum-post-actions">
-                                <a class="forum-join" href="forum-search.html">View</a>
-                                <span class="forum-menu-dot">...</span>
-                            </div>
-                        </div>
+                        <a class="forum-community" href="forum-search.html">
+                            <span class="forum-community-badge">Nu</span>
+                            <span>
+                                <strong>Nutrition</strong>
+                                <span>6,825 members</span>
+                            </span>
+                        </a>
 
-                        <h2 class="forum-post-title">The recovery mistake that makes chest and shoulder progress look flat</h2>
-                        <p class="forum-post-copy">
-                            This slot behaves like a Reddit feed post visually, but keeps your own site palette and can later branch into another dedicated article page.
-                        </p>
-                        <div class="forum-post-media">
-                            <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
-                        </div>
-                        <div class="forum-post-stats">
-                            <span>167 upvotes</span>
-                            <span>Mobility and sleep</span>
-                            <span>Future article URL</span>
-                        </div>
-                    </article>
+                        <a class="forum-community" href="training-coming-soon.html">
+                            <span class="forum-community-badge">Fi</span>
+                            <span>
+                                <strong>Training Split</strong>
+                                <span>12,481 members</span>
+                            </span>
+                        </a>
 
-                    <article class="forum-post" id="cutting-post">
-                        <div class="forum-post-head">
-                            <div class="forum-post-meta">
-                                <span>r/odeology_forum</span>
-                                <span>queued topic</span>
-                                <span>cutting</span>
-                            </div>
-                            <div class="forum-post-actions">
-                                <a class="forum-join" href="forum-search.html">View</a>
-                                <span class="forum-menu-dot">...</span>
-                            </div>
-                        </div>
+                        <a class="forum-community" href="index.html#resources">
+                            <span class="forum-community-badge">Mc</span>
+                            <span>
+                                <strong>Macro Tools</strong>
+                                <span>4,228 members</span>
+                            </span>
+                        </a>
 
-                        <h2 class="forum-post-title">Can you keep building while cutting, or are you only getting better at maintaining</h2>
-                        <p class="forum-post-copy">
-                            The point here is the same as your screenshot: bigger image content in the feed, cleaner lines dividing posts, and a smaller supporting box on the right.
-                        </p>
-                        <div class="forum-post-media">
-                            <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
-                        </div>
-                        <div class="forum-post-stats">
-                            <span>144 upvotes</span>
-                            <span>Calorie deficit strategy</span>
-                            <span>Expectation setting</span>
-                        </div>
-                    </article>
+                        <a class="forum-community" href="overview.html">
+                            <span class="forum-community-badge">Ov</span>
+                            <span>
+                                <strong>Overview</strong>
+                                <span>26,803 readers</span>
+                            </span>
+                        </a>
 
-                    <article class="forum-post" id="meal-post">
-                        <div class="forum-post-head">
-                            <div class="forum-post-meta">
-                                <span>r/odeology_forum</span>
-                                <span>queued topic</span>
-                                <span>meal timing</span>
-                            </div>
-                            <div class="forum-post-actions">
-                                <a class="forum-join" href="forum-search.html">View</a>
-                                <span class="forum-menu-dot">...</span>
-                            </div>
-                        </div>
-
-                        <h2 class="forum-post-title">Meal timing for muscle gain when your schedule is inconsistent all week</h2>
-                        <p class="forum-post-copy">
-                            Another feed post placeholder with a real visual block, ready to turn into a forum article page later without changing the home page structure again.
-                        </p>
-                        <div class="forum-post-media">
-                            <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
-                        </div>
-                        <div class="forum-post-stats">
-                            <span>121 upvotes</span>
-                            <span>Protein distribution</span>
-                            <span>Practical planning</span>
-                        </div>
-                    </article>
-                </section>
+                        <a class="forum-side-more" href="forum-search.html">See more</a>
+                    </aside>
+                </div>
             </div>
         </section>
-
-        <aside class="forum-side">
-            <section class="forum-side-box">
-                <h3>Popular Communities</h3>
-
-                <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                    <span class="forum-community-badge">Bi</span>
-                    <span>
-                        <strong>Biceps Growth</strong>
-                        <span>7,001 members</span>
-                    </span>
-                </a>
-
-                <a class="forum-community" href="forum-search.html">
-                    <span class="forum-community-badge">Nu</span>
-                    <span>
-                        <strong>Nutrition</strong>
-                        <span>6,825 members</span>
-                    </span>
-                </a>
-
-                <a class="forum-community" href="training-coming-soon.html">
-                    <span class="forum-community-badge">Fi</span>
-                    <span>
-                        <strong>Training Split</strong>
-                        <span>12,481 members</span>
-                    </span>
-                </a>
-
-                <a class="forum-community" href="index.html#resources">
-                    <span class="forum-community-badge">Mc</span>
-                    <span>
-                        <strong>Macro Tools</strong>
-                        <span>4,228 members</span>
-                    </span>
-                </a>
-
-                <a class="forum-community" href="overview.html">
-                    <span class="forum-community-badge">Ov</span>
-                    <span>
-                        <strong>Overview</strong>
-                        <span>26,803 readers</span>
-                    </span>
-                </a>
-
-                <a class="forum-side-more" href="forum-search.html">See more</a>
-            </section>
-        </aside>
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
