@@ -399,16 +399,38 @@
         }
 
         .forum-community-badge {
-            width: 28px;
-            height: 28px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             display: grid;
             place-items: center;
             background: #ffffff;
             border: 1px solid var(--forum-border);
-            color: var(--forum-accent);
-            font-size: 0.72rem;
+            color: #ffffff;
+            font-size: 0.95rem;
             font-weight: 700;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(24, 33, 42, 0.08);
+        }
+
+        .forum-community-badge.is-biceps {
+            background: linear-gradient(160deg, #ff8a5b, #d24f18);
+        }
+
+        .forum-community-badge.is-nutrition {
+            background: linear-gradient(160deg, #7ac943, #2f8f3f);
+        }
+
+        .forum-community-badge.is-training {
+            background: linear-gradient(160deg, #4e7bff, #27485d);
+        }
+
+        .forum-community-badge.is-macro {
+            background: linear-gradient(160deg, #8b5cf6, #5b38c4);
+        }
+
+        .forum-community-badge.is-overview {
+            background: linear-gradient(160deg, #14b8a6, #0f766e);
         }
 
         .forum-community strong {
@@ -751,7 +773,7 @@
                         <h3>Popular Communities</h3>
 
                         <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                            <span class="forum-community-badge">Bi</span>
+                            <span class="forum-community-badge is-biceps">Bx</span>
                             <span>
                                 <strong>Biceps Growth</strong>
                                 <span>7,001 members</span>
@@ -759,7 +781,7 @@
                         </a>
 
                         <a class="forum-community" href="forum-search.html">
-                            <span class="forum-community-badge">Nu</span>
+                            <span class="forum-community-badge is-nutrition">Nt</span>
                             <span>
                                 <strong>Nutrition</strong>
                                 <span>6,825 members</span>
@@ -767,7 +789,7 @@
                         </a>
 
                         <a class="forum-community" href="training-coming-soon.html">
-                            <span class="forum-community-badge">Fi</span>
+                            <span class="forum-community-badge is-training">Tr</span>
                             <span>
                                 <strong>Training Split</strong>
                                 <span>12,481 members</span>
@@ -775,7 +797,7 @@
                         </a>
 
                         <a class="forum-community" href="index.html#resources">
-                            <span class="forum-community-badge">Mc</span>
+                            <span class="forum-community-badge is-macro">Mc</span>
                             <span>
                                 <strong>Macro Tools</strong>
                                 <span>4,228 members</span>
@@ -783,7 +805,7 @@
                         </a>
 
                         <a class="forum-community" href="overview.html">
-                            <span class="forum-community-badge">Ov</span>
+                            <span class="forum-community-badge is-overview">Ov</span>
                             <span>
                                 <strong>Overview</strong>
                                 <span>26,803 readers</span>
