@@ -15,12 +15,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        html:has(body.forum-page) {
+            background: #ffffff;
+        }
+
         body.forum-page {
-            --forum-bg: #f7f8f9;
+            --forum-bg: #ffffff;
             --forum-surface: #ffffff;
             --forum-surface-soft: #f4f7f9;
-            --forum-border: #d7dee4;
-            --forum-border-strong: #c4cfd7;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #dde3e8;
             --forum-text: #18212a;
             --forum-muted: #677482;
             --forum-accent: #27485d;
@@ -32,11 +36,18 @@
         }
 
         .forum-page .grain {
-            opacity: 0.03;
+            display: none;
+        }
+
+        .forum-page::before,
+        .forum-page::after {
+            display: none;
+            content: none;
         }
 
         .forum-shell {
-            width: min(100vw, 1600px);
+            width: 100vw;
+            max-width: none;
             margin: calc(var(--navbar-height, 72px) + 1px) auto 0;
             display: grid;
             grid-template-columns: 280px minmax(0, 1fr);
@@ -67,7 +78,7 @@
             gap: 0.8rem;
             align-items: center;
             padding: 0.15rem 0.2rem 0.9rem;
-            border-bottom: 1px solid rgba(24, 33, 42, 0.08);
+            border-bottom: 1px solid var(--forum-border);
         }
 
         .forum-left-logo {
@@ -260,7 +271,7 @@
 
         .forum-results-head {
             padding: 1.35rem 1.5rem 1rem;
-            border-bottom: 1px solid rgba(24, 33, 42, 0.08);
+            border-bottom: 1px solid var(--forum-border);
             display: grid;
             gap: 0.4rem;
         }
@@ -318,7 +329,7 @@
             padding: 1rem 1.5rem;
             text-decoration: none;
             color: inherit;
-            border-top: 1px solid rgba(24, 33, 42, 0.08);
+            border-top: 1px solid var(--forum-border);
             transition: background-color 140ms ease;
         }
 
