@@ -2232,13 +2232,13 @@ function setupNav() {
     const isIndex = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
     const homeHref = isIndex ? '#' : 'index.html';
     const macroHref = isIndex ? '#resources' : 'index.html#resources';
-    const faqHref = isIndex ? '#contact' : 'index.html#contact';
+    const forumHref = 'forum.html';
     const trainingHref = 'training-coming-soon.html';
     navMenu.innerHTML = `
         <li><a href="${homeHref}">Home</a></li>
         <li><a href="${macroHref}">Macro Calculator</a></li>
         <li><a href="${trainingHref}">Training</a></li>
-        <li><a href="${faqHref}">FAQ</a></li>
+        <li><a href="${forumHref}">FORUM</a></li>
     `;
 
     let backdrop = document.querySelector('.nav-drawer-backdrop');
@@ -2315,13 +2315,13 @@ function setupNav() {
         a.href = 'training-coming-soon.html';
         a.textContent = 'Training';
         li.appendChild(a);
-        const faqLi = Array.from(navMenu.querySelectorAll('li')).find((item) => {
+        const forumLi = Array.from(navMenu.querySelectorAll('li')).find((item) => {
             const link = item.querySelector('a');
             const label = String(link?.textContent || '').trim().toLowerCase();
-            return label === 'faq';
+            return label === 'forum';
         });
-        if (faqLi && faqLi.parentElement === navMenu) {
-            navMenu.insertBefore(li, faqLi);
+        if (forumLi && forumLi.parentElement === navMenu) {
+            navMenu.insertBefore(li, forumLi);
         } else {
             navMenu.appendChild(li);
         }

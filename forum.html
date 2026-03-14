@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Forum</title>
+    <meta name="description" content="The odeology_ forum: training, nutrition, recovery, and physique questions with shareable topic pages.">
+    <link rel="canonical" href="https://odeology.up.railway.app/forum.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-14-forum-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body.forum-page {
+            --forum-border: rgba(26, 34, 46, 0.1);
+            --forum-shadow: 0 20px 55px rgba(12, 16, 24, 0.12);
+            background:
+                radial-gradient(circle at top left, rgba(214, 176, 119, 0.22), transparent 28%),
+                linear-gradient(180deg, #f7f3ec 0%, #f3f5f7 48%, #eef1f4 100%);
+            min-height: 100vh;
+        }
+
+        .forum-shell {
+            width: min(1180px, calc(100vw - 2rem));
+            margin: calc(var(--navbar-height, 72px) + 32px) auto 52px;
+            display: grid;
+            gap: 1.2rem;
+        }
+
+        .forum-hero,
+        .forum-card {
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid var(--forum-border);
+            border-radius: 28px;
+            box-shadow: var(--forum-shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        .forum-hero {
+            padding: clamp(1.4rem, 3vw, 2.6rem);
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+            gap: 1.4rem;
+        }
+
+        .forum-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(31, 111, 235, 0.08);
+            color: #1e5fb8;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .forum-hero h1 {
+            margin: 0.65rem 0 0.6rem;
+            font-size: clamp(2rem, 4.6vw, 4.1rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+        }
+
+        .forum-hero p {
+            margin: 0;
+            max-width: 58ch;
+            color: rgba(20, 28, 40, 0.72);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .forum-hero-actions {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .forum-search {
+            display: grid;
+            gap: 0.85rem;
+            padding: 1rem;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(22, 28, 36, 0.97), rgba(34, 42, 54, 0.94));
+            color: #f4f7fb;
+        }
+
+        .forum-search input {
+            width: 100%;
+            padding: 0.95rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font: inherit;
+        }
+
+        .forum-search-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+
+        .forum-metric {
+            padding: 0.8rem 0.9rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .forum-metric strong {
+            display: block;
+            font-size: 1.15rem;
+        }
+
+        .forum-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.62fr);
+            gap: 1.1rem;
+        }
+
+        .forum-card {
+            padding: 1.1rem;
+        }
+
+        .forum-card-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 0.8rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .forum-card-head h2,
+        .forum-card-head h3 {
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .forum-topic-list {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .forum-topic {
+            display: grid;
+            grid-template-columns: 130px minmax(0, 1fr);
+            gap: 1rem;
+            padding: 0.85rem;
+            border-radius: 22px;
+            border: 1px solid rgba(21, 28, 36, 0.08);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 249, 252, 0.88));
+            text-decoration: none;
+            color: inherit;
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        }
+
+        .forum-topic:hover {
+            transform: translateY(-2px);
+            border-color: rgba(31, 111, 235, 0.22);
+            box-shadow: 0 18px 32px rgba(18, 26, 38, 0.1);
+        }
+
+        .forum-topic img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 18px;
+            background: #eef3f8;
+        }
+
+        .forum-topic-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .forum-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.24rem 0.6rem;
+            border-radius: 999px;
+            background: rgba(31, 111, 235, 0.08);
+            color: #1d5eb6;
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+
+        .forum-topic h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            letter-spacing: -0.03em;
+        }
+
+        .forum-topic p {
+            margin: 0.42rem 0 0.8rem;
+            color: rgba(20, 28, 40, 0.72);
+            line-height: 1.55;
+        }
+
+        .forum-topic-foot {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            color: rgba(20, 28, 40, 0.6);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .forum-side-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .forum-side-item {
+            padding: 0.85rem 0.9rem;
+            border-radius: 18px;
+            border: 1px solid rgba(21, 28, 36, 0.08);
+            background: rgba(247, 249, 252, 0.9);
+        }
+
+        .forum-side-item a {
+            color: #152131;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .forum-side-item p {
+            margin: 0.35rem 0 0;
+            color: rgba(20, 28, 40, 0.66);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 980px) {
+            .forum-hero,
+            .forum-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .forum-shell {
+                width: min(100vw - 1rem, 100vw - 1rem);
+                margin-top: calc(var(--navbar-height, 72px) + 20px);
+            }
+
+            .forum-topic {
+                grid-template-columns: 1fr;
+            }
+
+            .forum-search-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="forum-page">
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#resources">Macro Calculator</a></li>
+                <li><a href="training-coming-soon.html">Training</a></li>
+                <li><a href="forum.html">FORUM</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="forum-shell">
+        <section class="forum-hero">
+            <div>
+                <span class="forum-kicker">odeology_ Forum</span>
+                <h1>Questions that deserve their own link.</h1>
+                <p>
+                    Each topic can live on its own page, get shared directly, and build search traffic over time.
+                    Start with useful training questions, write strong answers, and make every thread worth ranking.
+                </p>
+                <div class="forum-hero-actions">
+                    <a class="btn btn-primary" href="forum-how-to-get-bigger-biceps.html">See Example Thread</a>
+                    <a class="btn btn-ghost" href="index.html">Back Home</a>
+                </div>
+            </div>
+            <aside class="forum-search">
+                <div>
+                    <strong style="font-size:1.12rem;">Forum Starter Structure</strong>
+                    <div style="margin-top:0.25rem;color:rgba(255,255,255,0.72);line-height:1.5;">Use an index page for discovery and individual thread pages for ranking.</div>
+                </div>
+                <input type="text" value="How to get bigger biceps" aria-label="Example forum search" readonly>
+                <div class="forum-search-grid">
+                    <div class="forum-metric">
+                        <strong>Own URL</strong>
+                        <span>Every thread should have a standalone page.</span>
+                    </div>
+                    <div class="forum-metric">
+                        <strong>Photos</strong>
+                        <span>Add images to make each answer stronger and more shareable.</span>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="forum-grid">
+            <div class="forum-card">
+                <div class="forum-card-head">
+                    <div>
+                        <h2>Featured Topics</h2>
+                        <div class="training-muted">Start with questions people actually search for.</div>
+                    </div>
+                </div>
+                <div class="forum-topic-list">
+                    <a class="forum-topic" href="forum-how-to-get-bigger-biceps.html">
+                        <img src="assets/images/exercises/muscle_arms.svg" alt="Arm training illustration">
+                        <div>
+                            <div class="forum-topic-meta">
+                                <span class="forum-chip">Training</span>
+                                <span class="forum-chip">Arms</span>
+                            </div>
+                            <h3>How to get bigger biceps</h3>
+                            <p>A search-friendly thread structure with a question, a direct answer, exercise photos, and layered replies.</p>
+                            <div class="forum-topic-foot">
+                                <span>URL: `forum-how-to-get-bigger-biceps.html`</span>
+                                <span>4 replies</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <div class="forum-topic" style="cursor:default;">
+                        <img src="assets/images/exercises/muscle_chest.svg" alt="Chest training illustration">
+                        <div>
+                            <div class="forum-topic-meta">
+                                <span class="forum-chip">Training</span>
+                                <span class="forum-chip">Chest</span>
+                            </div>
+                            <h3>How many sets per week for chest growth?</h3>
+                            <p>Another example topic you can turn into its own thread page next.</p>
+                            <div class="forum-topic-foot">
+                                <span>Recommended next thread</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="forum-topic" style="cursor:default;">
+                        <img src="assets/images/exercises/muscle_back.svg" alt="Back training illustration">
+                        <div>
+                            <div class="forum-topic-meta">
+                                <span class="forum-chip">Technique</span>
+                                <span class="forum-chip">Back</span>
+                            </div>
+                            <h3>Why can’t I feel lat pulldowns in my back?</h3>
+                            <p>This is another strong SEO-style question because people search the exact wording.</p>
+                            <div class="forum-topic-foot">
+                                <span>Recommended next thread</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="forum-card">
+                <div class="forum-card-head">
+                    <div>
+                        <h3>Ranking Notes</h3>
+                        <div class="training-muted">Structure matters more than just having a page.</div>
+                    </div>
+                </div>
+                <div class="forum-side-list">
+                    <div class="forum-side-item">
+                        <a href="forum-how-to-get-bigger-biceps.html">Use descriptive thread URLs</a>
+                        <p>Match the page name to the search intent instead of generic numeric IDs.</p>
+                    </div>
+                    <div class="forum-side-item">
+                        <a href="forum-how-to-get-bigger-biceps.html">Answer the question immediately</a>
+                        <p>Put the direct answer near the top before longer discussion.</p>
+                    </div>
+                    <div class="forum-side-item">
+                        <a href="forum-how-to-get-bigger-biceps.html">Add visuals where useful</a>
+                        <p>Progress photos, exercise images, and example plans make a thread more useful.</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <script src="js/main.js?v=2026-03-14-forum-nav-1"></script>
+</body>
+</html>
