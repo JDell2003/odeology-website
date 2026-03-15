@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Privacy Policy</title>
+    <meta name="description" content="Read how odeology_ handles account data, macro calculator inputs, grocery plans, training information, profile photos, messages, and website activity.">
+    <link rel="canonical" href="https://odeology.up.railway.app/privacy-policy.html">
+    <meta property="og:title" content="odeology_ Privacy Policy">
+    <meta property="og:description" content="A plain-language privacy policy for the odeology_ website and training platform.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://odeology.up.railway.app/privacy-policy.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-15-privacy-policy-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.privacy-page) {
+            background: #ffffff;
+        }
+
+        body.privacy-page {
+            --forum-bg: #ffffff;
+            --forum-surface: #ffffff;
+            --forum-surface-soft: #f4f7f9;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #c7d2db;
+            --forum-text: #17212b;
+            --forum-muted: #62717f;
+            --forum-accent: #27485d;
+            --forum-accent-soft: #dce7ee;
+            --forum-chip: #e8f0f5;
+            background: var(--forum-bg);
+            color: var(--forum-text);
+            min-height: 100vh;
+        }
+
+        .privacy-page .grain,
+        .privacy-page::before,
+        .privacy-page::after {
+            display: none;
+            content: none;
+        }
+
+        .forum-shell {
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 0;
+            background: #ffffff;
+        }
+
+        .forum-left,
+        .privacy-main {
+            background: var(--forum-surface);
+        }
+
+        .forum-left {
+            padding: 1rem 1rem 0;
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            align-self: start;
+            display: grid;
+            gap: 1rem;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            border-right: 1px solid var(--forum-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .forum-left::-webkit-scrollbar {
+            display: none;
+        }
+
+        .forum-left-head {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            padding: 0.15rem 0.2rem 0.9rem;
+            border-bottom: 1px solid var(--forum-border);
+        }
+
+        .forum-left-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(180deg, #38576b, #243f52);
+            color: #f8fbfd;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .forum-left-head strong {
+            display: block;
+            letter-spacing: -0.04em;
+        }
+
+        .forum-left-head span {
+            display: block;
+            font-size: 0.83rem;
+            color: var(--forum-muted);
+        }
+
+        .forum-nav-group {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .forum-nav-group + .forum-nav-group {
+            padding-top: 1rem;
+            border-top: 1px solid var(--forum-border);
+        }
+
+        .forum-nav-label {
+            padding: 0 0.35rem;
+            margin: 0 0 0.3rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: var(--forum-muted);
+        }
+
+        .forum-nav-link,
+        .forum-rail-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0.8rem;
+            border-radius: 999px;
+            color: var(--forum-text);
+            text-decoration: none;
+            font-weight: 700;
+            transition: background-color 140ms ease, transform 140ms ease;
+        }
+
+        .forum-nav-link:hover,
+        .forum-nav-link.is-active,
+        .forum-rail-link:hover,
+        .forum-rail-link.is-active {
+            background: var(--forum-accent-soft);
+            transform: translateX(2px);
+        }
+
+        .forum-nav-icon,
+        .forum-rail-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: transparent;
+            color: var(--forum-accent);
+            flex-shrink: 0;
+        }
+
+        .forum-nav-icon svg,
+        .forum-rail-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .forum-left-foot {
+            margin-top: auto;
+            padding: 1rem 0.25rem 1.25rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-text);
+        }
+
+        .forum-left-foot p {
+            margin: 0.3rem 0 0;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: var(--forum-muted);
+        }
+
+        .privacy-main {
+            min-width: 0;
+            padding: 0 0 4rem;
+        }
+
+        .privacy-topbar {
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.6rem;
+            border-bottom: 1px solid var(--forum-border);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        .privacy-topbar a {
+            color: var(--forum-accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .privacy-wrap {
+            max-width: 980px;
+            padding: 2rem 1.75rem 0;
+        }
+
+        .privacy-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 2.1rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 32px;
+            background:
+                radial-gradient(circle at top right, rgba(39, 72, 93, 0.14), transparent 34%),
+                linear-gradient(135deg, #f7fafc 0%, #eef4f8 52%, #fdfefe 100%);
+        }
+
+        .privacy-hero::after {
+            content: "";
+            position: absolute;
+            inset: auto -8% -36% auto;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(39, 72, 93, 0.12), transparent 68%);
+            pointer-events: none;
+        }
+
+        .privacy-eyebrow {
+            margin: 0 0 0.65rem;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--forum-accent);
+        }
+
+        .privacy-hero h1 {
+            margin: 0;
+            font-size: clamp(2.1rem, 4vw, 3.4rem);
+            line-height: 0.98;
+            letter-spacing: -0.06em;
+        }
+
+        .privacy-lead {
+            max-width: 720px;
+            margin: 0.95rem 0 0;
+            font-size: 1.02rem;
+            line-height: 1.75;
+            color: var(--forum-muted);
+        }
+
+        .privacy-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 1.4rem;
+        }
+
+        .privacy-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.68rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(39, 72, 93, 0.1);
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--forum-accent);
+        }
+
+        .privacy-quick {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0 0;
+        }
+
+        .privacy-quick-card {
+            padding: 1.05rem 1.1rem;
+            border-radius: 24px;
+            background: #ffffff;
+            border: 1px solid var(--forum-border);
+        }
+
+        .privacy-quick-card strong {
+            display: block;
+            font-size: 0.95rem;
+            letter-spacing: -0.03em;
+        }
+
+        .privacy-quick-card span {
+            display: block;
+            margin-top: 0.45rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--forum-muted);
+        }
+
+        .privacy-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .privacy-card {
+            padding: 1.45rem 1.45rem 1.55rem;
+            border-radius: 28px;
+            border: 1px solid var(--forum-border);
+            background: #ffffff;
+        }
+
+        .privacy-card.is-accent {
+            background:
+                linear-gradient(180deg, rgba(220, 231, 238, 0.52), rgba(255, 255, 255, 0.96));
+        }
+
+        .privacy-card.is-soft {
+            background:
+                linear-gradient(180deg, rgba(244, 247, 249, 0.96), rgba(255, 255, 255, 1));
+        }
+
+        .privacy-card h2 {
+            margin: 0;
+            font-size: 1.22rem;
+            letter-spacing: -0.05em;
+        }
+
+        .privacy-card p,
+        .privacy-card li {
+            color: var(--forum-muted);
+            line-height: 1.72;
+            font-size: 0.97rem;
+        }
+
+        .privacy-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .privacy-list {
+            margin: 0.95rem 0 0;
+            padding-left: 1.15rem;
+        }
+
+        .privacy-list li + li {
+            margin-top: 0.55rem;
+        }
+
+        .privacy-list strong {
+            color: var(--forum-text);
+        }
+
+        .privacy-note {
+            margin-top: 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 20px;
+            background: #f6f9fb;
+            border: 1px solid var(--forum-border);
+            color: var(--forum-text);
+            font-size: 0.92rem;
+            line-height: 1.65;
+        }
+
+        .privacy-contact {
+            margin-top: 1.6rem;
+            padding: 1.4rem;
+            border-radius: 28px;
+            border: 1px solid var(--forum-border-strong);
+            background:
+                radial-gradient(circle at top left, rgba(39, 72, 93, 0.08), transparent 36%),
+                #f9fbfc;
+        }
+
+        .privacy-contact h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.28rem;
+            letter-spacing: -0.05em;
+        }
+
+        .privacy-contact p {
+            margin: 0;
+            color: var(--forum-muted);
+            line-height: 1.7;
+        }
+
+        .privacy-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            color: var(--forum-muted);
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 1080px) {
+            .forum-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .forum-left {
+                position: relative;
+                top: 0;
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid var(--forum-border);
+            }
+
+            .privacy-topbar {
+                top: 0;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .privacy-wrap {
+                padding: 1.3rem 1rem 0;
+            }
+
+            .privacy-hero {
+                padding: 1.45rem;
+                border-radius: 24px;
+            }
+
+            .privacy-quick {
+                grid-template-columns: 1fr;
+            }
+
+            .privacy-card,
+            .privacy-contact {
+                border-radius: 22px;
+                padding: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="privacy-page forum-page">
+    <div class="grain"></div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="forum.html">Forum</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">&#x1F319;</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="forum-shell">
+        <aside class="forum-left">
+            <div class="forum-left-head">
+                <div class="forum-left-logo">od</div>
+                <div>
+                    <strong>odeology_</strong>
+                    <span>Plain-language policy</span>
+                </div>
+            </div>
+
+            <div class="forum-nav-group">
+                <div class="forum-nav-label">Browse</div>
+                <a class="forum-nav-link" href="index.html#resources">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4.5 11.5 12 5l7.5 6.5"></path><path d="M6.5 10.5v8h11v-8"></path></svg>
+                    </span>
+                    <span>Home</span>
+                </a>
+                <a class="forum-nav-link" href="overview.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path></svg>
+                    </span>
+                    <span>Overview</span>
+                </a>
+                <a class="forum-nav-link" href="training.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 9v6"></path><path d="M17 9v6"></path><path d="M9.5 10h5"></path><path d="M9.5 14h5"></path><path d="M5.5 10v4"></path><path d="M18.5 10v4"></path></svg>
+                    </span>
+                    <span>Training</span>
+                </a>
+                <a class="forum-nav-link" href="forum.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M6.5 7.5h10a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H11l-3.5 2v-2H6.5A1.5 1.5 0 0 1 5 13V9a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>
+                    </span>
+                    <span>Forum</span>
+                </a>
+            </div>
+
+            <div class="forum-nav-group">
+                <div class="forum-nav-label">Legal</div>
+                <a class="forum-rail-link is-active" href="privacy-policy.html" aria-current="page">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5 18 7v4.5c0 3.5-2.1 6.6-6 8-3.9-1.4-6-4.5-6-8V7l6-2.5Z"></path><path d="m9.5 12 1.7 1.7 3.3-3.5"></path></svg>
+                    </span>
+                    <span>Privacy Policy</span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg>
+                    </span>
+                    <span>Odeology Rules</span>
+                </a>
+            </div>
+
+            <div class="forum-left-foot">
+                <strong>What this page covers</strong>
+                <p>Accounts, macro inputs, grocery planning, workouts, photos, messages, cookies, and support features.</p>
+            </div>
+        </aside>
+
+        <main class="privacy-main">
+            <div class="privacy-topbar">
+                <span>Privacy Policy</span>
+                <a href="forum.html">Back to forum</a>
+            </div>
+
+            <div class="privacy-wrap">
+                <section class="privacy-hero">
+                    <p class="privacy-eyebrow">odeology_ Privacy Policy</p>
+                    <h1>How we handle your data on this website.</h1>
+                    <p class="privacy-lead">This policy explains what information odeology_ may collect, how we use it, when we may share it, and what choices you have. It is written for the actual tools on this site: the macro calculator, grocery planning, training portal, overview dashboard, forum, account features, and support features like coaches or chefs.</p>
+                    <div class="privacy-chips" aria-label="Key topics">
+                        <span class="privacy-chip">Macros</span>
+                        <span class="privacy-chip">Groceries</span>
+                        <span class="privacy-chip">Training</span>
+                        <span class="privacy-chip">Photos</span>
+                        <span class="privacy-chip">Messages</span>
+                        <span class="privacy-chip">Cookies</span>
+                    </div>
+                    <div class="privacy-quick">
+                        <div class="privacy-quick-card">
+                            <strong>What we collect</strong>
+                            <span>Account details, plan inputs, uploaded content, and website activity tied to how the product works.</span>
+                        </div>
+                        <div class="privacy-quick-card">
+                            <strong>Why we use it</strong>
+                            <span>To build plans, run the portal, support coaches or chefs, secure accounts, and improve the product.</span>
+                        </div>
+                        <div class="privacy-quick-card">
+                            <strong>Your choices</strong>
+                            <span>You can ask about your data, request deletion where allowed, or stop using optional features.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="privacy-grid">
+                    <section class="privacy-card is-accent">
+                        <h2>1. Information we may collect</h2>
+                        <ul class="privacy-list">
+                            <li><strong>Account information:</strong> name, email address, username, login details, profile settings, and similar account data.</li>
+                            <li><strong>Macro calculator inputs:</strong> age, sex, height, weight, goal, activity level, training style, and food preferences you enter to build targets.</li>
+                            <li><strong>Grocery and meal-plan data:</strong> selected foods, grocery preferences, budgets, meal plans, calendar status, restock choices, and related planning details.</li>
+                            <li><strong>Training data:</strong> workout plans, workout logs, shared workout invites, progress notes, dashboard activity, and other training records tied to your account.</li>
+                            <li><strong>Photos and profile content:</strong> profile photo, progress photos, avatars, or other images you upload or crop through site features.</li>
+                            <li><strong>Community and messaging data:</strong> forum activity, messages, friend requests, workout-sharing requests, and support conversations sent through the platform.</li>
+                            <li><strong>Device and usage data:</strong> IP address, browser type, pages visited, clicks, referring pages, timestamps, and similar technical activity used to operate and improve the site.</li>
+                        </ul>
+                    </section>
+
+                    <section class="privacy-card is-soft">
+                        <h2>2. How we use your information</h2>
+                        <ul class="privacy-list">
+                            <li><strong>Run the product:</strong> create macro targets, generate grocery plans, build training views, and show your dashboard data.</li>
+                            <li><strong>Personalize the experience:</strong> remember your settings, save your planning progress, and keep your account signed in when appropriate.</li>
+                            <li><strong>Support coaching or chef features:</strong> if you use coaching, chef, or support-related tools, we may use your submitted information to match, coordinate, or respond.</li>
+                            <li><strong>Communicate with you:</strong> send service messages, alerts, account notices, replies to support requests, and similar product communications.</li>
+                            <li><strong>Improve performance:</strong> understand how people use the calculator, training flows, community features, and other tools so we can improve them.</li>
+                            <li><strong>Protect the platform:</strong> detect abuse, secure accounts, prevent fraud, enforce site rules, and investigate misuse.</li>
+                        </ul>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>3. Macro, grocery, and training data</h2>
+                        <p>odeology_ is built around food and training workflows, so the data you enter for those workflows is a core part of the service. When you use the macro calculator, grocery planner, overview dashboard, or training portal, we may store the information needed to keep those features working for you across sessions.</p>
+                        <div class="privacy-note">That can include your calorie and macro targets, grocery preferences, meal-plan snapshots, restock timing, workout plans, workout-sharing activity, and progress records tied to your account.</div>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>4. Photos, messages, coaches, and chefs</h2>
+                        <p>If you upload a profile photo, progress photo, or other image, we may store that content so it can appear inside your account or related product features. If you message through the platform, send a support request, or use a coach or chef feature, we may store those communications so the service can operate and your requests can be handled.</p>
+                        <p>If odeology_ introduces or expands coach or chef services, the information you provide through those flows may be used to help deliver those services.</p>
+                    </section>
+
+                    <section class="privacy-card is-soft">
+                        <h2>5. Cookies, local storage, and similar tools</h2>
+                        <p>We may use cookies, browser storage, session storage, and similar technologies to keep the website running and to remember your settings. On this site, that may include saving theme choices, session data, grocery-planning progress, auth hints, and related feature state.</p>
+                        <p>We may also use analytics, email, or onsite communication tools to understand usage and improve communication with users. If you block cookies or local storage, some parts of the website may not work correctly.</p>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>6. When we may share information</h2>
+                        <ul class="privacy-list">
+                            <li><strong>Service providers:</strong> we may use third parties to host the site, support authentication, process communications, power analytics, or run other business operations.</li>
+                            <li><strong>Support delivery:</strong> if a coach, chef, or support function is part of the service you are using, relevant information may be shared as needed to provide that function.</li>
+                            <li><strong>Legal or safety reasons:</strong> we may disclose information if we believe it is reasonably necessary to comply with law, protect users, enforce our terms, or respond to fraud or abuse.</li>
+                            <li><strong>Business changes:</strong> if the business is sold, merged, reorganized, or transfers assets, information may be transferred as part of that transaction.</li>
+                        </ul>
+                        <div class="privacy-note">We do not write this policy to promise something narrower than the product actually does. If the service expands, this policy may be updated to match the live features and data practices.</div>
+                    </section>
+
+                    <section class="privacy-card is-accent">
+                        <h2>7. Your choices and rights</h2>
+                        <p>You can choose not to submit optional information, but some features may not work without it. Depending on where you live, you may also have rights to ask about the personal information we hold about you, request corrections, or request deletion, subject to legal and operational limits.</p>
+                        <p>If you are a California resident, you may also have privacy rights under California law. We do not guarantee that every request can be completed in every case, but we will review requests in good faith and respond as required.</p>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>8. Data retention and security</h2>
+                        <p>We may keep information as long as it is reasonably needed to operate the service, maintain records, resolve disputes, prevent fraud, enforce agreements, or meet legal obligations. Retention may vary by data type and feature.</p>
+                        <p>We use reasonable administrative, technical, and organizational measures to protect information, but no system is completely secure. You should use strong passwords and avoid sharing sensitive information unless it is needed for the feature you are using.</p>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>9. Health and fitness information</h2>
+                        <p>Some information entered into odeology_ may relate to body measurements, goals, nutrition preferences, workout history, or other fitness-related information. We use that information to provide the product features you request. The site is not intended to replace medical advice, diagnosis, or treatment.</p>
+                        <p>Do not submit information you do not want stored in connection with your account or service use. If a feature asks for optional detail, treat it as optional unless the product clearly says it is required.</p>
+                    </section>
+
+                    <section class="privacy-card">
+                        <h2>10. Children</h2>
+                        <p>odeology_ is not intended for children under 13. If we learn that personal information from a child under 13 has been submitted through the site without appropriate permission, we may delete it.</p>
+                    </section>
+                </div>
+
+                <section class="privacy-contact">
+                    <h2>Questions or requests</h2>
+                    <p>If you want to ask about this policy, make a privacy request, or report a concern, use the contact flow on the website and include “Privacy Request” in your message so it can be routed correctly.</p>
+                    <div class="privacy-meta">
+                        <span>Last updated: March 15, 2026</span>
+                        <span>Applies to: odeology_ website and web app features</span>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js?v=2026-03-15-privacy-policy-1"></script>
+</body>
+</html>
