@@ -51,6 +51,39 @@
             gap: 1.1rem;
         }
 
+        .forum-thread-back {
+            position: fixed;
+            top: calc(var(--navbar-height, 72px) + 18px);
+            left: max(1rem, calc((100vw - min(1120px, calc(100vw - 2rem))) / 2 - 4.2rem));
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(20, 26, 36, 0.1);
+            box-shadow: 0 14px 30px rgba(12, 16, 24, 0.12);
+            color: #14202c;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            z-index: 5;
+        }
+
+        .forum-thread-back svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .forum-thread-back:hover {
+            background: #ffffff;
+            transform: translateX(-1px);
+        }
+
         .forum-thread-card,
         .forum-thread-side {
             background: rgba(255, 255, 255, 0.88);
@@ -223,6 +256,13 @@
                 margin-top: calc(var(--navbar-height, 72px) + 18px);
             }
 
+            .forum-thread-back {
+                top: calc(var(--navbar-height, 72px) + 12px);
+                left: 0.85rem;
+                width: 44px;
+                height: 44px;
+            }
+
             .forum-thread-hero {
                 grid-template-columns: 1fr;
             }
@@ -252,6 +292,12 @@
             </ul>
         </div>
     </nav>
+
+    <a class="forum-thread-back" href="forum.html" aria-label="Back to forum home">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 6 9 12l6 6"></path>
+        </svg>
+    </a>
 
     <main class="forum-thread-shell">
         <article class="forum-thread-card">
