@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Community Room</title>
+    <meta name="description" content="Join an Odeology community room to see who is active and what the latest discussion looks like.">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-15-forum-room-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.forum-home-page) { background: #ffffff; }
+        body.forum-home-page {
+            --forum-bg: #ffffff;
+            --forum-surface: #ffffff;
+            --forum-surface-soft: #f5f7f9;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #cfd7de;
+            --forum-text: #18212a;
+            --forum-muted: #677482;
+            --forum-accent: #27485d;
+            background: var(--forum-bg);
+            color: var(--forum-text);
+            min-height: 100vh;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+        .forum-home-page .grain, .forum-home-page::before, .forum-home-page::after { display: none; content: none; }
+        .forum-room-shell { width: min(1180px, calc(100vw - 2rem)); margin: 0 auto; padding: 1rem 0 2rem; }
+        .forum-room-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 0 1.2rem;
+        }
+        .forum-room-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+            color: var(--forum-text);
+            font-weight: 700;
+        }
+        .forum-room-back span {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #eef3f7;
+        }
+        .forum-room-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 1rem;
+            align-items: start;
+        }
+        .forum-room-main,
+        .forum-room-side {
+            border: 1px solid var(--forum-border);
+            border-radius: 20px;
+            background: #ffffff;
+        }
+        .forum-room-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.15rem 1.15rem 1rem;
+            border-bottom: 1px solid var(--forum-border);
+        }
+        .forum-room-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .forum-room-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .forum-room-title h1 {
+            margin: 0 0 0.35rem;
+            font: 700 2rem/0.95 "Space Grotesk", sans-serif;
+            letter-spacing: -0.05em;
+        }
+        .forum-room-title p { margin: 0; color: var(--forum-muted); line-height: 1.6; }
+        .forum-room-feed { padding: 1rem 1.15rem; display: grid; gap: 0.9rem; }
+        .forum-message {
+            padding: 0.95rem 1rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 16px;
+            background: #fbfcfd;
+        }
+        .forum-message-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
+        }
+        .forum-message-user { font-weight: 700; }
+        .forum-message-time { color: var(--forum-muted); }
+        .forum-message-copy { margin: 0; color: var(--forum-text); line-height: 1.6; }
+        .forum-room-compose {
+            padding: 1rem 1.15rem 1.15rem;
+            border-top: 1px solid var(--forum-border);
+            display: grid;
+            gap: 0.75rem;
+        }
+        .forum-room-compose textarea {
+            width: 100%;
+            min-height: 96px;
+            resize: vertical;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--forum-border-strong);
+            border-radius: 16px;
+            font: inherit;
+            color: var(--forum-text);
+        }
+        .forum-room-compose-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .forum-room-compose-note { color: var(--forum-muted); font-size: 0.9rem; }
+        .forum-room-send {
+            min-height: 42px;
+            padding: 0.7rem 1rem;
+            border: 0;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .forum-room-side { padding: 1rem; position: sticky; top: calc(var(--navbar-height, 72px) + 1rem); }
+        .forum-side-block + .forum-side-block { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--forum-border); }
+        .forum-side-block h2 {
+            margin: 0 0 0.75rem;
+            font: 700 1.2rem/1 "Space Grotesk", sans-serif;
+            letter-spacing: -0.04em;
+        }
+        .forum-member-list { display: grid; gap: 0.7rem; }
+        .forum-member {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .forum-member-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #e8eff4;
+            color: var(--forum-accent);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .forum-member span { display: block; color: var(--forum-muted); font-size: 0.84rem; }
+        .forum-room-gate {
+            width: min(720px, calc(100vw - 2rem));
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 24px;
+            background: #ffffff;
+            text-align: center;
+        }
+        .forum-room-gate h1 { margin: 0 0 0.7rem; font: 700 2rem/0.95 "Space Grotesk", sans-serif; }
+        .forum-room-gate p { margin: 0 0 1rem; color: var(--forum-muted); line-height: 1.6; }
+        .forum-room-gate button {
+            min-height: 42px;
+            padding: 0.7rem 1rem;
+            border: 0;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        @media (max-width: 900px) {
+            .forum-room-layout { grid-template-columns: 1fr; }
+            .forum-room-side { position: static; }
+        }
+    </style>
+</head>
+<body class="forum-home-page">
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#resources">Macro Calculator</a></li>
+                <li><a href="training-coming-soon.html">Training</a></li>
+                <li><a href="forum.html">FORUM</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main id="forum-room-root"></main>
+
+    <script src="js/main.js?v=2026-03-15-forum-room-1"></script>
+    <script src="js/forum-community-room.js?v=2026-03-15-forum-room-1"></script>
+</body>
+</html>

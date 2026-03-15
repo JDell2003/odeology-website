@@ -11,36 +11,36 @@
       title: 'Recommended for you',
       copy: 'Good entry points if you want high-signal discussion without needing a huge member count.',
       items: [
-        { name: 'Strength Base', visitors: '18K weekly visitors', href: 'forum-how-to-get-bigger-biceps.html', image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=180&q=80', copy: 'Programming-first conversations for lifters trying to build a better base before chasing fancy methods.', topics: ['training', 'habits'] },
-        { name: 'Macro Kitchen', visitors: '12K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=180&q=80', copy: 'High-protein meals, easier prep systems, and recipe ideas that do not wreck adherence.', topics: ['nutrition', 'recipes', 'fat-loss'] },
-        { name: 'Recovery Reset', visitors: '9.4K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=180&q=80', copy: 'Sleep, soreness management, mobility, and the boring recovery habits that actually keep progress moving.', topics: ['recovery', 'mindset'] },
-        { name: 'Cut Phase Club', visitors: '7.8K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=180&q=80', copy: 'Deficit strategy, hunger control, and keeping muscle while leaning out without turning the process into chaos.', topics: ['fat-loss', 'habits'] },
-        { name: 'Form Check Lab', visitors: '6.1K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=180&q=80', copy: 'Technique breakdowns, movement tweaks, and lift discussions that keep training cleaner and safer.', topics: ['training', 'recovery'] },
-        { name: 'Consistency Wins', visitors: '5.3K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=180&q=80', copy: 'A lane for staying steady when motivation dips and the real job becomes repeating useful days.', topics: ['mindset', 'habits'] }
+        { slug: 'strength-base', name: 'Strength Base', visitors: '18K weekly visitors', image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=180&q=80', copy: 'Programming-first conversations for lifters trying to build a better base before chasing fancy methods.', topics: ['training', 'habits'] },
+        { slug: 'macro-kitchen', name: 'Macro Kitchen', visitors: '12K weekly visitors', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=180&q=80', copy: 'High-protein meals, easier prep systems, and recipe ideas that do not wreck adherence.', topics: ['nutrition', 'recipes', 'fat-loss'] },
+        { slug: 'recovery-reset', name: 'Recovery Reset', visitors: '9.4K weekly visitors', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=180&q=80', copy: 'Sleep, soreness management, mobility, and the boring recovery habits that actually keep progress moving.', topics: ['recovery', 'mindset'] },
+        { slug: 'cut-phase-club', name: 'Cut Phase Club', visitors: '7.8K weekly visitors', image: 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=180&q=80', copy: 'Deficit strategy, hunger control, and keeping muscle while leaning out without turning the process into chaos.', topics: ['fat-loss', 'habits'] },
+        { slug: 'form-check-lab', name: 'Form Check Lab', visitors: '6.1K weekly visitors', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=180&q=80', copy: 'Technique breakdowns, movement tweaks, and lift discussions that keep training cleaner and safer.', topics: ['training', 'recovery'] },
+        { slug: 'consistency-wins', name: 'Consistency Wins', visitors: '5.3K weekly visitors', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=180&q=80', copy: 'A lane for staying steady when motivation dips and the real job becomes repeating useful days.', topics: ['mindset', 'habits'] }
       ]
     },
     {
       title: 'Most active on Odeology',
       copy: 'The broadest conversations right now, useful if you want faster replies and more varied perspectives.',
       items: [
-        { name: 'Gym Floor', visitors: '24K weekly visitors', href: 'forum.html', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=180&q=80', copy: 'The broad front page lane for lifting, routines, equipment, and everyday training questions.', topics: ['training'] },
-        { name: 'Lean Plate', visitors: '19K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'Calorie control, satiety, food swaps, and simple meal structures that actually survive a busy week.', topics: ['nutrition', 'fat-loss'] },
-        { name: 'Sleep & Reset', visitors: '15K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=180&q=80', copy: 'Recovery systems, bedtime routines, and getting back on track after training stress starts stacking up.', topics: ['recovery', 'habits'] },
-        { name: 'Strength Women', visitors: '11K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=180&q=80', copy: 'Women-led training conversations focused on performance, confidence, and building a stronger baseline.', topics: ['training', 'mindset'] },
-        { name: 'Appetite Control', visitors: '8.6K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'Hunger management, meal volume, fiber, and other practical fixes when the deficit starts fighting back.', topics: ['fat-loss', 'nutrition'] },
-        { name: 'Prep Once Eat Easy', visitors: '7.2K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=180&q=80', copy: 'Batch cooking, grocery structure, and repeatable meal systems for people who do not want to freestyle nutrition daily.', topics: ['recipes', 'habits', 'nutrition'] }
+        { slug: 'gym-floor', name: 'Gym Floor', visitors: '24K weekly visitors', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=180&q=80', copy: 'The broad front page lane for lifting, routines, equipment, and everyday training questions.', topics: ['training'] },
+        { slug: 'lean-plate', name: 'Lean Plate', visitors: '19K weekly visitors', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'Calorie control, satiety, food swaps, and simple meal structures that actually survive a busy week.', topics: ['nutrition', 'fat-loss'] },
+        { slug: 'sleep-reset', name: 'Sleep & Reset', visitors: '15K weekly visitors', image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=180&q=80', copy: 'Recovery systems, bedtime routines, and getting back on track after training stress starts stacking up.', topics: ['recovery', 'habits'] },
+        { slug: 'strength-women', name: 'Strength Women', visitors: '11K weekly visitors', image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=180&q=80', copy: 'Women-led training conversations focused on performance, confidence, and building a stronger baseline.', topics: ['training', 'mindset'] },
+        { slug: 'appetite-control', name: 'Appetite Control', visitors: '8.6K weekly visitors', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'Hunger management, meal volume, fiber, and other practical fixes when the deficit starts fighting back.', topics: ['fat-loss', 'nutrition'] },
+        { slug: 'prep-once-eat-easy', name: 'Prep Once Eat Easy', visitors: '7.2K weekly visitors', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=180&q=80', copy: 'Batch cooking, grocery structure, and repeatable meal systems for people who do not want to freestyle nutrition daily.', topics: ['recipes', 'habits', 'nutrition'] }
       ]
     },
     {
       title: 'Best starting points',
       copy: 'Smaller lanes organized around specific needs, useful if you want less noise and more direct relevance.',
       items: [
-        { name: 'Beginner Barbell', visitors: '6.5K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=180&q=80', copy: 'Simple entry point for people learning barbell basics without getting lost in advanced-program noise.', topics: ['training'] },
-        { name: 'Protein Pantry', visitors: '5.9K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=180&q=80', copy: 'Snack ideas, grocery staples, and easy protein upgrades for people trying to stop under-eating by accident.', topics: ['nutrition', 'recipes'] },
-        { name: 'Reset Week', visitors: '4.8K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=180&q=80', copy: 'For when the plan slipped, the schedule got messy, and the next job is rebuilding rhythm instead of chasing perfection.', topics: ['mindset', 'recovery', 'habits'] },
-        { name: 'Deficit Without Drama', visitors: '4.1K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'A calmer place for building a sustainable deficit without overcompensating into restriction and rebound.', topics: ['fat-loss', 'nutrition'] },
-        { name: 'Garage Sessions', visitors: '3.7K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=180&q=80', copy: 'Training around limited equipment, home setups, and getting useful work done without a perfect gym environment.', topics: ['training', 'habits'] },
-        { name: 'Deload Dialogues', visitors: '3.2K weekly visitors', href: 'forum-search.html', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=180&q=80', copy: 'Conversations for people who know they should back off for a week but still need help doing it intelligently.', topics: ['recovery', 'mindset'] }
+        { slug: 'beginner-barbell', name: 'Beginner Barbell', visitors: '6.5K weekly visitors', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=180&q=80', copy: 'Simple entry point for people learning barbell basics without getting lost in advanced-program noise.', topics: ['training'] },
+        { slug: 'protein-pantry', name: 'Protein Pantry', visitors: '5.9K weekly visitors', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=180&q=80', copy: 'Snack ideas, grocery staples, and easy protein upgrades for people trying to stop under-eating by accident.', topics: ['nutrition', 'recipes'] },
+        { slug: 'reset-week', name: 'Reset Week', visitors: '4.8K weekly visitors', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=180&q=80', copy: 'For when the plan slipped, the schedule got messy, and the next job is rebuilding rhythm instead of chasing perfection.', topics: ['mindset', 'recovery', 'habits'] },
+        { slug: 'deficit-without-drama', name: 'Deficit Without Drama', visitors: '4.1K weekly visitors', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=180&q=80', copy: 'A calmer place for building a sustainable deficit without overcompensating into restriction and rebound.', topics: ['fat-loss', 'nutrition'] },
+        { slug: 'garage-sessions', name: 'Garage Sessions', visitors: '3.7K weekly visitors', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=180&q=80', copy: 'Training around limited equipment, home setups, and getting useful work done without a perfect gym environment.', topics: ['training', 'habits'] },
+        { slug: 'deload-dialogues', name: 'Deload Dialogues', visitors: '3.2K weekly visitors', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=180&q=80', copy: 'Conversations for people who know they should back off for a week but still need help doing it intelligently.', topics: ['recovery', 'mindset'] }
       ]
     }
   ];
@@ -73,6 +73,44 @@
     return haystack.includes(activeQuery);
   }
 
+  function getCommunityHref(item) {
+    const params = new URLSearchParams({
+      community: item.slug,
+      name: item.name,
+      image: item.image,
+      copy: item.copy
+    });
+    return `forum-community-room.html?${params.toString()}`;
+  }
+
+  async function ensureSignedInOrPrompt(targetHref) {
+    let signedIn = false;
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+      const data = await response.json().catch(() => ({}));
+      signedIn = Boolean(response.ok && data?.user);
+    } catch {
+      signedIn = Boolean(window.localStorage && localStorage.getItem('ode_auth_user_hint_v1'));
+    }
+
+    if (signedIn) {
+      window.location.href = targetHref;
+      return;
+    }
+
+    try {
+      sessionStorage.setItem('ode_auth_return_to', targetHref);
+    } catch {
+      // ignore
+    }
+
+    if (typeof window.odeOpenAuthModal === 'function') {
+      window.odeOpenAuthModal('login');
+    } else {
+      window.location.href = targetHref;
+    }
+  }
+
   function createCard(item) {
     const card = document.createElement('article');
     card.className = 'forum-explore-card';
@@ -86,7 +124,7 @@
             <span>${escapeHtml(item.visitors)}</span>
           </div>
         </div>
-        <a class="forum-card-join" href="${escapeHtml(item.href)}">Join</a>
+        <a class="forum-card-join" href="${escapeHtml(getCommunityHref(item))}" data-community-join="${escapeHtml(item.slug)}">Join</a>
       </div>
       <p class="forum-card-copy">${escapeHtml(item.copy)}</p>
       <div class="forum-card-tags">${item.topics.slice(0, 2).map((topic) => `<span class="forum-card-tag">${escapeHtml(titleCase(topic))}</span>`).join('')}</div>
@@ -171,10 +209,22 @@
     });
   }
 
+  function bindJoinButtons() {
+    sectionsRoot.querySelectorAll('[data-community-join]').forEach((link) => {
+      link.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const href = link.getAttribute('href');
+        if (!href) return;
+        await ensureSignedInOrPrompt(href);
+      });
+    });
+  }
+
   function refreshView() {
     renderSections();
     applyFilters();
     bindSectionButtons();
+    bindJoinButtons();
   }
 
   topicButtons.forEach((button) => {
