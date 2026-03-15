@@ -152,7 +152,9 @@
   }
 
   function postMatches(item) {
-    const scopeMatch = state.scope === 'all' || item.scope === state.scope;
+    const scopeMatch = state.scope === 'all'
+      || (state.scope === 'pictures' && item.format === 'image' && item.imageUrl)
+      || item.scope === state.scope;
     const minutes = Number(item.ageMinutes || 0);
     const timeMatch = state.time === 'all'
       || (state.time === 'today' && minutes <= 1440)
