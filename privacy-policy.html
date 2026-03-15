@@ -184,6 +184,12 @@
             color: var(--forum-muted);
         }
 
+        .forum-drawer-trigger,
+        .forum-rail-overlay,
+        .forum-left-header {
+            display: none;
+        }
+
         .privacy-main {
             min-width: 0;
             padding: 0 0 4rem;
@@ -388,12 +394,101 @@
                 grid-template-columns: 1fr;
             }
 
+            .forum-drawer-trigger {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                left: 0.9rem;
+                bottom: 0.9rem;
+                min-height: 34px;
+                padding: 0.45rem 0.9rem;
+                border: 0;
+                border-radius: 999px;
+                background: #111827;
+                color: #ffffff;
+                font: 700 0.8rem/1 "IBM Plex Sans", sans-serif;
+                box-shadow: 0 10px 24px rgba(15, 23, 35, 0.22);
+                z-index: 41;
+            }
+
+            .forum-rail-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 35, 0.48);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 180ms ease;
+                z-index: 39;
+            }
+
             .forum-left {
-                position: relative;
+                position: fixed;
                 top: 0;
+                left: 0;
+                height: 100dvh;
+                width: min(320px, 86vw);
                 max-height: none;
-                border-right: none;
+                padding: 1rem;
+                border-right: 1px solid var(--forum-border);
+                border-bottom: 0;
+                transform: translateX(-100%);
+                transition: transform 200ms ease;
+                z-index: 40;
+            }
+
+            .forum-left-header {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                margin-bottom: 0.45rem;
+                padding: 0.1rem 3.2rem 0.85rem 0.2rem;
                 border-bottom: 1px solid var(--forum-border);
+                position: sticky;
+                top: 0;
+                background: #ffffff;
+                z-index: 1;
+            }
+
+            .forum-left-header strong {
+                font: 700 1rem/1 "Space Grotesk", sans-serif;
+                letter-spacing: -0.03em;
+            }
+
+            .forum-rail-close {
+                position: absolute;
+                top: 0.25rem;
+                right: 0;
+                width: 40px;
+                height: 40px;
+                border: 0;
+                border-radius: 50%;
+                background: #edf2f6;
+                color: var(--forum-text);
+                font-size: 1.4rem;
+                line-height: 1;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            body.forum-rail-open {
+                overflow: hidden;
+            }
+
+            body.forum-rail-open .forum-left {
+                transform: translateX(0);
+            }
+
+            body.forum-rail-open .forum-rail-overlay {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            body.forum-rail-open .forum-drawer-trigger {
+                opacity: 0;
+                pointer-events: none;
             }
 
             .privacy-topbar {
@@ -463,8 +558,15 @@
         </div>
     </nav>
 
+    <button class="forum-drawer-trigger" type="button" aria-expanded="false" aria-controls="forum-rail-drawer">Menu</button>
+    <div class="forum-rail-overlay" aria-hidden="true"></div>
+
     <div class="forum-shell">
-        <aside class="forum-left">
+        <aside class="forum-left forum-rail" id="forum-rail-drawer">
+            <div class="forum-left-header forum-rail-header">
+                <strong>Menu</strong>
+                <button class="forum-rail-close" type="button" aria-label="Close menu">&times;</button>
+            </div>
             <div class="forum-nav-group">
                 <a class="forum-nav-link" href="index.html#resources">
                     <span class="forum-nav-icon" aria-hidden="true">
