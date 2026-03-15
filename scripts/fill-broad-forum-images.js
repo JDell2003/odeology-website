@@ -143,9 +143,9 @@ function fallbackTags(post, intent, index = 0) {
   const age = Math.floor(base / 2) % 2 === 0 ? 'youngadult' : 'adult';
   const sportSets = [
     ['gym', 'athlete'],
-    ['track', 'athlete'],
-    ['wrestling', 'athlete'],
-    ['jiu-jitsu', 'athlete']
+    ['runner', 'athlete'],
+    ['weightlifting', 'athlete'],
+    ['workout', 'selfie']
   ];
   const sport = sportSets[Math.floor(base / 4) % sportSets.length];
   const people = [gender, age, ...sport];
@@ -156,8 +156,8 @@ function fallbackTags(post, intent, index = 0) {
   if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return [...people, 'gym', 'shoulders', 'fitness'];
   if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return [...people, 'gym', 'arms', 'fitness'];
   if (/\b(abs|core)\b/.test(text)) return [...people, 'gym', 'abs', 'fitness'];
-  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return [gender, age, 'wrestling', 'athlete', 'sports', 'fitness'];
-  return [...people, 'sports', 'fitness', 'training'];
+  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return [gender, age, 'athlete', 'training', 'fitness', 'gym'];
+  return [...people, 'fitness', 'training', 'mirror'];
 }
 
 function fallbackItem(post, intent, index) {
