@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Explore Communities</title>
+    <meta name="description" content="Explore Odeology forum communities by training goal, nutrition interest, recovery focus, and coaching style in a Reddit-style discover page.">
+    <link rel="canonical" href="https://odeology.up.railway.app/forum-explore.html">
+    <meta property="og:title" content="odeology_ Explore Communities">
+    <meta property="og:description" content="Browse recommended Odeology communities with category tabs, join cards, and discover-style sections.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://odeology.up.railway.app/forum-explore.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-14-forum-explore-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.forum-home-page) { background: #ffffff; }
+        body.forum-home-page {
+            --forum-bg: #ffffff;
+            --forum-surface: #ffffff;
+            --forum-surface-soft: #f5f7f9;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #cfd7de;
+            --forum-text: #18212a;
+            --forum-muted: #677482;
+            --forum-accent: #27485d;
+            --forum-accent-soft: #dce7ee;
+            background: var(--forum-bg);
+            color: var(--forum-text);
+            min-height: 100vh;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+        .forum-home-page .grain,
+        .forum-home-page::before,
+        .forum-home-page::after { display: none; content: none; }
+        .forum-page-shell {
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 272px minmax(0, 1fr);
+            gap: 0;
+            background: #ffffff;
+        }
+        .forum-rail {
+            padding: 0.9rem 1rem 0;
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            align-self: start;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            border-right: 1px solid var(--forum-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .forum-rail::-webkit-scrollbar { display: none; }
+        .forum-rail-group { display: grid; gap: 0.15rem; padding: 0.55rem 0 0.9rem; }
+        .forum-rail-group + .forum-rail-group { border-top: 1px solid var(--forum-border); }
+        .forum-rail-label {
+            margin: 0 0 0.35rem;
+            padding: 0 0.35rem;
+            color: var(--forum-muted);
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .forum-rail-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.72rem 0.9rem;
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--forum-text);
+            font-size: 0.98rem;
+        }
+        .forum-rail-link.is-active,
+        .forum-rail-link:hover { background: #edf2f6; }
+        .forum-rail-icon {
+            width: 26px;
+            height: 26px;
+            display: grid;
+            place-items: center;
+            background: transparent;
+            color: #1f2933;
+            flex-shrink: 0;
+        }
+        .forum-rail-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .forum-rail-link.is-active .forum-rail-icon { color: #ffffff; }
+        .forum-rail-link.is-active .forum-rail-icon svg circle { fill: #111827; stroke: #111827; }
+        .forum-rail-link.is-active .forum-rail-icon svg path.active-cut { stroke: #ffffff; }
+        .forum-rail-foot {
+            padding: 0.7rem 0 1.2rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-muted);
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+        .forum-main { min-width: 0; padding: 0 1.25rem 2rem; }
+        .forum-main-inner { width: min(1040px, 100%); margin: 0 auto; }
+        .forum-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 1rem 0 0.8rem;
+        }
+        .forum-searchbar {
+            flex: 1 1 460px;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            min-height: 48px;
+            padding: 0 1rem;
+            border: 1px solid var(--forum-border-strong);
+            border-radius: 999px;
+            background: #ffffff;
+        }
+        .forum-searchbar svg { width: 18px; height: 18px; color: var(--forum-muted); flex-shrink: 0; }
+        .forum-searchbar input {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: var(--forum-text);
+            font: inherit;
+        }
+        .forum-toolbar-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 999px;
+            background: var(--forum-surface-soft);
+            color: var(--forum-text);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .forum-explore-header { padding: 0.5rem 0 1rem; border-bottom: 1px solid var(--forum-border); }
+        .forum-explore-header h1 {
+            margin: 0 0 0.5rem;
+            font: 700 clamp(2rem, 4vw, 2.8rem)/0.95 "Space Grotesk", sans-serif;
+            letter-spacing: -0.05em;
+        }
+        .forum-explore-header p {
+            margin: 0;
+            max-width: 740px;
+            color: var(--forum-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        .forum-chip-row { display: flex; gap: 0.6rem; flex-wrap: wrap; padding: 1.15rem 0 1.25rem; }
+        .forum-chip {
+            min-height: 38px;
+            padding: 0.62rem 0.9rem;
+            border: 1px solid var(--forum-border-strong);
+            border-radius: 999px;
+            background: #ffffff;
+            color: var(--forum-text);
+            font: 600 0.9rem/1 "IBM Plex Sans", sans-serif;
+            cursor: pointer;
+        }
+        .forum-chip.is-active { background: var(--forum-accent-soft); border-color: var(--forum-accent-soft); color: var(--forum-accent); }
+        .forum-section { padding: 1.55rem 0 0; border-top: 1px solid var(--forum-border); }
+        .forum-section:first-of-type { border-top: 0; }
+        .forum-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .forum-section-head h2 { margin: 0; font: 700 1.65rem/1 "Space Grotesk", sans-serif; letter-spacing: -0.04em; }
+        .forum-section-head p { margin: 0; color: var(--forum-muted); font-size: 0.95rem; }
+        .forum-community-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+        .forum-explore-card {
+            display: grid;
+            gap: 0.9rem;
+            min-height: 180px;
+            padding: 1rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 1px 0 rgba(14, 25, 34, 0.03);
+        }
+        .forum-explore-card[hidden] { display: none; }
+        .forum-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; }
+        .forum-card-identity { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+        .forum-card-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #e6edf3;
+        }
+        .forum-card-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .forum-card-name { min-width: 0; }
+        .forum-card-name strong { display: block; margin-bottom: 0.2rem; font-size: 1.02rem; }
+        .forum-card-name span { display: block; color: var(--forum-muted); font-size: 0.88rem; }
+        .forum-card-join {
+            flex-shrink: 0;
+            min-height: 32px;
+            padding: 0.45rem 0.95rem;
+            border: 0;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .forum-card-copy { margin: 0; color: var(--forum-muted); font-size: 0.95rem; line-height: 1.55; }
+        .forum-card-tags { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: auto; }
+        .forum-card-tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            background: #f4f7fa;
+            color: var(--forum-accent);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            text-transform: uppercase;
+        }
+        .forum-show-more-wrap { display: flex; justify-content: center; padding-top: 0.95rem; }
+        .forum-show-more {
+            min-height: 38px;
+            padding: 0.58rem 1rem;
+            border: 0;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .forum-empty-state {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--forum-muted);
+            border: 1px dashed var(--forum-border-strong);
+            border-radius: 16px;
+            background: #fafbfd;
+        }
+        @media (max-width: 1120px) { .forum-community-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 900px) {
+            .forum-page-shell { grid-template-columns: 1fr; }
+            .forum-rail { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--forum-border); }
+        }
+        @media (max-width: 720px) {
+            .forum-main { padding-inline: 0.85rem; }
+            .forum-community-grid { grid-template-columns: 1fr; }
+            .forum-section-head { display: grid; }
+        }
+    </style>
+</head>
+<body class="forum-home-page">
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a class="brand-wordmark" href="index.html" aria-label="odeology_ home">
+                <span class="brand-wordmark__text">odeology_</span>
+            </a>
+            <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#reviews">Reviews</a></li>
+                <li><a href="overview.html">Dashboard</a></li>
+                <li><a href="training-coming-soon.html">Training</a></li>
+                <li><a href="forum.html">FORUM</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="forum-page-shell">
+        <aside class="forum-rail">
+            <div class="forum-rail-group">
+                <a class="forum-rail-link" href="index.html">
+                    <span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"></path><path d="M6.5 9.5V20h11V9.5"></path></svg></span>
+                    <span>Home</span>
+                </a>
+                <a class="forum-rail-link" href="forum.html">
+                    <span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path class="active-cut" d="M9 9h6l-6 6"></path></svg></span>
+                    <span>Popular</span>
+                </a>
+                <a class="forum-rail-link" href="forum-recent-studies.html">
+                    <span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6.5h6v11H4z"></path><path d="M14 6.5h6v4h-6z"></path><path d="M14 13.5h6v4H14z"></path></svg></span>
+                    <span>Recent Studies</span>
+                </a>
+                <a class="forum-rail-link is-active" href="forum-explore.html">
+                    <span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2.2"></circle><circle cx="17" cy="7" r="2.2"></circle><circle cx="12" cy="17" r="2.2"></circle></svg></span>
+                    <span>Explore</span>
+                </a>
+            </div>
+
+            <div class="forum-rail-group">
+                <p class="forum-rail-label">Resources</p>
+                <a class="forum-rail-link" href="overview.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 10c0-2.2 2.2-4 5-4 1.3 0 2.5.4 3.4 1.1C15.3 8 17 8 18 8c0 1.7-1 3-2.5 3.7.3.5.5 1.1.5 1.8 0 2.5-2.2 4.5-5 4.5-1.2 0-2.2-.3-3.1-.9L5 18l1-2.6C6 14.8 6 14.4 6 14Z"></path></svg></span><span>About Odeology</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 14V6l14 6-14 6v-8Z"></path><path d="M5 12h-2"></path></svg></span><span>Advertise</span></a>
+                <a class="forum-rail-link" href="dashboard.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 19 7v10l-7 4-7-4V7l7-4Z"></path><path d="M9 10.5 12 9l3 1.5v3L12 15l-3-1.5Z"></path></svg></span><span>Developer Platform</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 16.5v.1"></path><path d="M10.2 9.5a2 2 0 1 1 3.2 1.6c-.8.6-1.4 1.1-1.4 2.4"></path></svg></span><span>Help</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path><path d="M8.5 15h4"></path></svg></span><span>Blog</span></a>
+                <a class="forum-rail-link" href="training-coming-soon.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 8h10v10H7z"></path><path d="M9 8V6h6v2"></path><path d="M7 12h10"></path></svg></span><span>Careers</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5 4 4"></path><path d="m7 17 8-8 4 4-8 8H7v-4Z"></path></svg></span><span>Press</span></a>
+            </div>
+
+            <div class="forum-rail-group">
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Odeology Rules</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Privacy Policy</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>User Agreement</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Your Privacy Choices</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v8"></path><path d="M8.5 12H15"></path></svg></span><span>Accessibility</span></a>
+            </div>
+
+            <div class="forum-rail-foot">Odeology &copy; 2026. All rights reserved.</div>
+        </aside>
+
+        <section class="forum-main">
+            <div class="forum-main-inner">
+                <div class="forum-toolbar">
+                    <label class="forum-searchbar" aria-label="Search communities">
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8.5 15.5a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm0-1.7a5.3 5.3 0 1 0 0-10.6 5.3 5.3 0 0 0 0 10.6Zm5.35.85 3.15 3.15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        <input id="explore-search-input" type="search" placeholder="Search communities by topic, goal, or style">
+                    </label>
+                    <a class="forum-toolbar-link" href="forum.html">Back to popular</a>
+                </div>
+
+                <section class="forum-explore-header" aria-label="Explore communities intro">
+                    <h1>Explore Communities</h1>
+                    <p>Browse the parts of Odeology that feel closest to your goals right now. This page leans more on recommendation lanes and useful starting points than fake trending tags.</p>
+                </section>
+
+                <div class="forum-chip-row" aria-label="Explore topic tabs">
+                    <button class="forum-chip is-active" type="button" data-explore-topic="all">All</button>
+                    <button class="forum-chip" type="button" data-explore-topic="training">Training</button>
+                    <button class="forum-chip" type="button" data-explore-topic="fat-loss">Fat loss</button>
+                    <button class="forum-chip" type="button" data-explore-topic="nutrition">Nutrition</button>
+                    <button class="forum-chip" type="button" data-explore-topic="recovery">Recovery</button>
+                    <button class="forum-chip" type="button" data-explore-topic="mindset">Mindset</button>
+                    <button class="forum-chip" type="button" data-explore-topic="recipes">Recipes</button>
+                    <button class="forum-chip" type="button" data-explore-topic="habits">Habits</button>
+                </div>
+
+                <div id="explore-empty-state" class="forum-empty-state" hidden>No communities matched that topic yet. Try a broader lane.</div>
+
+                <div id="explore-sections"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js?v=2026-03-14-forum-explore-1"></script>
+    <script src="js/forum-explore.js?v=2026-03-14-forum-explore-1"></script>
+</body>
+</html>
