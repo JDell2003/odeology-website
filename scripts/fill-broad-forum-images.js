@@ -138,26 +138,40 @@ function applyImage(post, item, intent) {
 
 function fallbackTags(post, intent, index = 0) {
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
-  const base = hashValue(post.id || post.slug || post.title);
-  const gender = index % 2 === 0 ? 'woman' : 'man';
-  const age = Math.floor(base / 2) % 2 === 0 ? 'youngadult' : 'adult';
-  const sportSets = [
-    ['gym', 'athlete'],
-    ['runner', 'athlete'],
-    ['weightlifting', 'athlete'],
+  const femaleSets = [
+    ['woman', 'fitness'],
+    ['woman', 'gym'],
     ['workout', 'selfie']
   ];
-  const sport = sportSets[Math.floor(base / 4) % sportSets.length];
-  const people = [gender, age, ...sport];
-  if (intent === 'food') return ['meal', 'prep', 'protein'];
-  if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return [...people, 'gym', 'legs', 'fitness'];
-  if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return [...people, 'gym', 'chest', 'fitness'];
-  if (/\b(back|lat|row|pullup|pulldown|trap)\b/.test(text)) return [...people, 'gym', 'back', 'fitness'];
-  if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return [...people, 'gym', 'shoulders', 'fitness'];
-  if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return [...people, 'gym', 'arms', 'fitness'];
-  if (/\b(abs|core)\b/.test(text)) return [...people, 'gym', 'abs', 'fitness'];
-  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return [gender, age, 'athlete', 'training', 'fitness', 'gym'];
-  return [...people, 'fitness', 'training', 'mirror'];
+  const maleSets = [
+    ['man', 'fitness'],
+    ['man', 'gym'],
+    ['weightlifting', 'fitness']
+  ];
+  const neutralSets = [
+    ['gym', 'fitness'],
+    ['runner', 'fitness'],
+    ['workout', 'selfie']
+  ];
+  const foodSets = [
+    ['food'],
+    ['meal'],
+    ['healthy', 'meal'],
+    ['protein', 'food'],
+    ['chicken', 'rice']
+  ];
+  if (intent === 'food') return foodSets[index % foodSets.length];
+  const gendered = index % 2 === 0 ? femaleSets : maleSets;
+  const base = gendered[Math.floor(index / 2) % gendered.length];
+  const neutral = neutralSets[Math.floor(index / 3) % neutralSets.length];
+  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return ['gym', 'fitness'];
+  if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return [...base];
+  if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return [...base];
+  if (/\b(back|lat|row|pullup|pulldown|trap)\b/.test(text)) return [...base];
+  if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return [...base];
+  if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return [...base];
+  if (/\b(abs|core)\b/.test(text)) return [...base];
+  return [...neutral];
 }
 
 function fallbackItem(post, intent, index) {
