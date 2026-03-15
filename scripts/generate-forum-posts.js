@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const OUT = path.join(process.cwd(), 'data', 'forum-posts.json');
 const TOTAL = 2000;
@@ -193,6 +194,16 @@ function applyCaptionImperfection(text) {
   return out;
 }
 
+function applyTitleImperfection(text) {
+  let out = String(text || '');
+  if (rand() < 0.05) {
+    const pair = pick(typoMap);
+    out = out.replace(new RegExp(pair[0], 'i'), pair[1]);
+  }
+  if (rand() < 0.05) out = out.toLowerCase();
+  return out;
+}
+
 function pickPostType() {
   const roll = rand();
   if (roll < 0.5) return 'question';
@@ -308,7 +319,260 @@ function titlePlausible(text) {
   return true;
 }
 
-function title(category, c, postType) {
+function liftMuscleGroup(lift) {
+  const map = {
+    'incline-press': 'upper-chest',
+    'smith-incline': 'upper-chest',
+    dip: 'triceps',
+    'machine-press': 'pecs',
+    'cable-fly': 'pecs',
+    'cable-row': 'upper-back',
+    'chest-supported-row': 'upper-back',
+    'lat-pulldown': 'lats',
+    'pull-up': 'lats',
+    'dumbbell-curl': 'biceps',
+    'preacher-curl': 'biceps',
+    'lateral-raise': 'side-delts',
+    'hack-squat': 'quads',
+    'leg-press': 'quads',
+    'split-squat': 'quads',
+    'leg-curl': 'hamstrings',
+    RDL: 'hamstrings',
+    'hip-thrust': 'glutes'
+  };
+  return map[lift] || 'shoulders';
+}
+
+function imageSubjectFor(category, c, imageType) {
+  if (imageType === 'food') return pretty(c.food || c.food2 || 'meal prep');
+  if (imageType === 'supplement') return pretty(c.supp || 'creatine');
+  if (imageType === 'article') {
+    const articleTopics = {
+      training: ['training to failure', 'weekly volume', 'exercise order', 'progressive overload'],
+      nutrition: ['protein timing', 'high protein diets', 'meal timing', 'bulking calories'],
+      recovery: ['recovery bottlenecks', 'sleep quality', 'deload timing', 'fatigue management'],
+      cutting: ['fat loss adherence', 'diet fatigue', 'meal timing on cuts', 'keeping strength while cutting'],
+      bulking: ['rate of gain', 'bulking food quality', 'gaining too fast', 'surplus control'],
+      supplements: ['creatine loading', 'pre workout ingredients', 'supplement basics', 'what actually matters'],
+      lifestyle: ['habit stacking', 'consistency', 'routine design', 'accountability']
+    };
+    return pick(articleTopics[category] || articleTopics.training);
+  }
+  if (imageType === 'planning') return pretty(c.block || c.planner || 'training split');
+  if (imageType === 'physique') return pretty(c.part || 'progress check');
+  if (imageType === 'equipment') return pretty(c.lift || 'barbell setup');
+  if (imageType === 'general_gym') return pretty(c.setting || 'gym session');
+  return pretty(c.lift || c.part || 'training');
+}
+
+function resolveImageMeta(category, c, postType) {
+  const roll = rand();
+  let imageType = 'exercise';
+  if (category === 'nutrition' || category === 'cutting' || category === 'bulking') {
+    if (postType === 'question') imageType = roll < 0.58 ? 'food' : roll < 0.82 ? 'physique' : 'planning';
+    else if (postType === 'personal') imageType = roll < 0.48 ? 'food' : roll < 0.84 ? 'physique' : 'general_gym';
+    else if (postType === 'advice') imageType = roll < 0.55 ? 'food' : roll < 0.82 ? 'planning' : 'physique';
+    else imageType = roll < 0.52 ? 'food' : 'general_gym';
+  } else if (category === 'supplements') {
+    if (postType === 'question') imageType = roll < 0.42 ? 'supplement' : roll < 0.68 ? 'article' : roll < 0.86 ? 'planning' : 'general_gym';
+    else if (postType === 'personal') imageType = roll < 0.46 ? 'supplement' : roll < 0.78 ? 'general_gym' : 'article';
+    else if (postType === 'advice') imageType = roll < 0.38 ? 'article' : roll < 0.74 ? 'supplement' : 'planning';
+    else imageType = roll < 0.56 ? 'supplement' : 'general_gym';
+  } else if (category === 'lifestyle') {
+    if (postType === 'question') imageType = roll < 0.45 ? 'planning' : roll < 0.78 ? 'general_gym' : 'physique';
+    else if (postType === 'personal') imageType = roll < 0.48 ? 'general_gym' : roll < 0.78 ? 'planning' : 'physique';
+    else if (postType === 'advice') imageType = roll < 0.56 ? 'planning' : 'general_gym';
+    else imageType = 'general_gym';
+  } else if (category === 'recovery') {
+    if (postType === 'question') imageType = roll < 0.44 ? 'planning' : roll < 0.76 ? 'exercise' : 'general_gym';
+    else if (postType === 'personal') imageType = roll < 0.54 ? 'general_gym' : roll < 0.8 ? 'exercise' : 'planning';
+    else if (postType === 'advice') imageType = roll < 0.48 ? 'planning' : 'exercise';
+    else imageType = 'general_gym';
+  } else {
+    if (postType === 'question') imageType = roll < 0.62 ? 'exercise' : roll < 0.82 ? 'physique' : roll < 0.9 ? 'planning' : 'general_gym';
+    else if (postType === 'personal') imageType = roll < 0.48 ? 'exercise' : roll < 0.82 ? 'physique' : 'general_gym';
+    else if (postType === 'advice') imageType = roll < 0.56 ? 'exercise' : roll < 0.8 ? 'planning' : 'physique';
+    else imageType = roll < 0.5 ? 'general_gym' : roll < 0.78 ? 'exercise' : 'physique';
+  }
+
+  const muscleGroup =
+    imageType === 'exercise' || imageType === 'physique'
+      ? imageType === 'exercise'
+        ? liftMuscleGroup(c.lift || 'incline-press')
+        : c.part
+      : imageType === 'food'
+        ? 'nutrition'
+        : imageType === 'supplement'
+          ? 'supplements'
+          : imageType === 'planning'
+            ? 'programming'
+            : null;
+
+  const postAngleByType = {
+    article: ['reaction', 'summary', 'debate', 'takeaway'],
+    food: ['meal_prep', 'protein_question', 'bulk_cut_use', 'taste_vs_macros'],
+    physique: ['progress', 'lagging_part', 'bulk_or_cut', 'confidence_check'],
+    exercise: ['technique', 'variation', 'exercise_order', 'stimulus'],
+    equipment: ['setup', 'worth_it', 'swap', 'simple_vs_fancy'],
+    planning: ['split_review', 'consistency', 'custom_vs_generic', 'progression'],
+    supplement: ['worth_it', 'experience', 'food_vs_supps', 'beginner_question'],
+    general_gym: ['check_in', 'routine', 'friction', 'motivation']
+  };
+
+  const subject = imageSubjectFor(category, c, imageType);
+  return {
+    imageType,
+    mainObject: subject,
+    subject,
+    muscleGroup,
+    postAngle: pick(postAngleByType[imageType] || postAngleByType.general_gym)
+  };
+}
+
+function imageAwareTitle(category, c, postType, imageMeta) {
+  const subject = pretty(imageMeta.subject || c.part || c.lift || 'training');
+  const muscle = pretty(imageMeta.muscleGroup || c.part || 'training');
+  const lift = liftLabel(c.lift || 'incline-press');
+  const families = {
+    article: {
+      question: [
+        { family: 'article-reaction', text: `saw an article about ${subject} and now im rethinking this` },
+        { family: 'article-debate', text: `you guys actually agree with this ${subject} take` },
+        { family: 'article-summary', text: `read something about ${subject} today and it kind of made sense` }
+      ],
+      personal: [
+        { family: 'article-takeaway', text: `${subject} article kind of changed how im looking at this` },
+        { family: 'article-reacted', text: `read a ${subject} piece today and it actually stuck with me` }
+      ],
+      advice: [
+        { family: 'article-discussion', text: `best takeaway ive seen lately on ${subject}` },
+        { family: 'article-opinion', text: `this ${subject} article is probably more useful than most hot takes` }
+      ],
+      casual: [
+        { family: 'article-casual', text: `fitness articles always make me question what im doing` }
+      ]
+    },
+    food: {
+      question: [
+        { family: 'food-easy', text: `this ${subject} has been one of the easiest ways to hit protein` },
+        { family: 'food-question', text: `is ${subject} actually a good bulk meal or no` },
+        { family: 'food-prep', text: `anybody got a way to make ${subject} less boring` }
+      ],
+      personal: [
+        { family: 'food-repeatable', text: `${subject} is carrying my week right now` },
+        { family: 'food-practical', text: `looks boring but this ${subject} makes the diet way easier` }
+      ],
+      advice: [
+        { family: 'food-macros', text: `simple ${subject} beats overcomplicated meal prep every time` },
+        { family: 'food-busy', text: `if your week is chaotic something like ${subject} is hard to beat` }
+      ],
+      casual: [
+        { family: 'food-casual', text: `meal prep is still just dishes and protein` }
+      ]
+    },
+    physique: {
+      question: [
+        { family: 'physique-progress', text: `finally seeing a little more shape but ${muscle} still feels behind` },
+        { family: 'physique-bulkcut', text: `bulk or keep leaning out a bit more` },
+        { family: 'physique-check', text: `am i being impatient or is ${muscle} still behind` },
+        { family: 'physique-subject', text: `progress check on ${muscle} because it still feels behind` }
+      ],
+      personal: [
+        { family: 'physique-personal', text: `${muscle} is not where i want it yet but it finally looks different` },
+        { family: 'physique-confidence', text: `trying not to overreact but i think ${muscle} is finally moving` }
+      ],
+      advice: [
+        { family: 'physique-opinion', text: `physique check reminder that boring progress still counts` },
+        { family: 'physique-detail', text: `small changes in ${muscle} show up way before perfect photos do` }
+      ],
+      casual: [
+        { family: 'physique-casual', text: `progress is progress even when it feels slow` }
+      ]
+    },
+    exercise: {
+      question: [
+        { family: 'exercise-clicking', text: `this ${subject} variation finally started clicking for me` },
+        { family: 'exercise-order', text: `should ${subject} go earlier in the workout or stay where it is` },
+        { family: 'exercise-stimulus', text: `i feel ${subject} everywhere except where im supposed to` }
+      ],
+      personal: [
+        { family: 'exercise-personal', text: `${subject} finally started moving again` },
+        { family: 'exercise-specific', text: `putting ${subject} first actually helped a lot` }
+      ],
+      advice: [
+        { family: 'exercise-opinion', text: `this ${subject} setup works better than i expected` },
+        { family: 'exercise-variation', text: `this version of ${subject} feels way better than the default one` }
+      ],
+      casual: [
+        { family: 'exercise-casual', text: `${subject} still humbles me every week` }
+      ]
+    },
+    planning: {
+      question: [
+        { family: 'planning-cleanup', text: `at what point do you stop tweaking your ${subject} every week` },
+        { family: 'planning-simple', text: `cleaned up my ${subject} and it already feels easier to follow` },
+        { family: 'planning-custom', text: `when do you stop using generic workouts and go more custom` },
+        { family: 'planning-structure', text: `does this ${subject} still look too complicated or not` }
+      ],
+      personal: [
+        { family: 'planning-personal', text: `${subject} looks simple on paper and thats probably the point` },
+        { family: 'planning-structure', text: `simplifying my ${subject} helped more than i expected` }
+      ],
+      advice: [
+        { family: 'planning-advice', text: `most people would progress faster if they stopped rewriting the plan` },
+        { family: 'planning-routine', text: `consistency beats constantly tweaking your ${subject}` }
+      ],
+      casual: [
+        { family: 'planning-casual', text: `my notes app has too much power over the week` }
+      ]
+    },
+    supplement: {
+      question: [
+        { family: 'supp-worth', text: `anybody actually notice a difference from ${subject} or nah` },
+        { family: 'supp-basics', text: `${subject} worth buying or should food still be the focus` },
+        { family: 'supp-trust', text: `${subject} actually useful or just expensive powder` }
+      ],
+      personal: [
+        { family: 'supp-personal', text: `${subject} is one of the only things i keep buying` },
+        { family: 'supp-experience', text: `at this point ${subject} is either useful or im coping` }
+      ],
+      advice: [
+        { family: 'supp-advice', text: `supplements matter a lot less than people want them to` },
+        { family: 'supp-food', text: `food and consistency still beat most supplement stacks` }
+      ],
+      casual: [
+        { family: 'supp-casual', text: `expensive powder discourse never ends` }
+      ]
+    },
+    general_gym: {
+      question: [
+        { family: 'gym-routine', text: `anybody else feel way better once the gym week gets simpler` },
+        { family: 'gym-friction', text: `is it normal to lose momentum after one messy week` },
+        { family: 'gym-motivation', text: `what actually keeps you consistent when life gets loud` },
+        { family: 'gym-subject', text: `how do you keep ${subject} from throwing the whole week off` }
+      ],
+      personal: [
+        { family: 'gym-personal', text: `${subject} made the week feel way harder than it needed to` },
+        { family: 'gym-checkin', text: `busy week but i still found a decent session in there` }
+      ],
+      advice: [
+        { family: 'gym-advice', text: `making gym days easier to start fixes more than motivation does` },
+        { family: 'gym-consistency', text: `a lower friction routine usually wins` }
+      ],
+      casual: [
+        { family: 'gym-casual', text: `forgot my headphones and still had a good session` }
+      ]
+    }
+  };
+
+  const selected = pick((families[imageMeta.imageType] || families.general_gym)[postType] || families.general_gym.question);
+  const finalText = fixGrammar(applyTitleImperfection(selected.text));
+  if (!titlePlausible(finalText)) return imageAwareTitle(category, c, postType, imageMeta);
+  return { text: finalText, family: `image-${imageMeta.imageType}-${selected.family}` };
+}
+
+function title(category, c, postType, imageMeta = null) {
+  if (imageMeta) return imageAwareTitle(category, c, postType, imageMeta);
   const question = {
     training: [
       { family: 'bodypart-normal', text: `are ${partLabel(c.part)} just genetics at some point` },
@@ -440,11 +704,11 @@ function title(category, c, postType) {
   const selected = pick(pools[postType][category]);
   if (typeof selected === 'string') {
     const varied = decorateNonQuestionTitle(selected, category, postType, c);
-    const finalText = fixGrammar(applyCaptionImperfection(varied));
+    const finalText = fixGrammar(applyTitleImperfection(varied));
     if (!titlePlausible(finalText)) return title(category, c, postType);
     return { text: finalText, family: `${category}-${postType}` };
   }
-  const finalText = fixGrammar(applyCaptionImperfection(selected.text));
+  const finalText = fixGrammar(applyTitleImperfection(selected.text));
   if (!titlePlausible(finalText)) return title(category, c, postType);
   return { text: finalText, family: `${category}-${postType}-${selected.family}` };
 }
@@ -491,7 +755,156 @@ function specificQuestionBody(category, c, titleInfo) {
   return null;
 }
 
-function body(category, c, postType, titleInfo) {
+function imageAwareBody(category, c, postType, titleInfo, imageMeta) {
+  const subject = pretty(imageMeta.subject || c.part || c.lift || 'training');
+  const muscle = pretty(imageMeta.muscleGroup || c.part || 'training');
+  const lift = liftLabel(c.lift || 'incline-press');
+  const freeMixed = [
+    'the free setup was honestly better than the random stuff i used to do.',
+    'not saying the free workouts are bad at all.',
+    'the site gave me a decent base.',
+    'free training helped me stop changing everything every week.'
+  ];
+  const bodies = {
+    article: {
+      question: [
+        `saw a piece about ${subject} earlier and it made me rethink how i have been approaching this.`,
+        `curious if people actually change anything after reading about ${subject} or if you just stick with what already works.`,
+        `not trying to overreact to one article. just wondering if there is actually something worth taking from it.`
+      ],
+      personal: [
+        `most articles go in one ear and out the other for me, but the ${subject} point here was actually useful.`,
+        `it lined up with what i keep running into in the gym, which is why it stood out.`,
+        `${rand() < 0.28 ? pick(freeMixed) + ' ' : ''}mostly made me want to simplify things instead of adding more noise.`
+      ],
+      advice: [
+        `stuff like this is useful when it gives you one clear takeaway instead of ten tiny optimizations.`,
+        `the ${subject} angle made more sense than the usual recycled fitness advice.`,
+        `if a post or article makes you clean up one obvious mistake that is already enough.`
+      ],
+      casual: [`fitness content is either useless or one sentence that actually sticks with you.`]
+    },
+    food: {
+      question: [
+        `this kind of ${subject} is easy for me to repeat when the week gets busy.`,
+        `mostly trying to decide if the convenience is worth how boring it looks.`,
+        `if youve got a better version of this that still keeps protein high im listening.`
+      ],
+      personal: [
+        `nothing fancy here. it just makes hitting protein and calories way less annoying.`,
+        `this is the sort of meal i keep going back to when i dont want to think too much.`,
+        `${rand() < 0.22 ? pick(freeMixed) + ' ' : ''}food like this keeps the rest of the plan from falling apart.`
+      ],
+      advice: [
+        `meals do not need to be impressive if they are easy to repeat and easy to track.`,
+        `something like ${subject} usually works better than chasing variety every single day.`,
+        `when food is simple i am way more likely to stay on plan.`
+      ],
+      casual: [`looks boring but it gets the job done.`]
+    },
+    physique: {
+      question: [
+        `finally starting to notice a little change, but ${muscle} still feels behind compared to the rest.`,
+        `trying not to overreact to one check in, just figuring out whether this looks like normal slow progress.`,
+        `if you were me would you keep pushing the bulk or lean out a little more first.`
+      ],
+      personal: [
+        `progress has been slow enough that i almost missed it until this week.`,
+        `not pretending this is insane progress, but it does look a little more like the work is showing now.`,
+        `${rand() < 0.18 ? pick(freeMixed) + ' ' : ''}mostly posting it because im trying to stay objective instead of changing everything too soon.`
+      ],
+      advice: [
+        `physique changes show up slower than people expect, especially when you stare at yourself every day.`,
+        `a lot of progress photos look unimpressive until you compare them to where you started.`,
+        `small visible changes are usually a sign to stay patient instead of panic.`
+      ],
+      casual: [`progress is progress even when it still feels behind.`]
+    },
+    exercise: {
+      question: [
+        `${lift} looks simple on paper but i still cant tell if my setup is good or if im making it harder than it needs to be.`,
+        `this version finally feels closer to the right stimulus, but im still not sure whether it belongs earlier in the workout.`,
+        `i either feel ${subject} exactly where i want it or nowhere near the target and i cant tell what changed.`
+      ],
+      personal: [
+        `this variation finally started making sense once i slowed it down and stopped rushing through the setup.`,
+        `ive done ${subject} for a while, but this is the first time it has actually felt repeatable.`,
+        `turns out a small execution change mattered more than adding more sets.`
+      ],
+      advice: [
+        `if an exercise never feels right, i usually check setup and order before i blame the whole program.`,
+        `a better variation or better execution usually fixes more than adding random volume.`,
+        `this is one of those movements where being patient with the setup matters a lot.`
+      ],
+      casual: [`some exercises really do humble you every week.`]
+    },
+    planning: {
+      question: [
+        `the more i look at ${subject} the more i think simple might be the whole point.`,
+        `${rand() < 0.3 ? pick(freeMixed) + ' ' : ''}trying to figure out when a basic setup stops being enough and when thats just me wanting novelty.`,
+        `i keep tweaking the plan instead of actually running it and im pretty sure thats half the problem.`
+      ],
+      personal: [
+        `cleaning up the structure made the week easier to follow almost immediately.`,
+        `this is the first time the plan has looked simple enough that i might actually leave it alone.`,
+        `a lot of my inconsistency was just coming from overcomplicating everything.`
+      ],
+      advice: [
+        `most people would be better off following a simple split for six weeks instead of rewriting it every few days.`,
+        `if the plan only works when life is perfect then it probably needs to be simpler.`,
+        `structure matters a lot more once you stop treating every week like a fresh start.`
+      ],
+      casual: [`my notes app is still the most inconsistent coach ive ever had.`]
+    },
+    supplement: {
+      question: [
+        `trying to figure out if ${subject} actually matters here or if im just looking for an easy fix.`,
+        `${rand() < 0.3 ? pick(freeMixed) + ' ' : ''}mostly wondering whether food and training still deserve the attention before this does.`,
+        `if youve used ${subject} for a while did you actually notice anything or not really.`
+      ],
+      personal: [
+        `${subject} is one of the few things i keep circling back to because at least it feels straightforward.`,
+        `im trying to get way less distracted by supplement hype and this is part of that.`,
+        `it either helps a little or i just like pretending it does.`
+      ],
+      advice: [
+        `supplements are usually the last place i would look if progress is shaky.`,
+        `the basics cover a lot more than people want to hear.`,
+        `if the routine and food are messy no powder is really fixing that.`
+      ],
+      casual: [`expensive tubs keep trying to become a personality trait.`]
+    },
+    general_gym: {
+      question: [
+        `the biggest issue lately is not knowledge, its just keeping the week from drifting.`,
+        `feels like one messy day turns into three if im not careful.`,
+        `curious what actually helps people stay locked in when the week gets loud.`
+      ],
+      personal: [
+        `${subject} threw the week off more than i expected, but i still got enough done to count it.`,
+        `not a huge breakthrough or anything. just one of those weeks where showing up was the win.`,
+        `the routine felt better once i stopped expecting perfect conditions.`
+      ],
+      advice: [
+        `lower friction routines usually beat high motivation routines over time.`,
+        `if showing up takes too much setup the plan probably needs less complexity.`,
+        `consistency gets easier when the default week is actually realistic.`
+      ],
+      casual: [`real life is still the hardest part of the program.`]
+    }
+  };
+  const lines = (bodies[imageMeta.imageType] || bodies.general_gym)[postType] || bodies.general_gym.question;
+  const count = postType === 'casual' ? 1 : postType === 'advice' ? 2 : rand() < 0.62 ? 2 : 3;
+  const text = fixGrammar(applyCaptionImperfection(shuffle(lines).slice(0, count).join(' ')));
+  return {
+    text,
+    styleKey: `image-${imageMeta.imageType}-${postType}-${imageMeta.postAngle}`,
+    mentionsFree: /free setup|free workouts|free training|site gave me|free plan/i.test(text)
+  };
+}
+
+function body(category, c, postType, titleInfo, imageMeta = null) {
+  if (imageMeta) return imageAwareBody(category, c, postType, titleInfo, imageMeta);
   const questionBodies = {
     training: [
       { key: 'frustrated-short', free: false, lines: ['my progress is decent overall but this one area is still lagging and its starting to piss me off.'] },
@@ -734,13 +1147,14 @@ function candidate(index, slots, postTypes) {
   const c = ctx(category);
   const postType = postTypes[index] || pickPostType();
   const image = slots.has(index);
+  const seededImageMeta = image ? resolveImageMeta(category, c, postType) : null;
   const stats = score(category, image);
   const minutesAgo = ageMinutes();
   const hour = int(0, 23);
   const minute = int(0, 59);
   const id = `forum-post-${String(index + 1).padStart(4, '0')}`;
-  const postTitle = title(category, c, postType);
-  const postBody = body(category, c, postType, postTitle);
+  const postTitle = title(category, c, postType, seededImageMeta);
+  const postBody = body(category, c, postType, postTitle, seededImageMeta);
   return {
     id,
     slug: slug(postTitle.text).slice(0, 96),
@@ -755,6 +1169,11 @@ function candidate(index, slots, postTypes) {
     body: postBody.text,
     bodyStyle: postBody.styleKey,
     mentionsFree: postBody.mentionsFree,
+    imageType: seededImageMeta ? seededImageMeta.imageType : null,
+    imageMainObject: seededImageMeta ? seededImageMeta.mainObject : null,
+    imageSubject: seededImageMeta ? seededImageMeta.subject : null,
+    imageMuscleGroup: seededImageMeta ? seededImageMeta.muscleGroup : null,
+    imagePostAngle: seededImageMeta ? seededImageMeta.postAngle : null,
     imageUrl: null,
     imageAlt: null,
     imageSource: null,
@@ -778,7 +1197,6 @@ function candidate(index, slots, postTypes) {
 }
 
 function useable(post, seenTitles, seenBodies, seenGrams) {
-  if (post.postType === 'question' && seenTitles.has(post.title)) return false;
   if (!titlePlausible(post.title)) return false;
   return true;
 }
@@ -854,6 +1272,8 @@ function imageMatchesProfile(post, item, profile) {
   const genericFitness = /\b(gym|fitness|workout|training|exercise|bodybuilding|physique|muscle|athlete|lifting|weightlifting|crossfit|powerlifting|strength|posing|progress|selfie|mirror|meal|protein|food|nutrition)\b/;
   const peopleCue = /\b(man|men|woman|women|girl|boy|person|people|adult|young adult|teen|teens|male|female|bodybuilder|lifter|athlete|model)\b/;
   const noteCue = /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/;
+  const articleCue = /\b(article|study|research|paper|screenshot)\b/;
+  const supplementCue = /\b(creatine|protein powder|pre workout|supplement|magnesium|caffeine|shaker|powder|tub)\b/;
   const neutralTrainingCue = /\b(barbell|dumbbell|plates|rack|bench|machine|cable|pulldown|row|press|squat|deadlift|mirror|gym floor)\b/;
   const exactTerms = {
     'upper-chest': /\b(upper chest|incline|incline bench|incline dumbbell|smith incline|cable fly|chest)\b/,
@@ -874,6 +1294,8 @@ function imageMatchesProfile(post, item, profile) {
     'smith-incline': /\b(smith incline|incline smith|incline press|smith machine)\b/,
     food: /\b(meal|protein|diet|food|prep|nutrition|calories)\b/,
     planning: /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/,
+    supplement: /\b(creatine|protein powder|pre workout|supplement|magnesium|caffeine|shaker|powder|tub)\b/,
+    article: /\b(article|study|research|paper|screenshot)\b/,
     lifestyle: /\b(gym|workout|training|mirror|selfie|lifter|athlete)\b/
   };
   const familyTerms = {
@@ -885,11 +1307,15 @@ function imageMatchesProfile(post, item, profile) {
     core: /\b(core|abs|ab wheel|cable crunch|bracing)\b/,
     food: /\b(meal|protein|food|prep|nutrition|diet)\b/,
     planning: /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/,
+    supplement: /\b(creatine|protein powder|pre workout|supplement|magnesium|caffeine|shaker|powder|tub)\b/,
+    article: /\b(article|study|research|paper|screenshot|notes)\b/,
     general: /\b(gym|workout|training|fitness|physique|progress|mirror|selfie|lifter|athlete|barbell|dumbbell|rack|plates)\b/
   };
 
   if (profile.exact === 'food' || profile.family === 'food') return exactTerms.food.test(context);
   if (profile.exact === 'planning' || profile.family === 'planning') return noteCue.test(context);
+  if (profile.exact === 'article' || profile.family === 'article') return articleCue.test(context);
+  if (profile.exact === 'supplement' || profile.family === 'supplement') return supplementCue.test(context);
 
   if (!(genericFitness.test(context) || peopleCue.test(context) || neutralTrainingCue.test(context))) return false;
 
@@ -955,6 +1381,65 @@ class Finder {
 }
 
 function detectImageProfile(post) {
+  if (post.imageType) {
+    const subject = String(post.imageSubject || post.imageMainObject || '').toLowerCase();
+    const muscle = String(post.imageMuscleGroup || '').toLowerCase();
+    const map = [
+      ['cable-fly', /\bcable fly\b/],
+      ['cable-row', /\bcable row\b/],
+      ['smith-incline', /\bsmith incline|incline smith\b/],
+      ['upper-chest', /\bupper chest|incline\b/],
+      ['rear-delts', /\brear delt|reverse pec deck\b/],
+      ['side-delts', /\bside delt|lateral raise\b/],
+      ['traps', /\btraps?|shrug|carry\b/],
+      ['upper-back', /\bupper back|chest supported row\b/],
+      ['lats', /\blats?|pulldown|pull up\b/],
+      ['hamstrings', /\bhamstrings?|rdl|leg curl\b/],
+      ['glutes', /\bglutes?|hip thrust\b/],
+      ['quads', /\bquads?|hack squat|leg press|split squat|squat\b/],
+      ['calves', /\bcalves|calf\b/],
+      ['abs', /\babs|core|ab wheel|cable crunch\b/],
+      ['biceps', /\bbiceps|curl\b/],
+      ['triceps', /\btriceps|pushdown|extension\b/]
+    ];
+    for (const [key, pattern] of map) {
+      if (pattern.test(subject) || pattern.test(muscle)) {
+        const familyMap = {
+          'upper-chest': 'chest',
+          'rear-delts': 'shoulders',
+          'side-delts': 'shoulders',
+          traps: 'back',
+          'upper-back': 'back',
+          lats: 'back',
+          biceps: 'arms',
+          triceps: 'arms',
+          hamstrings: 'legs',
+          glutes: 'legs',
+          quads: 'legs',
+          calves: 'legs',
+          abs: 'core',
+          'cable-row': 'back',
+          'cable-fly': 'chest',
+          'smith-incline': 'chest'
+        };
+        return { exact: key, family: familyMap[key] || 'general' };
+      }
+    }
+    if (post.imageType === 'food') return { exact: 'food', family: 'food' };
+    if (post.imageType === 'planning') return { exact: 'planning', family: 'planning' };
+    if (post.imageType === 'supplement') return { exact: 'supplement', family: 'supplement' };
+    if (post.imageType === 'article') return { exact: 'article', family: 'article' };
+    if (post.imageType === 'physique') {
+      if (/\b(chest|pecs|upper chest)\b/.test(muscle)) return { exact: 'upper-chest', family: 'chest' };
+      if (/\b(back|lats|upper back|traps)\b/.test(muscle)) return { exact: null, family: 'back' };
+      if (/\b(side delts|rear delts|shoulders)\b/.test(muscle)) return { exact: null, family: 'shoulders' };
+      if (/\b(biceps|triceps|forearms)\b/.test(muscle)) return { exact: null, family: 'arms' };
+      if (/\b(quads|hamstrings|glutes|calves)\b/.test(muscle)) return { exact: null, family: 'legs' };
+      if (/\b(abs|core)\b/.test(muscle)) return { exact: 'abs', family: 'core' };
+      return { exact: null, family: 'general' };
+    }
+    if (post.imageType === 'general_gym' || post.imageType === 'equipment') return { exact: null, family: 'general' };
+  }
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
   const exact = [
     ['cable-row', /\bcable row\b/],
@@ -974,6 +1459,8 @@ function detectImageProfile(post) {
     ['biceps', /\bbiceps|preacher curl|dumbbell curl|barbell curl\b/],
     ['triceps', /\btriceps|pushdowns?|extensions?|close grip\b/],
     ['planning', /\b(trainer|coaching|custom plan|custom workout|accountability|routine design|split)\b|free plan|free training|free workouts/],
+    ['supplement', /\b(creatine|pre workout|pre-workout|protein powder|supplement|magnesium|caffeine|beta alanine)\b/],
+    ['article', /\b(article|study|research|paper)\b/],
     ['food', /\b(meal|diet|protein|prep|food|calorie|calories|appetite|bulk|cut)\b/],
     ['lifestyle', /\b(headphones|packed gym|garage gym|spotter|busy week|missed one day)\b/]
   ];
@@ -997,6 +1484,8 @@ function detectImageProfile(post) {
         'cable-fly': 'chest',
         'smith-incline': 'chest',
         planning: 'planning',
+        supplement: 'supplement',
+        article: 'article',
         food: 'food',
         lifestyle: 'general'
       };
@@ -1008,6 +1497,8 @@ function detectImageProfile(post) {
   if (/\b(shoulders?|lateral raise)\b/.test(text)) return { exact: null, family: 'shoulders' };
   if (/\b(arms|forearms?)\b/.test(text)) return { exact: null, family: 'arms' };
   if (/\b(legs|adductors?)\b/.test(text)) return { exact: null, family: 'legs' };
+  if (/\b(article|study|research|paper)\b/.test(text)) return { exact: 'article', family: 'article' };
+  if (/\b(creatine|supplement|pre workout|protein powder)\b/.test(text)) return { exact: 'supplement', family: 'supplement' };
   return { exact: null, family: 'general' };
 }
 
@@ -1015,6 +1506,7 @@ function imageQueries(post) {
   const c = post._c || {};
   const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
   const profile = detectImageProfile(post);
+  const subject = pretty(post.imageSubject || '');
   const adultProgress = {
     chest: ['adult gym mirror selfie chest', 'young adult bodybuilding chest progress', 'adult fitness posing chest', 'adult athlete bench press gym'],
     back: ['adult gym mirror selfie back', 'young adult bodybuilding back progress', 'adult fitness posing back', 'adult athlete pull up gym'],
@@ -1023,7 +1515,9 @@ function imageQueries(post) {
     legs: ['adult gym mirror selfie legs', 'young adult fitness leg progress', 'adult bodybuilding lower body', 'adult athlete squat gym'],
     core: ['adult gym mirror selfie abs', 'young adult fitness core progress', 'adult physique check abs', 'adult athlete core workout gym'],
     food: ['healthy meal prep adult fitness', 'protein meal prep gym lifestyle'],
-    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique check gym'],
+    planning: ['adult workout notebook', 'adult gym notes phone', 'adult athlete training plan'],
+    supplement: ['creatine tub gym', 'protein powder shaker adult', 'supplement container gym'],
+    article: ['fitness article screenshot', 'research article screenshot fitness', 'training notes screenshot'],
     general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'adult athlete training gym', 'adult sports conditioning training']
   };
   const exactQueries = {
@@ -1043,7 +1537,9 @@ function imageQueries(post) {
     'cable-row': ['cable row adult gym', 'seated cable row adult fitness'],
     'cable-fly': ['cable fly adult gym', 'cable chest fly adult fitness'],
     'smith-incline': ['smith incline press adult gym', 'incline smith machine chest adult'],
-    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique progress gym', 'adult coach training client gym'],
+    planning: ['adult workout notebook', 'gym notes phone adult', 'training split notebook', 'program notes gym'],
+    supplement: [`${subject} supplement`, `${subject} shaker`, 'creatine tub gym', 'protein powder scoop'],
+    article: [`${subject} article screenshot`, `${subject} study screenshot`, 'fitness article screenshot', 'research article screenshot fitness'],
     food: [`${c.food} meal prep`, `${c.food2} healthy meal`, 'meal prep containers', `${c.meal} protein meal`],
     lifestyle: ['adult gym mirror selfie', 'crowded gym adult fitness', 'adult athlete training gym', 'adult weightlifting gym photo', 'adult jiu jitsu training']
   };
@@ -1055,7 +1551,9 @@ function imageQueries(post) {
     legs: ['squat rack adult gym', 'leg press adult gym', 'split squat adult fitness', 'hamstring curl adult gym', 'adult athlete leg workout gym', ...adultProgress.legs],
     core: ['ab wheel adult gym', 'cable crunch adult gym', 'core workout adult fitness', 'adult athlete ab workout gym', ...adultProgress.core],
     food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal', ...adultProgress.food],
-    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique check gym', 'adult coach with client gym', ...adultProgress.planning],
+    planning: ['adult workout notebook', 'training split notebook', 'gym notes phone adult', 'workout planner notebook', ...adultProgress.planning],
+    supplement: ['creatine tub gym', 'protein powder shaker adult', 'supplement shelf gym', ...adultProgress.supplement],
+    article: ['fitness article screenshot', 'research article screenshot fitness', 'training notes screenshot', ...adultProgress.article],
     general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult athlete training gym', 'adult sports conditioning training']
   };
   const neutralTraining = ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult athlete training gym', 'adult sports conditioning training', 'adult weightlifting gym photo'];
@@ -1105,7 +1603,9 @@ function imageMeta(post, item) {
     legs: 'leg training photo',
     core: 'core training photo',
     food: 'meal prep photo',
-    planning: 'fitness training photo',
+    planning: 'workout planning photo',
+    supplement: 'supplement photo',
+    article: 'fitness article screenshot',
     general: 'fitness training photo'
   };
   const profile = detectImageProfile(post);
@@ -1123,9 +1623,7 @@ function imageMeta(post, item) {
 }
 
 function loadExistingImagePool() {
-  if (!fs.existsSync(OUT)) return [];
-  try {
-    const payload = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  const readPool = (payload) => {
     const items = Array.isArray(payload.items) ? payload.items : [];
     return items
       .filter((item) => item && item.format === 'image' && item.imageUrl)
@@ -1141,6 +1639,26 @@ function loadExistingImagePool() {
         imageLicenseUrl: item.imageLicenseUrl || null,
         imagePageUrl: item.imagePageUrl || null
       }));
+  };
+
+  if (fs.existsSync(OUT)) {
+    try {
+      const payload = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+      const pool = readPool(payload);
+      if (pool.length >= 200) return pool;
+    } catch {
+      // Fall through to git copy.
+    }
+  }
+
+  try {
+    const raw = execSync('git show HEAD:data/forum-posts.json', {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 64 * 1024 * 1024
+    });
+    return readPool(JSON.parse(raw));
   } catch {
     return [];
   }
@@ -1168,6 +1686,8 @@ function existingImageMatches(post, item, profile) {
     'smith-incline': /incline press|chest training/,
     food: /meal prep/,
     planning: /workout planning/,
+    supplement: /supplement photo/,
+    article: /article screenshot/,
     chest: /chest training/,
     back: /back training/,
     shoulders: /shoulder training/,
@@ -1178,7 +1698,11 @@ function existingImageMatches(post, item, profile) {
   };
   const pattern = exactAlt[intent];
   if (!pattern) return false;
-  return pattern.test(text);
+  if (pattern.test(text)) return true;
+  if (profile.family && profile.family !== 'food' && profile.family !== 'planning' && profile.family !== 'article' && profile.family !== 'supplement') {
+    return /fitness training photo|chest training photo|back training photo|shoulder training photo|arm training photo|leg training photo|core training photo|lat training photo|triceps training photo|upper chest training photo|cable fly training photo|cable row training photo/.test(text);
+  }
+  return false;
 }
 
 function applyExistingImage(post, item) {
@@ -1206,7 +1730,9 @@ function applyExistingImage(post, item) {
     legs: 'leg training photo',
     core: 'core training photo',
     food: 'meal prep photo',
-    planning: 'fitness training photo',
+    planning: 'workout planning photo',
+    supplement: 'supplement photo',
+    article: 'fitness article screenshot',
     general: 'fitness training photo'
   };
   const profile = detectImageProfile(post);
@@ -1226,18 +1752,25 @@ async function assign(posts) {
   const finder = new Finder();
   const fallbackPool = loadExistingImagePool();
   const usedFallback = new Set();
-  const imageCount = posts.filter((post) => post.format === 'image').length;
   const takeExisting = (post, profile) => {
     const exactIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && existingImageMatches(post, item, profile));
     if (exactIndex === -1) return null;
     usedFallback.add(exactIndex);
     return fallbackPool[exactIndex];
   };
-  const takeFallback = (post) => {
+  const takeFallback = (post, profile) => {
+    const imageAlt = (item) => String(item.imageAlt || '').toLowerCase();
+    const preferredPattern =
+      profile.family === 'food' || profile.exact === 'food'
+        ? /meal prep photo/
+        : profile.family === 'planning' || profile.exact === 'planning'
+          ? /workout planning photo/
+          : /fitness training photo|chest training photo|back training photo|shoulder training photo|arm training photo|leg training photo|core training photo|lat training photo|triceps training photo|upper chest training photo|cable fly training photo|cable row training photo/;
+    const patternedIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && preferredPattern.test(imageAlt(item)));
     const pickIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.category === post.category);
     const scopeIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.scope === post.scope);
     const anyIndex = fallbackPool.findIndex((_, index) => !usedFallback.has(index));
-    const index = pickIndex !== -1 ? pickIndex : scopeIndex !== -1 ? scopeIndex : anyIndex;
+    const index = patternedIndex !== -1 ? patternedIndex : pickIndex !== -1 ? pickIndex : scopeIndex !== -1 ? scopeIndex : anyIndex;
     if (index === -1) return null;
     usedFallback.add(index);
     return fallbackPool[index];
@@ -1249,18 +1782,11 @@ async function assign(posts) {
     const usePlanning = profile.family === 'planning' || profile.exact === 'planning';
     const matches = (candidate) => imageMatchesProfile(post, candidate, profile);
     let item = takeExisting(post, profile);
-    if (!item) item = await finder.take(queries.exact, matches);
-    if (!item) item = await finder.take(queries.family, matches);
-    if (!item && !usePlanning) item = await finder.take(queries.neutral, matches);
-    if (!item && usePlanning) item = await finder.take([...queries.family, ...queries.neutral], matches);
-    if (!item && (profile.family === 'food' || post.category === 'nutrition' || post.category === 'cutting' || post.category === 'bulking')) {
-      item = await finder.take(broadImageQueries(post.category), matches);
-    }
     if (item) {
       Object.assign(post, imageMeta(post, item));
       continue;
     }
-    if (!usePlanning && profile.family !== 'food') {
+    if (profile.family === 'article' || profile.family === 'supplement') {
       post.format = 'text';
       post.imageUrl = null;
       post.imageAlt = null;
@@ -1271,7 +1797,7 @@ async function assign(posts) {
       post.imagePageUrl = null;
       continue;
     }
-    const fallback = takeFallback(post);
+    const fallback = takeFallback(post, profile);
     if (!fallback) {
       post.format = 'text';
       post.imageUrl = null;

@@ -213,6 +213,15 @@
   }
 
   function detectPostFocus(item) {
+    if (item.imageType === 'food') return 'nutrition';
+    if (item.imageType === 'planning') return 'planning';
+    if (item.imageType === 'supplement') return 'supplement';
+    if (item.imageType === 'article') return 'article';
+    if (item.imageType === 'physique' && /\b(chest|pecs|upper chest)\b/.test(String(item.imageMuscleGroup || '').toLowerCase())) return 'chest';
+    if (item.imageType === 'physique' && /\b(back|lats|upper back|traps)\b/.test(String(item.imageMuscleGroup || '').toLowerCase())) return 'back';
+    if (item.imageType === 'physique' && /\b(side delts|rear delts|shoulders)\b/.test(String(item.imageMuscleGroup || '').toLowerCase())) return 'delts';
+    if (item.imageType === 'physique' && /\b(biceps|triceps|forearms)\b/.test(String(item.imageMuscleGroup || '').toLowerCase())) return 'biceps';
+    if (item.imageType === 'physique' && /\b(quads|hamstrings|glutes|calves)\b/.test(String(item.imageMuscleGroup || '').toLowerCase())) return 'squat';
     const text = `${item.title || ''} ${item.body || ''}`.toLowerCase();
     if (/\b(pecs?|chest|bench|incline)\b/.test(text)) return 'chest';
     if (/\b(calves|calf)\b/.test(text)) return 'calves';
@@ -348,6 +357,33 @@
         support: ['food is harder than people make it sound', 'same problem here'],
         disagree: ['i wouldnt jump to coaching before fixing food', 'nah if calories are off no program will save it'],
         joke: ['eating enough is the real workout']
+      },
+      planning: {
+        advice: ['i would run the split as written for two weeks before tweaking anything else', 'simpler structure usually beats perfect structure you never stick to', 'pick one progression target and stop rewriting the week'],
+        experience: ['i made better progress once i stopped touching the plan every few days', 'cleaning up the split helped more than another fancy exercise swap'],
+        question: ['how often are you changing the plan right now', 'have you actually run the setup long enough to judge it'],
+        blunt: ['this sounds like overcomplicating it tbh', 'you might just need to leave the plan alone'],
+        support: ['most people overbuild their split at first', 'simple usually wins here'],
+        disagree: ['i still wouldnt jump to paying for help yet', 'nah this sounds fixable without coaching'],
+        joke: ['the notes app has ended a lot of gains']
+      },
+      supplement: {
+        advice: ['id keep creatine or protein and stop there for now', 'food and training quality still matter more than another tub', 'run the basics and ignore the hype for a month'],
+        experience: ['i bought way more supplements than i ever actually needed', 'creatine was the only one that ever felt boring enough to trust'],
+        question: ['have you already handled food and sleep', 'what are you expecting this to fix exactly'],
+        blunt: ['this could still just be expensive coping tbh', 'powder is not fixing a messy routine'],
+        support: ['everybody falls into the supplement rabbit hole at some point', 'fair question honestly'],
+        disagree: ['nah i wouldnt spend on this yet', 'i still think food is the move first'],
+        joke: ['supplement labels do way too much talking']
+      },
+      article: {
+        advice: ['i would take one useful point from the article and ignore the rest', 'articles are only helpful if they actually change one decision in your week', 'the takeaway matters more than trying to copy every detail'],
+        experience: ['sometimes an article just gives better wording to something you already felt in training', 'i usually read those and keep maybe one thing'],
+        question: ['what part of the article actually stood out to you', 'did it change anything specific for you or just get you thinking'],
+        blunt: ['fitness articles are noise unless you actually apply one thing', 'most of those posts just tell people what they already know'],
+        support: ['still worth discussing if it made you rethink something', 'i get why that would catch your attention'],
+        disagree: ['idk i wouldnt rewrite training over one article', 'nah i would not let one study screenshot change the whole plan'],
+        joke: ['one article and everybody becomes a scientist for a day']
       },
       generic: {
         advice: ['id keep it simple and fix one thing first', 'usually the boring fix works better than the fancy one', 'i would clean up execution before rewriting everything'],
