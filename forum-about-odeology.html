@@ -507,14 +507,18 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 42px;
-                margin: 0.9rem 1rem 0;
-                padding: 0.75rem 1rem;
+                position: fixed;
+                left: 0.9rem;
+                bottom: 0.9rem;
+                min-height: 34px;
+                padding: 0.45rem 0.9rem;
                 border: 0;
                 border-radius: 999px;
                 background: #111827;
                 color: #ffffff;
-                font: 700 0.88rem/1 "IBM Plex Sans", sans-serif;
+                font: 700 0.8rem/1 "IBM Plex Sans", sans-serif;
+                box-shadow: 0 10px 24px rgba(15, 23, 35, 0.22);
+                z-index: 41;
             }
             .forum-rail-overlay {
                 display: block;
@@ -530,7 +534,7 @@
                 position: fixed;
                 top: 0;
                 left: 0;
-                bottom: 0;
+                height: 100dvh;
                 width: min(320px, 86vw);
                 max-height: none;
                 overflow: auto;
@@ -550,6 +554,10 @@
                 margin-bottom: 0.45rem;
                 padding: 0.1rem 0.2rem 0.85rem;
                 border-bottom: 1px solid var(--forum-border);
+                position: sticky;
+                top: 0;
+                background: #ffffff;
+                z-index: 1;
             }
             .forum-rail-header strong {
                 font: 700 1rem/1 "Space Grotesk", sans-serif;
@@ -568,6 +576,7 @@
             body.forum-rail-open { overflow: hidden; }
             body.forum-rail-open .forum-rail { transform: translateX(0); }
             body.forum-rail-open .forum-rail-overlay { opacity: 1; pointer-events: auto; }
+            body.forum-rail-open .forum-drawer-trigger { opacity: 0; pointer-events: none; }
         }
         @media (max-width: 720px) {
             .forum-main { padding: 0 1rem 1.6rem; }
