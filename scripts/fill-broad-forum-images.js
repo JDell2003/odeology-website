@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 const OUT = 'data/forum-posts.json';
-const TARGET_IMAGES = 600;
-const OPENVERSE_MAX = 10;
+const TARGET_IMAGES = 500;
+const OPENVERSE_MAX = 20;
 const OPEN_LICENSES = new Set(['by', 'by-sa', 'cc0', 'pdm']);
 
 function norm(value) {
@@ -70,10 +70,14 @@ function imageMatchesIntent(item, intent) {
 }
 
 class Finder {
-  constructor() {
+  constructor(existingItems = []) {
     this.queries = new Map();
     this.used = new Set();
     this.usedUrls = new Set();
+    existingItems.forEach((item) => {
+      if (item && item.imageId) this.used.add(norm(item.imageId));
+      if (item && item.imageUrl) this.usedUrls.add(norm(item.imageUrl));
+    });
   }
 
   async fromQuery(query) {
@@ -89,8 +93,9 @@ class Finder {
         const item = state.results[state.index];
         state.index += 1;
         const itemUrl = norm(item.url);
-        if (!okImage(item) || this.used.has(item.id) || (itemUrl && this.usedUrls.has(itemUrl))) continue;
-        this.used.add(item.id);
+        const itemId = norm(item.id);
+        if (!okImage(item) || (itemId && this.used.has(itemId)) || (itemUrl && this.usedUrls.has(itemUrl))) continue;
+        if (itemId) this.used.add(itemId);
         if (itemUrl) this.usedUrls.add(itemUrl);
         return item;
       }
@@ -119,7 +124,43 @@ function queriesForIntent(intent) {
   if (intent === 'food') {
     return ['high protein meal prep', 'healthy meal prep', 'protein bowl meal', 'meal prep containers', 'fitness meal photo'];
   }
-  return ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'adult athlete training gym', 'weightlifting gym photo', 'adult sports conditioning training', 'jiu jitsu training'];
+  return [
+    'women fitness gym',
+    'women athlete training',
+    'female fitness progress',
+    'women weightlifting gym',
+    'women track athlete',
+    'female wrestling athlete',
+    'women workout selfie gym',
+    'women sports training',
+    'female athlete gym mirror',
+    'women bodybuilder gym',
+    'women runner training',
+    'female lifter gym',
+    'women basketball training',
+    'women volleyball athlete',
+    'female soccer athlete training',
+    'women boxing training',
+    'women powerlifting gym',
+    'female strength athlete',
+    'women dumbbell workout',
+    'women barbell squat',
+    'women deadlift training',
+    'women bench press gym',
+    'female bodybuilding training',
+    'women gym portrait',
+    'female athlete portrait',
+    'women cardio training',
+    'women resistance training',
+    'female runner track',
+    'women cross training gym',
+    'women conditioning workout',
+    'female fitness selfie',
+    'women physique check gym',
+    'female sportswoman training',
+    'women lifting weights',
+    'women athletic training field'
+  ];
 }
 
 function applyImage(post, item, intent) {
@@ -176,7 +217,7 @@ function fallbackTags(post, intent, index = 0) {
 
 async function main() {
   const data = JSON.parse(fs.readFileSync(OUT, 'utf8'));
-  const finder = new Finder();
+  const finder = new Finder(data.items.filter((p) => p.format === 'image'));
   let images = data.items.filter((p) => p.format === 'image').length;
   const candidates = data.items.filter((p) => p.format === 'text').map((post) => ({ post, intent: detectBroadIntent(post) }));
   const prioritized = [
