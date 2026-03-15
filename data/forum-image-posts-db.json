@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-15T22:42:15.377Z",
-  "total": 60,
+  "generatedAt": "2026-03-15T22:59:29.753Z",
+  "total": 41,
   "items": [
     {
       "id": "forum-post-0008",
@@ -11,6 +11,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a white tray filled with food and vegetables",
       "imageUrl": "https://live.staticflickr.com/2708/4517345070_b733b77714_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "flickr",
@@ -93,6 +94,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a pot of food is being stirred in a frying pan",
       "imageUrl": "https://live.staticflickr.com/7839/46151768384_688088b28f_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "flickr",
@@ -175,6 +177,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with a fork and a spoon",
       "imageUrl": "https://live.staticflickr.com/1780/43991880552_054a81f0cf_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -257,6 +260,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a man is preparing food on a table",
       "imageUrl": "https://live.staticflickr.com/65535/51718178528_6ee3938f4c_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "flickr",
@@ -321,8 +325,8 @@
       "postType": "question",
       "category": "bulking",
       "scope": "nutrition",
-      "title": "would you actually keep high protein wrap in rotation or get sick of it fast",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "title": "wraps like this save me on busy days",
+      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
       "score": 36,
       "comments": 6,
       "viewCount": 717,
@@ -339,6 +343,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with meat and a fork",
       "imageUrl": "https://live.staticflickr.com/8374/8529440133_020137aedb.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -403,8 +408,8 @@
       "postType": "personal",
       "category": "cutting",
       "scope": "nutrition",
-      "title": "kept high protein wrap in the rotation because it just works",
-      "body": "not glamorous at all, but this kind of meal prep is usually what keeps the rest of the plan together.",
+      "title": "good high protein wrap or would you switch it up",
+      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
       "score": 39,
       "comments": 7,
       "viewCount": 758,
@@ -421,6 +426,7 @@
       "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of vegetables on a table",
       "imageUrl": "https://live.staticflickr.com/65535/49859602816_91fd41fc89_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -485,8 +491,8 @@
       "postType": "question",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "title": "would you count something like this as a real meal or just a snack",
+      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "score": 11,
       "comments": 6,
       "viewCount": 408,
@@ -503,6 +509,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with meat and vegetables",
       "imageUrl": "https://live.staticflickr.com/6088/6050429526_ef1edb556c_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -567,8 +574,8 @@
       "postType": "question",
       "category": "bulking",
       "scope": "nutrition",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "title": "this is exactly the kind of meal i use when i dont want to think",
+      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
       "score": 45,
       "comments": 7,
       "viewCount": 1040,
@@ -585,6 +592,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with vegetables and meat",
       "imageUrl": "https://live.staticflickr.com/2863/9680394407_e808f32f16_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -667,6 +675,7 @@
       "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a woman is cutting up a banana on a cutting board",
       "imageUrl": "https://live.staticflickr.com/5641/21972173266_c79e5e2771_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -731,8 +740,8 @@
       "postType": "question",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "would you actually keep protein yogurt bowl in rotation or get sick of it fast",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "title": "protein bowls like this are hard to beat",
+      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "score": 8,
       "comments": 5,
       "viewCount": 1032,
@@ -749,6 +758,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a man is preparing food on a counter",
       "imageUrl": "https://live.staticflickr.com/655/21998378685_096297fa09_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -831,6 +841,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a table topped with different types of food",
       "imageUrl": "https://live.staticflickr.com/8419/29400648723_56949aba27_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -913,6 +924,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with a sandwich and a salad",
       "imageUrl": "https://live.staticflickr.com/3695/13482783505_dd76e996d0_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -977,8 +989,8 @@
       "postType": "advice",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "if your week is busy this kind of food is hard to beat",
-      "body": "food setups like this are usually better than overcomplicating every meal and falling off by thursday.",
+      "title": "would you actually keep salmon meal prep like this in rotation",
+      "body": "looks simple but meals like this are usually what keep the week from going off the rails.",
       "score": 22,
       "comments": 6,
       "viewCount": 484,
@@ -995,6 +1007,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food on a wooden table",
       "imageUrl": "https://live.staticflickr.com/257/19585573385_f213fbfcb9_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1073,10 +1086,11 @@
       "slug": "if-your-week-is-chaotic-something-like-ground-turkey-rice-is-hard-to-beat",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of food on a table",
       "imageUrl": "https://live.staticflickr.com/6230/6279697324_10de3ff897_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1141,243 +1155,13 @@
       "postType": "advice",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "if your week is busy this kind of food is hard to beat",
-      "body": "food setups like this are usually better than overcomplicating every meal and falling off by thursday.",
+      "title": "this is one of the easiest high protein snacks ive found",
+      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "score": 66,
       "comments": 3,
       "viewCount": 917,
       "saveCount": 14,
       "ageMinutes": 433,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0127",
-      "slug": "this-bagel-sandwiches-has-been-one-of-the-easiest-ways-to-hit-protein",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "training split",
-      "imageSubject": "training split",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "split_review",
-      "imageUrl": "https://live.staticflickr.com/4116/4913079463_a765beed99_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "rmkoske",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/67146024@N00/4913079463",
-      "visionAnalysis": {
-        "broadLabel": "workout plan notebook",
-        "broadScore": 0.5774505734443665,
-        "detailLabel": "notebook or journal workout plan",
-        "detailScore": 0.5937018990516663,
-        "allBroad": [
-          {
-            "score": 0.5774505734443665,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.22778478264808655,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.08717550337314606,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.0719531774520874,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.031233208253979683,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.004402771592140198,
-            "label": "fitness progress selfie"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.5937018990516663,
-            "label": "notebook or journal workout plan"
-          },
-          {
-            "score": 0.2183603197336197,
-            "label": "phone notes or calendar planning"
-          },
-          {
-            "score": 0.15969763696193695,
-            "label": "written workout split"
-          },
-          {
-            "score": 0.028240131214261055,
-            "label": "meal plan notes"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "cutting",
-      "scope": "nutrition",
-      "title": "would you actually keep training split in rotation or get sick of it fast",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
-      "score": 53,
-      "comments": 3,
-      "viewCount": 669,
-      "saveCount": 4,
-      "ageMinutes": 9,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0136",
-      "slug": "this-tofu-rice-bowls-has-been-one-of-the-easiest-ways-to-hit-protein",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "gym session",
-      "imageSubject": "gym session",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/1045/528073640_8cf2ddffec_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "Unhindered by Talent",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/26406919@N00/528073640",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.4726622402667999,
-        "detailLabel": "athlete training scene",
-        "detailScore": 0.7351322770118713,
-        "allBroad": [
-          {
-            "score": 0.4726622402667999,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.33060768246650696,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.07404555380344391,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.06647282093763351,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.05385145917534828,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.0023602398578077555,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.7351322770118713,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.1652892529964447,
-            "label": "women sports training"
-          },
-          {
-            "score": 0.09026647359132767,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.009312006644904613,
-            "label": "gym mirror selfie"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "would you actually keep gym session in rotation or get sick of it fast",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
-      "score": 22,
-      "comments": 6,
-      "viewCount": 974,
-      "saveCount": 19,
-      "ageMinutes": 464,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0142",
-      "slug": "looks-boring-but-this-shrimp-rice-boxes-makes-the-diet-way-easier",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "creatine",
-      "imageSubject": "creatine",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/8041/8057187934_4f8ae366ec_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "jurvetson",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/44124348109@N01/8057187934",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.9592106938362122,
-        "detailLabel": "creatine container",
-        "detailScore": 0.8338447213172913,
-        "allBroad": [
-          {
-            "score": 0.9592106938362122,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.016323275864124298,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.014465675689280033,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.005807534791529179,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.002287789713591337,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.0019050302216783166,
-            "label": "fitness progress selfie"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.8338447213172913,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.14120975136756897,
-            "label": "protein powder or shaker bottle"
-          },
-          {
-            "score": 0.02494554966688156,
-            "label": "pre workout supplement"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "Creatine has been saving my week",
-      "body": "i end up leaning on meals like this whenever i need food that is fast, repeatable, and hard to mess up.",
-      "score": 73,
-      "comments": 6,
-      "viewCount": 349,
-      "saveCount": 10,
-      "ageMinutes": 1638,
       "isSeeded": true
     },
     {
@@ -1389,6 +1173,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with vegetables and cheese",
       "imageUrl": "https://live.staticflickr.com/8491/8326874357_6f0108d519_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1453,8 +1238,8 @@
       "postType": "casual",
       "category": "cutting",
       "scope": "nutrition",
-      "title": "this looks boring and thats exactly why it works",
-      "body": "meals like this are not exciting, they are just practical.",
+      "title": "would you actually keep salmon meal prep like this in rotation",
+      "body": "this is the kind of meal i can keep around without having to think too hard about protein.",
       "score": 60,
       "comments": 7,
       "viewCount": 627,
@@ -1471,6 +1256,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of food with carrots, broccoli, and fruit",
       "imageUrl": "https://live.staticflickr.com/2544/4007091102_031486bd66_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1535,8 +1321,8 @@
       "postType": "question",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "title": "this kind of salmon prep is boring in the best way",
+      "body": "looks simple but meals like this are usually what keep the week from going off the rails.",
       "score": 12,
       "comments": 7,
       "viewCount": 1274,
@@ -1549,10 +1335,11 @@
       "slug": "anybody-got-a-way-to-make-ground-turkey-rice-less-boring",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "high protein breakfast",
-      "imageSubject": "high protein breakfast",
+      "imageMainObject": "high protein oats",
+      "imageSubject": "high protein oats",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with eggs, bacon, and toast",
       "imageUrl": "https://live.staticflickr.com/3060/3250044961_80e1598067_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1617,91 +1404,13 @@
       "postType": "question",
       "category": "cutting",
       "scope": "nutrition",
-      "title": "this high protein breakfast looks simple but would you run it all week",
+      "title": "this high protein oats looks simple but would you run it all week",
       "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
       "score": 48,
       "comments": 5,
       "viewCount": 263,
       "saveCount": 3,
       "ageMinutes": 7,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0164",
-      "slug": "taco-beef-bowls-is-carrying-my-week-right-now",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "gym setup",
-      "imageSubject": "gym setup",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/8250/8451932647_6121686094_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "NZ Car Freak",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/64583732@N04/8451932647",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.34256550669670105,
-        "detailLabel": "barbell or equipment setup",
-        "detailScore": 0.7119355797767639,
-        "allBroad": [
-          {
-            "score": 0.34256550669670105,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.3258996605873108,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.2049734890460968,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.09584566950798035,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.026811134070158005,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.0039045573212206364,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.7119355797767639,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.16621358692646027,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.10110305994749069,
-            "label": "women sports training"
-          },
-          {
-            "score": 0.02074776031076908,
-            "label": "gym mirror selfie"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "cutting",
-      "scope": "nutrition",
-      "title": "Gym setup has been saving my week",
-      "body": "nothing crazy here. it just makes protein and calories easier to handle when the week gets messy.",
-      "score": 92,
-      "comments": 4,
-      "viewCount": 684,
-      "saveCount": 5,
-      "ageMinutes": 185,
       "isSeeded": true
     },
     {
@@ -1713,6 +1422,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a sandwich with lettuce, tomato, and cheese on a plate",
       "imageUrl": "https://live.staticflickr.com/3078/2577964672_1b6220c77e_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1777,8 +1487,8 @@
       "postType": "advice",
       "category": "bulking",
       "scope": "nutrition",
-      "title": "meals like this are boring but they work",
-      "body": "food setups like this are usually better than overcomplicating every meal and falling off by thursday.",
+      "title": "wraps like this save me on busy days",
+      "body": "if i can eat it fast and still get protein in, it stays in the rotation.",
       "score": 19,
       "comments": 7,
       "viewCount": 843,
@@ -1787,100 +1497,15 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0203",
-      "slug": "looks-boring-but-this-shrimp-rice-boxes-makes-the-diet-way-easier",
-      "imageFingerprint": "960px-hattie-james-women-s-fitness-gym-girl-gym-model-fitness-model",
-      "imageType": "food",
-      "imageMainObject": "quad focused leg work",
-      "imageSubject": "quad focused leg work",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "technique",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Hattie_James_Women%27s_fitness_Gym_girl%2C_Gym_Model%2C_Fitness_model_02.jpg/960px-Hattie_James_Women%27s_fitness_Gym_girl%2C_Gym_Model%2C_Fitness_model_02.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "wikimedia",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
-      "visionAnalysis": {
-        "broadLabel": "exercise in gym",
-        "broadScore": 0.46407344937324524,
-        "detailLabel": "squat or leg press",
-        "detailScore": 0.2231636643409729,
-        "allBroad": [
-          {
-            "score": 0.46407344937324524,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.2646789252758026,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.18738749623298645,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.0709252655506134,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.00977530237287283,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.0031595760956406593,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.2231636643409729,
-            "label": "squat or leg press"
-          },
-          {
-            "score": 0.16167256236076355,
-            "label": "bicep curl or arm exercise"
-          },
-          {
-            "score": 0.15038444101810455,
-            "label": "hip thrust or glute exercise"
-          },
-          {
-            "score": 0.13684068620204926,
-            "label": "lateral raise or shoulder exercise"
-          },
-          {
-            "score": 0.13411590456962585,
-            "label": "calf raise exercise"
-          },
-          {
-            "score": 0.12163552641868591,
-            "label": "bench press or incline press"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "Quad focused leg work has been saving my week",
-      "body": "i end up leaning on meals like this whenever i need food that is fast, repeatable, and hard to mess up.",
-      "score": 22,
-      "comments": 4,
-      "viewCount": 486,
-      "saveCount": 8,
-      "ageMinutes": 11,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0214",
       "slug": "anybody-got-a-way-to-make-salmon-bowls-less-boring",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of food with broccoli and noodles",
       "imageUrl": "https://live.staticflickr.com/99/297838061_bb2053df27_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -1945,263 +1570,13 @@
       "postType": "question",
       "category": "cutting",
       "scope": "nutrition",
-      "title": "this rice and protein meal prep looks simple but would you run it all week",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "title": "this is one of the easiest high protein snacks ive found",
+      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "score": 47,
       "comments": 3,
       "viewCount": 441,
       "saveCount": 14,
       "ageMinutes": 326,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0223",
-      "slug": "looks-boring-but-this-cottage-cheese-bowls-makes-the-diet-way-easier",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "sports training session",
-      "imageSubject": "sports training session",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/6167/6172915806_29b11753e8_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "Children's Bureau Centennial",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/67331818@N03/6172915806",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.3759281635284424,
-        "detailLabel": "women sports training",
-        "detailScore": 0.7658854722976685,
-        "allBroad": [
-          {
-            "score": 0.3759281635284424,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.33717912435531616,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.13378232717514038,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.06632021069526672,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.04794976860284805,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.038840387016534805,
-            "label": "workout plan notebook"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.7658854722976685,
-            "label": "women sports training"
-          },
-          {
-            "score": 0.21190693974494934,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.01866888627409935,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.0035386988893151283,
-            "label": "gym mirror selfie"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "Sports training session has been saving my week",
-      "body": "i end up leaning on meals like this whenever i need food that is fast, repeatable, and hard to mess up.",
-      "score": 34,
-      "comments": 7,
-      "viewCount": 758,
-      "saveCount": 12,
-      "ageMinutes": 275,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0236",
-      "slug": "i-feel-triceps-everywhere-except-where-im-supposed-to",
-      "imageFingerprint": "1280px-25-hallorenpokal-training-women-martin-rulsch",
-      "imageType": "physique",
-      "imageMainObject": "glute focused exercise",
-      "imageSubject": "glute focused exercise",
-      "imageMuscleGroup": "glutes",
-      "imagePostAngle": "technique",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/2020-01-25_47._Hallorenpokal_Training_Women_%28Martin_Rulsch%29_059.jpg/1280px-2020-01-25_47._Hallorenpokal_Training_Women_%28Martin_Rulsch%29_059.jpg",
-      "imageAlt": "triceps training photo",
-      "imageSource": "wikimedia",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
-      "visionAnalysis": {
-        "broadLabel": "exercise in gym",
-        "broadScore": 0.29673296213150024,
-        "detailLabel": "hip thrust or glute exercise",
-        "detailScore": 0.27738502621650696,
-        "allBroad": [
-          {
-            "score": 0.29673296213150024,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.2759047746658325,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.23227351903915405,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.1512421816587448,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.025752970948815346,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.018093612045049667,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.27738502621650696,
-            "label": "hip thrust or glute exercise"
-          },
-          {
-            "score": 0.19722364842891693,
-            "label": "bicep curl or arm exercise"
-          },
-          {
-            "score": 0.11936622858047485,
-            "label": "hamstring curl or rdl"
-          },
-          {
-            "score": 0.11052360385656357,
-            "label": "calf raise exercise"
-          },
-          {
-            "score": 0.10516567528247833,
-            "label": "squat or leg press"
-          },
-          {
-            "score": 0.101719930768013,
-            "label": "lateral raise or shoulder exercise"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "recovery",
-      "scope": "recovery",
-      "title": "first time my glutes have looked different in a while",
-      "body": "not saying i figured everything out, but this is the first progress check that makes me think glute work is finally paying off.",
-      "score": 57,
-      "comments": 4,
-      "viewCount": 503,
-      "saveCount": 7,
-      "ageMinutes": 58,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0242",
-      "slug": "trying-not-to-overreact-but-i-think-training-is-finally-moving",
-      "imageFingerprint": "",
-      "imageType": "physique",
-      "imageMainObject": "back pulling",
-      "imageSubject": "back pulling",
-      "imageMuscleGroup": "back",
-      "imagePostAngle": "technique",
-      "imageUrl": "https://live.staticflickr.com/2756/4388304888_28d43d8aef_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "sludgegulper",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/28179929@N08/4388304888",
-      "visionAnalysis": {
-        "broadLabel": "exercise in gym",
-        "broadScore": 0.48125576972961426,
-        "detailLabel": "back row or pulldown",
-        "detailScore": 0.2621515393257141,
-        "allBroad": [
-          {
-            "score": 0.48125576972961426,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.2354709655046463,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.14171351492404938,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.12550069391727448,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.011316539719700813,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.004742502700537443,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.2621515393257141,
-            "label": "back row or pulldown"
-          },
-          {
-            "score": 0.2127791941165924,
-            "label": "hip thrust or glute exercise"
-          },
-          {
-            "score": 0.2101266086101532,
-            "label": "calf raise exercise"
-          },
-          {
-            "score": 0.10590282827615738,
-            "label": "hamstring curl or rdl"
-          },
-          {
-            "score": 0.08844294399023056,
-            "label": "tricep extension or pushdown"
-          },
-          {
-            "score": 0.06649438291788101,
-            "label": "squat or leg press"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "nutrition",
-      "scope": "nutrition",
-      "title": "first time back progress has looked obvious to me",
-      "body": "posting this because i feel like back changes are easy to miss until they finally are not.",
-      "score": 61,
-      "comments": 4,
-      "viewCount": 224,
-      "saveCount": 17,
-      "ageMinutes": 700,
       "isSeeded": true
     },
     {
@@ -2213,6 +1588,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a salad with broccoli and other vegetables",
       "imageUrl": "https://live.staticflickr.com/8361/8290573069_506473f52e.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -2287,41 +1663,6 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0253",
-      "slug": "a-lower-friction-routine-usually-wins",
-      "imageFingerprint": "1280px-10-cgc-bettembourg-2021-training-women-10-december-balance-beam-martin-rulsch",
-      "imageType": "general_gym",
-      "imageMainObject": "garage gym mornings",
-      "imageSubject": "garage gym mornings",
-      "imageMuscleGroup": null,
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/2021-12-10_CGC_Bettembourg_2021_Training_Women_10_December_Balance_beam_%28Martin_Rulsch%29_53.jpg/1280px-2021-12-10_CGC_Bettembourg_2021_Training_Women_10_December_Balance_beam_%28Martin_Rulsch%29_53.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "wikimedia",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
-      "visionAnalysis": {
-        "broadLabel": "analysis_failed",
-        "broadScore": 0,
-        "detailLabel": "analysis_failed",
-        "detailScore": 0,
-        "error": "Unable to read image from \"https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/2021-12-10_CGC_Bettembourg_2021_Training_Women_10_December_Balance_beam_%28Martin_Rulsch%29_53.jpg/1280px-2021-12-10_CGC_Bettembourg_2021_Training_Women_10_December_Balance_beam_%28Martin_Rulsch%29_53.jpg\" (429 Too many requests (76af2b0))"
-      },
-      "postType": "advice",
-      "category": "lifestyle",
-      "scope": "training",
-      "title": "less setup usually means more consistency",
-      "body": "a routine that survives a normal hectic week is worth more than one that only works when everything is calm.",
-      "score": 36,
-      "comments": 7,
-      "viewCount": 1374,
-      "saveCount": 10,
-      "ageMinutes": 569,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0257",
       "slug": "i-feel-cable-fly-everywhere-except-where-im-supposed-to",
       "imageFingerprint": "",
@@ -2330,6 +1671,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of food with a spoon and a bowl of vegetables",
       "imageUrl": "https://live.staticflickr.com/8248/8492777737_c924f7e760_b.jpg",
       "imageAlt": "cable fly training photo",
       "imageSource": "openverse",
@@ -2394,8 +1736,8 @@
       "postType": "question",
       "category": "training",
       "scope": "training",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "title": "this kind of salmon prep is boring in the best way",
+      "body": "looks simple but meals like this are usually what keep the week from going off the rails.",
       "score": 58,
       "comments": 4,
       "viewCount": 681,
@@ -2412,6 +1754,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food on a table",
       "imageUrl": "https://live.staticflickr.com/3778/8872986863_952b10c19d_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -2486,80 +1829,6 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0268",
-      "slug": "looks-boring-but-this-steak-potato-boxes-makes-the-diet-way-easier",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "creatine",
-      "imageSubject": "creatine",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/2553/4160251830_b1cc5689b5_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "uair01",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/56759497@N00/4160251830",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.4873025715351105,
-        "detailLabel": "creatine container",
-        "detailScore": 0.607890248298645,
-        "allBroad": [
-          {
-            "score": 0.4873025715351105,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.19552023708820343,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.1583002656698227,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.12621520459651947,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.020323898643255234,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.012337840162217617,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.607890248298645,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.3495330512523651,
-            "label": "protein powder or shaker bottle"
-          },
-          {
-            "score": 0.042576685547828674,
-            "label": "pre workout supplement"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "nutrition",
-      "scope": "nutrition",
-      "title": "this is the type of meal i always come back to",
-      "body": "nothing crazy here. it just makes protein and calories easier to handle when the week gets messy.",
-      "score": 41,
-      "comments": 5,
-      "viewCount": 1268,
-      "saveCount": 22,
-      "ageMinutes": 2,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0273",
       "slug": "progress-check-on-mid-back-because-it-still-feels-behind",
       "imageFingerprint": "",
@@ -2568,6 +1837,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a person is preparing food on a plate",
       "imageUrl": "https://live.staticflickr.com/4058/4687614327_8db5b88d94_b.jpg",
       "imageAlt": "back training photo",
       "imageSource": "openverse",
@@ -2632,8 +1902,8 @@
       "postType": "question",
       "category": "training",
       "scope": "training",
-      "title": "this salmon meal prep looks simple but would you run it all week",
-      "body": "screenshotting this because meals like salmon meal prep are the only reason i hit protein on busy weeks.",
+      "title": "would you actually keep salmon meal prep like this in rotation",
+      "body": "this is the kind of meal i can keep around without having to think too hard about protein.",
       "score": 90,
       "comments": 6,
       "viewCount": 681,
@@ -2650,6 +1920,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a doughnut is on a tray on a counter",
       "imageUrl": "https://live.staticflickr.com/2043/2195469459_4f62e560c9_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -2714,8 +1985,8 @@
       "postType": "casual",
       "category": "training",
       "scope": "training",
-      "title": "meal prep still comes down to food you will actually repeat",
-      "body": "half the battle is having something easy enough to make again tomorrow.",
+      "title": "wraps like this save me on busy days",
+      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
       "score": 105,
       "comments": 7,
       "viewCount": 475,
@@ -2728,10 +1999,11 @@
       "slug": "what-actually-keeps-you-consistent-when-life-gets-loud",
       "imageFingerprint": "1280px-thumbnail",
       "imageType": "general_gym",
-      "imageMainObject": "rainy commute days",
-      "imageSubject": "rainy commute days",
+      "imageMainObject": "sports training session",
+      "imageSubject": "sports training session",
       "imageMuscleGroup": null,
       "imagePostAngle": "check_in",
+      "imageCaption": "a man holding a red and white baseball bat",
       "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/XIX_Commonwealth_Games-2010_Delhi_Nigerian_weightlifter_Onyeka_Azike_completed_a_lift_at_the_women%E2%80%99s_53_kg_category_weightlifting_and_won_the_Silver_Medal%2C_in_New_Delhi_on_October_05%2C_2010.jpg/1280px-thumbnail.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "wikimedia",
@@ -2740,17 +2012,60 @@
       "imageLicenseUrl": null,
       "imagePageUrl": null,
       "visionAnalysis": {
-        "broadLabel": "analysis_failed",
-        "broadScore": 0,
-        "detailLabel": "analysis_failed",
-        "detailScore": 0,
-        "error": "Unable to read image from \"https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/XIX_Commonwealth_Games-2010_Delhi_Nigerian_weightlifter_Onyeka_Azike_completed_a_lift_at_the_women%E2%80%99s_53_kg_category_weightlifting_and_won_the_Silver_Medal%2C_in_New_Delhi_on_October_05%2C_2010.jpg/1280px-thumbnail.jpg\" (429 Too many requests (76af2b0))"
+        "broadLabel": "general gym scene",
+        "broadScore": 0.3919932544231415,
+        "detailLabel": "women sports training",
+        "detailScore": 0.678534209728241,
+        "allBroad": [
+          {
+            "score": 0.3919932544231415,
+            "label": "general gym scene"
+          },
+          {
+            "score": 0.2523340880870819,
+            "label": "exercise in gym"
+          },
+          {
+            "score": 0.12560918927192688,
+            "label": "fitness progress selfie"
+          },
+          {
+            "score": 0.11960319429636002,
+            "label": "workout plan notebook"
+          },
+          {
+            "score": 0.0881747230887413,
+            "label": "supplement bottle"
+          },
+          {
+            "score": 0.02228555828332901,
+            "label": "meal prep food"
+          }
+        ],
+        "allDetail": [
+          {
+            "score": 0.678534209728241,
+            "label": "women sports training"
+          },
+          {
+            "score": 0.2222227156162262,
+            "label": "barbell or equipment setup"
+          },
+          {
+            "score": 0.09580348432064056,
+            "label": "athlete training scene"
+          },
+          {
+            "score": 0.003439617808908224,
+            "label": "gym mirror selfie"
+          }
+        ]
       },
       "postType": "question",
       "category": "supplements",
       "scope": "nutrition",
-      "title": "what actually keeps you consistent when life gets loud",
-      "body": "curious what actually keeps you steady when life gets noisy and the gym stops feeling automatic.",
+      "title": "anyone else feel way more athletic when training looks like this",
+      "body": "curious how many people here still mix sports style work in instead of only chasing gym numbers.",
       "score": 42,
       "comments": 4,
       "viewCount": 416,
@@ -2767,6 +2082,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food on a table",
       "imageUrl": "https://live.staticflickr.com/4114/5410164696_1d0833657a_b.jpg",
       "imageAlt": "quad training photo",
       "imageSource": "openverse",
@@ -2831,8 +2147,8 @@
       "postType": "casual",
       "category": "training",
       "scope": "training",
-      "title": "this looks boring and thats exactly why it works",
-      "body": "meals like this are not exciting, they are just practical.",
+      "title": "would you actually keep salmon meal prep like this in rotation",
+      "body": "this is the kind of meal i can keep around without having to think too hard about protein.",
       "score": 98,
       "comments": 3,
       "viewCount": 1239,
@@ -2849,6 +2165,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with a drink and a fork",
       "imageUrl": "https://live.staticflickr.com/3301/3532185633_2052c49004_b.jpg",
       "imageAlt": "lat training photo",
       "imageSource": "openverse",
@@ -2931,6 +2248,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with fruit and vegetables",
       "imageUrl": "https://live.staticflickr.com/8131/8698222547_c3bbdb2dbf.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -3005,92 +2323,15 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0305",
-      "slug": "anybody-else-feel-way-better-once-the-gym-week-gets-simpler",
-      "imageFingerprint": "",
-      "imageType": "planning",
-      "imageMainObject": "training split",
-      "imageSubject": "training split",
-      "imageMuscleGroup": "programming",
-      "imagePostAngle": "split_review",
-      "imageUrl": "https://live.staticflickr.com/4110/4946460069_ec3cbf8afa_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "rmkoske",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/67146024@N00/4946460069",
-      "visionAnalysis": {
-        "broadLabel": "workout plan notebook",
-        "broadScore": 0.869916558265686,
-        "detailLabel": "notebook or journal workout plan",
-        "detailScore": 0.41725483536720276,
-        "allBroad": [
-          {
-            "score": 0.869916558265686,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.05309825763106346,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.04331844300031662,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.02922648750245571,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.0025523013900965452,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.001887927995994687,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.41725483536720276,
-            "label": "notebook or journal workout plan"
-          },
-          {
-            "score": 0.3831758201122284,
-            "label": "phone notes or calendar planning"
-          },
-          {
-            "score": 0.1761569380760193,
-            "label": "written workout split"
-          },
-          {
-            "score": 0.023412425071001053,
-            "label": "meal plan notes"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "training",
-      "scope": "training",
-      "title": "would you leave this training split alone or keep tweaking it",
-      "body": "trying to keep the structure obvious enough that i can follow it even when life gets messy.",
-      "score": 92,
-      "comments": 6,
-      "viewCount": 640,
-      "saveCount": 25,
-      "ageMinutes": 331,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0306",
       "slug": "is-steak-potato-boxes-actually-a-good-bulk-meal-or-no",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of vegetables on a table",
       "imageUrl": "https://live.staticflickr.com/2515/4033758577_f419d3d80f_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -3155,8 +2396,8 @@
       "postType": "question",
       "category": "bulking",
       "scope": "nutrition",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "title": "would you count something like this as a real meal or just a snack",
+      "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "score": 32,
       "comments": 4,
       "viewCount": 637,
@@ -3173,6 +2414,7 @@
       "imageSubject": "salmon meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of vegetables on a table",
       "imageUrl": "https://live.staticflickr.com/2791/4383993458_7af6b8fd7e_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -3237,91 +2479,13 @@
       "postType": "question",
       "category": "nutrition",
       "scope": "nutrition",
-      "title": "good high protein meal or too boring to repeat",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "title": "this kind of salmon prep is boring in the best way",
+      "body": "if a salmon meal is this easy to repeat i usually stop trying to make it more exciting.",
       "score": 11,
       "comments": 3,
       "viewCount": 1038,
       "saveCount": 13,
       "ageMinutes": 195,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0315",
-      "slug": "before-bed-sessions-made-the-week-feel-way-harder-than-it-needed-to",
-      "imageFingerprint": "",
-      "imageType": "physique",
-      "imageMainObject": "gym setup",
-      "imageSubject": "gym setup",
-      "imageMuscleGroup": null,
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/606/22147741201_dd5b7bea44_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "Travelbusy.com",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/86829008@N03/22147741201",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.33055177330970764,
-        "detailLabel": "barbell or equipment setup",
-        "detailScore": 0.6931047439575195,
-        "allBroad": [
-          {
-            "score": 0.33055177330970764,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.3185713589191437,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.21646010875701904,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.11617010831832886,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.011737833730876446,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.006508822552859783,
-            "label": "workout plan notebook"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.6931047439575195,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.1908564567565918,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.11408805102109909,
-            "label": "women sports training"
-          },
-          {
-            "score": 0.0019507360411807895,
-            "label": "gym mirror selfie"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "supplements",
-      "scope": "nutrition",
-      "title": "trying not to overreact but i can finally see a change",
-      "body": "nothing insane here. just the kind of change that reminds you consistency does add up.",
-      "score": 37,
-      "comments": 6,
-      "viewCount": 467,
-      "saveCount": 6,
-      "ageMinutes": 492,
       "isSeeded": true
     },
     {
@@ -3333,6 +2497,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a person holding a sandwich in a paper bag",
       "imageUrl": "https://live.staticflickr.com/3817/13548314483_4a83a56868.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -3397,8 +2562,8 @@
       "postType": "casual",
       "category": "training",
       "scope": "training",
-      "title": "protein is easy when the food is this simple",
-      "body": "half the battle is having something easy enough to make again tomorrow.",
+      "title": "this is exactly the kind of meal i use when i dont want to think",
+      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
       "score": 68,
       "comments": 6,
       "viewCount": 1270,
@@ -3415,6 +2580,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a pot of food is being stirred in a pot",
       "imageUrl": "https://live.staticflickr.com/3251/2981824267_4c8fdd1be2_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -3489,80 +2655,6 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0321",
-      "slug": "progress-is-progress-even-when-it-feels-slow",
-      "imageFingerprint": "",
-      "imageType": "supplement",
-      "imageMainObject": "creatine",
-      "imageSubject": "creatine",
-      "imageMuscleGroup": "supplements",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/6089/6093701123_b25857f73a_b.jpg",
-      "imageAlt": "upper chest training photo",
-      "imageSource": "openverse",
-      "imageCreator": "kenteegardin",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/26373139@N08/6093701123",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.2737613618373871,
-        "detailLabel": "creatine container",
-        "detailScore": 0.5327147841453552,
-        "allBroad": [
-          {
-            "score": 0.2737613618373871,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.22113658487796783,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.14424476027488708,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.13563263416290283,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.11599437892436981,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.10923027992248535,
-            "label": "general gym scene"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.5327147841453552,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.2841459810733795,
-            "label": "pre workout supplement"
-          },
-          {
-            "score": 0.18313923478126526,
-            "label": "protein powder or shaker bottle"
-          }
-        ]
-      },
-      "postType": "casual",
-      "category": "training",
-      "scope": "training",
-      "title": "Creatine worth it or still just extra money",
-      "body": "this is one of the few products i still think about keeping around, but im still trying to be honest about whether it really helps.",
-      "score": 80,
-      "comments": 7,
-      "viewCount": 1294,
-      "saveCount": 22,
-      "ageMinutes": 268,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0322",
       "slug": "how-do-you-keep-shift-work-weeks-from-throwing-the-whole-week-off",
       "imageFingerprint": "",
@@ -3571,6 +2663,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a table topped with a bunch of different colored vases",
       "imageUrl": "https://live.staticflickr.com/7803/45962191695_9b7ea51189_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -3649,10 +2742,11 @@
       "slug": "meal-prep-is-still-just-dishes-and-protein",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with a bowl of vegetables",
       "imageUrl": "https://live.staticflickr.com/7296/9397844567_65a610ab3c_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -3717,8 +2811,8 @@
       "postType": "casual",
       "category": "bulking",
       "scope": "nutrition",
-      "title": "this looks boring and thats exactly why it works",
-      "body": "this is the kind of food that keeps a week from falling apart.",
+      "title": "this is one of the easiest high protein snacks ive found",
+      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "score": 40,
       "comments": 7,
       "viewCount": 464,
@@ -3731,10 +2825,11 @@
       "slug": "simple-overnight-oats-beats-overcomplicated-meal-prep-every-time",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of food with meat and vegetables",
       "imageUrl": "https://live.staticflickr.com/3138/2780368749_d86798aa49_b.jpg",
       "imageAlt": "meal prep photo",
       "imageSource": "openverse",
@@ -3799,8 +2894,8 @@
       "postType": "advice",
       "category": "cutting",
       "scope": "nutrition",
-      "title": "if your week is busy this kind of food is hard to beat",
-      "body": "if someone asked me what to keep around for hectic weeks, it would be stuff like this.",
+      "title": "this is one of the easiest high protein snacks ive found",
+      "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "score": 53,
       "comments": 5,
       "viewCount": 530,
@@ -3812,11 +2907,12 @@
       "id": "forum-post-0329",
       "slug": "busy-week-but-i-still-found-a-decent-session-in-there",
       "imageFingerprint": "",
-      "imageType": "planning",
-      "imageMainObject": "gym session",
-      "imageSubject": "gym session",
-      "imageMuscleGroup": "programming",
+      "imageType": "food",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
+      "imageMuscleGroup": "nutrition",
       "imagePostAngle": "check_in",
+      "imageCaption": "a bowl of food with a spoon and a bowl of ice cream",
       "imageUrl": "https://live.staticflickr.com/5041/5342876505_8722719385_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -3877,8 +2973,8 @@
       "postType": "personal",
       "category": "training",
       "scope": "training",
-      "title": "simplifying the plan helped more than i expected",
-      "body": "posting it because i know im not the only one who turns a normal split into a project.",
+      "title": "would you count something like this as a real meal or just a snack",
+      "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "score": 48,
       "comments": 5,
       "viewCount": 1033,
@@ -3887,162 +2983,15 @@
       "isSeeded": true
     },
     {
-      "id": "forum-post-0330",
-      "slug": "small-changes-in-training-show-up-way-before-perfect-photos-do",
-      "imageFingerprint": "",
-      "imageType": "supplement",
-      "imageMainObject": "creatine",
-      "imageSubject": "creatine",
-      "imageMuscleGroup": "supplements",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/183/414633167_e4bef3a56d_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "euthman",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/78147607@N00/414633167",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.5108199715614319,
-        "detailLabel": "creatine container",
-        "detailScore": 0.5624672174453735,
-        "allBroad": [
-          {
-            "score": 0.5108199715614319,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.22994835674762726,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.12481465935707092,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.06487377732992172,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.05040862038731575,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.01913459785282612,
-            "label": "workout plan notebook"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.5624672174453735,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.33588501811027527,
-            "label": "protein powder or shaker bottle"
-          },
-          {
-            "score": 0.1016477644443512,
-            "label": "pre workout supplement"
-          }
-        ]
-      },
-      "postType": "advice",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "Creatine worth it or still just extra money",
-      "body": "this is one of the few products i still think about keeping around, but im still trying to be honest about whether it really helps.",
-      "score": 71,
-      "comments": 5,
-      "viewCount": 962,
-      "saveCount": 10,
-      "ageMinutes": 114,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0332",
-      "slug": "rainy-commute-days-made-the-week-feel-way-harder-than-it-needed-to",
-      "imageFingerprint": "",
-      "imageType": "supplement",
-      "imageMainObject": "creatine",
-      "imageSubject": "creatine",
-      "imageMuscleGroup": "supplements",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/4025/4671351916_3bc6d2dc77_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "^^^ 星翼^^^",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/11983192@N00/4671351916",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.5453265905380249,
-        "detailLabel": "creatine container",
-        "detailScore": 0.6814717650413513,
-        "allBroad": [
-          {
-            "score": 0.5453265905380249,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.21873150765895844,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.08002052456140518,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.06873639672994614,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.05777265876531601,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.02941231243312359,
-            "label": "workout plan notebook"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.6814717650413513,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.16425223648548126,
-            "label": "protein powder or shaker bottle"
-          },
-          {
-            "score": 0.15427598357200623,
-            "label": "pre workout supplement"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "nutrition",
-      "scope": "nutrition",
-      "title": "anybody actually notice enough from creatine to keep buying it",
-      "body": "this is one of the few products i still think about keeping around, but im still trying to be honest about whether it really helps.",
-      "score": 33,
-      "comments": 3,
-      "viewCount": 456,
-      "saveCount": 19,
-      "ageMinutes": 1900,
-      "isSeeded": true
-    },
-    {
       "id": "forum-post-0333",
       "slug": "anybody-else-feel-way-better-once-the-gym-week-gets-simpler",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein yogurt bowl",
+      "imageSubject": "protein yogurt bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a bowl of pasta with vegetables and meat",
       "imageUrl": "https://live.staticflickr.com/4003/4555346617_3ef05d9bbc_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -4107,321 +3056,13 @@
       "postType": "question",
       "category": "lifestyle",
       "scope": "training",
-      "title": "this rice and protein meal prep looks simple but would you run it all week",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "title": "this is one of the easiest high protein snacks ive found",
+      "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "score": 43,
       "comments": 5,
       "viewCount": 189,
       "saveCount": 2,
       "ageMinutes": 1430,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0334",
-      "slug": "this-split-squat-setup-works-better-than-i-expected",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "protein powder",
-      "imageSubject": "protein powder",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "worth_it",
-      "imageUrl": "https://live.staticflickr.com/150/335667772_1492828c1b_b.jpg",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
-      "imageCreator": "ndrwfgg",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/69024001@N00/335667772",
-      "visionAnalysis": {
-        "broadLabel": "supplement bottle",
-        "broadScore": 0.9866408705711365,
-        "detailLabel": "protein powder or shaker bottle",
-        "detailScore": 0.4700937271118164,
-        "allBroad": [
-          {
-            "score": 0.9866408705711365,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.00816335342824459,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.002090513240545988,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.0015472653321921825,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.0008532758802175522,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.0007047106046229601,
-            "label": "fitness progress selfie"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.4700937271118164,
-            "label": "protein powder or shaker bottle"
-          },
-          {
-            "score": 0.46882134675979614,
-            "label": "creatine container"
-          },
-          {
-            "score": 0.061084944754838943,
-            "label": "pre workout supplement"
-          }
-        ]
-      },
-      "postType": "advice",
-      "category": "training",
-      "scope": "training",
-      "title": "meals like this are boring but they work",
-      "body": "when the goal is staying consistent i would rather have a boring meal i can repeat than a perfect one i never make again.",
-      "score": 30,
-      "comments": 6,
-      "viewCount": 425,
-      "saveCount": 18,
-      "ageMinutes": 940,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0336",
-      "slug": "training-is-not-where-i-want-it-yet-but-it-finally-looks-different",
-      "imageFingerprint": "",
-      "imageType": "planning",
-      "imageMainObject": "training split",
-      "imageSubject": "training split",
-      "imageMuscleGroup": "programming",
-      "imagePostAngle": "split_review",
-      "imageUrl": "https://live.staticflickr.com/2898/14022632007_572c14aa91_b.jpg",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
-      "imageCreator": "jurvetson",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/44124348109@N01/14022632007",
-      "visionAnalysis": {
-        "broadLabel": "workout plan notebook",
-        "broadScore": 0.3352499306201935,
-        "detailLabel": "notebook or journal workout plan",
-        "detailScore": 0.5110024809837341,
-        "allBroad": [
-          {
-            "score": 0.3352499306201935,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.30506694316864014,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.13526630401611328,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.10062573105096817,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.07153993844985962,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.05225115641951561,
-            "label": "meal prep food"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.5110024809837341,
-            "label": "notebook or journal workout plan"
-          },
-          {
-            "score": 0.22178895771503448,
-            "label": "meal plan notes"
-          },
-          {
-            "score": 0.1936921775341034,
-            "label": "phone notes or calendar planning"
-          },
-          {
-            "score": 0.07351641356945038,
-            "label": "written workout split"
-          }
-        ]
-      },
-      "postType": "personal",
-      "category": "nutrition",
-      "scope": "nutrition",
-      "title": "simplifying the plan helped more than i expected",
-      "body": "posting it because i know im not the only one who turns a normal split into a project.",
-      "score": 35,
-      "comments": 5,
-      "viewCount": 167,
-      "saveCount": 23,
-      "ageMinutes": 12,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0339",
-      "slug": "this-steak-potato-boxes-has-been-one-of-the-easiest-ways-to-hit-protein",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "gym setup",
-      "imageSubject": "gym setup",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/8/12062552_85ba5a9017_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "In Memoriam: sa_ku_ra",
-      "imageLicense": "by",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/79511840@N00/12062552",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.6249216198921204,
-        "detailLabel": "barbell or equipment setup",
-        "detailScore": 0.6334897875785828,
-        "allBroad": [
-          {
-            "score": 0.6249216198921204,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.1268254816532135,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.12006953358650208,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.06807863712310791,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.051179707050323486,
-            "label": "fitness progress selfie"
-          },
-          {
-            "score": 0.00892503559589386,
-            "label": "workout plan notebook"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.6334897875785828,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.2170882374048233,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.11313069611787796,
-            "label": "gym mirror selfie"
-          },
-          {
-            "score": 0.03629126772284508,
-            "label": "women sports training"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "this gym setup looks simple but would you run it all week",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
-      "score": 79,
-      "comments": 7,
-      "viewCount": 368,
-      "saveCount": 17,
-      "ageMinutes": 7114,
-      "isSeeded": true
-    },
-    {
-      "id": "forum-post-0340",
-      "slug": "this-egg-wraps-has-been-one-of-the-easiest-ways-to-hit-protein",
-      "imageFingerprint": "",
-      "imageType": "food",
-      "imageMainObject": "gym setup",
-      "imageSubject": "gym setup",
-      "imageMuscleGroup": "nutrition",
-      "imagePostAngle": "check_in",
-      "imageUrl": "https://live.staticflickr.com/4012/4414805607_8b6c22d97c_b.jpg",
-      "imageAlt": "meal prep photo",
-      "imageSource": "openverse",
-      "imageCreator": "Kurdistan Photo كوردستان",
-      "imageLicense": "by-sa",
-      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-      "imagePageUrl": "https://www.flickr.com/photos/8605011@N02/4414805607",
-      "visionAnalysis": {
-        "broadLabel": "general gym scene",
-        "broadScore": 0.44151997566223145,
-        "detailLabel": "barbell or equipment setup",
-        "detailScore": 0.6355562210083008,
-        "allBroad": [
-          {
-            "score": 0.44151997566223145,
-            "label": "general gym scene"
-          },
-          {
-            "score": 0.2660141587257385,
-            "label": "exercise in gym"
-          },
-          {
-            "score": 0.22235897183418274,
-            "label": "supplement bottle"
-          },
-          {
-            "score": 0.030065303668379784,
-            "label": "workout plan notebook"
-          },
-          {
-            "score": 0.024647457525134087,
-            "label": "meal prep food"
-          },
-          {
-            "score": 0.015394138172268867,
-            "label": "fitness progress selfie"
-          }
-        ],
-        "allDetail": [
-          {
-            "score": 0.6355562210083008,
-            "label": "barbell or equipment setup"
-          },
-          {
-            "score": 0.19365373253822327,
-            "label": "athlete training scene"
-          },
-          {
-            "score": 0.16019771993160248,
-            "label": "women sports training"
-          },
-          {
-            "score": 0.010592305101454258,
-            "label": "gym mirror selfie"
-          }
-        ]
-      },
-      "postType": "question",
-      "category": "bulking",
-      "scope": "nutrition",
-      "title": "would you actually keep gym setup in rotation or get sick of it fast",
-      "body": "screenshotting this because meals like gym setup are the only reason i hit protein on busy weeks.",
-      "score": 56,
-      "comments": 5,
-      "viewCount": 976,
-      "saveCount": 8,
-      "ageMinutes": 22,
       "isSeeded": true
     },
     {
@@ -4433,6 +3074,7 @@
       "imageSubject": "high protein wrap",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a sandwich and a bowl of soup on a table",
       "imageUrl": "https://live.staticflickr.com/7059/7011299443_792c39d0a9.jpg",
       "imageAlt": "core training photo",
       "imageSource": "openverse",
@@ -4497,8 +3139,8 @@
       "postType": "personal",
       "category": "training",
       "scope": "training",
-      "title": "kept high protein wrap in the rotation because it just works",
-      "body": "i end up leaning on meals like this whenever i need food that is fast, repeatable, and hard to mess up.",
+      "title": "good high protein wrap or would you switch it up",
+      "body": "if i can eat it fast and still get protein in, it stays in the rotation.",
       "score": 23,
       "comments": 6,
       "viewCount": 877,
@@ -4515,6 +3157,7 @@
       "imageSubject": "rice and protein meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with meat, vegetables and a fork",
       "imageUrl": "https://live.staticflickr.com/3602/3622388556_f94cf2d9a2_b.jpg",
       "imageAlt": "workout planning photo",
       "imageSource": "openverse",
@@ -4593,10 +3236,11 @@
       "slug": "weekend-catch-ups-made-the-week-feel-way-harder-than-it-needed-to",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "high protein breakfast",
-      "imageSubject": "high protein breakfast",
+      "imageMainObject": "high protein oats",
+      "imageSubject": "high protein oats",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with a fork and a cup of coffee",
       "imageUrl": "https://live.staticflickr.com/60/188950013_ea88f9f9d1_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",
@@ -4675,10 +3319,11 @@
       "slug": "forgot-my-headphones-and-still-had-a-good-session",
       "imageFingerprint": "",
       "imageType": "food",
-      "imageMainObject": "high protein breakfast",
-      "imageSubject": "high protein breakfast",
+      "imageMainObject": "high protein oats",
+      "imageSubject": "high protein oats",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
+      "imageCaption": "a plate of food with eggs, sausage, and bacon",
       "imageUrl": "https://live.staticflickr.com/6093/6211281132_ef3d3a5869_b.jpg",
       "imageAlt": "fitness training photo",
       "imageSource": "openverse",

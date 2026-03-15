@@ -226,11 +226,13 @@
     const subject = String(record.imageSubject || record.imageMainObject || item.imageSubject || '').toLowerCase();
     const muscle = String(record.imageMuscleGroup || item.imageMuscleGroup || '').toLowerCase();
     const detail = String(record.visionAnalysis && record.visionAnalysis.detailLabel || '').toLowerCase();
+    const caption = String(record.imageCaption || item.imageCaption || '').toLowerCase();
     const subjectLabel = String(record.imageSubject || record.imageMainObject || item.imageSubject || 'this').toLowerCase();
+    const imageText = `${subject} ${muscle} ${detail} ${caption}`.trim();
 
     if (!imageType) return null;
 
-    if (imageType === 'physique' && /glute|butt|booty/.test(`${subject} ${muscle} ${detail}`)) {
+    if (imageType === 'physique' && /glute|butt|booty/.test(imageText)) {
       return {
         advice: ['glutes finally started moving for me when i added more direct work and actually progressed it', 'hip thrusts and controlled glute work helped mine way more than i expected', 'if glutes are lagging i would look at exercise order and direct volume first'],
         experience: ['glutes took forever for me until i trained them on purpose instead of hoping compounds covered it', 'mine finally looked different once i treated glute work like a real priority'],
@@ -242,7 +244,7 @@
       };
     }
 
-    if ((imageType === 'exercise' || imageType === 'physique') && /back pulling|back|lat|row|pulldown|pull up/.test(`${subject} ${muscle} ${detail}`)) {
+    if ((imageType === 'exercise' || imageType === 'physique') && /back pulling|back|lat|row|pulldown|pull up|cable row/.test(imageText)) {
       return {
         advice: ['back started making more sense for me once i cleaned up elbow path and setup', 'if a pull finally feels more direct i would keep that variation in for a while', 'better back setup usually matters more than adding random extra pulling'],
         experience: ['my back only started showing more once i could actually feel rows and pulldowns where they were supposed to', 'back progress was way easier to notice once pull work finally clicked'],
@@ -254,7 +256,7 @@
       };
     }
 
-    if (imageType === 'supplement' && /creatine/.test(`${subject} ${detail}`)) {
+    if (imageType === 'supplement' && /creatine/.test(imageText)) {
       return {
         advice: ['creatine is still one of the only boring supplements i trust', 'if youre already handling food and training then creatine is at least a reasonable basic', 'i would keep creatine simple and ignore most of the hype around everything else'],
         experience: ['creatine is one of the few things i never really overthought once i started taking it daily', 'most supplements felt optional to me but creatine always felt like the easiest basic'],
@@ -266,7 +268,7 @@
       };
     }
 
-    if (imageType === 'food' && /salmon/.test(`${subject} ${detail}`)) {
+    if (imageType === 'food' && /salmon|fish/.test(imageText)) {
       return {
         advice: ['salmon like that is solid if it actually fits the week and you will repeat it', 'if a meal like this keeps protein easy i would keep it around', 'for something that looks this simple the main question is whether you will actually keep making it'],
         experience: ['meals like this are exactly what save my week when i stop wanting to think about food', 'simple salmon meals always worked better for me than trying to make every meal interesting'],
@@ -278,7 +280,7 @@
       };
     }
 
-    if (imageType === 'food' && /wrap|sandwich/.test(`${subject} ${detail}`)) {
+    if (imageType === 'food' && /wrap|sandwich|tortilla/.test(imageText)) {
       return {
         advice: ['wraps like that are hard to beat when you need portable protein', 'if the goal is consistency a meal like that makes a lot of sense', 'easy food you can actually repeat usually matters more than perfect macros'],
         experience: ['wrap type meals saved me on workdays more than anything else', 'stuff like that is what kept my protein from falling apart on busy weeks'],
@@ -287,6 +289,78 @@
         support: ['that kind of meal is way more useful than people give it credit for', 'looks simple in a good way'],
         disagree: ['nah i would not overthink a meal like that', 'if it works i would keep it boring and repeatable'],
         joke: ['the best meal prep always looks the least exciting']
+      };
+    }
+
+    if (imageType === 'food' && /yogurt|parfait|berries|granola|bowl/.test(imageText)) {
+      return {
+        advice: ['protein bowls like that are great when a full meal sounds like too much work', 'stuff like this is useful because it is quick and still gets protein in', 'if you can keep a bowl like that easy to repeat it earns its spot'],
+        experience: ['i use food like that when appetite is weird but i still need something with protein', 'yogurt bowls end up doing more work for me than a lot of bigger meals'],
+        question: ['do you count that as a snack or a real meal', 'what do you usually add to a bowl like that for more staying power'],
+        blunt: ['easy protein wins more often than perfect protein tbh', 'if it is simple enough to repeat thats already a plus'],
+        support: ['that actually looks like something you would keep making', 'simple food like that is underrated'],
+        disagree: ['nah i would not overthink a bowl like that', 'if it helps you hit protein it is doing its job'],
+        joke: ['the least exciting meals are always the most useful']
+      };
+    }
+
+    if (imageType === 'exercise' && /hip thrust|glute bridge|glute focused/.test(imageText)) {
+      return {
+        advice: ['hip thrusts helped my glutes once i stopped rushing them', 'if glutes are lagging this kind of direct work usually matters', 'i would keep that glute work in and actually progress it before changing anything else'],
+        experience: ['glutes finally moved for me once i started taking direct work like that seriously', 'that kind of setup was a lot more useful for my glutes than hoping compounds covered it'],
+        question: ['are you doing glute work like that once or twice a week', 'did you put that earlier in the session'],
+        blunt: ['glutes usually need more direct work than people want to hear', 'if theyre not growing id stop hoping random leg days fix it'],
+        support: ['that kind of glute work can definitely move things', 'makes sense if glutes finally started responding'],
+        disagree: ['nah i wouldnt cut that out if it is finally working', 'i think you stick with direct glute work before changing course'],
+        joke: ['glutes really do make you earn it']
+      };
+    }
+
+    if (imageType === 'exercise' && /bench|incline|press|cable fly/.test(imageText)) {
+      return {
+        advice: ['pressing like that usually works better once setup is locked in', 'if chest is finally feeling involved i would not change much yet', 'a movement like that probably belongs earlier if chest is the goal'],
+        experience: ['incline work finally made upper chest make sense for me', 'my chest only started growing once pressing felt more like this and less shoulder dominant'],
+        question: ['does that hit chest or mostly shoulders for you', 'would you keep that where it is or move it earlier'],
+        blunt: ['if shoulders still take over then the setup is still off tbh', 'pressing volume is useless if chest never actually gets the work'],
+        support: ['that looks like a much better chest setup', 'makes sense if this finally clicked'],
+        disagree: ['nah i wouldnt swap it out if it is finally feeling right', 'i think you keep running that before overthinking it'],
+        joke: ['every chest setup is one inch away from turning into shoulders']
+      };
+    }
+
+    if (imageType === 'exercise' && /lateral|rear delt|shoulder isolation|pec deck/.test(imageText)) {
+      return {
+        advice: ['delt work like that usually responds to cleaner reps more than extra ego', 'i would keep shoulder work controlled and actually count the hard reps', 'movements like that tend to work better once you stop turning them into traps'],
+        experience: ['side delts only started moving once i slowed everything down', 'rear delt work clicked for me after i stopped loading it like a row'],
+        question: ['do you feel that in delts or does traps still take over', 'how often are you hitting shoulder work right now'],
+        blunt: ['most people let traps steal these reps tbh', 'if delt work never feels direct the setup is probably still off'],
+        support: ['that kind of shoulder work can definitely finally make things click', 'makes sense if delts started responding once the setup got cleaner'],
+        disagree: ['nah i wouldnt scrap that if it is finally hitting', 'i think you keep the movement and clean up execution first'],
+        joke: ['side delts stay humble until they randomly show up']
+      };
+    }
+
+    if (imageType === 'general_gym' && /car|steering wheel|vehicle|beat up after leg day/.test(imageText)) {
+      return {
+        advice: ['nothing to fix here this is just the cost of a real leg day', 'if the drive home looks like that the session probably counted', 'hydrate and walk a bit before you lock up completely'],
+        experience: ['i have definitely sat in the car like that after a hard lower day', 'the post leg day drive home is always its own event'],
+        question: ['was this after squats or split squats', 'what did you hit that session'],
+        blunt: ['yeah thats just leg day collecting its payment', 'no notes thats normal'],
+        support: ['everybody who trains legs knows that feeling', 'realest post in the feed honestly'],
+        disagree: ['nah this is not a sign you need more volume lol', 'i would not take that as a reason to go lighter'],
+        joke: ['manual transmission after leg day should be illegal']
+      };
+    }
+
+    if (imageType === 'general_gym' && /baseball|bat|track|runner|sports training/.test(imageText)) {
+      return {
+        advice: ['sports work like that still counts if it keeps you athletic and consistent', 'conditioning from field work is still useful even if it is not a normal gym session', 'i like keeping some sports movement in instead of only chasing gym numbers'],
+        experience: ['stuff like that always reminds me i feel better when training is not only lifting', 'i grew up doing sports so sessions like that still scratch a different itch'],
+        question: ['do you still mix sports work in during the week', 'does that kind of session replace cardio for you'],
+        blunt: ['people act like only barbell work counts and that is dumb tbh', 'athletic work is still training even if it is not a lift'],
+        support: ['this kind of training is underrated', 'looks like a good break from the usual gym routine'],
+        disagree: ['nah i would not cut that out just because it isnt bodybuilding style', 'i think some sports work makes a lot of people feel better overall'],
+        joke: ['field work has a way of humbling gym only legs']
       };
     }
 

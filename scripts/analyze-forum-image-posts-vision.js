@@ -171,11 +171,12 @@ async function main() {
   const data = JSON.parse(fs.readFileSync(IMAGE_DB_PATH, 'utf8'));
   const items = Array.isArray(data.items) ? data.items : [];
   const classifier = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32');
+  const captioner = await pipeline('image-to-text', 'Xenova/vit-gpt2-image-captioning');
 
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
     if (!item.imageUrl) continue;
-    if (item.visionAnalysis && item.visionAnalysis.broadLabel && item.visionAnalysis.detailLabel) {
+    if (item.visionAnalysis && item.visionAnalysis.broadLabel && item.visionAnalysis.detailLabel && item.imageCaption) {
       console.log(`[${index + 1}/${items.length}] ${item.id} -> skipped existing analysis`);
       continue;
     }
@@ -196,6 +197,8 @@ async function main() {
         allBroad: broad.slice(0, 6),
         allDetail: detail.slice(0, 6)
       };
+      const caption = await captioner(item.imageUrl);
+      item.imageCaption = String((Array.isArray(caption) ? caption[0] && caption[0].generated_text : caption && caption.generated_text) || '').trim();
       item.imageType = mapped.imageType;
       item.imageMainObject = mapped.imageSubject;
       item.imageSubject = mapped.imageSubject;

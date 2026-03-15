@@ -53,10 +53,13 @@ function imageTextBlob(post) {
     post.imageMainObject,
     post.imageSubject,
     post.imageMuscleGroup,
+    post.imageCaption,
     post.imageAlt,
     post.imageUrl,
     post.imagePageUrl,
     post.imageCreator,
+    post.visionAnalysis && post.visionAnalysis.broadLabel,
+    post.visionAnalysis && post.visionAnalysis.detailLabel,
     post.title,
     post.body
   ].filter(Boolean).join(' ').toLowerCase();
@@ -64,15 +67,27 @@ function imageTextBlob(post) {
 
 function isUsableImageRecord(post) {
   const text = imageTextBlob(post);
+  const caption = String(post.imageCaption || '').toLowerCase();
   if (!post.imageUrl) return false;
   if (/\b(pdf|page\d+-|ia_|manual|guidebook|yearbook|book scan|scanned|pamphlet|catalog|brochure)\b/.test(text)) return false;
   if (/(\/pdf\/|\.pdf|page\d+-\d+px|practical_child_training|ia_)/.test(text)) return false;
   if (/\b(statue|building|artifact|monument|ruins|sculpture|church|cathedral|temple|museum)\b/.test(text)) return false;
+  if (/\b(bus|coach|carriage|truck|train|airplane|skateboard|piggy bank|elephant|toy|painting|birds|wine|television|screen tv|large screen|box|plastic sliding box)\b/.test(caption)) return false;
+  if (post.imageType === 'food' && !/\b(food|meal|plate|bowl|tray|sandwich|wrap|salad|rice|fish|salmon|meat|vegetable|banana|counter|table|cooking|preparing)\b/.test(caption)) return false;
+  if (post.imageType === 'supplement' && !/\b(bottle|container|powder|shaker|supplement|jar|tub|drink)\b/.test(caption)) return false;
+  if (post.imageType === 'planning' && !/\b(notes|notebook|journal|paper|calendar|writing|written|plan)\b/.test(caption)) return false;
+  if (post.imageType === 'exercise'
+    && !/\b(gym|training|workout|weights|barbell|dumbbell|exercise|press|row|pulldown|squat|leg press|curl|raise|runner|running|lift|lifting)\b/.test(caption)) return false;
+  if (post.imageType === 'physique'
+    && !/\b(mirror|selfie|posing|physique|body|shirtless|abs|muscular|fitness)\b/.test(caption)) return false;
+  if (post.imageType === 'general_gym'
+    && !/\b(gym|training|workout|weights|barbell|dumbbell|runner|running|athlete|baseball|track|sport|sports|lift|lifting)\b/.test(caption)) return false;
   return true;
 }
 
 function resolveImageRecord(post) {
   const text = imageTextBlob(post);
+  const caption = String(post.imageCaption || '').toLowerCase();
   const subject = pretty(post.imageSubject || post.imageMainObject || '');
   const muscle = pretty(post.imageMuscleGroup || '');
   const explicitType = post.imageType || null;
@@ -137,9 +152,114 @@ function resolveImageRecord(post) {
   return resolved;
 }
 
+function captionHas(caption, ...patterns) {
+  return patterns.some((pattern) => new RegExp(pattern, 'i').test(caption));
+}
+
+function deriveVisualDetails(post, resolved) {
+  const caption = String(post.imageCaption || '').toLowerCase();
+  const detail = String(post.visionAnalysis && post.visionAnalysis.detailLabel || '').toLowerCase();
+  const text = `${caption} ${detail} ${String(post.imageAlt || '')}`.toLowerCase();
+  const derived = { ...resolved };
+
+  if (derived.imageType === 'food') {
+    if (captionHas(text, '\\bsalmon\\b', '\\bfish\\b')) derived.subject = 'salmon meal prep';
+    else if (captionHas(text, '\\bwrap\\b', '\\bsandwich\\b', '\\btortilla\\b')) derived.subject = 'high protein wrap';
+    else if (captionHas(text, '\\byogurt\\b', '\\bparfait\\b', '\\bbowl\\b')) derived.subject = 'protein yogurt bowl';
+    else if (captionHas(text, '\\boatmeal\\b', '\\boats\\b', '\\bporridge\\b')) derived.subject = 'high protein oats';
+    else if (captionHas(text, '\\begg\\b', '\\bomelet\\b')) derived.subject = 'high protein eggs';
+    else if (captionHas(text, '\\bchicken\\b', '\\brace\\b', '\\btray\\b', '\\bcontainer\\b', '\\bmeal prep\\b')) derived.subject = 'rice and protein meal prep';
+    else if (captionHas(text, '\\brace\\b')) derived.subject = 'rice based meal prep';
+    return derived;
+  }
+
+  if (derived.imageType === 'physique') {
+    if (captionHas(text, '\\bglute\\b', '\\bbutt\\b', '\\bbooty\\b', '\\bshorts\\b', '\\bleggings\\b')) {
+      derived.subject = 'glute progress check';
+      derived.muscleGroup = 'glutes';
+    } else if (captionHas(text, '\\babs\\b', '\\bmidriff\\b', '\\bwaist\\b', '\\bstomach\\b')) {
+      derived.subject = 'ab progress check';
+      derived.muscleGroup = 'abs';
+    } else if (captionHas(text, '\\barm\\b', '\\bbicep\\b', '\\bflex\\b')) {
+      derived.subject = 'arm progress check';
+      derived.muscleGroup = 'arms';
+    } else if (captionHas(text, '\\bback\\b', '\\blat\\b', '\\bshoulder blades\\b')) {
+      derived.subject = 'back progress check';
+      derived.muscleGroup = 'back';
+    } else if (captionHas(text, '\\bmirror\\b', '\\bselfie\\b', '\\bposing\\b', '\\bphysique\\b', '\\bbody\\b')) {
+      derived.subject = 'physique progress check';
+      derived.muscleGroup = derived.muscleGroup || 'full body';
+    }
+    return derived;
+  }
+
+  if (derived.imageType === 'exercise') {
+    if (captionHas(text, '\\bincline\\b', '\\bbench\\b', '\\bdumbbell press\\b', '\\bsmith\\b', '\\bcable fly\\b')) {
+      derived.subject = captionHas(text, '\\bcable fly\\b') ? 'cable fly work' : 'incline or bench pressing';
+      derived.muscleGroup = 'chest';
+    } else if (captionHas(text, '\\brow\\b', '\\bpulldown\\b', '\\bpullup\\b', '\\blat\\b', '\\bcable row\\b')) {
+      derived.subject = captionHas(text, '\\bcable row\\b') ? 'cable row work' : 'back pulling';
+      derived.muscleGroup = 'back';
+    } else if (captionHas(text, '\\blateral\\b', '\\braise\\b', '\\brear delt\\b', '\\bpec deck\\b')) {
+      derived.subject = captionHas(text, '\\brear delt\\b', '\\bpec deck\\b') ? 'rear delt work' : 'side delt work';
+      derived.muscleGroup = captionHas(text, '\\brear delt\\b', '\\bpec deck\\b') ? 'rear delts' : 'side delts';
+    } else if (captionHas(text, '\\bcurl\\b', '\\bbicep\\b', '\\bdumbbell curl\\b')) {
+      derived.subject = 'bicep curl work';
+      derived.muscleGroup = 'biceps';
+    } else if (captionHas(text, '\\bpushdown\\b', '\\bextension\\b', '\\btricep\\b')) {
+      derived.subject = 'tricep extension work';
+      derived.muscleGroup = 'triceps';
+    } else if (captionHas(text, '\\bhip thrust\\b', '\\bglute bridge\\b')) {
+      derived.subject = 'hip thrust work';
+      derived.muscleGroup = 'glutes';
+    } else if (captionHas(text, '\\brdl\\b', '\\bromanian deadlift\\b', '\\bleg curl\\b', '\\bhamstring\\b')) {
+      derived.subject = captionHas(text, '\\bleg curl\\b') ? 'leg curl work' : 'hamstring hinge work';
+      derived.muscleGroup = 'hamstrings';
+    } else if (captionHas(text, '\\bsquat\\b', '\\bleg press\\b', '\\bhack squat\\b', '\\bsplit squat\\b', '\\bquad\\b')) {
+      derived.subject = captionHas(text, '\\bleg press\\b') ? 'leg press work' : 'quad focused leg work';
+      derived.muscleGroup = 'quads';
+    } else if (captionHas(text, '\\bcalf\\b', '\\btoe raise\\b')) {
+      derived.subject = 'calf training';
+      derived.muscleGroup = 'calves';
+    } else if (captionHas(text, '\\bcar\\b', '\\bvehicle\\b', '\\binterior\\b', '\\bsteering wheel\\b')) {
+      derived.imageType = 'general_gym';
+      derived.subject = 'beat up after leg day';
+      derived.muscleGroup = null;
+    }
+    return derived;
+  }
+
+  if (derived.imageType === 'planning') {
+    if (captionHas(text, '\\bnotes\\b', '\\bphone\\b', '\\bscreen\\b')) derived.subject = 'phone workout notes';
+    else if (captionHas(text, '\\bnotebook\\b', '\\bjournal\\b', '\\bpaper\\b', '\\bhandwriting\\b')) derived.subject = 'written workout split';
+    else if (captionHas(text, '\\bmeal\\b')) derived.subject = 'meal planning notes';
+    return derived;
+  }
+
+  if (derived.imageType === 'supplement') {
+    if (captionHas(text, '\\bcreatine\\b')) derived.subject = 'creatine';
+    else if (captionHas(text, '\\bprotein\\b', '\\bshaker\\b')) derived.subject = 'protein powder';
+    else if (captionHas(text, '\\bpre workout\\b', '\\bpre-workout\\b', '\\bcaffeine\\b')) derived.subject = 'pre workout';
+    return derived;
+  }
+
+  if (captionHas(text, '\\bcar\\b', '\\bvehicle\\b', '\\bsteering wheel\\b')) {
+    derived.imageType = 'general_gym';
+    derived.subject = 'beat up after leg day';
+    derived.muscleGroup = null;
+  } else if (captionHas(text, '\\bmirror\\b', '\\bselfie\\b')) {
+    derived.subject = 'gym mirror check in';
+  } else if (captionHas(text, '\\bbarbell\\b', '\\bplates\\b', '\\brack\\b')) {
+    derived.subject = 'barbell setup';
+  }
+
+  return derived;
+}
+
 function buildImageCopy(post) {
   const random = seededValue(post.id);
-  const resolved = resolveImageRecord(post);
+  const resolved = deriveVisualDetails(post, resolveImageRecord(post));
+  const imageCaption = compactText(post.imageCaption || '');
   const subject = pretty(resolved.subject || post.category || 'training');
   const category = post.category || 'training';
   const postType = post.postType || 'question';
@@ -186,6 +306,166 @@ function buildImageCopy(post) {
       `this is one of the few products i still think about keeping around, but im still trying to be honest about whether it really helps.`
     ];
     return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'food') {
+    const text = `${subject} ${imageCaption}`.toLowerCase();
+    if (/salmon|fish/.test(text)) {
+      return {
+        title: pick([
+          'salmon meals like this make protein way easier',
+          'would you actually keep salmon meal prep like this in rotation',
+          'this kind of salmon prep is boring in the best way'
+        ], random),
+        body: pick([
+          'this is the kind of meal i can keep around without having to think too hard about protein.',
+          'looks simple but meals like this are usually what keep the week from going off the rails.',
+          'if a salmon meal is this easy to repeat i usually stop trying to make it more exciting.'
+        ], random),
+        resolved
+      };
+    }
+    if (/wrap|sandwich|tortilla/.test(text)) {
+      return {
+        title: pick([
+          'wraps like this save me on busy days',
+          'good high protein wrap or would you switch it up',
+          'this is exactly the kind of meal i use when i dont want to think'
+        ], random),
+        body: pick([
+          'portable food like this usually does more for consistency than perfect macros ever will.',
+          'if i can eat it fast and still get protein in, it stays in the rotation.',
+          'curious if you would actually keep a wrap like this all week or get tired of it fast.'
+        ], random),
+        resolved
+      };
+    }
+    if (/yogurt|parfait|bowl|berries|granola/.test(text)) {
+      return {
+        title: pick([
+          'protein bowls like this are hard to beat',
+          'this is one of the easiest high protein snacks ive found',
+          'would you count something like this as a real meal or just a snack'
+        ], random),
+        body: pick([
+          'stuff like this makes it easier to keep protein up when a full meal sounds annoying.',
+          'not fancy at all but this type of bowl usually survives my week better than anything complicated.',
+          'i end up leaning on food like this when appetite is weird and i still need something easy.'
+        ], random),
+        resolved
+      };
+    }
+  }
+
+  if (imageType === 'exercise') {
+    const text = `${subject} ${imageCaption}`.toLowerCase();
+    if (/hip thrust|glute bridge|glute/.test(text)) {
+      return {
+        title: pick([
+          'my glutes finally started responding once i took hip thrusts seriously',
+          'is this the kind of glute work that actually makes a difference',
+          'hip thrusts like this finally made glute work click for me'
+        ], random),
+        body: pick([
+          'this is the first time direct glute work has looked like it was actually doing something instead of just tiring me out.',
+          'curious if glutes finally started moving for other people once they added more focused work like this.',
+          'not saying this fixes everything, but this kind of setup felt way more direct than what i was doing before.'
+        ], random),
+        resolved
+      };
+    }
+    if (/cable row|row|pulldown|pullup|lat/.test(text)) {
+      return {
+        title: pick([
+          'cable rows finally started making sense to me',
+          'does this kind of back work finally make lats click for you',
+          'pretty sure this is the kind of pull work my back needed'
+        ], random),
+        body: pick([
+          'this was one of the first pulling setups where it actually felt like back work instead of arms taking over.',
+          'curious if a row like this was what finally helped other people feel their back properly.',
+          'small change on paper but this looked and felt way more like actual back training.'
+        ], random),
+        resolved
+      };
+    }
+    if (/bench|incline|cable fly|press/.test(text)) {
+      return {
+        title: pick([
+          'incline work like this finally made my upper chest feel involved',
+          'does this pressing variation hit better than the usual version for anyone else',
+          'should a movement like this go earlier in the workout'
+        ], random),
+        body: pick([
+          'this is one of those setups that finally felt like chest instead of shoulders doing all the work.',
+          'curious if you would keep a press like this in the same spot or move it earlier in the session.',
+          'first time a pressing setup like this actually looked repeatable to me instead of awkward.'
+        ], random),
+        resolved
+      };
+    }
+    if (/lateral|rear delt|pec deck|shoulder/.test(text)) {
+      return {
+        title: pick([
+          'shoulder work like this finally started clicking for me',
+          'what actually made your side delts start responding',
+          'rear delt work always looks simple until you try to make it count'
+        ], random),
+        body: pick([
+          'this kind of shoulder setup finally felt direct instead of everything around it taking over.',
+          'curious if delt work started moving for other people once they cleaned up a setup like this.',
+          'still one of those movements where a small setup change matters way more than i expected.'
+        ], random),
+        resolved
+      };
+    }
+    if (/squat|leg press|hack squat|split squat|quad/.test(text)) {
+      return {
+        title: pick([
+          'leg work like this always makes me question my life choices',
+          'do your quads respond better when work like this goes first',
+          'pretty sure this is the kind of leg setup that humbles everybody'
+        ], random),
+        body: pick([
+          'nothing complicated here, just the kind of leg work that reminds you effort is still the whole game.',
+          'curious if you would keep this early in the session or move it after something heavier.',
+          'this setup always looks manageable until the set actually starts.'
+        ], random),
+        resolved
+      };
+    }
+  }
+
+  if (imageType === 'general_gym' && /beat up after leg day|car|steering wheel/.test(`${subject} ${imageCaption}`.toLowerCase())) {
+    return {
+      title: pick([
+        'me after leg day every single time',
+        'the drive home after leg day is always different',
+        'legs are cooked and i still have to get home somehow'
+      ], random),
+      body: pick([
+        'not even trying to be deep here. this is just the exact feeling after a real lower body session.',
+        'if youve ever sat in the car after leg day staring into space for a minute then you already get it.',
+        'the session is over but the recovery discussion has already started.'
+      ], random),
+      resolved
+    };
+  }
+
+  if (imageType === 'general_gym' && /baseball|bat|track|runner|sports training/.test(`${subject} ${imageCaption}`.toLowerCase())) {
+    return {
+      title: pick([
+        'sports training still counts even when it isnt a normal gym day',
+        'this kind of field work always reminds me conditioning matters too',
+        'anyone else feel way more athletic when training looks like this'
+      ], random),
+      body: pick([
+        'not every session needs to be a standard gym setup. stuff like this still does a lot more than people give it credit for.',
+        'this is the kind of training that makes me remember general athleticism still matters outside the usual lift list.',
+        'curious how many people here still mix sports style work in instead of only chasing gym numbers.'
+      ], random),
+      resolved
+    };
   }
 
   const families = {
@@ -665,6 +945,7 @@ function main() {
       imageSubject: updated.imageSubject || null,
       imageMuscleGroup: updated.imageMuscleGroup || null,
       imagePostAngle: updated.imagePostAngle || null,
+      imageCaption: updated.imageCaption || null,
       imageUrl: updated.imageUrl,
       imageAlt: updated.imageAlt || null,
       imageSource: updated.imageSource || null,
