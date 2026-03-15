@@ -549,10 +549,9 @@
             .forum-rail-header {
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
+                justify-content: flex-start;
                 margin-bottom: 0.45rem;
-                padding: 0.1rem 0.2rem 0.85rem;
+                padding: 0.1rem 3.2rem 0.85rem 0.2rem;
                 border-bottom: 1px solid var(--forum-border);
                 position: sticky;
                 top: 0;
@@ -564,6 +563,9 @@
                 letter-spacing: -0.03em;
             }
             .forum-rail-close {
+                position: absolute;
+                top: 0.25rem;
+                right: 0;
                 width: 40px;
                 height: 40px;
                 border: 0;
@@ -572,6 +574,9 @@
                 color: var(--forum-text);
                 font-size: 1.4rem;
                 line-height: 1;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
             }
             body.forum-rail-open { overflow: hidden; }
             body.forum-rail-open .forum-rail { transform: translateX(0); }
