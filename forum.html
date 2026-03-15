@@ -726,9 +726,28 @@
             }
 
             .forum-filter-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.24rem;
                 font-size: 0.84rem;
                 font-weight: 500;
                 line-height: 1;
+                color: #44505d;
+            }
+
+            .forum-filter-pill svg {
+                width: 0.72rem;
+                height: 0.72rem;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
+
+            .forum-filter-pill.is-icon {
+                gap: 0.22rem;
             }
 
             .forum-content-grid {
@@ -990,9 +1009,16 @@
                 </section>
 
                 <div class="forum-filter-row">
-                    <span class="forum-filter-pill">Best</span>
-                    <span class="forum-filter-pill">Everywhere</span>
-                    <span class="forum-filter-pill">Today</span>
+                    <span class="forum-filter-pill">Best
+                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                    </span>
+                    <span class="forum-filter-pill">Everywhere
+                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                    </span>
+                    <span class="forum-filter-pill is-icon">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h11v9h-11z"></path><path d="M4.5 8.5h11"></path></svg>
+                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                    </span>
                 </div>
 
                 <div class="forum-content-grid">
