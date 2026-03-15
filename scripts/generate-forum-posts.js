@@ -216,105 +216,192 @@ function buildPostTypeSchedule(total) {
   ]);
 }
 
+const singularParts = new Set(['upper-chest', 'upper-back', 'mid-back', 'back']);
+const pluralParts = new Set(['biceps', 'rear-delts', 'side-delts', 'quads', 'hamstrings', 'lats', 'glutes', 'triceps', 'calves', 'forearms', 'traps', 'abs', 'adductors', 'pecs', 'shoulders']);
+const singularLifts = new Set(['RDL', 'hack-squat', 'lat-pulldown', 'leg-press', 'cable-row', 'preacher-curl', 'chest-supported-row', 'split-squat', 'machine-press', 'lateral-raise', 'cable-fly', 'leg-curl', 'hip-thrust', 'pull-up', 'smith-incline', 'dip', 'incline-press', 'dumbbell-curl']);
+
+function isPluralPart(part) {
+  if (pluralParts.has(part)) return true;
+  if (singularParts.has(part)) return false;
+  return /s$/.test(part);
+}
+
+function partLabel(part) {
+  return pretty(part);
+}
+
+function partAreIs(part) {
+  return isPluralPart(part) ? 'are' : 'is';
+}
+
+function partDoDoes(part) {
+  return isPluralPart(part) ? 'do' : 'does';
+}
+
+function liftLabel(lift) {
+  return pretty(lift);
+}
+
+function fixGrammar(text) {
+  let out = String(text || '');
+  const replacements = [
+    [/\bupper chest are\b/gi, 'upper chest is'],
+    [/\bupper back are\b/gi, 'upper back is'],
+    [/\bmid back are\b/gi, 'mid back is'],
+    [/\btraps keeps\b/gi, 'traps keep'],
+    [/\bpecs keeps\b/gi, 'pecs keep'],
+    [/\btriceps finally looks\b/gi, 'triceps finally look'],
+    [/\bcalves keeps\b/gi, 'calves keep'],
+    [/\bhamstrings keeps\b/gi, 'hamstrings keep'],
+    [/\bshoulders keeps\b/gi, 'shoulders keep'],
+    [/\bglutes keeps\b/gi, 'glutes keep'],
+    [/\blats keeps\b/gi, 'lats keep'],
+    [/\bquads keeps\b/gi, 'quads keep'],
+    [/\brear delts keeps\b/gi, 'rear delts keep'],
+    [/\bside delts keeps\b/gi, 'side delts keep'],
+    [/\bforearms keeps\b/gi, 'forearms keep'],
+    [/\badductors keeps\b/gi, 'adductors keep'],
+    [/\bcravings keeps\b/gi, 'cravings keep'],
+    [/\bweeks and appetite keeps\b/gi, 'weeks and appetite keeps'],
+    [/\bhours and appetite keeps\b/gi, 'hours and appetite keeps']
+  ];
+  for (const [pattern, replacement] of replacements) out = out.replace(pattern, replacement);
+  return out;
+}
+
+function decorateNonQuestionTitle(text, category, postType, c) {
+  if (postType === 'question') return text;
+  const suffixMap = {
+    training: [`after ${pretty(c.setting)}`, `with ${pretty(c.constraint)}`, `on ${pretty(c.block)}`],
+    nutrition: [`for ${pretty(c.meal)}`, `with ${pretty(c.food2)}`, `during ${pretty(c.setting)}`],
+    recovery: [`after ${pretty(c.block)}`, `with ${pretty(c.tool)}`, `during ${pretty(c.setting)}`],
+    cutting: [`during ${pretty(c.setting)}`, `with ${pretty(c.deficit)}`, `around ${pretty(c.meal)}`],
+    bulking: [`with ${pretty(c.surplus)}`, `during ${pretty(c.setting)}`, `around ${pretty(c.food2)}`],
+    supplements: [`with ${pretty(c.stack)}`, `around ${pretty(c.setting)}`, `while cutting back`],
+    lifestyle: [`during ${pretty(c.setting)}`, `with ${pretty(c.planner)}`, `when ${pretty(c.routine)} hits`]
+  };
+  const extras = suffixMap[category] || [];
+  if (!extras.length || rand() < 0.4) return text;
+  const extra = pick(extras);
+  const titleWords = new Set(plainWords(text));
+  const extraWords = plainWords(extra);
+  const overlap = extraWords.filter((word) => titleWords.has(word)).length;
+  if (overlap >= 2) return text;
+  return `${text} ${extra}`;
+}
+
 function title(category, c, postType) {
   const question = {
     training: [
-      `${pretty(c.part)} are way behind compared to everything else`,
-      `what actually helped you bring up your ${pretty(c.part)}`,
-      `anyone here finally figure out ${pretty(c.part)}`,
-      `my ${pretty(c.part)} still look behind and im getting annoyed`,
-      `free plan helped but my ${pretty(c.part)} are still lagging`,
-      `how do you know when ${pretty(c.part)} just need more time`,
-      `${pretty(c.lift)} is stuck again and im getting annoyed`,
-      `what usually fixes a stalled ${pretty(c.lift)}`,
-      `free plan is decent but when do you outgrow it`,
-      `would a trainer actually help or am i overthinking this`
+      { family: 'bodypart-normal', text: `are ${partLabel(c.part)} just genetics at some point` },
+      { family: 'bodypart-helped', text: `what exercise finally made your ${partLabel(c.part)} grow` },
+      { family: 'bodypart-feel', text: `anybody else suck at feeling ${partLabel(c.part)} on pull work` },
+      { family: 'volume-question', text: `how much is too much for ${partLabel(c.part)}` },
+      { family: 'is-this-normal', text: `is it normal that my ${partLabel(c.part)} ${partAreIs(c.part)} still behind` },
+      { family: 'exercise-order', text: `should ${liftLabel(c.lift)} go before accessories` },
+      { family: 'plateau-bench', text: `how long did it take your ${liftLabel(c.lift)} to move again` },
+      { family: 'program-sucks', text: `when do you know your split just sucks` },
+      { family: 'free-plan-grow', text: `free plan helped but my ${partLabel(c.part)} ${partAreIs(c.part)} still not moving` },
+      { family: 'trainer-overthinking', text: `would a trainer actually help or am i overthinking this` },
+      { family: 'volume-overthinking', text: `am i overthinking this or do i need more volume` },
+      { family: 'normal-beginner', text: `is it normal to feel everything except ${partLabel(c.part)}` }
     ],
     nutrition: [
-      `how can i gain weight faster without feeling gross`,
-      `free workouts helped but im still not growing much`,
-      `what should i eat if size is moving too slow`,
-      `can you make solid progress on a free plan if food is good`,
-      `when do you stop using generic advice for food`,
-      `my weight is barely moving what should i change`,
-      `do i need a more custom plan if eating is already decent`,
-      `what finally made weight gain easier for you`,
-      `is food usually the reason progress feels stuck`,
-      `would coaching even help if calories are the real issue`
+      { family: 'eat-more', text: `how are you guys eating enough without feeling gross on ${pretty(c.meal)}` },
+      { family: 'meal-timing', text: `does eating late actually matter for growth on ${pretty(c.setting)}` },
+      { family: 'weight-moving', text: `my weight is barely moving what would you change first` },
+      { family: 'food-vs-coaching', text: `would coaching even help if calories are the real issue` },
+      { family: 'appetite', text: `what actually helped your appetite on a bulk` },
+      { family: 'meal-prep', text: `what do you eat when ${pretty(c.setting)} kills your appetite` },
+      { family: 'free-plan-food', text: `can the free plan work if food is dialed in` },
+      { family: 'generic-food', text: `when do generic meal ideas stop being enough` },
+      { family: 'size-moving', text: `what should i eat if size is moving too slow` },
+      { family: 'cut-hunger', text: `how do you keep a cut from falling apart with ${pretty(c.appetite)}` }
     ],
     recovery: [
-      `do most people need accountability to really stay on track`,
-      `how do you stay consistent when recovery is a mess`,
-      `what helps you stop skipping workouts every other week`,
-      `how do i stop falling off when sleep gets bad`,
-      `would a trainer help if recovery keeps derailing me`,
-      `is coaching worth it if consistency is the real problem`,
-      `free plan is fine but recovery still keeps messing me up`,
-      `when do you know a basic program isnt enough anymore`,
-      `what do you do when progress slows down and recovery feels off`,
-      `anyone else train hard for two weeks then disappear`
+      { family: 'consistency', text: `how do you stay consistent when sleep is bad` },
+      { family: 'skip-workouts', text: `what helps you stop skipping workouts every other week` },
+      { family: 'recovery-normal', text: `is this level of soreness normal or am i doing too much` },
+      { family: 'sleep-trash', text: `should i lower volume if sleep is trash this week` },
+      { family: 'trainer-consistency', text: `do beginners actually need a trainer for accountability` },
+      { family: 'free-plan-recovery', text: `free plan is fine but recovery still keeps messing me up` },
+      { family: 'falling-off', text: `anyone else lose motivation after missing two days` },
+      { family: 'normal-confusion', text: `how do you know if youre tired or just making excuses` },
+      { family: 'deload-question', text: `how sore is too sore after ${pretty(c.block)}` },
+      { family: 'routine-falling', text: `anyone else train hard for two weeks then disappear` }
     ],
     cutting: [
-      `how do i keep muscle while trying to cut faster`,
-      `free plan helped but my cut still falls apart on weekends`,
-      `should i get coaching if i keep losing consistency on a cut`,
-      `when does a generic cut stop being enough`,
-      `can you get lean with free workouts if life is messy`,
-      `what should i change if my cut keeps stalling`,
-      `how do you stop falling off every few weeks on a cut`,
-      `is accountability worth it when fat loss gets hard`,
-      `what usually fixes a cut that keeps drifting`,
-      `would custom coaching actually help or just stress me out more`
+      { family: 'cut-muscle', text: `how do i keep muscle while trying to cut faster` },
+      { family: 'weekend-cut', text: `why do cuts always fall apart on weekends` },
+      { family: 'coach-cut', text: `should i get coaching if i keep losing consistency on a cut` },
+      { family: 'cut-enough', text: `when does a generic cut stop being enough` },
+      { family: 'life-messy', text: `can you get lean with free workouts if ${pretty(c.setting)} keeps messing things up` },
+      { family: 'stalling-cut', text: `what should i change if my cut keeps stalling` },
+      { family: 'accountability-cut', text: `is accountability worth it when fat loss gets hard` },
+      { family: 'cut-normal', text: `is it normal for a cut to feel good one week and awful the next` },
+      { family: 'meal-order', text: `does meal timing matter more on a cut or am i overthinking it` },
+      { family: 'exercise-order-cut', text: `should cardio come after lifting if im trying to keep muscle` }
     ],
     bulking: [
-      `how can i gain weight faster with this program`,
-      `should i get a trainer or keep using the free plan`,
-      `is the free training enough if im serious about getting bigger`,
-      `when should someone switch from free workouts to a real plan`,
-      `do i need a custom workout plan to bulk right`,
-      `how do you know when a basic plan stops being enough`,
-      `my arms still arent growing what would you change`,
-      `what should i do if my chest still isnt moving`,
-      `can a free plan actually get you big if youre consistent`,
-      `at what point do you need something more tailored`
+      { family: 'gain-faster', text: `how can i gain weight faster with this program` },
+      { family: 'trainer-free', text: `should i get a trainer or keep using the free plan` },
+      { family: 'free-enough-big', text: `is the free training enough if im serious about getting bigger` },
+      { family: 'switch-free', text: `when should someone switch from free workouts to a real plan` },
+      { family: 'custom-bulk', text: `do i need a custom workout plan to bulk right` },
+      { family: 'basic-enough', text: `how do you know when a basic plan stops being enough` },
+      { family: 'arms-not-growing', text: `my arms still arent growing what would you change` },
+      { family: 'chest-not-moving', text: `what should i do if my chest still isnt moving` },
+      { family: 'free-plan-big', text: `can a free plan actually get you big if youre consistent` },
+      { family: 'tailored-when', text: `at what point do you need something more tailored` }
     ],
     supplements: [
-      `is creatine actually worth it`,
-      `do supplements matter if im still on a free program`,
-      `should i fix food first or buy more supplements`,
-      `can i still make progress without paying for coaching`,
-      `does the free training cover enough if basics are handled`,
-      `what is actually worth buying for muscle gain`,
-      `would coaching help more than another supplement tub`,
-      `how do i know if i need more than the basic stuff`,
-      `free plan is decent but what actually moves progress faster`,
-      `is online coaching worth it before buying more tubs`,
-      `what matters more here food or supplements honestly`
+      { family: 'creatine-worth', text: `is creatine actually worth it` },
+      { family: 'supp-food', text: `should i fix food first or buy more supplements` },
+      { family: 'paying-coach', text: `can i still make progress without paying for coaching` },
+      { family: 'free-basics', text: `does the free training cover enough if basics are handled` },
+      { family: 'buying-worth', text: `what is actually worth buying for muscle gain` },
+      { family: 'coach-vs-tub', text: `would coaching help more than another ${pretty(c.supp)} tub` },
+      { family: 'basic-stuff', text: `how do i know if i need more than the basic stuff` },
+      { family: 'moves-progress', text: `free plan is decent but what actually moves progress faster` },
+      { family: 'online-coaching', text: `is online coaching worth it before buying more tubs` },
+      { family: 'food-or-supps', text: `what matters more here food or supplements honestly` }
     ],
     lifestyle: [
-      `how do you stay consistent with training`,
-      `what helps you stop skipping workouts when life gets busy`,
-      `do i need accountability to really grow`,
-      `how do i stop falling off every few weeks`,
-      `should i get a trainer if consistency is my main problem`,
-      `is online coaching worth it if i keep starting over`,
-      `free workouts helped but i still cant stay locked in`,
-      `when is coaching actually worth paying for`,
-      `how do i know if i need accountability or just discipline`,
-      `can a free plan work if consistency is still bad`
+      { family: 'stay-consistent', text: `how do you stay consistent with training when life gets busy` },
+      { family: 'stop-skipping', text: `what helps you stop skipping workouts when the week gets messy` },
+      { family: 'need-accountability', text: `do i need accountability to really grow` },
+      { family: 'falling-off', text: `how do i stop falling off every few weeks` },
+      { family: 'trainer-consistency', text: `should i get a trainer if consistency is my main problem` },
+      { family: 'starting-over', text: `is online coaching worth it if i keep starting over` },
+      { family: 'free-stay-locked', text: `free workouts helped but i still cant stay locked in` },
+      { family: 'coaching-worth', text: `when is coaching actually worth paying for` },
+      { family: 'discipline-or-help', text: `how do i know if i need accountability or just discipline` },
+      { family: 'normal-motivation', text: `anyone else lose motivation after missing two days` }
     ]
   };
   const personal = {
-    training: [`${pretty(c.setting)} finally showed me why ${pretty(c.part)} keeps lagging`, `${pretty(c.lift)} started moving once i stopped changing everything`, `${pretty(c.block)} feels way better after trimming junk volume`, `${pretty(c.constraint)} and my ${pretty(c.part)} finally looks better`, `${pretty(c.setting)} but training is finally clicking again`],
-    nutrition: [`${pretty(c.food)} is carrying my diet right now`, `${pretty(c.food2)} made meal prep way easier this week`, `${pretty(c.setting)} and simple food is saving me again`, `${pretty(c.food)} finally feels like a meal i can repeat`, `${pretty(c.appetite)} is still annoying but food got easier`],
-    recovery: [`${pretty(c.tool)} helped my recovery more than expected`, `${pretty(c.issue)} finally calmed down this week`, `${pretty(c.setting)} made me realize i needed more recovery`, `${pretty(c.block)} felt way better after backing off`, `${pretty(c.issue)} was fatigue more than anything else`],
+    training: [
+      { family: 'lift-finally', text: `${liftLabel(c.lift)} finally started moving again` },
+      { family: 'split-cleaner', text: `${pretty(c.block)} feels way cleaner now` },
+      { family: 'priority-helped', text: `putting ${partLabel(c.part)} first actually helped` },
+      { family: 'timing-helped', text: `${pretty(c.constraint)} forced me to simplify and it helped` },
+      { family: 'session-clicking', text: `training is finally starting to click again` }
+    ],
+    nutrition: [`${pretty(c.food)} is carrying my diet right now`, `${pretty(c.food2)} made meal prep way easier this week`, `simple food is saving me again`, `${pretty(c.food)} finally feels like a meal i can repeat`, `${pretty(c.appetite)} is still annoying but food got easier`],
+    recovery: [`${pretty(c.tool)} helped my recovery more than expected`, `${pretty(c.issue)} finally calmed down this week`, `backing off made me realize i needed more recovery`, `${pretty(c.block)} felt way better after backing off`, `${pretty(c.issue)} was fatigue more than anything else`],
     cutting: [`${pretty(c.setting)} showed me what keeps ruining my cut`, `${pretty(c.food)} made this cut way easier to stick to`, `${pretty(c.hunger)} chilled out once i fixed meal timing`, `${pretty(c.deficit)} finally feels manageable`, `${pretty(c.meal)} was the part making the cut fall apart`],
     bulking: [`${pretty(c.food)} is the first bulk meal i dont hate`, `${pretty(c.setting)} made my bulk way sloppier than i thought`, `${pretty(c.bulk)} showed up right when the scale got moving`, `${pretty(c.food2)} made calories easier this week`, `${pretty(c.surplus)} feels better when dinner is planned`],
     supplements: [`${pretty(c.stack)} got cut in half and i barely noticed`, `${pretty(c.supp)} is the only tub i keep reaching for`, `${pretty(c.supp2)} is probably getting dropped`, `${pretty(c.stack)} looked useful until i actually audited it`, `${pretty(c.supp)} still feels like the only obvious keeper`],
-    lifestyle: [`${pretty(c.planner)} works until ${pretty(c.routine)} shows up`, `${pretty(c.setting)} keeps exposing the weak part of my week`, `${pretty(c.routine)} was quietly ruining everything`, `${pretty(c.planner)} got simpler and consistency improved fast`, `${pretty(c.setting)} made me fix the boring parts first`]
+    lifestyle: [`${pretty(c.planner)} works until ${pretty(c.routine)} shows up`, `${pretty(c.setting)} keeps exposing the weak part of my week`, `${pretty(c.routine)} was quietly ruining everything`, `${pretty(c.planner)} got simpler and consistency improved fast`, `simplifying the week made a bigger difference than i expected`]
   };
   const advice = {
-    training: [`${pretty(c.block)} and ${pretty(c.part)} lagging what would you fix first`, `${pretty(c.lift)} earlier in the session or leave it alone`, `${pretty(c.setting)} and would you change volume or exercise order`, `${pretty(c.constraint)} and what would you fix in this split`, `${pretty(c.part)} behind and im trying not to overreact`],
+    training: [
+      `${pretty(c.block)} and what would you fix first`,
+      `should ${liftLabel(c.lift)} come earlier in the session`,
+      `would you change volume or exercise order here`,
+      `what would you fix in this split first`,
+      `am i doing too much for ${partLabel(c.part)} or not enough`
+    ],
     nutrition: [`${pretty(c.food)} setup and what would you change first`, `${pretty(c.appetite)} keeps ruining dinner what would you fix`, `${pretty(c.setting)} and should i just lower variety`, `${pretty(c.food2)} vs ${pretty(c.food)} for busy days`, `${pretty(c.meal)} and how would you make this easier`],
     recovery: [`${pretty(c.issue)} and would you deload now or wait`, `${pretty(c.tool)} in place and recovery still off`, `${pretty(c.setting)} and what would you change first`, `${pretty(c.issue)} plus mid sleep what would you fix`, `${pretty(c.block)} and i think volume is too high maybe`],
     cutting: [`${pretty(c.hunger)} at night and what would you change`, `${pretty(c.deficit)} plus busy days what would you fix first`, `${pretty(c.setting)} and should i clean weekends up first`, `${pretty(c.food)} setup and how would you make it easier`, `${pretty(c.meal)} and this cut still feels sloppy`],
@@ -323,17 +410,21 @@ function title(category, c, postType) {
     lifestyle: [`${pretty(c.routine)} by friday and what would you change`, `${pretty(c.setting)} and how would you simplify this week`, `${pretty(c.planner)} helping but not enough what would you fix`, `${pretty(c.routine)} keeps breaking the routine what would you do`, `${pretty(c.setting)} and i need a lower friction version of this`]
   };
   const casual = {
-    training: [`${pretty(c.setting)} and leg day wrecked me tonight`, `${pretty(c.constraint)} and the gym still took me out`, `${pretty(c.block)} has my arms fried`, `${pretty(c.setting)} and bulgarian split squats still feel illegal`],
-    nutrition: [`${pretty(c.setting)} and meal prep already got boring again`, `${pretty(c.food)} but im tired of washing containers`, `${pretty(c.meal)} and eating enough is the actual workout`, `${pretty(c.appetite)} makes protein way more annoying than training`],
-    recovery: [`${pretty(c.setting)} and my body wants a day off`, `${pretty(c.issue)} hanging around longer than it should`, `${pretty(c.tool)} or not recovery still feels harder than training`, `${pretty(c.block)} and sleep debt is undefeated`],
-    cutting: [`${pretty(c.setting)} and cuts are fun until dinner hits`, `${pretty(c.hunger)} is annoying me today`, `${pretty(c.meal)} and this cut is testing my patience`, `${pretty(c.food)} helps but weekends still make the cut feel fake`],
-    bulking: [`${pretty(c.setting)} and bulking is fun until appetite disappears`, `${pretty(c.food)} but im already tired of eating this much`, `${pretty(c.surplus)} and my grocery bill is flying`, `${pretty(c.food2)} plus bulking without getting sloppy is hard`],
-    supplements: [`${pretty(c.stack)} getting out of hand again`, `${pretty(c.supp)} and i still cant tell if it matters`, `${c.caffeine}mg is carrying this week`, `${pretty(c.supp2)} and supplement shelves still feel like a scam`],
-    lifestyle: [`${pretty(c.setting)} and the routine fell apart again`, `${pretty(c.routine)} makes consistency feel fake`, `${pretty(c.planner)} looked good until real life showed up`, `${pretty(c.setting)} and i still got the work done somehow`]
+    training: ['bulgarian split squats still feel illegal', 'low sleep and squats was a dumb combo', 'gym was packed and i almost left', 'forgot my headphones and still had a solid session', 'garage gym mornings hit different'],
+    nutrition: ['meal prep is just doing dishes forever', 'eating enough is way harder than the workout', 'protein is easy until the week gets busy', 'appetite disappeared right when i needed it most', 'i am tired of washing containers again'],
+    recovery: ['my body wants a day off and i agree', 'sleep debt is undefeated this week', 'recovery somehow feels harder than training right now', 'still sore and pretending thats fine', 'did not realize fatigue could stack this fast'],
+    cutting: ['cuts are fun until dinner hits', 'hunger is annoying me today', 'the cut is testing my patience now', 'weekends make every cut feel fake', 'low calories and errands is a terrible combo'],
+    bulking: ['bulking is fun until appetite disappears', 'already tired of eating this much', 'the scale is moving and so is my grocery bill', 'trying to bulk without feeling gross is a full time job', 'liquid calories are saving me right now'],
+    supplements: ['my stack is getting out of hand again', 'still cant tell if this tub matters', `${c.caffeine}mg is carrying this week`, 'supplement shelves still feel like a scam', 'creatine is the only thing i trust at this point'],
+    lifestyle: ['busy week but i still got sessions in', 'trying to stay consistent without making this my whole life', 'routine felt solid until real life showed up', 'missed one day and almost let the whole week go', 'getting back in rhythm is harder than starting']
   };
   const pools = { question, personal, advice, casual };
-  const value = pick(pools[postType][category]);
-  return applyCaptionImperfection(value);
+  const selected = pick(pools[postType][category]);
+  if (typeof selected === 'string') {
+    const varied = decorateNonQuestionTitle(selected, category, postType, c);
+    return { text: fixGrammar(applyCaptionImperfection(varied)), family: `${category}-${postType}` };
+  }
+  return { text: fixGrammar(applyCaptionImperfection(selected.text)), family: `${category}-${postType}-${selected.family}` };
 }
 
 function body(category, c, postType) {
@@ -349,8 +440,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like everyone else grows this faster than me and im trying to figure out what im missing.'] },
       { key: 'coaching-curiosity', free: false, lines: ['not against paying for help.', 'i just dont know if im actually at the point where a trainer would make a difference.'] },
       { key: 'positive-free', free: true, lines: ['the free workouts honestly got me out of doing random dumb stuff.', 'im not complaining about that at all. just trying to figure out what to change next.'] },
-      { key: 'free-good-limited', free: true, lines: ['site helped me get more consistent ill give it that.', 'just feels like im at the point where generic stuff might not be enough anymore.'] },
-      { key: 'neutral-detail', free: false, lines: ['not looking for a magic fix.', 'i mostly want to know if i should stay patient or actually change the plan.'] }
+      { key: 'normal-check', free: false, lines: ['mostly trying to figure out whether this is normal or if im wasting time by leaving it alone.'] },
+      { key: 'exercise-order', free: false, lines: ['part of me thinks the problem is exercise order more than effort.', 'not sure if thats a real issue or me overthinking it.'] },
+      { key: 'life-context', free: false, lines: ['between work and training after dark i cant always tell if im under recovering or just impatient.'] }
     ],
     nutrition: [
       { key: 'frustrated-short', free: false, lines: ['food is way better than it used to be but size still isnt moving the way i expected.'] },
@@ -363,8 +455,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like everyone else gains size faster even when their food looks worse than mine.'] },
       { key: 'coaching-curiosity', free: false, lines: ['not against paying for help if it actually speeds things up.', 'just dont know if im there yet.'] },
       { key: 'positive-free', free: true, lines: ['the free setup cleaned up a lot of dumb stuff i was doing.', 'just want to know what the next step is now.'] },
-      { key: 'free-good-limited', free: true, lines: ['it helped in the beginning but now i want something more specific.'] },
-      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more food, more time, or a better plan.'] }
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more food, more time, or a better plan.'] },
+      { key: 'appetite-context', free: false, lines: ['my appetite is all over the place during the week so i cant tell if the issue is calories or just inconsistency.'] },
+      { key: 'work-context', free: false, lines: ['work has been busy enough that some days i barely feel hungry until late.', 'trying to figure out if thats the whole problem.'] }
     ],
     recovery: [
       { key: 'frustrated-short', free: false, lines: ['recovery is honestly the part that keeps making this feel harder than it should.'] },
@@ -377,8 +470,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like other people can miss sleep for a week and still train fine.'] },
       { key: 'coaching-curiosity', free: false, lines: ['if this is the kind of thing a coach would catch faster then maybe thats worth it.'] },
       { key: 'positive-free', free: true, lines: ['free plan is fine for getting me in the gym.', 'im just not sure it solves the recovery side once life gets messy.'] },
-      { key: 'free-good-limited', free: true, lines: ['not saying the free stuff is bad at all.', 'just feels limited when recovery starts deciding everything.'] },
-      { key: 'neutral-detail', free: false, lines: ['i mostly want to know if i should back off or stay the course.'] }
+      { key: 'neutral-detail', free: false, lines: ['i mostly want to know if i should back off or stay the course.'] },
+      { key: 'soreness-check', free: false, lines: ['the hard part is i cant tell whether im just normal sore or actually digging a hole.'] },
+      { key: 'sleep-context', free: false, lines: ['sleep has been hit or miss and i dont know how much that should change the plan.'] }
     ],
     cutting: [
       { key: 'frustrated-short', free: false, lines: ['fat loss is moving but not cleanly and im getting annoyed with it.'] },
@@ -391,8 +485,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like everyone else gets leaner faster than i do with the same effort.'] },
       { key: 'coaching-curiosity', free: false, lines: ['if accountability is the missing part i could see coaching being useful.'] },
       { key: 'positive-free', free: true, lines: ['the free setup gave me a decent base.', 'just feels like im past the point where a generic cut layout solves everything.'] },
-      { key: 'free-good-limited', free: true, lines: ['it helped me get started but now i want something more specific to me.'] },
-      { key: 'neutral-detail', free: false, lines: ['mostly trying to decide whether i need a better plan or better execution.'] }
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to decide whether i need a better plan or better execution.'] },
+      { key: 'social-context', free: false, lines: ['weekends are where everything falls apart for me so im trying to fix that without making the whole cut miserable.'] },
+      { key: 'normal-check', free: false, lines: ['not sure if this is just normal cut frustration or if im doing something obviously wrong.'] }
     ],
     bulking: [
       { key: 'frustrated-short', free: false, lines: ['im doing okay overall but size is not coming on as fast as i thought it would.'] },
@@ -405,8 +500,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like everyone else gets bigger faster and im trying to figure out why.'] },
       { key: 'coaching-curiosity', free: false, lines: ['not against paying for help if it means i stop second guessing everything.'] },
       { key: 'positive-free', free: true, lines: ['the site honestly got me out of random training.', 'just feels like i might need more structure now if im serious about getting bigger.'] },
-      { key: 'free-good-limited', free: true, lines: ['free workouts are decent but i cant tell how long theyre enough for.'] },
-      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out whether to stay patient or get more specific.'] }
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out whether to stay patient or get more specific.'] },
+      { key: 'friend-comparison', free: false, lines: ['guys i train with seem to put on size faster than i do and im trying not to do something stupid just because of that.'] },
+      { key: 'age-context', free: false, lines: ['ive only been training seriously for a bit over a year so i dont know if this pace is normal or slow.'] }
     ],
     supplements: [
       { key: 'frustrated-short', free: false, lines: ['i cant tell if im solving the wrong problem with supplements.'] },
@@ -419,8 +515,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like everybody else knows exactly what matters and i still dont.'] },
       { key: 'coaching-curiosity', free: false, lines: ['if a coach would just tell me what not to waste time on that might be worth it.'] },
       { key: 'positive-free', free: true, lines: ['free stuff is a good base honestly.', 'im just trying to figure out if the next step is programming or not supplements at all.'] },
-      { key: 'free-good-limited', free: true, lines: ['not saying the free stuff is bad. i just want better results than im getting right now.'] },
-      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out what actually matters before spending more money.'] }
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out what actually matters before spending more money.'] },
+      { key: 'confused-stack', free: false, lines: ['feels like im one youtube video away from buying nonsense again so im trying to slow down and ask first.'] },
+      { key: 'shortcut-check', free: false, lines: ['i dont want to waste time on expensive shortcuts if the boring basics are still the answer.'] }
     ],
     lifestyle: [
       { key: 'frustrated-short', free: false, lines: ['consistency is still the thing i cant get fully under control.'] },
@@ -433,8 +530,9 @@ function body(category, c, postType) {
       { key: 'comparison', free: false, lines: ['feels like other people can stay locked in way easier than i can.'] },
       { key: 'coaching-curiosity', free: false, lines: ['if a coach would mostly help with accountability then maybe thats what i need.'] },
       { key: 'positive-free', free: true, lines: ['the free workouts are better than the random stuff i was doing before.', 'i just cant tell whether consistency is the real issue now.'] },
-      { key: 'free-good-limited', free: true, lines: ['it gave me a decent base but now im wondering if thats all it can really do.'] },
-      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more structure or just better habits.'] }
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more structure or just better habits.'] },
+      { key: 'kids-work', free: false, lines: ['between work and family stuff my week gets weird fast, so i need something that doesnt fall apart every time life gets busy.'] },
+      { key: 'gym-confidence', free: false, lines: ['half of this is probably just me getting in my own head after missing a few days.'] }
     ]
   };
   const bodies = {
@@ -485,13 +583,13 @@ function body(category, c, postType) {
   if (postType === 'question') {
     const archetype = pick(pool);
     return {
-      text: applyCaptionImperfection(archetype.lines.join(' ')),
+      text: fixGrammar(applyCaptionImperfection(archetype.lines.join(' '))),
       styleKey: `${category}-${archetype.key}`,
       mentionsFree: archetype.free
     };
   }
   return {
-    text: applyCaptionImperfection(shuffle(pool).slice(0, rand() < 0.75 ? 2 : 3).join(' ')),
+    text: fixGrammar(applyCaptionImperfection(shuffle(pool).slice(0, rand() < 0.68 ? 1 : rand() < 0.88 ? 2 : 3).join(' '))),
     styleKey: `${category}-${postType}`,
     mentionsFree: false
   };
@@ -511,7 +609,7 @@ function score(category, image) {
   }[category] || [3, 40];
   const base = int(span[0], span[1]) + (image ? int(0, 12) : 0);
   const comments = int(3, 7);
-  const views = clamp(int(120, 900) + comments * int(18, 55), 120, 900);
+  const views = clamp(int(90, 1280) + comments * int(12, 44), 90, 1480);
   const saves = clamp(int(2, 25), 2, 25);
   return { score: clamp(base, 3, 120), comments, views, saves };
 }
@@ -528,6 +626,7 @@ function ageMinutes() {
 
 function titlePattern(post) {
   const text = String(post.title || '').toLowerCase();
+  if (post.titleFamily) return post.titleFamily;
   if (/how can i grow|how do i grow|bring up my|grow the fastest/.test(text)) return 'grow-x';
   if (/free plan|free training|free workouts|site/.test(text)) return 'free-plan';
   if (/trainer|coaching|custom plan|custom workout|basic program/.test(text)) return 'coach-custom';
@@ -536,9 +635,10 @@ function titlePattern(post) {
 }
 
 function recentWindowOk(post, posts) {
-  const window = posts.slice(-15);
+  const window = posts.slice(-25);
   const pattern = titlePattern(post);
   const samePatternCount = window.filter((item) => titlePattern(item) === pattern).length;
+  if (samePatternCount >= 1 && /bodypart-normal|bodypart-helped|is-this-normal|plateau-bench|free-plan-grow|trainer-overthinking|free-plan|coach-custom|plateau/.test(pattern)) return false;
   if (pattern === 'grow-x' && samePatternCount >= 2) return false;
   if (pattern === 'free-plan' && samePatternCount >= 2) return false;
   if (pattern === 'coach-custom' && samePatternCount >= 2) return false;
@@ -546,9 +646,12 @@ function recentWindowOk(post, posts) {
 
   if (post.postType === 'question') {
     const freeMentions = window.filter((item) => item.postType === 'question' && item.mentionsFree).length;
-    if (post.mentionsFree && freeMentions >= 2) return false;
+    if (post.mentionsFree && freeMentions >= 1) return false;
 
-    const sameStyle = window.filter((item) => item.postType === 'question' && item.bodyStyle === post.bodyStyle).length;
+    const sameStyle = posts.slice(-20).filter((item) => item.postType === 'question' && item.bodyStyle === post.bodyStyle).length;
+    if (sameStyle >= 1) return false;
+  } else {
+    const sameStyle = posts.slice(-20).filter((item) => item.postType === post.postType && item.bodyStyle === post.bodyStyle).length;
     if (sameStyle >= 2) return false;
   }
 
@@ -573,14 +676,15 @@ function candidate(index, slots, postTypes) {
   const postBody = body(category, c, postType);
   return {
     id,
-    slug: slug(postTitle).slice(0, 96),
+    slug: slug(postTitle.text).slice(0, 96),
     community: pick(cfg[category].communities),
     scope: scopeMap[category] || 'training',
     category,
     author: generateUsername(),
     format: image ? 'image' : 'text',
     postType,
-    title: postTitle,
+    title: postTitle.text,
+    titleFamily: postTitle.family,
     body: postBody.text,
     bodyStyle: postBody.styleKey,
     mentionsFree: postBody.mentionsFree,
