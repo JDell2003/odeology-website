@@ -63,6 +63,7 @@ class Finder {
   constructor() {
     this.queries = new Map();
     this.used = new Set();
+    this.usedUrls = new Set();
   }
 
   async fromQuery(query) {
@@ -77,8 +78,10 @@ class Finder {
       while (state.index < state.results.length) {
         const item = state.results[state.index];
         state.index += 1;
-        if (!okImage(item) || this.used.has(item.id)) continue;
+        const itemUrl = norm(item.url);
+        if (!okImage(item) || this.used.has(item.id) || (itemUrl && this.usedUrls.has(itemUrl))) continue;
         this.used.add(item.id);
+        if (itemUrl) this.usedUrls.add(itemUrl);
         return item;
       }
       if (state.done || state.page > OPENVERSE_MAX) return null;
