@@ -125,7 +125,22 @@ protectedPhrases = uniq(
 ).sort((left, right) => right.length - left.length);
 
 function common() {
-  return { week: `week ${pick(pool.week)}`, days: pick(pool.days), len: pick(pool.len), sleep: pick(pool.sleep), steps: pick(pool.steps), protein: pick(pool.protein), budget: pick(pool.budget), meals: pick(pool.meals), setting: pick(pool.setting), constraint: pick(pool.constraint), tag: `${pick(pool.tag1)} ${pick(pool.tag2)}` };
+  const left = pick(pool.tag1);
+  const leftStem = leadStem(left);
+  const tag2Options = pool.tag2.filter((item) => leadStem(item) !== leftStem && leadStem(item) !== 'week');
+  return {
+    week: `week ${pick(pool.week)}`,
+    days: pick(pool.days),
+    len: pick(pool.len),
+    sleep: pick(pool.sleep),
+    steps: pick(pool.steps),
+    protein: pick(pool.protein),
+    budget: pick(pool.budget),
+    meals: pick(pool.meals),
+    setting: pick(pool.setting),
+    constraint: pick(pool.constraint),
+    tag: `${left} ${pick(tag2Options.length ? tag2Options : pool.tag2)}`
+  };
 }
 
 function ctx(category) {
@@ -143,134 +158,134 @@ function ctx(category) {
 }
 
 function title(category, c) {
-  if (category === 'training') return withLead(c, ['check', 'question', 'update', 'note', 'rant', 'look'], pick([
-    `${cap(c.part)} on ${pretty(c.block)}: ${pretty(c.lift)} climbs, ${pretty(c.friction)} stays`,
-    `${cap(c.setting)} with ${pretty(c.part)}: ${pretty(c.block)} fits, ${pretty(c.constraint)} bites`,
-    `${cap(c.constraint)} for ${pretty(c.part)}: ${pretty(c.lift)} stays, ${pretty(c.block)} changes`,
-    `${cap(c.friction)} after ${c.week}: ${pretty(c.part)} lag, ${pretty(c.setting)} adds noise`,
-    `${cap(c.block)} for ${pretty(c.part)}: ${pretty(c.setting)} works, ${pretty(c.constraint)} does not`,
-    `${cap(c.lift)} days for ${pretty(c.part)}: ${pretty(c.block)} helps, ${pretty(c.friction)} wins`,
-    `${cap(c.part)} check with ${pretty(c.setting)}: ${pretty(c.lift)} solid, ${pretty(c.constraint)} annoying`,
-    `${cap(c.setting)} x ${pretty(c.block)}: ${pretty(c.part)} late, ${pretty(c.lift)} early`,
-    `${cap(c.part)} update after ${c.week}: ${pretty(c.block)} good, ${pretty(c.friction)} louder`,
-    `${cap(c.block)} around ${pretty(c.part)}: ${pretty(c.setting)} calm, ${pretty(c.constraint)} messy`
-  ]));
-  if (category === 'nutrition') return withLead(c, ['meal', 'thought', 'question', 'check', 'note', 'update'], pick([
-    `${cap(c.food)} for ${pretty(c.meal)}: ${c.protein}g fits, ${pretty(c.appetite)} does not`,
-    `${cap(c.food)} vs ${pretty(c.food2)}: ${pretty(c.meal)} picks ${pretty(c.food)}, ${pretty(c.appetite)} picks ${pretty(c.food2)}`,
-    `${cap(c.setting)} with ${pretty(c.food)}: ${c.budget} holds, ${pretty(c.appetite)} pushes back`,
-    `${cap(c.meal)} around ${pretty(c.food)}: ${pretty(c.food2)} travels, ${c.protein}g still lands`,
-    `${c.budget} dollar ${pretty(c.meal)}: ${pretty(c.food)} stays cheap, ${c.protein}g stays possible`,
-    `${cap(c.appetite)} after ${c.week}: ${pretty(c.food)} easy, ${pretty(c.setting)} not easy`,
-    `${cap(c.food2)} on ${pretty(c.setting)}: ${c.protein}g lands, ${pretty(c.appetite)} lingers`,
-    `${cap(c.food)} check for ${pretty(c.setting)}: ${pretty(c.meal)} smooth, ${pretty(c.appetite)} loud`,
-    `${cap(c.meal)} with ${pretty(c.food2)}: ${c.budget} okay, ${pretty(c.appetite)} still weird`,
-    `${cap(c.food)} after ${c.week}: ${c.protein}g easy, ${pretty(c.food2)} tempting`
-  ]));
-  if (category === 'recovery') return withLead(c, ['reality', 'check', 'question', 'note', 'update', 'rant'], pick([
-    `${cap(c.issue)} with ${pretty(c.tool)}: ${pretty(c.block)} improves, ${pretty(c.setting)} stings`,
-    `${cap(c.tool)} for ${pretty(c.issue)}: ${pretty(c.part)} calms down, ${c.days} days still drag`,
-    `${cap(c.block)} plus ${pretty(c.issue)}: ${c.sleep}h helps, ${pretty(c.setting)} hurts`,
-    `${cap(c.issue)} after ${c.week}: ${pretty(c.tool)} stays, ${pretty(c.part)} still complains`,
-    `${cap(c.setting)} around ${pretty(c.issue)}: ${pretty(c.block)} survives, ${pretty(c.tool)} barely does`,
-    `${cap(c.part)} on ${pretty(c.issue)}: ${pretty(c.tool)} helps, ${c.steps}k still feels low`,
-    `${cap(c.tool)} during ${pretty(c.block)}: ${pretty(c.issue)} softer, ${pretty(c.setting)} louder`,
-    `${cap(c.issue)} check with ${pretty(c.part)}: ${pretty(c.tool)} real, ${pretty(c.block)} maybe real`,
-    `${cap(c.setting)} after ${c.week}: ${pretty(c.issue)} up, ${pretty(c.tool)} also up`,
-    `${cap(c.block)} with ${pretty(c.tool)}: ${pretty(c.issue)} less sharp, ${c.sleep}h still short`
-  ]));
-  if (category === 'cutting') return withLead(c, ['cut', 'check', 'question', 'update', 'note', 'reality'], pick([
-    `${cap(c.deficit)} with ${pretty(c.food)}: ${pretty(c.meal)} works, ${pretty(c.hunger)} follows`,
-    `${cap(c.food)} on ${pretty(c.deficit)}: ${c.protein}g lands, ${pretty(c.hunger)} stays`,
-    `${cap(c.meal)} during ${pretty(c.deficit)}: ${pretty(c.food)} helps, ${pretty(c.food2)} travels`,
-    `${cap(c.hunger)} after ${c.week}: ${pretty(c.food)} steady, ${c.steps}k daily`,
-    `${cap(c.setting)} in ${pretty(c.deficit)}: ${pretty(c.food)} easy, ${pretty(c.hunger)} loud`,
-    `${cap(c.hunger)} with ${pretty(c.meal)}: ${c.protein}g holds, ${pretty(c.food)} also holds`,
-    `${c.steps}k and ${pretty(c.deficit)}: ${pretty(c.food)} fine, ${pretty(c.hunger)} annoying`,
-    `${cap(c.food)} vs ${pretty(c.food2)}: ${pretty(c.deficit)} keeps ${pretty(c.food)}, ${pretty(c.hunger)} keeps ${pretty(c.food2)}`,
-    `${cap(c.deficit)} after ${c.week}: ${pretty(c.meal)} shaky, ${pretty(c.food)} reliable`,
-    `${cap(c.food2)} for ${pretty(c.deficit)}: ${c.protein}g okay, ${pretty(c.hunger)} not okay`
-  ]));
-  if (category === 'bulking') return withLead(c, ['bulk', 'check', 'question', 'update', 'note', 'look'], pick([
-    `${cap(c.surplus)} with ${pretty(c.food)}: ${pretty(c.food2)} helps, ${pretty(c.bulk)} shows up`,
-    `${cap(c.food)} on ${pretty(c.surplus)}: ${c.meals} meals okay, ${pretty(c.bulk)} gets loud`,
-    `${cap(c.meal)} during ${pretty(c.surplus)}: ${pretty(c.food)} lands, ${pretty(c.food2)} lands easier`,
-    `${cap(c.bulk)} after ${c.week}: ${pretty(c.food)} saves mornings, ${pretty(c.food2)} saves later`,
-    `${cap(c.setting)} on ${pretty(c.surplus)}: ${pretty(c.food)} works, ${pretty(c.bulk)} lingers`,
-    `${c.meals} meals in ${pretty(c.surplus)}: ${pretty(c.food)} solid, ${pretty(c.food2)} smoother`,
-    `${cap(c.food2)} with ${pretty(c.bulk)}: ${pretty(c.meal)} easier, ${pretty(c.surplus)} still clean`,
-    `${cap(c.food)} vs ${pretty(c.food2)}: ${pretty(c.surplus)} needs ${pretty(c.food)}, appetite needs ${pretty(c.food2)}`,
-    `${cap(c.surplus)} after ${c.week}: ${pretty(c.bulk)} worse, ${pretty(c.food)} better`,
-    `${cap(c.bulk)} on ${pretty(c.setting)}: ${pretty(c.food)} reliable, ${c.meals} still not enough`
-  ]));
-  if (category === 'supplements') return withLead(c, ['stack', 'check', 'question', 'update', 'note', 'thought'], pick([
-    `${cap(c.supp)} with ${pretty(c.stack)}: ${pretty(c.supp2)} stays, ${c.caffeine}mg already carries`,
-    `${cap(c.stack)} around ${pretty(c.supp)}: ${pretty(c.supp2)} extra, ${c.caffeine}mg enough`,
-    `${cap(c.supp)} vs ${pretty(c.supp2)}: bag keeps ${pretty(c.supp)}, budget cuts ${pretty(c.supp2)}`,
-    `${c.caffeine}mg plus ${pretty(c.supp)}: ${pretty(c.stack)} enough, ${pretty(c.supp2)} optional`,
-    `${cap(c.supp2)} in ${pretty(c.stack)}: ${pretty(c.supp)} earns space, ${c.caffeine}mg earns more`,
-    `${cap(c.supp)} after ${c.week}: ${pretty(c.stack)} simple, ${pretty(c.supp2)} probably out`,
-    `${cap(c.stack)} with ${c.caffeine}mg: ${pretty(c.supp)} clear, ${pretty(c.supp2)} cloudy`,
-    `${cap(c.supp2)} on ${pretty(c.stack)}: ${pretty(c.supp)} stays obvious, ${c.caffeine}mg stays louder`,
-    `${cap(c.supp)} for ${pretty(c.stack)}: ${c.caffeine}mg fixed, ${pretty(c.supp2)} maybe fluff`,
-    `${cap(c.stack)} after ${c.week}: ${pretty(c.supp)} survives, ${pretty(c.supp2)} gets cut`
-  ]));
-  return withLead(c, ['reset', 'check', 'question', 'note', 'update', 'reality'], pick([
-    `${cap(c.planner)} with ${pretty(c.setting)}: ${pretty(c.food)} helps, ${pretty(c.routine)} still hits`,
-    `${cap(c.routine)} after ${c.week}: ${pretty(c.planner)} helps, ${pretty(c.food)} saves nights`,
-    `${cap(c.setting)} with ${pretty(c.planner)}: ${pretty(c.food)} holds, ${pretty(c.routine)} leaks`,
-    `${cap(c.planner)} vs ${pretty(c.routine)}: ${pretty(c.food)} fits one, ${pretty(c.setting)} breaks one`,
-    `${cap(c.food)} plus ${pretty(c.planner)}: ${pretty(c.routine)} still finds gaps`,
-    `${cap(c.setting)} after ${c.week}: ${pretty(c.planner)} okay, ${pretty(c.routine)} louder`,
-    `${cap(c.routine)} with ${pretty(c.food)}: ${pretty(c.planner)} helps, mornings still wobble`,
-    `${cap(c.planner)} around ${pretty(c.setting)}: ${pretty(c.food)} stays ready, sleep does not`,
-    `${cap(c.food)} for ${pretty(c.routine)}: ${pretty(c.setting)} messy, ${pretty(c.planner)} cleaner`,
-    `${cap(c.setting)} x ${pretty(c.planner)}: ${pretty(c.routine)} late, ${pretty(c.food)} early`
-  ]));
+  if (category === 'training') return `${titleLead(c)}, ${pretty(c.setting)}: ${pick([
+    `${pretty(c.part)} lagging, ${pretty(c.lift)} climbing, ${pretty(c.block)} unchanged`,
+    `${pretty(c.setting)} exposing ${pretty(c.part)}, ${pretty(c.constraint)} shrinking ${pretty(c.block)}`,
+    `${pretty(c.friction)} returning, ${pretty(c.part)} stalling, ${pretty(c.lift)} rising`,
+    `${pretty(c.block)} running smooth, ${pretty(c.part)} still not catching up`,
+    `${pretty(c.constraint)} squeezing sessions, ${pretty(c.part)} paying first`,
+    `${pretty(c.setting)} consistent, ${pretty(c.part)} progress still off`,
+    `${pretty(c.lift)} better, ${pretty(c.part)} flatter, ${pretty(c.friction)} louder`,
+    `${pretty(c.block)} helping most things, ${pretty(c.part)} missing the memo`,
+    `${pretty(c.friction)} back again, ${pretty(c.part)} growth slowing down`,
+    `${pretty(c.constraint)} tighter now, ${pretty(c.part)} showing it first`
+  ])}`;
+  if (category === 'nutrition') return `${titleLead(c)}, ${pretty(c.meal)}: ${pick([
+    `${pretty(c.food)} surviving ${pretty(c.meal)}, ${pretty(c.appetite)} killing consistency`,
+    `${c.protein}g planned, ${pretty(c.appetite)} arriving, ${pretty(c.food)} still easiest`,
+    `${c.budget} groceries, ${pretty(c.food)} staying, ${pretty(c.food2)} traveling`,
+    `${pretty(c.setting)} messy again, ${pretty(c.food)} still beating ${pretty(c.food2)}`,
+    `${pretty(c.meal)} getting rough, ${pretty(c.food)} carrying the day`,
+    `${pretty(c.appetite)} rising, ${pretty(c.food2)} looking better than usual`,
+    `${pretty(c.setting)} hitting hard, ${pretty(c.food)} staying repeatable`,
+    `${pretty(c.food)} carrying protein, ${pretty(c.food2)} carrying convenience`,
+    `${pretty(c.food2)} packing easier, ${pretty(c.food)} keeping me on track`,
+    `${pretty(c.appetite)} back again, ${pretty(c.food)} still saving the plan`
+  ])}`;
+  if (category === 'recovery') return `${titleLead(c)}, ${pretty(c.tool)}: ${pick([
+    `${pretty(c.issue)} outlasting ${pretty(c.tool)} again`,
+    `${pretty(c.block)} solid in session, ${pretty(c.issue)} loud after`,
+    `${pretty(c.setting)} rougher lately, ${pretty(c.issue)} easier to notice`,
+    `${pretty(c.tool)} helping a little, ${pretty(c.issue)} coming back anyway`,
+    `${pretty(c.issue)} hanging around, ${pretty(c.block)} looking messier`,
+    `${pretty(c.setting)} amplifying ${pretty(c.issue)} more than expected`,
+    `${pretty(c.tool)} softening it, ${pretty(c.issue)} refusing to leave`,
+    `${pretty(c.issue)} showing up late, ${pretty(c.block)} losing trust`,
+    `${pretty(c.setting)} heavier now, ${pretty(c.issue)} heavier too`,
+    `${pretty(c.issue)} still there, even after better recovery`
+  ])}`;
+  if (category === 'cutting') return `${titleLead(c)}, ${pretty(c.meal)}: ${pick([
+    `${pretty(c.food)} holding ${pretty(c.deficit)}, ${pretty(c.hunger)} blowing up nights`,
+    `${pretty(c.meal)} breaking ${pretty(c.deficit)}, ${pretty(c.food2)} helping, ${pretty(c.food)} winning`,
+    `${pretty(c.food2)} traveling better, ${pretty(c.food)} keeping me fuller`,
+    `${pretty(c.setting)} messy again, ${pretty(c.hunger)} feeling worse than calories`,
+    `${pretty(c.hunger)} bigger now, ${pretty(c.deficit)} feeling smaller on paper`,
+    `${pretty(c.food)} still winning this cut by Friday`,
+    `${pretty(c.food2)} useful early, ${pretty(c.hunger)} stronger late`,
+    `${pretty(c.meal)} wobbling again, clean cut turning random`,
+    `${pretty(c.deficit)} manageable until ${pretty(c.setting)} gets chaotic`,
+    `${pretty(c.food)} doing more for this cut than macro math`
+  ])}`;
+  if (category === 'bulking') return `${titleLead(c)}, ${pretty(c.food)}: ${pick([
+    `${pretty(c.food)} carrying ${pretty(c.surplus)}, ${pretty(c.bulk)} wrecking later meals`,
+    `meal ${c.meals} flipping ${pretty(c.surplus)} into random snacking`,
+    `${pretty(c.food2)} going down easier, ${pretty(c.food)} keeping calories cleaner`,
+    `${pretty(c.setting)} making ${pretty(c.surplus)} look sloppier than planned`,
+    `${pretty(c.bulk)} showing up right when the scale gets fun`,
+    `${pretty(c.food)} still feeling like my cleanest late week calories`,
+    `${pretty(c.surplus)} fine early, appetite gone near meal ${c.meals}`,
+    `${pretty(c.food2)} helping appetite, ${pretty(c.food)} fitting the plan better`,
+    `${pretty(c.bulk)} making this lean bulk way messier`,
+    `${pretty(c.setting)} pushing the bulk toward convenience over structure`
+  ])}`;
+  if (category === 'supplements') return `${titleLead(c)}, ${pretty(c.supp)}: ${pick([
+    `${pretty(c.supp)} staying, ${pretty(c.supp2)} fading, ${pretty(c.stack)} shrinking`,
+    `${c.caffeine}mg doing more than half this ${pretty(c.stack)}`,
+    `${pretty(c.stack)} feeling cluttered next to ${pretty(c.supp)}`,
+    `${pretty(c.supp2)} still invisible beside ${pretty(c.supp)}`,
+    `${pretty(c.stack)} looking smart, then feeling unnecessary`,
+    `${pretty(c.supp)} earning its spot, ${pretty(c.supp2)} losing ground`,
+    `${c.caffeine}mg and ${pretty(c.supp)} doing the real work`,
+    `${pretty(c.supp2)} making me want a smaller cheaper stack`,
+    `${pretty(c.stack)} turning into habit over help`,
+    `${pretty(c.supp)} obvious, the rest still questionable`
+  ])}`;
+  return `${titleLead(c)}, ${pretty(c.setting)}: ${pick([
+    `${pretty(c.planner)} helping until ${pretty(c.routine)} shows up`,
+    `${pretty(c.setting)} exposing the weak spot in my routine`,
+    `normal weeks fine, ${pretty(c.routine)} breaking everything`,
+    `${pretty(c.setting)} making this system look too complicated`,
+    `${pretty(c.planner)} folding when ${pretty(c.routine)} hits`,
+    `${pretty(c.planner)} cannot save ${pretty(c.setting)} plus ${pretty(c.routine)}`,
+    `${pretty(c.setting)} still being the part my routine cannot survive`,
+    `${pretty(c.routine)} starting the consistency leak every time`,
+    `perfect weeks easy, ${pretty(c.setting)} testing the real plan`,
+    `${pretty(c.planner)} helping, ${pretty(c.routine)} still winning too often`
+  ])}`;
 }
 
 function body(category, c) {
   if (category === 'training') return pick([
-    `Not gonna lie, this block looks better on paper than it feels in the mirror. I have been running ${pretty(c.block)} for ${c.week} in ${pretty(c.setting)}, keeping food around ${c.protein}g and steps near ${c.steps}k, and ${pretty(c.part)} still read like the slowest responder.`,
-    `This is one of those phases where I do not want more fluff, I want one clean fix. ${pretty(c.lift)} feels good, ${pretty(c.constraint)} is real, and ${pretty(c.friction)} keeps making me wonder if ${pretty(c.part)} need more intent instead of more volume.`,
-    `I am trying to coach myself like a normal person, not a spreadsheet. ${pretty(c.setting)} is the reality, ${pretty(c.block)} is the plan, and ${pretty(c.part)} are the part that still make me think I am missing something obvious.`,
-    `Honestly, the rest of the setup is boring in a good way. Sleep is around ${c.sleep} hours, sessions land inside ${pretty(c.constraint)}, and ${pretty(c.part)} still look late compared with how ${pretty(c.lift)} is moving.`
+    `I have been running ${pretty(c.block)} for ${c.week} and overall I like it, but ${pretty(c.part)} progress is clearly behind. ${pretty(c.lift)} feels stronger, recovery is decent, and I do not want to add junk volume just to feel productive. If you were in this spot, would you change exercise order, weekly sets, or just let it ride longer?`,
+    `The reality is ${pretty(c.setting)} and ${pretty(c.constraint)} are not changing any time soon. I can stay consistent, but ${pretty(c.friction)} keeps showing up and I cannot tell whether ${pretty(c.part)} needs more attention or just better placement in the session.`,
+    `Protein is around ${c.protein}g, sleep is about ${c.sleep} hours, and steps are near ${c.steps}k, so the basics are not terrible. That is why ${pretty(c.part)} progress being behind is starting to bother me more than it should.`,
+    `I am not chasing a crazy fix here. I just want ${pretty(c.part)} to stop being the thing that makes the whole block feel incomplete, especially when ${pretty(c.lift)} is moving in the right direction.`
   ]);
   if (category === 'nutrition') return pick([
-    `This is the kind of meal setup I can actually repeat without feeling like I am cosplaying a bodybuilder. ${pretty(c.food)} has been doing the heavy lifting, ${pretty(c.meal)} is still the stress point, and ${pretty(c.appetite)} is usually what turns a clean day into a random day.`,
-    `I am aiming for about ${c.protein}g across ${c.meals} meals and trying to keep groceries near ${c.budget}. The part I still hate is how fast ${pretty(c.setting)} can turn a good plan into whatever I can grab in two minutes.`,
-    `Low-key, I do not need a fancier plan, I need a default that survives noise. ${pretty(c.food)} works, ${pretty(c.food2)} travels better, and ${pretty(c.appetite)} keeps deciding whether I stay on script or start winging it.`,
-    `The goal here is food that feels automatic, not food that deserves applause. ${pretty(c.meal)} is where I usually lose rhythm, so I keep testing ${pretty(c.food)} against ${pretty(c.food2)} and seeing which one survives a messy week better.`
+    `I keep coming back to ${pretty(c.food)} because it is easy, repeatable, and does not make me hate eating for this goal. I am aiming for ${c.protein}g across ${c.meals} meals, but ${pretty(c.appetite)} is usually what turns a clean day into a random one.`,
+    `The ${pretty(c.meal)} stretch is where my whole plan usually starts slipping. I can prep ${pretty(c.food)} or ${pretty(c.food2)}, but once the day gets busy I start improvising and the numbers drift faster than I want.`,
+    `I am trying to keep groceries around ${c.budget} a week and still make high protein eating feel normal. Right now most of the workload is falling on ${pretty(c.food)}, and I can tell the setup gets shaky during ${pretty(c.setting)} stretches.`,
+    `I do not need fancy food. I need food I will actually repeat when I am tired, busy, or bored. That is why I keep testing ${pretty(c.food)} against ${pretty(c.food2)} instead of chasing another perfect recipe.`
   ]);
   if (category === 'recovery') return pick([
-    `I can feel the difference between something being annoying and something being unsustainable, and this is getting close to the second bucket. ${pretty(c.issue)} is the part that keeps hanging around even though I already added ${pretty(c.tool)} and cleaned up the obvious stuff.`,
-    `The session itself usually feels okay. Then later on ${pretty(c.issue)} shows up and makes me re-read the whole block in my head. I am around ${c.sleep} hours, ${c.steps}k steps, and ${c.days} training days, so I am trying not to be dramatic before I need to be.`,
-    `I do not mind doing recovery work when it clearly pays off. What gets old is doing ${pretty(c.tool)} and still not trusting whether ${pretty(c.issue)} is actually moving in the right direction or just getting quieter for a day.`,
-    `This is the kind of thing that makes a good block feel sloppy. ${pretty(c.block)} still makes sense, but ${pretty(c.setting)} plus ${pretty(c.issue)} keeps making me wonder whether I need less stress, better prep, or a straight-up deload.`
+    `${pretty(c.issue)} is the one thing making this block feel less sustainable than it should. I already added ${pretty(c.tool)}, sleep is around ${c.sleep} hours, and I am trying not to overreact, but it keeps hanging around long enough to make me second guess the whole setup.`,
+    `Everything feels fine during the session and then ${pretty(c.issue)} shows up later and ruins the confidence. I am training ${c.days} days, steps are around ${c.steps}k, and I cannot tell whether I need less volume, a better warm up, or just more patience.`,
+    `I do not mind doing recovery work when I can actually feel it helping. The frustrating part is that even with ${pretty(c.tool)} in the mix, I still do not trust ${pretty(c.issue)} is actually getting fixed.`,
+    `This is not dramatic pain, it is just annoying enough to keep stealing attention. That is why I am trying to figure out whether the problem is recovery, exercise setup, or the fact that ${pretty(c.setting)} has been rough lately.`
   ]);
   if (category === 'cutting') return pick([
-    `The calories are not the hard part right now. ${pretty(c.hunger)} is. I can hold a ${c.deficit}, keep steps around ${c.steps}k, and still feel the day go sideways the second ${pretty(c.meal)} stops being predictable.`,
-    `I wanted this cut to feel boring, and instead it keeps turning into little negotiations with hunger. ${pretty(c.food)} is the one meal that keeps me calm, ${pretty(c.food2)} is the one that travels best, and neither fully solves ${pretty(c.hunger)} once the week gets long.`,
-    `Training is holding up better than my patience with food. ${c.protein}g is manageable, the deficit is fine on paper, and then ${pretty(c.setting)} plus ${pretty(c.hunger)} makes me feel like I am one sloppy dinner away from improvising the whole day.`,
-    `This is less about suffering and more about friction. ${pretty(c.food)} keeps me inside the lines, ${pretty(c.meal)} is still the wobble point, and I am trying to fix the setup before I blame the deficit itself.`
+    `The cut itself is not killing me. ${pretty(c.hunger)} is. I can handle a ${pretty(c.deficit)}, keep steps around ${c.steps}k, and still feel the day go sideways once ${pretty(c.meal)} stops being predictable.`,
+    `${pretty(c.food)} is the one meal that keeps me calm, ${pretty(c.food2)} travels better, and neither fully solves the mental side of a long cut. That is the part I am trying to clean up before I blame the calories.`,
+    `Training is holding up better than my patience with food. ${c.protein}g is manageable, the deficit is fine on paper, and then ${pretty(c.setting)} plus ${pretty(c.hunger)} makes me want to improvise dinner.`,
+    `I wanted this cut to feel boring. Instead it keeps turning into little negotiations with hunger, convenience, and how much I want to think about food after work.`
   ]);
   if (category === 'bulking') return pick([
-    `I am trying to keep this bulk looking intentional instead of just bigger portions plus bad decisions. ${pretty(c.food)} is the easiest win, ${pretty(c.food2)} is the backup, and ${pretty(c.bulk)} is the part that keeps showing up once the day gets long.`,
-    `The first half of the day usually feels easy. Then appetite shifts, meal ${c.meals} starts feeling expensive, and the whole surplus goes from planned to improvised way too fast. That is the part I am trying to tighten up.`,
-    `I do not want extra calories to feel chaotic. A ${c.surplus} is fine, ${pretty(c.setting)} is manageable, and I can still tell exactly when the structure breaks and the bulk starts feeling dirtier than I want.`,
-    `The goal is more food, not more noise. ${pretty(c.food)} keeps the numbers moving, ${pretty(c.bulk)} keeps testing my patience, and I am trying to find the version of this phase that still feels clean by Friday night.`
+    `The bulk is going fine until ${pretty(c.bulk)} starts showing up. I am aiming for about a ${pretty(c.surplus)}, and ${pretty(c.food)} has been the easiest way to push calories up without feeling gross.`,
+    `Meal ${c.meals} is where the whole thing starts feeling like work. I can get most of my food in early, but once appetite drops I either force it or start eating random stuff that does not feel worth it.`,
+    `I want the extra calories to feel intentional, not like I am just snacking my way into a surplus. ${pretty(c.food)} and ${pretty(c.food2)} both work, but one probably needs to become the boring default.`,
+    `This is the part of bulking nobody sold me on. The training is fun, the scale moving is fun, and then digestion, appetite, and a normal schedule all start negotiating with each other.`
   ]);
   if (category === 'supplements') return pick([
-    `I am in the mood to cut containers, not add new ones. ${pretty(c.supp)} is the one I still trust, ${pretty(c.supp2)} is the one I keep questioning, and ${c.caffeine}mg already does most of the heavy lifting I actually notice.`,
-    `This stack got built one small purchase at a time, and now I am trying to figure out which pieces are real and which pieces just look disciplined on the counter. ${pretty(c.stack)} sounded smart when I put it together; now I am less convinced.`,
-    `Food and training still run the whole show for me, so I am trying to be brutally honest about what belongs in the bag. If ${pretty(c.supp2)} disappeared tomorrow, I am not sure I could tell without looking at the label.`,
-    `There is a big difference between useful and just familiar. ${pretty(c.supp)} has earned that spot so far, but I keep looking at the rest of the stack and thinking I might be paying for routine more than effect.`
+    `I am at the point where I would rather simplify the stack than keep pretending every tub matters. ${pretty(c.supp)} is the one I expect to keep, ${pretty(c.supp2)} is the one I keep side eyeing, and ${c.caffeine}mg already covers most of what I actually feel.`,
+    `Training and food are still the main drivers for me, so I am trying to be honest about what is earning a place in the bag. Right now this is basically a ${pretty(c.stack)}, and I am not convinced every piece deserves to survive.`,
+    `The more I look at my setup, the more I think I bought convenience instead of results. If you cut your stack back to the things you could genuinely notice, what would still be left?`,
+    `I am not anti supplement, I am just anti pretending. If something matters, I want to be able to point to what it is actually doing besides making me feel organized.`
   ]);
   return pick([
-    `I am pretty sure motivation is not the problem here anymore. Structure is. ${pretty(c.planner)} works when life stays calm, ${pretty(c.routine)} is what shows up when life does not, and that gap is what I am trying to close.`,
-    `The thing I want most is a routine that still works on a weird week. ${pretty(c.setting)} keeps exposing what is real, ${pretty(c.food)} keeps saving the evenings, and I can still tell the whole setup is a little too fragile.`,
-    `I do not need a harder plan. I need a plan that survives real life. ${pretty(c.planner)} helps, ${pretty(c.routine)} keeps testing it, and I am trying to simplify before I start pretending I just need more discipline.`,
-    `Some weeks make me feel organized, other weeks make me feel like I built the whole system for a version of life I do not actually live. That is why I keep trimming, testing, and seeing what still holds once the noise shows up.`
+    `I do not think motivation is the issue anymore. I think the system is. ${pretty(c.planner)} works until ${pretty(c.routine)} shows up, and then the whole week starts feeling improvised again.`,
+    `My training is fine when the schedule is calm. The second life gets noisy, I can tell which parts of the routine were never really stable. ${pretty(c.setting)} exposes that immediately.`,
+    `I am trying to build something that survives normal life, not just perfect weeks. Right now the weak spot is probably groceries, sleep, or the way I am timing everything.`,
+    `This is less about discipline and more about friction. I can usually tell exactly where the week unravels; I just have not simplified that part enough yet.`
   ]);
 }
 
