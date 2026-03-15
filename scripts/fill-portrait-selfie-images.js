@@ -272,6 +272,19 @@ function normalizeImageFamily(value) {
     .trim();
 }
 
+function personKeyForImage(value) {
+  const raw = String(value || '').toLowerCase();
+  if (!raw) return null;
+  if (/aleesha_young/.test(raw)) return 'person_aleesha_young';
+  if (/34459240334|35135220152|35302740245|35263265856/.test(raw)) return 'person_fitography_woman_a';
+  if (/35263804916/.test(raw)) return 'person_fitography_man_a';
+  if (/31536627862/.test(raw)) return 'person_cjquines_woman_a';
+  if (/8901359149/.test(raw)) return 'person_felipe_pilotto_man_a';
+  if (/john_quinlan|former_pro_wrestler/.test(raw)) return 'person_john_quinlan';
+  if (/5992046962/.test(raw)) return 'person_runner_gareth_a';
+  return null;
+}
+
 function pickAlt(profile) {
   const map = {
     glutes: 'glute progress selfie',
@@ -431,11 +444,14 @@ class Finder {
     this.usedIds = new Set();
     this.usedUrls = new Set();
     this.usedFamilies = new Set();
+    this.usedPeople = new Set();
     items.forEach((item) => {
       if (item.imageId) this.usedIds.add(norm(item.imageId));
       if (item.imageUrl) this.usedUrls.add(norm(item.imageUrl));
       const family = normalizeImageFamily(item.imageUrl || item.imagePageUrl);
       if (family) this.usedFamilies.add(family);
+      const personKey = personKeyForImage(item.imageUrl || item.imagePageUrl);
+      if (personKey) this.usedPeople.add(personKey);
     });
   }
 
@@ -454,11 +470,13 @@ class Finder {
         const itemId = norm(item.id);
         const itemUrl = norm(item.url);
         const family = normalizeImageFamily(item.url || item.foreign_landing_url || item.detail_url);
-        if (this.usedIds.has(itemId) || this.usedUrls.has(itemUrl) || (family && this.usedFamilies.has(family))) continue;
+        const personKey = personKeyForImage(item.url || item.foreign_landing_url || item.detail_url);
+        if (this.usedIds.has(itemId) || this.usedUrls.has(itemUrl) || (family && this.usedFamilies.has(family)) || (personKey && this.usedPeople.has(personKey))) continue;
         if (!isPortraitCandidate(item, profile)) continue;
         if (itemId) this.usedIds.add(itemId);
         if (itemUrl) this.usedUrls.add(itemUrl);
         if (family) this.usedFamilies.add(family);
+        if (personKey) this.usedPeople.add(personKey);
         return item;
       }
       if (state.done || state.page > OPENVERSE_MAX) return null;
@@ -476,9 +494,11 @@ function takeCurated(profile, finder) {
   for (const item of pools) {
     const urlKey = norm(item.url);
     const family = normalizeImageFamily(item.url || item.foreign_landing_url);
-    if (finder.usedUrls.has(urlKey) || (family && finder.usedFamilies.has(family))) continue;
+    const personKey = personKeyForImage(item.url || item.foreign_landing_url);
+    if (finder.usedUrls.has(urlKey) || (family && finder.usedFamilies.has(family)) || (personKey && finder.usedPeople.has(personKey))) continue;
     finder.usedUrls.add(urlKey);
     if (family) finder.usedFamilies.add(family);
+    if (personKey) finder.usedPeople.add(personKey);
     return { ...item, id: item.url };
   }
   return null;
