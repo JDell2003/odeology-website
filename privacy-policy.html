@@ -215,25 +215,8 @@
         }
 
         .privacy-hero {
-            position: relative;
-            overflow: hidden;
-            padding: 2.1rem;
-            border: 1px solid var(--forum-border);
-            border-radius: 32px;
-            background:
-                radial-gradient(circle at top right, rgba(39, 72, 93, 0.14), transparent 34%),
-                linear-gradient(135deg, #f7fafc 0%, #eef4f8 52%, #fdfefe 100%);
-        }
-
-        .privacy-hero::after {
-            content: "";
-            position: absolute;
-            inset: auto -8% -36% auto;
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(39, 72, 93, 0.12), transparent 68%);
-            pointer-events: none;
+            padding: 0 0 2rem;
+            border-bottom: 1px solid var(--forum-border);
         }
 
         .privacy-eyebrow {
@@ -271,10 +254,8 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.68rem 0.9rem;
+            padding: 0.35rem 0;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.82);
-            border: 1px solid rgba(39, 72, 93, 0.1);
             font-size: 0.86rem;
             font-weight: 700;
             color: var(--forum-accent);
@@ -288,10 +269,12 @@
         }
 
         .privacy-quick-card {
-            padding: 1.05rem 1.1rem;
-            border-radius: 24px;
-            background: #ffffff;
-            border: 1px solid var(--forum-border);
+            padding: 0 1rem 0 0;
+            border-right: 1px solid var(--forum-border);
+        }
+
+        .privacy-quick-card:last-child {
+            border-right: none;
         }
 
         .privacy-quick-card strong {
@@ -311,25 +294,21 @@
         .privacy-grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
-            gap: 1rem;
+            gap: 0;
             margin-top: 1.5rem;
         }
 
         .privacy-card {
-            padding: 1.45rem 1.45rem 1.55rem;
-            border-radius: 28px;
-            border: 1px solid var(--forum-border);
-            background: #ffffff;
+            padding: 1.8rem 0;
+            border-top: 1px solid var(--forum-border);
         }
 
         .privacy-card.is-accent {
-            background:
-                linear-gradient(180deg, rgba(220, 231, 238, 0.52), rgba(255, 255, 255, 0.96));
+            background: transparent;
         }
 
         .privacy-card.is-soft {
-            background:
-                linear-gradient(180deg, rgba(244, 247, 249, 0.96), rgba(255, 255, 255, 1));
+            background: transparent;
         }
 
         .privacy-card h2 {
@@ -364,10 +343,8 @@
 
         .privacy-note {
             margin-top: 1rem;
-            padding: 0.95rem 1rem;
-            border-radius: 20px;
-            background: #f6f9fb;
-            border: 1px solid var(--forum-border);
+            padding: 0 0 0 1rem;
+            border-left: 3px solid var(--forum-accent);
             color: var(--forum-text);
             font-size: 0.92rem;
             line-height: 1.65;
@@ -375,12 +352,8 @@
 
         .privacy-contact {
             margin-top: 1.6rem;
-            padding: 1.4rem;
-            border-radius: 28px;
-            border: 1px solid var(--forum-border-strong);
-            background:
-                radial-gradient(circle at top left, rgba(39, 72, 93, 0.08), transparent 36%),
-                #f9fbfc;
+            padding: 1.8rem 0 0;
+            border-top: 1px solid var(--forum-border-strong);
         }
 
         .privacy-contact h2 {
@@ -434,18 +407,27 @@
             }
 
             .privacy-hero {
-                padding: 1.45rem;
-                border-radius: 24px;
+                padding: 0 0 1.5rem;
             }
 
             .privacy-quick {
                 grid-template-columns: 1fr;
             }
 
+            .privacy-quick-card {
+                padding: 0 0 1rem;
+                border-right: none;
+                border-bottom: 1px solid var(--forum-border);
+            }
+
+            .privacy-quick-card:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
             .privacy-card,
             .privacy-contact {
-                border-radius: 22px;
-                padding: 1.1rem;
+                padding-top: 1.3rem;
             }
         }
     </style>
