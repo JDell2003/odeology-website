@@ -939,39 +939,50 @@ function imageQueries(post) {
   const c = post._c || {};
   const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
   const profile = detectImageProfile(post);
+  const adultProgress = {
+    chest: ['adult gym mirror selfie chest', 'young adult bodybuilding chest progress', 'adult fitness posing chest'],
+    back: ['adult gym mirror selfie back', 'young adult bodybuilding back progress', 'adult fitness posing back'],
+    shoulders: ['adult gym mirror selfie shoulders', 'young adult fitness shoulder progress', 'adult lateral raise physique'],
+    arms: ['adult gym mirror selfie arms', 'young adult fitness biceps progress', 'adult bodybuilding arm pose'],
+    legs: ['adult gym mirror selfie legs', 'young adult fitness leg progress', 'adult bodybuilding lower body'],
+    core: ['adult gym mirror selfie abs', 'young adult fitness core progress', 'adult physique check abs'],
+    food: ['healthy meal prep adult fitness', 'protein meal prep gym lifestyle'],
+    planning: ['adult workout log notebook gym', 'fitness notes phone gym'],
+    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym']
+  };
   const exactQueries = {
-    'upper-chest': ['incline bench press', 'incline dumbbell press gym', 'incline smith machine chest', 'upper chest cable fly'],
-    'rear-delts': ['rear delt machine gym', 'reverse pec deck gym', 'rear delt raise gym'],
-    'side-delts': ['lateral raise gym', 'cable lateral raise gym', 'dumbbell lateral raise gym'],
-    traps: ['barbell shrug gym', 'dumbbell shrug gym', 'farmer carry gym'],
-    'upper-back': ['chest supported row gym', 'upper back row gym', 'barbell row gym'],
-    lats: ['lat pulldown gym', 'pull up gym', 'wide grip pulldown gym'],
-    biceps: ['dumbbell curl gym', 'preacher curl gym', 'barbell curl gym'],
-    triceps: ['tricep pushdown gym', 'overhead tricep extension gym', 'close grip bench gym'],
-    hamstrings: ['romanian deadlift gym', 'leg curl machine gym', 'rdl gym'],
-    glutes: ['hip thrust gym', 'glute bridge gym', 'hip thrust machine gym'],
-    quads: ['hack squat gym', 'leg press gym', 'split squat gym', 'barbell squat gym'],
-    calves: ['standing calf raise gym', 'seated calf raise gym', 'calf raise machine gym'],
-    abs: ['ab wheel gym', 'cable crunch gym', 'core workout gym'],
-    'cable-row': ['cable row gym', 'seated cable row gym'],
-    'cable-fly': ['cable fly gym', 'cable chest fly gym'],
-    'smith-incline': ['smith incline press gym', 'incline smith machine chest'],
-    planning: ['workout notebook gym', 'phone notes gym workout', 'fitness planner notebook', 'workout log notebook'],
+    'upper-chest': ['incline bench press adult gym', 'incline dumbbell press adult fitness', 'incline smith machine chest adult', 'upper chest cable fly adult'],
+    'rear-delts': ['rear delt machine adult gym', 'reverse pec deck adult gym', 'rear delt raise adult gym'],
+    'side-delts': ['lateral raise adult gym', 'cable lateral raise adult gym', 'dumbbell lateral raise adult fitness'],
+    traps: ['barbell shrug adult gym', 'dumbbell shrug adult gym', 'farmer carry adult gym'],
+    'upper-back': ['chest supported row adult gym', 'upper back row adult fitness', 'barbell row adult gym'],
+    lats: ['lat pulldown adult gym', 'pull up adult gym', 'wide grip pulldown adult fitness'],
+    biceps: ['dumbbell curl adult gym', 'preacher curl adult gym', 'barbell curl adult fitness'],
+    triceps: ['tricep pushdown adult gym', 'overhead tricep extension adult gym', 'close grip bench adult gym'],
+    hamstrings: ['romanian deadlift adult gym', 'leg curl machine adult gym', 'rdl adult fitness'],
+    glutes: ['hip thrust adult gym', 'glute bridge adult fitness', 'hip thrust machine adult gym'],
+    quads: ['hack squat adult gym', 'leg press adult gym', 'split squat adult fitness', 'barbell squat adult gym'],
+    calves: ['standing calf raise adult gym', 'seated calf raise adult gym', 'calf raise machine adult fitness'],
+    abs: ['ab wheel adult gym', 'cable crunch adult gym', 'core workout adult fitness'],
+    'cable-row': ['cable row adult gym', 'seated cable row adult fitness'],
+    'cable-fly': ['cable fly adult gym', 'cable chest fly adult fitness'],
+    'smith-incline': ['smith incline press adult gym', 'incline smith machine chest adult'],
+    planning: ['adult workout notebook gym', 'adult phone notes gym workout', 'fitness planner notebook', 'workout log notebook'],
     food: [`${c.food} meal prep`, `${c.food2} healthy meal`, 'meal prep containers', `${c.meal} protein meal`],
-    lifestyle: ['gym mirror selfie', 'crowded gym', 'gym floor scene']
+    lifestyle: ['adult gym mirror selfie', 'crowded gym adult fitness', 'gym floor scene']
   };
   const familyQueries = {
-    chest: ['bench press gym', 'chest press machine', 'incline bench press', 'barbell bench gym'],
-    back: ['lat pulldown gym', 'barbell row gym', 'back mirror gym', 'pull up gym'],
-    shoulders: ['lateral raise gym', 'rear delt machine gym', 'shoulder dumbbell raise'],
-    arms: ['dumbbell curl gym', 'tricep pushdown gym', 'arm flex mirror gym'],
-    legs: ['squat rack gym', 'leg press gym', 'split squat gym', 'hamstring curl gym'],
-    core: ['ab wheel gym', 'cable crunch gym', 'core workout gym'],
-    food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal'],
-    planning: ['workout notebook gym', 'phone notes gym workout', 'fitness planner notebook'],
-    general: ['gym mirror selfie', 'barbell plates gym', 'gym rack platform']
+    chest: ['bench press adult gym', 'chest press machine adult', 'incline bench adult fitness', ...adultProgress.chest],
+    back: ['lat pulldown adult gym', 'barbell row adult gym', 'back mirror adult gym', 'pull up adult fitness', ...adultProgress.back],
+    shoulders: ['lateral raise adult gym', 'rear delt machine adult gym', 'shoulder dumbbell raise adult', ...adultProgress.shoulders],
+    arms: ['dumbbell curl adult gym', 'tricep pushdown adult gym', 'arm flex mirror adult gym', ...adultProgress.arms],
+    legs: ['squat rack adult gym', 'leg press adult gym', 'split squat adult fitness', 'hamstring curl adult gym', ...adultProgress.legs],
+    core: ['ab wheel adult gym', 'cable crunch adult gym', 'core workout adult fitness', ...adultProgress.core],
+    food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal', ...adultProgress.food],
+    planning: ['adult workout notebook gym', 'adult phone notes gym workout', 'fitness planner notebook', ...adultProgress.planning],
+    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform']
   };
-  const neutralTraining = ['gym mirror selfie', 'barbell plates gym', 'gym rack platform', 'workout notebook gym'];
+  const neutralTraining = ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult workout log notebook'];
   return {
     exact: uniq([...(exactQueries[profile.exact] || []), titleTerms]),
     family: uniq([...(familyQueries[profile.family] || familyQueries.general), titleTerms]),
