@@ -250,27 +250,29 @@
 
     const total = Math.max(0, Number(item.comments || 0));
     const random = seededValue(item.id);
-    const replyIndex = total >= 4 && random() < 0.78 ? Math.min(total - 1, 2 + Math.floor(random() * Math.max(1, total - 2))) : -1;
+    const replyIndex = total >= 4 && random() < 0.72 ? Math.min(total - 1, 2 + Math.floor(random() * Math.max(1, total - 2))) : -1;
     const replyParentIndex = replyIndex > 1 ? Math.max(0, replyIndex - 1) : -1;
-    const disagreeIndex = total >= 3 ? 1 : -1;
+    const disagreeIndex = total >= 3 && random() < 0.36 ? 1 : -1;
     const comments = Array.from({ length: total }, (_, index) => {
       const baseMinutes = Math.max(1, Number(item.ageMinutes || 120));
       const ageMinutes = Math.max(1, Math.round(baseMinutes * (0.08 + random() * 0.82)));
-      const tierRoll = random();
-      let score;
-      if (tierRoll < 0.16) {
-        score = Math.round(random() * 3);
-      } else if (tierRoll < 0.58) {
-        score = Math.round(2 + random() * 18);
-      } else if (tierRoll < 0.88) {
-        score = Math.round(12 + random() * 75);
-      } else {
-        score = Math.round(65 + random() * Math.max(20, total * 1.35));
+      let score = 0;
+      if (index === 0) score = Math.round(5 + random() * 20);
+      else {
+        const tierRoll = random();
+        if (tierRoll < 0.3) score = Math.round(random() * 3);
+        else if (tierRoll < 0.82) score = Math.round(1 + random() * 11);
+        else score = Math.round(5 + random() * 20);
       }
 
       const mode = index === disagreeIndex ? 'disagree' : index === replyIndex ? 'reply' : 'base';
+      const lengthRoll = random();
       let body = buildCommentBody(item, random, mode);
-      if (random() > 0.84 && mode === 'base') body = `${body} ${buildCommentBody(item, random, 'reply')}`;
+      if (lengthRoll < 0.4) {
+        body = pickFrom(shortCommentReactions, random);
+      } else if (lengthRoll > 0.95) {
+        body = `${buildCommentBody(item, random, mode)} ${buildCommentBody(item, random, 'reply')}`;
+      }
 
       return {
         id: `${item.id}-comment-${index + 1}`,
@@ -353,6 +355,14 @@
           <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.imageAlt || item.title)}" loading="lazy">
         </a>`
       : '';
+    const signalsMarkup = `
+      <div class="forum-post-signals">
+        <span>${escapeHtml(formatCompactNumber(item.viewCount || 0))} views</span>
+        <span>&bull;</span>
+        <span>${escapeHtml(formatCompactNumber(item.comments))} comments</span>
+        <span>&bull;</span>
+        <span>${escapeHtml(formatCompactNumber(item.saveCount || 0))} saves</span>
+      </div>`;
 
     return `
       <article class="forum-post" data-post-id="${escapeHtml(item.id)}" data-scope="${escapeHtml(item.scope)}" data-category="${escapeHtml(item.category)}" data-minutes="${escapeHtml(item.ageMinutes)}" data-score="${escapeHtml(item.score)}" data-comments="${escapeHtml(item.comments)}">
@@ -388,9 +398,11 @@
             <span>${escapeHtml(formatCompactNumber(item.comments))}</span>
           </button>
           <span class="forum-post-stat-pill">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-4 7 4V5a2 2 0 0 0-2-2Z"></path></svg>
+            <span>${escapeHtml(formatCompactNumber(item.saveCount || 0))}</span>
           </span>
         </div>
+        ${signalsMarkup}
       </article>`;
   }
 

@@ -193,7 +193,15 @@ function applyCaptionImperfection(text) {
   return out;
 }
 
-function title(category, c) {
+function pickPostType() {
+  const roll = rand();
+  if (roll < 0.5) return 'question';
+  if (roll < 0.75) return 'personal';
+  if (roll < 0.9) return 'advice';
+  return 'casual';
+}
+
+function title(category, c, postType) {
   const question = {
     training: [`${pretty(c.setting)} has me wondering if ${pretty(c.lift)} is enough for ${pretty(c.part)}`, `${pretty(c.block)} and ${pretty(c.part)} still not clicking for me`, `${pretty(c.constraint)} and ${pretty(c.part)} still lagging`, `${pretty(c.lift)} for ${pretty(c.part)} growth or am i missing something`, `${pretty(c.setting)} and anyone else struggle with ${pretty(c.part)}`],
     nutrition: [`${pretty(c.meal)} got me asking what meals you repeat the most`, `${pretty(c.food)} worth meal prepping or not really`, `${pretty(c.appetite)} and keeping protein high feels impossible`, `${pretty(c.setting)} and food starts getting random fast`, `${pretty(c.food2)} or ${pretty(c.food)} when the day gets messy`],
@@ -230,26 +238,58 @@ function title(category, c) {
     supplements: [`${pretty(c.stack)} getting out of hand again`, `${pretty(c.supp)} and i still cant tell if it matters`, `${c.caffeine}mg is carrying this week`, `${pretty(c.supp2)} and supplement shelves still feel like a scam`],
     lifestyle: [`${pretty(c.setting)} and the routine fell apart again`, `${pretty(c.routine)} makes consistency feel fake`, `${pretty(c.planner)} looked good until real life showed up`, `${pretty(c.setting)} and i still got the work done somehow`]
   };
-  const roll = rand();
-  let value = '';
-  if (roll < 0.4) value = pick(question[category]);
-  else if (roll < 0.7) value = pick(personal[category]);
-  else if (roll < 0.9) value = pick(advice[category]);
-  else value = pick(casual[category]);
+  const pools = { question, personal, advice, casual };
+  const value = pick(pools[postType][category]);
   return applyCaptionImperfection(value);
 }
 
-function body(category, c) {
+function body(category, c, postType) {
   const bodies = {
-    training: ['I keep training consistently but one thing is obviously lagging. The main lift is moving and recovery is decent, so I am trying not to throw random volume at the problem.', 'This has been bugging me because the overall split is fine, but one body part is still behind. Curious what you would fix first.', 'Not looking for a magic answer. Just trying to figure out whether this is an exercise order problem, a volume problem, or me being impatient.'],
-    nutrition: ['I can eat well for a few days no problem, then the routine gets messy and I start winging it. The easiest thing to repeat is usually what saves the week.', 'Mostly trying to keep food simple enough that I actually stick to it. The hard part is when the day gets busy and I stop wanting to think about meals.', 'I do better when one or two meals are boring on purpose. Curious what foods you guys keep around when motivation is low.'],
-    recovery: ['This is not a dramatic injury post. It is more that recovery has felt off long enough that I know something needs to change.', 'Session performance is okay, but afterward I can tell something is getting backed up. Sleep has been mid and that might be the whole answer.', 'Trying not to overreact, but I also do not want to ignore it until it gets worse.'],
-    cutting: ['The cut is fine on paper. The real issue is how random the day gets once I am tired or hungry.', 'I can hit the numbers early, then the back half of the day turns into a negotiation with convenience and appetite.', 'Mostly looking for practical fixes, not another perfect plan I will not follow.'],
-    bulking: ['Training is good. The food side is what keeps getting weird on busy days.', 'I am trying to keep the surplus intentional instead of just eating random extra stuff late at night.', 'Curious what actually worked for people once appetite stopped cooperating.'],
-    supplements: ['I am trying to be honest about what is actually helping and what just makes me feel organized.', 'This started as a simple stack and somehow turned into too many tubs again.', 'Would rather keep the basics and stop pretending every extra scoop matters.'],
-    lifestyle: ['I do fine when the week is calm. The second life gets messy, I can see exactly where the routine was never really stable.', 'This feels more like a friction problem than a motivation problem.', 'Trying to build something that works on normal weeks, not just ideal ones.']
+    training: {
+      question: ['I keep training consistently but one thing is obviously lagging. The main lift is moving and recovery is decent, so I am trying not to throw random volume at the problem.', 'This has been bugging me because the overall split is fine, but one body part is still behind. Curious what you would fix first.', 'Not looking for a magic answer. Just trying to figure out whether this is an exercise order problem, a volume problem, or me being impatient.'],
+      personal: ['Finally feels like I can see what was going wrong instead of just guessing every week.', 'I did not change a ton, but the small adjustment made the whole week feel cleaner.', 'Still early, but this is the first time the setup has felt sustainable.'],
+      advice: ['Mostly posting this because the simple fixes usually work better than people think.', 'If I was starting over I would clean up the boring stuff first.', 'This is one of those things that feels more complicated than it needs to be.'],
+      casual: ['No deep lesson here. Just one of those gym thoughts you have mid week.', 'Posting this because I know I am not the only one who deals with it.', 'Some gym problems are not serious, just annoying enough to be funny.']
+    },
+    nutrition: {
+      question: ['I can eat well for a few days no problem, then the routine gets messy and I start winging it. The easiest thing to repeat is usually what saves the week.', 'Mostly trying to keep food simple enough that I actually stick to it. The hard part is when the day gets busy and I stop wanting to think about meals.', 'I do better when one or two meals are boring on purpose. Curious what foods you guys keep around when motivation is low.'],
+      personal: ['This was one of those changes that made dieting feel easier without making it feel strict.', 'The food is nothing special, it is just repeatable enough that I keep doing it.', 'I keep trying more interesting meals and then end up back here because it works.'],
+      advice: ['I think most people would be better off repeating one decent meal instead of chasing perfect variety.', 'If the plan only works when life is calm, the food setup is probably too complicated.', 'Simple meals are boring, but boring is usually what keeps the week on track.'],
+      casual: ['No clue why food gets harder the second the week gets busy.', 'Meal prep really is just doing dishes forever.', 'Eating enough protein is way less glamorous than people make it sound.']
+    },
+    recovery: {
+      question: ['This is not a dramatic injury post. It is more that recovery has felt off long enough that I know something needs to change.', 'Session performance is okay, but afterward I can tell something is getting backed up. Sleep has been mid and that might be the whole answer.', 'Trying not to overreact, but I also do not want to ignore it until it gets worse.'],
+      personal: ['The fix was a lot less exciting than I wanted it to be.', 'I kept calling it motivation until I finally admitted it was just fatigue.', 'A lighter week helped more than another recovery gadget did.'],
+      advice: ['A lot of recovery issues are just stress showing up in training clothes.', 'Sometimes the answer really is sleep, food, and one less hard set.', 'Recovery gets easier once you stop treating every week like a max effort block.'],
+      casual: ['Recovery is somehow harder than training this week.', 'My body wants a day off and I respect that.', 'Sleep debt is still undefeated.']
+    },
+    cutting: {
+      question: ['The cut is fine on paper. The real issue is how random the day gets once I am tired or hungry.', 'I can hit the numbers early, then the back half of the day turns into a negotiation with convenience and appetite.', 'Mostly looking for practical fixes, not another perfect plan I will not follow.'],
+      personal: ['The scale was not the issue. My routine was.', 'This got easier once I stopped trying to diet perfectly every single day.', 'I finally found the part of the cut that kept wrecking my weekends.'],
+      advice: ['If your cut falls apart at night, the problem probably started earlier in the day.', 'A smaller deficit you can repeat usually beats the aggressive one you keep breaking.', 'Cuts feel way less miserable when the meals are boring on purpose.'],
+      casual: ['Cuts are fun until dinner hits.', 'Hunger is annoying me today.', 'The cut is testing my patience now.']
+    },
+    bulking: {
+      question: ['Training is good. The food side is what keeps getting weird on busy days.', 'I am trying to keep the surplus intentional instead of just eating random extra stuff late at night.', 'Curious what actually worked for people once appetite stopped cooperating.'],
+      personal: ['This bulk is going better now that dinner is not random.', 'I thought appetite would be the easy part and was very wrong.', 'The training is fun. Eating enough without feeling gross is the real skill.'],
+      advice: ['A clean boring bulk is usually better than a sloppy fun one.', 'If appetite disappears, meal timing matters more than people want to admit.', 'One reliable calorie dense meal does more than trying to freestyle the whole day.'],
+      casual: ['Bulking is fun until appetite disappears.', 'I am already tired of eating this much.', 'The scale is moving and so is my grocery bill.']
+    },
+    supplements: {
+      question: ['I am trying to be honest about what is actually helping and what just makes me feel organized.', 'This started as a simple stack and somehow turned into too many tubs again.', 'Would rather keep the basics and stop pretending every extra scoop matters.'],
+      personal: ['Cutting the stack down was less dramatic than I expected.', 'Most of the tubs looked useful until I actually paid attention.', 'I keep coming back to the same one or two things and ignoring the rest.'],
+      advice: ['Most people would be fine with fewer tubs and better groceries.', 'If you cannot explain why it is in the stack, it probably does not need to be there.', 'The basic stuff covers more than most people want to hear.'],
+      casual: ['My stack is getting out of hand again.', 'I still cannot tell if this tub matters.', 'Supplement shelves are a scam sometimes.']
+    },
+    lifestyle: {
+      question: ['I do fine when the week is calm. The second life gets messy, I can see exactly where the routine was never really stable.', 'This feels more like a friction problem than a motivation problem.', 'Trying to build something that works on normal weeks, not just ideal ones.'],
+      personal: ['This finally clicked once the setup got more boring.', 'I kept thinking I needed motivation when I really needed less friction.', 'One small routine fix carried more than I expected.'],
+      advice: ['If the system falls apart on a busy week, the system probably needs simplifying.', 'The routine should survive a normal thursday, not just a perfect monday.', 'Making things easier usually works better than trying harder.'],
+      casual: ['Routine felt solid until real life showed up.', 'Busy week but i still got sessions in.', 'Trying to stay consistent without making this my whole life.']
+    }
   };
-  return applyCaptionImperfection(shuffle(bodies[category]).slice(0, rand() < 0.75 ? 2 : 3).join(' '));
+  const pool = bodies[category][postType];
+  return applyCaptionImperfection(shuffle(pool).slice(0, rand() < 0.75 ? 2 : 3).join(' '));
 }
 
 const scopeMap = { training: 'training', nutrition: 'nutrition', recovery: 'recovery', cutting: 'nutrition', bulking: 'nutrition', supplements: 'nutrition', lifestyle: 'training' };
@@ -265,7 +305,10 @@ function score(category, image) {
     lifestyle: [3, 44]
   }[category] || [3, 40];
   const base = int(span[0], span[1]) + (image ? int(0, 12) : 0);
-  return { score: clamp(base, 3, 120), comments: int(3, 7) };
+  const comments = int(3, 7);
+  const views = clamp(int(120, 900) + comments * int(18, 55), 120, 900);
+  const saves = clamp(int(2, 25), 2, 25);
+  return { score: clamp(base, 3, 120), comments, views, saves };
 }
 
 function ageMinutes() {
@@ -285,14 +328,15 @@ function imageSlots(total, target) {
 function candidate(index, slots) {
   const category = pick(weighted);
   const c = ctx(category);
+  const postType = pickPostType();
   const image = slots.has(index);
   const stats = score(category, image);
   const minutesAgo = ageMinutes();
   const hour = int(0, 23);
   const minute = int(0, 59);
   const id = `forum-post-${String(index + 1).padStart(4, '0')}`;
-  const postTitle = title(category, c);
-  const postBody = body(category, c);
+  const postTitle = title(category, c, postType);
+  const postBody = body(category, c, postType);
   return {
     id,
     slug: slug(postTitle).slice(0, 96),
@@ -301,6 +345,7 @@ function candidate(index, slots) {
     category,
     author: generateUsername(),
     format: image ? 'image' : 'text',
+    postType,
     title: postTitle,
     body: postBody,
     imageUrl: null,
@@ -313,6 +358,8 @@ function candidate(index, slots) {
     tags: cfg[category].tags,
     score: stats.score,
     comments: stats.comments,
+    viewCount: stats.views,
+    saveCount: stats.saves,
     ageMinutes: minutesAgo,
     preferredHourLocal: hour,
     preferredMinuteLocal: minute,
@@ -423,28 +470,38 @@ class Finder {
 
 function imageQueries(post) {
   const c = post._c || {};
-  const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 2).join(' ');
+  const titleText = String(post.title || '').toLowerCase();
+  const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
+  const keywordQueries = [];
+
+  if (/bench|press|chest/.test(titleText)) keywordQueries.push('bench press gym', 'chest press machine', 'barbell bench gym');
+  if (/squat|leg day|quads|leg press/.test(titleText)) keywordQueries.push('squat rack gym', 'barbell squat gym', 'leg press gym');
+  if (/deadlift|plates|chalk/.test(titleText)) keywordQueries.push('deadlift platform gym', 'chalk hands gym', 'barbell plates gym');
+  if (/progress|finally|bulk|cut|physique|mirror/.test(titleText)) keywordQueries.push('gym mirror selfie', 'progress photo gym', 'locker room mirror physique');
+  if (/meal|diet|protein|prep|food|grocery/.test(titleText)) keywordQueries.push('meal prep containers', 'high protein meal prep', 'gym meal prep food');
+  if (/packed|gym|culture|break|back in the gym/.test(titleText)) keywordQueries.push('crowded gym', 'gym equipment floor', 'messy gym scene');
+
   const queries = {
-    training: [`${c.part} gym`, `${c.lift} workout`, `${c.block} training`, `${c.setting} dumbbell`],
-    nutrition: [`${c.food} meal prep`, `${c.food2} healthy meal`, `${c.meal} protein meal`, `${titleTerms} meal`],
-    recovery: [`${c.issue} stretching`, `${c.tool} recovery`, `${c.block} mobility`, `${titleTerms} recovery`],
-    cutting: [`${c.food} low calorie meal`, `${c.food2} lean meal`, `${c.meal} healthy meal`, `${titleTerms} meal`],
-    bulking: [`${c.food} high calorie meal`, `${c.food2} bodybuilding meal`, `${c.meal} protein meal`, `${titleTerms} meal`],
-    supplements: [`${c.supp} shaker`, `${c.supp2} supplement`, `${c.stack} gym bag`, `${titleTerms} supplement`],
-    lifestyle: [`${c.planner} planner`, 'fitness planner notebook', 'meal prep calendar', `${titleTerms} planner`]
+    training: [...keywordQueries, `${c.part} gym`, `${c.lift} workout`, 'gym mirror selfie', 'barbell plates gym', `${c.block} training`, `${c.setting} dumbbell`],
+    nutrition: [...keywordQueries, `${c.food} meal prep`, `${c.food2} healthy meal`, 'meal prep containers', `${c.meal} protein meal`, `${titleTerms} meal`],
+    recovery: [...keywordQueries, `${c.issue} stretching`, `${c.tool} recovery`, 'chalk hands gym', `${c.block} mobility`, `${titleTerms} recovery`],
+    cutting: [...keywordQueries, `${c.food} low calorie meal`, `${c.food2} lean meal`, 'gym mirror selfie', `${c.meal} healthy meal`, `${titleTerms} meal`],
+    bulking: [...keywordQueries, `${c.food} high calorie meal`, `${c.food2} bodybuilding meal`, 'gym mirror selfie', `${c.meal} protein meal`, `${titleTerms} meal`],
+    supplements: [...keywordQueries, `${c.supp} shaker`, `${c.supp2} supplement`, 'gym bag supplements', `${c.stack} gym bag`, `${titleTerms} supplement`],
+    lifestyle: [...keywordQueries, `${c.planner} planner`, 'fitness planner notebook', 'meal prep calendar', 'crowded gym', `${titleTerms} planner`]
   };
   return uniq([...(queries[post.category] || []), ...cfg[post.category].fallback, titleTerms]);
 }
 
 function broadImageQueries(category) {
   const map = {
-    training: ['fitness', 'gym', 'exercise'],
-    nutrition: ['food', 'meal', 'cooking'],
-    recovery: ['stretching', 'walking', 'mobility'],
-    cutting: ['healthy food', 'meal prep', 'food'],
-    bulking: ['bodybuilding food', 'meal prep', 'food'],
-    supplements: ['shaker bottle', 'supplement', 'nutrition'],
-    lifestyle: ['planner', 'notebook', 'calendar']
+    training: ['gym mirror selfie', 'barbell plates gym', 'gym floor scene'],
+    nutrition: ['meal prep containers', 'protein meal prep', 'meal prep food'],
+    recovery: ['chalk hands gym', 'stretching gym', 'walking recovery'],
+    cutting: ['gym mirror selfie', 'lean meal prep', 'meal prep food'],
+    bulking: ['gym mirror selfie', 'bodybuilding meal prep', 'protein meal prep'],
+    supplements: ['shaker bottle gym', 'gym bag supplements', 'supplement container'],
+    lifestyle: ['crowded gym', 'fitness planner notebook', 'gym floor scene']
   };
   return map[category] || ['photo'];
 }
@@ -513,12 +570,6 @@ async function assign(posts) {
   };
   for (const post of posts) {
     if (post.format !== 'image') continue;
-    if (fallbackPool.length >= imageCount) {
-      const fallback = takeFallback(post);
-      if (!fallback) throw new Error(`No unique fallback image found for ${post.id}`);
-      Object.assign(post, applyExistingImage(post, fallback));
-      continue;
-    }
     let item = await finder.take(imageQueries(post));
     if (!item) item = await finder.take(broadImageQueries(post.category));
     if (item) {
