@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'forum-posts.json');
-const IMAGE_OUTPUT_DIR = path.join(process.cwd(), 'generated', 'forum-post-images');
 const TOTAL_POSTS = 2000;
 const SEED = 20260315;
 
@@ -27,144 +26,56 @@ const slugify = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '');
 
-const escapeXml = (value) => String(value || '')
-  .replace(/&/g, '&amp;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&apos;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;');
+const normalizeKeyword = (value) => String(value || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9\s-]/g, ' ')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .join('-');
 
 const communityConfigs = {
   training: {
     communities: ['r/odeology_forum', 'r/training', 'r/homegym', 'r/bicepsgrowth', 'r/pushpulllegs'],
     authors: ['pull_day_notes', 'volume_and_vibes', 'garage_rack_log', 'benchdayhabit', 'weekend_hypertrophy'],
     tags: ['training', 'hypertrophy', 'execution'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600', alt: 'Lifter curling a dumbbell in a gym' },
-      { url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Gym training setup with athlete and weights' },
-      { url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Athlete training with dumbbells in a gym' },
-      { url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Strength training equipment arranged in a gym' }
-    ]
+    imageTags: ['gym', 'fitness', 'workout', 'dumbbell', 'barbell', 'bodybuilding']
   },
   nutrition: {
     communities: ['r/nutrition', 'r/nutritiontiming', 'r/highprotein', 'r/mealprep', 'r/easymeals'],
     authors: ['macro_plate', 'rice_and_rituals', 'proteinfirstdaily', 'mealprep_mike', 'pantry_systems'],
     tags: ['nutrition', 'meals', 'protein'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Healthy mixed meal with vegetables and protein' },
-      { url: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Salmon plate with greens and vegetables' },
-      { url: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Prepared meal containers lined up on a counter' },
-      { url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Protein-forward meal with grains and vegetables' }
-    ]
+    imageTags: ['healthy-food', 'meal', 'mealprep', 'protein', 'salad', 'salmon']
   },
   recovery: {
     communities: ['r/recovery', 'r/mobility', 'r/sleepforgains', 'r/deload', 'r/injuryfree'],
     authors: ['recovery_logbook', 'restdaywalker', 'sleep_quality_check', 'mobility_minute', 'easy_does_it'],
     tags: ['recovery', 'sleep', 'mobility'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Athlete recovering and stretching on the floor' },
-      { url: 'https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Foam roller and recovery equipment in gym space' },
-      { url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Walking outdoors as light recovery activity' }
-    ]
+    imageTags: ['stretching', 'mobility', 'recovery', 'walking', 'yoga', 'foam-roller']
   },
   cutting: {
     communities: ['r/cutting', 'r/fatlossphase', 'r/leaningout', 'r/bodyrecomp', 'r/caloriedeficit'],
     authors: ['deficit_diary', 'lean_phase_log', 'trimwithoutpanic', 'hunger_management', 'recomp_notes'],
     tags: ['fat-loss', 'nutrition', 'consistency'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600', alt: 'Lean meal plated with vegetables and fish' },
-      { url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Large salad bowl with lean protein and vegetables' },
-      { url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Simple lower-calorie meal prep on a table' }
-    ]
+    imageTags: ['healthy-food', 'lean-meal', 'salad', 'fish', 'mealprep', 'calorie-deficit']
   },
   bulking: {
     communities: ['r/bulking', 'r/gaining', 'r/massphase', 'r/bigplates', 'r/strengthmeals'],
     authors: ['surplus_journal', 'massphasecook', 'more_rice_more_reps', 'bulk_szn_daily', 'hardgainerhelper'],
     tags: ['muscle-gain', 'nutrition', 'surplus'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Large meal bowl used for muscle gain meal prep' },
-      { url: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'High-calorie meal prep containers on a kitchen counter' },
-      { url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Hearty plate with carbohydrates and protein' }
-    ]
+    imageTags: ['meal', 'rice', 'beef', 'chicken', 'bodybuilding-food', 'gym-food']
   },
   supplements: {
     communities: ['r/supplements', 'r/creatine', 'r/preworkout', 'r/researchstack', 'r/proteinpowder'],
     authors: ['stack_check', 'creatine_question', 'label_reader', 'simple_supps_only', 'scoopandgo'],
     tags: ['supplements', 'creatine', 'performance'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Supplements and shaker bottle on a gym bench' },
-      { url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Water bottle and training setup for pre-workout routine' },
-      { url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Training gear and recovery supplements on a mat' }
-    ]
+    imageTags: ['supplements', 'protein', 'shaker', 'creatine', 'preworkout', 'gym-bag']
   },
   lifestyle: {
     communities: ['r/consistency', 'r/busyfitness', 'r/shiftworkerfitness', 'r/weekendreset', 'r/adhesion'],
     authors: ['calendar_and_cals', 'busyweek_lifter', 'nightshift_macros', 'consistentish', 'habit_stack_daily'],
     tags: ['consistency', 'lifestyle', 'planning'],
-    images: [
-      { url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Notebook and laptop used for planning habits and fitness' },
-      { url: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Planner and coffee used for scheduling workouts and meals' },
-      { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600', alt: 'Simple desk setup for building a weekly routine' }
-    ]
-  }
-};
-
-const categoryArtwork = {
-  training: {
-    label: 'Training',
-    gradientStart: '#102033',
-    gradientEnd: '#27485d',
-    accent: '#68d5ff',
-    accentSoft: '#d7f5ff',
-    icon: 'training'
-  },
-  nutrition: {
-    label: 'Nutrition',
-    gradientStart: '#1f3a1f',
-    gradientEnd: '#516f28',
-    accent: '#ffe082',
-    accentSoft: '#fff5d0',
-    icon: 'nutrition'
-  },
-  recovery: {
-    label: 'Recovery',
-    gradientStart: '#2b2247',
-    gradientEnd: '#5963a6',
-    accent: '#d8d2ff',
-    accentSoft: '#f2efff',
-    icon: 'recovery'
-  },
-  cutting: {
-    label: 'Cutting',
-    gradientStart: '#4a271f',
-    gradientEnd: '#a64f3a',
-    accent: '#ffd0b8',
-    accentSoft: '#fff0e7',
-    icon: 'cutting'
-  },
-  bulking: {
-    label: 'Bulking',
-    gradientStart: '#40270b',
-    gradientEnd: '#9c6b1e',
-    accent: '#ffe29a',
-    accentSoft: '#fff4d1',
-    icon: 'bulking'
-  },
-  supplements: {
-    label: 'Supplements',
-    gradientStart: '#1b3351',
-    gradientEnd: '#2f7ab0',
-    accent: '#bfe7ff',
-    accentSoft: '#edf8ff',
-    icon: 'supplements'
-  },
-  lifestyle: {
-    label: 'Lifestyle',
-    gradientStart: '#25313d',
-    gradientEnd: '#667482',
-    accent: '#f2d6a2',
-    accentSoft: '#fff4e4',
-    icon: 'lifestyle'
+    imageTags: ['planner', 'notebook', 'desk', 'calendar', 'coffee', 'workspace']
   }
 };
 
@@ -210,7 +121,6 @@ const titleQualifiers = [
 
 function buildContext(categoryKey) {
   const bits = titleBits;
-
   const defaultGoal = pick(bits.goals);
   const goal = categoryKey === 'training'
     ? pick(bits.trainingGoals)
@@ -258,11 +168,11 @@ function buildTitle(categoryKey, format, context) {
       ]);
     case 'cutting':
       return format === 'image'
-        ? `This is the leanest meal prep I can actually repeat during a cut`
+        ? 'This is the leanest meal prep I can actually repeat during a cut'
         : `How are you keeping strength while cutting without ${ctx.mistake}?`;
     case 'bulking':
       return format === 'image'
-        ? `Current lean bulk plate check before I push calories higher`
+        ? 'Current lean bulk plate check before I push calories higher'
         : `What made your lean bulk finally work ${ctx.constraint}?`;
     case 'supplements':
       return pick([
@@ -365,117 +275,36 @@ function buildStats(categoryKey, format) {
   return { score, comments };
 }
 
-function wrapLines(text, maxChars, maxLines) {
-  const words = String(text || '').split(/\s+/).filter(Boolean);
-  const lines = [];
-  let current = '';
+function buildImageTags(categoryKey, context) {
+  const config = communityConfigs[categoryKey];
+  const tags = new Set(config.imageTags);
 
-  words.forEach((word) => {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-      return;
-    }
-
-    if (current) {
-      lines.push(current);
-      current = word;
-    } else {
-      lines.push(word.slice(0, maxChars));
-      current = word.slice(maxChars);
-    }
-  });
-
-  if (current) {
-    lines.push(current);
+  if (categoryKey === 'training') {
+    tags.add(normalizeKeyword(context.bodyPart));
+    tags.add(normalizeKeyword(context.trainingBlock));
+  } else if (categoryKey === 'nutrition' || categoryKey === 'cutting' || categoryKey === 'bulking') {
+    tags.add(normalizeKeyword(context.food));
+    tags.add(normalizeKeyword(context.mealSituation));
+  } else if (categoryKey === 'recovery') {
+    tags.add(normalizeKeyword(context.recoveryIssue));
+  } else if (categoryKey === 'supplements') {
+    tags.add(normalizeKeyword(context.supplement));
+  } else if (categoryKey === 'lifestyle') {
+    tags.add(normalizeKeyword(context.context));
   }
 
-  const trimmed = lines.slice(0, maxLines);
-  if (lines.length > maxLines) {
-    trimmed[maxLines - 1] = `${trimmed[maxLines - 1].replace(/[.,;:!?-]*$/, '')}...`;
-  }
-
-  return trimmed;
+  return Array.from(tags)
+    .filter(Boolean)
+    .slice(0, 5);
 }
 
-function buildIconMarkup(icon, accent) {
-  switch (icon) {
-    case 'training':
-      return `<path d="M250 204h110l42-42 26 26-42 42v110h-36V230H250z" fill="${accent}" opacity="0.92"/><rect x="160" y="244" width="142" height="32" rx="16" fill="${accent}" opacity="0.92"/>`;
-    case 'nutrition':
-      return `<path d="M220 168c0 28-18 45-18 71v95h-30v-95c0-26-18-43-18-71h20c0 18 8 30 13 38v-38h20v38c5-8 13-20 13-38Zm88 0h24v166h-24v-70h-24v-22h24z" fill="${accent}" opacity="0.92"/>`;
-    case 'recovery':
-      return `<circle cx="250" cy="244" r="74" fill="${accent}" opacity="0.92"/><circle cx="284" cy="220" r="64" fill="url(#card-bg)" opacity="0.95"/><circle cx="358" cy="178" r="8" fill="${accent}" opacity="0.85"/><circle cx="388" cy="210" r="6" fill="${accent}" opacity="0.72"/>`;
-    case 'cutting':
-      return `<path d="M180 312 304 188" stroke="${accent}" stroke-width="26" stroke-linecap="round" opacity="0.9"/><circle cx="338" cy="154" r="34" stroke="${accent}" stroke-width="20" fill="none" opacity="0.9"/><path d="M220 158c28 0 52 24 52 52" stroke="${accent}" stroke-width="18" fill="none" opacity="0.5"/>`;
-    case 'bulking':
-      return `<path d="M178 210h184l-22 126H200z" fill="${accent}" opacity="0.88"/><path d="M214 210c0-28 17-44 36-44 22 0 33 18 42 18 10 0 18-10 34-10 22 0 38 18 38 44" stroke="${accent}" stroke-width="18" fill="none" opacity="0.88"/>`;
-    case 'supplements':
-      return `<rect x="186" y="188" width="156" height="78" rx="39" fill="${accent}" opacity="0.92"/><path d="M264 188v78" stroke="url(#card-bg)" stroke-width="14" opacity="0.5"/><rect x="210" y="286" width="108" height="34" rx="17" fill="${accent}" opacity="0.7"/>`;
-    case 'lifestyle':
-      return `<rect x="186" y="170" width="156" height="138" rx="24" fill="${accent}" opacity="0.9"/><path d="M220 148v40M308 148v40M214 220h100M214 252h76M214 284h54" stroke="url(#card-bg)" stroke-width="16" stroke-linecap="round" opacity="0.55"/>`;
-    default:
-      return `<circle cx="260" cy="240" r="70" fill="${accent}" opacity="0.88"/>`;
-  }
-}
-
-function buildImageAsset(post, index) {
-  const theme = categoryArtwork[post.category] || categoryArtwork.training;
-  const titleLines = wrapLines(post.title, 28, 4);
-  const bodyLines = wrapLines(post.body, 42, 3);
-  const orbitX = 1040 + ((index * 91) % 380);
-  const orbitY = 180 + ((index * 53) % 320);
-  const circleX = 1210 + ((index * 47) % 220);
-  const circleY = 760 + ((index * 29) % 180);
-  const stripeOffset = 720 + ((index * 37) % 150);
-  const rotation = ((index * 7) % 24) - 12;
-  const fileName = `${post.id}.svg`;
-  const relativePath = `/generated/forum-post-images/${fileName}`;
-  const titleMarkup = titleLines.map((line, lineIndex) => `<tspan x="120" dy="${lineIndex === 0 ? 0 : 68}">${escapeXml(line)}</tspan>`).join('');
-  const bodyMarkup = bodyLines.map((line, lineIndex) => `<tspan x="124" dy="${lineIndex === 0 ? 0 : 34}">${escapeXml(line)}</tspan>`).join('');
-
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
-  <title id="title">${escapeXml(post.title)}</title>
-  <desc id="desc">Unique odeology forum cover art for ${escapeXml(post.community)} in the ${escapeXml(theme.label)} category.</desc>
-  <defs>
-    <linearGradient id="card-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${theme.gradientStart}"/>
-      <stop offset="100%" stop-color="${theme.gradientEnd}"/>
-    </linearGradient>
-    <linearGradient id="card-glow" x1="10%" y1="0%" x2="90%" y2="100%">
-      <stop offset="0%" stop-color="${theme.accent}" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="${theme.accentSoft}" stop-opacity="0.55"/>
-    </linearGradient>
-  </defs>
-  <rect width="1600" height="1200" fill="url(#card-bg)"/>
-  <circle cx="${orbitX}" cy="${orbitY}" r="340" fill="url(#card-glow)" opacity="0.26"/>
-  <circle cx="${circleX}" cy="${circleY}" r="210" fill="${theme.accent}" opacity="0.12"/>
-  <g opacity="0.16" transform="translate(${stripeOffset} -80) rotate(${rotation} 320 620)">
-    <rect x="0" y="0" width="82" height="1400" rx="40" fill="${theme.accentSoft}"/>
-    <rect x="132" y="0" width="38" height="1400" rx="19" fill="${theme.accentSoft}"/>
-    <rect x="222" y="0" width="20" height="1400" rx="10" fill="${theme.accentSoft}"/>
-  </g>
-  <rect x="84" y="94" width="1432" height="1012" rx="46" fill="#ffffff" opacity="0.07"/>
-  <rect x="96" y="106" width="1408" height="988" rx="40" fill="#0f1720" opacity="0.08"/>
-  <rect x="120" y="118" width="230" height="54" rx="27" fill="${theme.accentSoft}" opacity="0.95"/>
-  <text x="148" y="152" font-family="IBM Plex Sans, Arial, sans-serif" font-size="28" font-weight="700" fill="${theme.gradientStart}">${escapeXml(theme.label.toUpperCase())}</text>
-  <text x="120" y="238" font-family="Space Grotesk, IBM Plex Sans, Arial, sans-serif" font-size="64" font-weight="700" letter-spacing="-1.6" fill="#ffffff">${titleMarkup}</text>
-  <text x="124" y="570" font-family="IBM Plex Sans, Arial, sans-serif" font-size="26" font-weight="500" fill="${theme.accentSoft}" opacity="0.95">${bodyMarkup}</text>
-  <text x="124" y="1030" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30" font-weight="600" fill="${theme.accentSoft}">${escapeXml(post.community)}</text>
-  <text x="124" y="1072" font-family="IBM Plex Sans, Arial, sans-serif" font-size="22" font-weight="500" fill="${theme.accentSoft}" opacity="0.85">odeology forum bot post • ${escapeXml(post.author)}</text>
-  <g transform="translate(1010 560)">
-    <rect x="0" y="0" width="390" height="390" rx="42" fill="#ffffff" opacity="0.08"/>
-    <rect x="16" y="16" width="358" height="358" rx="34" fill="#0d1621" opacity="0.12"/>
-    ${buildIconMarkup(theme.icon, theme.accent)}
-  </g>
-</svg>`;
-
-  fs.writeFileSync(path.join(IMAGE_OUTPUT_DIR, fileName), svg, 'utf8');
+function buildRemoteImage(categoryKey, context, index, title) {
+  const tags = buildImageTags(categoryKey, context).join(',');
+  const lock = SEED + index + 1;
 
   return {
-    url: relativePath,
-    alt: `${theme.label} forum cover for ${post.title}`
+    url: `https://loremflickr.com/1600/1200/${tags}?lock=${lock}`,
+    alt: `${communityConfigs[categoryKey].tags[0]} image for ${title}`
   };
 }
 
@@ -483,7 +312,7 @@ function buildPost(index) {
   const categoryKey = pick(['training', 'nutrition', 'recovery', 'cutting', 'bulking', 'supplements', 'lifestyle']);
   const config = communityConfigs[categoryKey];
   const context = buildContext(categoryKey);
-  const format = chance(categoryKey === 'nutrition' || categoryKey === 'cutting' || categoryKey === 'bulking' ? 0.78 : 0.48) ? 'image' : 'text';
+  const format = chance(0.5) ? 'image' : 'text';
   const stats = buildStats(categoryKey, format);
   const hour = intBetween(0, 23);
   const minute = intBetween(0, 59);
@@ -492,16 +321,7 @@ function buildPost(index) {
   const author = pick(config.authors);
   const body = buildBody(categoryKey, format, context);
   const id = `forum-post-${String(index + 1).padStart(4, '0')}`;
-  const image = format === 'image'
-    ? buildImageAsset({
-      id,
-      title,
-      community,
-      category: categoryKey,
-      author,
-      body
-    }, index)
-    : null;
+  const image = format === 'image' ? buildRemoteImage(categoryKey, context, index, title) : null;
 
   return {
     id,
@@ -560,9 +380,6 @@ function generatePosts(total) {
   return posts;
 }
 
-fs.rmSync(IMAGE_OUTPUT_DIR, { recursive: true, force: true });
-fs.mkdirSync(IMAGE_OUTPUT_DIR, { recursive: true });
-
 const items = generatePosts(TOTAL_POSTS);
 const payload = {
   generatedAt: new Date().toISOString(),
@@ -571,7 +388,7 @@ const payload = {
   summary: {
     imagePosts: items.filter((item) => item.format === 'image').length,
     textPosts: items.filter((item) => item.format === 'text').length,
-    uniqueImageAssets: items.filter((item) => item.imageUrl).length
+    uniqueImageUrls: new Set(items.map((item) => item.imageUrl).filter(Boolean)).size
   },
   items
 };
