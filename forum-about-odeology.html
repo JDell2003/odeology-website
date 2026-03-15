@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ About</title>
+    <meta name="description" content="Learn what Odeology does: free macro targets, grocery planning, restock tracking, and training tools in one system.">
+    <link rel="canonical" href="https://odeology.up.railway.app/forum-about-odeology.html">
+    <meta property="og:title" content="odeology_ About">
+    <meta property="og:description" content="A forum-linked landing page explaining Odeology's free macro calculator, grocery planner, overview tools, and training system.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://odeology.up.railway.app/forum-about-odeology.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-15-forum-about-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.forum-home-page) { background: #ffffff; }
+        body.forum-home-page {
+            --forum-bg: #ffffff;
+            --forum-surface: #ffffff;
+            --forum-surface-soft: #f5f7f9;
+            --forum-surface-alt: #f8fafc;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #cfd7de;
+            --forum-text: #18212a;
+            --forum-muted: #677482;
+            --forum-accent: #27485d;
+            --forum-accent-soft: #dce7ee;
+            --forum-orange: #d24f18;
+            --forum-dark: #0d1720;
+            --forum-dark-soft: #122230;
+            background: var(--forum-bg);
+            color: var(--forum-text);
+            min-height: 100vh;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+        .forum-home-page .grain,
+        .forum-home-page::before,
+        .forum-home-page::after { display: none; content: none; }
+        .forum-page-shell {
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 272px minmax(0, 1fr);
+            background: #ffffff;
+        }
+        .forum-rail {
+            padding: 0.9rem 1rem 0;
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            align-self: start;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            border-right: 1px solid var(--forum-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .forum-rail::-webkit-scrollbar { display: none; }
+        .forum-rail-group { display: grid; gap: 0.15rem; padding: 0.55rem 0 0.9rem; }
+        .forum-rail-group + .forum-rail-group { border-top: 1px solid var(--forum-border); }
+        .forum-rail-label {
+            margin: 0 0 0.35rem;
+            padding: 0 0.35rem;
+            color: var(--forum-muted);
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .forum-rail-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.72rem 0.9rem;
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--forum-text);
+            font-size: 0.98rem;
+        }
+        .forum-rail-link.is-active,
+        .forum-rail-link:hover { background: #edf2f6; }
+        .forum-rail-icon {
+            width: 26px;
+            height: 26px;
+            display: grid;
+            place-items: center;
+            color: #1f2933;
+            flex-shrink: 0;
+        }
+        .forum-rail-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .forum-rail-link.is-active .forum-rail-icon { color: #ffffff; }
+        .forum-rail-link.is-active .forum-rail-icon svg circle { fill: #111827; stroke: #111827; }
+        .forum-rail-link.is-active .forum-rail-icon svg path.active-cut { stroke: #ffffff; }
+        .forum-rail-foot {
+            padding: 0.7rem 0 1.2rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-muted);
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+        .forum-main { min-width: 0; padding: 0 1.25rem 2rem; }
+        .forum-main-inner { width: min(1120px, 100%); margin: 0 auto; }
+        .forum-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 1rem 0 1.1rem;
+        }
+        .forum-toolbar-meta { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+        .forum-toolbar-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 0.55rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid var(--forum-border);
+            background: var(--forum-surface-soft);
+            color: var(--forum-text);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .forum-toolbar-link,
+        .about-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0.75rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--forum-border-strong);
+            background: #ffffff;
+            color: var(--forum-text);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .forum-toolbar-link.is-primary,
+        .about-btn.is-primary {
+            background: var(--forum-orange);
+            border-color: var(--forum-orange);
+            color: #ffffff;
+        }
+        .about-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 1.4rem;
+            padding: 0.4rem 0 1.4rem;
+            align-items: stretch;
+        }
+        .about-hero-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.2rem 0;
+        }
+        .eyebrow {
+            margin: 0;
+            color: var(--forum-orange);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .about-hero-copy h1,
+        .about-section-head h2,
+        .about-band-head h2,
+        .about-split-copy h3 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            line-height: 1.02;
+            letter-spacing: -0.04em;
+        }
+        .about-hero-copy h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 0.96; letter-spacing: -0.05em; }
+        .about-section-head h2,
+        .about-band-head h2 { font-size: clamp(1.9rem, 3.2vw, 3rem); }
+        .about-split-copy h3 { font-size: clamp(1.6rem, 2.8vw, 2.5rem); }
+        .about-hero-copy p,
+        .about-section-head p,
+        .about-band-head p,
+        .about-split-copy p,
+        .about-card p,
+        .about-footer-cta p { margin: 0; color: var(--forum-muted); line-height: 1.7; }
+        .about-hero-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.15rem; }
+        .about-point,
+        .about-step,
+        .about-card,
+        .about-bullets li,
+        .about-footer-cta { border: 1px solid var(--forum-border); border-radius: 24px; background: var(--forum-surface-alt); }
+        .about-point { padding: 0.9rem 1rem; border-radius: 20px; }
+        .about-point strong,
+        .about-bullets strong { display: block; margin-bottom: 0.25rem; font-size: 0.95rem; }
+        .about-point span,
+        .about-bullets span { color: var(--forum-muted); font-size: 0.9rem; line-height: 1.55; }
+        .about-hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .about-hero-media {
+            position: relative;
+            min-height: 620px;
+            border-radius: 34px;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(10, 16, 22, 0.02), rgba(10, 16, 22, 0.42)),
+                url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=1500") center/cover no-repeat;
+        }
+        .about-hero-card,
+        .about-media-note {
+            position: absolute;
+            left: 1rem;
+            bottom: 1rem;
+            max-width: 300px;
+            padding: 0.95rem 1rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #35414d;
+            line-height: 1.55;
+            font-size: 0.9rem;
+            box-shadow: 0 12px 26px rgba(13, 23, 32, 0.15);
+        }
+        .about-section { padding: 1.5rem 0; }
+        .about-section-head,
+        .about-band-head { display: grid; gap: 0.55rem; margin-bottom: 1.1rem; }
+        .about-steps,
+        .about-stats,
+        .about-grid { display: grid; gap: 1rem; }
+        .about-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .about-step { padding: 1.2rem; }
+        .about-step-index {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            background: var(--forum-accent-soft);
+            color: var(--forum-accent);
+            font-weight: 700;
+            margin-bottom: 0.9rem;
+        }
+        .about-step h3,
+        .about-card h3,
+        .about-footer-cta h3 { margin: 0 0 0.45rem; font-size: 1.08rem; }
+        .about-step p { margin: 0; color: var(--forum-muted); line-height: 1.65; }
+        .about-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.3rem; align-items: stretch; padding: 1rem 0; }
+        .about-split.is-reverse .about-split-media { order: 2; }
+        .about-split.is-reverse .about-split-copy { order: 1; }
+        .about-split-media {
+            min-height: 380px;
+            border-radius: 28px;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .about-split-media.is-macro { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.05), rgba(13, 23, 32, 0.35)), url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
+        .about-split-media.is-grocery { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.04), rgba(13, 23, 32, 0.28)), url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
+        .about-split-media.is-training { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.08), rgba(13, 23, 32, 0.32)), url("https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
+        .about-split-media.is-overview { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.06), rgba(13, 23, 32, 0.26)), url("https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
+        .about-split-copy { display: flex; flex-direction: column; justify-content: center; gap: 0.9rem; padding: 0.8rem 0; }
+        .about-bullets { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
+        .about-bullets li { padding: 0.95rem 1rem; border-radius: 20px; background: #ffffff; }
+        .about-band {
+            margin: 1.6rem 0;
+            padding: 1.5rem;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--forum-dark) 0%, var(--forum-dark-soft) 100%);
+            color: #ffffff;
+        }
+        .about-band-head p,
+        .about-stat span { color: rgba(255, 255, 255, 0.76); }
+        .about-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 1.2rem; }
+        .about-stat { padding: 1.1rem; border-radius: 22px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .about-stat strong {
+            display: block;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: clamp(1.8rem, 3vw, 2.7rem);
+            letter-spacing: -0.05em;
+            margin-bottom: 0.2rem;
+        }
+        .about-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .about-card { padding: 1.15rem; }
+        .about-footer-cta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding: 1.2rem 1.25rem;
+            background: #ffffff;
+        }
+        @media (max-width: 1100px) {
+            .about-hero { grid-template-columns: 1fr; }
+            .about-hero-media { min-height: 460px; }
+            .about-steps,
+            .about-stats,
+            .about-grid,
+            .about-split { grid-template-columns: 1fr 1fr; }
+            .about-split.is-reverse .about-split-media,
+            .about-split.is-reverse .about-split-copy { order: initial; }
+        }
+        @media (max-width: 980px) {
+            .forum-page-shell { grid-template-columns: 1fr; }
+            .forum-rail { position: static; max-height: none; overflow: visible; border-right: 0; border-bottom: 1px solid var(--forum-border); }
+        }
+        @media (max-width: 720px) {
+            .forum-main { padding: 0 1rem 1.6rem; }
+            .about-hero-points,
+            .about-steps,
+            .about-stats,
+            .about-grid,
+            .about-split { grid-template-columns: 1fr; }
+            .about-hero-media { min-height: 380px; }
+            .about-band { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body class="forum-home-page">
+    <div class="preloader" id="preloader">
+        <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+        <div class="preloader-bar"><div class="fill"></div></div>
+    </div>
+    <div class="grain"></div>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#resources">Macro Calculator</a></li>
+                <li><a href="training-coming-soon.html">Training</a></li>
+                <li><a href="forum.html">FORUM</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main class="forum-page-shell">
+        <aside class="forum-rail">
+            <div class="forum-rail-group">
+                <a class="forum-rail-link" href="index.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"></path><path d="M6.5 9.5V20h11V9.5"></path></svg></span><span>Home</span></a>
+                <a class="forum-rail-link" href="forum.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path class="active-cut" d="M9 9h6l-6 6"></path></svg></span><span>Popular</span></a>
+                <a class="forum-rail-link" href="forum-recent-studies.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6.5h6v11H4z"></path><path d="M14 6.5h6v4h-6z"></path><path d="M14 13.5h6v4H14z"></path></svg></span><span>Recent Studies</span></a>
+            </div>
+            <div class="forum-rail-group">
+                <p class="forum-rail-label">Resources</p>
+                <a class="forum-rail-link is-active" href="forum-about-odeology.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 10c0-2.2 2.2-4 5-4 1.3 0 2.5.4 3.4 1.1C15.3 8 17 8 18 8c0 1.7-1 3-2.5 3.7.3.5.5 1.1.5 1.8 0 2.5-2.2 4.5-5 4.5-1.2 0-2.2-.3-3.1-.9L5 18l1-2.6C6 14.8 6 14.4 6 14Z"></path></svg></span><span>About Odeology</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 14V6l14 6-14 6v-8Z"></path><path d="M5 12h-2"></path></svg></span><span>Advertise</span></a>
+                <a class="forum-rail-link" href="dashboard.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 19 7v10l-7 4-7-4V7l7-4Z"></path><path d="M9 10.5 12 9l3 1.5v3L12 15l-3-1.5Z"></path></svg></span><span>Developer Platform</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 16.5v.1"></path><path d="M10.2 9.5a2 2 0 1 1 3.2 1.6c-.8.6-1.4 1.1-1.4 2.4"></path></svg></span><span>Help</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path><path d="M8.5 15h4"></path></svg></span><span>Blog</span></a>
+                <a class="forum-rail-link" href="training-coming-soon.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 8h10v10H7z"></path><path d="M9 8V6h6v2"></path><path d="M7 12h10"></path></svg></span><span>Careers</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5 4 4"></path><path d="m7 17 8-8 4 4-8 8H7v-4Z"></path></svg></span><span>Press</span></a>
+            </div>
+            <div class="forum-rail-group">
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Odeology Rules</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Privacy Policy</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>User Agreement</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg></span><span>Your Privacy Choices</span></a>
+                <a class="forum-rail-link" href="forum-search.html"><span class="forum-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v8"></path><path d="M8.5 12H15"></path></svg></span><span>Accessibility</span></a>
+            </div>
+            <div class="forum-rail-foot">Odeology &copy; 2026. All rights reserved.</div>
+        </aside>
+        <section class="forum-main">
+            <div class="forum-main-inner">
+                <div class="forum-toolbar">
+                    <div class="forum-toolbar-meta">
+                        <span class="forum-toolbar-chip">Free to use</span>
+                        <span class="forum-toolbar-chip">Macros + grocery + training</span>
+                        <span class="forum-toolbar-chip">Forum-linked resource page</span>
+                    </div>
+                    <div class="forum-toolbar-meta">
+                        <a class="forum-toolbar-link" href="forum.html">Back to forum</a>
+                        <a class="forum-toolbar-link is-primary" href="index.html#resources">Open macro calculator</a>
+                    </div>
+                </div>
+                <section class="about-hero" aria-label="About Odeology hero">
+                    <div class="about-hero-copy">
+                        <p class="eyebrow">About Odeology</p>
+                        <h1>Free tools for macros, groceries, and training in one flow.</h1>
+                        <p>Odeology is built to make the boring part of getting in shape easier. You enter your stats, goal, and training style, then the platform gives you calorie targets, macro breakdowns, a grocery plan, restock timing, and a training path that all connect instead of living in separate apps.</p>
+                        <div class="about-hero-points">
+                            <div class="about-point"><strong>Macro calculator</strong><span>Builds calories, protein, carbs, and fats around your body stats, goal, and training setup.</span></div>
+                            <div class="about-point"><strong>Training builder</strong><span>Creates a free training path and checks whether your meal plan matches the work you are asking your body to do.</span></div>
+                            <div class="about-point"><strong>Grocery planning</strong><span>Turns your nutrition target into a low-cost grocery plan with cards, full views, and downloadable PDF-style layouts.</span></div>
+                            <div class="about-point"><strong>Overview tools</strong><span>Shows meals, training, restock alerts, photos, and next actions in one place so users know what to do next.</span></div>
+                        </div>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="index.html#resources">Start free macro calculator</a>
+                            <a class="about-btn" href="training-coming-soon.html?start=1">Build free training plan</a>
+                        </div>
+                    </div>
+                    <div class="about-hero-media" aria-hidden="true">
+                        <div class="about-hero-card"><strong>Why this page exists</strong><p>If someone clicks “About Odeology” from the forum rail, this is the product story: what is free, what the macro calculator does, what the training side does, and how the whole system fits together.</p></div>
+                    </div>
+                </section>
+                <section class="about-section" aria-label="How Odeology works">
+                    <div class="about-section-head">
+                        <p class="eyebrow">How it works</p>
+                        <h2>One intake, then everything branches from the same target.</h2>
+                        <p>The point of Odeology is not to hand you disconnected widgets. The calorie target informs the macros. The macros inform the grocery build. The grocery plan feeds the overview and restock tracker. The training side can then compare your saved nutrition setup against the workload you are following.</p>
+                    </div>
+                    <div class="about-steps">
+                        <article class="about-step"><span class="about-step-index">01</span><h3>Enter your goal and body data</h3><p>Weight, body stats, goal direction, and training style are used to build a daily calorie target that is not generic.</p></article>
+                        <article class="about-step"><span class="about-step-index">02</span><h3>Unlock macros and groceries</h3><p>Protein, carbs, and fats are calculated from your target, then used to generate a grocery list, portions, and cost-focused meal planning.</p></article>
+                        <article class="about-step"><span class="about-step-index">03</span><h3>Run training from the same system</h3><p>The training flow can use your saved plan, highlight mismatches, and direct you into the next workout, restock task, or overview checkpoint.</p></article>
+                    </div>
+                </section>
+                <section class="about-split">
+                    <div class="about-split-media is-macro"><div class="about-media-note">The macro calculator is the front door. It is where calories, protein, carbs, and fats get set for the actual goal instead of guesswork.</div></div>
+                    <div class="about-split-copy">
+                        <p class="eyebrow">Macro Calculator</p>
+                        <h3>What the macro calculator does.</h3>
+                        <p>Odeology's macro calculator is not just a number box. It takes your goal, training style, and body stats, then creates a daily calorie target plus a macro split for protein, carbs, and fats. That target becomes the base layer for everything else on the platform.</p>
+                        <ul class="about-bullets">
+                            <li><strong>Personalized calorie target</strong><span>Daily calories are aligned to whether the user is trying to lose fat, maintain, or push progress in training.</span></li>
+                            <li><strong>Macro breakdown</strong><span>Protein, carbs, and fats are shown as usable daily targets, not vague “eat clean” advice.</span></li>
+                            <li><strong>Goal handoff into groceries</strong><span>Once macros are set, the user can move directly into a grocery list and meal build that matches those targets.</span></li>
+                            <li><strong>Free entry point</strong><span>The product pushes the idea clearly: users can start with the calculator for free and keep moving forward from there.</span></li>
+                        </ul>
+                    </div>
+                </section>
+                <section class="about-split is-reverse">
+                    <div class="about-split-media is-grocery"><div class="about-media-note">Macros matter more when they turn into an actual food system. Grocery cards, full views, monthly estimates, and restock timing are part of the workflow.</div></div>
+                    <div class="about-split-copy">
+                        <p class="eyebrow">Nutrition System</p>
+                        <h3>What happens after macros are set.</h3>
+                        <p>After the macro calculator, Odeology converts the target into practical planning. The user can build a grocery list, see cards or expanded views, compare month windows, and track restock timing instead of starting over every week.</p>
+                        <ul class="about-bullets">
+                            <li><strong>Low-cost grocery planning</strong><span>The system is built around making the nutrition plan feel buyable, not aspirational.</span></li>
+                            <li><strong>Multiple viewing modes</strong><span>Users can move between grocery cards, full grocery views, meal cards, list-style meal displays, and PDF-style outputs.</span></li>
+                            <li><strong>Restock alerts</strong><span>The overview side tracks what needs to be picked up again over the next 7, 14, and 30 days.</span></li>
+                            <li><strong>Saved plan behavior</strong><span>Because the plan can be tied to the account, the training side can check whether the saved food setup still matches the current goal.</span></li>
+                        </ul>
+                    </div>
+                </section>
+                <section class="about-split">
+                    <div class="about-split-media is-training"><div class="about-media-note">Training is not isolated here. The product checks whether the meal plan and the program are working together or fighting each other.</div></div>
+                    <div class="about-split-copy">
+                        <p class="eyebrow">Training</p>
+                        <h3>What the training side does.</h3>
+                        <p>The training flow exists to move users from planning into execution. It gives them a free program entry point, organizes training days, and uses the saved nutrition setup as context instead of pretending food and training are separate problems.</p>
+                        <ul class="about-bullets">
+                            <li><strong>Free training-plan entry</strong><span>The site explicitly positions training as free to start, with a “build plan” path connected to the rest of the system.</span></li>
+                            <li><strong>Today's workout and weekly view</strong><span>The overview page can surface the user's latest session, recent training window, and direct link into today's workout.</span></li>
+                            <li><strong>Nutrition alignment checks</strong><span>The training flow can flag when the saved meal plan does not match the workload or goal and recommend an adjustment.</span></li>
+                            <li><strong>Workout database and portal links</strong><span>The wider training area includes a program page, workout database access, and a dashboard-style path for continuing execution.</span></li>
+                        </ul>
+                    </div>
+                </section>
+                <section class="about-split is-reverse">
+                    <div class="about-split-media is-overview"><div class="about-media-note">Overview is where the product becomes usable day to day: meals, macros, training, restock alerts, photos, and community layers in one control point.</div></div>
+                    <div class="about-split-copy">
+                        <p class="eyebrow">Overview + Functions</p>
+                        <h3>What users can actually open and use.</h3>
+                        <p>This is the part most “about” pages skip. Odeology is not just a promise page. It already has clear functions users can click into: quick tour, dash, grocery calendar, training program, leaderboard, coaches, available chefs, photo history, and restock tracking.</p>
+                        <ul class="about-bullets">
+                            <li><strong>Quick tour and dash</strong><span>Users can be guided into the system and return to a simple dashboard-style checkpoint instead of hunting through menus.</span></li>
+                            <li><strong>Overview filters</strong><span>The overview page already splits sections into meals, restock, training, and photos so the user can focus on the next task.</span></li>
+                            <li><strong>Community functions</strong><span>Leaderboard, coaches, and chefs sit next to the planning tools so the product feels like a living system, not just a calculator.</span></li>
+                            <li><strong>Photo and progress tracking</strong><span>Photos and status views give the user another feedback layer beyond scale weight and daily calories.</span></li>
+                        </ul>
+                    </div>
+                </section>
+                <section class="about-band" aria-label="Why it is free">
+                    <div class="about-band-head">
+                        <p class="eyebrow">Free Access</p>
+                        <h2>Say the main thing clearly: the calculator and training entry are free.</h2>
+                        <p>That needs to be obvious. Users can open the macro calculator, generate targets, start a grocery flow, and begin the training-plan path without the page sounding hidden or gated. This page should make that promise simple.</p>
+                    </div>
+                    <div class="about-stats">
+                        <div class="about-stat"><strong>Free</strong><span>Start with the macro calculator without turning the product into a paid wall on click one.</span></div>
+                        <div class="about-stat"><strong>1 Flow</strong><span>Macros, groceries, overview, and training are meant to connect instead of being separate products.</span></div>
+                        <div class="about-stat"><strong>7 / 14 / 30</strong><span>Restock tracking windows already exist to help users keep their plan alive after setup.</span></div>
+                        <div class="about-stat"><strong>Daily</strong><span>The system is designed around usable daily actions: today's workout, today's food plan, and the next restock need.</span></div>
+                    </div>
+                </section>
+                <section class="about-section" aria-label="Core functions grid">
+                    <div class="about-section-head">
+                        <p class="eyebrow">Functions</p>
+                        <h2>The short version of what each major part does.</h2>
+                        <p>If someone lands here from the forum, they should leave knowing what the platform actually contains, not just the brand voice around it.</p>
+                    </div>
+                    <div class="about-grid">
+                        <article class="about-card"><h3>Macro calculator</h3><p>Builds personalized calories and daily macro targets based on goal, stats, and training style.</p></article>
+                        <article class="about-card"><h3>Meal and grocery planning</h3><p>Turns nutrition targets into food selections, grocery cards, list views, cost windows, and PDF-style outputs.</p></article>
+                        <article class="about-card"><h3>Restock tracker</h3><p>Shows upcoming refill needs so the user can keep the plan running over the next week and month.</p></article>
+                        <article class="about-card"><h3>Training program</h3><p>Creates a free entry into structured training with today's workout links and plan guidance.</p></article>
+                        <article class="about-card"><h3>Overview page</h3><p>Collects meals, training, macros, restocks, photos, and next-step actions in one operating screen.</p></article>
+                        <article class="about-card"><h3>Community layer</h3><p>Adds leaderboard, coaches, chefs, and forum-linked discovery so users are not operating alone.</p></article>
+                    </div>
+                    <div class="about-footer-cta">
+                        <div>
+                            <h3>Use the tools instead of just reading about them.</h3>
+                            <p>Start with the macro calculator, then move into groceries, overview, and training from the same target.</p>
+                        </div>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="index.html#resources">Open macro calculator</a>
+                            <a class="about-btn" href="training-coming-soon.html?start=1">Start training free</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+    <script src="js/main.js?v=2026-03-15-forum-about-1"></script>
+</body>
+</html>
