@@ -163,13 +163,15 @@ function deriveVisualDetails(post, resolved) {
   const derived = { ...resolved };
 
   if (derived.imageType === 'food') {
-    if (captionHas(text, '\\bsalmon\\b', '\\bfish\\b')) derived.subject = 'salmon meal prep';
-    else if (captionHas(text, '\\bwrap\\b', '\\bsandwich\\b', '\\btortilla\\b')) derived.subject = 'high protein wrap';
-    else if (captionHas(text, '\\byogurt\\b', '\\bparfait\\b', '\\bbowl\\b')) derived.subject = 'protein yogurt bowl';
-    else if (captionHas(text, '\\boatmeal\\b', '\\boats\\b', '\\bporridge\\b')) derived.subject = 'high protein oats';
-    else if (captionHas(text, '\\begg\\b', '\\bomelet\\b')) derived.subject = 'high protein eggs';
-    else if (captionHas(text, '\\bchicken\\b', '\\brace\\b', '\\btray\\b', '\\bcontainer\\b', '\\bmeal prep\\b')) derived.subject = 'rice and protein meal prep';
-    else if (captionHas(text, '\\brace\\b')) derived.subject = 'rice based meal prep';
+    if (captionHas(caption, '\\bsalmon\\b', '\\bfish\\b', '\\bfillet\\b')) derived.subject = 'salmon meal prep';
+    else if (captionHas(caption, '\\bwrap\\b', '\\bsandwich\\b', '\\btortilla\\b')) derived.subject = 'high protein wrap';
+    else if (captionHas(caption, '\\byogurt\\b', '\\bparfait\\b', '\\bgranola\\b', '\\bberries\\b')) derived.subject = 'protein yogurt bowl';
+    else if (captionHas(caption, '\\boatmeal\\b', '\\boats\\b', '\\bporridge\\b')) derived.subject = 'high protein oats';
+    else if (captionHas(caption, '\\begg\\b', '\\bomelet\\b')) derived.subject = 'high protein eggs';
+    else if (captionHas(caption, '\\brace\\b', '\\btray\\b', '\\bcontainer\\b', '\\bmeal prep\\b', '\\bvegetables\\b', '\\bmeat\\b', '\\bchicken\\b')) derived.subject = 'rice and protein meal prep';
+    else if (captionHas(caption, '\\bbowl\\b')) derived.subject = 'high protein bowl';
+    else if (captionHas(caption, '\\bplate\\b')) derived.subject = 'high protein plate';
+    else if (captionHas(caption, '\\bfood\\b', '\\bmeal\\b')) derived.subject = 'high protein meal';
     return derived;
   }
 
@@ -315,12 +317,14 @@ function buildImageCopy(post) {
         title: pick([
           'salmon meals like this make protein way easier',
           'would you actually keep salmon meal prep like this in rotation',
-          'this kind of salmon prep is boring in the best way'
+          'this kind of salmon prep is boring in the best way',
+          'salmon like this is exactly what i fall back on when i need easy protein'
         ], random),
         body: pick([
           'this is the kind of meal i can keep around without having to think too hard about protein.',
           'looks simple but meals like this are usually what keep the week from going off the rails.',
-          'if a salmon meal is this easy to repeat i usually stop trying to make it more exciting.'
+          'if a salmon meal is this easy to repeat i usually stop trying to make it more exciting.',
+          'for a meal like this the main win is that it is easy enough to make again tomorrow.'
         ], random),
         resolved
       };
@@ -330,12 +334,14 @@ function buildImageCopy(post) {
         title: pick([
           'wraps like this save me on busy days',
           'good high protein wrap or would you switch it up',
-          'this is exactly the kind of meal i use when i dont want to think'
+          'this is exactly the kind of meal i use when i dont want to think',
+          'portable meals like this do more for me than fancy meal prep ever did'
         ], random),
         body: pick([
           'portable food like this usually does more for consistency than perfect macros ever will.',
           'if i can eat it fast and still get protein in, it stays in the rotation.',
-          'curious if you would actually keep a wrap like this all week or get tired of it fast.'
+          'curious if you would actually keep a wrap like this all week or get tired of it fast.',
+          'this is the type of food that keeps my day together when i dont have time to make a real meal.'
         ], random),
         resolved
       };
@@ -345,12 +351,65 @@ function buildImageCopy(post) {
         title: pick([
           'protein bowls like this are hard to beat',
           'this is one of the easiest high protein snacks ive found',
-          'would you count something like this as a real meal or just a snack'
+          'would you count something like this as a real meal or just a snack',
+          'stuff like this makes hitting protein feel way less annoying'
         ], random),
         body: pick([
           'stuff like this makes it easier to keep protein up when a full meal sounds annoying.',
           'not fancy at all but this type of bowl usually survives my week better than anything complicated.',
-          'i end up leaning on food like this when appetite is weird and i still need something easy.'
+          'i end up leaning on food like this when appetite is weird and i still need something easy.',
+          'this is the kind of thing i use when i need something quick that still feels decent.'
+        ], random),
+        resolved
+      };
+    }
+    if (/oats|oatmeal|porridge/.test(text)) {
+      return {
+        title: pick([
+          'oats like this are still one of the easiest ways to get food in',
+          'would you actually eat something like this before training',
+          'simple breakfasts like this save me more than meal prep does sometimes',
+          'this is the kind of breakfast i default to when everything feels rushed'
+        ], random),
+        body: pick([
+          'breakfast gets way easier when the food is simple enough to make half asleep.',
+          'meals like this are not exciting but they do make it easier to get the day started right.',
+          'curious if people here still use oats a lot or if most of you moved on to something faster.',
+          'for me the big win is that food like this is easy to repeat without thinking.'
+        ], random),
+        resolved
+      };
+    }
+    if (/egg|omelet/.test(text)) {
+      return {
+        title: pick([
+          'eggs still carry way more of my week than i want to admit',
+          'would you keep a meal like this in the breakfast rotation',
+          'simple egg meals are hard to beat when i need real food fast',
+          'this is the kind of meal i make when protein needs to be easy'
+        ], random),
+        body: pick([
+          'this is the kind of meal that works because it is fast and hard to mess up.',
+          'nothing fancy here, just food that actually makes it easier to hit protein.',
+          'if breakfast is going to happen for me it usually looks more like this than something creative.',
+          'the best meals are usually the ones you can keep making without getting annoyed.'
+        ], random),
+        resolved
+      };
+    }
+    if (/plate/.test(text)) {
+      return {
+        title: pick([
+          'meals like this are why simple food still wins',
+          'would you keep a plate like this in rotation all week',
+          'this is about as practical as food gets for me',
+          'nothing fancy but this is the type of meal i repeat'
+        ], random),
+        body: pick([
+          'this kind of plate is usually what keeps my food from getting way too complicated.',
+          'if the meal is easy enough to repeat i care way more about that than it looking impressive.',
+          'food like this tends to survive busy weeks better than the meals i overplan.',
+          'curious if you guys would actually keep something like this in the regular rotation.'
         ], random),
         resolved
       };
