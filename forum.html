@@ -153,6 +153,10 @@
             display: none;
         }
 
+        .forum-mobile-pill {
+            display: none;
+        }
+
         .forum-main {
             min-width: 0;
             padding: 0 1.25rem 2rem;
@@ -624,6 +628,31 @@
         }
 
         @media (max-width: 720px) {
+            .navbar-brand {
+                display: none;
+            }
+
+            .navbar-container {
+                justify-content: flex-end;
+                gap: 0.75rem;
+            }
+
+            .forum-mobile-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 34px;
+                padding: 0.45rem 0.95rem;
+                margin-right: auto;
+                border-radius: 999px;
+                background: #d24f18;
+                color: #ffffff;
+                text-decoration: none;
+                font: 700 0.82rem/1 "IBM Plex Sans", sans-serif;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+            }
+
             .forum-main {
                 padding: 0 1rem 1.6rem;
             }
@@ -648,6 +677,7 @@
     <nav class="navbar">
         <div class="navbar-container">
             <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+            <a class="forum-mobile-pill" href="forum.html">Forum</a>
             <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
                 <span></span>
                 <span></span>
