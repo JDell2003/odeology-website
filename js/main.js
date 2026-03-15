@@ -15739,6 +15739,9 @@ function setupPreloader() {
     let preloader = document.getElementById('preloader');
     const word = document.getElementById('preloader-word');
     const brand = document.querySelector('.navbar-brand');
+    const isForumPage = Boolean(
+        document.body?.classList?.contains('forum-home-page')
+    );
     const bypassForTour = (() => {
         try {
             const hash = String(window.location.hash || '').toLowerCase();
@@ -15751,6 +15754,11 @@ function setupPreloader() {
     })();
 
     if (bypassForTour) {
+        if (preloader) preloader.remove();
+        return;
+    }
+
+    if (isForumPage) {
         if (preloader) preloader.remove();
         return;
     }
@@ -15819,6 +15827,7 @@ function setupForumPreloaderNavigation() {
     const pageName = path.split('/').filter(Boolean).pop() || '';
     const onForumPage = pageName.startsWith('forum');
     if (!onForumPage) return;
+    return;
     if (window.__odeForumPreloaderNavigationBound) return;
     window.__odeForumPreloaderNavigationBound = true;
 
