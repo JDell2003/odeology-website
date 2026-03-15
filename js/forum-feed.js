@@ -21,6 +21,95 @@
   };
 
   let posts = [];
+  const openComments = new Set();
+  const commentCache = new Map();
+
+  const commentAuthors = [
+    'setsandscience',
+    'macrocheck',
+    'deloaddiary',
+    'plateprogress',
+    'sleeplifts',
+    'formfirstdaily',
+    'repcounting',
+    'proteinwindow',
+    'calmcutter',
+    'bulknotes',
+    'recoveryreceipt',
+    'gymratjournal',
+    'mealprepplug',
+    'hypertrophyday',
+    'cardioandcoffee',
+    'sorenessreport',
+    'coachmodeon',
+    'strengthreceipt',
+    'restdaytruth',
+    'routineaudit'
+  ];
+
+  const commentOpeners = [
+    'Honestly',
+    'Low key',
+    'Not gonna lie',
+    'From experience',
+    'Real talk',
+    'At this point',
+    'If I were you',
+    'For me',
+    'The biggest shift',
+    'The thing that helped most'
+  ];
+
+  const commentClosers = [
+    'and that fixed it fast.',
+    'and progress finally looked normal.',
+    'and the difference was obvious in two weeks.',
+    'and everything started feeling easier.',
+    'and the scale finally made sense.',
+    'and my training week stopped feeling random.',
+    'and the photo updates looked better right away.',
+    'and that ended the usual plateau.',
+    'and recovery stopped falling apart.',
+    'and the whole setup felt sustainable.'
+  ];
+
+  const categoryCommentPools = {
+    training: {
+      topics: ['exercise order', 'weekly volume', 'rep quality', 'range of motion', 'effort on last sets', 'upper body day structure'],
+      observations: ['you are probably doing too much junk volume', 'the first exercise is carrying the whole session', 'your curls look better when they come after rows', 'the weekly split matters more than one perfect workout', 'the hard sets need to stay hard'],
+      suggestions: ['trim one accessory and push the main lift harder', 'keep one curl pattern and progress it for four weeks', 'track the first working set instead of changing everything', 'put the hardest biceps work earlier in the session', 'stop adding sets when the reps are slowing down']
+    },
+    nutrition: {
+      topics: ['meal prep', 'protein target', 'hunger management', 'food volume', 'weekday consistency', 'grocery choices'],
+      observations: ['the meal looks lean enough but probably too light for the day', 'most people undercount sauces and snacks here', 'the food quality is solid but the portions decide everything', 'consistency usually matters more than perfect macros', 'the grocery setup is doing most of the work'],
+      suggestions: ['build one repeatable breakfast and lunch first', 'keep protein the same and adjust carbs around training', 'add one higher volume side so hunger stays calm', 'pick foods you can actually repeat for ten days', 'weigh the high calorie extras once so you know the real numbers']
+    },
+    recovery: {
+      topics: ['sleep debt', 'soreness', 'rest days', 'fatigue management', 'deload timing', 'stress load'],
+      observations: ['the recovery issue usually shows up before the lift stalls', 'people call this a motivation problem when it is really fatigue', 'your body is probably carrying more stress than the plan assumes', 'the soreness is a sign the week is not balancing out', 'recovery habits matter more than another accessory day'],
+      suggestions: ['pull one hard day back before adding more work', 'lock in sleep and steps for a full week first', 'use one lighter day to keep quality high', 'take the easy week before you feel forced into it', 'separate hard lower body work from your busiest day']
+    },
+    cutting: {
+      topics: ['diet fatigue', 'adherence', 'food choice', 'satiety', 'step count', 'training energy'],
+      observations: ['cutting gets messy when the plan is too aggressive on busy days', 'that usually happens when calories are low and activity is inconsistent', 'the hard part is not the deficit but repeating it cleanly', 'energy drops when food timing is all over the place', 'most stalls on a cut are routine problems first'],
+      suggestions: ['keep calories steady for four days before making changes', 'move more carbs closer to training', 'build one fallback meal for the nights you are cooked', 'use a smaller deficit if the lifts are crashing', 'watch the weekends before slashing more food']
+    },
+    bulking: {
+      topics: ['rate of gain', 'appetite', 'food quality', 'training push', 'meal frequency', 'bodyweight trend'],
+      observations: ['most bulks go sideways when the surplus gets sloppy', 'the scale trend matters more than one heavy day of eating', 'you want enough food to perform without feeling wrecked', 'the extra calories should support better sessions', 'bulking works best when the routine is boring on purpose'],
+      suggestions: ['raise intake in small steps instead of free styling weekends', 'anchor one liquid calorie meal if appetite is low', 'keep the same weigh in routine every morning', 'push performance markers before pushing more food', 'add one easy carb source you can repeat daily']
+    },
+    supplements: {
+      topics: ['stack choice', 'dosage timing', 'routine simplicity', 'expectations', 'budget', 'consistency'],
+      observations: ['most stacks are doing too much for too little return', 'consistency beats a longer supplement list', 'the basics cover more than people think', 'timing matters less than taking it daily', 'a clean routine is easier to judge'],
+      suggestions: ['keep creatine and protein then audit the rest', 'drop anything you cannot explain in one sentence', 'run the basics for a month before adding more', 'spend the money on food and sleep if the budget is tight', 'separate what helps performance from what just sounds good']
+    },
+    lifestyle: {
+      topics: ['schedule control', 'routine friction', 'travel weeks', 'consistency', 'work stress', 'daily habits'],
+      observations: ['the plan usually breaks where the routine gets inconvenient', 'this reads like a schedule problem more than a willpower problem', 'small habits are carrying the big results here', 'consistency always looks boring from the outside', 'real life logistics matter more than the perfect template'],
+      suggestions: ['reduce the setup time for the habit you keep missing', 'build a version of the plan for your busiest day', 'make the first action automatic and keep it short', 'stop waiting for the ideal week to start', 'set the routine around your real calendar instead of the perfect one']
+    }
+  };
 
   function escapeHtml(value) {
     return String(value || '')
@@ -93,6 +182,117 @@
     return list.sort((a, b) => bestScore(b) - bestScore(a));
   }
 
+  function seededValue(seed) {
+    let hash = 2166136261;
+    const source = String(seed || 'forum');
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return () => {
+      hash += 0x6D2B79F5;
+      let result = Math.imul(hash ^ (hash >>> 15), 1 | hash);
+      result ^= result + Math.imul(result ^ (result >>> 7), 61 | result);
+      return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function pickFrom(list, random) {
+    return list[Math.floor(random() * list.length)];
+  }
+
+  function getCategoryPool(item) {
+    return categoryCommentPools[item.category] || categoryCommentPools.training;
+  }
+
+  function buildCommentBody(item, index, random) {
+    const pool = getCategoryPool(item);
+    const opener = pickFrom(commentOpeners, random);
+    const topic = pickFrom(pool.topics, random);
+    const observation = pickFrom(pool.observations, random);
+    const suggestion = pickFrom(pool.suggestions, random);
+    const closer = pickFrom(commentClosers, random);
+    const title = String(item.title || '').toLowerCase();
+
+    if (title.includes('meal') || title.includes('prep') || title.includes('grocery')) {
+      return `${opener}, the part that makes sense here is the ${topic}. ${observation}, so I would ${suggestion}, ${closer}`;
+    }
+
+    if (title.includes('sleep') || title.includes('recovery') || title.includes('rest')) {
+      return `${opener}, this reads like a ${topic} issue. ${observation}, and I would ${suggestion}, ${closer}`;
+    }
+
+    if (title.includes('cut') || title.includes('deficit') || item.category === 'cutting') {
+      return `${opener}, the weak spot is probably your ${topic}. ${observation}, so ${suggestion}, ${closer}`;
+    }
+
+    if (title.includes('bulk') || item.category === 'bulking') {
+      return `${opener}, your ${topic} is what I would watch first. ${observation}, then ${suggestion}, ${closer}`;
+    }
+
+    if (item.category === 'training') {
+      return `${opener}, this sounds like a ${topic} problem more than a motivation problem. ${observation}, so I would ${suggestion}, ${closer}`;
+    }
+
+    if (item.category === 'supplements') {
+      return `${opener}, I would look at your ${topic} first. ${observation}, then ${suggestion}, ${closer}`;
+    }
+
+    return `${opener}, the main issue looks like ${topic}. ${observation}, so ${suggestion}, ${closer}`;
+  }
+
+  function generateComments(item) {
+    if (commentCache.has(item.id)) return commentCache.get(item.id);
+
+    const total = Math.max(0, Number(item.comments || 0));
+    const random = seededValue(item.id);
+    const comments = Array.from({ length: total }, (_, index) => {
+      const ageHours = Math.max(1, Math.round(Number(item.ageHours || 1) + random() * 72 + index * 0.15));
+      const score = Math.max(1, Math.round((total - index) * (0.55 + random() * 0.9)));
+      return {
+        id: `${item.id}-comment-${index + 1}`,
+        author: pickFrom(commentAuthors, random),
+        ageLabel: formatAge(ageHours),
+        score,
+        body: buildCommentBody(item, index, random)
+      };
+    });
+
+    commentCache.set(item.id, comments);
+    return comments;
+  }
+
+  function buildCommentMarkup(comment) {
+    return `
+      <article class="forum-comment" data-comment-id="${escapeHtml(comment.id)}">
+        <div class="forum-comment-meta">
+          <strong class="forum-comment-author">u/${escapeHtml(comment.author)}</strong>
+          <span>&bull;</span>
+          <span>${escapeHtml(comment.ageLabel)}</span>
+          <span>&bull;</span>
+          <span>${escapeHtml(formatCompactNumber(comment.score))} upvotes</span>
+        </div>
+        <p class="forum-comment-body">${escapeHtml(comment.body)}</p>
+      </article>`;
+  }
+
+  function buildCommentsSection(item) {
+    const isOpen = openComments.has(item.id);
+    const commentsMarkup = isOpen
+      ? generateComments(item).map((comment) => buildCommentMarkup(comment)).join('')
+      : '';
+
+    return `
+      <section class="forum-post-comments${isOpen ? ' is-open' : ''}" id="comments-${escapeHtml(item.id)}" data-comments-for="${escapeHtml(item.id)}"${isOpen ? '' : ' hidden'}>
+        <div class="forum-post-comments-header">
+          <strong>${escapeHtml(formatCompactNumber(item.comments))} comments</strong>
+        </div>
+        <div class="forum-post-comments-list">
+          ${commentsMarkup}
+        </div>
+      </section>`;
+  }
+
   function assignAnchorIds() {
     const articles = Array.from(feed.querySelectorAll('.forum-post'));
     articles.forEach((article) => article.removeAttribute('id'));
@@ -144,16 +344,17 @@
         <${titleTag} class="forum-post-title">${title}</${titleTag}>
         <p class="forum-post-copy">${body}</p>
         ${mediaMarkup}
+        ${buildCommentsSection(item)}
         <div class="forum-post-stats">
           <span class="forum-post-stat-pill is-vote">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
             <span>${escapeHtml(formatCompactNumber(item.score))}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
           </span>
-          <span class="forum-post-stat-pill">
+          <button class="forum-post-stat-pill is-comments" type="button" data-comment-toggle="${escapeHtml(item.id)}" aria-expanded="${openComments.has(item.id) ? 'true' : 'false'}" aria-controls="comments-${escapeHtml(item.id)}">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5c0 4.1-3.8 7.5-8.5 7.5H8l-4 3v-7c0-4.7 3.8-8.5 8.5-8.5h.5c4.4 0 8 3.1 8 7Z"></path></svg>
             <span>${escapeHtml(formatCompactNumber(item.comments))}</span>
-          </span>
+          </button>
           <span class="forum-post-stat-pill">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
           </span>
@@ -171,6 +372,32 @@
 
     feed.innerHTML = visible.map((item, index) => buildPostMarkup(item, index)).join('');
     assignAnchorIds();
+  }
+
+  function wireCommentToggles() {
+    feed.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-comment-toggle]');
+      if (!trigger) return;
+
+      const postId = trigger.getAttribute('data-comment-toggle');
+      if (!postId) return;
+
+      if (openComments.has(postId)) {
+        openComments.delete(postId);
+      } else {
+        openComments.add(postId);
+      }
+
+      renderPosts();
+
+      const refreshedPost = feed.querySelector(`[data-post-id="${CSS.escape(postId)}"]`);
+      if (!refreshedPost) return;
+
+      refreshedPost.scrollIntoView({
+        block: 'nearest',
+        behavior: 'auto'
+      });
+    });
   }
 
   function wireFilters() {
@@ -233,5 +460,6 @@
   }
 
   wireFilters();
+  wireCommentToggles();
   loadPosts();
 }());

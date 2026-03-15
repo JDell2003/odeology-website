@@ -497,6 +497,58 @@
             display: block;
         }
 
+        .forum-post-comments {
+            display: grid;
+            gap: 0.85rem;
+            padding: 0.9rem 0 0.1rem;
+        }
+
+        .forum-post-comments-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--forum-text);
+            font-size: 0.9rem;
+        }
+
+        .forum-post-comments-list {
+            display: grid;
+            gap: 0.7rem;
+            max-height: 28rem;
+            overflow-y: auto;
+            padding-right: 0.2rem;
+        }
+
+        .forum-comment {
+            display: grid;
+            gap: 0.28rem;
+            padding: 0.8rem 0.85rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 16px;
+            background: #f8fafc;
+        }
+
+        .forum-comment-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.38rem;
+            flex-wrap: wrap;
+            color: var(--forum-muted);
+            font-size: 0.78rem;
+        }
+
+        .forum-comment-author {
+            color: var(--forum-text);
+            font-size: 0.81rem;
+        }
+
+        .forum-comment-body {
+            margin: 0;
+            color: var(--forum-text);
+            line-height: 1.45;
+            font-size: 0.95rem;
+        }
+
         .forum-post-stats {
             display: flex;
             gap: 0.6rem;
@@ -518,6 +570,8 @@
             background: #f5f8fb;
             color: #25313d;
             text-decoration: none;
+            font: inherit;
+            cursor: pointer;
         }
 
         .forum-post-stat-pill.is-vote {
@@ -956,6 +1010,39 @@
                 overflow: hidden;
             }
 
+            .forum-post-comments {
+                gap: 0.62rem;
+                padding: 0.35rem 0 0.1rem;
+            }
+
+            .forum-post-comments-header {
+                font-size: 0.82rem;
+            }
+
+            .forum-post-comments-list {
+                gap: 0.55rem;
+                max-height: 18rem;
+            }
+
+            .forum-comment {
+                gap: 0.24rem;
+                padding: 0.68rem 0.72rem;
+                border-radius: 14px;
+            }
+
+            .forum-comment-meta {
+                font-size: 0.72rem;
+            }
+
+            .forum-comment-author {
+                font-size: 0.74rem;
+            }
+
+            .forum-comment-body {
+                font-size: 0.82rem;
+                line-height: 1.42;
+            }
+
             .forum-post-stats {
                 gap: 0.5rem;
                 flex-wrap: nowrap;
@@ -1217,6 +1304,6 @@
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
-    <script src="js/forum-feed.js?v=2026-03-15-forum-bot-feed"></script>
+    <script src="js/forum-feed.js?v=2026-03-15-forum-bot-feed-comments"></script>
 </body>
 </html>
