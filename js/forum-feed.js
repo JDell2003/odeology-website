@@ -24,60 +24,22 @@
   const openComments = new Set();
   const commentCache = new Map();
 
-  const commentAuthors = [
-    'mike',
-    'amy',
-    'Noah',
-    'sarahwrites',
-    'Jay',
-    'alison',
-    'nickp',
-    'Kayla',
-    'omar',
-    'jess',
-    'brandonlee',
-    'Tori',
-    'matthewc',
-    'zoe',
-    'anthony',
-    'Nina',
-    'derekm',
-    'lucy',
-    'christian',
-    'Maya',
-    'benji',
-    'hannah',
-    'aaronw',
-    'erin',
-    'casey',
-    'danielr',
-    'lena',
-    'ryan',
-    'ellie',
-    'sam',
-    'setsandscience',
-    'macrocheck',
-    'plateprogress',
-    'sleeplifts',
-    'proteinwindow',
-    'bulknotes',
-    'cardioandcoffee',
-    'restdaytruth',
-    'routineaudit',
-    'mealprepplug'
-  ];
+  const commentNamePool = ['matt', 'derek', 'sarah', 'alex', 'jason', 'mia', 'tyler', 'josh', 'noah', 'emma', 'ash', 'luke', 'nina', 'ella', 'brad', 'zoe'];
+  const commentFitnessHandles = ['ironmike', 'benchbeast', 'squatdad', 'platepusher', 'cutmode', 'bulkseason', 'latlover', 'barpath', 'repfiend', 'chalkhands'];
+  const commentUnderscoreHandles = ['jay_train', 'lifter_matt', 'sarah_lifts', 'alex_cuts', 'bench_ben', 'plates_n_prep', 'coach_jay', 'derek_rows'];
+  const commentCasualHandles = ['bro_lifts', 'gymrat', 'late_night_lifter', 'mealguy', 'cardiohater', 'legdaypain', 'preworkoutbrain', 'restdayvibes'];
 
   const shortCommentReactions = [
-    'This is exactly where I kept messing up.',
-    'Same. That was the fix for me too.',
-    'You are overthinking it.',
-    'This is actually a solid post.',
-    'I would not change much here.',
-    'That explains why my progress stalled.',
-    'This is way more common than people admit.',
-    'Yep, that is the part that matters.',
-    'I learned this the hard way.',
-    'Good post. Simple and correct.'
+    'same thing happened to me lol',
+    'this is actually solid',
+    'id keep it simple',
+    'you are overthinking it',
+    'good post honestly',
+    'yeah that helped me too',
+    'bulgarian split squats should be illegal',
+    'this makes way more sense',
+    'same here 😭',
+    'i learned that the hard way'
   ];
 
   const categoryCommentPools = {
@@ -136,24 +98,23 @@
     return String(number);
   }
 
-  function getAgeHours(item, index) {
-    if (Number.isFinite(Number(item.ageHours))) return Number(item.ageHours);
-    return index + 1;
+  function getAgeMinutes(item, index) {
+    if (Number.isFinite(Number(item.ageMinutes))) return Number(item.ageMinutes);
+    if (Number.isFinite(Number(item.ageHours))) return Math.round(Number(item.ageHours) * 60);
+    return Math.max(1, (index + 1) * 45);
   }
 
-  function formatAge(hours) {
-    const value = Math.max(1, Number(hours || 1));
-    if (value < 24) return `${value} hr. ago`;
-    if (value < 168) {
-      const days = Math.round(value / 24);
-      return `${days} day${days === 1 ? '' : 's'} ago`;
+  function formatAge(minutes) {
+    const value = Math.max(0, Number(minutes || 0));
+    if (value < 3) return 'just now';
+    if (value < 60) return `${Math.max(1, Math.round(value))}m ago`;
+    if (value < 1440) {
+      const hours = Math.round(value / 60);
+      return `${hours}h ago`;
     }
-    if (value < 720) {
-      const weeks = Math.round(value / 168);
-      return `${weeks} wk. ago`;
-    }
-    const months = Math.round(value / 720);
-    return `${months} mo. ago`;
+    if (value < 2880) return 'yesterday';
+    const days = Math.round(value / 1440);
+    return `${days} days ago`;
   }
 
   function bestScore(item) {
@@ -170,10 +131,10 @@
 
   function postMatches(item) {
     const scopeMatch = state.scope === 'all' || item.scope === state.scope;
-    const hours = Number(item.ageHours || 0);
+    const minutes = Number(item.ageMinutes || 0);
     const timeMatch = state.time === 'all'
-      || (state.time === 'today' && hours <= 24)
-      || (state.time === 'week' && hours <= 168);
+      || (state.time === 'today' && minutes <= 1440)
+      || (state.time === 'week' && minutes <= 10080);
 
     return scopeMatch && timeMatch;
   }
@@ -181,7 +142,7 @@
   function sortedPosts(items) {
     const list = items.slice();
     if (state.sort === 'new') {
-      return list.sort((a, b) => Number(a.ageHours || 0) - Number(b.ageHours || 0));
+      return list.sort((a, b) => Number(a.ageMinutes || 0) - Number(b.ageMinutes || 0));
     }
     if (state.sort === 'discussed') {
       return list.sort((a, b) => Number(b.comments || 0) - Number(a.comments || 0));
@@ -208,67 +169,80 @@
     return list[Math.floor(random() * list.length)];
   }
 
+  function buildUsername(random) {
+    const roll = random();
+    if (roll < 0.3) return pickFrom(commentNamePool, random);
+    if (roll < 0.6) return `${pickFrom(commentNamePool, random)}${pickFrom(['21', '24', '27', '31', '88', '92'], random)}`;
+    if (roll < 0.8) return pickFrom(commentFitnessHandles, random);
+    if (roll < 0.9) return pickFrom(commentUnderscoreHandles, random);
+    return pickFrom(commentCasualHandles, random);
+  }
+
+  function addImperfection(text, random) {
+    let value = String(text || '');
+    if (random() < 0.08) value = value.toLowerCase();
+    if (random() < 0.06) value += ` ${pickFrom(['lol', '😭', 'tbh', 'ngl'], random)}`;
+    if (random() < 0.05) value = value.replace(/bench/i, 'benhc').replace(/about/i, 'abt');
+    if (random() < 0.1) value = value.replace(/\byou are\b/i, 'youre').replace(/\bgoing to\b/i, 'gonna');
+    return value;
+  }
+
   function getCategoryPool(item) {
     return categoryCommentPools[item.category] || categoryCommentPools.training;
   }
 
-  function buildCommentBody(item, random) {
+  function buildCommentBody(item, random, mode) {
     const pool = getCategoryPool(item);
     const topic = pickFrom(pool.topics, random);
     const observation = pickFrom(pool.observations, random);
     const suggestion = pickFrom(pool.suggestions, random);
-    const title = String(item.title || '').toLowerCase();
-    const pattern = Math.floor(random() * 8);
+    const experience = [
+      `i had the same issue last year. ${suggestion}. helped a lot.`,
+      `same thing happened to me. once i fixed ${topic}, progress picked back up.`,
+      `for me it was literally ${topic}. ${suggestion}.`
+    ];
+    const supportive = [
+      `good post honestly`,
+      `this is way more common than people admit`,
+      `youre probably closer than you think`
+    ];
+    const curious = [
+      `how many hard sets were you doing`,
+      `were you eating enough when this started`,
+      `did you change anything else at the same time`
+    ];
+    const joking = [
+      `bulgarian split squats are still the villain somehow`,
+      `this is why leg day has trust issues`,
+      `the gym gods love making the obvious fix annoying`
+    ];
+    const disagree = [
+      `idk i kinda disagree. ${suggestion} would be the last thing id change.`,
+      `not sure i buy that. ${observation} but i wouldnt jump to more work.`,
+      `depends on volume honestly. i would not assume ${topic} is the whole issue.`
+    ];
+    const advice = [
+      `${observation}. id ${suggestion}.`,
+      `my guess is ${topic}. id ${suggestion}.`,
+      `the post makes sense. id just ${suggestion}.`
+    ];
+    const paragraph = [
+      `i went through almost this exact thing. on paper my training looked fine, but the weak spot was always ${topic}. once i stopped changing everything every week and just focused on one clean adjustment, progress started looking normal again.`,
+      `this feels like one of those problems that looks random in the moment but is obvious when you zoom out. ${observation}. if it were me i would ${suggestion}, leave it alone for two weeks, and see if the trend changes before rewriting the whole plan.`
+    ];
 
-    if (pattern === 0) {
-      return pickFrom(shortCommentReactions, random);
+    let base = '';
+    if (mode === 'disagree') base = pickFrom(disagree, random);
+    else if (mode === 'reply') base = pickFrom([...supportive, ...curious], random);
+    else {
+      const roll = random();
+      if (roll < 0.4) base = pickFrom(shortCommentReactions, random);
+      else if (roll < 0.62) base = pickFrom(experience, random);
+      else if (roll < 0.78) base = pickFrom(advice, random);
+      else if (roll < 0.9) base = pickFrom([...supportive, ...curious, ...joking], random);
+      else base = pickFrom(paragraph, random);
     }
-
-    if (pattern === 1) {
-      return `I had the same issue. Once I focused on ${topic} instead of changing five things at once, ${suggestion}.`;
-    }
-
-    if (pattern === 2) {
-      return `${observation}. I would ${suggestion}.`;
-    }
-
-    if (pattern === 3) {
-      return `The post makes sense, but I think the real problem is ${topic}. ${observation}, and that is usually where people leak progress.`;
-    }
-
-    if (pattern === 4) {
-      return `My only pushback is that people rush to fix this with more effort. ${suggestion}, then see what the next two weeks look like.`;
-    }
-
-    if (pattern === 5) {
-      return `This reads like something that feels random in the moment but is usually predictable on paper. ${observation}. ${suggestion}.`;
-    }
-
-    if (title.includes('meal') || title.includes('prep') || title.includes('grocery')) {
-      return `The food side of this is mostly ${topic}. ${observation}. I would ${suggestion}.`;
-    }
-
-    if (title.includes('sleep') || title.includes('recovery') || title.includes('rest')) {
-      return `This reads like a ${topic} issue to me. ${observation}. I would ${suggestion}.`;
-    }
-
-    if (title.includes('cut') || title.includes('deficit') || item.category === 'cutting') {
-      return `The weak spot is probably ${topic}. ${observation}. I would ${suggestion}.`;
-    }
-
-    if (title.includes('bulk') || item.category === 'bulking') {
-      return `I would watch ${topic} first. ${observation}. Then ${suggestion}.`;
-    }
-
-    if (item.category === 'training') {
-      return `This is more about ${topic} than motivation. ${observation}. I would ${suggestion}.`;
-    }
-
-    if (item.category === 'supplements') {
-      return `I would look at ${topic} first. ${observation}. Then ${suggestion}.`;
-    }
-
-    return `The main issue looks like ${topic}. ${observation}. ${suggestion}.`;
+    return addImperfection(base, random);
   }
 
   function generateComments(item) {
@@ -276,8 +250,12 @@
 
     const total = Math.max(0, Number(item.comments || 0));
     const random = seededValue(item.id);
+    const replyIndex = total >= 4 && random() < 0.78 ? Math.min(total - 1, 2 + Math.floor(random() * Math.max(1, total - 2))) : -1;
+    const replyParentIndex = replyIndex > 1 ? Math.max(0, replyIndex - 1) : -1;
+    const disagreeIndex = total >= 3 ? 1 : -1;
     const comments = Array.from({ length: total }, (_, index) => {
-      const ageHours = Math.max(1, Math.round(Number(item.ageHours || 1) + random() * 72 + index * 0.15));
+      const baseMinutes = Math.max(1, Number(item.ageMinutes || 120));
+      const ageMinutes = Math.max(1, Math.round(baseMinutes * (0.08 + random() * 0.82)));
       const tierRoll = random();
       let score;
       if (tierRoll < 0.16) {
@@ -290,18 +268,15 @@
         score = Math.round(65 + random() * Math.max(20, total * 1.35));
       }
 
-      const lengthRoll = random();
-      let body = buildCommentBody(item, random);
-      if (lengthRoll > 0.73) {
-        body = `${body} ${buildCommentBody(item, random)}`;
-      } else if (lengthRoll < 0.14) {
-        body = pickFrom(shortCommentReactions, random);
-      }
+      const mode = index === disagreeIndex ? 'disagree' : index === replyIndex ? 'reply' : 'base';
+      let body = buildCommentBody(item, random, mode);
+      if (random() > 0.84 && mode === 'base') body = `${body} ${buildCommentBody(item, random, 'reply')}`;
 
       return {
         id: `${item.id}-comment-${index + 1}`,
-        author: pickFrom(commentAuthors, random),
-        ageLabel: formatAge(ageHours),
+        parentId: index === replyIndex && replyParentIndex >= 0 ? `${item.id}-comment-${replyParentIndex + 1}` : null,
+        author: buildUsername(random),
+        ageLabel: formatAge(ageMinutes),
         score,
         body
       };
@@ -313,7 +288,7 @@
 
   function buildCommentMarkup(comment) {
     return `
-      <article class="forum-comment" data-comment-id="${escapeHtml(comment.id)}">
+      <article class="forum-comment${comment.parentId ? ' is-reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
         <div class="forum-comment-meta">
           <strong class="forum-comment-author">u/${escapeHtml(comment.author)}</strong>
           <span>&bull;</span>
@@ -370,7 +345,8 @@
     const title = escapeHtml(item.title);
     const body = escapeHtml(item.body);
     const community = escapeHtml(item.community);
-    const ageLabel = escapeHtml(formatAge(item.ageHours));
+    const author = escapeHtml(item.author || 'communitystarter');
+    const ageLabel = escapeHtml(formatAge(item.ageMinutes));
     const mediaMarkup = item.imageUrl
       ? `
         <a class="forum-post-media" href="forum-search.html">
@@ -379,12 +355,14 @@
       : '';
 
     return `
-      <article class="forum-post" data-post-id="${escapeHtml(item.id)}" data-scope="${escapeHtml(item.scope)}" data-category="${escapeHtml(item.category)}" data-hours="${escapeHtml(item.ageHours)}" data-score="${escapeHtml(item.score)}" data-comments="${escapeHtml(item.comments)}">
+      <article class="forum-post" data-post-id="${escapeHtml(item.id)}" data-scope="${escapeHtml(item.scope)}" data-category="${escapeHtml(item.category)}" data-minutes="${escapeHtml(item.ageMinutes)}" data-score="${escapeHtml(item.score)}" data-comments="${escapeHtml(item.comments)}">
         <div class="forum-post-head">
           <div class="forum-post-meta">
             <span class="forum-post-avatar"><img src="${escapeHtml(avatarUrl)}" alt="${community} avatar" loading="lazy"></span>
             <span class="forum-post-meta-main">
-              <strong>${community}</strong>
+              <strong>u/${author}</strong>
+              <span>&bull;</span>
+              <span>${community}</span>
               <span>&bull;</span>
               <span>${ageLabel}</span>
             </span>
@@ -504,7 +482,7 @@
       const payload = await response.json();
       posts = (Array.isArray(payload.items) ? payload.items : []).map((item, index) => ({
         ...item,
-        ageHours: getAgeHours(item, index)
+        ageMinutes: getAgeMinutes(item, index)
       }));
 
       renderPosts();
