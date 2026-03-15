@@ -13,8 +13,6 @@
 
   if (!feed || !filterControls.length) return;
 
-  const CUSTOM_POST_STORAGE_KEY = 'ode_forum_custom_posts_v1';
-
   const avatarByCategory = {
     training: 'https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120',
     nutrition: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=120&h=120',
@@ -136,6 +134,12 @@
   function getAgeMinutes(item, index) {
     if (Number.isFinite(Number(item.ageMinutes))) return Number(item.ageMinutes);
     if (Number.isFinite(Number(item.ageHours))) return Math.round(Number(item.ageHours) * 60);
+    if (item && item.createdAt) {
+      const createdAt = Date.parse(String(item.createdAt));
+      if (Number.isFinite(createdAt)) {
+        return Math.max(1, Math.round((Date.now() - createdAt) / 60000));
+      }
+    }
     return Math.max(1, (index + 1) * 45);
   }
 
@@ -150,24 +154,6 @@
     if (value < 2880) return 'yesterday';
     const days = Math.round(value / 1440);
     return `${days} days ago`;
-  }
-
-  function readStoredCustomPosts() {
-    try {
-      const raw = window.localStorage.getItem(CUSTOM_POST_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function writeStoredCustomPosts(items) {
-    try {
-      window.localStorage.setItem(CUSTOM_POST_STORAGE_KEY, JSON.stringify(items));
-    } catch (error) {
-      // Ignore storage failures and keep the live feed working.
-    }
   }
 
   function setComposePreview(src) {
@@ -230,6 +216,15 @@
       window.odeOpenAuthModal('signup');
     }
     return false;
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Could not read image'));
+      reader.readAsDataURL(file);
+    });
   }
 
   function bestScore(item) {
@@ -1255,45 +1250,55 @@
       const title = String(composeTitleInput?.value || '').trim();
       const body = String(composeBodyInput?.value || '').trim();
       const category = String(composeCategoryInput?.value || 'training').trim();
-      const imageUrl = String(composeImageUrlInput?.value || '').trim() || pendingComposeFileUrl;
+      const remoteImageUrl = String(composeImageUrlInput?.value || '').trim();
+      const imageFile = composeImageFileInput?.files && composeImageFileInput.files[0];
       if (!title || !body) return;
 
-      const authorBase = currentUser?.username || currentUser?.displayName || currentUser?.email || 'member';
-      const author = String(authorBase).trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'member';
-      const now = Date.now();
-      const post = {
-        id: `custom-post-${now}`,
-        slug: `custom-post-${now}`,
-        title,
-        body,
-        category,
-        scope: category,
-        community: `r/${category}`,
-        author,
-        postType: 'personal',
-        format: imageUrl ? 'image' : 'text',
-        imageUrl: imageUrl || null,
-        imageAlt: imageUrl ? title : null,
-        imageType: imageUrl ? 'general_gym' : null,
-        imageSubject: imageUrl ? 'member post' : null,
-        imageMainObject: imageUrl ? 'member post' : null,
-        imageMuscleGroup: null,
-        score: 1,
-        comments: 0,
-        viewCount: 3,
-        saveCount: 0,
-        ageMinutes: 1,
-        isSeeded: false
-      };
+      let imageDataUrl = null;
+      if (imageFile) {
+        try {
+          imageDataUrl = await fileToDataUrl(imageFile);
+        } catch (error) {
+          window.alert('Could not read that image file.');
+          return;
+        }
+      }
 
-      const stored = readStoredCustomPosts();
-      stored.unshift(post);
-      writeStoredCustomPosts(stored);
-      posts.unshift(post);
-      closeComposeModal();
-      resetComposeForm();
-      renderPosts();
-      feed.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      try {
+        const response = await fetch('/api/forum/posts', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify({
+            category,
+            title,
+            body,
+            imageUrl: remoteImageUrl || null,
+            imageDataUrl: imageDataUrl || null,
+            imageAlt: title
+          })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.item) {
+          window.alert(payload?.error || 'Could not publish forum post right now.');
+          return;
+        }
+
+        posts.unshift({
+          ...payload.item,
+          ageMinutes: getAgeMinutes(payload.item, 0)
+        });
+        closeComposeModal();
+        resetComposeForm();
+        renderPosts();
+        feed.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } catch (error) {
+        window.alert('Could not publish forum post right now.');
+      }
     });
 
     window.addEventListener('keydown', (event) => {
@@ -1312,12 +1317,16 @@
     feed.innerHTML = '<div class="forum-empty-state">Loading forum posts...</div>';
 
     try {
-      const [forumResponse, imageDbResponse] = await Promise.all([
+      const [forumResponse, imageDbResponse, sharedPostsResponse] = await Promise.all([
         fetch('/data/forum-posts.json', {
           headers: { Accept: 'application/json' }
         }),
         fetch('/data/forum-image-posts-db.json', {
           headers: { Accept: 'application/json' }
+        }).catch(() => null),
+        fetch('/api/forum/posts?limit=80', {
+          headers: { Accept: 'application/json' },
+          credentials: 'include'
         }).catch(() => null)
       ]);
 
@@ -1341,11 +1350,14 @@
         ...(imagePostIndex.get(item.id) || {}),
         ageMinutes: getAgeMinutes(item, index)
       }));
-      const customPosts = readStoredCustomPosts().map((item) => ({
+      const sharedPostsPayload = sharedPostsResponse && sharedPostsResponse.ok
+        ? await sharedPostsResponse.json().catch(() => ({ items: [] }))
+        : { items: [] };
+      const sharedPosts = (Array.isArray(sharedPostsPayload.items) ? sharedPostsPayload.items : []).map((item) => ({
         ...item,
         ageMinutes: getAgeMinutes(item, 0)
       }));
-      posts = [...customPosts, ...basePosts];
+      posts = [...sharedPosts, ...basePosts];
 
       renderPosts();
     } catch (error) {

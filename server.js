@@ -33,6 +33,7 @@ const adminRoutes = require('./core/adminRoutes');
 const trackRoutes = require('./core/trackRoutes');
 const trainingRoutes = require('./core/trainingRoutes');
 const socialRoutes = require('./core/socialRoutes');
+const forumRoutes = require('./core/forumRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
@@ -1732,6 +1733,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await authRoutes(req, res, url)) {
+        return;
+    }
+
+    if (await forumRoutes(req, res, url)) {
         return;
     }
 
