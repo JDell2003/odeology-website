@@ -47,12 +47,93 @@ function imageFingerprint(post) {
     .replace(/^-+|-+$/g, '');
 }
 
+function imageTextBlob(post) {
+  return [
+    post.imageType,
+    post.imageMainObject,
+    post.imageSubject,
+    post.imageMuscleGroup,
+    post.imageAlt,
+    post.imageUrl,
+    post.imagePageUrl,
+    post.imageCreator,
+    post.title,
+    post.body
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function isUsableImageRecord(post) {
+  const text = imageTextBlob(post);
+  if (!post.imageUrl) return false;
+  if (/\b(pdf|page\d+-|ia_|manual|guidebook|yearbook|book scan|scanned|pamphlet|catalog|brochure)\b/.test(text)) return false;
+  if (/(\/pdf\/|\.pdf|page\d+-\d+px|practical_child_training|ia_)/.test(text)) return false;
+  if (/\b(statue|building|artifact|monument|ruins|sculpture|church|cathedral|temple|museum)\b/.test(text)) return false;
+  return true;
+}
+
+function resolveImageRecord(post) {
+  const text = imageTextBlob(post);
+  const subject = pretty(post.imageSubject || post.imageMainObject || '');
+  const muscle = pretty(post.imageMuscleGroup || '');
+  const resolved = {
+    imageType: post.imageType || 'general_gym',
+    subject: subject || 'training',
+    muscleGroup: muscle || null
+  };
+
+  if (/\b(meal|protein|rice|beef|chicken|salmon|oats|yogurt|prep|food)\b/.test(text)) {
+    resolved.imageType = 'food';
+    resolved.subject = subject || 'high protein meal';
+    resolved.muscleGroup = 'nutrition';
+    return resolved;
+  }
+
+  if (/\b(split|planner|plan|notepad|notebook|calendar|schedule|notes)\b/.test(text)) {
+    resolved.imageType = 'planning';
+    resolved.subject = subject || 'training split';
+    resolved.muscleGroup = 'programming';
+    return resolved;
+  }
+
+  if (/\b(creatine|supplement|shaker|powder|pre workout|pre-workout|protein powder)\b/.test(text)) {
+    resolved.imageType = 'supplement';
+    resolved.subject = subject || 'creatine';
+    resolved.muscleGroup = 'supplements';
+    return resolved;
+  }
+
+  if (/\b(article|study|research|paper|screenshot)\b/.test(text)) {
+    resolved.imageType = 'article';
+    resolved.subject = subject || 'fitness article';
+    return resolved;
+  }
+
+  if (/\b(glute|booty|butt|physique|pose|progress|mirror|selfie|model|bikini|shape|body check)\b/.test(text)) {
+    resolved.imageType = 'physique';
+    resolved.subject = subject || 'progress check';
+    resolved.muscleGroup = muscle || (/\b(glute|booty|butt)\b/.test(text) ? 'glutes' : null);
+    return resolved;
+  }
+
+  if (/\b(incline|bench|press|curl|tricep|triceps|bicep|biceps|lat|row|pullup|pull-up|squat|leg press|hack squat|rdl|hip thrust|lateral raise|cable fly|cable row|leg curl|calf)\b/.test(text)) {
+    resolved.imageType = 'exercise';
+    resolved.subject = subject || muscle || 'training variation';
+    return resolved;
+  }
+
+  resolved.imageType = 'general_gym';
+  resolved.subject = subject || 'gym session';
+  return resolved;
+}
+
 function buildImageCopy(post) {
   const random = seededValue(post.id);
-  const subject = pretty(post.imageSubject || post.imageMainObject || post.imageMuscleGroup || post.category || 'training');
+  const resolved = resolveImageRecord(post);
+  const subject = pretty(resolved.subject || post.category || 'training');
   const category = post.category || 'training';
   const postType = post.postType || 'question';
-  const imageType = post.imageType || 'general_gym';
+  const imageType = resolved.imageType || 'general_gym';
+  const muscleGroup = pretty(resolved.muscleGroup || '');
 
   const families = {
     food: {
@@ -208,20 +289,24 @@ function buildImageCopy(post) {
     physique: {
       question: {
         titles: [
-          `am i being impatient or is progress finally showing here`,
-          `still feels behind but i can finally see something changing`,
+          muscleGroup === 'glutes' ? `are my glutes finally growing or am i reaching` : `am i being impatient or is progress finally showing here`,
+          muscleGroup === 'glutes' ? `what actually made your glutes start growing` : `still feels behind but i can finally see something changing`,
           `bulk or keep leaning out a little more from here`
         ],
         bodies: [
-          `this is the first time in a while that progress has looked different enough for me to actually notice it.`,
-          `still not where i want it, but at least it finally looks like the work is doing something.`,
+          muscleGroup === 'glutes'
+            ? `first progress shot in a while where it actually looks like glute work is doing something.`
+            : `this is the first time in a while that progress has looked different enough for me to actually notice it.`,
+          muscleGroup === 'glutes'
+            ? `still trying to figure out if i just need more time or if something finally started clicking.`
+            : `still not where i want it, but at least it finally looks like the work is doing something.`,
           `curious if you would keep pushing the same direction here or make a small change now.`
         ]
       },
       personal: {
         titles: [
-          `progress is slow but it finally looks different`,
-          `this is the first time the work has really shown up`,
+          muscleGroup === 'glutes' ? `my glutes finally look like theyre doing something` : `progress is slow but it finally looks different`,
+          muscleGroup === 'glutes' ? `this is the first progress pic where glutes actually look different` : `this is the first time the work has really shown up`,
           `trying not to overreact but i can finally see a change`
         ],
         bodies: [
@@ -411,7 +496,7 @@ function buildImageCopy(post) {
   const family = pool[postType] || pool.question;
   const title = compactText(pick(family.titles, random));
   const body = compactText(pick(family.bodies, random));
-  return { title, body };
+  return { title, body, resolved };
 }
 
 function main() {
@@ -421,11 +506,28 @@ function main() {
 
   const rewritten = items.map((post) => {
     if (!(post.format === 'image' && post.imageUrl)) return post;
+    if (!isUsableImageRecord(post)) {
+      return {
+        ...post,
+        format: 'text',
+        imageUrl: null,
+        imageAlt: null,
+        imageSource: null,
+        imageCreator: null,
+        imageLicense: null,
+        imageLicenseUrl: null,
+        imagePageUrl: null
+      };
+    }
 
     const copy = buildImageCopy(post);
     const fingerprint = imageFingerprint(post);
     const updated = {
       ...post,
+      imageType: copy.resolved.imageType,
+      imageMainObject: copy.resolved.subject,
+      imageSubject: copy.resolved.subject,
+      imageMuscleGroup: copy.resolved.muscleGroup,
       title: copy.title,
       body: copy.body
     };
