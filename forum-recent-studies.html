@@ -666,14 +666,17 @@
             }
 
             .forum-drawer-trigger {
+                --forum-trigger-height: 34px;
+                --forum-trigger-left: 14px;
+                --forum-trigger-bottom: 14px;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 position: fixed !important;
-                left: 14px;
-                bottom: 14px;
-                min-height: 34px;
-                padding: 0.45rem 0.9rem;
+                left: var(--forum-trigger-left);
+                bottom: var(--forum-trigger-bottom);
+                height: var(--forum-trigger-height);
+                padding: 0 0.9rem;
                 border: 0;
                 border-radius: 999px;
                 background: #111827;
@@ -681,6 +684,17 @@
                 font: 700 0.8rem/1 "IBM Plex Sans", sans-serif;
                 box-shadow: 0 10px 24px rgba(15, 23, 35, 0.22);
                 z-index: 41;
+                white-space: nowrap;
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                backface-visibility: hidden;
+            }
+
+            @supports (height: 100svh) {
+                .forum-drawer-trigger {
+                    bottom: auto;
+                    top: calc(100svh - var(--forum-trigger-height) - var(--forum-trigger-bottom));
+                }
             }
 
             .forum-rail-overlay {
