@@ -1,8 +1,19 @@
 (function () {
   const feed = document.getElementById('forum-feed');
   const filterControls = Array.from(document.querySelectorAll('.forum-filter-control'));
+  const addPostButton = document.getElementById('forum-add-post');
+  const composeModal = document.getElementById('forum-compose-modal');
+  const composeForm = document.getElementById('forum-compose-form');
+  const composeTitleInput = document.getElementById('forum-compose-title-input');
+  const composeBodyInput = document.getElementById('forum-compose-body');
+  const composeCategoryInput = document.getElementById('forum-compose-category');
+  const composeImageUrlInput = document.getElementById('forum-compose-image-url');
+  const composeImageFileInput = document.getElementById('forum-compose-image-file');
+  const composePreview = document.getElementById('forum-compose-preview');
 
   if (!feed || !filterControls.length) return;
+
+  const CUSTOM_POST_STORAGE_KEY = 'ode_forum_custom_posts_v1';
 
   const avatarByCategory = {
     training: 'https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120',
@@ -24,6 +35,8 @@
   const imagePostIndex = new Map();
   const openComments = new Set();
   const commentCache = new Map();
+  let currentUser = null;
+  let pendingComposeFileUrl = '';
 
   const commentNamePool = ['matt', 'derek', 'sarah', 'alex', 'jason', 'mia', 'tyler', 'josh', 'noah', 'emma', 'ash', 'luke', 'nina', 'ella', 'brad', 'zoe'];
   const commentFitnessHandles = ['ironmike', 'benchbeast', 'squatdad', 'platepusher', 'cutmode', 'bulkseason', 'latlover', 'barpath', 'repfiend', 'chalkhands'];
@@ -137,6 +150,86 @@
     if (value < 2880) return 'yesterday';
     const days = Math.round(value / 1440);
     return `${days} days ago`;
+  }
+
+  function readStoredCustomPosts() {
+    try {
+      const raw = window.localStorage.getItem(CUSTOM_POST_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeStoredCustomPosts(items) {
+    try {
+      window.localStorage.setItem(CUSTOM_POST_STORAGE_KEY, JSON.stringify(items));
+    } catch (error) {
+      // Ignore storage failures and keep the live feed working.
+    }
+  }
+
+  function setComposePreview(src) {
+    if (!composePreview) return;
+    if (!src) {
+      composePreview.removeAttribute('src');
+      composePreview.classList.remove('is-visible');
+      return;
+    }
+    composePreview.src = src;
+    composePreview.classList.add('is-visible');
+  }
+
+  function closeComposeModal() {
+    if (!composeModal) return;
+    composeModal.classList.remove('is-open');
+    composeModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function resetComposeForm() {
+    if (!composeForm) return;
+    if (pendingComposeFileUrl) {
+      URL.revokeObjectURL(pendingComposeFileUrl);
+    }
+    composeForm.reset();
+    pendingComposeFileUrl = '';
+    setComposePreview('');
+  }
+
+  function openComposeModal() {
+    if (!composeModal) return;
+    composeModal.classList.add('is-open');
+    composeModal.setAttribute('aria-hidden', 'false');
+    composeTitleInput?.focus();
+  }
+
+  async function refreshCurrentUser() {
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        currentUser = null;
+        return null;
+      }
+      const payload = await response.json();
+      currentUser = payload && payload.user ? payload.user : null;
+      return currentUser;
+    } catch (error) {
+      currentUser = null;
+      return null;
+    }
+  }
+
+  function ensureSignedInForCompose() {
+    if (currentUser) return true;
+    window.alert('Create an account to make a forum post.');
+    if (typeof window.odeOpenAuthModal === 'function') {
+      window.odeOpenAuthModal('signup');
+    }
+    return false;
   }
 
   function bestScore(item) {
@@ -1009,7 +1102,6 @@
             </span>
           </div>
           <div class="forum-post-actions">
-            <a class="forum-join" href="forum-search.html">Join</a>
             <span class="forum-menu-dot">...</span>
           </div>
         </div>
@@ -1110,6 +1202,112 @@
     });
   }
 
+  function wireCompose() {
+    if (!addPostButton || !composeModal || !composeForm) return;
+
+    addPostButton.addEventListener('click', async () => {
+      if (currentUser === null) {
+        await refreshCurrentUser();
+      }
+      if (!ensureSignedInForCompose()) return;
+      openComposeModal();
+    });
+
+    composeModal.querySelectorAll('[data-compose-close]').forEach((element) => {
+      element.addEventListener('click', () => {
+        closeComposeModal();
+        resetComposeForm();
+      });
+    });
+
+    composeImageUrlInput?.addEventListener('input', () => {
+      if (composeImageUrlInput.value.trim()) {
+        pendingComposeFileUrl = '';
+        if (composeImageFileInput) composeImageFileInput.value = '';
+        setComposePreview(composeImageUrlInput.value.trim());
+        return;
+      }
+      setComposePreview(pendingComposeFileUrl);
+    });
+
+    composeImageFileInput?.addEventListener('change', () => {
+      const file = composeImageFileInput.files && composeImageFileInput.files[0];
+      if (!file) {
+        pendingComposeFileUrl = '';
+        setComposePreview(composeImageUrlInput?.value.trim() || '');
+        return;
+      }
+      if (pendingComposeFileUrl) {
+        URL.revokeObjectURL(pendingComposeFileUrl);
+      }
+      pendingComposeFileUrl = URL.createObjectURL(file);
+      if (composeImageUrlInput) composeImageUrlInput.value = '';
+      setComposePreview(pendingComposeFileUrl);
+    });
+
+    composeForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (currentUser === null) {
+        await refreshCurrentUser();
+      }
+      if (!ensureSignedInForCompose()) return;
+
+      const title = String(composeTitleInput?.value || '').trim();
+      const body = String(composeBodyInput?.value || '').trim();
+      const category = String(composeCategoryInput?.value || 'training').trim();
+      const imageUrl = String(composeImageUrlInput?.value || '').trim() || pendingComposeFileUrl;
+      if (!title || !body) return;
+
+      const authorBase = currentUser?.username || currentUser?.displayName || currentUser?.email || 'member';
+      const author = String(authorBase).trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'member';
+      const now = Date.now();
+      const post = {
+        id: `custom-post-${now}`,
+        slug: `custom-post-${now}`,
+        title,
+        body,
+        category,
+        scope: category,
+        community: `r/${category}`,
+        author,
+        postType: 'personal',
+        format: imageUrl ? 'image' : 'text',
+        imageUrl: imageUrl || null,
+        imageAlt: imageUrl ? title : null,
+        imageType: imageUrl ? 'general_gym' : null,
+        imageSubject: imageUrl ? 'member post' : null,
+        imageMainObject: imageUrl ? 'member post' : null,
+        imageMuscleGroup: null,
+        score: 1,
+        comments: 0,
+        viewCount: 3,
+        saveCount: 0,
+        ageMinutes: 1,
+        isSeeded: false
+      };
+
+      const stored = readStoredCustomPosts();
+      stored.unshift(post);
+      writeStoredCustomPosts(stored);
+      posts.unshift(post);
+      closeComposeModal();
+      resetComposeForm();
+      renderPosts();
+      feed.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && composeModal.classList.contains('is-open')) {
+        closeComposeModal();
+        resetComposeForm();
+      }
+    });
+
+    window.addEventListener('odeauth', (event) => {
+      currentUser = event?.detail?.user || null;
+    });
+  }
+
   async function loadPosts() {
     feed.innerHTML = '<div class="forum-empty-state">Loading forum posts...</div>';
 
@@ -1138,11 +1336,16 @@
         });
       }
 
-      posts = (Array.isArray(payload.items) ? payload.items : []).map((item, index) => ({
+      const basePosts = (Array.isArray(payload.items) ? payload.items : []).map((item, index) => ({
         ...item,
         ...(imagePostIndex.get(item.id) || {}),
         ageMinutes: getAgeMinutes(item, index)
       }));
+      const customPosts = readStoredCustomPosts().map((item) => ({
+        ...item,
+        ageMinutes: getAgeMinutes(item, 0)
+      }));
+      posts = [...customPosts, ...basePosts];
 
       renderPosts();
     } catch (error) {
@@ -1152,5 +1355,7 @@
 
   wireFilters();
   wireCommentToggles();
+  wireCompose();
+  refreshCurrentUser();
   loadPosts();
 }());

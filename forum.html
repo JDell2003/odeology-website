@@ -173,6 +173,13 @@
             padding: 1rem 0 0.8rem;
         }
 
+        .forum-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-left: auto;
+        }
+
         .forum-searchbar {
             flex: 1 1 460px;
             display: flex;
@@ -215,6 +222,31 @@
             color: var(--forum-text);
             text-decoration: none;
             font-weight: 600;
+        }
+
+        .forum-add-post-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 42px;
+            padding: 0.7rem 1rem;
+            border: 0;
+            border-radius: 999px;
+            background: #111827;
+            color: #ffffff;
+            font: 700 0.92rem/1 "IBM Plex Sans", sans-serif;
+            cursor: pointer;
+        }
+
+        .forum-add-post-btn svg {
+            width: 0.95rem;
+            height: 0.95rem;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .forum-story-row {
@@ -386,6 +418,163 @@
             font-size: 0.95rem;
         }
 
+        .forum-compose-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            z-index: 90;
+        }
+
+        .forum-compose-modal.is-open {
+            display: flex;
+        }
+
+        .forum-compose-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(12, 18, 24, 0.55);
+        }
+
+        .forum-compose-card {
+            position: relative;
+            width: min(620px, 100%);
+            display: grid;
+            gap: 1rem;
+            padding: 1.25rem;
+            border-radius: 24px;
+            background: #ffffff;
+            border: 1px solid var(--forum-border);
+            box-shadow: 0 28px 64px rgba(15, 23, 35, 0.22);
+        }
+
+        .forum-compose-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .forum-compose-head h3 {
+            margin: 0;
+            font: 700 1.2rem/1.1 "Space Grotesk", sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .forum-compose-head p {
+            margin: 0.35rem 0 0;
+            color: var(--forum-muted);
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+
+        .forum-compose-close {
+            width: 2.2rem;
+            height: 2.2rem;
+            border: 0;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
+            font: 700 1rem/1 "IBM Plex Sans", sans-serif;
+            cursor: pointer;
+        }
+
+        .forum-compose-form {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .forum-compose-grid {
+            display: grid;
+            gap: 0.85rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .forum-compose-field {
+            display: grid;
+            gap: 0.42rem;
+        }
+
+        .forum-compose-field.is-full {
+            grid-column: 1 / -1;
+        }
+
+        .forum-compose-field label {
+            color: var(--forum-text);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .forum-compose-field input,
+        .forum-compose-field select,
+        .forum-compose-field textarea {
+            width: 100%;
+            margin: 0;
+            padding: 0.82rem 0.9rem;
+            border: 1px solid var(--forum-border-strong);
+            border-radius: 16px;
+            background: #ffffff;
+            color: var(--forum-text);
+            font: 500 0.95rem/1.45 "IBM Plex Sans", sans-serif;
+        }
+
+        .forum-compose-field textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .forum-compose-help {
+            color: var(--forum-muted);
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .forum-compose-preview {
+            display: none;
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 18px;
+            border: 1px solid var(--forum-border);
+            background: #eef2f5;
+        }
+
+        .forum-compose-preview.is-visible {
+            display: block;
+        }
+
+        .forum-compose-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.7rem;
+        }
+
+        .forum-compose-secondary,
+        .forum-compose-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0.72rem 1rem;
+            border-radius: 999px;
+            font: 700 0.9rem/1 "IBM Plex Sans", sans-serif;
+            cursor: pointer;
+        }
+
+        .forum-compose-secondary {
+            border: 1px solid var(--forum-border);
+            background: #ffffff;
+            color: var(--forum-text);
+        }
+
+        .forum-compose-submit {
+            border: 0;
+            background: #111827;
+            color: #ffffff;
+        }
+
         .forum-post {
             display: grid;
             grid-template-columns: 1fr;
@@ -444,21 +633,6 @@
             display: flex;
             align-items: center;
             gap: 0.6rem;
-        }
-
-        .forum-join {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 34px;
-            padding: 0.35rem 0.82rem;
-            border-radius: 999px;
-            background: #0d5bd7;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 0.01em;
         }
 
         .forum-menu-dot {
@@ -1027,14 +1201,36 @@
                 flex-shrink: 0;
             }
 
-            .forum-join {
-                min-height: 26px;
-                padding: 0.16rem 0.72rem;
-                font-size: 0.74rem;
-            }
-
             .forum-menu-dot {
                 font-size: 1rem;
+            }
+
+            .forum-toolbar {
+                gap: 0.55rem;
+                align-items: center;
+            }
+
+            .forum-toolbar-actions {
+                flex: 0 0 auto;
+                margin-left: 0;
+            }
+
+            .forum-add-post-btn {
+                min-height: 38px;
+                padding: 0.62rem 0.86rem;
+                font-size: 0.82rem;
+            }
+
+            .forum-compose-card {
+                width: 100%;
+                max-height: calc(100dvh - 1.5rem);
+                overflow-y: auto;
+                padding: 1rem;
+                border-radius: 22px;
+            }
+
+            .forum-compose-grid {
+                grid-template-columns: minmax(0, 1fr);
             }
 
             .forum-post-title {
@@ -1234,7 +1430,13 @@
                         </svg>
                         <input type="text" value="Find training topics, article threads, and forum posts" readonly>
                     </label>
-                    <a class="forum-toolbar-link" href="forum-search.html">Search view</a>
+                    <div class="forum-toolbar-actions">
+                        <a class="forum-toolbar-link" href="forum-search.html">Search view</a>
+                        <button class="forum-add-post-btn" id="forum-add-post" type="button">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12"></path><path d="M4 10h12"></path></svg>
+                            <span>Add Post</span>
+                        </button>
+                    </div>
                 </div>
 
                 <section class="forum-story-row" aria-label="Top stories">
@@ -1361,6 +1563,59 @@
             </div>
         </section>
     </main>
+
+    <div class="forum-compose-modal" id="forum-compose-modal" aria-hidden="true">
+        <div class="forum-compose-backdrop" data-compose-close></div>
+        <div class="forum-compose-card" role="dialog" aria-modal="true" aria-labelledby="forum-compose-title">
+            <div class="forum-compose-head">
+                <div>
+                    <h3 id="forum-compose-title">Create forum post</h3>
+                    <p>Post text only or attach a picture. If you are not signed in, we will prompt you to create an account first.</p>
+                </div>
+                <button class="forum-compose-close" type="button" data-compose-close aria-label="Close create post">X</button>
+            </div>
+            <form class="forum-compose-form" id="forum-compose-form">
+                <div class="forum-compose-grid">
+                    <div class="forum-compose-field">
+                        <label for="forum-compose-category">Category</label>
+                        <select id="forum-compose-category" name="category">
+                            <option value="training">Training</option>
+                            <option value="nutrition">Nutrition</option>
+                            <option value="recovery">Recovery</option>
+                            <option value="cutting">Cutting</option>
+                            <option value="bulking">Bulking</option>
+                            <option value="supplements">Supplements</option>
+                            <option value="lifestyle">Lifestyle</option>
+                        </select>
+                    </div>
+                    <div class="forum-compose-field">
+                        <label for="forum-compose-image-url">Image URL (optional)</label>
+                        <input id="forum-compose-image-url" name="imageUrl" type="url" placeholder="https://...">
+                    </div>
+                    <div class="forum-compose-field is-full">
+                        <label for="forum-compose-image-file">Or upload a picture</label>
+                        <input id="forum-compose-image-file" name="imageFile" type="file" accept="image/*">
+                        <div class="forum-compose-help">Use gym photos, progress shots, food, or training pictures.</div>
+                    </div>
+                    <div class="forum-compose-field is-full">
+                        <img class="forum-compose-preview" id="forum-compose-preview" alt="Selected post image preview">
+                    </div>
+                    <div class="forum-compose-field is-full">
+                        <label for="forum-compose-title-input">Subject line</label>
+                        <input id="forum-compose-title-input" name="title" type="text" maxlength="140" placeholder="What are you posting about?" required>
+                    </div>
+                    <div class="forum-compose-field is-full">
+                        <label for="forum-compose-body">Post text</label>
+                        <textarea id="forum-compose-body" name="body" maxlength="800" placeholder="Ask a question, share progress, or post what happened." required></textarea>
+                    </div>
+                </div>
+                <div class="forum-compose-actions">
+                    <button class="forum-compose-secondary" type="button" data-compose-close>Cancel</button>
+                    <button class="forum-compose-submit" type="submit">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
     <script src="js/forum-feed.js?v=2026-03-15-forum-realism-engine-2"></script>
