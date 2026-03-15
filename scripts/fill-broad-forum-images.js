@@ -174,21 +174,6 @@ function fallbackTags(post, intent, index = 0) {
   return [...neutral];
 }
 
-function fallbackItem(post, intent, index) {
-  const tags = fallbackTags(post, intent, index).join(',');
-  const key = slug(post.id || post.title || `forum-image-${index + 1}`) || `forum-image-${index + 1}`;
-  return {
-    id: `loremflickr-${key}`,
-    url: `https://loremflickr.com/1200/900/${tags}?lock=${encodeURIComponent(key)}`,
-    source: 'loremflickr',
-    creator: 'loremflickr',
-    license: null,
-    license_url: null,
-    foreign_landing_url: null,
-    detail_url: null
-  };
-}
-
 async function main() {
   const data = JSON.parse(fs.readFileSync(OUT, 'utf8'));
   const finder = new Finder();
@@ -202,7 +187,7 @@ async function main() {
   for (const [index, { post, intent }] of prioritized.entries()) {
     if (images >= TARGET_IMAGES) break;
     let item = await finder.take(queriesForIntent(intent), (candidate) => imageMatchesIntent(candidate, intent));
-    if (!item) item = fallbackItem(post, intent, index);
+    if (!item) continue;
     applyImage(post, item, intent);
     images += 1;
     added += 1;
