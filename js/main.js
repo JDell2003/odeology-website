@@ -30994,6 +30994,55 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+function initForumRailDrawer() {
+    const trigger = document.querySelector('.forum-drawer-trigger');
+    const rail = document.querySelector('.forum-rail');
+    const closeButton = document.querySelector('.forum-rail-close');
+    const overlay = document.querySelector('.forum-rail-overlay');
+
+    if (!trigger || !rail || !closeButton || !overlay) return;
+
+    const mobileMedia = window.matchMedia('(max-width: 980px)');
+
+    const closeRail = () => {
+        document.body.classList.remove('forum-rail-open');
+        trigger.setAttribute('aria-expanded', 'false');
+        overlay.setAttribute('aria-hidden', 'true');
+    };
+
+    const openRail = () => {
+        if (!mobileMedia.matches) return;
+        document.body.classList.add('forum-rail-open');
+        trigger.setAttribute('aria-expanded', 'true');
+        overlay.setAttribute('aria-hidden', 'false');
+        closeButton.focus();
+    };
+
+    trigger.addEventListener('click', openRail);
+    closeButton.addEventListener('click', closeRail);
+    overlay.addEventListener('click', closeRail);
+
+    rail.addEventListener('click', (event) => {
+        if (mobileMedia.matches && event.target.closest('a')) {
+            closeRail();
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && document.body.classList.contains('forum-rail-open')) {
+            closeRail();
+        }
+    });
+
+    mobileMedia.addEventListener('change', () => {
+        if (!mobileMedia.matches) {
+            closeRail();
+        }
+    });
+}
+
+initForumRailDrawer();
+
 
 
 
