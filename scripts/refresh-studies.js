@@ -2,41 +2,93 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = path.join(process.cwd(), 'data', 'studies.json');
-const MAX_STUDIES = Math.max(50, Number.parseInt(process.env.STUDIES_MAX || '500', 10) || 500);
-const ENRICH_LIMIT = Math.max(0, Number.parseInt(process.env.STUDIES_ENRICH_LIMIT || '150', 10) || 150);
+const MAX_STUDIES = Math.max(50, Number.parseInt(process.env.STUDIES_MAX || '1830', 10) || 1830);
+const ENRICH_LIMIT = Math.max(0, Number.parseInt(process.env.STUDIES_ENRICH_LIMIT || '0', 10) || 0);
 const OPENALEX_API_KEY = String(process.env.OPENALEX_API_KEY || '').trim();
 const EMAIL = String(process.env.NCBI_EMAIL || process.env.CONTACT_EMAIL || '').trim();
 const TOOL = 'odeology_studies_ingest';
 
 const SEARCH_QUERIES = [
-  { term: 'resistance training hypertrophy systematic review', tags: ['hypertrophy', 'training'] },
-  { term: 'dietary protein muscle mass systematic review', tags: ['nutrition', 'protein', 'muscle-gain'] },
+  { term: 'resistance training adults', tags: ['training'] },
+  { term: 'strength training adults', tags: ['training'] },
+  { term: 'muscle hypertrophy review', tags: ['hypertrophy', 'training'] },
+  { term: 'muscle hypertrophy randomized trial', tags: ['hypertrophy', 'training'] },
+  { term: 'body composition resistance training adults', tags: ['body-composition', 'training'] },
+  { term: 'lean mass resistance training adults', tags: ['body-composition', 'training'] },
+  { term: 'dietary protein muscle mass adults', tags: ['nutrition', 'protein', 'muscle-gain'] },
+  { term: 'protein supplementation exercise adults', tags: ['nutrition', 'protein', 'supplements'] },
+  { term: 'sports nutrition review exercise adults', tags: ['nutrition', 'performance'] },
+  { term: 'creatine supplementation exercise adults', tags: ['supplements', 'creatine', 'performance'] },
   { term: 'creatine resistance training meta-analysis', tags: ['supplements', 'creatine', 'performance'] },
-  { term: 'time-restricted eating resistance training body composition', tags: ['fat-loss', 'nutrition', 'meal-timing'] },
-  { term: 'exercise obesity randomized trial systematic review', tags: ['fat-loss', 'obesity', 'cardio'] },
-  { term: 'sleep recovery exercise performance review', tags: ['recovery', 'sleep', 'performance'] },
-  { term: 'sarcopenia exercise protein older adults systematic review', tags: ['recovery', 'older-adults', 'nutrition'] },
+  { term: 'beta alanine exercise performance review', tags: ['supplements', 'performance'] },
+  { term: 'caffeine exercise performance review', tags: ['supplements', 'performance'] },
+  { term: 'time restricted eating resistance training body composition', tags: ['fat-loss', 'meal-timing', 'nutrition'] },
+  { term: 'intermittent fasting exercise body composition adults', tags: ['fat-loss', 'meal-timing', 'nutrition'] },
+  { term: 'meal timing exercise adults review', tags: ['meal-timing', 'nutrition'] },
+  { term: 'exercise obesity adults randomized trial', tags: ['fat-loss', 'obesity', 'cardio'] },
+  { term: 'weight loss maintenance protein diet adults', tags: ['fat-loss', 'nutrition'] },
   { term: 'visceral fat exercise adults review', tags: ['fat-loss', 'body-composition'] },
-  { term: 'VO2 max interval training review', tags: ['conditioning', 'cardio', 'performance'] },
-  { term: 'body composition resistance training adults review', tags: ['body-composition', 'training'] }
+  { term: 'adiposity exercise sedentary behavior adults', tags: ['fat-loss', 'body-composition'] },
+  { term: 'VO2 max interval training adults', tags: ['conditioning', 'cardio', 'performance'] },
+  { term: 'high intensity interval training adults review', tags: ['conditioning', 'cardio', 'performance'] },
+  { term: 'endurance training adults review', tags: ['conditioning', 'cardio'] },
+  { term: 'sleep exercise recovery adults', tags: ['recovery', 'sleep', 'performance'] },
+  { term: 'exercise recovery soreness adults review', tags: ['recovery', 'performance'] },
+  { term: 'sarcopenia exercise protein older adults', tags: ['recovery', 'older-adults', 'nutrition'] },
+  { term: 'older adults resistance training muscle mass', tags: ['older-adults', 'training', 'body-composition'] },
+  { term: 'appetite exercise adults review', tags: ['nutrition', 'fat-loss'] },
+  { term: 'energy balance exercise adults body composition', tags: ['nutrition', 'body-composition'] },
+  { term: 'cardiorespiratory fitness adults systematic review', tags: ['conditioning', 'cardio'] }
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const fetchJson = async (url, opts = {}) => {
-  const res = await fetch(url, opts);
-  if (!res.ok) {
-    throw new Error(`Request failed (${res.status}) for ${url}`);
+async function fetchWithRetry(url, opts = {}, retries = 4) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(url, opts);
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status}) for ${url}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) break;
+      await sleep(500 * (attempt + 1));
+    }
   }
-  return await res.json();
+  throw lastError;
+}
+
+const fetchJson = async (url, opts = {}) => {
+  let lastError = null;
+  for (let attempt = 0; attempt <= 4; attempt += 1) {
+    try {
+      const res = await fetchWithRetry(url, opts, 0);
+      return await res.json();
+    } catch (error) {
+      lastError = error;
+      if (attempt === 4) break;
+      await sleep(500 * (attempt + 1));
+    }
+  }
+  throw lastError;
 };
 
 const fetchText = async (url, opts = {}) => {
-  const res = await fetch(url, opts);
-  if (!res.ok) {
-    throw new Error(`Request failed (${res.status}) for ${url}`);
+  let lastError = null;
+  for (let attempt = 0; attempt <= 4; attempt += 1) {
+    try {
+      const res = await fetchWithRetry(url, opts, 0);
+      return await res.text();
+    } catch (error) {
+      lastError = error;
+      if (attempt === 4) break;
+      await sleep(500 * (attempt + 1));
+    }
   }
-  return await res.text();
+  throw lastError;
 };
 
 function ncbiUrl(endpoint, params = {}) {
@@ -98,6 +150,97 @@ function inferTags(title, abstractText, baseTags = []) {
   return Array.from(tags);
 }
 
+function computeFitnessRelevance(title, abstractText, journal = '', baseTags = []) {
+  const haystack = `${title} ${abstractText} ${journal}`.toLowerCase();
+  const strongPositive = [
+    'resistance training',
+    'strength training',
+    'exercise training',
+    'physical activity',
+    'body composition',
+    'lean mass',
+    'muscle mass',
+    'muscle hypertrophy',
+    'weight loss',
+    'fat mass',
+    'fat-free mass',
+    'dietary protein',
+    'protein supplementation',
+    'sports nutrition',
+    'creatine',
+    'aerobic exercise',
+    'endurance training',
+    'interval training',
+    'vo2',
+    'recovery',
+    'sarcopenia'
+  ];
+  const weakPositive = [
+    'exercise',
+    'training',
+    'muscle',
+    'strength',
+    'fitness',
+    'nutrition',
+    'diet',
+    'protein',
+    'obesity',
+    'adiposity',
+    'weight maintenance',
+    'sedentary',
+    'cardiorespiratory',
+    'appetite',
+    'supplementation',
+    'body weight'
+  ];
+  const negativeSignals = [
+    'carcinoma',
+    'cancer',
+    'tumor',
+    'chemotherapy',
+    'immunotherapy',
+    'ultrasound',
+    'midwives',
+    'intrapartum',
+    'pregnancy',
+    'neonatal',
+    'dentistry',
+    'dental',
+    'ophthalmology',
+    'radiology',
+    'anesthesia',
+    'surgery',
+    'surgical',
+    'nursing education',
+    'medical education',
+    'curriculum',
+    'medical students',
+    'midwifery',
+    'qualitative study'
+  ];
+
+  let score = 0;
+  strongPositive.forEach((phrase) => {
+    if (haystack.includes(phrase)) score += 4;
+  });
+  weakPositive.forEach((phrase) => {
+    if (haystack.includes(phrase)) score += 1;
+  });
+  negativeSignals.forEach((phrase) => {
+    if (haystack.includes(phrase)) score -= 5;
+  });
+
+  if (journal.toLowerCase().includes('sports')) score += 2;
+  if (journal.toLowerCase().includes('exercise')) score += 2;
+  if (journal.toLowerCase().includes('nutrition')) score += 1;
+
+  return score;
+}
+
+function isFitnessStudy(title, abstractText, journal = '', baseTags = []) {
+  return computeFitnessRelevance(title, abstractText, journal, baseTags) >= 3;
+}
+
 function buildSummary({ title, abstractText, studyType, journal, year, tags }) {
   const sentences = splitSentences(abstractText);
   const leadTag = Array.isArray(tags) && tags.length ? tags[0].replace(/-/g, ' ') : 'fitness';
@@ -118,7 +261,7 @@ function buildSummary({ title, abstractText, studyType, journal, year, tags }) {
   return `${studyType} in ${journal || 'a peer-reviewed journal'} (${year || 'recent'}) covering ${leadTag}, based on the study titled "${title}".`;
 }
 
-async function searchPubMed(term, retmax = 120) {
+async function searchPubMed(term, retmax = 320) {
   const url = ncbiUrl('esearch.fcgi', {
     db: 'pubmed',
     retmode: 'json',
@@ -244,7 +387,7 @@ async function main() {
   const orderedPmids = [];
 
   for (const query of SEARCH_QUERIES) {
-    const ids = await searchPubMed(query.term, 120);
+    const ids = await searchPubMed(query.term, 320);
     for (const pmid of ids) {
       if (!pmidToTags.has(pmid)) orderedPmids.push(pmid);
       const nextTags = new Set([...(pmidToTags.get(pmid) || []), ...(query.tags || [])]);
@@ -254,14 +397,21 @@ async function main() {
     if (orderedPmids.length >= MAX_STUDIES * 2) break;
   }
 
-  const selectedPmids = orderedPmids.slice(0, MAX_STUDIES);
-  const summaries = await fetchPubMedSummaries(selectedPmids);
-  const abstracts = await fetchPubMedAbstracts(selectedPmids);
+  const candidatePmids = orderedPmids.slice(0, MAX_STUDIES * 2);
+  const summaries = await fetchPubMedSummaries(candidatePmids);
+  const prefilteredPmids = candidatePmids.filter((pmid) => {
+    const summary = summaries.get(pmid);
+    if (!summary) return false;
+    const title = normalizeSpace(summary.title || '');
+    const journal = normalizeSpace(summary.fulljournalname || summary.source || '');
+    return isFitnessStudy(title, '', journal, pmidToTags.get(pmid) || []);
+  }).slice(0, MAX_STUDIES + 500);
+  const abstracts = await fetchPubMedAbstracts(prefilteredPmids);
   const items = [];
 
   let enrichCount = 0;
 
-  for (const pmid of selectedPmids) {
+  for (const pmid of prefilteredPmids) {
     const summary = summaries.get(pmid);
     if (!summary) continue;
     const title = normalizeSpace(summary.title || '');
@@ -272,6 +422,7 @@ async function main() {
     const abstractText = normalizeSpace(abstracts.get(pmid) || '');
     const publicationTypes = Array.isArray(summary.pubtype) ? summary.pubtype.map((x) => normalizeSpace(x)) : [];
     const studyType = inferStudyType(title, publicationTypes);
+    if (!isFitnessStudy(title, abstractText, journal, pmidToTags.get(pmid) || [])) continue;
     const shouldEnrich = enrichCount < ENRICH_LIMIT;
     const europePmc = shouldEnrich ? await fetchEuropePmcByPmid(pmid) : null;
     const doi = normalizeSpace(europePmc?.doi || summary.elocationid || '').replace(/^doi:\s*/i, '');
@@ -304,6 +455,7 @@ async function main() {
     };
     items.push(item);
     if (shouldEnrich) enrichCount += 1;
+    if (items.length >= MAX_STUDIES) break;
   }
 
   const payload = {

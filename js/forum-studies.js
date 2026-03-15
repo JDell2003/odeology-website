@@ -11,6 +11,16 @@
   let localDataset = null;
   let apiMode = 'unknown';
 
+  function getDayOfYear(date) {
+    const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const diff = date - start;
+    return Math.floor(diff / 86400000) + 1;
+  }
+
+  function isLeapYear(year) {
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  }
+
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -159,12 +169,25 @@
     });
   }
 
+  function getDailyPicks(items) {
+    const list = Array.isArray(items) ? items : [];
+    if (!list.length) return [];
+    const now = new Date();
+    const slots = isLeapYear(now.getUTCFullYear()) ? 366 : 365;
+    const maxPool = Math.min(list.length, slots * 5);
+    const pool = list.slice(0, maxPool);
+    const start = ((getDayOfYear(now) - 1) * 5) % Math.max(pool.length, 1);
+    return Array.from({ length: Math.min(5, pool.length) }, (_, index) => pool[(start + index) % pool.length]).filter(Boolean);
+  }
+
   async function runSearch() {
+    const isDailyPicksMode = !String(searchInput.value || '').trim() && activeTopic === 'all';
+    const requestLimit = isDailyPicksMode ? 1830 : 18;
     const params = new URLSearchParams();
     const q = String(searchInput.value || '').trim();
     if (q) params.set('q', q);
     if (activeTopic && activeTopic !== 'all') params.set('topic', activeTopic);
-    params.set('limit', '18');
+    params.set('limit', String(requestLimit));
 
     status.textContent = 'Loading studies...';
 
@@ -197,14 +220,20 @@
         };
       }
 
-      renderStudies(payload.items || []);
+      const renderedItems = isDailyPicksMode ? getDailyPicks(payload.items || []) : (payload.items || []);
+      renderStudies(renderedItems);
       const total = Number(payload.total || 0);
-      const querySuffix = q ? ` for "${q}"` : '';
-      const topicSuffix = activeTopic && activeTopic !== 'all' ? ` in ${titleCaseTopic(activeTopic)}` : '';
       const sourceSuffix = payload.fallback
         ? 'Loaded from local cached dataset.'
         : 'Served by the local studies API.';
-      status.textContent = `${total} studies found${querySuffix}${topicSuffix}. ${sourceSuffix}`;
+
+      if (isDailyPicksMode) {
+        status.textContent = `Today's picks: ${renderedItems.length} studies out of ${total}. A different set rotates in each day and resets next year. ${sourceSuffix}`;
+      } else {
+        const querySuffix = q ? ` for "${q}"` : '';
+        const topicSuffix = activeTopic && activeTopic !== 'all' ? ` in ${titleCaseTopic(activeTopic)}` : '';
+        status.textContent = `${total} studies found${querySuffix}${topicSuffix}. ${sourceSuffix}`;
+      }
     } catch (error) {
       status.textContent = 'Unable to load the study database right now.';
       renderEmpty('The study dataset is unavailable right now. Refresh later or run the local study refresh script to rebuild the cache.');
