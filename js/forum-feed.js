@@ -34,7 +34,7 @@
     'this is actually solid',
     'id keep it simple',
     'you are overthinking it',
-    'good post honestly',
+    'that makes sense',
     'yeah that helped me too',
     'bulgarian split squats should be illegal',
     'this makes way more sense',
@@ -212,63 +212,251 @@
     return categoryCommentPools[item.category] || categoryCommentPools.training;
   }
 
-  function buildCommentBody(item, random, mode) {
-    const pool = getCategoryPool(item);
-    const topic = pickFrom(pool.topics, random);
-    const observation = pickFrom(pool.observations, random);
-    const suggestion = pickFrom(pool.suggestions, random);
-    const titleText = String(item.title || '').toLowerCase();
-    const isCoachPrompt = /trainer|coaching|custom|free plan|free training|basic program|accountability/.test(titleText);
-    const experience = [
-      `i had the same issue last year. ${suggestion}. helped a lot.`,
-      `same thing happened to me. once i fixed ${topic}, progress picked back up.`,
-      `for me it was literally ${topic}. ${suggestion}.`
-    ];
-    const supportive = [
-      `good post honestly`,
-      `this is way more common than people admit`,
-      `youre probably closer than you think`
-    ];
-    const curious = [
-      `how many hard sets were you doing`,
-      `were you eating enough when this started`,
-      `did you change anything else at the same time`
-    ];
-    const joking = [
-      `bulgarian split squats are still the villain somehow`,
-      `this is why leg day has trust issues`,
-      `the gym gods love making the obvious fix annoying`
-    ];
-    const disagree = [
-      `idk i kinda disagree. ${suggestion} would be the last thing id change.`,
-      `not sure i buy that. ${observation} but i wouldnt jump to more work.`,
-      `depends on volume honestly. i would not assume ${topic} is the whole issue.`
-    ];
-    const advice = [
-      `${observation}. id ${suggestion}.`,
-      `my guess is ${topic}. id ${suggestion}.`,
-      `the post makes sense. id just ${suggestion}.`
-    ];
-    const paragraph = [
-      `i went through almost this exact thing. on paper my training looked fine, but the weak spot was always ${topic}. once i stopped changing everything every week and just focused on one clean adjustment, progress started looking normal again.`,
-      `this feels like one of those problems that looks random in the moment but is obvious when you zoom out. ${observation}. if it were me i would ${suggestion}, leave it alone for two weeks, and see if the trend changes before rewriting the whole plan.`
-    ];
+  function detectPostFocus(item) {
+    const text = `${item.title || ''} ${item.body || ''}`.toLowerCase();
+    if (/pec|chest|bench|incline/.test(text)) return 'chest';
+    if (/calves|calf/.test(text)) return 'calves';
+    if (/hamstrings|hamstring|rdl|leg curl/.test(text)) return 'hamstrings';
+    if (/biceps|curl/.test(text)) return 'biceps';
+    if (/triceps/.test(text)) return 'triceps';
+    if (/side delts|rear delts|delts|shoulders|lateral raise/.test(text)) return 'delts';
+    if (/back|lats|wider|pull up|row/.test(text)) return 'back';
+    if (/squat|quads|leg press|hip thrust/.test(text)) return 'squat';
+    if (/deadlift|knees|plates|chalk/.test(text)) return 'deadlift';
+    if (/trainer|coaching|custom|free plan|free training|free workouts|basic program|accountability/.test(text)) return 'coaching';
+    if (/consistent|consistency|skipping|falling off/.test(text)) return 'consistency';
+    if (/gain weight|bulk|eating|protein|meal|food|diet/.test(text)) return 'nutrition';
+    return 'generic';
+  }
 
-    let base = '';
-    if (isCoachPrompt && mode === 'disagree') base = pickFrom(coachingDisagreeReplies, random);
-    else if (isCoachPrompt && mode === 'reply') base = pickFrom([...coachingSupportReplies, ...coachingLeanReplies], random);
-    else if (isCoachPrompt && random() < 0.55) base = pickFrom([...coachingSupportReplies, ...coachingLeanReplies], random);
-    else if (mode === 'disagree') base = pickFrom(disagree, random);
-    else if (mode === 'reply') base = pickFrom([...supportive, ...curious], random);
-    else {
+  function topicCommentPools(focus) {
+    const pools = {
+      chest: {
+        advice: ['upper chest responded better for me when i put incline smith first', 'if shoulders take over every press your chest stimulus probably sucks', 'i had to add more pressing volume before chest started moving'],
+        experience: ['chest didnt grow for me until i stopped making flat bench the only thing i cared about', 'mine changed once i added incline work and slowed the reps down'],
+        question: ['how much pressing are you doing compared to fly work', 'are your shoulders taking over on most presses'],
+        blunt: ['could just be bad chest stimulus tbh', 'if all you do is flat bench im not surprised'],
+        support: ['chest can be stubborn for a while', 'youre probably closer than you think'],
+        disagree: ['idk i wouldnt jump to coaching over chest lagging', 'nah this still sounds like execution more than needing a trainer'],
+        joke: ['chest days always turn into shoulder days somehow']
+      },
+      calves: {
+        advice: ['i had to train calves 3x a week before they moved at all', 'pause reps at the bottom helped mine way more than extra weight', 'full stretch and more frequency did more than anything else'],
+        experience: ['calves barely moved for me until i hit them almost every session', 'mine were a joke until i started taking them seriously'],
+        question: ['how often are you training them right now', 'are you actually pausing the reps'],
+        blunt: ['calves are genetics and frequency tbh', 'most people barely train them hard enough'],
+        support: ['calves are evil lol', 'same issue here'],
+        disagree: ['i dont think a trainer fixes calves by itself', 'nah i wouldnt pay for help just because calves are lagging'],
+        joke: ['calves got their own attitude problem']
+      },
+      hamstrings: {
+        advice: ['mine didnt move until i added rdls and stopped rushing reps', 'if glutes take over every hinge your hamstrings might not be getting enough work', 'leg curls plus slower hinges finally got mine moving'],
+        experience: ['hamstrings changed for me once i stopped treating rdls like a lower back lift', 'i needed more hinge work than i thought'],
+        question: ['how often are you training hamstrings right now', 'are you doing any real hip hinge work'],
+        blunt: ['sounds like glutes are stealing all the work tbh', 'could just be weak hinge mechanics'],
+        support: ['hamstrings can take forever to notice', 'that body part is annoying for a lot of people'],
+        disagree: ['i still think this is execution not coaching', 'nah you probably need better exercise choice first'],
+        joke: ['hamstrings only show up when they feel like it']
+      },
+      biceps: {
+        advice: ['biceps started growing faster when i put curls earlier in the workout', 'one curl you progress hard usually beats five random ones', 'i had better luck once i stopped rushing the lowering phase'],
+        experience: ['my arms finally moved once i kept the same curl pattern for a month', 'biceps changed fast once i treated them like a priority'],
+        question: ['how many hard arm sets are you doing', 'are your back exercises wiping you out before curls'],
+        blunt: ['could just be too much junk volume tbh', 'if you change exercises every week that probably isnt helping'],
+        support: ['arms can take a while', 'youre probably not far off'],
+        disagree: ['i wouldnt pay for coaching over biceps yet', 'nah this still sounds fixable without a custom plan'],
+        joke: ['arm day math never works the way we think']
+      },
+      triceps: {
+        advice: ['my triceps moved more once i got stronger on close grip pressing', 'if elbows hate all your extensions you might need a different angle', 'triceps finally grew when i trained them twice a week'],
+        experience: ['mine were stuck until i stopped relying on one pushdown variation', 'close grip stuff helped me more than endless extensions'],
+        question: ['what pressing are you doing besides isolation work', 'are your elbows getting beat up right now'],
+        blunt: ['might just be not enough hard pressing tbh', 'pushdowns alone probably wont do it'],
+        support: ['triceps can be weird to judge', 'same thing happened to me'],
+        disagree: ['i wouldnt call this a coaching problem yet', 'nah this still sounds like exercise selection'],
+        joke: ['triceps always hide until the lighting is perfect']
+      },
+      delts: {
+        advice: ['side delts moved once i added more frequency and cleaner lateral raises', 'rear delts finally showed up when i stopped turning every rep into traps', 'lighter laterals with better control helped a ton'],
+        experience: ['delts took forever until i stopped swinging everything', 'mine only changed when i trained them more than once a week'],
+        question: ['how much lateral raise work are you doing', 'are traps taking over your raises'],
+        blunt: ['this sounds like execution more than programming tbh', 'if every rep is a shrug youre not hitting delts well'],
+        support: ['delts are annoying for a lot of people', 'same problem here'],
+        disagree: ['i dont think a trainer is step one here', 'nah id fix technique first'],
+        joke: ['side delts are all ego and dumbbells']
+      },
+      back: {
+        advice: ['back got wider for me once i took pullups and pulldowns more seriously', 'lats finally showed up when i stopped turning rows into shrugging', 'more stable row setups helped my back way more than extra sets'],
+        experience: ['my back looked flat until i cleaned up elbow path', 'lats took way longer to notice than arms did for me'],
+        question: ['are you doing enough vertical pulling', 'do you feel lats or mostly arms on pull days'],
+        blunt: ['could just be bad back execution tbh', 'if biceps are taking over everything that explains a lot'],
+        support: ['back progress is harder to notice at first', 'same issue here'],
+        disagree: ['i still wouldnt jump to coaching over this', 'nah sounds more like setup than custom programming'],
+        joke: ['back day always turns into arm day somehow']
+      },
+      squat: {
+        advice: ['my squat moved once i pulled fatigue down for a week', 'squat stalls usually mean recovery or technique for me', 'leg press helped but only after i cleaned up the main squat work'],
+        experience: ['mine was stuck until i stopped burying myself every session', 'squat finally moved when i ate more and recovered better'],
+        question: ['how often are you squatting right now', 'are you recovering between lower days'],
+        blunt: ['honestly you might just be carrying too much fatigue', 'this could be food and effort tbh'],
+        support: ['squat stalls happen to everyone', 'youre probably not far off'],
+        disagree: ['i wouldnt pay for help over one squat stall yet', 'nah i think you need recovery more than coaching'],
+        joke: ['squat has a talent for humbling people']
+      },
+      deadlift: {
+        advice: ['deadlift moved faster for me once i stopped maxing my effort every week', 'if it always stalls at the knees id look at position and fatigue first', 'more back strength and cleaner setup helped mine most'],
+        experience: ['my deadlift stayed stuck until i fixed the start position', 'plates only started moving once i stopped grinding every rep'],
+        question: ['where is it actually stalling for you', 'how beat up are you by the time you pull'],
+        blunt: ['could just be too much fatigue tbh', 'if setup changes every rep thats probably part of it'],
+        support: ['deadlift stalls are brutal', 'same thing happened to me'],
+        disagree: ['i dont think coaching is the first fix here', 'nah id look at technique before paying anyone'],
+        joke: ['deadlift always acts dramatic for no reason']
+      },
+      coaching: {
+        advice: ['free plan is solid for getting started but once you plateau it probably needs more personalization', 'if youve been stuck for months you probably need something more tailored', 'sounds like you need better progression not just random workouts'],
+        experience: ['the free stuff was actually better than random training for me, then i hit a point where i needed more structure', 'coach helped mostly because i stopped second guessing everything'],
+        question: ['how long have you actually been consistent with the free plan', 'are you stuck because of the plan or because execution is inconsistent'],
+        blunt: ['trainer wont fix bad consistency', 'honestly most people just dont train hard enough'],
+        support: ['free stuff is fine for most beginners honestly', 'site gives a decent base, problem is most people change too much too early'],
+        disagree: ['nah dont pay for coaching yet', 'i wouldnt spend money until youve really been consistent for a while'],
+        joke: ['coaching wont magically make monday show up']
+      },
+      consistency: {
+        advice: ['the biggest fix for me was making the plan easier to follow on bad weeks', 'accountability helps but lowering friction helped me more', 'i needed a smaller version of the routine for chaotic days'],
+        experience: ['i used to disappear every other week too until i shortened the plan', 'consistency got better once i stopped trying to be perfect'],
+        question: ['what part of the week do you usually fall off', 'is it motivation or just life getting messy'],
+        blunt: ['could just be discipline tbh', 'if the setup is too annoying you wont keep doing it'],
+        support: ['a lot of people deal with this', 'youre not the only one'],
+        disagree: ['i dont think coaching fixes this by itself', 'nah accountability alone is not the whole answer'],
+        joke: ['consistency really hates thursdays']
+      },
+      nutrition: {
+        advice: ['if youre not gaining id audit calories before changing everything else', 'food usually matters more than people want to admit here', 'one repeatable high calorie meal can fix a lot'],
+        experience: ['i thought programming was the issue and it was mostly food', 'once i cleaned up meals progress looked way different'],
+        question: ['are you actually eating enough every day', 'how repeatable is your food right now'],
+        blunt: ['could just be not enough food tbh', 'this might be calories before anything else'],
+        support: ['food is harder than people make it sound', 'same problem here'],
+        disagree: ['i wouldnt jump to coaching before fixing food', 'nah if calories are off no program will save it'],
+        joke: ['eating enough is the real workout']
+      },
+      generic: {
+        advice: ['id keep it simple and fix one thing first', 'usually the boring fix works better than the fancy one', 'i would clean up execution before rewriting everything'],
+        experience: ['same thing happened to me and it got better once i simplified it', 'i had a similar issue and the basic fix worked'],
+        question: ['what have you tried so far', 'how long has it been stuck'],
+        blunt: ['could just be food and effort tbh', 'you might be overthinking it'],
+        support: ['youre probably not as far off as you think', 'this is more common than people admit'],
+        disagree: ['i wouldnt jump to paying for help yet', 'nah i think this is still fixable on your own'],
+        joke: ['fitness has a way of making simple stuff annoying']
+      }
+    };
+    return pools[focus] || pools.generic;
+  }
+
+  function buildCommentBody(item, random, mode, usedBodies) {
+    const genericPool = getCategoryPool(item);
+    const focus = detectPostFocus(item);
+    const pool = topicCommentPools(focus);
+    const titleText = String(item.title || '').toLowerCase();
+    const bodyText = String(item.body || '').toLowerCase();
+    const isCoachPrompt = /trainer|coaching|custom|free plan|free training|basic program|accountability/.test(titleText);
+    const advice = pool.advice || genericPool.suggestions || ['id simplify the plan and give it two weeks'];
+    const experience = pool.experience || ['same issue happened to me for a while'];
+    const questions = pool.question || ['what have you tried so far'];
+    const blunt = pool.blunt || ['could just be food and effort tbh'];
+    const support = pool.support || ['youre probably not as far off as you think'];
+    const disagree = pool.disagree || ['nah i wouldnt jump to paying for help yet'];
+    const jokes = pool.joke || ['fitness makes simple stuff annoying'];
+    const freeSupport = [
+      'free stuff is fine for most beginners honestly',
+      'site gives a decent base, problem is most people change too much too early',
+      'free plan can work if sleep and food are handled',
+      'i wouldnt pay yet unless youve actually been consistent for a while'
+    ];
+    const freeLean = [
+      'free plan is solid for getting started but once you plateau it probably needs more personalization',
+      'if youve been stuck for months you probably need something more tailored',
+      'sounds like you need better progression not just random workouts',
+      'custom structure matters more once progress slows down'
+    ];
+    const followUp = [
+      ...questions,
+      'how many hard sets are you doing right now',
+      'how long has this actually been stalled',
+      'did anything else change when this started'
+    ];
+    const shortReaction = uniq([
+      ...support,
+      ...jokes,
+      ...shortCommentReactions,
+      'same issue here',
+      'that tracks honestly'
+    ]);
+    const practical = uniq([
+      ...advice,
+      ...advice.map((line) => `${line} that helped me most.`),
+      ...advice.map((line) => `id start with ${line.replace(/^i had to |^if |^mine |^my /i, '')}`)
+    ]);
+    const personal = uniq([
+      ...experience,
+      ...experience.map((line) => `${line}. that was the turning point for me.`),
+      ...experience.map((line) => `same thing happened to me. ${line}.`)
+    ]);
+    const supportive = uniq([
+      ...support,
+      'youre probably closer than it feels right now',
+      'this is more common than people admit',
+      'youre not crazy for asking this'
+    ]);
+    const bluntList = uniq([
+      ...blunt,
+      'honestly this could still just be recovery and effort',
+      'if food and sleep are off no plan is saving this'
+    ]);
+    const disagreeList = uniq([
+      ...disagree,
+      ...(isCoachPrompt ? coachingDisagreeReplies : []),
+      'nah i still wouldnt pay for help yet'
+    ]);
+    const freeMix = uniq([
+      ...freeSupport,
+      ...freeLean,
+      'the free workouts are better than random training for most people',
+      'the free plan cleaned up a lot of dumb stuff for me before i changed anything else'
+    ]);
+    const paragraph = uniq([
+      `${pickFrom(experience, random)}. ${pickFrom(advice, random)}. id leave that alone for two weeks before rewriting the whole thing.`,
+      `${pickFrom(blunt, random)}. if it were me i would ${pickFrom(advice, random).replace(/\.$/, '')} and see if the trend changes.`,
+      `${pickFrom(support, random)}. ${pickFrom(questions, random)}. thats probably the part that tells you whether this is a programming issue or just execution.`
+    ]);
+
+    let candidates = [];
+    if (mode === 'disagree') {
+      candidates = isCoachPrompt ? [...disagreeList, ...freeSupport] : disagreeList;
+    } else if (mode === 'reply') {
+      candidates = [...followUp, ...supportive, ...(isCoachPrompt ? freeMix : [])];
+    } else {
       const roll = random();
-      if (roll < 0.4) base = pickFrom(shortCommentReactions, random);
-      else if (roll < 0.62) base = pickFrom(experience, random);
-      else if (roll < 0.78) base = pickFrom(advice, random);
-      else if (roll < 0.9) base = pickFrom([...supportive, ...curious, ...joking], random);
-      else base = pickFrom(paragraph, random);
+      if (roll < 0.25) candidates = practical;
+      else if (roll < 0.45) candidates = personal;
+      else if (roll < 0.6) candidates = followUp;
+      else if (roll < 0.75) candidates = bluntList;
+      else if (roll < 0.85) candidates = supportive;
+      else if (roll < 0.92) candidates = isCoachPrompt || /free plan|free workouts|free training|site/.test(bodyText) ? freeMix : disagreeList;
+      else candidates = paragraph;
     }
-    return addImperfection(base, random);
+
+    for (let tries = 0; tries < 6; tries += 1) {
+      const candidate = addImperfection(pickFrom(candidates, random), random);
+      const key = candidate.toLowerCase();
+      if (!usedBodies.has(key)) {
+        usedBodies.add(key);
+        return candidate;
+      }
+    }
+
+    const fallback = addImperfection(pickFrom([...practical, ...personal, ...supportive], random), random);
+    usedBodies.add(fallback.toLowerCase());
+    return fallback;
   }
 
   function generateComments(item) {
@@ -279,6 +467,7 @@
     const replyIndex = total >= 4 && random() < 0.72 ? Math.min(total - 1, 2 + Math.floor(random() * Math.max(1, total - 2))) : -1;
     const replyParentIndex = replyIndex > 1 ? Math.max(0, replyIndex - 1) : -1;
     const disagreeIndex = total >= 3 && random() < 0.36 ? 1 : -1;
+    const usedBodies = new Set();
     const comments = Array.from({ length: total }, (_, index) => {
       const baseMinutes = Math.max(1, Number(item.ageMinutes || 120));
       const ageMinutes = Math.max(1, Math.round(baseMinutes * (0.08 + random() * 0.82)));
@@ -293,11 +482,11 @@
 
       const mode = index === disagreeIndex ? 'disagree' : index === replyIndex ? 'reply' : 'base';
       const lengthRoll = random();
-      let body = buildCommentBody(item, random, mode);
+      let body = buildCommentBody(item, random, mode, usedBodies);
       if (lengthRoll < 0.4) {
-        body = pickFrom(shortCommentReactions, random);
+        body = buildCommentBody(item, random, mode, usedBodies);
       } else if (lengthRoll > 0.95) {
-        body = `${buildCommentBody(item, random, mode)} ${buildCommentBody(item, random, 'reply')}`;
+        body = `${buildCommentBody(item, random, mode, usedBodies)} ${buildCommentBody(item, random, 'reply', usedBodies)}`;
       }
 
       return {

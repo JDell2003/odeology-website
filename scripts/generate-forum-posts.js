@@ -219,83 +219,84 @@ function buildPostTypeSchedule(total) {
 function title(category, c, postType) {
   const question = {
     training: [
-      `how can i grow my ${pretty(c.part)} faster`,
-      `my ${pretty(c.part)} hasnt grown what should i change`,
-      `how do i know if i need a custom workout for ${pretty(c.part)}`,
-      `ive been using the free workouts but my ${pretty(c.part)} still wont grow`,
-      `is the free training enough to build real ${pretty(c.part)}`,
-      `my ${pretty(c.lift)} hasnt gone up in months what do i do`,
-      `how do i bring up my ${pretty(c.part)}`,
-      `what helps ${pretty(c.part)} grow the fastest`,
-      `free plan is good but how do i make it more specific to me`,
-      `when should someone switch from free workouts to a real plan`
+      `${pretty(c.part)} are way behind compared to everything else`,
+      `what actually helped you bring up your ${pretty(c.part)}`,
+      `anyone here finally figure out ${pretty(c.part)}`,
+      `my ${pretty(c.part)} still look behind and im getting annoyed`,
+      `free plan helped but my ${pretty(c.part)} are still lagging`,
+      `how do you know when ${pretty(c.part)} just need more time`,
+      `${pretty(c.lift)} is stuck again and im getting annoyed`,
+      `what usually fixes a stalled ${pretty(c.lift)}`,
+      `free plan is decent but when do you outgrow it`,
+      `would a trainer actually help or am i overthinking this`
     ],
     nutrition: [
-      `how can i gain weight faster with this program`,
-      `is the free plan enough if im serious about getting bigger`,
-      `what should i eat if i want faster muscle gain`,
-      `can i still make progress without paying for coaching`,
-      `what is missing from free workout plans if food is good`,
-      `my weight hasnt gone up what should i change`,
-      `how do i know if i need something more custom for food too`,
+      `how can i gain weight faster without feeling gross`,
       `free workouts helped but im still not growing much`,
-      `what should i do if im eating right and still not gaining`,
-      `is a custom plan better once weight gain stalls`
+      `what should i eat if size is moving too slow`,
+      `can you make solid progress on a free plan if food is good`,
+      `when do you stop using generic advice for food`,
+      `my weight is barely moving what should i change`,
+      `do i need a more custom plan if eating is already decent`,
+      `what finally made weight gain easier for you`,
+      `is food usually the reason progress feels stuck`,
+      `would coaching even help if calories are the real issue`
     ],
     recovery: [
-      `do i need accountability to really grow`,
-      `how do you stay consistent with training`,
-      `what helps you stop skipping workouts`,
-      `how do i stop falling off every few weeks`,
-      `should i get a trainer if recovery keeps messing me up`,
-      `would coaching help if i keep second guessing recovery stuff`,
-      `is the free training enough if my recovery is always off`,
-      `how do i know when i need more than a basic program`,
-      `what do you do when progress stalls and recovery feels bad`,
-      `can a trainer help if i keep falling out of routine`
+      `do most people need accountability to really stay on track`,
+      `how do you stay consistent when recovery is a mess`,
+      `what helps you stop skipping workouts every other week`,
+      `how do i stop falling off when sleep gets bad`,
+      `would a trainer help if recovery keeps derailing me`,
+      `is coaching worth it if consistency is the real problem`,
+      `free plan is fine but recovery still keeps messing me up`,
+      `when do you know a basic program isnt enough anymore`,
+      `what do you do when progress slows down and recovery feels off`,
+      `anyone else train hard for two weeks then disappear`
     ],
     cutting: [
       `how do i keep muscle while trying to cut faster`,
-      `free plan helped but my cut keeps falling apart what now`,
+      `free plan helped but my cut still falls apart on weekends`,
       `should i get coaching if i keep losing consistency on a cut`,
-      `how do i know if i need something more custom for fat loss`,
-      `can i get lean with just the free plan`,
-      `what should i do if im stuck while cutting`,
-      `how do i stop falling off every few weeks on a cut`,
-      `is accountability worth it when cutting gets hard`,
-      `what is missing from generic cut plans honestly`,
-      `when should someone switch from free help to custom fat loss coaching`
+      `when does a generic cut stop being enough`,
+      `can you get lean with free workouts if life is messy`,
+      `what should i change if my cut keeps stalling`,
+      `how do you stop falling off every few weeks on a cut`,
+      `is accountability worth it when fat loss gets hard`,
+      `what usually fixes a cut that keeps drifting`,
+      `would custom coaching actually help or just stress me out more`
     ],
     bulking: [
-      `how can i gain weight faster with the free plan`,
+      `how can i gain weight faster with this program`,
       `should i get a trainer or keep using the free plan`,
-      `is the free training enough to get big`,
-      `when should i switch from free workouts`,
+      `is the free training enough if im serious about getting bigger`,
+      `when should someone switch from free workouts to a real plan`,
       `do i need a custom workout plan to bulk right`,
-      `how do i know when i need more than a basic program`,
-      `my arms arent growing even though im bulking what now`,
-      `what should i do if my chest still isnt growing on this program`,
-      `can a free plan actually get me to my goal`,
-      `at what point do you need something custom`
+      `how do you know when a basic plan stops being enough`,
+      `my arms still arent growing what would you change`,
+      `what should i do if my chest still isnt moving`,
+      `can a free plan actually get you big if youre consistent`,
+      `at what point do you need something more tailored`
     ],
     supplements: [
       `is creatine actually worth it`,
       `do supplements matter if im still on a free program`,
       `should i fix food first or buy more supplements`,
       `can i still make progress without paying for coaching`,
-      `is the free training enough if i take the basics`,
+      `does the free training cover enough if basics are handled`,
       `what is actually worth buying for muscle gain`,
       `would coaching help more than another supplement tub`,
       `how do i know if i need more than the basic stuff`,
-      `free plan is decent but what helps progress move faster`,
-      `is online coaching worth it before messing with more supplements`
+      `free plan is decent but what actually moves progress faster`,
+      `is online coaching worth it before buying more tubs`,
+      `what matters more here food or supplements honestly`
     ],
     lifestyle: [
       `how do you stay consistent with training`,
-      `what helps you stop skipping workouts`,
+      `what helps you stop skipping workouts when life gets busy`,
       `do i need accountability to really grow`,
       `how do i stop falling off every few weeks`,
-      `should i get a trainer if consistency is my problem`,
+      `should i get a trainer if consistency is my main problem`,
       `is online coaching worth it if i keep starting over`,
       `free workouts helped but i still cant stay locked in`,
       `when is coaching actually worth paying for`,
@@ -336,52 +337,164 @@ function title(category, c, postType) {
 }
 
 function body(category, c, postType) {
+  const questionBodies = {
+    training: [
+      { key: 'frustrated-short', free: false, lines: ['my progress is decent overall but this one area is still lagging and its starting to piss me off.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['overall the free workouts were better than the random stuff i was doing before.', 'problem is one area is still behind and i cant tell what to change next.'] },
+      { key: 'confused-beginner', free: false, lines: ['still pretty new to lifting so i cant tell if this is normal or if im doing something wrong.'] },
+      { key: 'plateau', free: false, lines: ['everything else is moving okay but this one lift or body part has been stuck for weeks.', 'trying to figure out whether thats normal or if i need to change something.'] },
+      { key: 'customization', free: false, lines: ['at what point does a basic plan stop being enough and you need something more tailored?', 'thats basically what im trying to figure out.'] },
+      { key: 'consistency-blame', free: false, lines: ['honestly could just be me not pushing hard enough.', 'just wanted to ask before i keep spinning my wheels.'] },
+      { key: 'schedule-context', free: false, lines: ['my schedule has been all over the place lately so i cant tell if recovery is the problem or the actual training.'] },
+      { key: 'comparison', free: false, lines: ['feels like everyone else grows this faster than me and im trying to figure out what im missing.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['not against paying for help.', 'i just dont know if im actually at the point where a trainer would make a difference.'] },
+      { key: 'positive-free', free: true, lines: ['the free workouts honestly got me out of doing random dumb stuff.', 'im not complaining about that at all. just trying to figure out what to change next.'] },
+      { key: 'free-good-limited', free: true, lines: ['site helped me get more consistent ill give it that.', 'just feels like im at the point where generic stuff might not be enough anymore.'] },
+      { key: 'neutral-detail', free: false, lines: ['not looking for a magic fix.', 'i mostly want to know if i should stay patient or actually change the plan.'] }
+    ],
+    nutrition: [
+      { key: 'frustrated-short', free: false, lines: ['food is way better than it used to be but size still isnt moving the way i expected.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['free plan was actually better than the random stuff i was doing before.', 'still feels like im missing something if i want faster growth.'] },
+      { key: 'confused-beginner', free: false, lines: ['still pretty new so i cant tell if this is just me being impatient or if food actually needs to change.'] },
+      { key: 'plateau', free: false, lines: ['weight is basically flat and i feel like i should be moving faster by now.'] },
+      { key: 'customization', free: false, lines: ['trying to figure out if this is where generic advice stops helping and something more tailored matters.'] },
+      { key: 'consistency-blame', free: false, lines: ['could also just be me not eating as hard as i think i am.'] },
+      { key: 'schedule-context', free: false, lines: ['my week gets messy fast so i cant tell if the issue is calories or just life.'] },
+      { key: 'comparison', free: false, lines: ['feels like everyone else gains size faster even when their food looks worse than mine.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['not against paying for help if it actually speeds things up.', 'just dont know if im there yet.'] },
+      { key: 'positive-free', free: true, lines: ['the free setup cleaned up a lot of dumb stuff i was doing.', 'just want to know what the next step is now.'] },
+      { key: 'free-good-limited', free: true, lines: ['it helped in the beginning but now i want something more specific.'] },
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more food, more time, or a better plan.'] }
+    ],
+    recovery: [
+      { key: 'frustrated-short', free: false, lines: ['recovery is honestly the part that keeps making this feel harder than it should.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['the free training gave me some structure.', 'i still fall off when recovery gets weird though.'] },
+      { key: 'confused-beginner', free: false, lines: ['dont know if this is normal or if im missing something obvious.'] },
+      { key: 'plateau', free: false, lines: ['when progress slows down this is usually the part i cant figure out.'] },
+      { key: 'customization', free: false, lines: ['starting to wonder if this is where a more tailored plan actually matters.'] },
+      { key: 'consistency-blame', free: false, lines: ['could just be me not sleeping enough and then blaming the plan.'] },
+      { key: 'schedule-context', free: false, lines: ['my schedule has been all over the place lately so i dont know what to blame first.'] },
+      { key: 'comparison', free: false, lines: ['feels like other people can miss sleep for a week and still train fine.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['if this is the kind of thing a coach would catch faster then maybe thats worth it.'] },
+      { key: 'positive-free', free: true, lines: ['free plan is fine for getting me in the gym.', 'im just not sure it solves the recovery side once life gets messy.'] },
+      { key: 'free-good-limited', free: true, lines: ['not saying the free stuff is bad at all.', 'just feels limited when recovery starts deciding everything.'] },
+      { key: 'neutral-detail', free: false, lines: ['i mostly want to know if i should back off or stay the course.'] }
+    ],
+    cutting: [
+      { key: 'frustrated-short', free: false, lines: ['fat loss is moving but not cleanly and im getting annoyed with it.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['free plan helped me stop doing completely random stuff.', 'still feels like i need a better answer for the hard parts of cutting.'] },
+      { key: 'confused-beginner', free: false, lines: ['i cant tell if this is normal cut frustration or if im making an obvious mistake.'] },
+      { key: 'plateau', free: false, lines: ['this feels stalled even though i thought i was doing enough.'] },
+      { key: 'customization', free: false, lines: ['trying to figure out when generic cut advice stops being enough.'] },
+      { key: 'consistency-blame', free: false, lines: ['could just be me falling off at the worst times honestly.'] },
+      { key: 'schedule-context', free: false, lines: ['my week gets chaotic and the whole cut gets shaky fast.'] },
+      { key: 'comparison', free: false, lines: ['feels like everyone else gets leaner faster than i do with the same effort.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['if accountability is the missing part i could see coaching being useful.'] },
+      { key: 'positive-free', free: true, lines: ['the free setup gave me a decent base.', 'just feels like im past the point where a generic cut layout solves everything.'] },
+      { key: 'free-good-limited', free: true, lines: ['it helped me get started but now i want something more specific to me.'] },
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to decide whether i need a better plan or better execution.'] }
+    ],
+    bulking: [
+      { key: 'frustrated-short', free: false, lines: ['im doing okay overall but size is not coming on as fast as i thought it would.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['free training got me more consistent for sure.', 'i just want faster results now and cant tell what the bottleneck is.'] },
+      { key: 'confused-beginner', free: false, lines: ['still not advanced enough to know if this is normal or if im wasting time.'] },
+      { key: 'plateau', free: false, lines: ['weight or strength has been stuck long enough that im starting to question the setup.'] },
+      { key: 'customization', free: false, lines: ['at some point i assume a basic plan stops being enough for size.', 'just dont know if im there yet.'] },
+      { key: 'consistency-blame', free: false, lines: ['could just be me not eating or training hard enough and looking for a better answer than that.'] },
+      { key: 'schedule-context', free: false, lines: ['my schedule is messy enough that i cant tell whether the issue is recovery or the plan itself.'] },
+      { key: 'comparison', free: false, lines: ['feels like everyone else gets bigger faster and im trying to figure out why.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['not against paying for help if it means i stop second guessing everything.'] },
+      { key: 'positive-free', free: true, lines: ['the site honestly got me out of random training.', 'just feels like i might need more structure now if im serious about getting bigger.'] },
+      { key: 'free-good-limited', free: true, lines: ['free workouts are decent but i cant tell how long theyre enough for.'] },
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out whether to stay patient or get more specific.'] }
+    ],
+    supplements: [
+      { key: 'frustrated-short', free: false, lines: ['i cant tell if im solving the wrong problem with supplements.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['free plan helped me stop doing random stuff.', 'still not sure what actually moves progress faster from here.'] },
+      { key: 'confused-beginner', free: false, lines: ['hard to tell if i need better food, a better plan, or literally less overthinking.'] },
+      { key: 'plateau', free: false, lines: ['progress feels stuck enough that im looking everywhere for what im missing.'] },
+      { key: 'customization', free: false, lines: ['maybe this is where generic advice stops helping and specifics matter more.'] },
+      { key: 'consistency-blame', free: false, lines: ['could just be me wanting an easy fix instead of doing the boring work better.'] },
+      { key: 'schedule-context', free: false, lines: ['routine gets chaotic and then i start wondering if i need more structure.'] },
+      { key: 'comparison', free: false, lines: ['feels like everybody else knows exactly what matters and i still dont.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['if a coach would just tell me what not to waste time on that might be worth it.'] },
+      { key: 'positive-free', free: true, lines: ['free stuff is a good base honestly.', 'im just trying to figure out if the next step is programming or not supplements at all.'] },
+      { key: 'free-good-limited', free: true, lines: ['not saying the free stuff is bad. i just want better results than im getting right now.'] },
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out what actually matters before spending more money.'] }
+    ],
+    lifestyle: [
+      { key: 'frustrated-short', free: false, lines: ['consistency is still the thing i cant get fully under control.'] },
+      { key: 'progress-but-lagging', free: true, lines: ['free workouts helped because at least im not training randomly anymore.', 'i still keep falling off once life gets noisy though.'] },
+      { key: 'confused-beginner', free: false, lines: ['i cant tell if this is just normal beginner inconsistency or if i need more accountability.'] },
+      { key: 'plateau', free: false, lines: ['every time progress slows down it feels like the routine falls apart right after.'] },
+      { key: 'customization', free: false, lines: ['starting to wonder if a basic setup just stops being enough once life gets busier.'] },
+      { key: 'consistency-blame', free: false, lines: ['could just be discipline. i know that. just trying to be honest about it.'] },
+      { key: 'schedule-context', free: false, lines: ['my schedule has been everywhere lately so i dont know what part is actually failing.'] },
+      { key: 'comparison', free: false, lines: ['feels like other people can stay locked in way easier than i can.'] },
+      { key: 'coaching-curiosity', free: false, lines: ['if a coach would mostly help with accountability then maybe thats what i need.'] },
+      { key: 'positive-free', free: true, lines: ['the free workouts are better than the random stuff i was doing before.', 'i just cant tell whether consistency is the real issue now.'] },
+      { key: 'free-good-limited', free: true, lines: ['it gave me a decent base but now im wondering if thats all it can really do.'] },
+      { key: 'neutral-detail', free: false, lines: ['mostly trying to figure out if i need more structure or just better habits.'] }
+    ]
+  };
   const bodies = {
     training: {
-      question: ['I have been using the free workouts and they helped me get more consistent, but I still feel like one body part is not moving the way I want.', 'I am not super advanced or anything. I just want better results and I cannot tell if I need to change the program or just be more patient.', 'Mostly trying to figure out if this is normal beginner stuff or if I actually need something more custom now.'],
+      question: questionBodies.training,
       personal: ['Finally feels like I can see what was going wrong instead of just guessing every week.', 'I did not change a ton, but the small adjustment made the whole week feel cleaner.', 'Still early, but this is the first time the setup has felt sustainable.'],
       advice: ['Mostly posting this because the simple fixes usually work better than people think.', 'If I was starting over I would clean up the boring stuff first.', 'This is one of those things that feels more complicated than it needs to be.'],
       casual: ['No deep lesson here. Just one of those gym thoughts you have mid week.', 'Posting this because I know I am not the only one who deals with it.', 'Some gym problems are not serious, just annoying enough to be funny.']
     },
     nutrition: {
-      question: ['The free setup helped me clean up food a bit, but I still feel like my size is moving too slowly.', 'I am trying to keep things simple and cheap, but I also want faster progress and cannot tell what actually needs to change.', 'Not sure if I need more calories, a more specific plan, or just more time sticking with it.'],
+      question: questionBodies.nutrition,
       personal: ['This was one of those changes that made dieting feel easier without making it feel strict.', 'The food is nothing special, it is just repeatable enough that I keep doing it.', 'I keep trying more interesting meals and then end up back here because it works.'],
       advice: ['I think most people would be better off repeating one decent meal instead of chasing perfect variety.', 'If the plan only works when life is calm, the food setup is probably too complicated.', 'Simple meals are boring, but boring is usually what keeps the week on track.'],
       casual: ['No clue why food gets harder the second the week gets busy.', 'Meal prep really is just doing dishes forever.', 'Eating enough protein is way less glamorous than people make it sound.']
     },
     recovery: {
-      question: ['I feel like recovery is the thing that keeps stopping me from getting better results.', 'The free plan is easy enough to follow, but I still fall off when sleep or stress gets weird.', 'Trying to figure out if I just need more accountability or if I am missing something obvious.'],
+      question: questionBodies.recovery,
       personal: ['The fix was a lot less exciting than I wanted it to be.', 'I kept calling it motivation until I finally admitted it was just fatigue.', 'A lighter week helped more than another recovery gadget did.'],
       advice: ['A lot of recovery issues are just stress showing up in training clothes.', 'Sometimes the answer really is sleep, food, and one less hard set.', 'Recovery gets easier once you stop treating every week like a max effort block.'],
       casual: ['Recovery is somehow harder than training this week.', 'My body wants a day off and I respect that.', 'Sleep debt is still undefeated.']
     },
     cutting: {
-      question: ['The free plan gave me structure, but I still feel like fat loss gets messy as soon as life gets busy.', 'I want better results than I am getting right now and I cannot tell if I need more accountability or just better habits.', 'Mostly trying to figure out if generic cut plans stop being enough at some point.'],
+      question: questionBodies.cutting,
       personal: ['The scale was not the issue. My routine was.', 'This got easier once I stopped trying to diet perfectly every single day.', 'I finally found the part of the cut that kept wrecking my weekends.'],
       advice: ['If your cut falls apart at night, the problem probably started earlier in the day.', 'A smaller deficit you can repeat usually beats the aggressive one you keep breaking.', 'Cuts feel way less miserable when the meals are boring on purpose.'],
       casual: ['Cuts are fun until dinner hits.', 'Hunger is annoying me today.', 'The cut is testing my patience now.']
     },
     bulking: {
-      question: ['I have gotten some value out of the free training, but size is not coming on as fast as I hoped.', 'Trying to figure out when someone should stop using generic workouts and start doing something more specific.', 'I want to know if I need a trainer, a custom plan, or just more patience with the basics.'],
+      question: questionBodies.bulking,
       personal: ['This bulk is going better now that dinner is not random.', 'I thought appetite would be the easy part and was very wrong.', 'The training is fun. Eating enough without feeling gross is the real skill.'],
       advice: ['A clean boring bulk is usually better than a sloppy fun one.', 'If appetite disappears, meal timing matters more than people want to admit.', 'One reliable calorie dense meal does more than trying to freestyle the whole day.'],
       casual: ['Bulking is fun until appetite disappears.', 'I am already tired of eating this much.', 'The scale is moving and so is my grocery bill.']
     },
     supplements: {
-      question: ['I am trying to figure out if I need better programming or if I am just looking for shortcuts.', 'The free stuff has been helpful, but I still keep wondering what actually moves progress faster.', 'Not sure if I need coaching, better food, or if I am overthinking supplements completely.'],
+      question: questionBodies.supplements,
       personal: ['Cutting the stack down was less dramatic than I expected.', 'Most of the tubs looked useful until I actually paid attention.', 'I keep coming back to the same one or two things and ignoring the rest.'],
       advice: ['Most people would be fine with fewer tubs and better groceries.', 'If you cannot explain why it is in the stack, it probably does not need to be there.', 'The basic stuff covers more than most people want to hear.'],
       casual: ['My stack is getting out of hand again.', 'I still cannot tell if this tub matters.', 'Supplement shelves are a scam sometimes.']
     },
     lifestyle: {
-      question: ['I keep getting value from the free workouts, but consistency is still the thing keeping me from better results.', 'Trying to figure out if accountability is the missing piece or if I just need to stop making excuses.', 'I want more progress, but I do not know if the answer is coaching or just finally sticking to the basics.'],
+      question: questionBodies.lifestyle,
       personal: ['This finally clicked once the setup got more boring.', 'I kept thinking I needed motivation when I really needed less friction.', 'One small routine fix carried more than I expected.'],
       advice: ['If the system falls apart on a busy week, the system probably needs simplifying.', 'The routine should survive a normal thursday, not just a perfect monday.', 'Making things easier usually works better than trying harder.'],
       casual: ['Routine felt solid until real life showed up.', 'Busy week but i still got sessions in.', 'Trying to stay consistent without making this my whole life.']
     }
   };
   const pool = bodies[category][postType];
-  return applyCaptionImperfection(shuffle(pool).slice(0, rand() < 0.75 ? 2 : 3).join(' '));
+  if (postType === 'question') {
+    const archetype = pick(pool);
+    return {
+      text: applyCaptionImperfection(archetype.lines.join(' ')),
+      styleKey: `${category}-${archetype.key}`,
+      mentionsFree: archetype.free
+    };
+  }
+  return {
+    text: applyCaptionImperfection(shuffle(pool).slice(0, rand() < 0.75 ? 2 : 3).join(' ')),
+    styleKey: `${category}-${postType}`,
+    mentionsFree: false
+  };
 }
 
 const scopeMap = { training: 'training', nutrition: 'nutrition', recovery: 'recovery', cutting: 'nutrition', bulking: 'nutrition', supplements: 'nutrition', lifestyle: 'training' };
@@ -413,6 +526,35 @@ function ageMinutes() {
   return int(60 * 48, 60 * 24 * 6);
 }
 
+function titlePattern(post) {
+  const text = String(post.title || '').toLowerCase();
+  if (/how can i grow|how do i grow|bring up my|grow the fastest/.test(text)) return 'grow-x';
+  if (/free plan|free training|free workouts|site/.test(text)) return 'free-plan';
+  if (/trainer|coaching|custom plan|custom workout|basic program/.test(text)) return 'coach-custom';
+  if (/hasnt gone up|stuck|plateau|stalled/.test(text)) return 'plateau';
+  return 'other';
+}
+
+function recentWindowOk(post, posts) {
+  const window = posts.slice(-15);
+  const pattern = titlePattern(post);
+  const samePatternCount = window.filter((item) => titlePattern(item) === pattern).length;
+  if (pattern === 'grow-x' && samePatternCount >= 2) return false;
+  if (pattern === 'free-plan' && samePatternCount >= 2) return false;
+  if (pattern === 'coach-custom' && samePatternCount >= 2) return false;
+  if (pattern === 'plateau' && samePatternCount >= 2) return false;
+
+  if (post.postType === 'question') {
+    const freeMentions = window.filter((item) => item.postType === 'question' && item.mentionsFree).length;
+    if (post.mentionsFree && freeMentions >= 2) return false;
+
+    const sameStyle = window.filter((item) => item.postType === 'question' && item.bodyStyle === post.bodyStyle).length;
+    if (sameStyle >= 2) return false;
+  }
+
+  return true;
+}
+
 function imageSlots(total, target) {
   return new Set(shuffle(Array.from({ length: total }, (_, i) => i)).slice(0, target));
 }
@@ -439,7 +581,9 @@ function candidate(index, slots, postTypes) {
     format: image ? 'image' : 'text',
     postType,
     title: postTitle,
-    body: postBody,
+    body: postBody.text,
+    bodyStyle: postBody.styleKey,
+    mentionsFree: postBody.mentionsFree,
     imageUrl: null,
     imageAlt: null,
     imageSource: null,
@@ -484,6 +628,7 @@ function generate() {
     attempts += 1;
     const post = candidate(posts.length, slots, postTypes);
     if (!useable(post, seenTitles, seenBodies, seenGrams)) continue;
+    if (!recentWindowOk(post, posts)) continue;
     commit(post, seenTitles, seenBodies, seenGrams);
     posts.push(post);
   }
@@ -602,9 +747,18 @@ function broadImageQueries(category) {
 }
 
 function imageMeta(post, item) {
+  const altMap = {
+    training: 'gym training photo',
+    nutrition: 'meal prep photo',
+    recovery: 'gym recovery photo',
+    cutting: 'fitness progress photo',
+    bulking: 'muscle gain progress photo',
+    supplements: 'gym supplements photo',
+    lifestyle: 'fitness routine photo'
+  };
   return {
     imageUrl: item.url,
-    imageAlt: `${post.category} image for ${post.title}`,
+    imageAlt: altMap[post.category] || 'fitness forum photo',
     imageSource: 'openverse',
     imageCreator: item.creator || null,
     imageLicense: item.license || null,
@@ -638,9 +792,18 @@ function loadExistingImagePool() {
 }
 
 function applyExistingImage(post, item) {
+  const altMap = {
+    training: 'gym training photo',
+    nutrition: 'meal prep photo',
+    recovery: 'gym recovery photo',
+    cutting: 'fitness progress photo',
+    bulking: 'muscle gain progress photo',
+    supplements: 'gym supplements photo',
+    lifestyle: 'fitness routine photo'
+  };
   return {
     imageUrl: item.imageUrl,
-    imageAlt: `${post.category} image for ${post.title}`,
+    imageAlt: altMap[post.category] || item.imageAlt || 'fitness forum photo',
     imageSource: item.imageSource || 'openverse',
     imageCreator: item.imageCreator || null,
     imageLicense: item.imageLicense || null,
@@ -692,7 +855,7 @@ function dupFourGrams(posts) {
 }
 
 function clean(post) {
-  const { _c, imageId, ...rest } = post;
+  const { _c, imageId, bodyStyle, mentionsFree, ...rest } = post;
   return rest;
 }
 
