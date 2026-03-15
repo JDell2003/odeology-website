@@ -136,19 +136,19 @@ function applyImage(post, item, intent) {
   });
 }
 
-function fallbackTags(post, intent) {
+function fallbackTags(post, intent, index = 0) {
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
   const base = hashValue(post.id || post.slug || post.title);
-  const peopleSets = [
-    ['youngadult', 'athlete'],
-    ['adult', 'fitness'],
-    ['woman', 'workout'],
-    ['man', 'gym'],
+  const gender = index % 2 === 0 ? 'woman' : 'man';
+  const age = Math.floor(base / 2) % 2 === 0 ? 'youngadult' : 'adult';
+  const sportSets = [
+    ['gym', 'athlete'],
     ['track', 'athlete'],
     ['wrestling', 'athlete'],
     ['jiu-jitsu', 'athlete']
   ];
-  const people = peopleSets[base % peopleSets.length];
+  const sport = sportSets[Math.floor(base / 4) % sportSets.length];
+  const people = [gender, age, ...sport];
   if (intent === 'food') return ['meal', 'prep', 'protein'];
   if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return [...people, 'gym', 'legs', 'fitness'];
   if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return [...people, 'gym', 'chest', 'fitness'];
@@ -156,12 +156,12 @@ function fallbackTags(post, intent) {
   if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return [...people, 'gym', 'shoulders', 'fitness'];
   if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return [...people, 'gym', 'arms', 'fitness'];
   if (/\b(abs|core)\b/.test(text)) return [...people, 'gym', 'abs', 'fitness'];
-  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return ['youngadult', 'athlete', 'sports', 'wrestling', 'fitness'];
+  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return [gender, age, 'wrestling', 'athlete', 'sports', 'fitness'];
   return [...people, 'sports', 'fitness', 'training'];
 }
 
 function fallbackItem(post, intent, index) {
-  const tags = fallbackTags(post, intent).join(',');
+  const tags = fallbackTags(post, intent, index).join(',');
   const key = slug(post.id || post.title || `forum-image-${index + 1}`) || `forum-image-${index + 1}`;
   return {
     id: `loremflickr-${key}`,
