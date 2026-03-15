@@ -380,6 +380,12 @@
             margin: 0;
         }
 
+        .forum-empty-state {
+            padding: 1rem 0;
+            color: var(--forum-muted);
+            font-size: 0.95rem;
+        }
+
         .forum-post {
             display: grid;
             grid-template-columns: 1fr;
@@ -1162,176 +1168,20 @@
                     </div>
                     <div class="forum-filter-control" data-filter="time">
                         <button class="forum-filter-pill is-icon" type="button" aria-haspopup="true" aria-expanded="false">
-                            <span class="forum-filter-label">Today</span>
+                            <span class="forum-filter-label">All time</span>
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h11v9h-11z"></path><path d="M4.5 8.5h11"></path></svg>
                             <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
                         </button>
                         <div class="forum-filter-menu" role="menu">
-                            <button class="forum-filter-option is-active" type="button" data-value="today">Today</button>
+                            <button class="forum-filter-option" type="button" data-value="today">Today</button>
                             <button class="forum-filter-option" type="button" data-value="week">This week</button>
-                            <button class="forum-filter-option" type="button" data-value="all">All time</button>
+                            <button class="forum-filter-option is-active" type="button" data-value="all">All time</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="forum-content-grid">
-                    <section class="forum-feed">
-                        <article class="forum-post" id="featured-post" data-scope="training" data-hours="4" data-score="218" data-comments="42">
-                            <div class="forum-post-head">
-                                <div class="forum-post-meta">
-                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="odeology forum avatar" loading="lazy"></span>
-                                    <span class="forum-post-meta-main">
-                                        <strong>r/odeology_forum</strong>
-                                        <span>•</span>
-                                        <span>4 hr. ago</span>
-                                    </span>
-                                </div>
-                                <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-how-to-get-bigger-biceps.html">Join</a>
-                                    <span class="forum-menu-dot">...</span>
-                                </div>
-                            </div>
-
-                            <h1 class="forum-post-title">How to get bigger biceps without turning every pull day into random curls</h1>
-                            <p class="forum-post-copy">
-                                This stays as the main featured thread on the forum home page, but now it sits inside a feed-style layout with larger imagery, separator lines, and the smaller communities box on the right.
-                            </p>
-                            <a class="forum-post-media" href="forum-how-to-get-bigger-biceps.html">
-                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
-                            </a>
-                            <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill is-vote">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
-                                    <span>218</span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5c0 4.1-3.8 7.5-8.5 7.5H8l-4 3v-7c0-4.7 3.8-8.5 8.5-8.5h.5c4.4 0 8 3.1 8 7Z"></path></svg>
-                                    <span>42</span>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
-                                </span>
-                            </div>
-                        </article>
-
-                        <article class="forum-post" id="recovery-post" data-scope="recovery" data-hours="7" data-score="167" data-comments="28">
-                            <div class="forum-post-head">
-                                <div class="forum-post-meta">
-                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=120&h=120" alt="recovery thread avatar" loading="lazy"></span>
-                                    <span class="forum-post-meta-main">
-                                        <strong>r/recovery</strong>
-                                        <span>•</span>
-                                        <span>7 hr. ago</span>
-                                    </span>
-                                </div>
-                                <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">Join</a>
-                                    <span class="forum-menu-dot">...</span>
-                                </div>
-                            </div>
-
-                            <h2 class="forum-post-title">The recovery mistake that makes chest and shoulder progress look flat</h2>
-                            <p class="forum-post-copy">
-                                This slot behaves like a Reddit feed post visually, but keeps your own site palette and can later branch into another dedicated article page.
-                            </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
-                            </div>
-                            <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill is-vote">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
-                                    <span>167</span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5c0 4.1-3.8 7.5-8.5 7.5H8l-4 3v-7c0-4.7 3.8-8.5 8.5-8.5h.5c4.4 0 8 3.1 8 7Z"></path></svg>
-                                    <span>28</span>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
-                                </span>
-                            </div>
-                        </article>
-
-                        <article class="forum-post" id="cutting-post" data-scope="nutrition" data-hours="9" data-score="144" data-comments="19">
-                            <div class="forum-post-head">
-                                <div class="forum-post-meta">
-                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="cutting thread avatar" loading="lazy"></span>
-                                    <span class="forum-post-meta-main">
-                                        <strong>r/cutting</strong>
-                                        <span>•</span>
-                                        <span>9 hr. ago</span>
-                                    </span>
-                                </div>
-                                <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">Join</a>
-                                    <span class="forum-menu-dot">...</span>
-                                </div>
-                            </div>
-
-                            <h2 class="forum-post-title">Can you keep building while cutting, or are you only getting better at maintaining</h2>
-                            <p class="forum-post-copy">
-                                The point here is the same as your screenshot: bigger image content in the feed, cleaner lines dividing posts, and a smaller supporting box on the right.
-                            </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
-                            </div>
-                            <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill is-vote">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
-                                    <span>144</span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5c0 4.1-3.8 7.5-8.5 7.5H8l-4 3v-7c0-4.7 3.8-8.5 8.5-8.5h.5c4.4 0 8 3.1 8 7Z"></path></svg>
-                                    <span>19</span>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
-                                </span>
-                            </div>
-                        </article>
-
-                        <article class="forum-post" id="meal-post" data-scope="nutrition" data-hours="12" data-score="121" data-comments="15">
-                            <div class="forum-post-head">
-                                <div class="forum-post-meta">
-                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="meal timing thread avatar" loading="lazy"></span>
-                                    <span class="forum-post-meta-main">
-                                        <strong>r/nutritiontiming</strong>
-                                        <span>•</span>
-                                        <span>12 hr. ago</span>
-                                    </span>
-                                </div>
-                                <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">Join</a>
-                                    <span class="forum-menu-dot">...</span>
-                                </div>
-                            </div>
-
-                            <h2 class="forum-post-title">Meal timing for muscle gain when your schedule is inconsistent all week</h2>
-                            <p class="forum-post-copy">
-                                Another feed post placeholder with a real visual block, ready to turn into a forum article page later without changing the home page structure again.
-                            </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
-                            </div>
-                            <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill is-vote">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
-                                    <span>121</span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5c0 4.1-3.8 7.5-8.5 7.5H8l-4 3v-7c0-4.7 3.8-8.5 8.5-8.5h.5c4.4 0 8 3.1 8 7Z"></path></svg>
-                                    <span>15</span>
-                                </span>
-                                <span class="forum-post-stat-pill">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6"></path><path d="M20 11H9.5C7 11 5 13 5 15.5V19"></path></svg>
-                                </span>
-                            </div>
-                        </article>
-                    </section>
+                    <section class="forum-feed" id="forum-feed" aria-live="polite"></section>
 
                     <aside class="forum-side-box">
                         <h3>Start With Odeology</h3>
@@ -1367,101 +1217,6 @@
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const filterControls = Array.from(document.querySelectorAll(".forum-filter-control"));
-            const feed = document.querySelector(".forum-feed");
-            const posts = Array.from(document.querySelectorAll(".forum-post"));
-
-            if (!filterControls.length || !feed || !posts.length) {
-                return;
-            }
-
-            const state = {
-                sort: "best",
-                scope: "all",
-                time: "today"
-            };
-
-            const getBestScore = (post) => Number(post.dataset.score || 0) + Number(post.dataset.comments || 0) * 2;
-
-            const closeMenus = () => {
-                filterControls.forEach((control) => {
-                    control.classList.remove("is-open");
-                    const trigger = control.querySelector(".forum-filter-pill");
-                    if (trigger) {
-                        trigger.setAttribute("aria-expanded", "false");
-                    }
-                });
-            };
-
-            const postMatches = (post) => {
-                const scopeMatch = state.scope === "all" || post.dataset.scope === state.scope;
-                const hours = Number(post.dataset.hours || 0);
-                const timeMatch = state.time === "all"
-                    || (state.time === "today" && hours <= 24)
-                    || (state.time === "week" && hours <= 168);
-                return scopeMatch && timeMatch;
-            };
-
-            const sortPosts = (visiblePosts) => {
-                if (state.sort === "new") {
-                    return visiblePosts.sort((a, b) => Number(a.dataset.hours || 0) - Number(b.dataset.hours || 0));
-                }
-                if (state.sort === "discussed") {
-                    return visiblePosts.sort((a, b) => Number(b.dataset.comments || 0) - Number(a.dataset.comments || 0));
-                }
-                return visiblePosts.sort((a, b) => getBestScore(b) - getBestScore(a));
-            };
-
-            const applyFilters = () => {
-                const visiblePosts = sortPosts(posts.filter(postMatches));
-                posts.forEach((post) => {
-                    post.hidden = true;
-                });
-                visiblePosts.forEach((post) => {
-                    post.hidden = false;
-                    feed.appendChild(post);
-                });
-            };
-
-            filterControls.forEach((control) => {
-                const filterName = control.dataset.filter;
-                const trigger = control.querySelector(".forum-filter-pill");
-                const label = control.querySelector(".forum-filter-label");
-                const options = Array.from(control.querySelectorAll(".forum-filter-option"));
-
-                trigger.addEventListener("click", (event) => {
-                    event.stopPropagation();
-                    const willOpen = !control.classList.contains("is-open");
-                    closeMenus();
-                    if (willOpen) {
-                        control.classList.add("is-open");
-                        trigger.setAttribute("aria-expanded", "true");
-                    }
-                });
-
-                options.forEach((option) => {
-                    option.addEventListener("click", () => {
-                        state[filterName] = option.dataset.value;
-                        label.textContent = option.textContent.trim();
-                        options.forEach((item) => item.classList.remove("is-active"));
-                        option.classList.add("is-active");
-                        closeMenus();
-                        applyFilters();
-                    });
-                });
-            });
-
-            document.addEventListener("click", closeMenus);
-            window.addEventListener("keydown", (event) => {
-                if (event.key === "Escape") {
-                    closeMenus();
-                }
-            });
-
-            applyFilters();
-        });
-    </script>
+    <script src="js/forum-feed.js?v=2026-03-15-forum-bot-feed"></script>
 </body>
 </html>
