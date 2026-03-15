@@ -112,7 +112,7 @@
 
   function buildPostMarkup(item, index) {
     const titleTag = index === 0 ? 'h1' : 'h2';
-    const avatarUrl = item.imageUrl || avatarByCategory[item.category] || avatarByCategory.training;
+    const avatarUrl = avatarByCategory[item.category] || avatarByCategory.training;
     const title = escapeHtml(item.title);
     const body = escapeHtml(item.body);
     const community = escapeHtml(item.community);

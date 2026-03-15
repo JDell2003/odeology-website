@@ -1,11 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 
-const OUTPUT_PATH = path.join(process.cwd(), 'data', 'forum-posts.json');
-const TOTAL_POSTS = 2000;
+const OUT = path.join(process.cwd(), 'data', 'forum-posts.json');
+const TOTAL = 2000;
+const IMAGE_TARGET = 1000;
 const SEED = 20260315;
+const NGRAM = 4;
+const OPENVERSE_PAGE = 20;
+const OPENVERSE_MAX = 30;
+const OPEN_LICENSES = new Set(['by', 'by-sa', 'cc0', 'pdm']);
 
-function mulberry32(seed) {
+function rng(seed) {
   let t = seed >>> 0;
   return function next() {
     t += 0x6D2B79F5;
@@ -15,385 +20,387 @@ function mulberry32(seed) {
   };
 }
 
-const random = mulberry32(SEED);
-
-const pick = (items) => items[Math.floor(random() * items.length)];
-const chance = (value) => random() < value;
-const intBetween = (min, max) => Math.floor(random() * (max - min + 1)) + min;
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const slugify = (value) => String(value || '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '');
-
-const normalizeKeyword = (value) => String(value || '')
-  .toLowerCase()
-  .replace(/[^a-z0-9\s-]/g, ' ')
-  .split(/\s+/)
-  .filter(Boolean)
-  .slice(0, 2)
-  .join('-');
-
-const communityConfigs = {
-  training: {
-    communities: ['r/odeology_forum', 'r/training', 'r/homegym', 'r/bicepsgrowth', 'r/pushpulllegs'],
-    authors: ['pull_day_notes', 'volume_and_vibes', 'garage_rack_log', 'benchdayhabit', 'weekend_hypertrophy'],
-    tags: ['training', 'hypertrophy', 'execution'],
-    imageTags: ['gym', 'fitness', 'workout', 'dumbbell', 'barbell', 'bodybuilding']
-  },
-  nutrition: {
-    communities: ['r/nutrition', 'r/nutritiontiming', 'r/highprotein', 'r/mealprep', 'r/easymeals'],
-    authors: ['macro_plate', 'rice_and_rituals', 'proteinfirstdaily', 'mealprep_mike', 'pantry_systems'],
-    tags: ['nutrition', 'meals', 'protein'],
-    imageTags: ['healthy-food', 'meal', 'mealprep', 'protein', 'salad', 'salmon']
-  },
-  recovery: {
-    communities: ['r/recovery', 'r/mobility', 'r/sleepforgains', 'r/deload', 'r/injuryfree'],
-    authors: ['recovery_logbook', 'restdaywalker', 'sleep_quality_check', 'mobility_minute', 'easy_does_it'],
-    tags: ['recovery', 'sleep', 'mobility'],
-    imageTags: ['stretching', 'mobility', 'recovery', 'walking', 'yoga', 'foam-roller']
-  },
-  cutting: {
-    communities: ['r/cutting', 'r/fatlossphase', 'r/leaningout', 'r/bodyrecomp', 'r/caloriedeficit'],
-    authors: ['deficit_diary', 'lean_phase_log', 'trimwithoutpanic', 'hunger_management', 'recomp_notes'],
-    tags: ['fat-loss', 'nutrition', 'consistency'],
-    imageTags: ['healthy-food', 'lean-meal', 'salad', 'fish', 'mealprep', 'calorie-deficit']
-  },
-  bulking: {
-    communities: ['r/bulking', 'r/gaining', 'r/massphase', 'r/bigplates', 'r/strengthmeals'],
-    authors: ['surplus_journal', 'massphasecook', 'more_rice_more_reps', 'bulk_szn_daily', 'hardgainerhelper'],
-    tags: ['muscle-gain', 'nutrition', 'surplus'],
-    imageTags: ['meal', 'rice', 'beef', 'chicken', 'bodybuilding-food', 'gym-food']
-  },
-  supplements: {
-    communities: ['r/supplements', 'r/creatine', 'r/preworkout', 'r/researchstack', 'r/proteinpowder'],
-    authors: ['stack_check', 'creatine_question', 'label_reader', 'simple_supps_only', 'scoopandgo'],
-    tags: ['supplements', 'creatine', 'performance'],
-    imageTags: ['supplements', 'protein', 'shaker', 'creatine', 'preworkout', 'gym-bag']
-  },
-  lifestyle: {
-    communities: ['r/consistency', 'r/busyfitness', 'r/shiftworkerfitness', 'r/weekendreset', 'r/adhesion'],
-    authors: ['calendar_and_cals', 'busyweek_lifter', 'nightshift_macros', 'consistentish', 'habit_stack_daily'],
-    tags: ['consistency', 'lifestyle', 'planning'],
-    imageTags: ['planner', 'notebook', 'desk', 'calendar', 'coffee', 'workspace']
+const rand = rng(SEED);
+const pick = (list) => list[Math.floor(rand() * list.length)];
+const int = (min, max) => Math.floor(rand() * (max - min + 1)) + min;
+const uniq = (list) => Array.from(new Set(list.filter(Boolean)));
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const shuffle = (list) => {
+  const copy = list.slice();
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+  return copy;
 };
 
-const titleBits = {
-  goals: ['grow my upper chest', 'bring my arms up', 'stop stalling on squats', 'stay fuller while cutting', 'keep strength on low calories', 'eat enough protein without overthinking every meal', 'fix my push day fatigue', 'clean up my meal timing', 'feel more recovered between sessions', 'make a lean bulk actually work'],
-  trainingGoals: ['grow my upper chest', 'bring my arms up', 'stop stalling on squats', 'fix my push day fatigue', 'feel more recovered between sessions', 'bring up my side delts', 'make my back work feel better', 'actually progress my bench again'],
-  nutritionGoals: ['eat enough protein without overthinking every meal', 'clean up my meal timing', 'stay fuller while cutting', 'make a lean bulk actually work', 'stop late-night snacking from blowing calories', 'hit calories without force-feeding', 'make meal prep easier to repeat'],
-  supplementGoals: ['improve training performance', 'recover better between sessions', 'feel less flat during long sessions', 'make hydration easier', 'hit protein targets more consistently'],
-  mistakes: ['turning every session into junk volume', 'overshooting carbs at night', 'skipping recovery work until I feel beat up', 'making every meal too clean to stick to', 'copying influencer splits that bury my elbows', 'eating like a bodybuilder on weekdays and guessing on weekends', 'trying to PR when sleep is terrible', 'adding more supplements instead of fixing basics', 'cutting too hard and wrecking my training', 'changing the plan every five days'],
-  constraints: ['with only 45 minutes before work', 'while training in a garage gym', 'if I only want four meals a day', 'without needing six days in the gym', 'while working late shifts', 'when my appetite is low in the morning', 'if I meal prep only twice a week', 'without buying a ton of supplements', 'with two rest days locked in', 'while keeping groceries simple'],
-  foods: ['salmon bowls', 'ground turkey rice', 'overnight oats', 'Greek yogurt mixes', 'egg wraps', 'slow cooker chicken', 'air fryer potatoes', 'bagel sandwiches', 'beef and jasmine rice', 'cottage cheese bowls'],
-  recoveryIssues: ['waking up sore for two straight days', 'my elbows feeling cooked after push day', 'flat pumps by midweek', 'stiff hips before lower body days', 'sleeping badly on heavy training weeks', 'feeling fine in session but dead the next morning', 'tight shoulders during pressing', 'my back feeling fried after rows and RDLs'],
-  supplements: ['creatine monohydrate', 'caffeine', 'electrolytes', 'protein powder', 'beta-alanine', 'fish oil', 'magnesium glycinate', 'pre-workout', 'intra-workout carbs', 'collagen'],
-  mealSituations: ['before early morning training', 'on long workdays', 'during a cut', 'when appetite is low', 'for late-night hunger', 'on rest days', 'after heavy leg day', 'while traveling', 'during a lean bulk', 'when eating out a lot'],
-  trainingBlocks: ['upper/lower', 'push pull legs', 'full body', '4-day hypertrophy', 'home dumbbell split', 'bench specialization block', 'cutting maintenance block', 'high-frequency arms phase', '3-day strength split', 'glute-focused lower plan'],
-  bodyParts: ['biceps', 'rear delts', 'upper chest', 'quads', 'hamstrings', 'lats', 'side delts', 'triceps', 'glutes', 'calves'],
-  progressFrames: ['2 weeks', '4 weeks', '6 weeks', '8 weeks', '10 weeks', '12 weeks'],
-  contexts: ['after switching to a simpler split', 'since I started pre-planning dinner', 'once I stopped missing breakfast', 'after reducing junk volume', 'since I started walking after dinner', 'when I matched carbs to training days', 'after tightening my sleep schedule', 'since I cut out random snack grazing']
+const words = (text) => String(text || '').toLowerCase().match(/[a-z0-9]+(?:[.-][a-z0-9]+)*/g) || [];
+const slug = (text) => String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const norm = (text) => uniq(words(text).slice(0, 3)).join(' ');
+const grams = (text) => {
+  const list = words(text);
+  const out = [];
+  for (let i = 0; i <= list.length - NGRAM; i += 1) out.push(list.slice(i, i + NGRAM).join(' '));
+  return out;
 };
 
-const titleQualifiers = [
-  'for busy weeks',
-  'without overcomplicating it',
-  'when recovery is average',
-  'if time is tight',
-  'on a normal work schedule',
-  'without relying on motivation',
-  'for people keeping it simple',
-  'when the basics are already in place',
-  'if meals need to stay repeatable',
-  'without turning it into a second job',
-  'for a four-day setup',
-  'while keeping weekends sane',
-  'for lifters who miss meals sometimes',
-  'while staying consistent',
-  'when appetite is unpredictable',
-  'during a cut',
-  'during a lean bulk',
-  'for home gym training',
-  'for simple grocery runs',
-  'without chasing hacks'
-];
+const weighted = ['training', 'training', 'training', 'nutrition', 'nutrition', 'recovery', 'cutting', 'bulking', 'supplements', 'lifestyle'];
+const cfg = {
+  training: { communities: ['r/odeology_forum', 'r/training', 'r/pushpulllegs', 'r/homegym'], authors: ['garage_rack_log', 'rep_quality_first', 'benchblocknotes', 'set_count_journal'], tags: ['training', 'hypertrophy', 'execution'], fallback: ['strength workout gym', 'barbell workout', 'dumbbell training'] },
+  nutrition: { communities: ['r/nutrition', 'r/mealprep', 'r/highprotein', 'r/easymeals'], authors: ['protein_platebook', 'rice_and_rituals', 'prepdayrepeat', 'macro_margin'], tags: ['nutrition', 'meals', 'protein'], fallback: ['high protein meal prep', 'healthy meal prep', 'protein meal'] },
+  recovery: { communities: ['r/recovery', 'r/mobility', 'r/deload', 'r/sleepforgains'], authors: ['restdaywalker', 'sleep_window', 'mobility_minute', 'recovery_notes'], tags: ['recovery', 'sleep', 'mobility'], fallback: ['mobility stretching', 'recovery stretching', 'walking recovery'] },
+  cutting: { communities: ['r/cutting', 'r/caloriedeficit', 'r/leaningout', 'r/recompnotes'], authors: ['deficit_diary', 'lean_phase_log', 'satiety_first', 'cut_week_check'], tags: ['fat-loss', 'nutrition', 'consistency'], fallback: ['healthy low calorie meal', 'lean meal prep', 'salad protein meal'] },
+  bulking: { communities: ['r/bulking', 'r/gaining', 'r/massphase', 'r/strengthmeals'], authors: ['surplus_journal', 'massphasecook', 'big_plate_simple', 'bulkweeknotes'], tags: ['muscle-gain', 'nutrition', 'surplus'], fallback: ['high calorie meal prep', 'bodybuilding meal', 'protein rice bowl'] },
+  supplements: { communities: ['r/supplements', 'r/creatine', 'r/preworkout', 'r/proteinpowder'], authors: ['stack_check', 'simple_supps_only', 'label_reader', 'scoopandgo'], tags: ['supplements', 'performance', 'creatine'], fallback: ['supplement shaker bottle', 'protein powder shaker', 'gym bag supplements'] },
+  lifestyle: { communities: ['r/consistency', 'r/busyfitness', 'r/weekendreset', 'r/systemsoverhype'], authors: ['calendar_and_cals', 'habit_stack_daily', 'busyweeklift', 'reset_sunday'], tags: ['consistency', 'lifestyle', 'planning'], fallback: ['fitness planner notebook', 'workout calendar planner', 'meal prep notebook'] }
+};
 
-function buildContext(categoryKey) {
-  const bits = titleBits;
-  const defaultGoal = pick(bits.goals);
-  const goal = categoryKey === 'training'
-    ? pick(bits.trainingGoals)
-    : categoryKey === 'nutrition' || categoryKey === 'cutting' || categoryKey === 'bulking'
-      ? pick(bits.nutritionGoals)
-      : categoryKey === 'supplements'
-        ? pick(bits.supplementGoals)
-        : defaultGoal;
+const pool = {
+  part: ['upper-chest', 'biceps', 'rear-delts', 'side-delts', 'quads', 'hamstrings', 'lats', 'glutes', 'triceps', 'calves'],
+  block: ['upper-lower', 'push-pull-legs', 'full-body', '4-day-hypertrophy', '3-day-strength-split', 'bench-specialization', 'home-dumbbell-split'],
+  setting: ['garage-gym mornings', 'lunch-break sessions', 'shift-work weeks', 'crowded evenings', 'home-dumbbell nights', 'weekend catch-ups'],
+  constraint: ['under-45 minutes', 'before-work', 'no fifth-day', 'weekends open', 'limited rack-access', 'calm elbows'],
+  friction: ['presses fine curls-late', 'rows fine arms-late', 'front-delt takeover', 'pump no-progress', 'recovery runs-late'],
+  lift: ['incline-press', 'dumbbell-curl', 'RDL', 'hack-squat', 'lat-pulldown', 'leg-press', 'cable-row'],
+  food: ['salmon-bowls', 'ground-turkey-rice', 'Greek-yogurt-bowls', 'egg-wraps', 'beef-jasmine-rice', 'bagel-sandwiches', 'cottage-cheese-bowls', 'overnight-oats'],
+  food2: ['fruit-yogurt', 'rice-cake-turkey', 'potatoes-eggs', 'rice-beef', 'oats-whey', 'toast-eggs', 'chicken-pasta'],
+  meal: ['pre-6am training', 'long workdays', 'late shifts', 'post-leg day', 'commute days', 'cut days', 'low appetite'],
+  appetite: ['midday appetite-loss', 'late-hunger spikes', 'breakfast resistance', 'poor portability', 'weekend drift'],
+  issue: ['pressing-shoulder tightness', 'curl-elbow crankiness', 'slow quad-recovery', 'evening sleep-latency', 'row-day back-tightness'],
+  tool: ['dinner walks', 'mobility resets', 'foam rolling', 'breathing drills', 'early caffeine-cutoff'],
+  deficit: ['260 calorie deficit', '320 calorie deficit', '380 calorie deficit', '430 calorie deficit'],
+  hunger: ['dinner hunger-spikes', 'training goes-flat', 'restaurant math-breaks', 'energy drops-early'],
+  surplus: ['180 calorie surplus', '240 calorie surplus', '300 calorie surplus', '360 calorie surplus'],
+  bulk: ['meal-two appetite-drop', 'surplus digestion-mess', 'random extra-snacks', 'carbs drift-late'],
+  supp: ['creatine-monohydrate', 'whey-isolate', 'electrolytes', 'pre-workout', 'fish-oil', 'magnesium-glycinate', 'caffeine'],
+  stack: ['three-item-stack', 'two-scoop-shaker', 'simple-gym-bag', 'cut-back-stack', 'training-day-stack'],
+  planner: ['Sunday-whiteboard', 'notes-checklist', 'paper-planner', 'fridge-meal-grid', 'Sunday-grocery-template', 'calendar-reminder-stack'],
+  routine: ['Tuesday collapse', 'Friday drift', 'travel reset-loss', 'sleep cut-first', 'weekend Monday-spill'],
+  tag1: ['busy', 'quiet', 'cheap', 'late', 'early', 'small', 'heavy', 'light', 'steady', 'reset', 'simple', 'quick', 'deep', 'clean', 'weekend', 'weekday', 'office', 'garage', 'kitchen', 'commute', 'night', 'lunch', 'travel', 'student', 'family', 'solo', 'repeat', 'macro', 'grocery', 'sleep', 'volume', 'recovery', 'deficit', 'surplus', 'protein', 'meal', 'prep', 'cardio', 'strength', 'arm', 'leg', 'back', 'chest', 'shoulder', 'paper', 'calendar', 'habit', 'easy', 'hard', 'lean', 'bulk', 'cut', 'rest', 'deload', 'walk', 'shaker', 'stack'],
+  tag2: ['check', 'reset', 'plan', 'week', 'groceries', 'plate', 'session', 'routine', 'timing', 'setup', 'rhythm', 'block', 'focus', 'notes', 'budget', 'night', 'morning', 'lunch', 'prep', 'recovery', 'training', 'meal', 'cut', 'bulk', 'stack', 'planner', 'schedule'],
+  week: [3, 4, 5, 6, 7, 8, 9, 10, 12, 14],
+  days: [3, 4, 4, 4, 5, 5, 6],
+  len: ['38-minute', '42-minute', '47-minute', '51-minute', '56-minute', '61-minute'],
+  sleep: ['5.9', '6.2', '6.5', '6.8', '7.1', '7.4', '7.7', '8.0'],
+  steps: ['6.2', '7.4', '8.1', '8.8', '9.6', '10.4', '11.1', '12.3'],
+  protein: [146, 158, 167, 176, 184, 192, 201, 214, 228],
+  budget: [64, 72, 79, 86, 94, 103, 112, 121],
+  meals: [3, 4, 5, 6]
+};
 
-  return {
-    goal,
-    mistake: pick(bits.mistakes),
-    constraint: pick(bits.constraints),
-    food: pick(bits.foods),
-    recoveryIssue: pick(bits.recoveryIssues),
-    supplement: pick(bits.supplements),
-    mealSituation: pick(bits.mealSituations),
-    trainingBlock: pick(bits.trainingBlocks),
-    bodyPart: pick(bits.bodyParts),
-    progressFrame: pick(bits.progressFrames),
-    context: pick(bits.contexts)
-  };
+function common() {
+  return { week: `week ${pick(pool.week)}`, days: pick(pool.days), len: pick(pool.len), sleep: pick(pool.sleep), steps: pick(pool.steps), protein: pick(pool.protein), budget: pick(pool.budget), meals: pick(pool.meals), setting: pick(pool.setting), constraint: pick(pool.constraint), tag: `${pick(pool.tag1)} ${pick(pool.tag2)}` };
 }
 
-function buildTitle(categoryKey, format, context) {
-  const ctx = context;
-
-  switch (categoryKey) {
-    case 'training':
-      return pick([
-        `How do you ${ctx.goal} without ${ctx.mistake}?`,
-        `What finally helped you ${ctx.goal} ${ctx.constraint}?`,
-        `${ctx.progressFrame} into a ${ctx.trainingBlock} block and my ${ctx.bodyPart} still lag`,
-        `Is a ${ctx.trainingBlock} enough to ${ctx.goal} ${ctx.constraint}?`
-      ]);
-    case 'nutrition':
-      return format === 'image'
-        ? `Rate this ${ctx.food} setup ${ctx.mealSituation}`
-        : `What are your easiest high-protein meals ${ctx.mealSituation}?`;
-    case 'recovery':
-      return pick([
-        `What fixed ${ctx.recoveryIssue} without killing training momentum?`,
-        `Anyone else dealing with ${ctx.recoveryIssue} after a ${ctx.trainingBlock} block?`,
-        `${ctx.progressFrame} of training and recovery is the thing falling apart`
-      ]);
-    case 'cutting':
-      return format === 'image'
-        ? 'This is the leanest meal prep I can actually repeat during a cut'
-        : `How are you keeping strength while cutting without ${ctx.mistake}?`;
-    case 'bulking':
-      return format === 'image'
-        ? 'Current lean bulk plate check before I push calories higher'
-        : `What made your lean bulk finally work ${ctx.constraint}?`;
-    case 'supplements':
-      return pick([
-        `What supplements are actually worth it if the goal is to ${ctx.goal}?`,
-        `Do you notice a real difference from ${ctx.supplement} or is it mostly routine?`,
-        'If you only kept two supplements during a cut, what would they be?'
-      ]);
-    case 'lifestyle':
-      return pick([
-        `How are you staying consistent ${ctx.constraint}?`,
-        `What changed most for your progress ${ctx.context}?`,
-        'Busy schedule check: what part of the plan are you simplifying first?'
-      ]);
-    default:
-      return "What's working for you right now?";
+function ctx(category) {
+  const c = common();
+  if (category === 'training') return { ...c, part: pick(pool.part), part2: pick(pool.part), block: pick(pool.block), friction: pick(pool.friction), lift: pick(pool.lift) };
+  if (category === 'nutrition') return { ...c, food: pick(pool.food), food2: pick(pool.food2), meal: pick(pool.meal), appetite: pick(pool.appetite) };
+  if (category === 'recovery') return { ...c, block: pick(pool.block), issue: pick(pool.issue), tool: pick(pool.tool), part: pick(pool.part) };
+  if (category === 'cutting') return { ...ctx('nutrition'), deficit: pick(pool.deficit), hunger: pick(pool.hunger) };
+  if (category === 'bulking') return { ...ctx('nutrition'), surplus: pick(pool.surplus), bulk: pick(pool.bulk) };
+  if (category === 'supplements') {
+    const supp = pick(pool.supp);
+    return { ...c, supp, supp2: pick(pool.supp.filter((item) => item !== supp)), stack: pick(pool.stack), caffeine: pick([140, 180, 220, 260, 300]) };
   }
+  return { ...c, planner: pick(pool.planner), routine: pick(pool.routine), food: pick(pool.food) };
 }
 
-function buildBody(categoryKey, format, context) {
-  const ctx = context;
-  const lines = {
-    training: [
-      `I'm trying to ${ctx.goal} ${ctx.constraint}. Right now I'm running a ${ctx.trainingBlock} and I'm not sure if the bottleneck is volume, execution, or recovery.`,
-      'Not looking for a magic fix. Just curious what small change made the biggest difference for people here.',
-      'Would rather keep this sustainable than rebuild the whole program again next week.'
-    ],
-    nutrition: [
-      format === 'image'
-        ? `Dropped the picture because this is the easiest ${ctx.food} combo I've been repeating lately.`
-        : 'I keep overcomplicating food and then defaulting to random takeout.',
-      `Trying to get enough protein ${ctx.mealSituation} without cooking six different things.`,
-      'If you have a go-to option that always works, I want the simple version.'
-    ],
-    recovery: [
-      "Training is fine in the moment, but recovery is where I'm slipping right now.",
-      `Biggest issue lately is ${ctx.recoveryIssue} and I'd rather fix the base habits before I start removing exercises.`,
-      'Open to simple stuff like walking, sleep changes, mobility work, or changing weekly volume.'
-    ],
-    cutting: [
-      format === 'image'
-        ? 'Picture is basically the type of meal that helps me stay on plan without feeling deprived.'
-        : "The deficit itself isn't the hard part, it's keeping performance from sliding by week two.",
-      "I'm trying to keep the cut clean without turning every day into hunger management.",
-      'Would rather hear what actually worked than generic "just grind harder" advice.'
-    ],
-    bulking: [
-      format === 'image'
-        ? 'This is the kind of plate I can keep repeating without feeling stuffed all day.'
-        : 'I can hit calories for a few days, then appetite or planning falls apart.',
-      'Trying to make the surplus feel controlled instead of just eating random extra food.',
-      "If you've found a structure that keeps the gain phase clean, I'm interested."
-    ],
-    supplements: [
-      format === 'image'
-        ? "Pic is my current training bag setup because I'm trying to cut the supplement stack down to the basics."
-        : "I'm not anti-supplement, I just don't want to buy things that only feel useful because they're hyped.",
-      'Diet and training are handled first. Just trying to see what has a real place after that.',
-      'Would rather keep a short list that actually earns its spot.'
-    ],
-    lifestyle: [
-      format === 'image'
-        ? 'Photo is basically the little planning setup that keeps me from improvising the whole week.'
-        : "I'm not really struggling with knowledge right now, just with sticking to the basics when life gets noisy.",
-      'The more friction the system has, the faster I drift off it.',
-      'Curious what part you simplified first when consistency became the real problem.'
-    ]
-  };
-
-  return lines[categoryKey].join(' ');
+function title(category, c) {
+  if (category === 'training') return `${c.week}, ${c.tag}, ${c.part}, ${c.block}, ${c.constraint}`;
+  if (category === 'nutrition') return `${c.week}, ${c.tag}, ${c.food}, ${c.protein}g, ${c.meals} meals`;
+  if (category === 'recovery') return `${c.week}, ${c.tag}, ${c.issue}, ${c.block}, ${c.tool}`;
+  if (category === 'cutting') return `${c.week}, ${c.tag}, ${c.deficit}, ${c.food}, ${c.hunger}`;
+  if (category === 'bulking') return `${c.week}, ${c.tag}, ${c.surplus}, ${c.food}, ${c.bulk}`;
+  if (category === 'supplements') return `${c.week}, ${c.tag}, ${c.supp}, ${c.caffeine}mg, ${c.supp2}`;
+  return `${c.week}, ${c.tag}, ${c.planner}, ${c.routine.toLowerCase()}, ${c.steps}k`;
 }
 
-function buildScope(categoryKey) {
-  const map = {
-    training: 'training',
-    nutrition: 'nutrition',
-    recovery: 'recovery',
-    cutting: 'nutrition',
-    bulking: 'nutrition',
-    supplements: 'nutrition',
-    lifestyle: 'training'
-  };
-
-  return map[categoryKey] || 'training';
+function body(category, c) {
+  if (category === 'training') return pick([
+    `${c.week}; ${c.block}; ${c.setting}; ${c.len}; ${c.protein}g protein; ${c.sleep}h sleep; ${c.steps}k steps; ${c.part} late; ${c.lift} okay; volume or order?`,
+    `${c.block}; ${c.days} days; ${c.constraint}; ${c.friction}; ${c.protein}g protein; ${c.steps}k steps; tempo or exercise-swap?`,
+    `${c.setting}; ${c.week}; ${c.lift}; ${c.part} focus; ${c.sleep}h sleep; ${c.protein}g protein; ${c.len}; more sets or better order?`
+  ]);
+  if (category === 'nutrition') return pick([
+    `${c.food}; ${c.meals} meals; ${c.protein}g protein; ${c.budget} dollars; ${c.appetite}; meal or timing?`,
+    `${c.week}; ${c.food2}; ${c.food}; ${c.meal}; ${c.protein}g protein; prep or portability?`,
+    `${c.setting}; ${c.food}; ${c.food2}; ${c.meals} meals; ${c.appetite}; grocery or timing?`
+  ]);
+  if (category === 'recovery') return pick([
+    `${c.block}; ${c.week}; ${c.issue}; ${c.tool}; ${c.sleep}h sleep; ${c.steps}k steps; ${c.len}; deload or habit-fix?`,
+    `${c.setting}; ${c.issue}; ${c.part} focus; ${c.days} training days; ${c.tool}; walk more or trim sets?`,
+    `${c.week}; ${c.block}; ${c.issue}; ${c.sleep}h sleep; ${c.steps}k steps; caffeine-cutoff or mobility?`
+  ]);
+  if (category === 'cutting') return pick([
+    `${c.week}; ${c.deficit}; ${c.food}; ${c.steps}k steps; ${c.hunger}; fiber or timing?`,
+    `${c.setting}; ${c.deficit}; ${c.meals} meals; ${c.protein}g protein; ${c.hunger.toLowerCase()}; bigger lunch or later carbs?`,
+    `${c.food}; ${c.food2}; ${c.meal}; ${c.week}; ${c.deficit}; meal or habit?`
+  ]);
+  if (category === 'bulking') return pick([
+    `${c.week}; ${c.surplus}; ${c.food}; ${c.food2}; ${c.bulk}; breakfast or liquid calories?`,
+    `${c.setting}; ${c.meals} meals; ${c.protein}g protein; ${c.surplus}; ${c.bulk}; easier meal?`,
+    `${c.surplus}; ${c.food}; ${c.budget} dollars; ${c.week}; structure drifts; add carbs where?`
+  ]);
+  if (category === 'supplements') return pick([
+    `${c.stack}; ${c.supp}; ${c.supp2}; ${c.caffeine}mg caffeine; ${c.len}; ${c.sleep}h sleep; keep or cut?`,
+    `${c.week}; ${c.setting}; ${c.supp} in; ${c.supp2} out?; ${c.caffeine}mg caffeine; useful or clutter?`,
+    `${c.supp}; ${c.supp2}; ${c.stack}; ${c.protein}g protein; ${c.len}; ${c.steps}k steps; first cut?`
+  ]);
+  return pick([
+    `${c.planner}; ${c.days} training days; ${c.meals} meals; ${c.budget} dollars; ${c.routine}; simplify what?`,
+    `${c.week}; ${c.setting}; ${c.food}; ${c.planner}; follow-through slips; habit or grocery fix?`,
+    `${c.constraint}; ${c.planner}; ${c.days} training days; ${c.steps}k steps; ${c.routine}; sleep or schedule?`
+  ]);
 }
 
-function buildStats(categoryKey, format) {
-  const base = {
-    training: [120, 820],
-    nutrition: [85, 760],
-    recovery: [40, 520],
-    cutting: [95, 910],
-    bulking: [90, 700],
-    supplements: [35, 480],
-    lifestyle: [25, 420]
-  }[categoryKey] || [25, 400];
+const scopeMap = { training: 'training', nutrition: 'nutrition', recovery: 'recovery', cutting: 'nutrition', bulking: 'nutrition', supplements: 'nutrition', lifestyle: 'training' };
 
-  const score = intBetween(base[0], base[1]) + (format === 'image' ? intBetween(10, 140) : 0);
-  const comments = clamp(Math.round(score * (format === 'text' ? 0.18 : 0.12) + intBetween(2, 28)), 6, 420);
-
-  return { score, comments };
+function score(category, image) {
+  const span = {
+    training: [125, 840], nutrition: [100, 790], recovery: [45, 520], cutting: [120, 930],
+    bulking: [95, 740], supplements: [40, 430], lifestyle: [30, 410]
+  }[category] || [30, 400];
+  const base = int(span[0], span[1]) + (image ? int(12, 120) : 0);
+  return { score: clamp(base, 18, 1200), comments: clamp(Math.round(base * (image ? 0.14 : 0.19) + int(4, 34)), 8, 420) };
 }
 
-function buildImageTags(categoryKey, context) {
-  const config = communityConfigs[categoryKey];
-  const tags = new Set(config.imageTags);
-
-  if (categoryKey === 'training') {
-    tags.add(normalizeKeyword(context.bodyPart));
-    tags.add(normalizeKeyword(context.trainingBlock));
-  } else if (categoryKey === 'nutrition' || categoryKey === 'cutting' || categoryKey === 'bulking') {
-    tags.add(normalizeKeyword(context.food));
-    tags.add(normalizeKeyword(context.mealSituation));
-  } else if (categoryKey === 'recovery') {
-    tags.add(normalizeKeyword(context.recoveryIssue));
-  } else if (categoryKey === 'supplements') {
-    tags.add(normalizeKeyword(context.supplement));
-  } else if (categoryKey === 'lifestyle') {
-    tags.add(normalizeKeyword(context.context));
-  }
-
-  return Array.from(tags)
-    .filter(Boolean)
-    .slice(0, 5);
+function imageSlots(total, target) {
+  return new Set(shuffle(Array.from({ length: total }, (_, i) => i)).slice(0, target));
 }
 
-function buildRemoteImage(categoryKey, context, index, title) {
-  const tags = buildImageTags(categoryKey, context).join(',');
-  const lock = SEED + index + 1;
-
-  return {
-    url: `https://loremflickr.com/1600/1200/${tags}?lock=${lock}`,
-    alt: `${communityConfigs[categoryKey].tags[0]} image for ${title}`
-  };
-}
-
-function buildPost(index) {
-  const categoryKey = pick(['training', 'nutrition', 'recovery', 'cutting', 'bulking', 'supplements', 'lifestyle']);
-  const config = communityConfigs[categoryKey];
-  const context = buildContext(categoryKey);
-  const format = chance(0.5) ? 'image' : 'text';
-  const stats = buildStats(categoryKey, format);
-  const hour = intBetween(0, 23);
-  const minute = intBetween(0, 59);
-  const title = buildTitle(categoryKey, format, context);
-  const community = pick(config.communities);
-  const author = pick(config.authors);
-  const body = buildBody(categoryKey, format, context);
+function candidate(index, slots) {
+  const category = pick(weighted);
+  const c = ctx(category);
+  const image = slots.has(index);
+  const stats = score(category, image);
+  const hour = int(0, 23);
+  const minute = int(0, 59);
   const id = `forum-post-${String(index + 1).padStart(4, '0')}`;
-  const image = format === 'image' ? buildRemoteImage(categoryKey, context, index, title) : null;
-
+  const postTitle = title(category, c);
+  const postBody = body(category, c);
   return {
     id,
-    slug: slugify(title).slice(0, 80),
-    community,
-    scope: buildScope(categoryKey),
-    category: categoryKey,
-    author,
-    format,
-    title,
-    body,
-    imageUrl: image ? image.url : null,
-    imageAlt: image ? image.alt : null,
-    tags: config.tags,
+    slug: slug(postTitle).slice(0, 96),
+    community: pick(cfg[category].communities),
+    scope: scopeMap[category] || 'training',
+    category,
+    author: pick(cfg[category].authors),
+    format: image ? 'image' : 'text',
+    title: postTitle,
+    body: postBody,
+    imageUrl: null,
+    imageAlt: null,
+    imageSource: null,
+    imageCreator: null,
+    imageLicense: null,
+    imageLicenseUrl: null,
+    imagePageUrl: null,
+    tags: cfg[category].tags,
     score: stats.score,
     comments: stats.comments,
     preferredHourLocal: hour,
     preferredMinuteLocal: minute,
     preferredWindow: hour < 11 ? 'morning' : hour < 17 ? 'afternoon' : 'evening',
-    botSource: 'seeded-forum-generator'
+    botSource: 'seeded-forum-generator',
+    _c: c
   };
 }
 
-function uniquifyTitle(baseTitle, seenTitles) {
-  if (!seenTitles.has(baseTitle)) {
-    return baseTitle;
-  }
-
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const candidate = `${baseTitle} ${pick(titleQualifiers)}`;
-    if (!seenTitles.has(candidate)) {
-      return candidate;
-    }
-  }
-
-  return `${baseTitle} ${intBetween(2, 99)}`;
+function useable(post, seenTitles, seenBodies, seenGrams) {
+  if (seenTitles.has(post.title)) return false;
+  if (seenBodies.has(post.body)) return false;
+  return grams(post.title).every((gram) => !seenGrams.has(gram));
 }
 
-function generatePosts(total) {
+function commit(post, seenTitles, seenBodies, seenGrams) {
+  seenTitles.add(post.title);
+  seenBodies.add(post.body);
+  grams(post.title).forEach((gram) => seenGrams.add(gram));
+}
+
+function generate() {
   const posts = [];
   const seenTitles = new Set();
-
+  const seenBodies = new Set();
+  const seenGrams = new Set();
+  const slots = imageSlots(TOTAL, IMAGE_TARGET);
   let attempts = 0;
-  while (posts.length < total && attempts < total * 20) {
+  while (posts.length < TOTAL && attempts < TOTAL * 500) {
     attempts += 1;
-    const post = buildPost(posts.length);
-    post.title = uniquifyTitle(post.title, seenTitles);
-    seenTitles.add(post.title);
+    const post = candidate(posts.length, slots);
+    if (!useable(post, seenTitles, seenBodies, seenGrams)) continue;
+    commit(post, seenTitles, seenBodies, seenGrams);
     posts.push(post);
   }
-
-  if (posts.length !== total) {
-    throw new Error(`Only generated ${posts.length} unique posts out of ${total}`);
+  if (posts.length !== TOTAL) {
+    const probe = candidate(posts.length, slots);
+    const conflict = grams(probe.title).find((gram) => seenGrams.has(gram));
+    throw new Error(`Only generated ${posts.length} posts after ${attempts} attempts. Sample conflict: ${conflict}`);
   }
-
   return posts;
 }
 
-const items = generatePosts(TOTAL_POSTS);
-const payload = {
-  generatedAt: new Date().toISOString(),
-  total: items.length,
-  seed: SEED,
-  summary: {
-    imagePosts: items.filter((item) => item.format === 'image').length,
-    textPosts: items.filter((item) => item.format === 'text').length,
-    uniqueImageUrls: new Set(items.map((item) => item.imageUrl).filter(Boolean)).size
-  },
-  items
-};
+async function openverse(query, page) {
+  const url = new URL('https://api.openverse.org/v1/images/');
+  url.searchParams.set('q', query);
+  url.searchParams.set('page', String(page));
+  url.searchParams.set('page_size', String(OPENVERSE_PAGE));
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'odeology-forum-generator/1.0' } });
+    if (res.ok) return res.json();
+    if (![401, 429, 500, 502, 503, 504].includes(res.status)) {
+      throw new Error(`Openverse ${res.status} for ${query}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
+  }
+  return { results: [] };
+}
 
-fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-fs.writeFileSync(OUTPUT_PATH, JSON.stringify(payload, null, 2), 'utf8');
+function okImage(item) {
+  return item && item.id && item.url && OPEN_LICENSES.has(String(item.license || '').toLowerCase()) && !item.mature && Number(item.width || 0) >= 400 && Number(item.height || 0) >= 400;
+}
 
-console.log(`Saved ${items.length} forum posts to ${OUTPUT_PATH}`);
+class Finder {
+  constructor() {
+    this.queries = new Map();
+    this.used = new Set();
+    this.requests = 0;
+  }
+
+  async fromQuery(query) {
+    if (!query) return null;
+    const key = norm(query);
+    if (!key) return null;
+    let state = this.queries.get(key);
+    if (!state) {
+      state = { page: 1, index: 0, results: [], done: false };
+      this.queries.set(key, state);
+    }
+    while (true) {
+      while (state.index < state.results.length) {
+        const item = state.results[state.index];
+        state.index += 1;
+        if (!okImage(item) || this.used.has(item.id)) continue;
+        this.used.add(item.id);
+        return item;
+      }
+      if (state.done || state.page > OPENVERSE_MAX) return null;
+      const payload = await openverse(key, state.page);
+      this.requests += 1;
+      state.page += 1;
+      state.index = 0;
+      state.results = Array.isArray(payload.results) ? payload.results : [];
+      if (!state.results.length) state.done = true;
+    }
+  }
+
+  async take(list) {
+    for (const query of uniq(list.map(norm))) {
+      const item = await this.fromQuery(query);
+      if (item) return item;
+    }
+    return null;
+  }
+}
+
+function imageQueries(post) {
+  const c = post._c || {};
+  const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 2).join(' ');
+  const queries = {
+    training: [`${c.part} gym`, `${c.lift} workout`, `${c.block} training`, `${c.setting} dumbbell`],
+    nutrition: [`${c.food} meal prep`, `${c.food2} healthy meal`, `${c.meal} protein meal`, `${titleTerms} meal`],
+    recovery: [`${c.issue} stretching`, `${c.tool} recovery`, `${c.block} mobility`, `${titleTerms} recovery`],
+    cutting: [`${c.food} low calorie meal`, `${c.food2} lean meal`, `${c.meal} healthy meal`, `${titleTerms} meal`],
+    bulking: [`${c.food} high calorie meal`, `${c.food2} bodybuilding meal`, `${c.meal} protein meal`, `${titleTerms} meal`],
+    supplements: [`${c.supp} shaker`, `${c.supp2} supplement`, `${c.stack} gym bag`, `${titleTerms} supplement`],
+    lifestyle: [`${c.planner} planner`, 'fitness planner notebook', 'meal prep calendar', `${titleTerms} planner`]
+  };
+  return uniq([...(queries[post.category] || []), ...cfg[post.category].fallback, titleTerms]);
+}
+
+function broadImageQueries(category) {
+  const map = {
+    training: ['fitness', 'gym', 'exercise'],
+    nutrition: ['food', 'meal', 'cooking'],
+    recovery: ['stretching', 'walking', 'mobility'],
+    cutting: ['healthy food', 'meal prep', 'food'],
+    bulking: ['bodybuilding food', 'meal prep', 'food'],
+    supplements: ['shaker bottle', 'supplement', 'nutrition'],
+    lifestyle: ['planner', 'notebook', 'calendar']
+  };
+  return map[category] || ['photo'];
+}
+
+function imageMeta(post, item) {
+  return {
+    imageUrl: item.url,
+    imageAlt: `${post.category} image for ${post.title}`,
+    imageSource: 'openverse',
+    imageCreator: item.creator || null,
+    imageLicense: item.license || null,
+    imageLicenseUrl: item.license_url || null,
+    imagePageUrl: item.foreign_landing_url || item.detail_url || null,
+    imageId: item.id
+  };
+}
+
+async function assign(posts) {
+  const finder = new Finder();
+  for (const post of posts) {
+    if (post.format !== 'image') continue;
+    let item = await finder.take(imageQueries(post));
+    if (!item) item = await finder.take(broadImageQueries(post.category));
+    if (!item) throw new Error(`No unique open-license image found for ${post.id}`);
+    Object.assign(post, imageMeta(post, item));
+  }
+  return { requests: finder.requests, ids: finder.used.size };
+}
+
+function dupFourGrams(posts) {
+  const seen = new Map();
+  let dup = 0;
+  for (const post of posts) {
+    for (const gram of grams(post.title)) {
+      const first = seen.get(gram);
+      if (first && first !== post.id) dup += 1;
+      else if (!first) seen.set(gram, post.id);
+    }
+  }
+  return dup;
+}
+
+function clean(post) {
+  const { _c, imageId, ...rest } = post;
+  return rest;
+}
+
+async function main() {
+  const posts = generate();
+  const imageStats = await assign(posts);
+  const dup = dupFourGrams(posts);
+  if (dup !== 0) throw new Error(`Generator produced ${dup} duplicate 4-word phrases`);
+  const items = posts.map(clean);
+  const imagePosts = items.filter((item) => item.format === 'image');
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    total: items.length,
+    seed: SEED,
+    summary: {
+      imagePosts: imagePosts.length,
+      textPosts: items.length - imagePosts.length,
+      uniqueImageUrls: new Set(imagePosts.map((item) => item.imageUrl).filter(Boolean)).size,
+      duplicateTitleFourWordPhrases: dup,
+      openverseRequests: imageStats.requests
+    },
+    items
+  };
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
+  fs.writeFileSync(OUT, JSON.stringify(payload, null, 2), 'utf8');
+  console.log(`Saved ${items.length} forum posts to ${OUT}`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
