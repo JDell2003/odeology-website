@@ -72,7 +72,7 @@
 
         .forum-rail-group {
             display: grid;
-            gap: 0.2rem;
+            gap: 0.15rem;
             padding: 0.55rem 0 0.9rem;
         }
 
@@ -94,11 +94,11 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.72rem 0.85rem;
+            padding: 0.72rem 0.9rem;
             border-radius: 14px;
             text-decoration: none;
             color: var(--forum-text);
-            font-size: 1rem;
+            font-size: 0.98rem;
         }
 
         .forum-rail-link.is-active,
@@ -109,15 +109,42 @@
         .forum-rail-icon {
             width: 26px;
             height: 26px;
-            border-radius: 50%;
             display: grid;
             place-items: center;
             background: transparent;
-            color: var(--forum-accent);
-            font-size: 0.77rem;
-            font-weight: 700;
-            border: 1px solid var(--forum-border);
+            color: #1f2933;
             flex-shrink: 0;
+        }
+
+        .forum-rail-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .forum-rail-link.is-active .forum-rail-icon {
+            color: #ffffff;
+        }
+
+        .forum-rail-link.is-active .forum-rail-icon svg circle {
+            fill: #111827;
+            stroke: #111827;
+        }
+
+        .forum-rail-link.is-active .forum-rail-icon svg path.active-cut {
+            stroke: #ffffff;
+        }
+
+        .forum-rail-foot {
+            padding: 0.7rem 0 1.2rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-muted);
+            font-size: 0.72rem;
+            line-height: 1.4;
         }
 
         .forum-main {
@@ -581,62 +608,178 @@
         <aside class="forum-rail">
             <div class="forum-rail-group">
                 <a class="forum-rail-link" href="index.html">
-                    <span class="forum-rail-icon">Hm</span>
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 10.5 12 4l8 6.5"></path>
+                            <path d="M6.5 9.5V20h11V9.5"></path>
+                        </svg>
+                    </span>
                     <span>Home</span>
                 </a>
                 <a class="forum-rail-link is-active" href="forum.html">
-                    <span class="forum-rail-icon">Po</span>
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path class="active-cut" d="M9 9h6l-6 6"></path>
+                        </svg>
+                    </span>
                     <span>Popular</span>
                 </a>
                 <a class="forum-rail-link" href="forum-search.html">
-                    <span class="forum-rail-icon">Se</span>
-                    <span>Search</span>
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 6.5h6v11H4z"></path>
+                            <path d="M14 6.5h6v4h-6z"></path>
+                            <path d="M14 13.5h6v4H14z"></path>
+                        </svg>
+                    </span>
+                    <span>News</span>
                 </a>
-                <a class="forum-rail-link" href="training-coming-soon.html">
-                    <span class="forum-rail-icon">Tr</span>
-                    <span>Training</span>
+                <a class="forum-rail-link" href="overview.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="7" cy="7" r="2.2"></circle>
+                            <circle cx="17" cy="7" r="2.2"></circle>
+                            <circle cx="12" cy="17" r="2.2"></circle>
+                        </svg>
+                    </span>
+                    <span>Explore</span>
                 </a>
             </div>
 
             <div class="forum-rail-group">
                 <p class="forum-rail-label">Resources</p>
-                <a class="forum-rail-link" href="forum-how-to-get-bigger-biceps.html">
-                    <span class="forum-rail-icon">Ar</span>
-                    <span>Live article thread</span>
-                </a>
-                <a class="forum-rail-link" href="index.html#resources">
-                    <span class="forum-rail-icon">Mc</span>
-                    <span>Macro Calculator</span>
-                </a>
                 <a class="forum-rail-link" href="overview.html">
-                    <span class="forum-rail-icon">Ov</span>
-                    <span>Overview</span>
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M6 10c0-2.2 2.2-4 5-4 1.3 0 2.5.4 3.4 1.1C15.3 8 17 8 18 8c0 1.7-1 3-2.5 3.7.3.5.5 1.1.5 1.8 0 2.5-2.2 4.5-5 4.5-1.2 0-2.2-.3-3.1-.9L5 18l1-2.6C6 14.8 6 14.4 6 14Z"></path>
+                        </svg>
+                    </span>
+                    <span>About Reddit</span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 14V6l14 6-14 6v-8Z"></path>
+                            <path d="M5 12h-2"></path>
+                        </svg>
+                    </span>
+                    <span>Advertise</span>
                 </a>
                 <a class="forum-rail-link" href="dashboard.html">
-                    <span class="forum-rail-icon">Db</span>
-                    <span>Dashboard</span>
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3 19 7v10l-7 4-7-4V7l7-4Z"></path>
+                            <path d="M9 10.5 12 9l3 1.5v3L12 15l-3-1.5Z"></path>
+                        </svg>
+                    </span>
+                    <span>Developer Platform</span>
+                </a>
+                <a class="forum-rail-link" href="dashboard.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 6v6l4 2"></path>
+                            <circle cx="12" cy="12" r="8"></circle>
+                        </svg>
+                    </span>
+                    <span>Reddit Pro <span style="color:#f25f2c;font-size:0.84em;">BETA</span></span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <path d="M12 16.5v.1"></path>
+                            <path d="M10.2 9.5a2 2 0 1 1 3.2 1.6c-.8.6-1.4 1.1-1.4 2.4"></path>
+                        </svg>
+                    </span>
+                    <span>Help</span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 5h14v14H5z"></path>
+                            <path d="M8.5 9h7"></path>
+                            <path d="M8.5 12h7"></path>
+                            <path d="M8.5 15h4"></path>
+                        </svg>
+                    </span>
+                    <span>Blog</span>
+                </a>
+                <a class="forum-rail-link" href="training-coming-soon.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 8h10v10H7z"></path>
+                            <path d="M9 8V6h6v2"></path>
+                            <path d="M7 12h10"></path>
+                        </svg>
+                    </span>
+                    <span>Careers</span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="m15 5 4 4"></path>
+                            <path d="m7 17 8-8 4 4-8 8H7v-4Z"></path>
+                        </svg>
+                    </span>
+                    <span>Press</span>
                 </a>
             </div>
 
             <div class="forum-rail-group">
-                <p class="forum-rail-label">Communities</p>
-                <a class="forum-rail-link" href="#featured-post">
-                    <span class="forum-rail-icon">Bi</span>
-                    <span>Biceps Growth</span>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 6h14v12H5z"></path>
+                            <path d="M8.5 9h7"></path>
+                            <path d="M8.5 12h7"></path>
+                        </svg>
+                    </span>
+                    <span>Reddit Rules</span>
                 </a>
-                <a class="forum-rail-link" href="#recovery-post">
-                    <span class="forum-rail-icon">Rc</span>
-                    <span>Recovery</span>
+                <a class="forum-rail-link is-active" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 6h14v12H5z"></path>
+                            <path d="M8.5 9h7"></path>
+                            <path d="M8.5 12h7"></path>
+                        </svg>
+                    </span>
+                    <span>Privacy Policy</span>
                 </a>
-                <a class="forum-rail-link" href="#cutting-post">
-                    <span class="forum-rail-icon">Ct</span>
-                    <span>Cutting</span>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 6h14v12H5z"></path>
+                            <path d="M8.5 9h7"></path>
+                            <path d="M8.5 12h7"></path>
+                        </svg>
+                    </span>
+                    <span>User Agreement</span>
                 </a>
-                <a class="forum-rail-link" href="#meal-post">
-                    <span class="forum-rail-icon">Ml</span>
-                    <span>Meal Timing</span>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 6h14v12H5z"></path>
+                            <path d="M8.5 9h7"></path>
+                            <path d="M8.5 12h7"></path>
+                        </svg>
+                    </span>
+                    <span>Your Privacy Choices</span>
+                </a>
+                <a class="forum-rail-link" href="forum-search.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <path d="M12 8v8"></path>
+                            <path d="M8.5 12H15"></path>
+                        </svg>
+                    </span>
+                    <span>Accessibility</span>
                 </a>
             </div>
+
+            <div class="forum-rail-foot">Reddit, Inc. © 2026. All rights reserved.</div>
         </aside>
 
         <section class="forum-main">
