@@ -151,6 +151,16 @@
             border-color: var(--forum-orange);
             color: #ffffff;
         }
+        .reveal {
+            opacity: 0.18;
+            transform: translateY(34px);
+            transition: opacity 0.45s ease, transform 0.55s ease;
+            will-change: opacity, transform;
+        }
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
         .about-hero {
             display: grid;
             grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
@@ -234,6 +244,12 @@
             box-shadow: 0 12px 26px rgba(13, 23, 32, 0.15);
         }
         .about-section { padding: 2.5rem 0; }
+        .about-section.is-process .about-section-head {
+            max-width: 760px;
+        }
+        .about-section.is-process .about-steps {
+            padding-top: 0.5rem;
+        }
         .about-section-head,
         .about-band-head { display: grid; gap: 0.55rem; margin-bottom: 1.5rem; }
         .about-steps,
@@ -265,6 +281,55 @@
         .about-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; align-items: stretch; padding: 1.6rem 0; }
         .about-split.is-reverse .about-split-media { order: 2; }
         .about-split.is-reverse .about-split-copy { order: 1; }
+        .about-split.is-soft {
+            padding: 2rem;
+            border-radius: 32px;
+            background: linear-gradient(180deg, #fbfcfd 0%, #f2f6f9 100%);
+        }
+        .about-split.is-soft .about-split-copy {
+            padding: 0.3rem 0;
+        }
+        .about-split.is-dark {
+            padding: 2rem;
+            border-radius: 34px;
+            background: linear-gradient(135deg, #0f1821 0%, #182736 100%);
+            color: #ffffff;
+        }
+        .about-split.is-dark .eyebrow,
+        .about-promo .eyebrow {
+            color: #ff8a57;
+        }
+        .about-split.is-dark .about-split-copy p,
+        .about-split.is-dark .about-bullets span,
+        .about-split.is-dark .about-bullets strong {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .about-split.is-dark .about-bullets li {
+            border-left-color: rgba(255, 255, 255, 0.22);
+        }
+        .about-split.is-dark .about-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        .about-split.is-dark .about-btn.is-primary {
+            background: var(--forum-orange);
+            border-color: var(--forum-orange);
+        }
+        .about-split.is-editorial .about-split-copy {
+            position: relative;
+            padding-left: 1.6rem;
+        }
+        .about-split.is-editorial .about-split-copy::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.2rem;
+            bottom: 0.2rem;
+            width: 3px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--forum-orange), #f2b15f);
+        }
         .about-split-media {
             min-height: 380px;
             border-radius: 28px;
@@ -286,23 +351,51 @@
             border-radius: 0;
             background: transparent;
         }
-        .about-band {
-            margin: 2.2rem 0;
-            padding: 2rem;
-            border-radius: 30px;
-            background: linear-gradient(135deg, var(--forum-dark) 0%, var(--forum-dark-soft) 100%);
-            color: #ffffff;
+        .about-promo {
+            margin: 2.4rem 0;
+            padding: 2rem 2.1rem;
+            border-top: 1px solid var(--forum-border);
+            border-bottom: 1px solid var(--forum-border);
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+            gap: 2rem;
+            align-items: end;
+            background:
+                radial-gradient(circle at right top, rgba(210, 79, 24, 0.08), transparent 38%),
+                linear-gradient(180deg, #fffdf9 0%, #ffffff 100%);
         }
-        .about-band-head p,
-        .about-stat span { color: rgba(255, 255, 255, 0.76); }
-        .about-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 1.2rem; }
-        .about-stat { padding: 1.1rem; border-radius: 22px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .about-stat strong {
+        .about-promo-copy h2 {
+            margin: 0 0 0.7rem;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: clamp(2rem, 3.3vw, 3.15rem);
+            line-height: 0.98;
+            letter-spacing: -0.05em;
+        }
+        .about-promo-copy p {
+            margin: 0;
+            max-width: 58ch;
+            color: var(--forum-muted);
+            line-height: 1.75;
+        }
+        .about-promo-side {
+            display: grid;
+            gap: 1rem;
+            align-self: stretch;
+        }
+        .about-promo-metric {
+            padding: 0 0 0 1rem;
+            border-left: 3px solid var(--forum-orange);
+        }
+        .about-promo-metric strong {
             display: block;
             font-family: "Space Grotesk", sans-serif;
-            font-size: clamp(1.8rem, 3vw, 2.7rem);
-            letter-spacing: -0.05em;
-            margin-bottom: 0.2rem;
+            font-size: 2rem;
+            letter-spacing: -0.06em;
+            margin-bottom: 0.15rem;
+        }
+        .about-promo-metric span {
+            color: var(--forum-muted);
+            line-height: 1.6;
         }
         .about-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.3rem; }
         .about-card {
@@ -326,9 +419,9 @@
             .about-hero { grid-template-columns: 1fr; }
             .about-hero-media { min-height: 460px; }
             .about-steps,
-            .about-stats,
             .about-grid,
             .about-split { grid-template-columns: 1fr 1fr; }
+            .about-promo { grid-template-columns: 1fr; }
             .about-split.is-reverse .about-split-media,
             .about-split.is-reverse .about-split-copy { order: initial; }
         }
@@ -340,11 +433,15 @@
             .forum-main { padding: 0 1rem 1.6rem; }
             .about-hero-points,
             .about-steps,
-            .about-stats,
             .about-grid,
             .about-split { grid-template-columns: 1fr; }
             .about-hero-media { min-height: 380px; }
-            .about-band { padding: 1.2rem; }
+            .about-split.is-soft,
+            .about-split.is-dark { padding: 1.2rem; }
+            .about-promo {
+                padding: 1.4rem 0;
+                background: transparent;
+            }
         }
     </style>
 </head>
@@ -409,7 +506,7 @@
                         <a class="forum-toolbar-link is-primary" href="index.html#resources">Open macro calculator</a>
                     </div>
                 </div>
-                <section class="about-hero" aria-label="About Odeology hero">
+                <section class="about-hero reveal is-visible" aria-label="About Odeology hero">
                     <div class="about-hero-copy">
                         <p class="eyebrow">About Odeology</p>
                         <h1>Free tools for macros, groceries, and training in one flow.</h1>
@@ -430,7 +527,7 @@
                         <div class="about-hero-card"><strong>Why this page exists</strong><p>If someone clicks "About Odeology" from the forum rail, this is the product story: what is free, what the macro calculator does, what the training side does, and how the whole system fits together.</p></div>
                     </div>
                 </section>
-                <section class="about-section" aria-label="How Odeology works">
+                <section class="about-section is-process reveal" aria-label="How Odeology works">
                     <div class="about-section-head">
                         <p class="eyebrow">How it works</p>
                         <h2>One intake, then everything branches from the same target.</h2>
@@ -442,7 +539,7 @@
                         <article class="about-step"><span class="about-step-index">03</span><h3>Run training from the same system</h3><p>The training flow can use your saved plan, highlight mismatches, and direct you into the next workout, restock task, or overview checkpoint.</p></article>
                     </div>
                 </section>
-                <section class="about-split">
+                <section class="about-split is-editorial reveal">
                     <div class="about-split-media is-macro"><div class="about-media-note">The macro calculator is the front door. It is where calories, protein, carbs, and fats get set for the actual goal instead of guesswork.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Macro Calculator</p>
@@ -456,7 +553,7 @@
                         </ul>
                     </div>
                 </section>
-                <section class="about-split is-reverse">
+                <section class="about-split is-reverse is-soft reveal">
                     <div class="about-split-media is-grocery"><div class="about-media-note">Macros matter more when they turn into an actual food system. Grocery cards, full views, monthly estimates, and restock timing are part of the workflow.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Nutrition System</p>
@@ -470,7 +567,7 @@
                         </ul>
                     </div>
                 </section>
-                <section class="about-split">
+                <section class="about-split is-dark reveal">
                     <div class="about-split-media is-training"><div class="about-media-note">Training is not isolated here. The product checks whether the meal plan and the program are working together or fighting each other.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Training</p>
@@ -484,7 +581,7 @@
                         </ul>
                     </div>
                 </section>
-                <section class="about-split is-reverse">
+                <section class="about-split is-reverse is-editorial reveal">
                     <div class="about-split-media is-overview"><div class="about-media-note">Overview is where the product becomes usable day to day: meals, macros, training, restock alerts, photos, and community layers in one control point.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Overview + Functions</p>
@@ -498,7 +595,7 @@
                         </ul>
                     </div>
                 </section>
-                <section class="about-split">
+                <section class="about-split is-soft reveal">
                     <div class="about-split-media is-grocery"><div class="about-media-note">This part needs to feel real: users can work with trainers for programming, and chefs can handle the food side so the plan is easier to stick to in real life.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Coaches And Chefs</p>
@@ -515,20 +612,24 @@
                         </div>
                     </div>
                 </section>
-                <section class="about-band" aria-label="Why it is free">
-                    <div class="about-band-head">
+                <section class="about-promo reveal" aria-label="Why it is free">
+                    <div class="about-promo-copy">
                         <p class="eyebrow">Free Access</p>
-                        <h2>Say the main thing clearly: the calculator and training entry are free.</h2>
-                        <p>That needs to be obvious. Users can open the macro calculator, generate targets, start a grocery flow, and begin the training-plan path without the page sounding hidden or gated. This page should make that promise simple.</p>
+                        <h2>Start with the free tools, then expand into the rest of the system.</h2>
+                        <p>The calculator and the training entry point should feel easy to touch. Someone can build targets, start their grocery flow, and move into training without the page feeling like a paywall pitch. That is the cleaner message here.</p>
                     </div>
-                    <div class="about-stats">
-                        <div class="about-stat"><strong>Free</strong><span>Start with the macro calculator without turning the product into a paid wall on click one.</span></div>
-                        <div class="about-stat"><strong>1 Flow</strong><span>Macros, groceries, overview, and training are meant to connect instead of being separate products.</span></div>
-                        <div class="about-stat"><strong>7 / 14 / 30</strong><span>Restock tracking windows already exist to help users keep their plan alive after setup.</span></div>
-                        <div class="about-stat"><strong>Daily</strong><span>The system is designed around usable daily actions: today's workout, today's food plan, and the next restock need.</span></div>
+                    <div class="about-promo-side">
+                        <div class="about-promo-metric">
+                            <strong>Free start</strong>
+                            <span>Open the calculator and training flow without burying the value behind a gated first click.</span>
+                        </div>
+                        <div class="about-promo-metric">
+                            <strong>One connected system</strong>
+                            <span>Macros, groceries, overview, coaches, chefs, and training all point back to the same goal.</span>
+                        </div>
                     </div>
                 </section>
-                <section class="about-section" aria-label="Core functions grid">
+                <section class="about-section reveal" aria-label="Core functions grid">
                     <div class="about-section-head">
                         <p class="eyebrow">Functions</p>
                         <h2>The short version of what each major part does.</h2>
@@ -557,5 +658,28 @@
         </section>
     </main>
     <script src="js/main.js?v=2026-03-15-forum-about-1"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const revealItems = document.querySelectorAll(".reveal");
+            if (!revealItems.length || !("IntersectionObserver" in window)) {
+                revealItems.forEach((item) => item.classList.add("is-visible"));
+                return;
+            }
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        entry.target.classList.toggle("is-visible", entry.isIntersecting);
+                    });
+                },
+                {
+                    threshold: 0.2,
+                    rootMargin: "-6% 0px -10% 0px"
+                }
+            );
+
+            revealItems.forEach((item) => observer.observe(item));
+        });
+    </script>
 </body>
 </html>
