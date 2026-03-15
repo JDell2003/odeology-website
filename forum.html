@@ -338,6 +338,35 @@
             font-size: 0.88rem;
         }
 
+        .forum-post-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #e6edf3;
+        }
+
+        .forum-post-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .forum-post-meta-main {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .forum-post-meta-main strong {
+            color: var(--forum-text);
+            font-size: 0.9rem;
+        }
+
         .forum-post-actions {
             display: flex;
             align-items: center;
@@ -401,6 +430,17 @@
             color: var(--forum-muted);
             font-size: 0.88rem;
             font-weight: 600;
+        }
+
+        .forum-post-stat-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            background: #edf2f6;
+            color: var(--forum-text);
         }
 
         .forum-side-box {
@@ -654,15 +694,118 @@
             }
 
             .forum-main {
-                padding: 0 1rem 1.6rem;
+                padding: 0 0 1.6rem;
             }
 
-            .forum-story-row {
-                grid-template-columns: 1fr;
+            .forum-main-inner {
+                width: 100%;
+            }
+
+            .forum-toolbar {
+                display: none;
+            }
+
+            .forum-story-row,
+            .forum-side-box {
+                display: none;
+            }
+
+            .forum-filter-row {
+                gap: 1rem;
+                padding: 0.8rem 1rem;
+                border-top: 0;
+                background: #ffffff;
+            }
+
+            .forum-filter-pill {
+                font-size: 0.84rem;
+                font-weight: 500;
+            }
+
+            .forum-content-grid {
+                display: block;
+                padding-top: 0;
+            }
+
+            .forum-feed {
+                background: #ffffff;
+            }
+
+            .forum-post {
+                gap: 0.65rem;
+                padding: 0.9rem 1rem 1rem;
+                border-bottom: 1px solid #e6ebf0;
+            }
+
+            .forum-post-head {
+                flex-wrap: nowrap;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+
+            .forum-post-meta {
+                gap: 0.6rem;
+                flex: 1;
+                min-width: 0;
+                font-size: 0.77rem;
+            }
+
+            .forum-post-meta-main {
+                gap: 0.3rem;
+            }
+
+            .forum-post-meta-main strong {
+                font-size: 0.8rem;
+            }
+
+            .forum-post-actions {
+                gap: 0.45rem;
+                flex-shrink: 0;
+            }
+
+            .forum-join {
+                min-height: 30px;
+                padding: 0.35rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .forum-menu-dot {
+                font-size: 1rem;
+            }
+
+            .forum-post-title {
+                font: 600 1.05rem/1.25 "IBM Plex Sans", sans-serif;
+                letter-spacing: 0;
+            }
+
+            .forum-post-copy {
+                display: none;
             }
 
             .forum-post-media {
-                aspect-ratio: 1 / 1;
+                border-radius: 18px;
+                background: #d9d9d9;
+                aspect-ratio: 4 / 5;
+                overflow: hidden;
+            }
+
+            .forum-post-stats {
+                gap: 0.5rem;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 0.1rem;
+                scrollbar-width: none;
+            }
+
+            .forum-post-stats::-webkit-scrollbar {
+                display: none;
+            }
+
+            .forum-post-stat-pill {
+                min-height: 36px;
+                padding: 0.4rem 0.85rem;
+                font-size: 0.82rem;
+                white-space: nowrap;
             }
         }
     </style>
@@ -843,9 +986,12 @@
                         <article class="forum-post" id="featured-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>posted by odeology_</span>
-                                    <span>4 hr. ago</span>
+                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="odeology forum avatar" loading="lazy"></span>
+                                    <span class="forum-post-meta-main">
+                                        <strong>r/odeology_forum</strong>
+                                        <span>•</span>
+                                        <span>4 hr. ago</span>
+                                    </span>
                                 </div>
                                 <div class="forum-post-actions">
                                     <a class="forum-join" href="forum-how-to-get-bigger-biceps.html">Join</a>
@@ -861,21 +1007,24 @@
                                 <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
                             </a>
                             <div class="forum-post-stats">
-                                <span>218 upvotes</span>
-                                <span>42 comments</span>
-                                <span>Standalone article page</span>
+                                <span class="forum-post-stat-pill">218</span>
+                                <span class="forum-post-stat-pill">42 comments</span>
+                                <span class="forum-post-stat-pill">Share</span>
                             </div>
                         </article>
 
                         <article class="forum-post" id="recovery-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>recovery</span>
+                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=120&h=120" alt="recovery thread avatar" loading="lazy"></span>
+                                    <span class="forum-post-meta-main">
+                                        <strong>r/recovery</strong>
+                                        <span>•</span>
+                                        <span>7 hr. ago</span>
+                                    </span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="forum-search.html">Join</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
@@ -888,21 +1037,24 @@
                                 <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span>167 upvotes</span>
-                                <span>Mobility and sleep</span>
-                                <span>Future article URL</span>
+                                <span class="forum-post-stat-pill">167</span>
+                                <span class="forum-post-stat-pill">28 comments</span>
+                                <span class="forum-post-stat-pill">Share</span>
                             </div>
                         </article>
 
                         <article class="forum-post" id="cutting-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>cutting</span>
+                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="cutting thread avatar" loading="lazy"></span>
+                                    <span class="forum-post-meta-main">
+                                        <strong>r/cutting</strong>
+                                        <span>•</span>
+                                        <span>9 hr. ago</span>
+                                    </span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="forum-search.html">Join</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
@@ -915,21 +1067,24 @@
                                 <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span>144 upvotes</span>
-                                <span>Calorie deficit strategy</span>
-                                <span>Expectation setting</span>
+                                <span class="forum-post-stat-pill">144</span>
+                                <span class="forum-post-stat-pill">19 comments</span>
+                                <span class="forum-post-stat-pill">Share</span>
                             </div>
                         </article>
 
                         <article class="forum-post" id="meal-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>meal timing</span>
+                                    <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="meal timing thread avatar" loading="lazy"></span>
+                                    <span class="forum-post-meta-main">
+                                        <strong>r/nutritiontiming</strong>
+                                        <span>•</span>
+                                        <span>12 hr. ago</span>
+                                    </span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="forum-search.html">Join</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
@@ -942,9 +1097,9 @@
                                 <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span>121 upvotes</span>
-                                <span>Protein distribution</span>
-                                <span>Practical planning</span>
+                                <span class="forum-post-stat-pill">121</span>
+                                <span class="forum-post-stat-pill">15 comments</span>
+                                <span class="forum-post-stat-pill">Share</span>
                             </div>
                         </article>
                     </section>
