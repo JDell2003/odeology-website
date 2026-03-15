@@ -75,11 +75,22 @@ function resolveImageRecord(post) {
   const text = imageTextBlob(post);
   const subject = pretty(post.imageSubject || post.imageMainObject || '');
   const muscle = pretty(post.imageMuscleGroup || '');
+  const explicitType = post.imageType || null;
   const resolved = {
-    imageType: post.imageType || 'general_gym',
+    imageType: explicitType || 'general_gym',
     subject: subject || 'training',
     muscleGroup: muscle || null
   };
+
+  if (explicitType === 'food' || explicitType === 'planning' || explicitType === 'supplement' || explicitType === 'article') {
+    return resolved;
+  }
+  if (explicitType === 'physique' && muscle) {
+    return resolved;
+  }
+  if (explicitType === 'exercise' && (muscle || /\b(back pulling|glute focused|quad focused|arm training|shoulder isolation|bench|press|row|pull|curl|tricep|squat|leg|hip thrust|calf)\b/.test(subject.toLowerCase()))) {
+    return resolved;
+  }
 
   if (/\b(meal|protein|rice|beef|chicken|salmon|oats|yogurt|prep|food)\b/.test(text)) {
     resolved.imageType = 'food';
@@ -115,7 +126,7 @@ function resolveImageRecord(post) {
     return resolved;
   }
 
-  if (/\b(incline|bench|press|curl|tricep|triceps|bicep|biceps|lat|row|pullup|pull-up|squat|leg press|hack squat|rdl|hip thrust|lateral raise|cable fly|cable row|leg curl|calf)\b/.test(text)) {
+  if (/\b(incline|bench|press|curl|tricep|triceps|bicep|biceps|lat|row|pullup|pull-up|pulling|squat|leg press|hack squat|rdl|hip thrust|lateral raise|cable fly|cable row|leg curl|calf|quad focused|glute focused)\b/.test(text)) {
     resolved.imageType = 'exercise';
     resolved.subject = subject || muscle || 'training variation';
     return resolved;
@@ -134,6 +145,48 @@ function buildImageCopy(post) {
   const postType = post.postType || 'question';
   const imageType = resolved.imageType || 'general_gym';
   const muscleGroup = pretty(resolved.muscleGroup || '');
+
+  if (imageType === 'physique' && muscleGroup === 'glutes') {
+    const titlePool = [
+      'my glutes finally look like theyre starting to grow',
+      'what actually got your glutes to finally grow',
+      'first time my glutes have looked different in a while'
+    ];
+    const bodyPool = [
+      'posting this because glutes were one of the slower areas for me and this is the first time it actually looks like the work is showing.',
+      'curious what made glute growth finally start moving for other people because this is the first time i can really see a change.',
+      'not saying i figured everything out, but this is the first progress check that makes me think glute work is finally paying off.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'physique' && muscleGroup === 'back') {
+    const titlePool = [
+      'back is finally starting to look different',
+      'what actually got your back to start showing more',
+      'first time back progress has looked obvious to me'
+    ];
+    const bodyPool = [
+      'back progress has been harder for me to notice than anything else, so this is the first time it has looked different enough to matter.',
+      'posting this because i feel like back changes are easy to miss until they finally are not.',
+      'curious what actually helped other people once they finally started seeing more back development.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'supplement' && /creatine|protein powder|pre workout/i.test(subject)) {
+    const titlePool = [
+      `${titleCase(subject)} worth it or still just extra money`,
+      `anybody actually notice enough from ${subject} to keep buying it`,
+      `still not sure ${subject} matters but i keep buying it`
+    ];
+    const bodyPool = [
+      `curious if ${subject} has actually felt worth it for other people or if it mostly just feels productive.`,
+      `if food and training are still the real drivers here then i dont want to pretend ${subject} matters more than it does.`,
+      `this is one of the few products i still think about keeping around, but im still trying to be honest about whether it really helps.`
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
 
   const families = {
     food: {
@@ -356,8 +409,8 @@ function buildImageCopy(post) {
       personal: {
         titles: [
           `${titleCase(subject)} is one of the few things i still keep around`,
-          `one of the only supplements i havent fully dropped`,
-          `still not sure this matters but i keep buying it`
+          `${titleCase(subject)} is still one of the only supplements i havent dropped`,
+          `still not sure ${subject} matters but i keep buying it`
         ],
         bodies: [
           `most tubs end up feeling optional pretty fast, but this is one of the few i still keep in the routine.`,
@@ -492,6 +545,70 @@ function buildImageCopy(post) {
     }
   };
 
+  if (imageType === 'exercise' && muscleGroup === 'glutes') {
+    families.exercise = {
+      ...families.exercise,
+      question: {
+        titles: [
+          `did glutes finally start growing once you added something like this`,
+          `is this the kind of glute work that finally makes a difference`,
+          `would you put glute work like this earlier in the session`
+        ],
+        bodies: [
+          `this is the kind of movement that makes me wonder if my glutes needed a more direct setup the whole time.`,
+          `curious if this is the sort of exercise that finally gets glutes moving or if it still comes down to patience.`,
+          `if youve had glutes lag for a while, was it a movement like this that actually helped.`
+        ]
+      },
+      personal: {
+        titles: [
+          `my glutes finally started responding once i added something like this`,
+          `this kind of glute work makes way more sense to me now`,
+          `pretty sure this is the kind of movement my glutes were missing`
+        ],
+        bodies: [
+          `this is the first time glute work has looked and felt like it was actually doing something instead of just tiring me out.`,
+          `posting it because glutes were one of the slower areas for me and this kind of setup finally felt more direct.`,
+          `not saying one exercise changes everything, but this definitely felt more targeted than what i was doing before.`
+        ]
+      },
+      advice: families.exercise.advice,
+      casual: families.exercise.casual
+    };
+  }
+
+  if (imageType === 'exercise' && muscleGroup === 'back') {
+    families.exercise = {
+      ...families.exercise,
+      question: {
+        titles: [
+          `does this kind of back work finally make lats click for you`,
+          `back work like this feel way better than the usual version for anyone else`,
+          `would you move this pulling work earlier in the session`
+        ],
+        bodies: [
+          `this looks like the kind of setup that either makes back training click or still ends up in the arms.`,
+          `curious if a movement like this was what finally helped you feel your back properly.`,
+          `trying to figure out whether this is more about execution or just needing better back exercise choices.`
+        ]
+      },
+      personal: {
+        titles: [
+          `back work finally started feeling more direct with this`,
+          `pretty sure this is the kind of pull work my back needed`,
+          `this setup made back training click way more`
+        ],
+        bodies: [
+          `the big difference here was finally feeling back work where i was supposed to instead of everything else taking over.`,
+          `posting it because this is the kind of pull variation that makes you realize setup matters a lot.`,
+          `not a huge change on paper, but this definitely felt more like back training than what i was doing before.`
+        ]
+      },
+      advice: families.exercise.advice,
+      casual: families.exercise.casual
+    };
+  }
+
   const pool = families[imageType] || families.general_gym;
   const family = pool[postType] || pool.question;
   const title = compactText(pick(family.titles, random));
@@ -501,12 +618,18 @@ function buildImageCopy(post) {
 
 function main() {
   const forum = JSON.parse(fs.readFileSync(FORUM_PATH, 'utf8'));
+  const existingImageDb = fs.existsSync(IMAGE_DB_PATH)
+    ? JSON.parse(fs.readFileSync(IMAGE_DB_PATH, 'utf8'))
+    : { items: [] };
+  const imageIndex = new Map((Array.isArray(existingImageDb.items) ? existingImageDb.items : []).filter((item) => item && item.id).map((item) => [item.id, item]));
   const items = Array.isArray(forum.items) ? forum.items : [];
   const imageDbItems = [];
 
   const rewritten = items.map((post) => {
     if (!(post.format === 'image' && post.imageUrl)) return post;
-    if (!isUsableImageRecord(post)) {
+    const imageRecord = imageIndex.get(post.id);
+    const source = imageRecord ? { ...post, ...imageRecord } : post;
+    if (!isUsableImageRecord(source)) {
       return {
         ...post,
         format: 'text',
@@ -520,10 +643,11 @@ function main() {
       };
     }
 
-    const copy = buildImageCopy(post);
-    const fingerprint = imageFingerprint(post);
+    const copy = buildImageCopy(source);
+    const fingerprint = imageFingerprint(source);
     const updated = {
       ...post,
+      ...(imageRecord || {}),
       imageType: copy.resolved.imageType,
       imageMainObject: copy.resolved.subject,
       imageSubject: copy.resolved.subject,
@@ -536,18 +660,19 @@ function main() {
       id: post.id,
       slug: post.slug,
       imageFingerprint: fingerprint,
-      imageType: post.imageType || null,
-      imageMainObject: post.imageMainObject || null,
-      imageSubject: post.imageSubject || null,
-      imageMuscleGroup: post.imageMuscleGroup || null,
-      imagePostAngle: post.imagePostAngle || null,
-      imageUrl: post.imageUrl,
-      imageAlt: post.imageAlt || null,
-      imageSource: post.imageSource || null,
-      imageCreator: post.imageCreator || null,
-      imageLicense: post.imageLicense || null,
-      imageLicenseUrl: post.imageLicenseUrl || null,
-      imagePageUrl: post.imagePageUrl || null,
+      imageType: updated.imageType || null,
+      imageMainObject: updated.imageMainObject || null,
+      imageSubject: updated.imageSubject || null,
+      imageMuscleGroup: updated.imageMuscleGroup || null,
+      imagePostAngle: updated.imagePostAngle || null,
+      imageUrl: updated.imageUrl,
+      imageAlt: updated.imageAlt || null,
+      imageSource: updated.imageSource || null,
+      imageCreator: updated.imageCreator || null,
+      imageLicense: updated.imageLicense || null,
+      imageLicenseUrl: updated.imageLicenseUrl || null,
+      imagePageUrl: updated.imagePageUrl || null,
+      visionAnalysis: imageRecord ? imageRecord.visionAnalysis || null : null,
       postType: post.postType,
       category: post.category,
       scope: post.scope,
