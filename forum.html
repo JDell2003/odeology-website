@@ -411,122 +411,80 @@
             text-transform: uppercase;
         }
 
-        .forum-community {
-            display: grid;
-            grid-template-columns: 28px minmax(0, 1fr);
-            gap: 0.75rem;
-            align-items: center;
-            padding: 0.6rem 0;
-            text-decoration: none;
-            color: var(--forum-text);
+        .forum-side-intro {
+            margin: 0;
+            color: var(--forum-muted);
+            font-size: 0.95rem;
+            line-height: 1.65;
         }
 
-        .forum-community + .forum-community {
+        .forum-side-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
             border-top: 1px solid rgba(221, 227, 232, 0.7);
         }
 
-        .forum-community-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(24, 33, 42, 0.08);
-            box-shadow: 0 3px 10px rgba(24, 33, 42, 0.1);
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .forum-community-badge svg {
-            display: none;
-        }
-
-        .forum-community-badge img {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover;
-            object-position: center center;
-        }
-
-        .forum-community-badge.is-biceps {
-            background: linear-gradient(160deg, #1d2128, #2b313b);
-            color: #f4f7fb;
-        }
-
-        .forum-community-badge.is-nutrition {
-            background: linear-gradient(160deg, #0f9f6e, #0b7d57);
-            color: #f3fff9;
-        }
-
-        .forum-community-badge.is-training {
-            background: linear-gradient(160deg, #476fb2, #355790);
-            color: #f2f7ff;
-        }
-
-        .forum-community-badge.is-macro {
-            background: linear-gradient(160deg, #e74a3b, #c92d22);
-            color: #fff6f5;
-        }
-
-        .forum-community-badge.is-overview {
-            background: linear-gradient(160deg, #4a3a2a, #2e2318);
-            color: #f8f1e8;
-        }
-
-        .forum-community strong {
-            display: block;
-            font-size: 0.98rem;
-        }
-
-        .forum-community span {
-            display: block;
-            color: var(--forum-muted);
-            font-size: 0.84rem;
-        }
-
-        .forum-side-more {
-            display: inline-block;
-            margin-top: 0.75rem;
-            padding: 0;
-            border: 0;
-            background: transparent;
+        .forum-side-section h4 {
+            margin: 0 0 0.55rem;
             color: var(--forum-text);
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
+            font-size: 0.95rem;
+            letter-spacing: -0.02em;
         }
 
-        .forum-community.is-hidden {
-            display: none;
-        }
-
-        .forum-community.is-visible {
+        .forum-side-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
             display: grid;
+            gap: 0.55rem;
         }
 
-        .forum-side-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-top: 0.85rem;
+        .forum-side-list li {
+            position: relative;
+            padding-left: 1rem;
+            color: var(--forum-muted);
+            font-size: 0.9rem;
+            line-height: 1.55;
         }
 
-        .forum-create-community {
+        .forum-side-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.55rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--forum-accent);
+        }
+
+        .forum-side-actions {
+            display: grid;
+            gap: 0.7rem;
+            margin-top: 1.1rem;
+        }
+
+        .forum-side-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 34px;
-            padding: 0.45rem 0.85rem;
+            min-height: 42px;
+            padding: 0.75rem 1rem;
             border-radius: 999px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .forum-side-button.is-primary {
             background: var(--forum-text);
             color: #ffffff;
-            font-size: 0.84rem;
-            font-weight: 700;
-            text-decoration: none;
+        }
+
+        .forum-side-button.is-secondary {
+            border: 1px solid var(--forum-border-strong);
+            background: #ffffff;
+            color: var(--forum-text);
         }
 
         @media (max-width: 1280px) {
@@ -855,83 +813,31 @@
                     </section>
 
                     <aside class="forum-side-box">
-                        <h3>Popular Communities</h3>
+                        <h3>Start With Odeology</h3>
+                        <p class="forum-side-intro">Use the forum for ideas and discussion, then move into the tools that actually build your plan.</p>
 
-                        <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                            <span class="forum-community-badge is-biceps" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160&h=160" alt="Biceps Growth community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Biceps Growth</strong>
-                                <span>7,001 members</span>
-                            </span>
-                        </a>
+                        <div class="forum-side-section">
+                            <h4>What we offer</h4>
+                            <ul class="forum-side-list">
+                                <li>Macro calculator support and resource guidance.</li>
+                                <li>Training access and structure for consistent progress.</li>
+                                <li>Overview and planning tools that connect the whole system.</li>
+                            </ul>
+                        </div>
 
-                        <a class="forum-community" href="forum-search.html">
-                            <span class="forum-community-badge is-nutrition" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Nutrition community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Nutrition</strong>
-                                <span>6,825 members</span>
-                            </span>
-                        </a>
+                        <div class="forum-side-section">
+                            <h4>What we need from you</h4>
+                            <ul class="forum-side-list">
+                                <li>Your goal, consistency, and honest input.</li>
+                                <li>Basic training and nutrition details so the plan makes sense.</li>
+                                <li>Willingness to use the tools instead of just reading about them.</li>
+                            </ul>
+                        </div>
 
-                        <a class="forum-community" href="training-coming-soon.html">
-                            <span class="forum-community-badge is-training" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Training Split community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Training Split</strong>
-                                <span>12,481 members</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community" href="index.html#resources">
-                            <span class="forum-community-badge is-macro" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Macro Tools community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Macro Tools</strong>
-                                <span>4,228 members</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community" href="forum-about-odeology.html">
-                            <span class="forum-community-badge is-overview" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Overview community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Overview</strong>
-                                <span>26,803 readers</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community is-hidden" href="dashboard.html" data-extra-community>
-                            <span class="forum-community-badge" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Dashboard community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Dashboard</strong>
-                                <span>9,412 readers</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community is-hidden" href="training.html" data-extra-community>
-                            <span class="forum-community-badge" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Programs community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Programs</strong>
-                                <span>5,208 members</span>
-                            </span>
-                        </a>
-
-                        <div class="forum-side-footer">
-                            <div>
-                                <button class="forum-side-more" type="button" id="forum-side-more">See more</button>
-                            </div>
-                            <a class="forum-create-community" href="forum-search.html">Create community</a>
+                        <div class="forum-side-actions">
+                            <a class="forum-side-button is-primary" href="training.html">Go To Training</a>
+                            <a class="forum-side-button is-secondary" href="index.html#resources">Open Macro Calculator</a>
+                            <a class="forum-side-button is-secondary" href="forum-about-odeology.html">See How Odeology Works</a>
                         </div>
                     </aside>
                 </div>
@@ -940,30 +846,5 @@
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
-    <script>
-        (function () {
-            const moreButton = document.getElementById('forum-side-more');
-            const hiddenCommunities = Array.from(document.querySelectorAll('[data-extra-community]'));
-
-            if (!moreButton || hiddenCommunities.length === 0) return;
-
-            moreButton.addEventListener('click', function () {
-                const expanded = moreButton.getAttribute('data-expanded') === 'true';
-
-                hiddenCommunities.forEach(function (community) {
-                    if (expanded) {
-                        community.classList.add('is-hidden');
-                        community.classList.remove('is-visible');
-                    } else {
-                        community.classList.remove('is-hidden');
-                        community.classList.add('is-visible');
-                    }
-                });
-
-                moreButton.setAttribute('data-expanded', expanded ? 'false' : 'true');
-                moreButton.textContent = expanded ? 'See more' : 'Show less';
-            });
-        }());
-    </script>
 </body>
 </html>
