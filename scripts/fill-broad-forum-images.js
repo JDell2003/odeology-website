@@ -21,6 +21,16 @@ function slug(value) {
     .slice(0, 48);
 }
 
+function hashValue(value) {
+  let hash = 2166136261;
+  const source = String(value || 'forum');
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 async function openverse(q, page = 1) {
   const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&license=by,by-sa,cc0,pdm&page=${page}&page_size=20`;
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -128,15 +138,26 @@ function applyImage(post, item, intent) {
 
 function fallbackTags(post, intent) {
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
+  const base = hashValue(post.id || post.slug || post.title);
+  const peopleSets = [
+    ['youngadult', 'athlete'],
+    ['adult', 'fitness'],
+    ['woman', 'workout'],
+    ['man', 'gym'],
+    ['track', 'athlete'],
+    ['wrestling', 'athlete'],
+    ['jiu-jitsu', 'athlete']
+  ];
+  const people = peopleSets[base % peopleSets.length];
   if (intent === 'food') return ['meal', 'prep', 'protein'];
-  if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return ['gym', 'legs', 'fitness'];
-  if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return ['gym', 'chest', 'fitness'];
-  if (/\b(back|lat|row|pullup|pulldown|trap)\b/.test(text)) return ['gym', 'back', 'fitness'];
-  if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return ['gym', 'shoulders', 'fitness'];
-  if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return ['gym', 'arms', 'fitness'];
-  if (/\b(abs|core)\b/.test(text)) return ['gym', 'abs', 'fitness'];
-  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return ['sports', 'training', 'fitness'];
-  return ['gym', 'fitness', 'person'];
+  if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return [...people, 'gym', 'legs', 'fitness'];
+  if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return [...people, 'gym', 'chest', 'fitness'];
+  if (/\b(back|lat|row|pullup|pulldown|trap)\b/.test(text)) return [...people, 'gym', 'back', 'fitness'];
+  if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return [...people, 'gym', 'shoulders', 'fitness'];
+  if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return [...people, 'gym', 'arms', 'fitness'];
+  if (/\b(abs|core)\b/.test(text)) return [...people, 'gym', 'abs', 'fitness'];
+  if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return ['youngadult', 'athlete', 'sports', 'wrestling', 'fitness'];
+  return [...people, 'sports', 'fitness', 'training'];
 }
 
 function fallbackItem(post, intent, index) {
