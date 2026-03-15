@@ -288,6 +288,15 @@
             color: var(--forum-text);
             font-size: 0.93rem;
             font-weight: 600;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .forum-filter-pill.is-active {
+            color: #1a56b6;
         }
 
         .forum-content-grid {
@@ -469,6 +478,18 @@
             color: var(--forum-muted);
             font-size: 0.86rem;
             line-height: 1.45;
+        }
+
+        .forum-feed-status {
+            padding: 0.95rem 0 0;
+            color: var(--forum-muted);
+            font-size: 0.9rem;
+        }
+
+        .forum-empty-state {
+            padding: 1.35rem 0;
+            color: var(--forum-muted);
+            line-height: 1.6;
         }
 
         .forum-side-box {
@@ -858,7 +879,7 @@
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M8.5 15.5a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm0-1.7a5.3 5.3 0 1 0 0-10.6 5.3 5.3 0 0 0 0 10.6Zm5.35.85 3.15 3.15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
-                        <input type="text" value="Find recent research on training, recovery, body composition, and nutrition" readonly>
+                        <input id="studies-search-input" type="search" placeholder="Search recent research on training, recovery, body composition, and nutrition">
                     </label>
                     <a class="forum-toolbar-link" href="forum.html">Back to popular</a>
                 </div>
@@ -871,13 +892,18 @@
                 </section>
 
                 <div class="forum-filter-row">
-                    <span class="forum-filter-pill">PubMed-indexed</span>
-                    <span class="forum-filter-pill">Recent reviews</span>
-                    <span class="forum-filter-pill">Applied takeaways</span>
+                    <button class="forum-filter-pill is-active" type="button" data-studies-topic="all">All</button>
+                    <button class="forum-filter-pill" type="button" data-studies-topic="training">Training</button>
+                    <button class="forum-filter-pill" type="button" data-studies-topic="fat-loss">Fat loss</button>
+                    <button class="forum-filter-pill" type="button" data-studies-topic="nutrition">Nutrition</button>
+                    <button class="forum-filter-pill" type="button" data-studies-topic="supplements">Supplements</button>
+                    <button class="forum-filter-pill" type="button" data-studies-topic="recovery">Recovery</button>
                 </div>
 
+                <div class="forum-feed-status" id="studies-feed-status">Loading studies…</div>
+
                 <div class="forum-content-grid">
-                    <section class="forum-feed">
+                    <section class="forum-feed" id="studies-feed">
                         <article class="forum-post" id="featured-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
@@ -1071,5 +1097,6 @@
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-studies-1"></script>
+    <script src="js/forum-studies.js?v=2026-03-14-forum-studies-1"></script>
 </body>
 </html>

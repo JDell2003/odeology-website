@@ -11,7 +11,8 @@
                     "scrape:prices":  "node js/scrape-prices.js",
                     "plan:groceries":  "node js/planner.js",
                     "scrape:api":  "node index.js",
-                    "scrape:scraperapi":  "node js/scraperapi-fetch.js"
+                    "scrape:scraperapi":  "node js/scraperapi-fetch.js",
+                    "studies:refresh":  "node scripts/refresh-studies.js"
                 },
     "keywords":  [
 

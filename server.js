@@ -36,6 +36,7 @@ const socialRoutes = require('./core/socialRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
+const studiesRoutes = require('./core/studiesRoutes');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
@@ -1757,6 +1758,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await leaderboardRoutes(req, res, url)) {
+        return;
+    }
+
+    if (await studiesRoutes(req, res, url)) {
         return;
     }
 
