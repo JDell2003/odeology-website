@@ -316,6 +316,30 @@
             background: var(--forum-orange);
             border-color: var(--forum-orange);
         }
+        .about-training-panel {
+            display: grid;
+            gap: 0.8rem;
+            margin-top: 0.4rem;
+            padding: 1rem 1.05rem;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .about-training-panel strong {
+            display: block;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        .about-training-panel span {
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.6;
+        }
+        .about-training-actions {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 0.45rem;
+        }
         .about-split.is-editorial .about-split-copy {
             position: relative;
             padding-left: 1.6rem;
@@ -551,6 +575,10 @@
                             <li><strong>Goal handoff into groceries</strong><span>Once macros are set, the user can move directly into a grocery list and meal build that matches those targets.</span></li>
                             <li><strong>Free entry point</strong><span>The product pushes the idea clearly: users can start with the calculator for free and keep moving forward from there.</span></li>
                         </ul>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="index.html#resources">Open macro calculator</a>
+                            <a class="about-btn" href="index.html?ns=start">Start generator flow</a>
+                        </div>
                     </div>
                 </section>
                 <section class="about-split is-reverse is-soft reveal">
@@ -565,6 +593,10 @@
                             <li><strong>Restock alerts</strong><span>The overview side tracks what needs to be picked up again over the next 7, 14, and 30 days.</span></li>
                             <li><strong>Saved plan behavior</strong><span>Because the plan can be tied to the account, the training side can check whether the saved food setup still matches the current goal.</span></li>
                         </ul>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="grocery-calendar.html">Open grocery calendar</a>
+                            <a class="about-btn" href="overview.html">Open overview meals</a>
+                        </div>
                     </div>
                 </section>
                 <section class="about-split is-dark reveal">
@@ -579,6 +611,15 @@
                             <li><strong>Nutrition alignment checks</strong><span>The training flow can flag when the saved meal plan does not match the workload or goal and recommend an adjustment.</span></li>
                             <li><strong>Workout database and portal links</strong><span>The wider training area includes a program page, workout database access, and a dashboard-style path for continuing execution.</span></li>
                         </ul>
+                        <div class="about-training-panel">
+                            <strong>Start the program, then keep using the portal.</strong>
+                            <span>Go straight into the free plan builder, or open the live training page if you want the actual workout side of the system.</span>
+                        </div>
+                        <div class="about-training-actions">
+                            <a class="about-btn is-primary" href="training-coming-soon.html?start=1">Build training plan</a>
+                            <a class="about-btn" href="training.html">Open training page</a>
+                            <a class="about-btn" href="overview.html">Open workout overview</a>
+                        </div>
                     </div>
                 </section>
                 <section class="about-split is-reverse is-editorial reveal">
@@ -593,6 +634,10 @@
                             <li><strong>Community functions</strong><span>Leaderboard, coaches, and chefs sit next to the planning tools so the product feels like a living system, not just a calculator.</span></li>
                             <li><strong>Photo and progress tracking</strong><span>Photos and status views give the user another feedback layer beyond scale weight and daily calories.</span></li>
                         </ul>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="overview.html">Open overview</a>
+                            <a class="about-btn" href="forum.html">Open community forum</a>
+                        </div>
                     </div>
                 </section>
                 <section class="about-split is-soft reveal">
@@ -627,6 +672,10 @@
                             <strong>One connected system</strong>
                             <span>Macros, groceries, overview, coaches, chefs, and training all point back to the same goal.</span>
                         </div>
+                        <div class="about-hero-actions">
+                            <a class="about-btn is-primary" href="index.html#resources">Start free</a>
+                            <a class="about-btn" href="training-coming-soon.html?start=1">Open training start</a>
+                        </div>
                     </div>
                 </section>
                 <section class="about-section reveal" aria-label="Core functions grid">
@@ -651,6 +700,7 @@
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="index.html#resources">Open macro calculator</a>
                             <a class="about-btn" href="training-coming-soon.html?start=1">Start training free</a>
+                            <a class="about-btn" href="overview.html">Open overview</a>
                         </div>
                     </div>
                 </section>
