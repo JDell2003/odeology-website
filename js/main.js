@@ -9142,6 +9142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initThemeToggle();
     initTracking();
     setupPreloader();
+    setupForumPreloaderNavigation();
     setupNav();
     setupTrainingNavRouting();
     initAuthUi();
@@ -15811,6 +15812,92 @@ function setupPreloader() {
         preloader.classList.add('hidden');
         setTimeout(() => preloader.remove(), 600);
     }, 4200);
+}
+
+function setupForumPreloaderNavigation() {
+    const path = String(window.location.pathname || '').toLowerCase();
+    const pageName = path.split('/').filter(Boolean).pop() || '';
+    const onForumPage = pageName.startsWith('forum');
+    if (!onForumPage) return;
+    if (window.__odeForumPreloaderNavigationBound) return;
+    window.__odeForumPreloaderNavigationBound = true;
+
+    const buildNavigationPreloader = () => {
+        const existing = document.getElementById('preloader');
+        if (existing) return existing;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'preloader';
+        overlay.id = 'preloader';
+        overlay.innerHTML = `
+            <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+            <div class="preloader-bar"><div class="fill"></div></div>
+        `;
+        document.body.appendChild(overlay);
+        return overlay;
+    };
+
+    const showNavigationPreloader = () => {
+        const overlay = buildNavigationPreloader();
+        overlay.classList.remove('hidden');
+        overlay.style.opacity = '1';
+        overlay.style.visibility = 'visible';
+        const word = overlay.querySelector('.preloader-word');
+        if (word) {
+            word.style.animation = '';
+            word.style.transform = '';
+            word.style.filter = '';
+            word.style.left = '';
+            word.style.top = '';
+        }
+        const bar = overlay.querySelector('.preloader-bar');
+        if (bar) bar.classList.remove('fade');
+        return overlay;
+    };
+
+    document.addEventListener('click', (event) => {
+        if (event.defaultPrevented) return;
+        if (!(event.target instanceof Element)) return;
+        if (event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const link = event.target.closest('a[href]');
+        if (!link) return;
+        if (link.hasAttribute('download')) return;
+        if (String(link.getAttribute('target') || '').toLowerCase() === '_blank') return;
+
+        const rawHref = String(link.getAttribute('href') || '').trim();
+        if (!rawHref) return;
+        if (
+            rawHref.startsWith('#') ||
+            rawHref.startsWith('mailto:') ||
+            rawHref.startsWith('tel:') ||
+            rawHref.startsWith('javascript:')
+        ) {
+            return;
+        }
+
+        let targetUrl;
+        try {
+            targetUrl = new URL(rawHref, window.location.href);
+        } catch {
+            return;
+        }
+
+        if (targetUrl.origin !== window.location.origin) return;
+
+        const samePath = targetUrl.pathname === window.location.pathname;
+        const sameSearch = targetUrl.search === window.location.search;
+        const sameHash = targetUrl.hash === window.location.hash;
+        const noHash = !targetUrl.hash;
+        if (samePath && sameSearch && (noHash || sameHash)) return;
+
+        event.preventDefault();
+        showNavigationPreloader();
+        window.setTimeout(() => {
+            window.location.href = targetUrl.href;
+        }, 180);
+    });
 }
 
 /* Helpers to update config if needed */
