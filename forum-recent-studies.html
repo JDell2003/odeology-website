@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>odeology_ Forum</title>
-    <meta name="description" content="Explore the odeology_ forum home page with a Reddit-style feed, story cards, trending topics, and article-style forum posts.">
-    <link rel="canonical" href="https://odeology.up.railway.app/forum.html">
-    <meta property="og:title" content="odeology_ Forum">
-    <meta property="og:description" content="A Reddit-inspired forum home page with a feed layout, image cards, and dedicated article pages.">
+    <title>odeology_ Recent Studies</title>
+    <meta name="description" content="Read recent PubMed-indexed studies on creatine, time-restricted eating, exercise, adiposity, and weight-loss maintenance inside a Reddit-style Odeology forum feed.">
+    <link rel="canonical" href="https://odeology.up.railway.app/forum-recent-studies.html">
+    <meta property="og:title" content="odeology_ Recent Studies">
+    <meta property="og:description" content="A text-first Odeology forum view covering recent credible studies with plain-English summaries and direct abstract links.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://odeology.up.railway.app/forum.html">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600">
-    <link rel="stylesheet" href="css/main.css?v=2026-03-14-forum-home-2">
+    <meta property="og:url" content="https://odeology.up.railway.app/forum-recent-studies.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-14-forum-studies-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -393,6 +392,85 @@
             font-weight: 600;
         }
 
+        .forum-hero-copy {
+            padding: 1rem 0 0.35rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .forum-hero-copy h1 {
+            margin: 0;
+            font: 700 clamp(1.95rem, 3vw, 2.7rem)/0.98 "Space Grotesk", sans-serif;
+            letter-spacing: -0.05em;
+        }
+
+        .forum-hero-copy p {
+            margin: 0;
+            max-width: 74ch;
+            color: var(--forum-muted);
+            line-height: 1.65;
+        }
+
+        .forum-study-links {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .forum-study-link {
+            color: var(--forum-accent);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .forum-study-link:hover {
+            text-decoration: underline;
+        }
+
+        .forum-study-bullets {
+            margin: 0;
+            padding-left: 1.15rem;
+            color: var(--forum-text);
+            line-height: 1.6;
+        }
+
+        .forum-study-bullets li + li {
+            margin-top: 0.3rem;
+        }
+
+        .forum-side-note {
+            margin: 0 0 0.95rem;
+            color: var(--forum-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .forum-source-link {
+            display: block;
+            padding: 0.72rem 0;
+            text-decoration: none;
+            color: var(--forum-text);
+        }
+
+        .forum-source-link + .forum-source-link {
+            border-top: 1px solid rgba(221, 227, 232, 0.7);
+        }
+
+        .forum-source-link strong {
+            display: block;
+            font-size: 0.95rem;
+        }
+
+        .forum-source-link span {
+            display: block;
+            margin-top: 0.18rem;
+            color: var(--forum-muted);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
         .forum-side-box {
             width: 100%;
             position: sticky;
@@ -616,7 +694,7 @@
                     </span>
                     <span>Home</span>
                 </a>
-                <a class="forum-rail-link is-active" href="forum.html">
+                <a class="forum-rail-link" href="forum.html">
                     <span class="forum-rail-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -625,7 +703,7 @@
                     </span>
                     <span>Popular</span>
                 </a>
-                <a class="forum-rail-link" href="forum-recent-studies.html">
+                <a class="forum-rail-link is-active" href="forum-recent-studies.html">
                     <span class="forum-rail-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <path d="M4 6.5h6v11H4z"></path>
@@ -728,7 +806,7 @@
                     </span>
                     <span>Odeology Rules</span>
                 </a>
-                <a class="forum-rail-link is-active" href="forum-search.html">
+                <a class="forum-rail-link" href="forum-search.html">
                     <span class="forum-rail-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <path d="M5 6h14v12H5z"></path>
@@ -780,65 +858,22 @@
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M8.5 15.5a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm0-1.7a5.3 5.3 0 1 0 0-10.6 5.3 5.3 0 0 0 0 10.6Zm5.35.85 3.15 3.15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
-                        <input type="text" value="Find training topics, article threads, and forum posts" readonly>
+                        <input type="text" value="Find recent research on training, recovery, body composition, and nutrition" readonly>
                     </label>
-                    <a class="forum-toolbar-link" href="forum-search.html">Search view</a>
+                    <a class="forum-toolbar-link" href="forum.html">Back to popular</a>
                 </div>
 
-                <section class="forum-story-row" aria-label="Top stories">
-                    <a class="forum-story-card" href="forum-how-to-get-bigger-biceps.html">
-                        <img src="https://images.unsplash.com/photo-1569419910356-f63064754fc9?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200" alt="Featured recovery nutrition story" loading="lazy">
-                        <div class="forum-story-copy">
-                            <h2>Best post-workout foods for growth</h2>
-                            <p>Why recovery meals matter more than random supplements.</p>
-                            <div class="forum-story-meta">
-                                <span>r/Nutrition</span>
-                                <span>and more</span>
-                            </div>
-                        </div>
-                    </a>
-
-                    <a class="forum-story-card" href="#featured-post">
-                        <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200" alt="Strength and muscle gain story" loading="lazy">
-                        <div class="forum-story-copy">
-                            <h2>Mass gain meals that are easy to repeat</h2>
-                            <p>High-protein staples that actually fit a muscle-building routine.</p>
-                            <div class="forum-story-meta">
-                                <span>r/Gaining</span>
-                                <span>and more</span>
-                            </div>
-                        </div>
-                    </a>
-
-                    <a class="forum-story-card" href="#recovery-post">
-                        <img src="https://images.unsplash.com/photo-1762744962625-2bbc69c13cca?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200" alt="Recovery and breakfast story" loading="lazy">
-                        <div class="forum-story-copy">
-                            <h2>Simple breakfasts that keep training on track</h2>
-                            <p>Protein-first meals for lifters who need easy consistency.</p>
-                            <div class="forum-story-meta">
-                                <span>r/FitnessMeals</span>
-                                <span>and more</span>
-                            </div>
-                        </div>
-                    </a>
-
-                    <a class="forum-story-card" href="#cutting-post">
-                        <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200" alt="Cutting and carbs story" loading="lazy">
-                        <div class="forum-story-copy">
-                            <h2>When carbs help more than they hurt a cut</h2>
-                            <p>How to keep training performance while tightening calories.</p>
-                            <div class="forum-story-meta">
-                                <span>r/Cutting</span>
-                                <span>and more</span>
-                            </div>
-                        </div>
-                    </a>
+                <section class="forum-hero-copy" aria-label="Recent studies intro">
+                    <h1>Recent Studies</h1>
+                    <p>
+                        This view tracks recent PubMed-indexed research that actually matters for training, body composition, appetite control, and weight-loss maintenance. Summaries below are plain-English overviews, not copy-pasted abstracts.
+                    </p>
                 </section>
 
                 <div class="forum-filter-row">
-                    <span class="forum-filter-pill">Best</span>
-                    <span class="forum-filter-pill">Everywhere</span>
-                    <span class="forum-filter-pill">Today</span>
+                    <span class="forum-filter-pill">PubMed-indexed</span>
+                    <span class="forum-filter-pill">Recent reviews</span>
+                    <span class="forum-filter-pill">Applied takeaways</span>
                 </div>
 
                 <div class="forum-content-grid">
@@ -846,222 +881,195 @@
                         <article class="forum-post" id="featured-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>posted by odeology_</span>
-                                    <span>4 hr. ago</span>
+                                    <span>PubMed</span>
+                                    <span>systematic review and meta-analysis</span>
+                                    <span>2025</span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-how-to-get-bigger-biceps.html">Join</a>
+                                    <a class="forum-join" href="https://pubmed.ncbi.nlm.nih.gov/40189912/" target="_blank" rel="noopener noreferrer">Read abstract</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
 
-                            <h1 class="forum-post-title">How to get bigger biceps without turning every pull day into random curls</h1>
+                            <h2 class="forum-post-title">Creatine plus resistance training still looks like a strong lean-mass play across age groups</h2>
                             <p class="forum-post-copy">
-                                This stays as the main featured thread on the forum home page, but now it sits inside a feed-style layout with larger imagery, separator lines, and the smaller communities box on the right.
+                                A recent meta-analysis on PubMed found that pairing resistance training with creatine supplementation improved fat-free mass in adults under 50 and in adults 50 and over. The useful practical read is that creatine still looks relevant whether the goal is performance support in younger lifters or preserving lean tissue in older adults.
                             </p>
-                            <a class="forum-post-media" href="forum-how-to-get-bigger-biceps.html">
-                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
-                            </a>
+                            <ul class="forum-study-bullets">
+                                <li>The signal was strongest for fat-free mass, not just scale weight.</li>
+                                <li>This fits well with periods where training quality and recovery are already consistent.</li>
+                                <li>It does not mean creatine replaces programming, sleep, or protein intake.</li>
+                            </ul>
                             <div class="forum-post-stats">
-                                <span>218 upvotes</span>
-                                <span>42 comments</span>
-                                <span>Standalone article page</span>
+                                <span>Topic: lean mass</span>
+                                <span>Population: adults across age bands</span>
+                                <span>Source: PubMed 40189912</span>
+                            </div>
+                            <div class="forum-study-links">
+                                <a class="forum-study-link" href="https://pubmed.ncbi.nlm.nih.gov/40189912/" target="_blank" rel="noopener noreferrer">Open PubMed abstract</a>
                             </div>
                         </article>
 
                         <article class="forum-post" id="recovery-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>recovery</span>
+                                    <span>PubMed</span>
+                                    <span>systematic review and meta-analysis</span>
+                                    <span>2025</span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="https://pubmed.ncbi.nlm.nih.gov/41350709/" target="_blank" rel="noopener noreferrer">Read abstract</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
 
-                            <h2 class="forum-post-title">The recovery mistake that makes chest and shoulder progress look flat</h2>
+                            <h2 class="forum-post-title">Nutrition plus exercise continues to outperform nutrition alone for sarcopenia-related outcomes</h2>
                             <p class="forum-post-copy">
-                                This slot behaves like a Reddit feed post visually, but keeps your own site palette and can later branch into another dedicated article page.
+                                This review looked at older adults with sarcopenia and found that combining nutritional supplementation with exercise was more useful than supplementation by itself for a range of outcomes tied to strength and function. The big implication is that "supportive nutrition" works best when it is attached to actual training or structured movement.
                             </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
-                            </div>
+                            <ul class="forum-study-bullets">
+                                <li>The pattern supports pairing protein-oriented support with real activity, not treating supplements as the whole intervention.</li>
+                                <li>This matters most for older adults trying to protect strength, mobility, and independence.</li>
+                                <li>It also reinforces the basic Odeology idea that nutrition and training should be programmed together.</li>
+                            </ul>
                             <div class="forum-post-stats">
-                                <span>167 upvotes</span>
-                                <span>Mobility and sleep</span>
-                                <span>Future article URL</span>
+                                <span>Topic: sarcopenia</span>
+                                <span>Population: older adults</span>
+                                <span>Source: PubMed 41350709</span>
+                            </div>
+                            <div class="forum-study-links">
+                                <a class="forum-study-link" href="https://pubmed.ncbi.nlm.nih.gov/41350709/" target="_blank" rel="noopener noreferrer">Open PubMed abstract</a>
                             </div>
                         </article>
 
                         <article class="forum-post" id="cutting-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>cutting</span>
+                                    <span>PubMed</span>
+                                    <span>meta-analysis</span>
+                                    <span>2025</span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="https://pubmed.ncbi.nlm.nih.gov/41017942/" target="_blank" rel="noopener noreferrer">Read abstract</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
 
-                            <h2 class="forum-post-title">Can you keep building while cutting, or are you only getting better at maintaining</h2>
+                            <h2 class="forum-post-title">Time-restricted eating with resistance training may help fat-mass reduction, but tradeoffs still matter</h2>
                             <p class="forum-post-copy">
-                                The point here is the same as your screenshot: bigger image content in the feed, cleaner lines dividing posts, and a smaller supporting box on the right.
+                                A newer review on time-restricted eating paired with resistance training suggests there may be modest fat-mass advantages in some settings, but the evidence is not a blank check for everyone to compress their eating window. Compliance, total protein intake, and training performance still decide whether the setup helps or backfires.
                             </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
-                            </div>
+                            <ul class="forum-study-bullets">
+                                <li>TRE seems more useful when it makes calorie control easier, not when it cuts protein feedings too hard.</li>
+                                <li>Lifters in a deficit still need to protect training quality and recovery.</li>
+                                <li>This is a "maybe useful tool," not a universal upgrade.</li>
+                            </ul>
                             <div class="forum-post-stats">
-                                <span>144 upvotes</span>
-                                <span>Calorie deficit strategy</span>
-                                <span>Expectation setting</span>
+                                <span>Topic: cutting strategy</span>
+                                <span>Population: resistance-trained adults</span>
+                                <span>Source: PubMed 41017942</span>
+                            </div>
+                            <div class="forum-study-links">
+                                <a class="forum-study-link" href="https://pubmed.ncbi.nlm.nih.gov/41017942/" target="_blank" rel="noopener noreferrer">Open PubMed abstract</a>
                             </div>
                         </article>
 
                         <article class="forum-post" id="meal-post">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
-                                    <span>r/odeology_forum</span>
-                                    <span>queued topic</span>
-                                    <span>meal timing</span>
+                                    <span>PubMed</span>
+                                    <span>observational review</span>
+                                    <span>2025</span>
                                 </div>
                                 <div class="forum-post-actions">
-                                    <a class="forum-join" href="forum-search.html">View</a>
+                                    <a class="forum-join" href="https://pubmed.ncbi.nlm.nih.gov/40859970/" target="_blank" rel="noopener noreferrer">Read abstract</a>
                                     <span class="forum-menu-dot">...</span>
                                 </div>
                             </div>
 
-                            <h2 class="forum-post-title">Meal timing for muscle gain when your schedule is inconsistent all week</h2>
+                            <h2 class="forum-post-title">Exercise, sedentary time, and adiposity still cluster together the way most coaches would expect</h2>
                             <p class="forum-post-copy">
-                                Another feed post placeholder with a real visual block, ready to turn into a forum article page later without changing the home page structure again.
+                                This recent paper reviewed the relationship between physical activity, sedentary behavior, and adiposity patterning. The practical message is not revolutionary, but it is useful: training sessions matter, and the rest of the day still matters too. You cannot fully out-program a routine that is otherwise very inactive.
                             </p>
-                            <div class="forum-post-media">
-                                <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
-                            </div>
+                            <ul class="forum-study-bullets">
+                                <li>Structured exercise and background movement both shape body-composition outcomes.</li>
+                                <li>High sedentary time can weaken the bigger picture even if workouts are in place.</li>
+                                <li>This is especially relevant for desk-heavy lifters trying to lean out.</li>
+                            </ul>
                             <div class="forum-post-stats">
-                                <span>121 upvotes</span>
-                                <span>Protein distribution</span>
-                                <span>Practical planning</span>
+                                <span>Topic: adiposity and inactivity</span>
+                                <span>Population: adults</span>
+                                <span>Source: PubMed 40859970</span>
+                            </div>
+                            <div class="forum-study-links">
+                                <a class="forum-study-link" href="https://pubmed.ncbi.nlm.nih.gov/40859970/" target="_blank" rel="noopener noreferrer">Open PubMed abstract</a>
+                            </div>
+                        </article>
+
+                        <article class="forum-post" id="maintenance-post">
+                            <div class="forum-post-head">
+                                <div class="forum-post-meta">
+                                    <span>PubMed</span>
+                                    <span>weight-loss maintenance study</span>
+                                    <span>2025</span>
+                                </div>
+                                <div class="forum-post-actions">
+                                    <a class="forum-join" href="https://pubmed.ncbi.nlm.nih.gov/40774350/" target="_blank" rel="noopener noreferrer">Read abstract</a>
+                                    <span class="forum-menu-dot">...</span>
+                                </div>
+                            </div>
+
+                            <h2 class="forum-post-title">Higher protein concentration may still help weight-loss maintenance when the hard part becomes staying there</h2>
+                            <p class="forum-post-copy">
+                                The PREVIEW study follow-up on dietary macronutrient composition and protein concentration focused on maintenance rather than just the first drop in body weight. That is useful because a lot of people can lose weight for a stretch, but far fewer can stabilize the result. Higher-protein setups still appear relevant for appetite control and maintenance behavior.
+                            </p>
+                            <ul class="forum-study-bullets">
+                                <li>The maintenance phase deserves its own strategy, not just a weaker version of the fat-loss phase.</li>
+                                <li>Protein concentration may help adherence and satiety after the initial cut.</li>
+                                <li>This is the kind of paper that matters for long-term body-composition planning, not just “before and after” pushes.</li>
+                            </ul>
+                            <div class="forum-post-stats">
+                                <span>Topic: maintenance</span>
+                                <span>Population: adults after weight loss</span>
+                                <span>Source: PubMed 40774350</span>
+                            </div>
+                            <div class="forum-study-links">
+                                <a class="forum-study-link" href="https://pubmed.ncbi.nlm.nih.gov/40774350/" target="_blank" rel="noopener noreferrer">Open PubMed abstract</a>
                             </div>
                         </article>
                     </section>
 
                     <aside class="forum-side-box">
-                        <h3>Popular Communities</h3>
+                        <h3>Trusted Sources</h3>
+                        <p class="forum-side-note">
+                            This page is pulling from recent PubMed-indexed papers so the forum has a research lane that feels current without turning into screenshots or random social-media claims.
+                        </p>
 
-                        <a class="forum-community" href="forum-how-to-get-bigger-biceps.html">
-                            <span class="forum-community-badge is-biceps" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=160&h=160" alt="Biceps Growth community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Biceps Growth</strong>
-                                <span>7,001 members</span>
-                            </span>
+                        <a class="forum-source-link" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener noreferrer">
+                            <strong>PubMed</strong>
+                            <span>Primary source hub for indexed abstracts and linked journal records.</span>
                         </a>
 
-                        <a class="forum-community" href="forum-search.html">
-                            <span class="forum-community-badge is-nutrition" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Nutrition community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Nutrition</strong>
-                                <span>6,825 members</span>
-                            </span>
+                        <a class="forum-source-link" href="https://jamanetwork.com/journals/jamanetworkopen" target="_blank" rel="noopener noreferrer">
+                            <strong>JAMA Network Open</strong>
+                            <span>Useful when newer exercise, obesity, or public-health studies need full-paper context.</span>
                         </a>
 
-                        <a class="forum-community" href="training-coming-soon.html">
-                            <span class="forum-community-badge is-training" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Training Split community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Training Split</strong>
-                                <span>12,481 members</span>
-                            </span>
+                        <a class="forum-source-link" href="https://www.ncbi.nlm.nih.gov/pmc/" target="_blank" rel="noopener noreferrer">
+                            <strong>PubMed Central</strong>
+                            <span>Good for full-text follow-up when the abstract looks useful but you need methods and limitations.</span>
                         </a>
 
-                        <a class="forum-community" href="index.html#resources">
-                            <span class="forum-community-badge is-macro" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Macro Tools community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Macro Tools</strong>
-                                <span>4,228 members</span>
-                            </span>
+                        <a class="forum-source-link" href="https://pubmed.ncbi.nlm.nih.gov/?term=systematic+review+exercise+nutrition" target="_blank" rel="noopener noreferrer">
+                            <strong>Review search shortcut</strong>
+                            <span>Direct search for exercise and nutrition systematic reviews if you want to keep this lane updated.</span>
                         </a>
-
-                        <a class="forum-community" href="overview.html">
-                            <span class="forum-community-badge is-overview" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Overview community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Overview</strong>
-                                <span>26,803 readers</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community is-hidden" href="dashboard.html" data-extra-community>
-                            <span class="forum-community-badge" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Dashboard community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Dashboard</strong>
-                                <span>9,412 readers</span>
-                            </span>
-                        </a>
-
-                        <a class="forum-community is-hidden" href="training.html" data-extra-community>
-                            <span class="forum-community-badge" aria-hidden="true">
-                                <img src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=160&h=160" alt="Programs community picture" loading="lazy">
-                            </span>
-                            <span>
-                                <strong>Programs</strong>
-                                <span>5,208 members</span>
-                            </span>
-                        </a>
-
-                        <div class="forum-side-footer">
-                            <div>
-                                <button class="forum-side-more" type="button" id="forum-side-more">See more</button>
-                            </div>
-                            <a class="forum-create-community" href="forum-search.html">Create community</a>
-                        </div>
                     </aside>
                 </div>
             </div>
         </section>
     </main>
 
-    <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
-    <script>
-        (function () {
-            const moreButton = document.getElementById('forum-side-more');
-            const hiddenCommunities = Array.from(document.querySelectorAll('[data-extra-community]'));
-
-            if (!moreButton || hiddenCommunities.length === 0) return;
-
-            moreButton.addEventListener('click', function () {
-                const expanded = moreButton.getAttribute('data-expanded') === 'true';
-
-                hiddenCommunities.forEach(function (community) {
-                    if (expanded) {
-                        community.classList.add('is-hidden');
-                        community.classList.remove('is-visible');
-                    } else {
-                        community.classList.remove('is-hidden');
-                        community.classList.add('is-visible');
-                    }
-                });
-
-                moreButton.setAttribute('data-expanded', expanded ? 'false' : 'true');
-                moreButton.textContent = expanded ? 'See more' : 'Show less';
-            });
-        }());
-    </script>
+    <script src="js/main.js?v=2026-03-14-forum-studies-1"></script>
 </body>
 </html>
