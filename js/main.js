@@ -31003,6 +31003,27 @@ function initForumRailDrawer() {
     if (!trigger || !rail || !closeButton || !overlay) return;
 
     const mobileMedia = window.matchMedia('(max-width: 980px)');
+    let pinnedTriggerViewportHeight = 0;
+    let lastViewportWidth = window.innerWidth;
+
+    const pinTrigger = (reset = false) => {
+        if (!mobileMedia.matches) {
+            trigger.style.top = '';
+            trigger.style.left = '';
+            trigger.style.bottom = '';
+            pinnedTriggerViewportHeight = 0;
+            return;
+        }
+
+        if (!pinnedTriggerViewportHeight || reset) {
+            pinnedTriggerViewportHeight = window.innerHeight;
+        }
+
+        const triggerHeight = Math.round(trigger.getBoundingClientRect().height || 34);
+        trigger.style.left = '14px';
+        trigger.style.top = `${pinnedTriggerViewportHeight - triggerHeight - 14}px`;
+        trigger.style.bottom = 'auto';
+    };
 
     const closeRail = () => {
         document.body.classList.remove('forum-rail-open');
@@ -31017,6 +31038,8 @@ function initForumRailDrawer() {
         overlay.setAttribute('aria-hidden', 'false');
         closeButton.focus();
     };
+
+    pinTrigger(true);
 
     trigger.addEventListener('click', openRail);
     closeButton.addEventListener('click', closeRail);
@@ -31034,10 +31057,18 @@ function initForumRailDrawer() {
         }
     });
 
+    window.addEventListener('resize', () => {
+        if (window.innerWidth !== lastViewportWidth) {
+            lastViewportWidth = window.innerWidth;
+            pinTrigger(true);
+        }
+    });
+
     mobileMedia.addEventListener('change', () => {
         if (!mobileMedia.matches) {
             closeRail();
         }
+        pinTrigger(true);
     });
 }
 
