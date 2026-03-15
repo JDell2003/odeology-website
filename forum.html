@@ -289,13 +289,80 @@
             border-bottom: 1px solid var(--forum-border);
         }
 
+        .forum-filter-control {
+            position: relative;
+        }
+
         .forum-filter-pill {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
             color: var(--forum-text);
             font-size: 0.93rem;
             font-weight: 600;
+            font-family: inherit;
+        }
+
+        .forum-filter-pill svg {
+            width: 0.78rem;
+            height: 0.78rem;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .forum-filter-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            min-width: 10.5rem;
+            padding: 0.35rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 18px 38px rgba(15, 23, 35, 0.14);
+            display: none;
+            z-index: 10;
+        }
+
+        .forum-filter-control.is-open .forum-filter-menu {
+            display: grid;
+            gap: 0.12rem;
+        }
+
+        .forum-filter-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.62rem 0.72rem;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--forum-text);
+            font: 500 0.88rem/1.2 "IBM Plex Sans", sans-serif;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .forum-filter-option:hover,
+        .forum-filter-option.is-active {
+            background: #edf2f6;
+        }
+
+        .forum-filter-option.is-active::after {
+            content: "•";
+            color: var(--forum-orange);
+            font-size: 1rem;
+            line-height: 1;
         }
 
         .forum-content-grid {
@@ -750,6 +817,17 @@
                 gap: 0.22rem;
             }
 
+            .forum-filter-menu {
+                min-width: 9.4rem;
+                top: calc(100% + 0.35rem);
+                border-radius: 12px;
+            }
+
+            .forum-filter-option {
+                padding: 0.58rem 0.68rem;
+                font-size: 0.82rem;
+            }
+
             .forum-content-grid {
                 display: block;
                 padding-top: 0;
@@ -1009,21 +1087,46 @@
                 </section>
 
                 <div class="forum-filter-row">
-                    <span class="forum-filter-pill">Best
-                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
-                    </span>
-                    <span class="forum-filter-pill">Everywhere
-                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
-                    </span>
-                    <span class="forum-filter-pill is-icon">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h11v9h-11z"></path><path d="M4.5 8.5h11"></path></svg>
-                        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
-                    </span>
+                    <div class="forum-filter-control" data-filter="sort">
+                        <button class="forum-filter-pill" type="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="forum-filter-label">Best</span>
+                            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                        </button>
+                        <div class="forum-filter-menu" role="menu">
+                            <button class="forum-filter-option is-active" type="button" data-value="best">Best</button>
+                            <button class="forum-filter-option" type="button" data-value="new">New</button>
+                            <button class="forum-filter-option" type="button" data-value="discussed">Discussed</button>
+                        </div>
+                    </div>
+                    <div class="forum-filter-control" data-filter="scope">
+                        <button class="forum-filter-pill" type="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="forum-filter-label">Everywhere</span>
+                            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                        </button>
+                        <div class="forum-filter-menu" role="menu">
+                            <button class="forum-filter-option is-active" type="button" data-value="all">Everywhere</button>
+                            <button class="forum-filter-option" type="button" data-value="training">Training</button>
+                            <button class="forum-filter-option" type="button" data-value="nutrition">Nutrition</button>
+                            <button class="forum-filter-option" type="button" data-value="recovery">Recovery</button>
+                        </div>
+                    </div>
+                    <div class="forum-filter-control" data-filter="time">
+                        <button class="forum-filter-pill is-icon" type="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="forum-filter-label">Today</span>
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h11v9h-11z"></path><path d="M4.5 8.5h11"></path></svg>
+                            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"></path></svg>
+                        </button>
+                        <div class="forum-filter-menu" role="menu">
+                            <button class="forum-filter-option is-active" type="button" data-value="today">Today</button>
+                            <button class="forum-filter-option" type="button" data-value="week">This week</button>
+                            <button class="forum-filter-option" type="button" data-value="all">All time</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="forum-content-grid">
                     <section class="forum-feed">
-                        <article class="forum-post" id="featured-post">
+                        <article class="forum-post" id="featured-post" data-scope="training" data-hours="4" data-score="218" data-comments="42">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
                                     <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="odeology forum avatar" loading="lazy"></span>
@@ -1062,7 +1165,7 @@
                             </div>
                         </article>
 
-                        <article class="forum-post" id="recovery-post">
+                        <article class="forum-post" id="recovery-post" data-scope="recovery" data-hours="7" data-score="167" data-comments="28">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
                                     <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=120&h=120" alt="recovery thread avatar" loading="lazy"></span>
@@ -1101,7 +1204,7 @@
                             </div>
                         </article>
 
-                        <article class="forum-post" id="cutting-post">
+                        <article class="forum-post" id="cutting-post" data-scope="nutrition" data-hours="9" data-score="144" data-comments="19">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
                                     <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="cutting thread avatar" loading="lazy"></span>
@@ -1140,7 +1243,7 @@
                             </div>
                         </article>
 
-                        <article class="forum-post" id="meal-post">
+                        <article class="forum-post" id="meal-post" data-scope="nutrition" data-hours="12" data-score="121" data-comments="15">
                             <div class="forum-post-head">
                                 <div class="forum-post-meta">
                                     <span class="forum-post-avatar"><img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=120&h=120" alt="meal timing thread avatar" loading="lazy"></span>
@@ -1214,5 +1317,101 @@
     </main>
 
     <script src="js/main.js?v=2026-03-14-forum-home-2"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const filterControls = Array.from(document.querySelectorAll(".forum-filter-control"));
+            const feed = document.querySelector(".forum-feed");
+            const posts = Array.from(document.querySelectorAll(".forum-post"));
+
+            if (!filterControls.length || !feed || !posts.length) {
+                return;
+            }
+
+            const state = {
+                sort: "best",
+                scope: "all",
+                time: "today"
+            };
+
+            const getBestScore = (post) => Number(post.dataset.score || 0) + Number(post.dataset.comments || 0) * 2;
+
+            const closeMenus = () => {
+                filterControls.forEach((control) => {
+                    control.classList.remove("is-open");
+                    const trigger = control.querySelector(".forum-filter-pill");
+                    if (trigger) {
+                        trigger.setAttribute("aria-expanded", "false");
+                    }
+                });
+            };
+
+            const postMatches = (post) => {
+                const scopeMatch = state.scope === "all" || post.dataset.scope === state.scope;
+                const hours = Number(post.dataset.hours || 0);
+                const timeMatch = state.time === "all"
+                    || (state.time === "today" && hours <= 24)
+                    || (state.time === "week" && hours <= 168);
+                return scopeMatch && timeMatch;
+            };
+
+            const sortPosts = (visiblePosts) => {
+                if (state.sort === "new") {
+                    return visiblePosts.sort((a, b) => Number(a.dataset.hours || 0) - Number(b.dataset.hours || 0));
+                }
+                if (state.sort === "discussed") {
+                    return visiblePosts.sort((a, b) => Number(b.dataset.comments || 0) - Number(a.dataset.comments || 0));
+                }
+                return visiblePosts.sort((a, b) => getBestScore(b) - getBestScore(a));
+            };
+
+            const applyFilters = () => {
+                const visiblePosts = sortPosts(posts.filter(postMatches));
+                posts.forEach((post) => {
+                    post.hidden = true;
+                });
+                visiblePosts.forEach((post) => {
+                    post.hidden = false;
+                    feed.appendChild(post);
+                });
+            };
+
+            filterControls.forEach((control) => {
+                const filterName = control.dataset.filter;
+                const trigger = control.querySelector(".forum-filter-pill");
+                const label = control.querySelector(".forum-filter-label");
+                const options = Array.from(control.querySelectorAll(".forum-filter-option"));
+
+                trigger.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    const willOpen = !control.classList.contains("is-open");
+                    closeMenus();
+                    if (willOpen) {
+                        control.classList.add("is-open");
+                        trigger.setAttribute("aria-expanded", "true");
+                    }
+                });
+
+                options.forEach((option) => {
+                    option.addEventListener("click", () => {
+                        state[filterName] = option.dataset.value;
+                        label.textContent = option.textContent.trim();
+                        options.forEach((item) => item.classList.remove("is-active"));
+                        option.classList.add("is-active");
+                        closeMenus();
+                        applyFilters();
+                    });
+                });
+            });
+
+            document.addEventListener("click", closeMenus);
+            window.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    closeMenus();
+                }
+            });
+
+            applyFilters();
+        });
+    </script>
 </body>
 </html>
