@@ -34,6 +34,18 @@ const shuffle = (list) => {
   }
   return copy;
 };
+const normalizeImageFamily = (value) => {
+  const raw = decodeURIComponent(String(value || '').toLowerCase());
+  const tail = raw.split('/').pop() || raw;
+  return tail
+    .replace(/\?.*$/, '')
+    .replace(/\.(jpg|jpeg|png|webp|gif)$/i, '')
+    .replace(/[_-]?\d+\b/g, '')
+    .replace(/\b(copy|cropped|small|medium|large|thumb)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 let protectedPhrases = [];
 const plainWords = (text) => String(text || '').toLowerCase().match(/[a-z0-9]+(?:[.-][a-z0-9]+)*/g) || [];
@@ -1625,20 +1637,31 @@ function imageMeta(post, item) {
 function loadExistingImagePool() {
   const readPool = (payload) => {
     const items = Array.isArray(payload.items) ? payload.items : [];
+    const seenFamilies = new Set();
     return items
       .filter((item) => item && item.format === 'image' && item.imageUrl)
       .filter((item) => !/(museum|collections\.|candlestick|furniture_fitting|artifact|brooklynmuseum|otegroupmuseum)/i.test(String(item.imageUrl || '')))
-      .map((item) => ({
-        category: item.category,
-        scope: item.scope,
-        imageUrl: item.imageUrl,
-        imageAlt: item.imageAlt || null,
-        imageSource: item.imageSource || null,
-        imageCreator: item.imageCreator || null,
-        imageLicense: item.imageLicense || null,
-        imageLicenseUrl: item.imageLicenseUrl || null,
-        imagePageUrl: item.imagePageUrl || null
-      }));
+      .map((item) => {
+        const family = normalizeImageFamily(item.imageUrl) || normalizeImageFamily(item.imagePageUrl) || String(item.imageCreator || '').toLowerCase().trim();
+        return {
+          category: item.category,
+          scope: item.scope,
+          imageUrl: item.imageUrl,
+          imageAlt: item.imageAlt || null,
+          imageSource: item.imageSource || null,
+          imageCreator: item.imageCreator || null,
+          imageLicense: item.imageLicense || null,
+          imageLicenseUrl: item.imageLicenseUrl || null,
+          imagePageUrl: item.imagePageUrl || null,
+          imageFamily: family
+        };
+      })
+      .filter((item) => {
+        const family = item.imageFamily || item.imageUrl;
+        if (seenFamilies.has(family)) return false;
+        seenFamilies.add(family);
+        return true;
+      });
   };
 
   if (fs.existsSync(OUT)) {
@@ -1752,10 +1775,12 @@ async function assign(posts) {
   const finder = new Finder();
   const fallbackPool = loadExistingImagePool();
   const usedFallback = new Set();
+  const usedFamilies = new Set();
   const takeExisting = (post, profile) => {
-    const exactIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && existingImageMatches(post, item, profile));
+    const exactIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && !usedFamilies.has(item.imageFamily || item.imageUrl) && existingImageMatches(post, item, profile));
     if (exactIndex === -1) return null;
     usedFallback.add(exactIndex);
+    usedFamilies.add(fallbackPool[exactIndex].imageFamily || fallbackPool[exactIndex].imageUrl);
     return fallbackPool[exactIndex];
   };
   const takeFallback = (post, profile) => {
@@ -1766,13 +1791,15 @@ async function assign(posts) {
         : profile.family === 'planning' || profile.exact === 'planning'
           ? /workout planning photo/
           : /fitness training photo|chest training photo|back training photo|shoulder training photo|arm training photo|leg training photo|core training photo|lat training photo|triceps training photo|upper chest training photo|cable fly training photo|cable row training photo/;
-    const patternedIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && preferredPattern.test(imageAlt(item)));
-    const pickIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.category === post.category);
-    const scopeIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.scope === post.scope);
-    const anyIndex = fallbackPool.findIndex((_, index) => !usedFallback.has(index));
+    const available = (item, index) => !usedFallback.has(index) && !usedFamilies.has(item.imageFamily || item.imageUrl);
+    const patternedIndex = fallbackPool.findIndex((item, index) => available(item, index) && preferredPattern.test(imageAlt(item)));
+    const pickIndex = fallbackPool.findIndex((item, index) => available(item, index) && item.category === post.category);
+    const scopeIndex = fallbackPool.findIndex((item, index) => available(item, index) && item.scope === post.scope);
+    const anyIndex = fallbackPool.findIndex((item, index) => available(item, index));
     const index = patternedIndex !== -1 ? patternedIndex : pickIndex !== -1 ? pickIndex : scopeIndex !== -1 ? scopeIndex : anyIndex;
     if (index === -1) return null;
     usedFallback.add(index);
+    usedFamilies.add(fallbackPool[index].imageFamily || fallbackPool[index].imageUrl);
     return fallbackPool[index];
   };
   for (const post of posts) {
@@ -1782,6 +1809,14 @@ async function assign(posts) {
     const usePlanning = profile.family === 'planning' || profile.exact === 'planning';
     const matches = (candidate) => imageMatchesProfile(post, candidate, profile);
     let item = takeExisting(post, profile);
+    if (item) {
+      const family = normalizeImageFamily(item.url) || normalizeImageFamily(item.foreign_landing_url) || normalizeImageFamily(item.detail_url);
+      if (family && usedFamilies.has(family)) {
+        item = null;
+      } else if (family) {
+        usedFamilies.add(family);
+      }
+    }
     if (item) {
       Object.assign(post, imageMeta(post, item));
       continue;
