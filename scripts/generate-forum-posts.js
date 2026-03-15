@@ -476,7 +476,7 @@ function specificPartBodies(part) {
 function specificQuestionBody(category, c, titleInfo) {
   if (category !== 'training') return null;
   const family = titleInfo.family || '';
-  if (/bodypart-normal|bodypart-helped|free-plan-grow|bodypart-feel|volume-question|is-this-normal/.test(family)) {
+  if (/bodypart-normal|bodypart-helped|free-plan-grow|bodypart-feel|volume-question|is-this-normal|normal-beginner/.test(family)) {
     const lines = specificPartBodies(c.part);
     return { text: fixGrammar(applyCaptionImperfection(pick(lines))), styleKey: `${category}-${family}-specific`, mentionsFree: /free-plan-grow/.test(family) };
   }
@@ -878,56 +878,106 @@ class Finder {
   }
 }
 
-function imageQueries(post) {
-  const c = post._c || {};
-  const titleText = String(post.title || '').toLowerCase();
-  const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
-  const intent = detectImageIntent(post);
-  const byIntent = {
-    chest: ['bench press gym', 'chest press machine', 'incline bench press', 'barbell bench gym'],
-    back: ['lat pulldown gym', 'pull up gym', 'barbell row gym', 'back mirror gym'],
-    shoulders: ['lateral raise gym', 'shoulder dumbbell raise', 'rear delt machine gym', 'dumbbell shoulder workout'],
-    arms: ['dumbbell curl gym', 'tricep pushdown gym', 'arm flex mirror gym', 'preacher curl gym'],
-    legs: ['squat rack gym', 'leg press gym', 'split squat gym', 'hamstring curl gym'],
-    core: ['ab wheel gym', 'cable crunch gym', 'core workout gym', 'plank gym'],
-    food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal'],
-    planning: ['workout notebook gym', 'phone notes gym workout', 'fitness planner notebook', 'workout log notebook'],
-    general: ['gym mirror selfie', 'gym floor scene', 'barbell plates gym', 'crowded gym']
+function detectImageProfile(post) {
+  const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
+  const exact = {
+    'upper-chest': /\bupper chest|incline smith|smith incline|incline dumbbell|incline bench|incline press|upper chest cable fly\b/,
+    'rear-delts': /\brear delts?|reverse pec deck|rear delt\b/,
+    'side-delts': /\bside delts?|lateral raises?\b/,
+    traps: /\btraps?|shrugs?|carries|farmer carries\b/,
+    'upper-back': /\bupper back|chest supported row|chest-supported-row\b/,
+    lats: /\blats?|lat pulldown|pullups?|pull up\b/,
+    biceps: /\bbiceps|preacher curl|dumbbell curl|barbell curl|curls?\b/,
+    triceps: /\btriceps|pushdowns?|extensions?|close grip\b/,
+    hamstrings: /\bhamstrings?|rdl|leg curl\b/,
+    glutes: /\bglutes?|hip thrust\b/,
+    quads: /\bquads?|hack squat|leg press|split squat|squat\b/,
+    calves: /\bcalves|calf\b/,
+    abs: /\babs|core|bracing|brace|cable crunch|ab wheel\b/,
+    'cable-row': /\bcable row\b/,
+    'cable-fly': /\bcable fly\b/,
+    'smith-incline': /\bsmith incline|smith-incline\b/,
+    planning: /\b(trainer|coaching|custom plan|custom workout|accountability|routine design|split)\b|free plan|free training|free workouts/,
+    food: /\b(meal|diet|protein|prep|food|calorie|calories|appetite|bulk|cut)\b/,
+    lifestyle: /\b(headphones|packed gym|garage gym|spotter|busy week|missed one day)\b/
   };
-  const contextual = {
-    training: [`${c.lift} workout`, `${c.part} gym`],
-    nutrition: [`${c.food} meal prep`, `${c.food2} healthy meal`, `${c.meal} protein meal`],
-    recovery: [`${c.issue} stretching`, `${c.tool} recovery`, `${c.block} mobility`],
-    cutting: [`${c.food} low calorie meal`, `${c.food2} lean meal`, `${c.meal} healthy meal`],
-    bulking: [`${c.food} high calorie meal`, `${c.food2} bodybuilding meal`, `${c.meal} protein meal`],
-    supplements: [`${c.supp} shaker`, `${c.supp2} supplement`, 'gym bag supplements'],
-    lifestyle: [`${c.planner} planner`, 'fitness planner notebook', 'crowded gym']
-  };
-  const intentFallback = {
-    chest: ['gym mirror selfie', 'workout notebook gym'],
-    back: ['gym mirror selfie', 'barbell plates gym'],
-    shoulders: ['gym mirror selfie', 'workout notebook gym'],
-    arms: ['gym mirror selfie', 'barbell plates gym'],
-    legs: ['gym rack platform', 'barbell plates gym'],
-    core: ['gym mirror selfie', 'workout notebook gym'],
-    food: ['meal prep containers', 'protein meal'],
-    planning: ['fitness planner notebook', 'phone notes gym workout'],
-    general: ['gym mirror selfie', 'barbell plates gym']
-  };
-  return uniq([...(byIntent[intent] || byIntent.general), ...(contextual[post.category] || []), ...(intentFallback[intent] || []), titleTerms]);
+  for (const [key, pattern] of Object.entries(exact)) {
+    if (pattern.test(text)) {
+      const familyMap = {
+        'upper-chest': 'chest',
+        'rear-delts': 'shoulders',
+        'side-delts': 'shoulders',
+        traps: 'back',
+        'upper-back': 'back',
+        lats: 'back',
+        biceps: 'arms',
+        triceps: 'arms',
+        hamstrings: 'legs',
+        glutes: 'legs',
+        quads: 'legs',
+        calves: 'legs',
+        abs: 'core',
+        'cable-row': 'back',
+        'cable-fly': 'chest',
+        'smith-incline': 'chest',
+        planning: 'planning',
+        food: 'food',
+        lifestyle: 'general'
+      };
+      return { exact: key, family: familyMap[key] || 'general' };
+    }
+  }
+  if (/\b(pecs?|chest|bench|pressing?)\b/.test(text)) return { exact: null, family: 'chest' };
+  if (/\b(back|rows?|pullups?|pull up|mid back)\b/.test(text)) return { exact: null, family: 'back' };
+  if (/\b(shoulders?|lateral raise)\b/.test(text)) return { exact: null, family: 'shoulders' };
+  if (/\b(arms|forearms?)\b/.test(text)) return { exact: null, family: 'arms' };
+  if (/\b(legs|adductors?)\b/.test(text)) return { exact: null, family: 'legs' };
+  return { exact: null, family: 'general' };
 }
 
-function detectImageIntent(post) {
-  const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
-  if (/\b(meal|diet|protein|prep|food|calorie|calories|appetite|bulk|cut)\b/.test(text)) return 'food';
-  if (/\b(trainer|coaching|custom|accountability|notebook|planner|split|exercise order)\b|free plan|free training|free workouts/.test(text)) return 'planning';
-  if (/\b(pecs?|chest|bench|incline|pressing?)\b/.test(text)) return 'chest';
-  if (/\b(lats?|back|rows?|pull up|pullups|upper back|mid back)\b/.test(text)) return 'back';
-  if (/\b(side delts?|rear delts?|shoulders?|lateral raises?)\b/.test(text)) return 'shoulders';
-  if (/\b(quads?|hamstrings?|glutes?|calves|adductors?|leg press|split squat|squats?|rdl|hip thrust|leg curl)\b/.test(text)) return 'legs';
-  if (/\b(biceps|triceps|arms|curls?|pushdowns?|forearms?)\b/.test(text)) return 'arms';
-  if (/\b(abs|core|brace|bracing)\b/.test(text)) return 'core';
-  return 'general';
+function imageQueries(post) {
+  const c = post._c || {};
+  const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
+  const profile = detectImageProfile(post);
+  const exactQueries = {
+    'upper-chest': ['incline bench press', 'incline dumbbell press gym', 'incline smith machine chest', 'upper chest cable fly'],
+    'rear-delts': ['rear delt machine gym', 'reverse pec deck gym', 'rear delt raise gym'],
+    'side-delts': ['lateral raise gym', 'cable lateral raise gym', 'dumbbell lateral raise gym'],
+    traps: ['barbell shrug gym', 'dumbbell shrug gym', 'farmer carry gym'],
+    'upper-back': ['chest supported row gym', 'upper back row gym', 'barbell row gym'],
+    lats: ['lat pulldown gym', 'pull up gym', 'wide grip pulldown gym'],
+    biceps: ['dumbbell curl gym', 'preacher curl gym', 'barbell curl gym'],
+    triceps: ['tricep pushdown gym', 'overhead tricep extension gym', 'close grip bench gym'],
+    hamstrings: ['romanian deadlift gym', 'leg curl machine gym', 'rdl gym'],
+    glutes: ['hip thrust gym', 'glute bridge gym', 'hip thrust machine gym'],
+    quads: ['hack squat gym', 'leg press gym', 'split squat gym', 'barbell squat gym'],
+    calves: ['standing calf raise gym', 'seated calf raise gym', 'calf raise machine gym'],
+    abs: ['ab wheel gym', 'cable crunch gym', 'core workout gym'],
+    'cable-row': ['cable row gym', 'seated cable row gym'],
+    'cable-fly': ['cable fly gym', 'cable chest fly gym'],
+    'smith-incline': ['smith incline press gym', 'incline smith machine chest'],
+    planning: ['workout notebook gym', 'phone notes gym workout', 'fitness planner notebook', 'workout log notebook'],
+    food: [`${c.food} meal prep`, `${c.food2} healthy meal`, 'meal prep containers', `${c.meal} protein meal`],
+    lifestyle: ['gym mirror selfie', 'crowded gym', 'gym floor scene']
+  };
+  const familyQueries = {
+    chest: ['bench press gym', 'chest press machine', 'incline bench press', 'barbell bench gym'],
+    back: ['lat pulldown gym', 'barbell row gym', 'back mirror gym', 'pull up gym'],
+    shoulders: ['lateral raise gym', 'rear delt machine gym', 'shoulder dumbbell raise'],
+    arms: ['dumbbell curl gym', 'tricep pushdown gym', 'arm flex mirror gym'],
+    legs: ['squat rack gym', 'leg press gym', 'split squat gym', 'hamstring curl gym'],
+    core: ['ab wheel gym', 'cable crunch gym', 'core workout gym'],
+    food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal'],
+    planning: ['workout notebook gym', 'phone notes gym workout', 'fitness planner notebook'],
+    general: ['gym mirror selfie', 'barbell plates gym', 'gym rack platform']
+  };
+  const neutralTraining = ['gym mirror selfie', 'barbell plates gym', 'gym rack platform', 'workout notebook gym'];
+  return {
+    exact: uniq([...(exactQueries[profile.exact] || []), titleTerms]),
+    family: uniq([...(familyQueries[profile.family] || familyQueries.general), titleTerms]),
+    neutral: neutralTraining,
+    profile
+  };
 }
 
 function broadImageQueries(category) {
@@ -945,6 +995,22 @@ function broadImageQueries(category) {
 
 function imageMeta(post, item) {
   const altMap = {
+    'upper-chest': 'upper chest training photo',
+    'rear-delts': 'rear delt training photo',
+    'side-delts': 'side delt training photo',
+    traps: 'trap training photo',
+    'upper-back': 'upper back training photo',
+    lats: 'lat training photo',
+    biceps: 'biceps training photo',
+    triceps: 'triceps training photo',
+    hamstrings: 'hamstring training photo',
+    glutes: 'glute training photo',
+    quads: 'quad training photo',
+    calves: 'calf training photo',
+    abs: 'core training photo',
+    'cable-row': 'cable row training photo',
+    'cable-fly': 'cable fly training photo',
+    'smith-incline': 'incline press training photo',
     chest: 'chest training photo',
     back: 'back training photo',
     shoulders: 'shoulder training photo',
@@ -953,9 +1019,10 @@ function imageMeta(post, item) {
     core: 'core training photo',
     food: 'meal prep photo',
     planning: 'workout planning photo',
-    general: 'gym lifestyle photo'
+    general: 'gym mirror photo'
   };
-  const intent = detectImageIntent(post);
+  const profile = detectImageProfile(post);
+  const intent = profile.exact || profile.family;
   return {
     imageUrl: item.url,
     imageAlt: altMap[intent] || 'fitness forum photo',
@@ -993,6 +1060,22 @@ function loadExistingImagePool() {
 
 function applyExistingImage(post, item) {
   const altMap = {
+    'upper-chest': 'upper chest training photo',
+    'rear-delts': 'rear delt training photo',
+    'side-delts': 'side delt training photo',
+    traps: 'trap training photo',
+    'upper-back': 'upper back training photo',
+    lats: 'lat training photo',
+    biceps: 'biceps training photo',
+    triceps: 'triceps training photo',
+    hamstrings: 'hamstring training photo',
+    glutes: 'glute training photo',
+    quads: 'quad training photo',
+    calves: 'calf training photo',
+    abs: 'core training photo',
+    'cable-row': 'cable row training photo',
+    'cable-fly': 'cable fly training photo',
+    'smith-incline': 'incline press training photo',
     chest: 'chest training photo',
     back: 'back training photo',
     shoulders: 'shoulder training photo',
@@ -1001,9 +1084,10 @@ function applyExistingImage(post, item) {
     core: 'core training photo',
     food: 'meal prep photo',
     planning: 'workout planning photo',
-    general: 'gym lifestyle photo'
+    general: 'gym mirror photo'
   };
-  const intent = detectImageIntent(post);
+  const profile = detectImageProfile(post);
+  const intent = profile.exact || profile.family;
   return {
     imageUrl: item.imageUrl,
     imageAlt: altMap[intent] || item.imageAlt || 'fitness forum photo',
@@ -1031,14 +1115,43 @@ async function assign(posts) {
   };
   for (const post of posts) {
     if (post.format !== 'image') continue;
-    let item = await finder.take(imageQueries(post));
-    if (!item) item = await finder.take(broadImageQueries(post.category));
+    const queries = imageQueries(post);
+    const profile = queries.profile;
+    const usePlanning = profile.family === 'planning' || profile.exact === 'planning';
+    let item = await finder.take(queries.exact);
+    if (!item) item = await finder.take(queries.family);
+    if (!item && !usePlanning) item = await finder.take(queries.neutral);
+    if (!item && usePlanning) item = await finder.take([...queries.family, ...queries.neutral]);
+    if (!item && (profile.family === 'food' || post.category === 'nutrition' || post.category === 'cutting' || post.category === 'bulking')) {
+      item = await finder.take(broadImageQueries(post.category));
+    }
     if (item) {
       Object.assign(post, imageMeta(post, item));
       continue;
     }
+    if (!usePlanning && profile.family !== 'food') {
+      post.format = 'text';
+      post.imageUrl = null;
+      post.imageAlt = null;
+      post.imageSource = null;
+      post.imageCreator = null;
+      post.imageLicense = null;
+      post.imageLicenseUrl = null;
+      post.imagePageUrl = null;
+      continue;
+    }
     const fallback = takeFallback(post);
-    if (!fallback) throw new Error(`No unique open-license image found for ${post.id}`);
+    if (!fallback) {
+      post.format = 'text';
+      post.imageUrl = null;
+      post.imageAlt = null;
+      post.imageSource = null;
+      post.imageCreator = null;
+      post.imageLicense = null;
+      post.imageLicenseUrl = null;
+      post.imagePageUrl = null;
+      continue;
+    }
     Object.assign(post, applyExistingImage(post, fallback));
   }
   return { requests: finder.requests, ids: finder.used.size };
