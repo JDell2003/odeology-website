@@ -185,7 +185,8 @@
 
         .forum-drawer-trigger,
         .forum-rail-overlay,
-        .forum-left-header {
+        .forum-left-header,
+        .forum-rail-close-floating {
             display: none;
         }
 
@@ -438,6 +439,13 @@
                 z-index: 40;
             }
 
+            .forum-rail-close-floating {
+                display: inline-flex;
+                position: absolute;
+                top: 0.9rem;
+                right: 0.9rem;
+            }
+
             .forum-left-header {
                 display: flex;
                 align-items: center;
@@ -568,6 +576,7 @@
 
     <div class="forum-shell">
         <aside class="forum-left forum-rail" id="forum-rail-drawer">
+            <button class="forum-rail-close forum-rail-close-floating" type="button" aria-label="Close menu">X</button>
             <div class="forum-left-header forum-rail-header">
                 <strong>Menu</strong>
                 <button class="forum-rail-close" type="button" aria-label="Close menu">X</button>

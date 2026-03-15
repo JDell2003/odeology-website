@@ -110,7 +110,8 @@
         }
         .forum-drawer-trigger,
         .forum-rail-overlay,
-        .forum-rail-header { display: none; }
+        .forum-rail-header,
+        .forum-rail-close-floating { display: none; }
         .forum-main { min-width: 0; padding: 0 1.25rem 2rem; }
         .forum-main-inner { width: min(1120px, 100%); margin: 0 auto; }
         .forum-toolbar {
@@ -546,6 +547,12 @@
                 transition: transform 200ms ease;
                 z-index: 40;
             }
+            .forum-rail-close-floating {
+                display: inline-flex;
+                position: absolute;
+                top: 0.9rem;
+                right: 0.9rem;
+            }
             .forum-rail-header {
                 display: flex;
                 align-items: center;
@@ -635,6 +642,7 @@
     <div class="forum-rail-overlay" aria-hidden="true"></div>
     <main class="forum-page-shell">
         <aside class="forum-rail" id="forum-rail-drawer">
+            <button class="forum-rail-close forum-rail-close-floating" type="button" aria-label="Close forum menu">X</button>
             <div class="forum-rail-header">
                 <strong>Forum Menu</strong>
                 <button class="forum-rail-close" type="button" aria-label="Close forum menu">X</button>
