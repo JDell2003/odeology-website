@@ -1013,15 +1013,15 @@ function imageQueries(post) {
   const titleTerms = words(post.title).filter((word) => word.length > 2).slice(0, 3).join(' ');
   const profile = detectImageProfile(post);
   const adultProgress = {
-    chest: ['adult gym mirror selfie chest', 'young adult bodybuilding chest progress', 'adult fitness posing chest'],
-    back: ['adult gym mirror selfie back', 'young adult bodybuilding back progress', 'adult fitness posing back'],
-    shoulders: ['adult gym mirror selfie shoulders', 'young adult fitness shoulder progress', 'adult lateral raise physique'],
-    arms: ['adult gym mirror selfie arms', 'young adult fitness biceps progress', 'adult bodybuilding arm pose'],
-    legs: ['adult gym mirror selfie legs', 'young adult fitness leg progress', 'adult bodybuilding lower body'],
-    core: ['adult gym mirror selfie abs', 'young adult fitness core progress', 'adult physique check abs'],
+    chest: ['adult gym mirror selfie chest', 'young adult bodybuilding chest progress', 'adult fitness posing chest', 'adult athlete bench press gym'],
+    back: ['adult gym mirror selfie back', 'young adult bodybuilding back progress', 'adult fitness posing back', 'adult athlete pull up gym'],
+    shoulders: ['adult gym mirror selfie shoulders', 'young adult fitness shoulder progress', 'adult lateral raise physique', 'adult athlete shoulder workout gym'],
+    arms: ['adult gym mirror selfie arms', 'young adult fitness biceps progress', 'adult bodybuilding arm pose', 'adult athlete dumbbell curl gym'],
+    legs: ['adult gym mirror selfie legs', 'young adult fitness leg progress', 'adult bodybuilding lower body', 'adult athlete squat gym'],
+    core: ['adult gym mirror selfie abs', 'young adult fitness core progress', 'adult physique check abs', 'adult athlete core workout gym'],
     food: ['healthy meal prep adult fitness', 'protein meal prep gym lifestyle'],
-    planning: ['adult workout log notebook gym', 'fitness notes phone gym'],
-    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym']
+    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique check gym'],
+    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'adult athlete training gym', 'adult sports conditioning training']
   };
   const exactQueries = {
     'upper-chest': ['incline bench press adult gym', 'incline dumbbell press adult fitness', 'incline smith machine chest adult', 'upper chest cable fly adult'],
@@ -1040,22 +1040,22 @@ function imageQueries(post) {
     'cable-row': ['cable row adult gym', 'seated cable row adult fitness'],
     'cable-fly': ['cable fly adult gym', 'cable chest fly adult fitness'],
     'smith-incline': ['smith incline press adult gym', 'incline smith machine chest adult'],
-    planning: ['adult workout notebook gym', 'adult phone notes gym workout', 'fitness planner notebook', 'workout log notebook'],
+    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique progress gym', 'adult coach training client gym'],
     food: [`${c.food} meal prep`, `${c.food2} healthy meal`, 'meal prep containers', `${c.meal} protein meal`],
-    lifestyle: ['adult gym mirror selfie', 'crowded gym adult fitness', 'gym floor scene']
+    lifestyle: ['adult gym mirror selfie', 'crowded gym adult fitness', 'adult athlete training gym', 'adult weightlifting gym photo', 'adult jiu jitsu training']
   };
   const familyQueries = {
-    chest: ['bench press adult gym', 'chest press machine adult', 'incline bench adult fitness', ...adultProgress.chest],
-    back: ['lat pulldown adult gym', 'barbell row adult gym', 'back mirror adult gym', 'pull up adult fitness', ...adultProgress.back],
-    shoulders: ['lateral raise adult gym', 'rear delt machine adult gym', 'shoulder dumbbell raise adult', ...adultProgress.shoulders],
-    arms: ['dumbbell curl adult gym', 'tricep pushdown adult gym', 'arm flex mirror adult gym', ...adultProgress.arms],
-    legs: ['squat rack adult gym', 'leg press adult gym', 'split squat adult fitness', 'hamstring curl adult gym', ...adultProgress.legs],
-    core: ['ab wheel adult gym', 'cable crunch adult gym', 'core workout adult fitness', ...adultProgress.core],
+    chest: ['bench press adult gym', 'chest press machine adult', 'incline bench adult fitness', 'adult athlete chest workout', ...adultProgress.chest],
+    back: ['lat pulldown adult gym', 'barbell row adult gym', 'back mirror adult gym', 'pull up adult fitness', 'adult athlete back workout', ...adultProgress.back],
+    shoulders: ['lateral raise adult gym', 'rear delt machine adult gym', 'shoulder dumbbell raise adult', 'adult athlete shoulder day gym', ...adultProgress.shoulders],
+    arms: ['dumbbell curl adult gym', 'tricep pushdown adult gym', 'arm flex mirror adult gym', 'adult athlete arm workout gym', ...adultProgress.arms],
+    legs: ['squat rack adult gym', 'leg press adult gym', 'split squat adult fitness', 'hamstring curl adult gym', 'adult athlete leg workout gym', ...adultProgress.legs],
+    core: ['ab wheel adult gym', 'cable crunch adult gym', 'core workout adult fitness', 'adult athlete ab workout gym', ...adultProgress.core],
     food: ['meal prep containers', 'high protein meal prep', 'healthy meal prep', 'protein meal', ...adultProgress.food],
-    planning: ['adult workout notebook gym', 'adult phone notes gym workout', 'fitness planner notebook', ...adultProgress.planning],
-    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform']
+    planning: ['adult gym mirror selfie', 'adult athlete training gym', 'adult physique check gym', 'adult coach with client gym', ...adultProgress.planning],
+    general: ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult athlete training gym', 'adult sports conditioning training']
   };
-  const neutralTraining = ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult workout log notebook'];
+  const neutralTraining = ['adult gym mirror selfie', 'young adult fitness progress photo', 'adult physique check gym', 'barbell plates gym', 'gym rack platform', 'adult athlete training gym', 'adult sports conditioning training', 'adult weightlifting gym photo'];
   return {
     exact: uniq([...(exactQueries[profile.exact] || []), titleTerms]),
     family: uniq([...(familyQueries[profile.family] || familyQueries.general), titleTerms]),
@@ -1102,8 +1102,8 @@ function imageMeta(post, item) {
     legs: 'leg training photo',
     core: 'core training photo',
     food: 'meal prep photo',
-    planning: 'workout planning photo',
-    general: 'gym mirror photo'
+    planning: 'fitness training photo',
+    general: 'fitness training photo'
   };
   const profile = detectImageProfile(post);
   const intent = profile.exact || profile.family;
@@ -1203,8 +1203,8 @@ function applyExistingImage(post, item) {
     legs: 'leg training photo',
     core: 'core training photo',
     food: 'meal prep photo',
-    planning: 'workout planning photo',
-    general: 'gym mirror photo'
+    planning: 'fitness training photo',
+    general: 'fitness training photo'
   };
   const profile = detectImageProfile(post);
   const intent = profile.exact || profile.family;
