@@ -8,6 +8,7 @@
 
   let activeTopic = 'all';
   let debounceTimer = null;
+  let localDataset = null;
 
   function escapeHtml(value) {
     return String(value || '')
@@ -26,8 +27,73 @@
       .join(' ');
   }
 
+  function tokenize(input) {
+    return String(input || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+
   function renderEmpty(message) {
     feed.innerHTML = `<div class="forum-empty-state">${escapeHtml(message)}</div>`;
+  }
+
+  function scoreStudy(item, tokens, topic) {
+    const title = String(item?.title || '').toLowerCase();
+    const summary = String(item?.summary || '').toLowerCase();
+    const journal = String(item?.journal || '').toLowerCase();
+    const studyType = String(item?.studyType || item?.evidenceType || '').toLowerCase();
+    const tags = Array.isArray(item?.tags) ? item.tags.map((tag) => String(tag || '').toLowerCase()) : [];
+
+    if (topic && topic !== 'all' && !tags.includes(topic)) return -1;
+
+    if (!tokens.length) {
+      let base = 1;
+      if (studyType.includes('meta-analysis')) base += 8;
+      else if (studyType.includes('systematic review')) base += 7;
+      else if (studyType.includes('randomized')) base += 5;
+      return base;
+    }
+
+    let score = 0;
+    tokens.forEach((token) => {
+      if (title.includes(token)) score += 8;
+      if (summary.includes(token)) score += 4;
+      if (journal.includes(token)) score += 2;
+      if (studyType.includes(token)) score += 3;
+      if (tags.some((tag) => tag.includes(token))) score += 6;
+    });
+    return score;
+  }
+
+  function searchLocalStudies(items, { query, topic, limit }) {
+    const tokens = tokenize(query);
+    const ranked = (Array.isArray(items) ? items : [])
+      .map((item) => ({ item, score: scoreStudy(item, tokens, topic) }))
+      .filter((entry) => entry.score >= 0)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const aDate = String(a.item?.publicationDate || a.item?.year || '');
+        const bDate = String(b.item?.publicationDate || b.item?.year || '');
+        return bDate.localeCompare(aDate);
+      });
+
+    return {
+      total: ranked.length,
+      items: ranked.slice(0, limit).map((entry) => entry.item)
+    };
+  }
+
+  async function loadLocalDataset() {
+    if (localDataset) return localDataset;
+    const response = await fetch('/data/studies.json', {
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) throw new Error(`Local dataset failed with ${response.status}`);
+    localDataset = await response.json();
+    return localDataset;
   }
 
   function renderStudies(items) {
@@ -99,19 +165,40 @@
     if (activeTopic && activeTopic !== 'all') params.set('topic', activeTopic);
     params.set('limit', '18');
 
-    status.textContent = 'Loading studies…';
+    status.textContent = 'Loading studies...';
 
     try {
-      const response = await fetch(`/api/studies/search?${params.toString()}`, {
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!response.ok) throw new Error(`Failed with ${response.status}`);
-      const payload = await response.json();
+      let payload;
+
+      try {
+        const response = await fetch(`/api/studies/search?${params.toString()}`, {
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error(`API failed with ${response.status}`);
+        payload = await response.json();
+      } catch {
+        const dataset = await loadLocalDataset();
+        const result = searchLocalStudies(dataset.items || [], {
+          query: q,
+          topic: activeTopic,
+          limit: 18
+        });
+        payload = {
+          total: result.total,
+          items: result.items,
+          generatedAt: dataset.generatedAt || null,
+          fallback: true
+        };
+      }
+
       renderStudies(payload.items || []);
       const total = Number(payload.total || 0);
       const querySuffix = q ? ` for "${q}"` : '';
       const topicSuffix = activeTopic && activeTopic !== 'all' ? ` in ${titleCaseTopic(activeTopic)}` : '';
-      status.textContent = `${total} studies found${querySuffix}${topicSuffix}. Cached locally from public research sources.`;
+      const sourceSuffix = payload.fallback
+        ? 'Loaded from local cached dataset.'
+        : 'Served by the local studies API.';
+      status.textContent = `${total} studies found${querySuffix}${topicSuffix}. ${sourceSuffix}`;
     } catch (error) {
       status.textContent = 'Unable to load the study database right now.';
       renderEmpty('The study dataset is unavailable right now. Refresh later or run the local study refresh script to rebuild the cache.');
