@@ -436,11 +436,23 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0.38rem;
             min-height: 38px;
-            padding: 0.45rem 0.9rem;
+            padding: 0.45rem 0.82rem;
             border-radius: 999px;
             background: #edf2f6;
             color: var(--forum-text);
+            text-decoration: none;
+        }
+
+        .forum-post-stat-pill svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 1.9;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .forum-side-box {
@@ -1008,9 +1020,17 @@
                                 <img src="https://images.unsplash.com/photo-1704223524532-c5b4e8490297?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Biceps forum article visual" loading="lazy">
                             </a>
                             <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill">218</span>
-                                <span class="forum-post-stat-pill">42 comments</span>
-                                <span class="forum-post-stat-pill">Share</span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"></path><path d="m7 10 5-5 5 5"></path></svg>
+                                    <span>218</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3v-7.5A7.5 7.5 0 0 1 11.5 7h1A7.5 7.5 0 0 1 20 14.5Z"></path></svg>
+                                    <span>42</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="m12 8 4 4-4 4"></path><path d="M16 5h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path><path d="M8 19H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"></path></svg>
+                                </span>
                             </div>
                         </article>
 
@@ -1038,9 +1058,17 @@
                                 <img src="https://images.unsplash.com/photo-1547852355-61348aeea17c?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600" alt="Chest recovery thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill">167</span>
-                                <span class="forum-post-stat-pill">28 comments</span>
-                                <span class="forum-post-stat-pill">Share</span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"></path><path d="m7 10 5-5 5 5"></path></svg>
+                                    <span>167</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3v-7.5A7.5 7.5 0 0 1 11.5 7h1A7.5 7.5 0 0 1 20 14.5Z"></path></svg>
+                                    <span>28</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="m12 8 4 4-4 4"></path><path d="M16 5h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path><path d="M8 19H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"></path></svg>
+                                </span>
                             </div>
                         </article>
 
@@ -1068,9 +1096,17 @@
                                 <img src="https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Cutting phase thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill">144</span>
-                                <span class="forum-post-stat-pill">19 comments</span>
-                                <span class="forum-post-stat-pill">Share</span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"></path><path d="m7 10 5-5 5 5"></path></svg>
+                                    <span>144</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3v-7.5A7.5 7.5 0 0 1 11.5 7h1A7.5 7.5 0 0 1 20 14.5Z"></path></svg>
+                                    <span>19</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="m12 8 4 4-4 4"></path><path d="M16 5h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path><path d="M8 19H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"></path></svg>
+                                </span>
                             </div>
                         </article>
 
@@ -1098,9 +1134,17 @@
                                 <img src="https://images.unsplash.com/photo-1666819691716-827f78d892f3?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1600" alt="Meal timing thread visual" loading="lazy">
                             </div>
                             <div class="forum-post-stats">
-                                <span class="forum-post-stat-pill">121</span>
-                                <span class="forum-post-stat-pill">15 comments</span>
-                                <span class="forum-post-stat-pill">Share</span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"></path><path d="m7 10 5-5 5 5"></path></svg>
+                                    <span>121</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3v-7.5A7.5 7.5 0 0 1 11.5 7h1A7.5 7.5 0 0 1 20 14.5Z"></path></svg>
+                                    <span>15</span>
+                                </span>
+                                <span class="forum-post-stat-pill">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="m12 8 4 4-4 4"></path><path d="M16 5h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path><path d="M8 19H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"></path></svg>
+                                </span>
                             </div>
                         </article>
                     </section>
