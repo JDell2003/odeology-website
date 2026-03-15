@@ -832,7 +832,77 @@ async function openverse(query, page) {
 }
 
 function okImage(item) {
-  return item && item.id && item.url && OPEN_LICENSES.has(String(item.license || '').toLowerCase()) && !item.mature && Number(item.width || 0) >= 400 && Number(item.height || 0) >= 400;
+  if (!(item && item.id && item.url)) return false;
+  if (!OPEN_LICENSES.has(String(item.license || '').toLowerCase())) return false;
+  if (item.mature) return false;
+  if (Number(item.width || 0) < 400 || Number(item.height || 0) < 400) return false;
+  const url = String(item.url || '').toLowerCase();
+  const title = String(item.title || '').toLowerCase();
+  const creator = String(item.creator || '').toLowerCase();
+  const detail = `${url} ${title} ${creator}`;
+  if (url.endsWith('.svg')) return false;
+  if (/(diagram|illustration|drawing|icon|logo|vector|statue|building|architecture|furniture|candlestick|artifact|museum|sculpture|monument|ruins|landscape|cityscape|interior|exterior|church|cathedral|temple|painting)/.test(detail)) return false;
+  return true;
+}
+
+function imageContext(item) {
+  return `${String(item.title || '')} ${String(item.creator || '')} ${String(item.url || '')}`.toLowerCase();
+}
+
+function imageMatchesProfile(post, item, profile) {
+  const context = imageContext(item);
+  const genericFitness = /\b(gym|fitness|workout|training|exercise|bodybuilding|physique|muscle|athlete|lifting|weightlifting|crossfit|powerlifting|strength|posing|progress|selfie|mirror|meal|protein|food|nutrition)\b/;
+  const peopleCue = /\b(man|men|woman|women|girl|boy|person|people|adult|young adult|teen|teens|male|female|bodybuilder|lifter|athlete|model)\b/;
+  const noteCue = /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/;
+  const neutralTrainingCue = /\b(barbell|dumbbell|plates|rack|bench|machine|cable|pulldown|row|press|squat|deadlift|mirror|gym floor)\b/;
+  const exactTerms = {
+    'upper-chest': /\b(upper chest|incline|incline bench|incline dumbbell|smith incline|cable fly|chest)\b/,
+    'rear-delts': /\b(rear delt|reverse pec deck|rear raise|rear delts|posterior delt)\b/,
+    'side-delts': /\b(side delt|lateral raise|shoulder raise|medial delt|delt)\b/,
+    traps: /\b(trap|traps|shrug|carries|farmer carry|upper back)\b/,
+    'upper-back': /\b(upper back|row|rows|chest supported row|back)\b/,
+    lats: /\b(lat|lats|pulldown|pullup|pull up|back)\b/,
+    biceps: /\b(biceps|bicep|curl|preacher)\b/,
+    triceps: /\b(triceps|tricep|pushdown|extension|close grip)\b/,
+    hamstrings: /\b(hamstring|leg curl|rdl|romanian deadlift|hinge)\b/,
+    glutes: /\b(glute|glutes|hip thrust|glute bridge)\b/,
+    quads: /\b(quad|quads|squat|hack squat|leg press|split squat)\b/,
+    calves: /\b(calf|calves|calf raise|seated calf|standing calf)\b/,
+    abs: /\b(abs|ab|core|cable crunch|ab wheel|bracing)\b/,
+    'cable-row': /\b(cable row|seated row|row)\b/,
+    'cable-fly': /\b(cable fly|cable chest fly|fly|chest)\b/,
+    'smith-incline': /\b(smith incline|incline smith|incline press|smith machine)\b/,
+    food: /\b(meal|protein|diet|food|prep|nutrition|calories)\b/,
+    planning: /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/,
+    lifestyle: /\b(gym|workout|training|mirror|selfie|lifter|athlete)\b/
+  };
+  const familyTerms = {
+    chest: /\b(chest|bench|press|fly|incline)\b/,
+    back: /\b(back|lat|row|pulldown|pullup|trap)\b/,
+    shoulders: /\b(shoulder|delt|lateral raise|rear delt)\b/,
+    arms: /\b(bicep|tricep|curl|pushdown|arm)\b/,
+    legs: /\b(legs|quad|hamstring|glute|calf|squat|leg press|split squat|hip thrust|rdl)\b/,
+    core: /\b(core|abs|ab wheel|cable crunch|bracing)\b/,
+    food: /\b(meal|protein|food|prep|nutrition|diet)\b/,
+    planning: /\b(notebook|notes|planner|log|journal|program|spreadsheet|template)\b/,
+    general: /\b(gym|workout|training|fitness|physique|progress|mirror|selfie|lifter|athlete|barbell|dumbbell|rack|plates)\b/
+  };
+
+  if (profile.exact === 'food' || profile.family === 'food') return exactTerms.food.test(context);
+  if (profile.exact === 'planning' || profile.family === 'planning') return noteCue.test(context);
+
+  if (!(genericFitness.test(context) || peopleCue.test(context) || neutralTrainingCue.test(context))) return false;
+
+  if (profile.exact && exactTerms[profile.exact]) {
+    if (exactTerms[profile.exact].test(context)) return true;
+    return false;
+  }
+
+  if (profile.family && familyTerms[profile.family]) {
+    return familyTerms[profile.family].test(context) || neutralTrainingCue.test(context);
+  }
+
+  return familyTerms.general.test(context);
 }
 
 class Finder {
@@ -869,9 +939,12 @@ class Finder {
     }
   }
 
-  async take(list) {
+  async take(list, validator = null) {
     for (const query of uniq(list.map(norm))) {
       const item = await this.fromQuery(query);
+      if (item && validator && !validator(item)) {
+        continue;
+      }
       if (item) return item;
     }
     return null;
@@ -880,28 +953,28 @@ class Finder {
 
 function detectImageProfile(post) {
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
-  const exact = {
-    'upper-chest': /\bupper chest|incline smith|smith incline|incline dumbbell|incline bench|incline press|upper chest cable fly\b/,
-    'rear-delts': /\brear delts?|reverse pec deck|rear delt\b/,
-    'side-delts': /\bside delts?|lateral raises?\b/,
-    traps: /\btraps?|shrugs?|carries|farmer carries\b/,
-    'upper-back': /\bupper back|chest supported row|chest-supported-row\b/,
-    lats: /\blats?|lat pulldown|pullups?|pull up\b/,
-    biceps: /\bbiceps|preacher curl|dumbbell curl|barbell curl|curls?\b/,
-    triceps: /\btriceps|pushdowns?|extensions?|close grip\b/,
-    hamstrings: /\bhamstrings?|rdl|leg curl\b/,
-    glutes: /\bglutes?|hip thrust\b/,
-    quads: /\bquads?|hack squat|leg press|split squat|squat\b/,
-    calves: /\bcalves|calf\b/,
-    abs: /\babs|core|bracing|brace|cable crunch|ab wheel\b/,
-    'cable-row': /\bcable row\b/,
-    'cable-fly': /\bcable fly\b/,
-    'smith-incline': /\bsmith incline|smith-incline\b/,
-    planning: /\b(trainer|coaching|custom plan|custom workout|accountability|routine design|split)\b|free plan|free training|free workouts/,
-    food: /\b(meal|diet|protein|prep|food|calorie|calories|appetite|bulk|cut)\b/,
-    lifestyle: /\b(headphones|packed gym|garage gym|spotter|busy week|missed one day)\b/
-  };
-  for (const [key, pattern] of Object.entries(exact)) {
+  const exact = [
+    ['cable-row', /\bcable row\b/],
+    ['cable-fly', /\bcable fly\b/],
+    ['smith-incline', /\bsmith incline|smith-incline\b/],
+    ['upper-chest', /\bupper chest|incline smith|smith incline|incline dumbbell|incline bench|incline press|upper chest cable fly\b/],
+    ['rear-delts', /\brear delts?|reverse pec deck|rear delt\b/],
+    ['side-delts', /\bside delts?|lateral raises?\b/],
+    ['traps', /\btraps?|shrugs?|carries|farmer carries\b/],
+    ['upper-back', /\bupper back|chest supported row|chest-supported-row\b/],
+    ['lats', /\blats?|lat pulldown|pullups?|pull up\b/],
+    ['hamstrings', /\bhamstrings?|rdl|leg curl\b/],
+    ['glutes', /\bglutes?|hip thrust\b/],
+    ['quads', /\bquads?|hack squat|leg press|split squat|squat\b/],
+    ['calves', /\bcalves|calf\b/],
+    ['abs', /\babs|core|bracing|brace|cable crunch|ab wheel\b/],
+    ['biceps', /\bbiceps|preacher curl|dumbbell curl|barbell curl\b/],
+    ['triceps', /\btriceps|pushdowns?|extensions?|close grip\b/],
+    ['planning', /\b(trainer|coaching|custom plan|custom workout|accountability|routine design|split)\b|free plan|free training|free workouts/],
+    ['food', /\b(meal|diet|protein|prep|food|calorie|calories|appetite|bulk|cut)\b/],
+    ['lifestyle', /\b(headphones|packed gym|garage gym|spotter|busy week|missed one day)\b/]
+  ];
+  for (const [key, pattern] of exact) {
     if (pattern.test(text)) {
       const familyMap = {
         'upper-chest': 'chest',
@@ -1053,6 +1126,7 @@ function loadExistingImagePool() {
     const items = Array.isArray(payload.items) ? payload.items : [];
     return items
       .filter((item) => item && item.format === 'image' && item.imageUrl)
+      .filter((item) => !/(museum|collections\.|candlestick|furniture_fitting|artifact|brooklynmuseum|otegroupmuseum)/i.test(String(item.imageUrl || '')))
       .map((item) => ({
         category: item.category,
         scope: item.scope,
@@ -1067,6 +1141,41 @@ function loadExistingImagePool() {
   } catch {
     return [];
   }
+}
+
+function existingImageMatches(post, item, profile) {
+  const text = `${String(item.imageAlt || '')} ${String(item.imageUrl || '')}`.toLowerCase();
+  const intent = profile.exact || profile.family;
+  const exactAlt = {
+    'upper-chest': /upper chest|incline press/,
+    'rear-delts': /rear delt/,
+    'side-delts': /side delt|shoulder training/,
+    traps: /trap training|back training/,
+    'upper-back': /upper back|back training/,
+    lats: /lat training|back training/,
+    biceps: /biceps|arm training/,
+    triceps: /triceps|arm training/,
+    hamstrings: /hamstring|leg training/,
+    glutes: /glute|leg training/,
+    quads: /quad|leg training/,
+    calves: /calf|leg training/,
+    abs: /core training/,
+    'cable-row': /cable row|back training/,
+    'cable-fly': /cable fly|chest training/,
+    'smith-incline': /incline press|chest training/,
+    food: /meal prep/,
+    planning: /workout planning/,
+    chest: /chest training/,
+    back: /back training/,
+    shoulders: /shoulder training/,
+    arms: /arm training|biceps|triceps/,
+    legs: /leg training|hamstring|glute|quad|calf/,
+    core: /core training/,
+    general: /gym mirror/
+  };
+  const pattern = exactAlt[intent];
+  if (!pattern) return false;
+  return pattern.test(text);
 }
 
 function applyExistingImage(post, item) {
@@ -1115,6 +1224,12 @@ async function assign(posts) {
   const fallbackPool = loadExistingImagePool();
   const usedFallback = new Set();
   const imageCount = posts.filter((post) => post.format === 'image').length;
+  const takeExisting = (post, profile) => {
+    const exactIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && existingImageMatches(post, item, profile));
+    if (exactIndex === -1) return null;
+    usedFallback.add(exactIndex);
+    return fallbackPool[exactIndex];
+  };
   const takeFallback = (post) => {
     const pickIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.category === post.category);
     const scopeIndex = fallbackPool.findIndex((item, index) => !usedFallback.has(index) && item.scope === post.scope);
@@ -1129,12 +1244,14 @@ async function assign(posts) {
     const queries = imageQueries(post);
     const profile = queries.profile;
     const usePlanning = profile.family === 'planning' || profile.exact === 'planning';
-    let item = await finder.take(queries.exact);
-    if (!item) item = await finder.take(queries.family);
-    if (!item && !usePlanning) item = await finder.take(queries.neutral);
-    if (!item && usePlanning) item = await finder.take([...queries.family, ...queries.neutral]);
+    const matches = (candidate) => imageMatchesProfile(post, candidate, profile);
+    let item = takeExisting(post, profile);
+    if (!item) item = await finder.take(queries.exact, matches);
+    if (!item) item = await finder.take(queries.family, matches);
+    if (!item && !usePlanning) item = await finder.take(queries.neutral, matches);
+    if (!item && usePlanning) item = await finder.take([...queries.family, ...queries.neutral], matches);
     if (!item && (profile.family === 'food' || post.category === 'nutrition' || post.category === 'cutting' || post.category === 'bulking')) {
-      item = await finder.take(broadImageQueries(post.category));
+      item = await finder.take(broadImageQueries(post.category), matches);
     }
     if (item) {
       Object.assign(post, imageMeta(post, item));
