@@ -126,11 +126,11 @@ function applyImage(post, item, intent) {
 function fallbackTags(post, intent) {
   const text = `${post.title || ''} ${post.body || ''}`.toLowerCase();
   if (intent === 'food') return ['meal', 'prep', 'protein'];
+  if (/\b(leg curl|hamstring|hamstrings|rdl|romanian deadlift|quad|quads|glute|glutes|calf|calves|leg press|squat|hip thrust|legs)\b/.test(text)) return ['gym', 'legs', 'fitness'];
   if (/\b(bench|chest|pec|incline|press)\b/.test(text)) return ['gym', 'chest', 'fitness'];
   if (/\b(back|lat|row|pullup|pulldown|trap)\b/.test(text)) return ['gym', 'back', 'fitness'];
   if (/\b(side delt|rear delt|shoulder|lateral raise)\b/.test(text)) return ['gym', 'shoulders', 'fitness'];
   if (/\b(biceps|triceps|curl|pushdown|arm)\b/.test(text)) return ['gym', 'arms', 'fitness'];
-  if (/\b(quad|hamstring|glute|calf|leg press|squat|hip thrust|rdl|legs)\b/.test(text)) return ['gym', 'legs', 'fitness'];
   if (/\b(abs|core)\b/.test(text)) return ['gym', 'abs', 'fitness'];
   if (/\b(jiu jitsu|wrestling|martial arts)\b/.test(text)) return ['sports', 'training', 'fitness'];
   return ['gym', 'fitness', 'person'];
