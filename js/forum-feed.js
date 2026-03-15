@@ -224,9 +224,71 @@
     const record = getImageRecord(item) || item;
     const imageType = record.imageType || item.imageType;
     const subject = String(record.imageSubject || record.imageMainObject || item.imageSubject || '').toLowerCase();
+    const muscle = String(record.imageMuscleGroup || item.imageMuscleGroup || '').toLowerCase();
+    const detail = String(record.visionAnalysis && record.visionAnalysis.detailLabel || '').toLowerCase();
     const subjectLabel = String(record.imageSubject || record.imageMainObject || item.imageSubject || 'this').toLowerCase();
 
     if (!imageType) return null;
+
+    if (imageType === 'physique' && /glute|butt|booty/.test(`${subject} ${muscle} ${detail}`)) {
+      return {
+        advice: ['glutes finally started moving for me when i added more direct work and actually progressed it', 'hip thrusts and controlled glute work helped mine way more than i expected', 'if glutes are lagging i would look at exercise order and direct volume first'],
+        experience: ['glutes took forever for me until i trained them on purpose instead of hoping compounds covered it', 'mine finally looked different once i treated glute work like a real priority'],
+        question: ['what finally got your glutes growing', 'are you doing any direct glute work right now'],
+        blunt: ['glutes usually need more direct work than people admit tbh', 'if theyre not growing id stop hoping random leg work fixes it'],
+        support: ['glute progress is easy to miss until it suddenly isnt', 'thats real progress honestly'],
+        disagree: ['nah i would not change direction too fast if progress is finally showing', 'i wouldnt rush to overhaul things if glutes are finally moving'],
+        joke: ['glutes take their sweet time and then randomly show up']
+      };
+    }
+
+    if ((imageType === 'exercise' || imageType === 'physique') && /back pulling|back|lat|row|pulldown|pull up/.test(`${subject} ${muscle} ${detail}`)) {
+      return {
+        advice: ['back started making more sense for me once i cleaned up elbow path and setup', 'if a pull finally feels more direct i would keep that variation in for a while', 'better back setup usually matters more than adding random extra pulling'],
+        experience: ['my back only started showing more once i could actually feel rows and pulldowns where they were supposed to', 'back progress was way easier to notice once pull work finally clicked'],
+        question: ['was this the kind of pull variation that finally made back work click for you', 'do you feel back more here or mostly arms'],
+        blunt: ['if pull work still turns into arm work nothing changes tbh', 'back progress usually starts once execution stops being sloppy'],
+        support: ['back changes are easy to miss for a while', 'that kind of pull work can finally make things click'],
+        disagree: ['nah i wouldnt change too much if back work is finally feeling better', 'i think you keep the variation before rewriting the whole day'],
+        joke: ['back day loves pretending it is arm day']
+      };
+    }
+
+    if (imageType === 'supplement' && /creatine/.test(`${subject} ${detail}`)) {
+      return {
+        advice: ['creatine is still one of the only boring supplements i trust', 'if youre already handling food and training then creatine is at least a reasonable basic', 'i would keep creatine simple and ignore most of the hype around everything else'],
+        experience: ['creatine is one of the few things i never really overthought once i started taking it daily', 'most supplements felt optional to me but creatine always felt like the easiest basic'],
+        question: ['are you taking it consistently or just on training days', 'do you actually notice anything from it or do you just keep it in because its a basic'],
+        blunt: ['creatine still isnt fixing a messy routine tbh', 'if food and training are off this is not the main issue'],
+        support: ['fair thing to keep in the stack honestly', 'at least creatine has a better case than most supplements'],
+        disagree: ['nah i still wouldnt expect miracles from it', 'i would not act like creatine matters more than the boring basics'],
+        joke: ['creatine might be the only tub with less drama than the people taking it']
+      };
+    }
+
+    if (imageType === 'food' && /salmon/.test(`${subject} ${detail}`)) {
+      return {
+        advice: ['salmon like that is solid if it actually fits the week and you will repeat it', 'if a meal like this keeps protein easy i would keep it around', 'for something that looks this simple the main question is whether you will actually keep making it'],
+        experience: ['meals like this are exactly what save my week when i stop wanting to think about food', 'simple salmon meals always worked better for me than trying to make every meal interesting'],
+        question: ['would you actually keep salmon like that in rotation', 'how easy is that to prep ahead'],
+        blunt: ['boring repeatable meals usually win tbh', 'if it keeps protein easy i wouldnt overcomplicate it'],
+        support: ['that looks like the kind of meal that actually works in real life', 'simple food setups like that are underrated'],
+        disagree: ['nah i would not ditch that just because it looks basic', 'meals do not need to be fancy to be useful'],
+        joke: ['meal prep always looks the same once it starts working']
+      };
+    }
+
+    if (imageType === 'food' && /wrap|sandwich/.test(`${subject} ${detail}`)) {
+      return {
+        advice: ['wraps like that are hard to beat when you need portable protein', 'if the goal is consistency a meal like that makes a lot of sense', 'easy food you can actually repeat usually matters more than perfect macros'],
+        experience: ['wrap type meals saved me on workdays more than anything else', 'stuff like that is what kept my protein from falling apart on busy weeks'],
+        question: ['would you actually keep a meal like that in rotation all week', 'how often do you use wraps like that when life gets busy'],
+        blunt: ['practical food usually beats impressive food tbh', 'if its easy to repeat that already matters a lot'],
+        support: ['that kind of meal is way more useful than people give it credit for', 'looks simple in a good way'],
+        disagree: ['nah i would not overthink a meal like that', 'if it works i would keep it boring and repeatable'],
+        joke: ['the best meal prep always looks the least exciting']
+      };
+    }
 
     const byType = {
       food: {
