@@ -21,6 +21,7 @@
   };
 
   let posts = [];
+  const imagePostIndex = new Map();
   const openComments = new Set();
   const commentCache = new Map();
 
@@ -212,6 +213,236 @@
     return categoryCommentPools[item.category] || categoryCommentPools.training;
   }
 
+  function getImageRecord(item) {
+    if (!item || !item.id) return null;
+    return imagePostIndex.get(item.id) || null;
+  }
+
+  function getImageAwareCommentSet(item) {
+    const record = getImageRecord(item) || item;
+    const imageType = record.imageType || item.imageType;
+    const subject = String(record.imageSubject || record.imageMainObject || item.imageSubject || '').toLowerCase();
+    const subjectLabel = String(record.imageSubject || record.imageMainObject || item.imageSubject || 'this').toLowerCase();
+
+    if (!imageType) return null;
+
+    const byType = {
+      food: {
+        advice: [
+          `i would keep ${subjectLabel} in rotation if its easy to repeat`,
+          'meals like this are usually better than chasing variety every day',
+          'if it helps you hit protein consistently i would not overcomplicate it'
+        ],
+        experience: [
+          'food like this saved me on busy weeks',
+          `i always come back to stuff like ${subjectLabel} when life gets chaotic`
+        ],
+        question: [
+          'would you actually eat that three days in a row',
+          'how easy is that to prep ahead'
+        ],
+        blunt: [
+          'boring meals usually work better tbh',
+          'if it fits protein and calories i wouldnt overthink it'
+        ],
+        support: [
+          'that kind of meal is practical honestly',
+          'simple food setups are underrated'
+        ],
+        disagree: [
+          'nah i would not swap this out just because it looks boring',
+          'i dont think meals need to be exciting to be useful'
+        ],
+        joke: [
+          'meal prep really is just dishes and protein'
+        ]
+      },
+      planning: {
+        advice: [
+          'i would run that exact setup for two weeks before changing anything',
+          'cleaner structure usually helps more than adding more detail',
+          'simple plans survive bad weeks a lot better'
+        ],
+        experience: [
+          'my progress got better once i stopped rewriting the split every few days',
+          'leaving the plan alone helped me more than tweaking it'
+        ],
+        question: [
+          'how often are you changing the plan right now',
+          'have you actually run that setup long enough to judge it'
+        ],
+        blunt: [
+          'this mostly sounds like overthinking it tbh',
+          'you probably need less tweaking not more'
+        ],
+        support: [
+          'simple usually wins here',
+          'that looks easier to stick to than most plans people make'
+        ],
+        disagree: [
+          'nah i still would not pay for help yet',
+          'i think that is fixable without making it more custom'
+        ],
+        joke: [
+          'notes apps have ended a lot of gains'
+        ]
+      },
+      exercise: {
+        advice: [
+          `if ${subjectLabel} finally feels right i would keep it there for a few weeks`,
+          'i usually check setup and order before blaming the exercise itself',
+          'one small execution fix can matter more than extra sets'
+        ],
+        experience: [
+          `i had the same thing happen when ${subjectLabel} finally clicked`,
+          'most exercise problems get easier once the setup feels repeatable'
+        ],
+        question: [
+          'would you move it earlier in the workout or leave it there',
+          'does it actually feel better or just look better'
+        ],
+        blunt: [
+          'this still looks like setup more than programming tbh',
+          'if the movement finally clicks i would not mess with it too fast'
+        ],
+        support: [
+          'thats the kind of fix that actually matters',
+          'good sign if it finally feels repeatable'
+        ],
+        disagree: [
+          'nah i would not rewrite the whole day over that',
+          'i think you stay with the variation before changing more stuff'
+        ],
+        joke: [
+          'some exercises really make you earn the right to keep them'
+        ]
+      },
+      physique: {
+        advice: [
+          'if progress is finally showing i would stay patient a little longer',
+          'small visual changes usually mean the boring stuff is working',
+          'i would not panic change things if the trend is finally moving'
+        ],
+        experience: [
+          'that is exactly how my progress looked before it became more obvious',
+          'i almost missed the early changes too because they were subtle'
+        ],
+        question: [
+          'would you keep pushing the same direction from there',
+          'are you trying to lean out more or just hold the pace'
+        ],
+        blunt: [
+          'looks like progress to me tbh',
+          'i think youre being harder on it than you need to be'
+        ],
+        support: [
+          'thats real progress even if its not dramatic',
+          'progress is progress honestly'
+        ],
+        disagree: [
+          'nah i would not rush a change yet',
+          'i dont think that means you need to switch direction right now'
+        ],
+        joke: [
+          'the mirror loves hiding progress until it randomly doesnt'
+        ]
+      },
+      supplement: {
+        advice: [
+          `i would only keep ${subjectLabel} if the basics are already handled`,
+          'food and training still matter more than another supplement',
+          'keeping supplements boring is usually the move'
+        ],
+        experience: [
+          `i bought way more stuff than ${subjectLabel} ever ended up replacing`,
+          'most supplements felt optional once i cleaned up everything else'
+        ],
+        question: [
+          'have you already handled food and sleep first',
+          'do you actually notice a difference from it'
+        ],
+        blunt: [
+          'powder is not fixing a messy routine tbh',
+          'this could still be expensive coping'
+        ],
+        support: [
+          'fair question because most of this stuff is overhyped',
+          'everybody goes through the supplement rabbit hole'
+        ],
+        disagree: [
+          'nah i wouldnt buy it yet',
+          'i still think food comes first here'
+        ],
+        joke: [
+          'supplement labels always promise a new life'
+        ]
+      },
+      article: {
+        advice: [
+          'i would take one useful point from that and ignore the rest',
+          'stuff like that is only helpful if it changes one real decision',
+          'the takeaway matters more than the screenshot itself'
+        ],
+        experience: [
+          'sometimes one article just gives better words to what you already noticed',
+          'i usually save those and keep maybe one useful point'
+        ],
+        question: [
+          'did anything in it actually change what youre doing',
+          'what part of it stood out most to you'
+        ],
+        blunt: [
+          'most article screenshots are noise tbh',
+          'i wouldnt rewrite training over one post'
+        ],
+        support: [
+          'still worth discussing if it made you rethink something',
+          'i get why you saved that'
+        ],
+        disagree: [
+          'nah i would not let one screenshot change the whole week',
+          'id keep what works before overreacting to content'
+        ],
+        joke: [
+          'one screenshot and everybody becomes a coach'
+        ]
+      },
+      general_gym: {
+        advice: [
+          'lower friction routines usually beat higher motivation routines',
+          'if the week still happened that counts more than people think',
+          'simple sessions survive real life better'
+        ],
+        experience: [
+          'a lot of my better weeks start with keeping things basic',
+          'showing up on messy weeks helped me more than perfect sessions did'
+        ],
+        question: [
+          'what part of the week usually throws you off most',
+          'does keeping it simple help you stay on track'
+        ],
+        blunt: [
+          'this is mostly a routine problem tbh',
+          'real life is usually the part people forget to program for'
+        ],
+        support: [
+          'that is a normal kind of week honestly',
+          'basic sessions are underrated'
+        ],
+        disagree: [
+          'nah i dont think you need to complicate it more',
+          'i would keep the setup simple before changing much else'
+        ],
+        joke: [
+          'real life stays undefeated'
+        ]
+      }
+    };
+
+    if (imageType === 'physique' && /\b(chest|pecs|upper chest)\b/.test(subject)) return null;
+    return byType[imageType] || null;
+  }
+
   function detectPostFocus(item) {
     if (item.imageType === 'food') return 'nutrition';
     if (item.imageType === 'planning') return 'planning';
@@ -401,7 +632,8 @@
   function buildCommentBody(item, random, mode, usedBodies) {
     const genericPool = getCategoryPool(item);
     const focus = detectPostFocus(item);
-    const pool = topicCommentPools(focus);
+    const imagePool = getImageAwareCommentSet(item);
+    const pool = imagePool || topicCommentPools(focus);
     const titleText = String(item.title || '').toLowerCase();
     const bodyText = String(item.body || '').toLowerCase();
     const isCoachPrompt = /trainer|coaching|custom|free plan|free training|basic program|accountability/.test(titleText);
@@ -744,17 +976,33 @@
     feed.innerHTML = '<div class="forum-empty-state">Loading forum posts...</div>';
 
     try {
-      const response = await fetch('/data/forum-posts.json', {
-        headers: { Accept: 'application/json' }
-      });
+      const [forumResponse, imageDbResponse] = await Promise.all([
+        fetch('/data/forum-posts.json', {
+          headers: { Accept: 'application/json' }
+        }),
+        fetch('/data/forum-image-posts-db.json', {
+          headers: { Accept: 'application/json' }
+        }).catch(() => null)
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`Forum feed failed with ${response.status}`);
+      if (!forumResponse.ok) {
+        throw new Error(`Forum feed failed with ${forumResponse.status}`);
       }
 
-      const payload = await response.json();
+      const payload = await forumResponse.json();
+      imagePostIndex.clear();
+
+      if (imageDbResponse && imageDbResponse.ok) {
+        const imagePayload = await imageDbResponse.json();
+        const imageItems = Array.isArray(imagePayload.items) ? imagePayload.items : [];
+        imageItems.forEach((item) => {
+          if (item && item.id) imagePostIndex.set(item.id, item);
+        });
+      }
+
       posts = (Array.isArray(payload.items) ? payload.items : []).map((item, index) => ({
         ...item,
+        ...(imagePostIndex.get(item.id) || {}),
         ageMinutes: getAgeMinutes(item, index)
       }));
 
