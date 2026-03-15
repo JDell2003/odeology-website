@@ -201,15 +201,107 @@ function pickPostType() {
   return 'casual';
 }
 
+function buildPostTypeSchedule(total) {
+  const counts = {
+    question: Math.round(total * 0.5),
+    personal: Math.round(total * 0.25),
+    advice: Math.round(total * 0.15)
+  };
+  counts.casual = total - counts.question - counts.personal - counts.advice;
+  return shuffle([
+    ...Array.from({ length: counts.question }, () => 'question'),
+    ...Array.from({ length: counts.personal }, () => 'personal'),
+    ...Array.from({ length: counts.advice }, () => 'advice'),
+    ...Array.from({ length: counts.casual }, () => 'casual')
+  ]);
+}
+
 function title(category, c, postType) {
   const question = {
-    training: [`${pretty(c.setting)} has me wondering if ${pretty(c.lift)} is enough for ${pretty(c.part)}`, `${pretty(c.block)} and ${pretty(c.part)} still not clicking for me`, `${pretty(c.constraint)} and ${pretty(c.part)} still lagging`, `${pretty(c.lift)} for ${pretty(c.part)} growth or am i missing something`, `${pretty(c.setting)} and anyone else struggle with ${pretty(c.part)}`],
-    nutrition: [`${pretty(c.meal)} got me asking what meals you repeat the most`, `${pretty(c.food)} worth meal prepping or not really`, `${pretty(c.appetite)} and keeping protein high feels impossible`, `${pretty(c.setting)} and food starts getting random fast`, `${pretty(c.food2)} or ${pretty(c.food)} when the day gets messy`],
-    recovery: [`${pretty(c.issue)} after normal sessions is getting old`, `${pretty(c.tool)} helping or just placebo for recovery`, `${pretty(c.setting)} and soreness hanging around too long`, `${pretty(c.issue)} and what actually helped you fix it`, `${pretty(c.block)} plus recovery feeling off again`],
-    cutting: [`${pretty(c.deficit)} and normal life do not feel compatible rn`, `${pretty(c.hunger)} keeps hijacking this cut`, `${pretty(c.setting)} and staying full on a cut is rough`, `${pretty(c.meal)} making this cut harder than it should be`, `${pretty(c.food)} actually helping anyone stay full lately`],
-    bulking: [`${pretty(c.surplus)} and my appetite already tapped out`, `${pretty(c.food)} making bulking easier or just repetitive`, `${pretty(c.setting)} and eating enough feels harder than training`, `${pretty(c.bulk)} keeps showing up halfway through the week`, `${pretty(c.food2)} helping anyone hit calories cleanly`],
-    supplements: [`${pretty(c.supp)} doing anything noticeable for you guys`, `${pretty(c.stack)} and i want to cut half of it`, `${pretty(c.supp2)} worth keeping or not really`, `${c.caffeine}mg before training feel normal to you`, `${pretty(c.supp)} plus food and sleep enough for most people`],
-    lifestyle: [`${pretty(c.routine)} keeps wrecking my consistency`, `${pretty(c.setting)} and the whole week starts slipping`, `${pretty(c.planner)} helping anyone stay on track long term`, `${pretty(c.routine)} and what part of the week fails first`, `${pretty(c.setting)} making this way harder than it should be`]
+    training: [
+      `how can i grow my ${pretty(c.part)} faster`,
+      `my ${pretty(c.part)} hasnt grown what should i change`,
+      `how do i know if i need a custom workout for ${pretty(c.part)}`,
+      `ive been using the free workouts but my ${pretty(c.part)} still wont grow`,
+      `is the free training enough to build real ${pretty(c.part)}`,
+      `my ${pretty(c.lift)} hasnt gone up in months what do i do`,
+      `how do i bring up my ${pretty(c.part)}`,
+      `what helps ${pretty(c.part)} grow the fastest`,
+      `free plan is good but how do i make it more specific to me`,
+      `when should someone switch from free workouts to a real plan`
+    ],
+    nutrition: [
+      `how can i gain weight faster with this program`,
+      `is the free plan enough if im serious about getting bigger`,
+      `what should i eat if i want faster muscle gain`,
+      `can i still make progress without paying for coaching`,
+      `what is missing from free workout plans if food is good`,
+      `my weight hasnt gone up what should i change`,
+      `how do i know if i need something more custom for food too`,
+      `free workouts helped but im still not growing much`,
+      `what should i do if im eating right and still not gaining`,
+      `is a custom plan better once weight gain stalls`
+    ],
+    recovery: [
+      `do i need accountability to really grow`,
+      `how do you stay consistent with training`,
+      `what helps you stop skipping workouts`,
+      `how do i stop falling off every few weeks`,
+      `should i get a trainer if recovery keeps messing me up`,
+      `would coaching help if i keep second guessing recovery stuff`,
+      `is the free training enough if my recovery is always off`,
+      `how do i know when i need more than a basic program`,
+      `what do you do when progress stalls and recovery feels bad`,
+      `can a trainer help if i keep falling out of routine`
+    ],
+    cutting: [
+      `how do i keep muscle while trying to cut faster`,
+      `free plan helped but my cut keeps falling apart what now`,
+      `should i get coaching if i keep losing consistency on a cut`,
+      `how do i know if i need something more custom for fat loss`,
+      `can i get lean with just the free plan`,
+      `what should i do if im stuck while cutting`,
+      `how do i stop falling off every few weeks on a cut`,
+      `is accountability worth it when cutting gets hard`,
+      `what is missing from generic cut plans honestly`,
+      `when should someone switch from free help to custom fat loss coaching`
+    ],
+    bulking: [
+      `how can i gain weight faster with the free plan`,
+      `should i get a trainer or keep using the free plan`,
+      `is the free training enough to get big`,
+      `when should i switch from free workouts`,
+      `do i need a custom workout plan to bulk right`,
+      `how do i know when i need more than a basic program`,
+      `my arms arent growing even though im bulking what now`,
+      `what should i do if my chest still isnt growing on this program`,
+      `can a free plan actually get me to my goal`,
+      `at what point do you need something custom`
+    ],
+    supplements: [
+      `is creatine actually worth it`,
+      `do supplements matter if im still on a free program`,
+      `should i fix food first or buy more supplements`,
+      `can i still make progress without paying for coaching`,
+      `is the free training enough if i take the basics`,
+      `what is actually worth buying for muscle gain`,
+      `would coaching help more than another supplement tub`,
+      `how do i know if i need more than the basic stuff`,
+      `free plan is decent but what helps progress move faster`,
+      `is online coaching worth it before messing with more supplements`
+    ],
+    lifestyle: [
+      `how do you stay consistent with training`,
+      `what helps you stop skipping workouts`,
+      `do i need accountability to really grow`,
+      `how do i stop falling off every few weeks`,
+      `should i get a trainer if consistency is my problem`,
+      `is online coaching worth it if i keep starting over`,
+      `free workouts helped but i still cant stay locked in`,
+      `when is coaching actually worth paying for`,
+      `how do i know if i need accountability or just discipline`,
+      `can a free plan work if consistency is still bad`
+    ]
   };
   const personal = {
     training: [`${pretty(c.setting)} finally showed me why ${pretty(c.part)} keeps lagging`, `${pretty(c.lift)} started moving once i stopped changing everything`, `${pretty(c.block)} feels way better after trimming junk volume`, `${pretty(c.constraint)} and my ${pretty(c.part)} finally looks better`, `${pretty(c.setting)} but training is finally clicking again`],
@@ -246,43 +338,43 @@ function title(category, c, postType) {
 function body(category, c, postType) {
   const bodies = {
     training: {
-      question: ['I keep training consistently but one thing is obviously lagging. The main lift is moving and recovery is decent, so I am trying not to throw random volume at the problem.', 'This has been bugging me because the overall split is fine, but one body part is still behind. Curious what you would fix first.', 'Not looking for a magic answer. Just trying to figure out whether this is an exercise order problem, a volume problem, or me being impatient.'],
+      question: ['I have been using the free workouts and they helped me get more consistent, but I still feel like one body part is not moving the way I want.', 'I am not super advanced or anything. I just want better results and I cannot tell if I need to change the program or just be more patient.', 'Mostly trying to figure out if this is normal beginner stuff or if I actually need something more custom now.'],
       personal: ['Finally feels like I can see what was going wrong instead of just guessing every week.', 'I did not change a ton, but the small adjustment made the whole week feel cleaner.', 'Still early, but this is the first time the setup has felt sustainable.'],
       advice: ['Mostly posting this because the simple fixes usually work better than people think.', 'If I was starting over I would clean up the boring stuff first.', 'This is one of those things that feels more complicated than it needs to be.'],
       casual: ['No deep lesson here. Just one of those gym thoughts you have mid week.', 'Posting this because I know I am not the only one who deals with it.', 'Some gym problems are not serious, just annoying enough to be funny.']
     },
     nutrition: {
-      question: ['I can eat well for a few days no problem, then the routine gets messy and I start winging it. The easiest thing to repeat is usually what saves the week.', 'Mostly trying to keep food simple enough that I actually stick to it. The hard part is when the day gets busy and I stop wanting to think about meals.', 'I do better when one or two meals are boring on purpose. Curious what foods you guys keep around when motivation is low.'],
+      question: ['The free setup helped me clean up food a bit, but I still feel like my size is moving too slowly.', 'I am trying to keep things simple and cheap, but I also want faster progress and cannot tell what actually needs to change.', 'Not sure if I need more calories, a more specific plan, or just more time sticking with it.'],
       personal: ['This was one of those changes that made dieting feel easier without making it feel strict.', 'The food is nothing special, it is just repeatable enough that I keep doing it.', 'I keep trying more interesting meals and then end up back here because it works.'],
       advice: ['I think most people would be better off repeating one decent meal instead of chasing perfect variety.', 'If the plan only works when life is calm, the food setup is probably too complicated.', 'Simple meals are boring, but boring is usually what keeps the week on track.'],
       casual: ['No clue why food gets harder the second the week gets busy.', 'Meal prep really is just doing dishes forever.', 'Eating enough protein is way less glamorous than people make it sound.']
     },
     recovery: {
-      question: ['This is not a dramatic injury post. It is more that recovery has felt off long enough that I know something needs to change.', 'Session performance is okay, but afterward I can tell something is getting backed up. Sleep has been mid and that might be the whole answer.', 'Trying not to overreact, but I also do not want to ignore it until it gets worse.'],
+      question: ['I feel like recovery is the thing that keeps stopping me from getting better results.', 'The free plan is easy enough to follow, but I still fall off when sleep or stress gets weird.', 'Trying to figure out if I just need more accountability or if I am missing something obvious.'],
       personal: ['The fix was a lot less exciting than I wanted it to be.', 'I kept calling it motivation until I finally admitted it was just fatigue.', 'A lighter week helped more than another recovery gadget did.'],
       advice: ['A lot of recovery issues are just stress showing up in training clothes.', 'Sometimes the answer really is sleep, food, and one less hard set.', 'Recovery gets easier once you stop treating every week like a max effort block.'],
       casual: ['Recovery is somehow harder than training this week.', 'My body wants a day off and I respect that.', 'Sleep debt is still undefeated.']
     },
     cutting: {
-      question: ['The cut is fine on paper. The real issue is how random the day gets once I am tired or hungry.', 'I can hit the numbers early, then the back half of the day turns into a negotiation with convenience and appetite.', 'Mostly looking for practical fixes, not another perfect plan I will not follow.'],
+      question: ['The free plan gave me structure, but I still feel like fat loss gets messy as soon as life gets busy.', 'I want better results than I am getting right now and I cannot tell if I need more accountability or just better habits.', 'Mostly trying to figure out if generic cut plans stop being enough at some point.'],
       personal: ['The scale was not the issue. My routine was.', 'This got easier once I stopped trying to diet perfectly every single day.', 'I finally found the part of the cut that kept wrecking my weekends.'],
       advice: ['If your cut falls apart at night, the problem probably started earlier in the day.', 'A smaller deficit you can repeat usually beats the aggressive one you keep breaking.', 'Cuts feel way less miserable when the meals are boring on purpose.'],
       casual: ['Cuts are fun until dinner hits.', 'Hunger is annoying me today.', 'The cut is testing my patience now.']
     },
     bulking: {
-      question: ['Training is good. The food side is what keeps getting weird on busy days.', 'I am trying to keep the surplus intentional instead of just eating random extra stuff late at night.', 'Curious what actually worked for people once appetite stopped cooperating.'],
+      question: ['I have gotten some value out of the free training, but size is not coming on as fast as I hoped.', 'Trying to figure out when someone should stop using generic workouts and start doing something more specific.', 'I want to know if I need a trainer, a custom plan, or just more patience with the basics.'],
       personal: ['This bulk is going better now that dinner is not random.', 'I thought appetite would be the easy part and was very wrong.', 'The training is fun. Eating enough without feeling gross is the real skill.'],
       advice: ['A clean boring bulk is usually better than a sloppy fun one.', 'If appetite disappears, meal timing matters more than people want to admit.', 'One reliable calorie dense meal does more than trying to freestyle the whole day.'],
       casual: ['Bulking is fun until appetite disappears.', 'I am already tired of eating this much.', 'The scale is moving and so is my grocery bill.']
     },
     supplements: {
-      question: ['I am trying to be honest about what is actually helping and what just makes me feel organized.', 'This started as a simple stack and somehow turned into too many tubs again.', 'Would rather keep the basics and stop pretending every extra scoop matters.'],
+      question: ['I am trying to figure out if I need better programming or if I am just looking for shortcuts.', 'The free stuff has been helpful, but I still keep wondering what actually moves progress faster.', 'Not sure if I need coaching, better food, or if I am overthinking supplements completely.'],
       personal: ['Cutting the stack down was less dramatic than I expected.', 'Most of the tubs looked useful until I actually paid attention.', 'I keep coming back to the same one or two things and ignoring the rest.'],
       advice: ['Most people would be fine with fewer tubs and better groceries.', 'If you cannot explain why it is in the stack, it probably does not need to be there.', 'The basic stuff covers more than most people want to hear.'],
       casual: ['My stack is getting out of hand again.', 'I still cannot tell if this tub matters.', 'Supplement shelves are a scam sometimes.']
     },
     lifestyle: {
-      question: ['I do fine when the week is calm. The second life gets messy, I can see exactly where the routine was never really stable.', 'This feels more like a friction problem than a motivation problem.', 'Trying to build something that works on normal weeks, not just ideal ones.'],
+      question: ['I keep getting value from the free workouts, but consistency is still the thing keeping me from better results.', 'Trying to figure out if accountability is the missing piece or if I just need to stop making excuses.', 'I want more progress, but I do not know if the answer is coaching or just finally sticking to the basics.'],
       personal: ['This finally clicked once the setup got more boring.', 'I kept thinking I needed motivation when I really needed less friction.', 'One small routine fix carried more than I expected.'],
       advice: ['If the system falls apart on a busy week, the system probably needs simplifying.', 'The routine should survive a normal thursday, not just a perfect monday.', 'Making things easier usually works better than trying harder.'],
       casual: ['Routine felt solid until real life showed up.', 'Busy week but i still got sessions in.', 'Trying to stay consistent without making this my whole life.']
@@ -325,10 +417,10 @@ function imageSlots(total, target) {
   return new Set(shuffle(Array.from({ length: total }, (_, i) => i)).slice(0, target));
 }
 
-function candidate(index, slots) {
+function candidate(index, slots, postTypes) {
   const category = pick(weighted);
   const c = ctx(category);
-  const postType = pickPostType();
+  const postType = postTypes[index] || pickPostType();
   const image = slots.has(index);
   const stats = score(category, image);
   const minutesAgo = ageMinutes();
@@ -386,16 +478,17 @@ function generate() {
   const seenBodies = new Set();
   const seenGrams = new Set();
   const slots = imageSlots(TOTAL, IMAGE_TARGET);
+  const postTypes = buildPostTypeSchedule(TOTAL);
   let attempts = 0;
   while (posts.length < TOTAL && attempts < TOTAL * 500) {
     attempts += 1;
-    const post = candidate(posts.length, slots);
+    const post = candidate(posts.length, slots, postTypes);
     if (!useable(post, seenTitles, seenBodies, seenGrams)) continue;
     commit(post, seenTitles, seenBodies, seenGrams);
     posts.push(post);
   }
   if (posts.length !== TOTAL) {
-    const probe = candidate(posts.length, slots);
+    const probe = candidate(posts.length, slots, postTypes);
     const conflict = grams(probe.title).find((gram) => seenGrams.has(gram));
     throw new Error(`Only generated ${posts.length} posts after ${attempts} attempts. Sample conflict: ${conflict}`);
   }
@@ -477,7 +570,9 @@ function imageQueries(post) {
   if (/bench|press|chest/.test(titleText)) keywordQueries.push('bench press gym', 'chest press machine', 'barbell bench gym');
   if (/squat|leg day|quads|leg press/.test(titleText)) keywordQueries.push('squat rack gym', 'barbell squat gym', 'leg press gym');
   if (/deadlift|plates|chalk/.test(titleText)) keywordQueries.push('deadlift platform gym', 'chalk hands gym', 'barbell plates gym');
-  if (/progress|finally|bulk|cut|physique|mirror/.test(titleText)) keywordQueries.push('gym mirror selfie', 'progress photo gym', 'locker room mirror physique');
+  if (/progress|finally|bulk|cut|physique|mirror|trainer|coaching|custom|free plan|free training/.test(titleText)) keywordQueries.push('gym mirror selfie', 'progress photo gym', 'workout notebook gym', 'phone notes gym workout');
+  if (/biceps|triceps|arms|side delts|delt/.test(titleText)) keywordQueries.push('dumbbell curl gym', 'arm flex mirror gym', 'lateral raise gym');
+  if (/back|wider|lats/.test(titleText)) keywordQueries.push('lat pulldown gym', 'back mirror gym', 'pull up gym');
   if (/meal|diet|protein|prep|food|grocery/.test(titleText)) keywordQueries.push('meal prep containers', 'high protein meal prep', 'gym meal prep food');
   if (/packed|gym|culture|break|back in the gym/.test(titleText)) keywordQueries.push('crowded gym', 'gym equipment floor', 'messy gym scene');
 

@@ -80,6 +80,27 @@
     }
   };
 
+  const coachingSupportReplies = [
+    'you can still make solid progress with free plans if youre consistent',
+    'probably fix sleep and food first',
+    'you might not need coaching yet',
+    'free plans work fine if you actually run them long enough'
+  ];
+
+  const coachingLeanReplies = [
+    'if youve been stuck for months you probably need something more tailored',
+    'free plans are fine to start but custom usually helps once you plateau',
+    'sounds like you need better progression not just random workouts',
+    'a trainer helps if you keep second guessing everything'
+  ];
+
+  const coachingDisagreeReplies = [
+    'nah dont pay for coaching yet',
+    'honestly most people just dont train hard enough',
+    'trainer wont fix bad consistency',
+    'i wouldnt spend money until the basics are actually locked in'
+  ];
+
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -196,6 +217,8 @@
     const topic = pickFrom(pool.topics, random);
     const observation = pickFrom(pool.observations, random);
     const suggestion = pickFrom(pool.suggestions, random);
+    const titleText = String(item.title || '').toLowerCase();
+    const isCoachPrompt = /trainer|coaching|custom|free plan|free training|basic program|accountability/.test(titleText);
     const experience = [
       `i had the same issue last year. ${suggestion}. helped a lot.`,
       `same thing happened to me. once i fixed ${topic}, progress picked back up.`,
@@ -232,7 +255,10 @@
     ];
 
     let base = '';
-    if (mode === 'disagree') base = pickFrom(disagree, random);
+    if (isCoachPrompt && mode === 'disagree') base = pickFrom(coachingDisagreeReplies, random);
+    else if (isCoachPrompt && mode === 'reply') base = pickFrom([...coachingSupportReplies, ...coachingLeanReplies], random);
+    else if (isCoachPrompt && random() < 0.55) base = pickFrom([...coachingSupportReplies, ...coachingLeanReplies], random);
+    else if (mode === 'disagree') base = pickFrom(disagree, random);
     else if (mode === 'reply') base = pickFrom([...supportive, ...curious], random);
     else {
       const roll = random();
