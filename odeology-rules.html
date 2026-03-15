@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>odeology_ Rules</title>
+    <meta name="description" content="Read the community and platform rules for odeology_, including conduct standards, privacy expectations, content rules, authenticity requirements, and enforcement.">
+    <link rel="canonical" href="https://odeology.up.railway.app/odeology-rules.html">
+    <meta property="og:title" content="odeology_ Rules">
+    <meta property="og:description" content="Community and platform rules for odeology_ members, forum participants, and app users.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://odeology.up.railway.app/odeology-rules.html">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-15-rules-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.rules-page) {
+            background: #ffffff;
+        }
+
+        body.rules-page {
+            --forum-bg: #ffffff;
+            --forum-surface: #ffffff;
+            --forum-surface-soft: #f4f7f9;
+            --forum-border: #dde3e8;
+            --forum-border-strong: #c7d2db;
+            --forum-text: #17212b;
+            --forum-muted: #62717f;
+            --forum-accent: #27485d;
+            --forum-accent-soft: #dce7ee;
+            background: var(--forum-bg);
+            color: var(--forum-text);
+            min-height: 100vh;
+        }
+
+        .rules-page .grain,
+        .rules-page::before,
+        .rules-page::after {
+            display: none;
+            content: none;
+        }
+
+        .forum-shell {
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 0;
+            background: #ffffff;
+        }
+
+        .forum-left,
+        .rules-main {
+            background: var(--forum-surface);
+        }
+
+        .forum-left {
+            padding: 1rem 1rem 0;
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            align-self: start;
+            display: grid;
+            gap: 1rem;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            border-right: 1px solid var(--forum-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .forum-left::-webkit-scrollbar {
+            display: none;
+        }
+
+        .forum-left-head {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            padding: 0.15rem 0.2rem 0.9rem;
+            border-bottom: 1px solid var(--forum-border);
+        }
+
+        .forum-left-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(180deg, #38576b, #243f52);
+            color: #f8fbfd;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .forum-left-head strong {
+            display: block;
+            letter-spacing: -0.04em;
+        }
+
+        .forum-left-head span {
+            display: block;
+            font-size: 0.83rem;
+            color: var(--forum-muted);
+        }
+
+        .forum-nav-group {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .forum-nav-group + .forum-nav-group {
+            padding-top: 1rem;
+            border-top: 1px solid var(--forum-border);
+        }
+
+        .forum-nav-label {
+            padding: 0 0.35rem;
+            margin: 0 0 0.3rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: var(--forum-muted);
+        }
+
+        .forum-nav-link,
+        .forum-rail-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0.8rem;
+            border-radius: 999px;
+            color: var(--forum-text);
+            text-decoration: none;
+            font-weight: 700;
+            transition: background-color 140ms ease, transform 140ms ease;
+        }
+
+        .forum-nav-link:hover,
+        .forum-nav-link.is-active,
+        .forum-rail-link:hover,
+        .forum-rail-link.is-active {
+            background: var(--forum-accent-soft);
+            transform: translateX(2px);
+        }
+
+        .forum-nav-icon,
+        .forum-rail-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: transparent;
+            color: var(--forum-accent);
+            flex-shrink: 0;
+        }
+
+        .forum-nav-icon svg,
+        .forum-rail-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .forum-left-foot {
+            margin-top: auto;
+            padding: 1rem 0.25rem 1.25rem;
+            border-top: 1px solid var(--forum-border);
+            color: var(--forum-text);
+        }
+
+        .forum-left-foot p {
+            margin: 0.3rem 0 0;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: var(--forum-muted);
+        }
+
+        .rules-main {
+            min-width: 0;
+            padding: 0 0 4rem;
+        }
+
+        .rules-topbar {
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.6rem;
+            border-bottom: 1px solid var(--forum-border);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        .rules-topbar a {
+            color: var(--forum-accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .rules-wrap {
+            max-width: 980px;
+            padding: 2rem 1.75rem 0;
+        }
+
+        .rules-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 2.1rem;
+            border: 1px solid var(--forum-border);
+            border-radius: 32px;
+            background:
+                radial-gradient(circle at top right, rgba(39, 72, 93, 0.14), transparent 34%),
+                linear-gradient(135deg, #f7fafc 0%, #eef4f8 52%, #fdfefe 100%);
+        }
+
+        .rules-hero::after {
+            content: "";
+            position: absolute;
+            inset: auto -8% -36% auto;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(39, 72, 93, 0.12), transparent 68%);
+            pointer-events: none;
+        }
+
+        .rules-eyebrow {
+            margin: 0 0 0.65rem;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--forum-accent);
+        }
+
+        .rules-hero h1 {
+            margin: 0;
+            font-size: clamp(2.1rem, 4vw, 3.4rem);
+            line-height: 0.98;
+            letter-spacing: -0.06em;
+        }
+
+        .rules-lead {
+            max-width: 760px;
+            margin: 0.95rem 0 0;
+            font-size: 1.02rem;
+            line-height: 1.75;
+            color: var(--forum-muted);
+        }
+
+        .rules-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 1.4rem;
+        }
+
+        .rules-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.68rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(39, 72, 93, 0.1);
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--forum-accent);
+        }
+
+        .rules-quick {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0 0;
+        }
+
+        .rules-quick-card {
+            padding: 1.05rem 1.1rem;
+            border-radius: 24px;
+            background: #ffffff;
+            border: 1px solid var(--forum-border);
+        }
+
+        .rules-quick-card strong {
+            display: block;
+            font-size: 0.95rem;
+            letter-spacing: -0.03em;
+        }
+
+        .rules-quick-card span {
+            display: block;
+            margin-top: 0.45rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--forum-muted);
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .rules-card {
+            padding: 1.45rem 1.45rem 1.55rem;
+            border-radius: 28px;
+            border: 1px solid var(--forum-border);
+            background: #ffffff;
+            scroll-margin-top: 8rem;
+        }
+
+        .rules-card.is-accent {
+            background: linear-gradient(180deg, rgba(220, 231, 238, 0.52), rgba(255, 255, 255, 0.96));
+        }
+
+        .rules-card.is-soft {
+            background: linear-gradient(180deg, rgba(244, 247, 249, 0.96), rgba(255, 255, 255, 1));
+        }
+
+        .rules-card h2 {
+            margin: 0;
+            font-size: 1.22rem;
+            letter-spacing: -0.05em;
+        }
+
+        .rules-card p,
+        .rules-card li {
+            color: var(--forum-muted);
+            line-height: 1.72;
+            font-size: 0.97rem;
+        }
+
+        .rules-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .rules-list {
+            margin: 0.95rem 0 0;
+            padding-left: 1.15rem;
+        }
+
+        .rules-list li + li {
+            margin-top: 0.55rem;
+        }
+
+        .rules-list strong {
+            color: var(--forum-text);
+        }
+
+        .rules-note {
+            margin-top: 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 20px;
+            background: #f6f9fb;
+            border: 1px solid var(--forum-border);
+            color: var(--forum-text);
+            font-size: 0.92rem;
+            line-height: 1.65;
+        }
+
+        .rules-contact {
+            margin-top: 1.6rem;
+            padding: 1.4rem;
+            border-radius: 28px;
+            border: 1px solid var(--forum-border-strong);
+            background:
+                radial-gradient(circle at top left, rgba(39, 72, 93, 0.08), transparent 36%),
+                #f9fbfc;
+        }
+
+        .rules-contact h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.28rem;
+            letter-spacing: -0.05em;
+        }
+
+        .rules-contact p {
+            margin: 0;
+            color: var(--forum-muted);
+            line-height: 1.7;
+        }
+
+        .rules-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            color: var(--forum-muted);
+            font-size: 0.88rem;
+        }
+
+        .rules-copyright {
+            margin-top: 1.1rem;
+            color: var(--forum-muted);
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 1080px) {
+            .forum-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .forum-left {
+                position: relative;
+                top: 0;
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid var(--forum-border);
+            }
+
+            .rules-topbar {
+                top: 0;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .rules-wrap {
+                padding: 1.3rem 1rem 0;
+            }
+
+            .rules-hero {
+                padding: 1.45rem;
+                border-radius: 24px;
+            }
+
+            .rules-quick {
+                grid-template-columns: 1fr;
+            }
+
+            .rules-card,
+            .rules-contact {
+                border-radius: 22px;
+                padding: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="rules-page forum-page">
+    <div class="grain"></div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html#resources">Home</a></li>
+                <li><a href="overview.html">Overview</a></li>
+                <li>
+                    <a class="nav-training" href="training.html">
+                        <span class="nav-training-main">Training</span>
+                        <span class="nav-training-sub">30 days free</span>
+                    </a>
+                </li>
+                <li><a href="forum.html">Forum</a></li>
+            </ul>
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-icon">&#x1F319;</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="forum-shell">
+        <aside class="forum-left">
+            <div class="forum-left-head">
+                <div class="forum-left-logo">od</div>
+                <div>
+                    <strong>odeology_</strong>
+                    <span>Community standards</span>
+                </div>
+            </div>
+
+            <div class="forum-nav-group">
+                <div class="forum-nav-label">Browse</div>
+                <a class="forum-nav-link" href="index.html#resources">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4.5 11.5 12 5l7.5 6.5"></path><path d="M6.5 10.5v8h11v-8"></path></svg>
+                    </span>
+                    <span>Home</span>
+                </a>
+                <a class="forum-nav-link" href="overview.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path></svg>
+                    </span>
+                    <span>Overview</span>
+                </a>
+                <a class="forum-nav-link" href="training.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 9v6"></path><path d="M17 9v6"></path><path d="M9.5 10h5"></path><path d="M9.5 14h5"></path><path d="M5.5 10v4"></path><path d="M18.5 10v4"></path></svg>
+                    </span>
+                    <span>Training</span>
+                </a>
+                <a class="forum-nav-link" href="forum.html">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M6.5 7.5h10a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H11l-3.5 2v-2H6.5A1.5 1.5 0 0 1 5 13V9a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>
+                    </span>
+                    <span>Forum</span>
+                </a>
+            </div>
+
+            <div class="forum-nav-group">
+                <div class="forum-nav-label">On this page</div>
+                <a class="forum-nav-link" href="#rules">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 6.5h10"></path><path d="M7 11.5h10"></path><path d="M7 16.5h7"></path></svg>
+                    </span>
+                    <span>Rules</span>
+                </a>
+                <a class="forum-nav-link" href="#enforcement">
+                    <span class="forum-nav-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5 18 7v4.5c0 3.5-2.1 6.6-6 8-3.9-1.4-6-4.5-6-8V7l6-2.5Z"></path><path d="m9.5 12 1.7 1.7 3.3-3.5"></path></svg>
+                    </span>
+                    <span>Enforcement</span>
+                </a>
+            </div>
+
+            <div class="forum-nav-group">
+                <div class="forum-nav-label">Legal</div>
+                <a class="forum-rail-link is-active" href="odeology-rules.html" aria-current="page">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"></path><path d="M8.5 9h7"></path><path d="M8.5 12h7"></path></svg>
+                    </span>
+                    <span>Odeology Rules</span>
+                </a>
+                <a class="forum-rail-link" href="privacy-policy.html">
+                    <span class="forum-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5 18 7v4.5c0 3.5-2.1 6.6-6 8-3.9-1.4-6-4.5-6-8V7l6-2.5Z"></path><path d="m9.5 12 1.7 1.7 3.3-3.5"></path></svg>
+                    </span>
+                    <span>Privacy Policy</span>
+                </a>
+            </div>
+
+            <div class="forum-left-foot">
+                <strong>What these rules cover</strong>
+                <p>Forum behavior, profile content, messages, workout sharing, coaching flows, chef support, uploads, site integrity, and account safety.</p>
+            </div>
+        </aside>
+
+        <main class="rules-main">
+            <div class="rules-topbar">
+                <span>Odeology Rules</span>
+                <a href="forum.html">Back to forum</a>
+            </div>
+
+            <div class="rules-wrap">
+                <section class="rules-hero">
+                    <p class="rules-eyebrow">odeology_ Rules</p>
+                    <h1>Build progress here. Do not make the platform worse for everyone else.</h1>
+                    <p class="rules-lead">odeology_ is for training, nutrition, planning, accountability, and community. The goal is straightforward: people should be able to use the forum and product features without being harassed, misled, exposed, or manipulated. These rules apply across public community spaces and product features tied to your account.</p>
+                    <div class="rules-chips" aria-label="Key topics">
+                        <span class="rules-chip">Forum</span>
+                        <span class="rules-chip">Messages</span>
+                        <span class="rules-chip">Photos</span>
+                        <span class="rules-chip">Training</span>
+                        <span class="rules-chip">Macros</span>
+                        <span class="rules-chip">Safety</span>
+                    </div>
+                    <div class="rules-quick">
+                        <div class="rules-quick-card">
+                            <strong>Who these rules apply to</strong>
+                            <span>Everyone using the site, including forum members, account holders, invited users, and anyone using support or coaching flows.</span>
+                        </div>
+                        <div class="rules-quick-card">
+                            <strong>What they govern</strong>
+                            <span>Posts, comments, uploads, messages, progress sharing, account behavior, and use of planning or training tools.</span>
+                        </div>
+                        <div class="rules-quick-card">
+                            <strong>How they are enforced</strong>
+                            <span>Warnings, removals, restrictions, suspensions, and permanent bans depending on severity and repeat behavior.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="rules-grid" id="rules">
+                    <section class="rules-card is-accent">
+                        <h2>Rule 1. Respect people.</h2>
+                        <p>Do not harass, bully, threaten, demean, dogpile, or target other people. That includes private messages, comments, replies, account names, profile content, and coordinated behavior. Nobody should need to absorb abuse just to use a food, training, or community platform.</p>
+                        <div class="rules-note">Content or behavior that promotes hate, intimidation, or targeted hostility toward people or groups may be removed immediately and can lead to account loss.</div>
+                    </section>
+
+                    <section class="rules-card is-soft">
+                        <h2>Rule 2. Participate honestly.</h2>
+                        <p>Use the community and product features in a real way. Do not spam, mass-post low-value content, flood comments, manipulate engagement, create fake interest, or use the platform to run deceptive funnels.</p>
+                        <p>If you are here to sell, scrape attention, or manufacture credibility instead of actually participating, you are using the site the wrong way.</p>
+                    </section>
+
+                    <section class="rules-card">
+                        <h2>Rule 3. Respect privacy.</h2>
+                        <p>Do not post, reveal, threaten to reveal, or pressure others to share private or identifying information. That includes names, phone numbers, addresses, private messages, off-platform identities, payment details, medical details, check-in locations, or any information a person has not chosen to make public here.</p>
+                        <p>Do not repost someone else's photos, progress images, or messages in a way that exposes them or invites harassment.</p>
+                    </section>
+
+                    <section class="rules-card">
+                        <h2>Rule 4. No sexual or exploitative content involving minors.</h2>
+                        <p>Do not post, request, encourage, link to, or normalize sexual, exploitative, abusive, or suggestive content involving minors. Any predatory behavior involving a minor is prohibited and may be escalated immediately.</p>
+                    </section>
+
+                    <section class="rules-card is-soft">
+                        <h2>Rule 5. Be authentic.</h2>
+                        <p>Do not impersonate a coach, client, chef, trainer, moderator, brand, or another user in a deceptive way. You do not need to use your legal name, but you cannot use a false identity to scam, manipulate trust, or misrepresent authority.</p>
+                    </section>
+
+                    <section class="rules-card">
+                        <h2>Rule 6. Use training and nutrition features responsibly.</h2>
+                        <p>Do not use macro, grocery, training, or coaching-related features to mislead people with fabricated qualifications, fake transformations, falsified logs, or dangerous claims presented as professional certainty. If you are sharing advice, keep it honest, grounded, and clearly within your actual experience.</p>
+                        <div class="rules-note">odeology_ can support fitness and planning. It is not a license to roleplay as a clinician or to pressure people into unsafe behavior.</div>
+                    </section>
+
+                    <section class="rules-card is-accent">
+                        <h2>Rule 7. No scams, coercion, or prohibited transactions.</h2>
+                        <p>Do not use the site to run scams, phishing attempts, fraudulent offers, off-platform payment traps, or illegal sales. Do not pressure users into sending money, private images, credentials, or off-site contact information under false pretenses.</p>
+                    </section>
+
+                    <section class="rules-card">
+                        <h2>Rule 8. Label and share content responsibly.</h2>
+                        <p>If you post graphic, sensitive, or otherwise potentially disturbing content, use context and caution. Do not upload shocking, exploitative, or sexualized content simply to farm reactions. Keep posted material consistent with a training, food, progress, and community environment.</p>
+                    </section>
+
+                    <section class="rules-card">
+                        <h2>Rule 9. Do not abuse the platform.</h2>
+                        <p>Do not attempt to break the site, scrape protected content, attack the service, bypass restrictions, automate abuse, evade bans, or interfere with normal use. Do not exploit invites, message systems, shared workout features, or account workflows to overwhelm other users or the product itself.</p>
+                    </section>
+                </div>
+
+                <section class="rules-card is-soft" id="enforcement">
+                    <h2>Enforcement</h2>
+                    <p>We can respond to rule-breaking in different ways depending on severity, intent, prior behavior, and safety risk. Enforcement may include one or more of the following:</p>
+                    <ul class="rules-list">
+                        <li><strong>Warnings:</strong> asking you to stop, edit, relabel, or remove behavior that violates the rules.</li>
+                        <li><strong>Content actions:</strong> removing posts, comments, uploads, profile elements, messages, or shared assets.</li>
+                        <li><strong>Feature restrictions:</strong> limiting posting, messaging, workout sharing, profile editing, community access, or other account capabilities.</li>
+                        <li><strong>Temporary suspensions:</strong> time-limited restrictions on account use or specific product features.</li>
+                        <li><strong>Permanent bans:</strong> removing accounts or access to community and app features when behavior is severe, repeated, or clearly bad-faith.</li>
+                        <li><strong>Safety escalation:</strong> preserving information and taking additional action when behavior presents a serious safety, legal, or platform-integrity concern.</li>
+                    </ul>
+                    <div class="rules-note">We reserve the right to act on the spirit of these rules, not only the narrowest possible reading of them.</div>
+                </section>
+
+                <section class="rules-contact">
+                    <h2>Questions or reports</h2>
+                    <p>If you need to report a rules issue, use the contact or support flow on the website and include "Rules Report" in your message so it can be routed correctly. If the issue involves safety, impersonation, privacy, or coercion, include the relevant account or content details.</p>
+                    <div class="rules-meta">
+                        <span>Last updated: March 15, 2026</span>
+                        <span>Applies to: odeology_ website, forum, and account-based features</span>
+                    </div>
+                    <p class="rules-copyright">Odeology © 2026. All rights reserved.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js?v=2026-03-15-rules-1"></script>
+</body>
+</html>
