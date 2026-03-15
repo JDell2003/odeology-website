@@ -214,18 +214,19 @@
 
   function detectPostFocus(item) {
     const text = `${item.title || ''} ${item.body || ''}`.toLowerCase();
-    if (/pec|chest|bench|incline/.test(text)) return 'chest';
-    if (/calves|calf/.test(text)) return 'calves';
-    if (/hamstrings|hamstring|rdl|leg curl/.test(text)) return 'hamstrings';
-    if (/biceps|curl/.test(text)) return 'biceps';
-    if (/triceps/.test(text)) return 'triceps';
-    if (/side delts|rear delts|delts|shoulders|lateral raise/.test(text)) return 'delts';
-    if (/back|lats|wider|pull up|row/.test(text)) return 'back';
-    if (/squat|quads|leg press|hip thrust/.test(text)) return 'squat';
-    if (/deadlift|knees|plates|chalk/.test(text)) return 'deadlift';
-    if (/trainer|coaching|custom|free plan|free training|free workouts|basic program|accountability/.test(text)) return 'coaching';
-    if (/consistent|consistency|skipping|falling off/.test(text)) return 'consistency';
-    if (/gain weight|bulk|eating|protein|meal|food|diet/.test(text)) return 'nutrition';
+    if (/\b(pecs?|chest|bench|incline)\b/.test(text)) return 'chest';
+    if (/\b(calves|calf)\b/.test(text)) return 'calves';
+    if (/\b(hamstrings?|rdl|leg curl)\b/.test(text)) return 'hamstrings';
+    if (/\b(biceps|curl|preacher curl|dumbbell curl)\b/.test(text)) return 'biceps';
+    if (/\b(triceps)\b/.test(text)) return 'triceps';
+    if (/\b(traps|shrug|carry|carries)\b/.test(text)) return 'traps';
+    if (/\b(side delts?|rear delts?|delts?|shoulders?|lateral raise)\b/.test(text)) return 'delts';
+    if (/\b(back|lats?|wider|pull up|pullups|rows?|upper back|mid back)\b/.test(text)) return 'back';
+    if (/\b(squat|quads?|leg press|hip thrust|split squat)\b/.test(text)) return 'squat';
+    if (/\b(deadlift|knees|plates|chalk)\b/.test(text)) return 'deadlift';
+    if (/\b(trainer|coaching|custom|basic program|accountability)\b|free plan|free training|free workouts/.test(text)) return 'coaching';
+    if (/\b(consistent|consistency|skipping)\b|falling off/.test(text)) return 'consistency';
+    if (/\b(gain weight|bulk|eating|protein|meal|food|diet)\b/.test(text)) return 'nutrition';
     return 'generic';
   }
 
@@ -275,6 +276,15 @@
         support: ['triceps can be weird to judge', 'same thing happened to me'],
         disagree: ['i wouldnt call this a coaching problem yet', 'nah this still sounds like exercise selection'],
         joke: ['triceps always hide until the lighting is perfect']
+      },
+      traps: {
+        advice: ['traps responded better for me when i added shrugs and heavy carries', 'mine grew once i stopped assuming rows alone were enough', 'upper back work plus direct shrugging helped a lot'],
+        experience: ['traps didnt really move for me until i trained them on purpose', 'mine looked better once i took carries seriously'],
+        question: ['are you doing any direct shrug work', 'do rows and carries already feel trap heavy for you'],
+        blunt: ['rows alone might not be enough tbh', 'could just be that traps need more direct work'],
+        support: ['traps can be weird to notice', 'same problem here'],
+        disagree: ['i wouldnt jump to coaching over traps lagging', 'nah this still sounds like exercise choice first'],
+        joke: ['traps only show up when you stop caring']
       },
       delts: {
         advice: ['side delts moved once i added more frequency and cleaner lateral raises', 'rear delts finally showed up when i stopped turning every rep into traps', 'lighter laterals with better control helped a ton'],
