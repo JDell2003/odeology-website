@@ -549,6 +549,35 @@
             font-size: 0.95rem;
         }
 
+        .forum-comment-footer {
+            display: flex;
+            align-items: center;
+        }
+
+        .forum-comment-votes {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.36rem;
+            min-height: 32px;
+            padding: 0.34rem 0.66rem;
+            border: 1px solid #e2e8ef;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #25313d;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .forum-comment-votes svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 1.85;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         .forum-post-stats {
             display: flex;
             gap: 0.6rem;
@@ -1041,6 +1070,12 @@
             .forum-comment-body {
                 font-size: 0.82rem;
                 line-height: 1.42;
+            }
+
+            .forum-comment-votes {
+                min-height: 30px;
+                padding: 0.3rem 0.58rem;
+                font-size: 0.74rem;
             }
 
             .forum-post-stats {

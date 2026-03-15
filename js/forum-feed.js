@@ -25,52 +25,59 @@
   const commentCache = new Map();
 
   const commentAuthors = [
+    'mike',
+    'amy',
+    'Noah',
+    'sarahwrites',
+    'Jay',
+    'alison',
+    'nickp',
+    'Kayla',
+    'omar',
+    'jess',
+    'brandonlee',
+    'Tori',
+    'matthewc',
+    'zoe',
+    'anthony',
+    'Nina',
+    'derekm',
+    'lucy',
+    'christian',
+    'Maya',
+    'benji',
+    'hannah',
+    'aaronw',
+    'erin',
+    'casey',
+    'danielr',
+    'lena',
+    'ryan',
+    'ellie',
+    'sam',
     'setsandscience',
     'macrocheck',
-    'deloaddiary',
     'plateprogress',
     'sleeplifts',
-    'formfirstdaily',
-    'repcounting',
     'proteinwindow',
-    'calmcutter',
     'bulknotes',
-    'recoveryreceipt',
-    'gymratjournal',
-    'mealprepplug',
-    'hypertrophyday',
     'cardioandcoffee',
-    'sorenessreport',
-    'coachmodeon',
-    'strengthreceipt',
     'restdaytruth',
-    'routineaudit'
+    'routineaudit',
+    'mealprepplug'
   ];
 
-  const commentOpeners = [
-    'Honestly',
-    'Low key',
-    'Not gonna lie',
-    'From experience',
-    'Real talk',
-    'At this point',
-    'If I were you',
-    'For me',
-    'The biggest shift',
-    'The thing that helped most'
-  ];
-
-  const commentClosers = [
-    'and that fixed it fast.',
-    'and progress finally looked normal.',
-    'and the difference was obvious in two weeks.',
-    'and everything started feeling easier.',
-    'and the scale finally made sense.',
-    'and my training week stopped feeling random.',
-    'and the photo updates looked better right away.',
-    'and that ended the usual plateau.',
-    'and recovery stopped falling apart.',
-    'and the whole setup felt sustainable.'
+  const shortCommentReactions = [
+    'This is exactly where I kept messing up.',
+    'Same. That was the fix for me too.',
+    'You are overthinking it.',
+    'This is actually a solid post.',
+    'I would not change much here.',
+    'That explains why my progress stalled.',
+    'This is way more common than people admit.',
+    'Yep, that is the part that matters.',
+    'I learned this the hard way.',
+    'Good post. Simple and correct.'
   ];
 
   const categoryCommentPools = {
@@ -205,40 +212,63 @@
     return categoryCommentPools[item.category] || categoryCommentPools.training;
   }
 
-  function buildCommentBody(item, index, random) {
+  function buildCommentBody(item, random) {
     const pool = getCategoryPool(item);
-    const opener = pickFrom(commentOpeners, random);
     const topic = pickFrom(pool.topics, random);
     const observation = pickFrom(pool.observations, random);
     const suggestion = pickFrom(pool.suggestions, random);
-    const closer = pickFrom(commentClosers, random);
     const title = String(item.title || '').toLowerCase();
+    const pattern = Math.floor(random() * 8);
+
+    if (pattern === 0) {
+      return pickFrom(shortCommentReactions, random);
+    }
+
+    if (pattern === 1) {
+      return `I had the same issue. Once I focused on ${topic} instead of changing five things at once, ${suggestion}.`;
+    }
+
+    if (pattern === 2) {
+      return `${observation}. I would ${suggestion}.`;
+    }
+
+    if (pattern === 3) {
+      return `The post makes sense, but I think the real problem is ${topic}. ${observation}, and that is usually where people leak progress.`;
+    }
+
+    if (pattern === 4) {
+      return `My only pushback is that people rush to fix this with more effort. ${suggestion}, then see what the next two weeks look like.`;
+    }
+
+    if (pattern === 5) {
+      return `This reads like something that feels random in the moment but is usually predictable on paper. ${observation}. ${suggestion}.`;
+    }
 
     if (title.includes('meal') || title.includes('prep') || title.includes('grocery')) {
-      return `${opener}, the part that makes sense here is the ${topic}. ${observation}, so I would ${suggestion}, ${closer}`;
+      return `The food side of this is mostly ${topic}. ${observation}. I would ${suggestion}.`;
     }
 
     if (title.includes('sleep') || title.includes('recovery') || title.includes('rest')) {
-      return `${opener}, this reads like a ${topic} issue. ${observation}, and I would ${suggestion}, ${closer}`;
+      return `This reads like a ${topic} issue to me. ${observation}. I would ${suggestion}.`;
     }
 
     if (title.includes('cut') || title.includes('deficit') || item.category === 'cutting') {
-      return `${opener}, the weak spot is probably your ${topic}. ${observation}, so ${suggestion}, ${closer}`;
+      return `The weak spot is probably ${topic}. ${observation}. I would ${suggestion}.`;
     }
 
     if (title.includes('bulk') || item.category === 'bulking') {
-      return `${opener}, your ${topic} is what I would watch first. ${observation}, then ${suggestion}, ${closer}`;
+      return `I would watch ${topic} first. ${observation}. Then ${suggestion}.`;
     }
 
     if (item.category === 'training') {
-      return `${opener}, this sounds like a ${topic} problem more than a motivation problem. ${observation}, so I would ${suggestion}, ${closer}`;
+      return `This is more about ${topic} than motivation. ${observation}. I would ${suggestion}.`;
     }
 
     if (item.category === 'supplements') {
-      return `${opener}, I would look at your ${topic} first. ${observation}, then ${suggestion}, ${closer}`;
+      return `I would look at ${topic} first. ${observation}. Then ${suggestion}.`;
     }
 
-    return `${opener}, the main issue looks like ${topic}. ${observation}, so ${suggestion}, ${closer}`;
+    return `The main issue looks like ${topic}. ${observation}. ${suggestion}.`;
   }
 
   function generateComments(item) {
@@ -248,13 +278,32 @@
     const random = seededValue(item.id);
     const comments = Array.from({ length: total }, (_, index) => {
       const ageHours = Math.max(1, Math.round(Number(item.ageHours || 1) + random() * 72 + index * 0.15));
-      const score = Math.max(1, Math.round((total - index) * (0.55 + random() * 0.9)));
+      const tierRoll = random();
+      let score;
+      if (tierRoll < 0.16) {
+        score = Math.round(random() * 3);
+      } else if (tierRoll < 0.58) {
+        score = Math.round(2 + random() * 18);
+      } else if (tierRoll < 0.88) {
+        score = Math.round(12 + random() * 75);
+      } else {
+        score = Math.round(65 + random() * Math.max(20, total * 1.35));
+      }
+
+      const lengthRoll = random();
+      let body = buildCommentBody(item, random);
+      if (lengthRoll > 0.73) {
+        body = `${body} ${buildCommentBody(item, random)}`;
+      } else if (lengthRoll < 0.14) {
+        body = pickFrom(shortCommentReactions, random);
+      }
+
       return {
         id: `${item.id}-comment-${index + 1}`,
         author: pickFrom(commentAuthors, random),
         ageLabel: formatAge(ageHours),
         score,
-        body: buildCommentBody(item, index, random)
+        body
       };
     });
 
@@ -269,10 +318,15 @@
           <strong class="forum-comment-author">u/${escapeHtml(comment.author)}</strong>
           <span>&bull;</span>
           <span>${escapeHtml(comment.ageLabel)}</span>
-          <span>&bull;</span>
-          <span>${escapeHtml(formatCompactNumber(comment.score))} upvotes</span>
         </div>
         <p class="forum-comment-body">${escapeHtml(comment.body)}</p>
+        <div class="forum-comment-footer">
+          <span class="forum-comment-votes">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 13 5-5 5 5"></path></svg>
+            <span>${escapeHtml(formatCompactNumber(comment.score))}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5 5 5-5"></path></svg>
+          </span>
+        </div>
       </article>`;
   }
 
