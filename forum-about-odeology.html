@@ -216,10 +216,24 @@
             background: transparent;
         }
         .about-point strong,
-        .about-bullets strong { display: block; margin-bottom: 0.25rem; font-size: 0.95rem; }
+        .about-bullets strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            font-family: "Space Grotesk", sans-serif;
+            letter-spacing: -0.02em;
+        }
         .about-point span,
         .about-bullets span { color: var(--forum-muted); font-size: 0.9rem; line-height: 1.55; }
         .about-hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .about-value-line {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.08rem;
+            line-height: 1.35;
+            color: #15202b;
+            letter-spacing: -0.02em;
+        }
         .about-hero-media {
             position: relative;
             min-height: 620px;
@@ -568,13 +582,14 @@
                 <section class="about-hero reveal is-visible" aria-label="About Odeology hero">
                     <div class="about-hero-copy">
                         <p class="eyebrow">About Odeology</p>
-                        <h1>Free tools for macros, groceries, and training in one flow.</h1>
-                        <p>Odeology is built to make the boring part of getting in shape easier. You enter your stats, goal, and training style, then the platform gives you calorie targets, macro breakdowns, a grocery plan, restock timing, and a training path that all connect instead of living in separate apps.</p>
+                        <h1>Get your plan. Get your food. Get your training.</h1>
+                        <p class="about-value-line">Tell Odeology your goal and it gives you the next steps fast.</p>
+                        <p>You put in your stats and goal. Odeology gives you calories, macros, groceries, training, and a member overview that all work together.</p>
                         <div class="about-hero-points">
-                            <div class="about-point"><strong>Macro calculator</strong><span>Builds calories, protein, carbs, and fats around your body stats, goal, and training setup.</span></div>
-                            <div class="about-point"><strong>Training builder</strong><span>Creates a free training path and checks whether your meal plan matches the work you are asking your body to do.</span></div>
-                            <div class="about-point"><strong>Grocery planning</strong><span>Turns your nutrition target into a low-cost grocery plan with cards, full views, and downloadable PDF-style layouts.</span></div>
-                            <div class="about-point"><strong>Overview tools</strong><span>Shows meals, training, restock alerts, photos, and next actions in one place so users know what to do next.</span></div>
+                            <div class="about-point"><strong>Get your macros</strong><span>See calories, protein, carbs, and fats built for your goal.</span></div>
+                            <div class="about-point"><strong>Get your training</strong><span>Start a free plan and keep your workouts tied to your food plan.</span></div>
+                            <div class="about-point"><strong>Get your groceries</strong><span>Turn your numbers into a real food list you can actually use.</span></div>
+                            <div class="about-point"><strong>Get your next step</strong><span>Use one overview page for meals, training, restocks, and progress.</span></div>
                         </div>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="index.html#resources">Start free macro calculator</a>
@@ -589,26 +604,27 @@
                 <section class="about-section is-process reveal" aria-label="How Odeology works">
                     <div class="about-section-head">
                         <p class="eyebrow">How it works</p>
-                        <h2>One intake, then everything branches from the same target.</h2>
-                        <p>The point of Odeology is not to hand you disconnected widgets. The calorie target informs the macros. The macros inform the grocery build. The grocery plan feeds the overview and restock tracker. The training side can then compare your saved nutrition setup against the workload you are following.</p>
+                        <h2>One setup. Four clear outputs.</h2>
+                        <p>You enter your goal once. From there Odeology builds the parts most people usually have to piece together by hand.</p>
                     </div>
                     <div class="about-steps">
-                        <article class="about-step"><span class="about-step-index">01</span><h3>Enter your goal and body data</h3><p>Weight, body stats, goal direction, and training style are used to build a daily calorie target that is not generic.</p></article>
-                        <article class="about-step"><span class="about-step-index">02</span><h3>Unlock macros and groceries</h3><p>Protein, carbs, and fats are calculated from your target, then used to generate a grocery list, portions, and cost-focused meal planning.</p></article>
-                        <article class="about-step"><span class="about-step-index">03</span><h3>Run training from the same system</h3><p>The training flow can use your saved plan, highlight mismatches, and direct you into the next workout, restock task, or overview checkpoint.</p></article>
+                        <article class="about-step"><span class="about-step-index">01</span><h3>Calories and macros</h3><p>Get daily targets built from your goal, body stats, and training style.</p></article>
+                        <article class="about-step"><span class="about-step-index">02</span><h3>Groceries and meals</h3><p>Turn those targets into food, grocery lists, and restock timing.</p></article>
+                        <article class="about-step"><span class="about-step-index">03</span><h3>Training and tracking</h3><p>Start the workouts and use the overview page to stay on track.</p></article>
                     </div>
                 </section>
                 <section class="about-split is-editorial reveal">
                     <div class="about-split-media is-macro"><div class="about-media-note">The macro calculator is the front door. It is where calories, protein, carbs, and fats get set for the actual goal instead of guesswork.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Macro Calculator</p>
-                        <h3>What the macro calculator does.</h3>
-                        <p>Odeology's macro calculator is not just a number box. It takes your goal, training style, and body stats, then creates a daily calorie target plus a macro split for protein, carbs, and fats. That target becomes the base layer for everything else on the platform.</p>
+                        <h3>Know what to eat.</h3>
+                        <p class="about-value-line">This is where the plan starts.</p>
+                        <p>The macro calculator gives you daily calories and macro targets that fit your goal. Those numbers power the rest of the site.</p>
                         <ul class="about-bullets">
-                            <li><strong>Personalized calorie target</strong><span>Daily calories are aligned to whether the user is trying to lose fat, maintain, or push progress in training.</span></li>
-                            <li><strong>Macro breakdown</strong><span>Protein, carbs, and fats are shown as usable daily targets, not vague "eat clean" advice.</span></li>
-                            <li><strong>Goal handoff into groceries</strong><span>Once macros are set, the user can move directly into a grocery list and meal build that matches those targets.</span></li>
-                            <li><strong>Free entry point</strong><span>The product pushes the idea clearly: users can start with the calculator for free and keep moving forward from there.</span></li>
+                            <li><strong>Calories for your goal</strong><span>Cut, maintain, or push progress with a target that fits.</span></li>
+                            <li><strong>Simple macro targets</strong><span>See protein, carbs, and fats in clear daily numbers.</span></li>
+                            <li><strong>Feeds the grocery side</strong><span>Your food plan starts from these numbers.</span></li>
+                            <li><strong>Free to start</strong><span>You can start here without friction.</span></li>
                         </ul>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="index.html#resources">Open macro calculator</a>
@@ -620,13 +636,14 @@
                     <div class="about-split-media is-grocery"><div class="about-media-note">Macros matter more when they turn into an actual food system. Grocery cards, full views, monthly estimates, and restock timing are part of the workflow.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Nutrition System</p>
-                        <h3>What happens after macros are set.</h3>
-                        <p>After the macro calculator, Odeology converts the target into practical planning. The user can build a grocery list, see cards or expanded views, compare month windows, and track restock timing instead of starting over every week.</p>
+                        <h3>Turn numbers into food.</h3>
+                        <p class="about-value-line">This is the practical part.</p>
+                        <p>Once your macros are set, Odeology helps turn them into groceries, meals, and restock reminders.</p>
                         <ul class="about-bullets">
-                            <li><strong>Low-cost grocery planning</strong><span>The system is built around making the nutrition plan feel buyable, not aspirational.</span></li>
-                            <li><strong>Multiple viewing modes</strong><span>Users can move between grocery cards, full grocery views, meal cards, list-style meal displays, and PDF-style outputs.</span></li>
-                            <li><strong>Restock alerts</strong><span>The overview side tracks what needs to be picked up again over the next 7, 14, and 30 days.</span></li>
-                            <li><strong>Saved plan behavior</strong><span>Because the plan can be tied to the account, the training side can check whether the saved food setup still matches the current goal.</span></li>
+                            <li><strong>Build a grocery list</strong><span>Get food choices tied to your targets.</span></li>
+                            <li><strong>View it your way</strong><span>Use cards, full views, or PDF-style outputs.</span></li>
+                            <li><strong>Know what to rebuy</strong><span>Restock reminders help keep the plan going.</span></li>
+                            <li><strong>Keep your plan saved</strong><span>Your training side can use the same food setup.</span></li>
                         </ul>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="grocery-calendar.html">Open grocery calendar</a>
@@ -638,17 +655,18 @@
                     <div class="about-split-media is-training"><div class="about-media-note">Training is not isolated here. The product checks whether the meal plan and the program are working together or fighting each other.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Training</p>
-                        <h3>What the training side does.</h3>
-                        <p>The training flow exists to move users from planning into execution. It gives them a free program entry point, organizes training days, and uses the saved nutrition setup as context instead of pretending food and training are separate problems.</p>
+                        <h3>Know what to do in the gym.</h3>
+                        <p class="about-value-line">Start the workouts and keep the plan moving.</p>
+                        <p>The training side gives users a free starting point, a live training page, and a better link between workouts and nutrition.</p>
                         <ul class="about-bullets">
-                            <li><strong>Free training-plan entry</strong><span>The site explicitly positions training as free to start, with a "build plan" path connected to the rest of the system.</span></li>
-                            <li><strong>Today's workout and weekly view</strong><span>The overview page can surface the user's latest session, recent training window, and direct link into today's workout.</span></li>
-                            <li><strong>Nutrition alignment checks</strong><span>The training flow can flag when the saved meal plan does not match the workload or goal and recommend an adjustment.</span></li>
-                            <li><strong>Workout database and portal links</strong><span>The wider training area includes a program page, workout database access, and a dashboard-style path for continuing execution.</span></li>
+                            <li><strong>Free plan start</strong><span>Start building your training plan right away.</span></li>
+                            <li><strong>See today's workout</strong><span>Jump into the next session faster.</span></li>
+                            <li><strong>Match food to training</strong><span>The site can catch when your meal plan and training are out of sync.</span></li>
+                            <li><strong>Keep everything connected</strong><span>Training, overview, and food all work off the same system.</span></li>
                         </ul>
                         <div class="about-training-panel">
-                            <strong>Start the program, then keep using the portal.</strong>
-                            <span>Go straight into the free plan builder, or open the live training page if you want the actual workout side of the system.</span>
+                            <strong>Start here if you want the workout side.</strong>
+                            <span>Build the plan, open the training page, or jump into the workout overview.</span>
                         </div>
                         <div class="about-training-actions">
                             <a class="about-btn is-primary" href="training-coming-soon.html?start=1">Build training plan</a>
@@ -661,13 +679,14 @@
                     <div class="about-split-media is-overview"><div class="about-media-note">Overview is where the product becomes usable day to day: meals, macros, training, restock alerts, photos, and community layers in one control point.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Overview + Functions</p>
-                        <h3>What users can actually open and use.</h3>
-                        <p>This is the part most "about" pages skip. Odeology is not just a promise page. It already has clear functions users can click into: quick tour, dash, grocery calendar, training program, leaderboard, coaches, available chefs, photo history, and restock tracking.</p>
+                        <h3>See everything in one place.</h3>
+                        <p class="about-value-line">The overview page is the control center.</p>
+                        <p>The overview page helps users see meals, training, progress, restocks, and the next thing to do.</p>
                         <ul class="about-bullets">
-                            <li><strong>Quick tour and dash</strong><span>Users can be guided into the system and return to a simple dashboard-style checkpoint instead of hunting through menus.</span></li>
-                            <li><strong>Overview filters</strong><span>The overview page already splits sections into meals, restock, training, and photos so the user can focus on the next task.</span></li>
-                            <li><strong>Community functions</strong><span>Leaderboard, coaches, and chefs sit next to the planning tools so the product feels like a living system, not just a calculator.</span></li>
-                            <li><strong>Photo and progress tracking</strong><span>Photos and status views give the user another feedback layer beyond scale weight and daily calories.</span></li>
+                            <li><strong>Meals and groceries</strong><span>See the food side fast.</span></li>
+                            <li><strong>Training and restocks</strong><span>Stay focused on what needs attention next.</span></li>
+                            <li><strong>Community access</strong><span>Coaches, chefs, and community tools live next to the plan.</span></li>
+                            <li><strong>Progress tracking</strong><span>Use photos and check-ins to see change over time.</span></li>
                         </ul>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="overview.html">Open overview</a>
@@ -679,12 +698,13 @@
                     <div class="about-split-media is-grocery"><div class="about-media-note">This part needs to feel real: users can work with trainers for programming, and chefs can handle the food side so the plan is easier to stick to in real life.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Coaches And Chefs</p>
-                        <h3>Support is not just digital. Trainers guide the work, and chefs can handle the meals.</h3>
-                        <p>Odeology is meant to connect users to more than targets on a screen. Trainers or coaches help with the execution side of the plan: programming, consistency, and adjustments. Chefs cover the food side for people who do not want to shop, prep, and cook every meal themselves.</p>
+                        <h3>Get help when you want it.</h3>
+                        <p class="about-value-line">Coaches help with training. Chefs help with food.</p>
+                        <p>Some users want more support. Trainers help with the workout side. Chefs help turn the meal plan into real meals.</p>
                         <ul class="about-bullets">
-                            <li><strong>Coaches and trainers</strong><span>They help users follow the right plan, stay consistent, and make changes when training, recovery, or progress starts to slip.</span></li>
-                            <li><strong>Available chefs</strong><span>For users who want less friction, the chef side can take the meal plan and turn it into actual prepared food instead of another task on the list.</span></li>
-                            <li><strong>Same system, less guesswork</strong><span>The point is that the macros, groceries, training, and human support all point back to the same goal instead of competing with each other.</span></li>
+                            <li><strong>Work with a coach</strong><span>Get help with training, consistency, and changes.</span></li>
+                            <li><strong>Use a chef</strong><span>Let someone handle the meal side for you.</span></li>
+                            <li><strong>Keep one plan</strong><span>Your support still points back to the same macros and goal.</span></li>
                         </ul>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="training.html">Open training tab</a>
@@ -695,17 +715,17 @@
                 <section class="about-promo reveal" aria-label="Why it is free">
                     <div class="about-promo-copy">
                         <p class="eyebrow">Free Access</p>
-                        <h2>Start with the free tools, then expand into the rest of the system.</h2>
-                        <p>The calculator and the training entry point should feel easy to touch. Someone can build targets, start their grocery flow, and move into training without the page feeling like a paywall pitch. That is the cleaner message here.</p>
+                        <h2>Start free. See the value fast.</h2>
+                        <p>Use the calculator, start training, and move into the rest of the system without hitting a wall on the first click.</p>
                     </div>
                     <div class="about-promo-side">
                         <div class="about-promo-metric">
                             <strong>Free start</strong>
-                            <span>Open the calculator and training flow without burying the value behind a gated first click.</span>
+                            <span>Open the key tools right away.</span>
                         </div>
                         <div class="about-promo-metric">
-                            <strong>One connected system</strong>
-                            <span>Macros, groceries, overview, coaches, chefs, and training all point back to the same goal.</span>
+                            <strong>One connected plan</strong>
+                            <span>Food, workouts, and support all stay tied together.</span>
                         </div>
                         <div class="about-hero-actions">
                             <a class="about-btn is-primary" href="index.html#resources">Start free</a>
@@ -716,16 +736,16 @@
                 <section class="about-section reveal" aria-label="Core functions grid">
                     <div class="about-section-head">
                         <p class="eyebrow">Functions</p>
-                        <h2>The short version of what each major part does.</h2>
-                        <p>If someone lands here from the forum, they should leave knowing what the platform actually contains, not just the brand voice around it.</p>
+                        <h2>What you get.</h2>
+                        <p>The quick version of the value on the site.</p>
                     </div>
                     <div class="about-grid">
-                        <article class="about-card"><h3>Macro calculator</h3><p>Builds personalized calories and daily macro targets based on goal, stats, and training style.</p></article>
-                        <article class="about-card"><h3>Meal and grocery planning</h3><p>Turns nutrition targets into food selections, grocery cards, list views, cost windows, and PDF-style outputs.</p></article>
-                        <article class="about-card"><h3>Restock tracker</h3><p>Shows upcoming refill needs so the user can keep the plan running over the next week and month.</p></article>
-                        <article class="about-card"><h3>Training program</h3><p>Creates a free entry into structured training with today's workout links and plan guidance.</p></article>
-                        <article class="about-card"><h3>Overview page</h3><p>Collects meals, training, macros, restocks, photos, and next-step actions in one operating screen.</p></article>
-                        <article class="about-card"><h3>Community layer</h3><p>Adds leaderboard, coaches, chefs, and forum-linked discovery so users are not operating alone.</p></article>
+                        <article class="about-card"><h3>Macros</h3><p>See your calorie and macro targets.</p></article>
+                        <article class="about-card"><h3>Groceries</h3><p>Turn the plan into food you can buy.</p></article>
+                        <article class="about-card"><h3>Restocks</h3><p>Know what needs to be bought again.</p></article>
+                        <article class="about-card"><h3>Training</h3><p>Start the plan and open the workout page.</p></article>
+                        <article class="about-card"><h3>Overview</h3><p>See the whole plan in one place.</p></article>
+                        <article class="about-card"><h3>Support</h3><p>Use coaches, chefs, and community tools.</p></article>
                     </div>
                     <div class="about-footer-cta">
                         <div>
