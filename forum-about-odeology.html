@@ -289,12 +289,6 @@
         .about-split.is-soft .about-split-copy {
             padding: 0.3rem 0;
         }
-        .about-split.is-dark {
-            padding: 2rem;
-            border-radius: 34px;
-            background: linear-gradient(135deg, #0f1821 0%, #182736 100%);
-            color: #ffffff;
-        }
         .about-split.is-dark .eyebrow,
         .about-promo .eyebrow {
             color: #ff8a57;
@@ -316,22 +310,57 @@
             background: var(--forum-orange);
             border-color: var(--forum-orange);
         }
+        .about-split.is-training-feature {
+            padding: 2rem;
+            border-radius: 36px;
+            background:
+                radial-gradient(circle at top right, rgba(208, 98, 42, 0.14), transparent 32%),
+                linear-gradient(135deg, #f7ede5 0%, #fff8f4 52%, #f2f6f8 100%);
+            color: #17202a;
+            border: 1px solid #e6d7ca;
+            box-shadow: 0 18px 38px rgba(29, 34, 40, 0.08);
+        }
+        .about-split.is-training-feature .eyebrow {
+            color: #bf5a27;
+        }
+        .about-split.is-training-feature .about-split-copy h3 {
+            color: #12202d;
+        }
+        .about-split.is-training-feature .about-split-copy p,
+        .about-split.is-training-feature .about-bullets span,
+        .about-split.is-training-feature .about-bullets strong {
+            color: #51606e;
+        }
+        .about-split.is-training-feature .about-bullets li {
+            border-left-color: #d7b49c;
+        }
+        .about-split.is-training-feature .about-btn {
+            background: rgba(255, 255, 255, 0.78);
+            color: #17202a;
+            border-color: #d8c6b8;
+        }
+        .about-split.is-training-feature .about-btn.is-primary {
+            background: #c95c26;
+            border-color: #c95c26;
+            color: #ffffff;
+        }
         .about-training-panel {
             display: grid;
             gap: 0.8rem;
             margin-top: 0.4rem;
             padding: 1rem 1.05rem;
             border-radius: 22px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #dfcfc2;
+            box-shadow: 0 10px 22px rgba(39, 32, 25, 0.06);
         }
         .about-training-panel strong {
             display: block;
-            color: #ffffff;
+            color: #16212c;
             font-size: 1rem;
         }
         .about-training-panel span {
-            color: rgba(255, 255, 255, 0.78);
+            color: #586776;
             line-height: 1.6;
         }
         .about-training-actions {
@@ -364,7 +393,12 @@
         }
         .about-split-media.is-macro { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.05), rgba(13, 23, 32, 0.35)), url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
         .about-split-media.is-grocery { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.04), rgba(13, 23, 32, 0.28)), url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
-        .about-split-media.is-training { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.08), rgba(13, 23, 32, 0.32)), url("https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
+        .about-split-media.is-training {
+            background-image:
+                linear-gradient(180deg, rgba(26, 21, 16, 0.1), rgba(26, 21, 16, 0.22)),
+                url("https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1400&h=1000");
+            background-position: center 30%;
+        }
         .about-split-media.is-overview { background-image: linear-gradient(180deg, rgba(13, 23, 32, 0.06), rgba(13, 23, 32, 0.26)), url("https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=900"); }
         .about-split-copy { display: flex; flex-direction: column; justify-content: center; gap: 0.9rem; padding: 0.8rem 0; }
         .about-bullets { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; }
@@ -461,7 +495,8 @@
             .about-split { grid-template-columns: 1fr; }
             .about-hero-media { min-height: 380px; }
             .about-split.is-soft,
-            .about-split.is-dark { padding: 1.2rem; }
+            .about-split.is-dark,
+            .about-split.is-training-feature { padding: 1.2rem; }
             .about-promo {
                 padding: 1.4rem 0;
                 background: transparent;
@@ -599,7 +634,7 @@
                         </div>
                     </div>
                 </section>
-                <section class="about-split is-dark reveal">
+                <section class="about-split is-training-feature reveal">
                     <div class="about-split-media is-training"><div class="about-media-note">Training is not isolated here. The product checks whether the meal plan and the program are working together or fighting each other.</div></div>
                     <div class="about-split-copy">
                         <p class="eyebrow">Training</p>
