@@ -9,6 +9,7 @@
   let activeTopic = 'all';
   let debounceTimer = null;
   let localDataset = null;
+  let apiMode = 'unknown';
 
   function escapeHtml(value) {
     return String(value || '')
@@ -171,10 +172,15 @@
       let payload;
 
       try {
+        if (apiMode === 'disabled') throw new Error('API disabled');
         const response = await fetch(`/api/studies/search?${params.toString()}`, {
           headers: { Accept: 'application/json' }
         });
-        if (!response.ok) throw new Error(`API failed with ${response.status}`);
+        if (!response.ok) {
+          if (response.status === 404) apiMode = 'disabled';
+          throw new Error(`API failed with ${response.status}`);
+        }
+        apiMode = 'enabled';
         payload = await response.json();
       } catch {
         const dataset = await loadLocalDataset();
