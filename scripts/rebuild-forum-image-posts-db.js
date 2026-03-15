@@ -69,6 +69,7 @@ function isUsableImageRecord(post) {
   const text = imageTextBlob(post);
   const caption = String(post.imageCaption || '').toLowerCase();
   if (!post.imageUrl) return false;
+  if (post.manualVision === true && post.imageCaption && post.imageType && post.imageSubject) return true;
   if (/\b(pdf|page\d+-|ia_|manual|guidebook|yearbook|book scan|scanned|pamphlet|catalog|brochure)\b/.test(text)) return false;
   if (/(\/pdf\/|\.pdf|page\d+-\d+px|practical_child_training|ia_)/.test(text)) return false;
   if (/\b(statue|building|artifact|monument|ruins|sculpture|church|cathedral|temple|museum)\b/.test(text)) return false;
@@ -164,19 +165,31 @@ function deriveVisualDetails(post, resolved) {
 
   if (derived.imageType === 'food') {
     if (captionHas(caption, '\\bsalmon\\b', '\\bfish\\b', '\\bfillet\\b')) derived.subject = 'salmon meal prep';
-    else if (captionHas(caption, '\\bwrap\\b', '\\bsandwich\\b', '\\btortilla\\b')) derived.subject = 'high protein wrap';
+    else if (captionHas(caption, '\\btortilla\\b', '\\bwrap\\b')) derived.subject = 'high protein wrap';
+    else if (captionHas(caption, '\\bsandwich\\b')) derived.subject = 'protein sandwich plate';
     else if (captionHas(caption, '\\byogurt\\b', '\\bparfait\\b', '\\bgranola\\b', '\\bberries\\b')) derived.subject = 'protein yogurt bowl';
+    else if (captionHas(caption, '\\bbanana\\b', '\\bcutting board\\b')) derived.subject = 'fruit prep breakfast';
     else if (captionHas(caption, '\\boatmeal\\b', '\\boats\\b', '\\bporridge\\b')) derived.subject = 'high protein oats';
-    else if (captionHas(caption, '\\begg\\b', '\\bomelet\\b')) derived.subject = 'high protein eggs';
-    else if (captionHas(caption, '\\brace\\b', '\\btray\\b', '\\bcontainer\\b', '\\bmeal prep\\b', '\\bvegetables\\b', '\\bmeat\\b', '\\bchicken\\b')) derived.subject = 'rice and protein meal prep';
+    else if (captionHas(caption, '\\beggs?\\b', '\\bbacon\\b', '\\btoast\\b', '\\bomelet\\b')) derived.subject = 'breakfast plate';
+    else if (captionHas(caption, '\\bpot\\b', '\\bfrying pan\\b', '\\bskillet\\b', '\\bstirred\\b')) derived.subject = 'skillet meal prep';
+    else if (captionHas(caption, '\\bnoodles\\b', '\\bpasta\\b')) derived.subject = 'protein noodle bowl';
+    else if (captionHas(caption, '\\bsalad\\b')) derived.subject = 'salad meal prep';
+    else if (captionHas(caption, '\\btray\\b', '\\bcontainer\\b', '\\bmeal prep\\b')) derived.subject = 'meal prep tray';
+    else if (captionHas(caption, '\\brace\\b', '\\bmeat\\b', '\\bchicken\\b')) derived.subject = 'rice and protein meal prep';
     else if (captionHas(caption, '\\bbowl\\b')) derived.subject = 'high protein bowl';
     else if (captionHas(caption, '\\bplate\\b')) derived.subject = 'high protein plate';
-    else if (captionHas(caption, '\\bfood\\b', '\\bmeal\\b')) derived.subject = 'high protein meal';
+    else if (captionHas(caption, '\\bfood\\b', '\\bmeal\\b')) derived.subject = 'simple meal prep';
     return derived;
   }
 
   if (derived.imageType === 'physique') {
-    if (captionHas(text, '\\bglute\\b', '\\bbutt\\b', '\\bbooty\\b', '\\bshorts\\b', '\\bleggings\\b')) {
+    if (captionHas(text, '\\bupper body development\\b', '\\bupper body\\b')) {
+      derived.subject = 'upper body progress check';
+      derived.muscleGroup = 'upper body';
+    } else if (captionHas(text, '\\bportrait-style gym progress photo\\b', '\\bgym progress photo\\b')) {
+      derived.subject = 'physique progress check';
+      derived.muscleGroup = 'full body';
+    } else if (captionHas(text, '\\bglute\\b', '\\bbutt\\b', '\\bbooty\\b', '\\bshorts\\b', '\\bleggings\\b')) {
       derived.subject = 'glute progress check';
       derived.muscleGroup = 'glutes';
     } else if (captionHas(text, '\\babs\\b', '\\bmidriff\\b', '\\bwaist\\b', '\\bstomach\\b')) {
@@ -185,9 +198,15 @@ function deriveVisualDetails(post, resolved) {
     } else if (captionHas(text, '\\barm\\b', '\\bbicep\\b', '\\bflex\\b')) {
       derived.subject = 'arm progress check';
       derived.muscleGroup = 'arms';
+    } else if (captionHas(text, '\\bshoulder\\b', '\\bdelts?\\b')) {
+      derived.subject = 'shoulder progress check';
+      derived.muscleGroup = 'shoulders';
     } else if (captionHas(text, '\\bback\\b', '\\blat\\b', '\\bshoulder blades\\b')) {
       derived.subject = 'back progress check';
       derived.muscleGroup = 'back';
+    } else if (captionHas(text, '\\bupper body\\b', '\\bchest\\b', '\\bshirtless\\b')) {
+      derived.subject = 'upper body progress check';
+      derived.muscleGroup = 'upper body';
     } else if (captionHas(text, '\\bmirror\\b', '\\bselfie\\b', '\\bposing\\b', '\\bphysique\\b', '\\bbody\\b')) {
       derived.subject = 'physique progress check';
       derived.muscleGroup = derived.muscleGroup || 'full body';
@@ -296,6 +315,62 @@ function buildImageCopy(post) {
     return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
   }
 
+  if (imageType === 'physique' && muscleGroup === 'arms') {
+    const titlePool = [
+      'arms are finally starting to look like i train them',
+      'first time my arms have looked different in a while',
+      'finally seeing a little more arm size show up'
+    ];
+    const bodyPool = [
+      'arms always felt like one of those things that took forever to show, so this is the first check in a while that actually looks different to me.',
+      'not acting like this is crazy progress, but it is enough to make me feel like the arm work is finally adding up.',
+      'posting this because arm progress is usually the first thing i overthink when the mirror is not changing.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'physique' && muscleGroup === 'shoulders') {
+    const titlePool = [
+      'shoulders finally look a little rounder',
+      'first time my shoulders have looked noticeably different',
+      'finally seeing a little more shoulder shape'
+    ];
+    const bodyPool = [
+      'shoulders are one of those spots where progress feels invisible until one day it is not.',
+      'not saying everything changed at once, but this is the first time shoulder work has looked like it is actually showing.',
+      'posting this because shoulder progress usually takes longer for me to notice than i expect.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'physique' && muscleGroup === 'upper body') {
+    const titlePool = [
+      'upper body is finally starting to look more athletic',
+      'first time my upper body has looked different in a while',
+      'finally seeing some upper body progress show up'
+    ];
+    const bodyPool = [
+      'this is the kind of progress check that makes me feel like the boring weeks of training are finally showing up somewhere.',
+      'not pretending this is huge, but it is enough to make me feel like upper body work is moving again.',
+      'posting this because upper body changes are easy for me to miss until the difference is obvious.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
+  if (imageType === 'physique' && muscleGroup === 'full body') {
+    const titlePool = [
+      'finally looks like the work is adding up a little',
+      'first progress photo in a while that actually felt different',
+      'trying not to overreact but this looks better than a month ago'
+    ];
+    const bodyPool = [
+      'not a dramatic change, just the kind of progress check that makes it easier to stay patient.',
+      'this is the first photo in a while that makes me feel like the routine is actually moving me somewhere.',
+      'posting it because progress usually looks smaller in real time than it does once you compare it back.'
+    ];
+    return { title: pick(titlePool, random), body: pick(bodyPool, random), resolved };
+  }
+
   if (imageType === 'supplement' && /creatine|protein powder|pre workout/i.test(subject)) {
     const titlePool = [
       `${titleCase(subject)} worth it or still just extra money`,
@@ -312,6 +387,111 @@ function buildImageCopy(post) {
 
   if (imageType === 'food') {
     const text = `${subject} ${imageCaption}`.toLowerCase();
+    if (/breakfast plate|eggs|bacon|toast/.test(text)) {
+      return {
+        title: pick([
+          'breakfast like this is way easier to repeat than fancy meal prep',
+          'would you keep a breakfast plate like this in rotation',
+          'this is the kind of breakfast that actually keeps me full'
+        ], random),
+        body: pick([
+          'if breakfast is going to happen for me it usually needs to look this simple.',
+          'meals like this are what keep the morning from turning into coffee and nothing else.',
+          'curious if you would keep a breakfast like this consistent or swap it out after a few days.'
+        ], random),
+        resolved
+      };
+    }
+    if (/protein sandwich plate|sandwich/.test(text)) {
+      return {
+        title: pick([
+          'sandwich meals like this save me on busy days',
+          'would you count a sandwich plate like this as a real meal',
+          'simple sandwich meals are hard to beat when the day gets busy'
+        ], random),
+        body: pick([
+          'this is the type of meal i lean on when i need something fast that still feels like real food.',
+          'portable meals like this usually do more for consistency than perfect meal prep ever does.',
+          'if i can eat it quickly and still get enough protein in, it stays in the rotation.'
+        ], random),
+        resolved
+      };
+    }
+    if (/fruit prep breakfast|banana/.test(text)) {
+      return {
+        title: pick([
+          'stuff like this is how i make breakfast happen at all',
+          'fruit prep like this makes the rest of breakfast way easier',
+          'this is the kind of simple prep that saves the morning'
+        ], random),
+        body: pick([
+          'breakfast is way easier for me when part of it is already prepped and sitting there ready.',
+          'nothing flashy here, just the kind of little food habit that makes the whole day smoother.',
+          'this is usually the difference between eating something decent and skipping it completely.'
+        ], random),
+        resolved
+      };
+    }
+    if (/skillet meal prep|pot|frying pan|stirred/.test(text)) {
+      return {
+        title: pick([
+          'one pan meals like this make meal prep way less annoying',
+          'this is the type of skillet meal i end up repeating all week',
+          'would you keep a skillet meal like this in rotation'
+        ], random),
+        body: pick([
+          'anything i can cook in one pan has a way better chance of surviving the week for me.',
+          'this is the kind of meal prep that feels practical enough to actually repeat.',
+          'if cleanup stays easy, meals like this are usually what end up sticking.'
+        ], random),
+        resolved
+      };
+    }
+    if (/protein noodle bowl|noodles|pasta/.test(text)) {
+      return {
+        title: pick([
+          'bowls like this make eating enough way easier for me',
+          'would you keep a noodle bowl like this in your rotation',
+          'this is the kind of bowl i make when i need food fast'
+        ], random),
+        body: pick([
+          'meals like this work for me because they are fast, filling, and easy to make again tomorrow.',
+          'nothing fancy here, just the kind of bowl that makes it easier to actually eat enough.',
+          'curious if you would keep this kind of bowl around or get bored of it too fast.'
+        ], random),
+        resolved
+      };
+    }
+    if (/salad meal prep|salad/.test(text)) {
+      return {
+        title: pick([
+          'salad plates like this only work for me if protein is high enough',
+          'would you actually keep a meal like this in a cut',
+          'this is the kind of lighter meal i use when appetite is weird'
+        ], random),
+        body: pick([
+          'for me meals like this only work when they still feel like real food and not just leaves.',
+          'this is the kind of lighter meal that helps when i want something clean without overthinking it.',
+          'curious if you guys would keep something like this around or add more to it.'
+        ], random),
+        resolved
+      };
+    }
+    if (/meal prep tray|tray/.test(text)) {
+      return {
+        title: pick([
+          'tray meals like this make the week easier',
+          'would you keep meal prep this simple',
+          'simple prep trays do more for me than complicated recipes'
+        ], random),
+        body: pick([
+          'this is the kind of prep that actually survives a busy week for me.',
+          'if the meal is this easy to portion out, i am way more likely to keep doing it.',
+          'nothing creative here, just practical food that is easy to make again.'
+        ], random),
+        resolved
+      };
+    }
     if (/salmon|fish/.test(text)) {
       return {
         title: pick([
@@ -514,14 +694,14 @@ function buildImageCopy(post) {
   if (imageType === 'general_gym' && /baseball|bat|track|runner|sports training/.test(`${subject} ${imageCaption}`.toLowerCase())) {
     return {
       title: pick([
-        'sports training still counts even when it isnt a normal gym day',
-        'this kind of field work always reminds me conditioning matters too',
-        'anyone else feel way more athletic when training looks like this'
+        'sessions like this always remind me training is bigger than the weight room',
+        'sports work like this makes normal gym sessions feel different',
+        'conditioning days like this still humble me fast'
       ], random),
       body: pick([
-        'not every session needs to be a standard gym setup. stuff like this still does a lot more than people give it credit for.',
-        'this is the kind of training that makes me remember general athleticism still matters outside the usual lift list.',
-        'curious how many people here still mix sports style work in instead of only chasing gym numbers.'
+        'not every hard session has to happen under a barbell. work like this still exposes a lot fast.',
+        'this kind of sports session always reminds me how different general conditioning feels from normal gym fatigue.',
+        'curious how many people here still keep some field or sport work in instead of only chasing numbers in the gym.'
       ], random),
       resolved
     };
@@ -1004,6 +1184,7 @@ function main() {
       imageSubject: updated.imageSubject || null,
       imageMuscleGroup: updated.imageMuscleGroup || null,
       imagePostAngle: updated.imagePostAngle || null,
+      manualVision: updated.manualVision === true,
       imageCaption: updated.imageCaption || null,
       imageUrl: updated.imageUrl,
       imageAlt: updated.imageAlt || null,

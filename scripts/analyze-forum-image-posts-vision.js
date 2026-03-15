@@ -176,6 +176,16 @@ async function main() {
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
     if (!item.imageUrl) continue;
+    if (item.manualVision && item.imageCaption && item.imageType && item.imageSubject) {
+      item.visionAnalysis = item.visionAnalysis || {
+        broadLabel: 'manual',
+        broadScore: 1,
+        detailLabel: 'manual',
+        detailScore: 1
+      };
+      console.log(`[${index + 1}/${items.length}] ${item.id} -> skipped manual analysis`);
+      continue;
+    }
     if (item.visionAnalysis && item.visionAnalysis.broadLabel && item.visionAnalysis.detailLabel && item.imageCaption) {
       console.log(`[${index + 1}/${items.length}] ${item.id} -> skipped existing analysis`);
       continue;

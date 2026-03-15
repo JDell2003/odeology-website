@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-03-15T23:04:58.743Z",
+  "generatedAt": "2026-03-15T23:31:58.609Z",
   "total": 2000,
   "seed": 20260315,
   "summary": {
-    "imagePosts": 171,
-    "textPosts": 1829,
+    "imagePosts": 65,
+    "textPosts": 1935,
     "uniqueImageUrls": 64,
     "duplicateTitleFiveWordPhrases": 7470,
     "openverseRequests": 0,
-    "imagePostDatabaseCount": 41
+    "imagePostDatabaseCount": 52
   },
   "items": [
     {
@@ -20,20 +20,20 @@
       "author": "zoe",
       "format": "image",
       "postType": "question",
-      "title": "i feel leg curl everywhere except where im supposed to",
+      "title": "finally seeing a little more arm size show up",
       "titleFamily": "image-exercise-exercise-stimulus",
-      "body": "this version finally feels closer to the right stimulus, but im still not sure whether it belongs earlier in the workout. i either feel leg curl exactly where i want it or nowhere near the target and i cant tell what changed.",
-      "imageType": "exercise",
-      "imageMainObject": "leg curl",
-      "imageSubject": "leg curl",
-      "imageMuscleGroup": "hamstrings",
-      "imagePostAngle": "variation",
-      "imageAlt": "hamstring training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "not acting like this is crazy progress, but it is enough to make me feel like the arm work is finally adding up.",
+      "imageType": "physique",
+      "imageMainObject": "arm progress check",
+      "imageSubject": "arm progress check",
+      "imageMuscleGroup": "arms",
+      "imagePostAngle": "progress",
+      "imageAlt": "arm progress selfie",
+      "imageSource": "wikimedia",
+      "imageCreator": "Lazymonsta",
+      "imageLicense": "by-sa",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "imagePageUrl": "https://commons.wikimedia.org/wiki/File:Female_bodybuilder_Aleesha_Young_biceps_flex.jpg",
       "tags": [
         "training",
         "hypertrophy",
@@ -48,7 +48,18 @@
       "preferredMinuteLocal": 0,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Female_bodybuilder_Aleesha_Young_biceps_flex.jpg",
+      "imageId": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Female_bodybuilder_Aleesha_Young_biceps_flex.jpg",
+      "manualVision": true,
+      "imageCaption": "a muscular woman flexing her arms in a bodybuilding pose",
+      "imageFingerprint": "file-female-bodybuilder-aleesha-young-biceps-flex",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0002",
@@ -57,7 +68,7 @@
       "scope": "training",
       "category": "lifestyle",
       "author": "jason",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "how do you keep post school dropoff from throwing the whole week off",
       "titleFamily": "image-general_gym-gym-subject",
@@ -67,8 +78,8 @@
       "imageSubject": "post school dropoff",
       "imageMuscleGroup": null,
       "imagePostAngle": "check_in",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -87,7 +98,9 @@
       "preferredMinuteLocal": 51,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "43135704-a5fe-49c4-a413-6b98df034775"
     },
     {
       "id": "forum-post-0003",
@@ -96,7 +109,7 @@
       "scope": "nutrition",
       "category": "nutrition",
       "author": "bro_lifts",
-      "format": "image",
+      "format": "text",
       "postType": "personal",
       "title": "busy week but i still found a decent session in there",
       "titleFamily": "image-general_gym-gym-checkin",
@@ -106,8 +119,8 @@
       "imageSubject": "rainy commute days",
       "imageMuscleGroup": null,
       "imagePostAngle": "check_in",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -126,7 +139,9 @@
       "preferredMinuteLocal": 32,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "3f19ba45-fea4-4d81-a593-a38f9e734695"
     },
     {
       "id": "forum-post-0004",
@@ -177,20 +192,20 @@
       "author": "bench_ben",
       "format": "image",
       "postType": "question",
-      "title": "i feel split squat everywhere except where im supposed to",
+      "title": "sessions like this always remind me training is bigger than the weight room",
       "titleFamily": "image-exercise-exercise-stimulus",
-      "body": "i either feel split squat exactly where i want it or nowhere near the target and i cant tell what changed. this version finally feels closer to the right stimulus, but im still not sure whether it belongs earlier in the workout.",
-      "imageType": "exercise",
-      "imageMainObject": "split squat",
-      "imageSubject": "split squat",
-      "imageMuscleGroup": "quads",
-      "imagePostAngle": "exercise_order",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "not every hard session has to happen under a barbell. work like this still exposes a lot fast.",
+      "imageType": "general_gym",
+      "imageMainObject": "sports training session",
+      "imageSubject": "sports training session",
+      "imageMuscleGroup": null,
+      "imagePostAngle": "check_in",
+      "imageAlt": "leg training portrait",
+      "imageSource": "flickr",
+      "imageCreator": "Gareth1953 All Right Now",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/gareth1953/5992046962",
       "tags": [
         "training",
         "hypertrophy",
@@ -205,7 +220,18 @@
       "preferredMinuteLocal": 2,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/6137/5992046962_ba1e6c8de7_b.jpg",
+      "imageId": "https://live.staticflickr.com/6137/5992046962_ba1e6c8de7_b.jpg",
+      "manualVision": true,
+      "imageCaption": "a female runner during a race in a vertical sports photo",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0006",
@@ -256,13 +282,13 @@
       "author": "noah",
       "format": "text",
       "postType": "personal",
-      "title": "crowded evenings made my bulk way sloppier than i thought",
+      "title": "trying not to overreact but i can finally see a change",
       "titleFamily": "bulking-personal",
-      "body": "This bulk is going better now that dinner is not random.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
-      "imageMuscleGroup": null,
+      "body": "posting it mostly to keep myself honest because day to day progress is way harder to notice than people think.",
+      "imageType": "physique",
+      "imageMainObject": "physique progress check",
+      "imageSubject": "physique progress check",
+      "imageMuscleGroup": "full body",
       "imagePostAngle": null,
       "imageUrl": null,
       "imageAlt": null,
@@ -285,7 +311,8 @@
       "preferredMinuteLocal": 1,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "8f743505-98af-49d1-b2a1-77da1d2f10b0"
     },
     {
       "id": "forum-post-0008",
@@ -296,12 +323,12 @@
       "author": "late_night_lifte",
       "format": "image",
       "postType": "advice",
-      "title": "simple high protein food usually wins",
+      "title": "simple prep trays do more for me than complicated recipes",
       "titleFamily": "image-food-food-busy",
-      "body": "food setups like this are usually better than overcomplicating every meal and falling off by thursday.",
+      "body": "if the meal is this easy to portion out, i am way more likely to keep doing it.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "meal prep tray",
+      "imageSubject": "meal prep tray",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/2708/4517345070_b733b77714_b.jpg",
@@ -381,7 +408,8 @@
           }
         ]
       },
-      "imageCaption": "a white tray filled with food and vegetables"
+      "imageCaption": "a white tray filled with food and vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0009",
@@ -390,7 +418,7 @@
       "scope": "training",
       "category": "training",
       "author": "jay21",
-      "format": "image",
+      "format": "text",
       "postType": "personal",
       "title": "lunch break sessions made the week feel way harder than it needed to",
       "titleFamily": "image-general_gym-gym-personal",
@@ -400,8 +428,8 @@
       "imageSubject": "lunch break sessions",
       "imageMuscleGroup": null,
       "imagePostAngle": "friction",
-      "imageAlt": "fitness training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -420,7 +448,9 @@
       "preferredMinuteLocal": 24,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "739de208-8caa-4a27-a363-6ee39a66dd02"
     },
     {
       "id": "forum-post-0010",
@@ -551,12 +581,12 @@
       "author": "brad",
       "format": "image",
       "postType": "question",
-      "title": "would you actually keep high protein meal in rotation or get sick of it fast",
+      "title": "one pan meals like this make meal prep way less annoying",
       "titleFamily": "image-food-food-prep",
-      "body": "this is the kind of food setup i end up coming back to when i need something easy and repeatable.",
+      "body": "this is the kind of meal prep that feels practical enough to actually repeat.",
       "imageType": "food",
-      "imageMainObject": "high protein meal",
-      "imageSubject": "high protein meal",
+      "imageMainObject": "skillet meal prep",
+      "imageSubject": "skillet meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/7839/46151768384_688088b28f_b.jpg",
@@ -636,7 +666,8 @@
           }
         ]
       },
-      "imageCaption": "a pot of food is being stirred in a frying pan"
+      "imageCaption": "a pot of food is being stirred in a frying pan",
+      "manualVision": false
     },
     {
       "id": "forum-post-0014",
@@ -804,7 +835,7 @@
       "scope": "nutrition",
       "category": "cutting",
       "author": "luke",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "when do you stop using generic workouts and go more custom",
       "titleFamily": "image-planning-planning-custom",
@@ -814,8 +845,8 @@
       "imageSubject": "training split",
       "imageMuscleGroup": "programming",
       "imagePostAngle": "consistency",
-      "imageAlt": "workout planning photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -834,7 +865,9 @@
       "preferredMinuteLocal": 17,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "d31130f0-348b-458d-9a22-886818390690"
     },
     {
       "id": "forum-post-0019",
@@ -843,7 +876,7 @@
       "scope": "training",
       "category": "training",
       "author": "cutmode",
-      "format": "image",
+      "format": "text",
       "postType": "personal",
       "title": "putting split squat first actually helped a lot",
       "titleFamily": "image-exercise-exercise-specific",
@@ -853,8 +886,8 @@
       "imageSubject": "split squat",
       "imageMuscleGroup": "quads",
       "imagePostAngle": "stimulus",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -873,7 +906,9 @@
       "preferredMinuteLocal": 53,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "5152bda5-fa96-4968-931e-a94094be0200"
     },
     {
       "id": "forum-post-0020",
@@ -924,13 +959,13 @@
       "author": "zoe24",
       "format": "text",
       "postType": "question",
-      "title": "my arms still arent growing what would you change",
+      "title": "am i being impatient or is progress finally showing here",
       "titleFamily": "bulking-question-arms-not-growing",
-      "body": "feels like everyone else gets bigger faster and im trying to figure out why.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
-      "imageMuscleGroup": null,
+      "body": "still not where i want it, but at least it finally looks like the work is doing something.",
+      "imageType": "physique",
+      "imageMainObject": "arm progress check",
+      "imageSubject": "arm progress check",
+      "imageMuscleGroup": "arms",
       "imagePostAngle": null,
       "imageUrl": null,
       "imageAlt": null,
@@ -953,7 +988,8 @@
       "preferredMinuteLocal": 17,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "https://live.staticflickr.com/4221/35263804916_e24b036f19.jpg"
     },
     {
       "id": "forum-post-0022",
@@ -1403,7 +1439,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with a fork and a spoon"
+      "imageCaption": "a plate of food with a fork and a spoon",
+      "manualVision": false
     },
     {
       "id": "forum-post-0032",
@@ -1412,7 +1449,7 @@
       "scope": "training",
       "category": "training",
       "author": "plates_n_prep",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "am i being impatient or is calves still behind",
       "titleFamily": "image-physique-physique-check",
@@ -1422,8 +1459,8 @@
       "imageSubject": "calves",
       "imageMuscleGroup": "calves",
       "imagePostAngle": "bulk_or_cut",
-      "imageAlt": "calf training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -1442,7 +1479,9 @@
       "preferredMinuteLocal": 32,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "17a622f3-d481-4af6-a6b1-36421c8399f5"
     },
     {
       "id": "forum-post-0033",
@@ -1532,12 +1571,12 @@
       "author": "mealguy",
       "format": "image",
       "postType": "question",
-      "title": "would you actually keep high protein meal in rotation or get sick of it fast",
+      "title": "would you actually keep simple meal prep in rotation or get sick of it fast",
       "titleFamily": "image-food-food-easy",
       "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
       "imageType": "food",
-      "imageMainObject": "high protein meal",
-      "imageSubject": "high protein meal",
+      "imageMainObject": "simple meal prep",
+      "imageSubject": "simple meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/65535/51718178528_6ee3938f4c_b.jpg",
@@ -1617,7 +1656,8 @@
           }
         ]
       },
-      "imageCaption": "a man is preparing food on a table"
+      "imageCaption": "a man is preparing food on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0036",
@@ -1713,7 +1753,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with meat and a fork"
+      "imageCaption": "a plate of food with meat and a fork",
+      "manualVision": false
     },
     {
       "id": "forum-post-0037",
@@ -1764,20 +1805,20 @@
       "author": "cutmode",
       "format": "image",
       "postType": "personal",
-      "title": "putting preacher curl first actually helped a lot",
+      "title": "first time my arms have looked different in a while",
       "titleFamily": "image-exercise-exercise-specific",
-      "body": "ive done preacher curl for a while, but this is the first time it has actually felt repeatable. this variation finally started making sense once i slowed it down and stopped rushing through the setup. turns out a small execution change mattered more than adding more sets.",
-      "imageType": "exercise",
-      "imageMainObject": "preacher curl",
-      "imageSubject": "preacher curl",
-      "imageMuscleGroup": "biceps",
-      "imagePostAngle": "variation",
-      "imageAlt": "biceps training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "not acting like this is crazy progress, but it is enough to make me feel like the arm work is finally adding up.",
+      "imageType": "physique",
+      "imageMainObject": "arm progress check",
+      "imageSubject": "arm progress check",
+      "imageMuscleGroup": "arms",
+      "imagePostAngle": "progress",
+      "imageAlt": "arm progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Fitography",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/154523227@N06/35263804916",
       "tags": [
         "training",
         "hypertrophy",
@@ -1792,7 +1833,18 @@
       "preferredMinuteLocal": 25,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/4221/35263804916_e24b036f19.jpg",
+      "imageId": "https://live.staticflickr.com/4221/35263804916_e24b036f19.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit man posing with visible arm and shoulder definition",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0039",
@@ -2243,8 +2295,8 @@
       "titleFamily": "image-food-food-prep",
       "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein bowl",
+      "imageSubject": "high protein bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/65535/49859602816_91fd41fc89_b.jpg",
@@ -2324,7 +2376,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of vegetables on a table"
+      "imageCaption": "a bowl of vegetables on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0051",
@@ -2333,7 +2386,7 @@
       "scope": "training",
       "category": "training",
       "author": "mealguy",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "i feel RDL everywhere except where im supposed to",
       "titleFamily": "image-exercise-exercise-stimulus",
@@ -2343,8 +2396,8 @@
       "imageSubject": "RDL",
       "imageMuscleGroup": "hamstrings",
       "imagePostAngle": "variation",
-      "imageAlt": "hamstring training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -2363,7 +2416,9 @@
       "preferredMinuteLocal": 6,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "3cad84c5-562d-446b-a7f9-3f97755fc920"
     },
     {
       "id": "forum-post-0052",
@@ -2459,7 +2514,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with meat and vegetables"
+      "imageCaption": "a plate of food with meat and vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0053",
@@ -2555,7 +2611,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with vegetables and meat"
+      "imageCaption": "a plate of food with vegetables and meat",
+      "manualVision": false
     },
     {
       "id": "forum-post-0054",
@@ -2725,12 +2782,12 @@
       "author": "noah92",
       "format": "image",
       "postType": "question",
-      "title": "this is one of the easiest high protein snacks ive found",
+      "title": "stuff like this is how i make breakfast happen at all",
       "titleFamily": "image-food-food-question",
-      "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
+      "body": "nothing flashy here, just the kind of little food habit that makes the whole day smoother.",
       "imageType": "food",
-      "imageMainObject": "protein yogurt bowl",
-      "imageSubject": "protein yogurt bowl",
+      "imageMainObject": "fruit prep breakfast",
+      "imageSubject": "fruit prep breakfast",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/5641/21972173266_c79e5e2771_b.jpg",
@@ -2810,7 +2867,8 @@
           }
         ]
       },
-      "imageCaption": "a woman is cutting up a banana on a cutting board"
+      "imageCaption": "a woman is cutting up a banana on a cutting board",
+      "manualVision": false
     },
     {
       "id": "forum-post-0059",
@@ -2821,20 +2879,20 @@
       "author": "ryan21",
       "format": "image",
       "postType": "advice",
-      "title": "this lateral raise setup works better than i expected",
+      "title": "first time my arms have looked different in a while",
       "titleFamily": "image-exercise-exercise-opinion",
-      "body": "if an exercise never feels right, i usually check setup and order before i blame the whole program. a better variation or better execution usually fixes more than adding random volume.",
-      "imageType": "exercise",
-      "imageMainObject": "lateral raise",
-      "imageSubject": "lateral raise",
-      "imageMuscleGroup": "side-delts",
-      "imagePostAngle": "variation",
-      "imageAlt": "side delt training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "not acting like this is crazy progress, but it is enough to make me feel like the arm work is finally adding up.",
+      "imageType": "physique",
+      "imageMainObject": "arm progress check",
+      "imageSubject": "arm progress check",
+      "imageMuscleGroup": "arms",
+      "imagePostAngle": "progress",
+      "imageAlt": "shoulder progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Fitography",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/154523227@N06/35135220152",
       "tags": [
         "training",
         "hypertrophy",
@@ -2849,7 +2907,18 @@
       "preferredMinuteLocal": 44,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/4275/35135220152_a4caac83e9.jpg",
+      "imageId": "https://live.staticflickr.com/4275/35135220152_a4caac83e9.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit woman in a weight training portrait with visible shoulder and arm definition",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0060",
@@ -2858,7 +2927,7 @@
       "scope": "training",
       "category": "training",
       "author": "jay24",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "am i being impatient or is calves still behind",
       "titleFamily": "image-physique-physique-check",
@@ -2868,8 +2937,8 @@
       "imageSubject": "calves",
       "imageMuscleGroup": "calves",
       "imagePostAngle": "bulk_or_cut",
-      "imageAlt": "calf training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -2888,7 +2957,9 @@
       "preferredMinuteLocal": 22,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "20e700ae-c8d5-40dc-8c63-508b42aa4e73"
     },
     {
       "id": "forum-post-0061",
@@ -3333,23 +3404,23 @@
       "scope": "training",
       "category": "training",
       "author": "matt24",
-      "format": "text",
+      "format": "image",
       "postType": "personal",
-      "title": "hip thrust finally started moving again",
+      "title": "what actually got your glutes to finally grow",
       "titleFamily": "training-personal-lift-finally",
-      "body": "Finally feels like I can see what was going wrong instead of just guessing every week. Still early, but this is the first time the setup has felt sustainable. 😭",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
-      "imageMuscleGroup": null,
-      "imagePostAngle": null,
-      "imageUrl": null,
-      "imageAlt": null,
-      "imageSource": null,
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "curious what made glute growth finally start moving for other people because this is the first time i can really see a change.",
+      "imageType": "physique",
+      "imageMainObject": "glute progress check",
+      "imageSubject": "glute progress check",
+      "imageMuscleGroup": "glutes",
+      "imagePostAngle": "progress",
+      "imageUrl": "https://live.staticflickr.com/4265/34459240334_2f3cb93005.jpg",
+      "imageAlt": "glute progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Fitography",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/154523227@N06/34459240334",
       "tags": [
         "training",
         "hypertrophy",
@@ -3364,7 +3435,17 @@
       "preferredMinuteLocal": 49,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "https://live.staticflickr.com/4265/34459240334_2f3cb93005.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit woman posing in a progress-style fitness photo with visible lower body development",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0073",
@@ -3495,8 +3576,8 @@
       "titleFamily": "image-food-food-busy",
       "body": "food setups like this are usually better than overcomplicating every meal and falling off by thursday.",
       "imageType": "food",
-      "imageMainObject": "high protein meal",
-      "imageSubject": "high protein meal",
+      "imageMainObject": "simple meal prep",
+      "imageSubject": "simple meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/655/21998378685_096297fa09_b.jpg",
@@ -3576,7 +3657,8 @@
           }
         ]
       },
-      "imageCaption": "a man is preparing food on a counter"
+      "imageCaption": "a man is preparing food on a counter",
+      "manualVision": false
     },
     {
       "id": "forum-post-0077",
@@ -3669,8 +3751,8 @@
       "titleFamily": "image-food-food-casual",
       "body": "meals like this are not exciting, they are just practical.",
       "imageType": "food",
-      "imageMainObject": "high protein meal",
-      "imageSubject": "high protein meal",
+      "imageMainObject": "simple meal prep",
+      "imageSubject": "simple meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/8419/29400648723_56949aba27_b.jpg",
@@ -3750,7 +3832,8 @@
           }
         ]
       },
-      "imageCaption": "a table topped with different types of food"
+      "imageCaption": "a table topped with different types of food",
+      "manualVision": false
     },
     {
       "id": "forum-post-0080",
@@ -3799,7 +3882,7 @@
       "scope": "training",
       "category": "training",
       "author": "cutmode",
-      "format": "image",
+      "format": "text",
       "postType": "casual",
       "title": "split squat still humbles me every week",
       "titleFamily": "image-exercise-exercise-casual",
@@ -3809,8 +3892,8 @@
       "imageSubject": "split squat",
       "imageMuscleGroup": "quads",
       "imagePostAngle": "stimulus",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -3829,7 +3912,9 @@
       "preferredMinuteLocal": 10,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "f0d4b4e9-dad5-44b2-8d10-886c299bdf09"
     },
     {
       "id": "forum-post-0082",
@@ -3918,12 +4003,12 @@
       "author": "ella",
       "format": "image",
       "postType": "advice",
-      "title": "good high protein wrap or would you switch it up",
+      "title": "would you count a sandwich plate like this as a real meal",
       "titleFamily": "image-food-food-busy",
-      "body": "curious if you would actually keep a wrap like this all week or get tired of it fast.",
+      "body": "portable meals like this usually do more for consistency than perfect meal prep ever does.",
       "imageType": "food",
-      "imageMainObject": "high protein wrap",
-      "imageSubject": "high protein wrap",
+      "imageMainObject": "protein sandwich plate",
+      "imageSubject": "protein sandwich plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/3695/13482783505_dd76e996d0_b.jpg",
@@ -4003,7 +4088,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with a sandwich and a salad"
+      "imageCaption": "a plate of food with a sandwich and a salad",
+      "manualVision": false
     },
     {
       "id": "forum-post-0085",
@@ -4289,7 +4375,7 @@
       "scope": "training",
       "category": "training",
       "author": "latlover",
-      "format": "image",
+      "format": "text",
       "postType": "question",
       "title": "should leg press go earlier in the workout or stay where it is",
       "titleFamily": "image-exercise-exercise-order",
@@ -4299,8 +4385,8 @@
       "imageSubject": "leg press",
       "imageMuscleGroup": "quads",
       "imagePostAngle": "exercise_order",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -4319,7 +4405,9 @@
       "preferredMinuteLocal": 8,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "b48effeb-f735-4984-9325-2e4f25db4082"
     },
     {
       "id": "forum-post-0093",
@@ -5278,20 +5366,20 @@
       "author": "noah",
       "format": "image",
       "postType": "question",
-      "title": "should smith incline go earlier in the workout or stay where it is",
+      "title": "first time my upper body has looked different in a while",
       "titleFamily": "image-exercise-exercise-order",
-      "body": "i either feel smith incline exactly where i want it or nowhere near the target and i cant tell what changed. smith incline looks simple on paper but i still cant tell if my setup is good or if im making it harder than it needs to be.",
-      "imageType": "exercise",
-      "imageMainObject": "smith incline",
-      "imageSubject": "smith incline",
-      "imageMuscleGroup": "upper-chest",
-      "imagePostAngle": "technique",
-      "imageAlt": "incline press training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "posting this because upper body changes are easy for me to miss until the difference is obvious.",
+      "imageType": "physique",
+      "imageMainObject": "upper body progress check",
+      "imageSubject": "upper body progress check",
+      "imageMuscleGroup": "upper body",
+      "imagePostAngle": "progress",
+      "imageAlt": "upper body progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Fitography",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/154523227@N06/35302740245",
       "tags": [
         "training",
         "hypertrophy",
@@ -5306,7 +5394,18 @@
       "preferredMinuteLocal": 54,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/4209/35302740245_32b249a1d9.jpg",
+      "imageId": "https://live.staticflickr.com/4209/35302740245_32b249a1d9.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit woman in a fitness portrait showing upper body development",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0118",
@@ -5522,7 +5621,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food on a wooden table"
+      "imageCaption": "a plate of food on a wooden table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0122",
@@ -5736,7 +5836,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food on a table"
+      "imageCaption": "a bowl of food on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0126",
@@ -6074,20 +6175,20 @@
       "author": "sarah",
       "format": "image",
       "postType": "advice",
-      "title": "this hip thrust setup works better than i expected",
+      "title": "my glutes finally look like theyre starting to grow",
       "titleFamily": "image-exercise-exercise-opinion",
-      "body": "if an exercise never feels right, i usually check setup and order before i blame the whole program. this is one of those movements where being patient with the setup matters a lot.",
-      "imageType": "exercise",
-      "imageMainObject": "hip thrust",
-      "imageSubject": "hip thrust",
+      "body": "curious what made glute growth finally start moving for other people because this is the first time i can really see a change.",
+      "imageType": "physique",
+      "imageMainObject": "glute progress check",
+      "imageSubject": "glute progress check",
       "imageMuscleGroup": "glutes",
-      "imagePostAngle": "exercise_order",
-      "imageAlt": "glute training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
+      "imagePostAngle": "progress",
+      "imageAlt": "glute progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "cjquines",
+      "imageLicense": "pdm",
       "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "imagePageUrl": "https://www.flickr.com/photos/150595761@N04/31536627862",
       "tags": [
         "training",
         "hypertrophy",
@@ -6102,7 +6203,18 @@
       "preferredMinuteLocal": 39,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/542/31536627862_9892587b2f_b.jpg",
+      "imageId": "https://live.staticflickr.com/542/31536627862_9892587b2f_b.jpg",
+      "manualVision": true,
+      "imageCaption": "a muscular woman posing in a bodybuilding portrait with visible lower body and glute development",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0134",
@@ -6151,20 +6263,20 @@
       "author": "zoe88",
       "format": "image",
       "postType": "question",
-      "title": "bulk or keep leaning out a bit more",
+      "title": "first time my arms have looked different in a while",
       "titleFamily": "image-physique-physique-bulkcut",
-      "body": "if you were me would you keep pushing the bulk or lean out a little more first. finally starting to notice a little change, but rear delts still feels behind compared to the rest.",
+      "body": "arms always felt like one of those things that took forever to show, so this is the first check in a while that actually looks different to me.",
       "imageType": "physique",
-      "imageMainObject": "rear delts",
-      "imageSubject": "rear delts",
-      "imageMuscleGroup": "rear-delts",
+      "imageMainObject": "arm progress check",
+      "imageSubject": "arm progress check",
+      "imageMuscleGroup": "arms",
       "imagePostAngle": "progress",
-      "imageAlt": "rear delt training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "imageAlt": "shoulder progress selfie",
+      "imageSource": "wikimedia",
+      "imageCreator": "Lazymonsta",
+      "imageLicense": "by-sa",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "imagePageUrl": "https://commons.wikimedia.org/wiki/File:Female_bodybuilder_Aleesha_Young_flexing_on_stage.jpg",
       "tags": [
         "training",
         "hypertrophy",
@@ -6179,7 +6291,18 @@
       "preferredMinuteLocal": 24,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/07/Female_bodybuilder_Aleesha_Young_flexing_on_stage.jpg",
+      "imageId": "https://upload.wikimedia.org/wikipedia/commons/0/07/Female_bodybuilder_Aleesha_Young_flexing_on_stage.jpg",
+      "manualVision": true,
+      "imageCaption": "a muscular woman flexing on stage with visible shoulder and arm definition",
+      "imageFingerprint": "file-female-bodybuilder-aleesha-young-flexing-on-stage",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0136",
@@ -6282,20 +6405,20 @@
       "author": "benchbeast",
       "format": "image",
       "postType": "advice",
-      "title": "this chest supported row setup works better than i expected",
+      "title": "this is why i check execution before changing the whole plan",
       "titleFamily": "image-exercise-exercise-opinion",
-      "body": "a better variation or better execution usually fixes more than adding random volume. this is one of those movements where being patient with the setup matters a lot.",
+      "body": "most exercise problems feel like programming problems at first, but a lot of them are really setup and execution issues.",
       "imageType": "exercise",
-      "imageMainObject": "chest supported row",
-      "imageSubject": "chest supported row",
-      "imageMuscleGroup": "upper-back",
-      "imagePostAngle": "variation",
-      "imageAlt": "upper back training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "imageMainObject": "upper body training portrait",
+      "imageSubject": "upper body training portrait",
+      "imageMuscleGroup": "chest",
+      "imagePostAngle": "technique",
+      "imageAlt": "upper body progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Felipe Pilotto",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/felipepilotto/8901359149",
       "tags": [
         "training",
         "hypertrophy",
@@ -6310,7 +6433,18 @@
       "preferredMinuteLocal": 2,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/7291/8901359149_005bf212ff_b.jpg",
+      "imageId": "https://live.staticflickr.com/7291/8901359149_005bf212ff_b.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit man in a gym portrait during upper body training",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0138",
@@ -6358,7 +6492,7 @@
       "scope": "training",
       "category": "training",
       "author": "sarah92",
-      "format": "image",
+      "format": "text",
       "postType": "personal",
       "title": "hack squat finally started moving again",
       "titleFamily": "image-exercise-exercise-personal",
@@ -6368,8 +6502,8 @@
       "imageSubject": "hack squat",
       "imageMuscleGroup": "quads",
       "imagePostAngle": "variation",
-      "imageAlt": "quad training photo",
-      "imageSource": "openverse",
+      "imageAlt": null,
+      "imageSource": null,
       "imageCreator": null,
       "imageLicense": null,
       "imageLicenseUrl": null,
@@ -6388,7 +6522,9 @@
       "preferredMinuteLocal": 18,
       "preferredWindow": "morning",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": null,
+      "imageId": "d31130f0-348b-458d-9a22-886818390690"
     },
     {
       "id": "forum-post-0140",
@@ -6604,12 +6740,12 @@
       "author": "matt31",
       "format": "text",
       "postType": "personal",
-      "title": "putting quads first actually helped",
+      "title": "not a perfect week but this still counted",
       "titleFamily": "training-personal-priority-helped",
-      "body": "Still early, but this is the first time the setup has felt sustainable.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
+      "body": "some weeks the goal is just to not let one bad day turn into four.",
+      "imageType": "general_gym",
+      "imageMainObject": "gym session",
+      "imageSubject": "gym session",
       "imageMuscleGroup": null,
       "imagePostAngle": null,
       "imageUrl": null,
@@ -6633,7 +6769,8 @@
       "preferredMinuteLocal": 20,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "16e08895-7bac-4dc5-905c-f4efe0765f13"
     },
     {
       "id": "forum-post-0145",
@@ -6727,8 +6864,8 @@
       "titleFamily": "image-food-food-casual",
       "body": "this kind of plate is usually what keeps my food from getting way too complicated.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein plate",
+      "imageSubject": "high protein plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/8491/8326874357_6f0108d519_b.jpg",
@@ -6808,7 +6945,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with vegetables and cheese"
+      "imageCaption": "a plate of food with vegetables and cheese",
+      "manualVision": false
     },
     {
       "id": "forum-post-0148",
@@ -7180,7 +7318,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food with carrots, broccoli, and fruit"
+      "imageCaption": "a bowl of food with carrots, broccoli, and fruit",
+      "manualVision": false
     },
     {
       "id": "forum-post-0156",
@@ -7429,12 +7568,12 @@
       "author": "matt21",
       "format": "image",
       "postType": "question",
-      "title": "would you keep a meal like this in the breakfast rotation",
+      "title": "would you keep a breakfast plate like this in rotation",
       "titleFamily": "image-food-food-prep",
-      "body": "if breakfast is going to happen for me it usually looks more like this than something creative.",
+      "body": "meals like this are what keep the morning from turning into coffee and nothing else.",
       "imageType": "food",
-      "imageMainObject": "high protein plate",
-      "imageSubject": "high protein plate",
+      "imageMainObject": "breakfast plate",
+      "imageSubject": "breakfast plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/3060/3250044961_80e1598067_b.jpg",
@@ -7514,7 +7653,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with eggs, bacon, and toast"
+      "imageCaption": "a plate of food with eggs, bacon, and toast",
+      "manualVision": false
     },
     {
       "id": "forum-post-0163",
@@ -7815,12 +7955,12 @@
       "author": "jay24",
       "format": "image",
       "postType": "advice",
-      "title": "good high protein wrap or would you switch it up",
+      "title": "sandwich meals like this save me on busy days",
       "titleFamily": "image-food-food-macros",
-      "body": "if i can eat it fast and still get protein in, it stays in the rotation.",
+      "body": "portable meals like this usually do more for consistency than perfect meal prep ever does.",
       "imageType": "food",
-      "imageMainObject": "high protein wrap",
-      "imageSubject": "high protein wrap",
+      "imageMainObject": "protein sandwich plate",
+      "imageSubject": "protein sandwich plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/3078/2577964672_1b6220c77e_b.jpg",
@@ -7900,7 +8040,8 @@
           }
         ]
       },
-      "imageCaption": "a sandwich with lettuce, tomato, and cheese on a plate"
+      "imageCaption": "a sandwich with lettuce, tomato, and cheese on a plate",
+      "manualVision": false
     },
     {
       "id": "forum-post-0170",
@@ -8466,20 +8607,20 @@
       "author": "alex21",
       "format": "image",
       "postType": "question",
-      "title": "this glutes variation finally started clicking for me",
+      "title": "finally looks like the work is adding up a little",
       "titleFamily": "image-exercise-exercise-clicking",
-      "body": "this version finally feels closer to the right stimulus, but im still not sure whether it belongs earlier in the workout. incline press looks simple on paper but i still cant tell if my setup is good or if im making it harder than it needs to be.",
-      "imageType": "exercise",
-      "imageMainObject": "glutes",
-      "imageSubject": "glutes",
-      "imageMuscleGroup": "upper-chest",
-      "imagePostAngle": "exercise_order",
-      "imageAlt": "glute training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "posting it because progress usually looks smaller in real time than it does once you compare it back.",
+      "imageType": "physique",
+      "imageMainObject": "physique progress check",
+      "imageSubject": "physique progress check",
+      "imageMuscleGroup": "full body",
+      "imagePostAngle": "progress",
+      "imageAlt": "glute progress selfie",
+      "imageSource": "flickr",
+      "imageCreator": "Fitography",
+      "imageLicense": "by",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "imagePageUrl": "https://www.flickr.com/photos/154523227@N06/35263265856",
       "tags": [
         "recovery",
         "sleep",
@@ -8494,7 +8635,18 @@
       "preferredMinuteLocal": 43,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://live.staticflickr.com/4263/35263265856_455f146c88.jpg",
+      "imageId": "https://live.staticflickr.com/4263/35263265856_455f146c88.jpg",
+      "manualVision": true,
+      "imageCaption": "a fit woman posing in a portrait-style gym progress photo",
+      "imageFingerprint": "",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0185",
@@ -9675,12 +9827,12 @@
       "author": "mia",
       "format": "text",
       "postType": "question",
-      "title": "is it normal to feel everything except calves",
+      "title": "anyone else train better when the setup stays this simple",
       "titleFamily": "training-question-normal-beginner",
-      "body": "calves are the one thing i cant tell whether its frequency genetics or just bad reps.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
+      "body": "curious what actually keeps you steady when life gets noisy and the gym stops feeling automatic.",
+      "imageType": "general_gym",
+      "imageMainObject": "gym session",
+      "imageSubject": "gym session",
       "imageMuscleGroup": null,
       "imagePostAngle": null,
       "imageUrl": null,
@@ -9704,7 +9856,8 @@
       "preferredMinuteLocal": 28,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "8ea40ddc-0248-4ab6-8b7f-83472ff09b26"
     },
     {
       "id": "forum-post-0214",
@@ -9715,12 +9868,12 @@
       "author": "mia",
       "format": "image",
       "postType": "question",
-      "title": "this is one of the easiest high protein snacks ive found",
+      "title": "would you keep a noodle bowl like this in your rotation",
       "titleFamily": "image-food-food-prep",
-      "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
+      "body": "nothing fancy here, just the kind of bowl that makes it easier to actually eat enough.",
       "imageType": "food",
-      "imageMainObject": "high protein bowl",
-      "imageSubject": "high protein bowl",
+      "imageMainObject": "protein noodle bowl",
+      "imageSubject": "protein noodle bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/99/297838061_bb2053df27_b.jpg",
@@ -9800,7 +9953,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food with broccoli and noodles"
+      "imageCaption": "a bowl of food with broccoli and noodles",
+      "manualVision": false
     },
     {
       "id": "forum-post-0215",
@@ -10087,20 +10241,20 @@
       "author": "jay24",
       "format": "image",
       "postType": "question",
-      "title": "this hip thrust variation finally started clicking for me",
+      "title": "finally seeing some upper body progress show up",
       "titleFamily": "image-exercise-exercise-clicking",
-      "body": "i either feel hip thrust exactly where i want it or nowhere near the target and i cant tell what changed. this version finally feels closer to the right stimulus, but im still not sure whether it belongs earlier in the workout.",
-      "imageType": "exercise",
-      "imageMainObject": "hip thrust",
-      "imageSubject": "hip thrust",
-      "imageMuscleGroup": "glutes",
-      "imagePostAngle": "stimulus",
-      "imageAlt": "glute training photo",
-      "imageSource": "openverse",
-      "imageCreator": null,
-      "imageLicense": null,
-      "imageLicenseUrl": null,
-      "imagePageUrl": null,
+      "body": "this is the kind of progress check that makes me feel like the boring weeks of training are finally showing up somewhere.",
+      "imageType": "physique",
+      "imageMainObject": "upper body progress check",
+      "imageSubject": "upper body progress check",
+      "imageMuscleGroup": "upper body",
+      "imagePostAngle": "progress",
+      "imageAlt": "glute progress selfie",
+      "imageSource": "wikimedia",
+      "imageCreator": "Gage Skidmore",
+      "imageLicense": "by-sa",
+      "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "imagePageUrl": "https://commons.wikimedia.org/wiki/File:Former_Pro_Wrestler_%26_Male_Fitness_Model_John_Quinlan.jpg",
       "tags": [
         "training",
         "hypertrophy",
@@ -10115,7 +10269,18 @@
       "preferredMinuteLocal": 17,
       "preferredWindow": "evening",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Former_Pro_Wrestler_%26_Male_Fitness_Model_John_Quinlan.jpg",
+      "imageId": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Former_Pro_Wrestler_%26_Male_Fitness_Model_John_Quinlan.jpg",
+      "manualVision": true,
+      "imageCaption": "a muscular man posing in a fitness model portrait with visible upper body development",
+      "imageFingerprint": "file-former-pro-wrestler-male-fitness-model-john-quinlan",
+      "visionAnalysis": {
+        "broadLabel": "manual",
+        "broadScore": 1,
+        "detailLabel": "manual",
+        "detailScore": 1
+      }
     },
     {
       "id": "forum-post-0223",
@@ -11042,13 +11207,13 @@
       "author": "emma",
       "format": "text",
       "postType": "question",
-      "title": "is it normal that my quads are still behind",
+      "title": "would you leave this training split alone or keep tweaking it",
       "titleFamily": "training-question-is-this-normal",
-      "body": "trying to figure out if this is more of a squat pattern issue or a leg press and split squat issue.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
-      "imageMuscleGroup": null,
+      "body": "this is the kind of layout i wish i used sooner because i usually overcomplicate the week for no reason.",
+      "imageType": "planning",
+      "imageMainObject": "training split",
+      "imageSubject": "training split",
+      "imageMuscleGroup": "programming",
       "imagePostAngle": null,
       "imageUrl": null,
       "imageAlt": null,
@@ -11071,7 +11236,8 @@
       "preferredMinuteLocal": 8,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "16e08895-7bac-4dc5-905c-f4efe0765f13"
     },
     {
       "id": "forum-post-0244",
@@ -11082,12 +11248,12 @@
       "author": "bulkseason",
       "format": "image",
       "postType": "question",
-      "title": "this rice and protein meal prep looks simple but would you run it all week",
+      "title": "would you actually keep a meal like this in a cut",
       "titleFamily": "image-food-food-question",
-      "body": "screenshotting this because meals like rice and protein meal prep are the only reason i hit protein on busy weeks.",
+      "body": "for me meals like this only work when they still feel like real food and not just leaves.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "salad meal prep",
+      "imageSubject": "salad meal prep",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/8361/8290573069_506473f52e.jpg",
@@ -11167,7 +11333,8 @@
           }
         ]
       },
-      "imageCaption": "a salad with broccoli and other vegetables"
+      "imageCaption": "a salad with broccoli and other vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0245",
@@ -11178,12 +11345,12 @@
       "author": "barpath",
       "format": "text",
       "postType": "personal",
-      "title": "hamstring soreness lasting was fatigue more than anything else",
+      "title": "showing up was probably the win here",
       "titleFamily": "recovery-personal",
-      "body": "I kept calling it motivation until I finally admitted it was just fatigue.",
-      "imageType": null,
-      "imageMainObject": null,
-      "imageSubject": null,
+      "body": "posting it because real progress usually looks more like this than some huge breakthrough.",
+      "imageType": "general_gym",
+      "imageMainObject": "gym session",
+      "imageSubject": "gym session",
       "imageMuscleGroup": null,
       "imagePostAngle": null,
       "imageUrl": null,
@@ -11207,7 +11374,8 @@
       "preferredMinuteLocal": 11,
       "preferredWindow": "afternoon",
       "botSource": "seeded-forum-generator",
-      "isSeeded": true
+      "isSeeded": true,
+      "imageId": "8ea40ddc-0248-4ab6-8b7f-83472ff09b26"
     },
     {
       "id": "forum-post-0246",
@@ -11668,8 +11836,8 @@
       "titleFamily": "image-exercise-exercise-stimulus",
       "body": "not fancy at all but this type of bowl usually survives my week better than anything complicated.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein bowl",
+      "imageSubject": "high protein bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/8248/8492777737_c924f7e760_b.jpg",
@@ -11749,7 +11917,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food with a spoon and a bowl of vegetables"
+      "imageCaption": "a bowl of food with a spoon and a bowl of vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0258",
@@ -12044,7 +12213,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food on a table"
+      "imageCaption": "a plate of food on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0264",
@@ -12547,7 +12717,8 @@
           }
         ]
       },
-      "imageCaption": "a person is preparing food on a plate"
+      "imageCaption": "a person is preparing food on a plate",
+      "manualVision": false
     },
     {
       "id": "forum-post-0274",
@@ -12916,12 +13087,12 @@
       "author": "repfiend",
       "format": "image",
       "postType": "casual",
-      "title": "meal prep still comes down to food you will actually repeat",
+      "title": "tray meals like this make the week easier",
       "titleFamily": "image-general_gym-gym-casual",
-      "body": "half the battle is having something easy enough to make again tomorrow.",
+      "body": "nothing creative here, just practical food that is easy to make again.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "meal prep tray",
+      "imageSubject": "meal prep tray",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/2043/2195469459_4f62e560c9_b.jpg",
@@ -13001,7 +13172,8 @@
           }
         ]
       },
-      "imageCaption": "a doughnut is on a tray on a counter"
+      "imageCaption": "a doughnut is on a tray on a counter",
+      "manualVision": false
     },
     {
       "id": "forum-post-0284",
@@ -13172,9 +13344,9 @@
       "author": "noah",
       "format": "image",
       "postType": "question",
-      "title": "anyone else feel way more athletic when training looks like this",
+      "title": "conditioning days like this still humble me fast",
       "titleFamily": "image-general_gym-gym-motivation",
-      "body": "curious how many people here still mix sports style work in instead of only chasing gym numbers.",
+      "body": "curious how many people here still keep some field or sport work in instead of only chasing numbers in the gym.",
       "imageType": "general_gym",
       "imageMainObject": "sports training session",
       "imageSubject": "sports training session",
@@ -13253,7 +13425,8 @@
           }
         ]
       },
-      "imageCaption": "a man holding a red and white baseball bat"
+      "imageCaption": "a man holding a red and white baseball bat",
+      "manualVision": false
     },
     {
       "id": "forum-post-0289",
@@ -13349,7 +13522,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food on a table"
+      "imageCaption": "a plate of food on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0290",
@@ -13644,7 +13818,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with a drink and a fork"
+      "imageCaption": "a plate of food with a drink and a fork",
+      "manualVision": false
     },
     {
       "id": "forum-post-0296",
@@ -13858,8 +14033,8 @@
       "titleFamily": "image-general_gym-gym-friction",
       "body": "food like this tends to survive busy weeks better than the meals i overplan.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein plate",
+      "imageSubject": "high protein plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/8131/8698222547_c3bbdb2dbf.jpg",
@@ -13939,7 +14114,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with fruit and vegetables"
+      "imageCaption": "a plate of food with fruit and vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0302",
@@ -14166,8 +14342,8 @@
       "titleFamily": "image-food-food-question",
       "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein bowl",
+      "imageSubject": "high protein bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/2515/4033758577_f419d3d80f_b.jpg",
@@ -14247,7 +14423,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of vegetables on a table"
+      "imageCaption": "a bowl of vegetables on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0307",
@@ -14461,8 +14638,8 @@
       "titleFamily": "image-food-food-question",
       "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein bowl",
+      "imageSubject": "high protein bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/2791/4383993458_7af6b8fd7e_b.jpg",
@@ -14542,7 +14719,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of vegetables on a table"
+      "imageCaption": "a bowl of vegetables on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0313",
@@ -14843,12 +15021,12 @@
       "author": "noah",
       "format": "image",
       "postType": "casual",
-      "title": "portable meals like this do more for me than fancy meal prep ever did",
+      "title": "simple sandwich meals are hard to beat when the day gets busy",
       "titleFamily": "image-general_gym-gym-casual",
-      "body": "this is the type of food that keeps my day together when i dont have time to make a real meal.",
+      "body": "if i can eat it quickly and still get enough protein in, it stays in the rotation.",
       "imageType": "food",
-      "imageMainObject": "high protein wrap",
-      "imageSubject": "high protein wrap",
+      "imageMainObject": "protein sandwich plate",
+      "imageSubject": "protein sandwich plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/3817/13548314483_4a83a56868.jpg",
@@ -14928,7 +15106,8 @@
           }
         ]
       },
-      "imageCaption": "a person holding a sandwich in a paper bag"
+      "imageCaption": "a person holding a sandwich in a paper bag",
+      "manualVision": false
     },
     {
       "id": "forum-post-0320",
@@ -14939,12 +15118,12 @@
       "author": "plates_n_prep",
       "format": "image",
       "postType": "question",
-      "title": "this high protein meal looks simple but would you run it all week",
+      "title": "this is the type of skillet meal i end up repeating all week",
       "titleFamily": "image-physique-physique-check",
-      "body": "curious if you guys would actually keep something like this in the rotation or change it after two days.",
+      "body": "if cleanup stays easy, meals like this are usually what end up sticking.",
       "imageType": "food",
-      "imageMainObject": "high protein meal",
-      "imageSubject": "high protein meal",
+      "imageMainObject": "skillet meal prep",
+      "imageSubject": "skillet meal prep",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/3251/2981824267_4c8fdd1be2_b.jpg",
       "imageAlt": "fitness training photo",
@@ -15024,7 +15203,8 @@
           }
         ]
       },
-      "imageCaption": "a pot of food is being stirred in a pot"
+      "imageCaption": "a pot of food is being stirred in a pot",
+      "manualVision": false
     },
     {
       "id": "forum-post-0321",
@@ -15208,7 +15388,8 @@
           }
         ]
       },
-      "imageCaption": "a table topped with a bunch of different colored vases"
+      "imageCaption": "a table topped with a bunch of different colored vases",
+      "manualVision": false
     },
     {
       "id": "forum-post-0323",
@@ -15382,8 +15563,8 @@
       "titleFamily": "image-food-food-casual",
       "body": "i end up leaning on food like this when appetite is weird and i still need something easy.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "high protein bowl",
+      "imageSubject": "high protein bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/7296/9397844567_65a610ab3c_b.jpg",
@@ -15463,7 +15644,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with a bowl of vegetables"
+      "imageCaption": "a plate of food with a bowl of vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0328",
@@ -15559,7 +15741,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food with meat and vegetables"
+      "imageCaption": "a bowl of food with meat and vegetables",
+      "manualVision": false
     },
     {
       "id": "forum-post-0329",
@@ -15651,7 +15834,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of food with a spoon and a bowl of ice cream"
+      "imageCaption": "a bowl of food with a spoon and a bowl of ice cream",
+      "manualVision": false
     },
     {
       "id": "forum-post-0330",
@@ -15878,12 +16062,12 @@
       "author": "chris88",
       "format": "image",
       "postType": "question",
-      "title": "this is one of the easiest high protein snacks ive found",
+      "title": "would you keep a noodle bowl like this in your rotation",
       "titleFamily": "image-general_gym-gym-routine",
-      "body": "this is the kind of thing i use when i need something quick that still feels decent.",
+      "body": "curious if you would keep this kind of bowl around or get bored of it too fast.",
       "imageType": "food",
-      "imageMainObject": "rice and protein meal prep",
-      "imageSubject": "rice and protein meal prep",
+      "imageMainObject": "protein noodle bowl",
+      "imageSubject": "protein noodle bowl",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/4003/4555346617_3ef05d9bbc_b.jpg",
@@ -15963,7 +16147,8 @@
           }
         ]
       },
-      "imageCaption": "a bowl of pasta with vegetables and meat"
+      "imageCaption": "a bowl of pasta with vegetables and meat",
+      "manualVision": false
     },
     {
       "id": "forum-post-0334",
@@ -16456,12 +16641,12 @@
       "author": "mike88",
       "format": "image",
       "postType": "personal",
-      "title": "this is exactly the kind of meal i use when i dont want to think",
+      "title": "would you count a sandwich plate like this as a real meal",
       "titleFamily": "image-physique-physique-confidence",
-      "body": "if i can eat it fast and still get protein in, it stays in the rotation.",
+      "body": "portable meals like this usually do more for consistency than perfect meal prep ever does.",
       "imageType": "food",
-      "imageMainObject": "high protein wrap",
-      "imageSubject": "high protein wrap",
+      "imageMainObject": "protein sandwich plate",
+      "imageSubject": "protein sandwich plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/7059/7011299443_792c39d0a9.jpg",
@@ -16541,7 +16726,8 @@
           }
         ]
       },
-      "imageCaption": "a sandwich and a bowl of soup on a table"
+      "imageCaption": "a sandwich and a bowl of soup on a table",
+      "manualVision": false
     },
     {
       "id": "forum-post-0342",
@@ -16797,7 +16983,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with meat, vegetables and a fork"
+      "imageCaption": "a plate of food with meat, vegetables and a fork",
+      "manualVision": false
     },
     {
       "id": "forum-post-0347",
@@ -16973,7 +17160,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with a fork and a cup of coffee"
+      "imageCaption": "a plate of food with a fork and a cup of coffee",
+      "manualVision": false
     },
     {
       "id": "forum-post-0350",
@@ -17304,12 +17492,12 @@
       "author": "plates_n_prep",
       "format": "image",
       "postType": "casual",
-      "title": "eggs still carry way more of my week than i want to admit",
+      "title": "breakfast like this is way easier to repeat than fancy meal prep",
       "titleFamily": "image-general_gym-gym-casual",
-      "body": "if breakfast is going to happen for me it usually looks more like this than something creative.",
+      "body": "meals like this are what keep the morning from turning into coffee and nothing else.",
       "imageType": "food",
-      "imageMainObject": "high protein plate",
-      "imageSubject": "high protein plate",
+      "imageMainObject": "breakfast plate",
+      "imageSubject": "breakfast plate",
       "imageMuscleGroup": "nutrition",
       "imagePostAngle": "protein_question",
       "imageUrl": "https://live.staticflickr.com/6093/6211281132_ef3d3a5869_b.jpg",
@@ -17389,7 +17577,8 @@
           }
         ]
       },
-      "imageCaption": "a plate of food with eggs, sausage, and bacon"
+      "imageCaption": "a plate of food with eggs, sausage, and bacon",
+      "manualVision": false
     },
     {
       "id": "forum-post-0359",
