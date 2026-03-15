@@ -189,7 +189,7 @@ function applyCaptionImperfection(text) {
     out = out.replace(new RegExp(pair[0], 'i'), pair[1]);
   }
   if (rand() < 0.08) out = out.toLowerCase();
-  if (rand() < 0.06) out += ` ${pick(['lol', '😭', 'ngl', 'tbh'])}`;
+  if (rand() < 0.06) out += ` ${pick(['lol', '😭'])}`;
   return out;
 }
 
