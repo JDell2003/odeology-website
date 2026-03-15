@@ -579,7 +579,7 @@
                         <a class="forum-toolbar-link is-primary" href="index.html#resources">Open macro calculator</a>
                     </div>
                 </div>
-                <section class="about-hero reveal is-visible" aria-label="About Odeology hero">
+                <section class="about-hero reveal" aria-label="About Odeology hero">
                     <div class="about-hero-copy">
                         <p class="eyebrow">About Odeology</p>
                         <h1>Get your plan. Get your food. Get your training.</h1>
@@ -765,25 +765,40 @@
     <script src="js/main.js?v=2026-03-15-forum-about-1"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const revealItems = document.querySelectorAll(".reveal");
-            if (!revealItems.length || !("IntersectionObserver" in window)) {
-                revealItems.forEach((item) => item.classList.add("is-visible"));
+            const revealItems = Array.from(document.querySelectorAll(".reveal"));
+            if (!revealItems.length) {
                 return;
             }
 
-            const observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach((entry) => {
-                        entry.target.classList.toggle("is-visible", entry.isIntersecting);
-                    });
-                },
-                {
-                    threshold: 0.2,
-                    rootMargin: "-6% 0px -10% 0px"
-                }
-            );
+            let ticking = false;
 
-            revealItems.forEach((item) => observer.observe(item));
+            function updateRevealState() {
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                const activeTop = viewportHeight * 0.14;
+                const activeBottom = viewportHeight * 0.88;
+
+                revealItems.forEach((item) => {
+                    const rect = item.getBoundingClientRect();
+                    const visibleHeight = Math.min(rect.bottom, activeBottom) - Math.max(rect.top, activeTop);
+                    const minimumVisible = Math.min(140, rect.height * 0.22);
+                    const isActive = visibleHeight > minimumVisible;
+                    item.classList.toggle("is-visible", isActive);
+                });
+
+                ticking = false;
+            }
+
+            function requestRevealUpdate() {
+                if (ticking) {
+                    return;
+                }
+                ticking = true;
+                window.requestAnimationFrame(updateRevealState);
+            }
+
+            updateRevealState();
+            window.addEventListener("scroll", requestRevealUpdate, { passive: true });
+            window.addEventListener("resize", requestRevealUpdate);
         });
     </script>
 </body>
