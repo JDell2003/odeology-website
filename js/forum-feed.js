@@ -31,6 +31,9 @@
 
   let posts = [];
   const imagePostIndex = new Map();
+  const seededUsers = [];
+  const seededUsersById = new Map();
+  const seededUsersByName = new Map();
   const openComments = new Set();
   const commentCache = new Map();
   let currentUser = null;
@@ -296,12 +299,22 @@
     return pickFrom(commentCasualHandles, random);
   }
 
-  function addImperfection(text, random) {
+  function addImperfection(text, random, profile) {
     let value = String(text || '');
-    if (random() < 0.08) value = value.toLowerCase();
-    if (random() < 0.06) value += ` ${pickFrom(['lol', '😭', 'tbh', 'ngl'], random)}`;
-    if (random() < 0.05) value = value.replace(/bench/i, 'benhc').replace(/about/i, 'abt');
-    if (random() < 0.1) value = value.replace(/\byou are\b/i, 'youre').replace(/\bgoing to\b/i, 'gonna');
+    const grammarStyle = String(profile?.grammarStyle || '');
+    const emojiUsage = String(profile?.emojiUsage || 'low');
+    const writingTraits = Array.isArray(profile?.writingTraits) ? profile.writingTraits : [];
+    const lowerChance = grammarStyle.includes('lowercase') ? 0.24 : 0.08;
+    const typoChance = grammarStyle.includes('noisy') ? 0.12 : 0.05;
+    const emojiChance = emojiUsage === 'none' ? 0.01 : emojiUsage === 'medium' ? 0.12 : 0.06;
+
+    if (random() < lowerChance) value = value.toLowerCase();
+    if (random() < emojiChance) value += ` ${pickFrom(['lol', 'fr', 'lmao', ':)'], random)}`;
+    if (random() < typoChance) value = value.replace(/bench/i, 'benhc').replace(/about/i, 'abt');
+    if (random() < typoChance) value = value.replace(/\byou are\b/i, 'youre').replace(/\bgoing to\b/i, 'gonna');
+    if (writingTraits.includes('short-posts') && value.length > 120 && random() < 0.32) {
+      value = value.split(/[.?!]/)[0].trim();
+    }
     return value;
   }
 
@@ -312,6 +325,42 @@
   function getImageRecord(item) {
     if (!item || !item.id) return null;
     return imagePostIndex.get(item.id) || null;
+  }
+
+  function getPostProfile(item) {
+    if (!item) return null;
+    if (item.userId && seededUsersById.has(item.userId)) {
+      return seededUsersById.get(item.userId);
+    }
+    if (item.author && seededUsersByName.has(String(item.author).toLowerCase())) {
+      return seededUsersByName.get(String(item.author).toLowerCase());
+    }
+    return null;
+  }
+
+  function pickCommenterProfile(item, random, usedIds) {
+    if (!seededUsers.length) return null;
+    const category = String(item?.category || item?.scope || '').toLowerCase();
+    const postType = String(item?.postType || '').toLowerCase();
+    const imageType = String(item?.imageType || '').toLowerCase();
+    const postHour = Number(item?.preferredHourLocal || 12);
+
+    const candidates = seededUsers
+      .map((profile) => {
+        let score = random();
+        if ((profile.favoriteTopics || []).includes(category)) score += 3;
+        if ((profile.preferredPostTypes || []).includes(postType)) score += 1.5;
+        if (imageType && (profile.allowedImageTypes || []).includes(imageType)) score += 1.1;
+        if ((profile.activeHours || []).includes(postHour)) score += 0.7;
+        if (profile.userId === item.userId) score -= 1.5;
+        if (usedIds.has(profile.userId)) score -= 0.5;
+        return { profile, score };
+      })
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 10);
+
+    const picked = candidates[Math.floor(random() * Math.max(1, Math.min(3, candidates.length)))];
+    return picked ? picked.profile : seededUsers[0];
   }
 
   function getImageAwareCommentSet(item) {
@@ -861,7 +910,7 @@
     return pools[focus] || pools.generic;
   }
 
-  function buildCommentBody(item, random, mode, usedBodies) {
+  function buildCommentBody(item, random, mode, usedBodies, profile) {
     const genericPool = getCategoryPool(item);
     const focus = detectPostFocus(item);
     const imagePool = getImageAwareCommentSet(item);
@@ -956,7 +1005,7 @@
     }
 
     for (let tries = 0; tries < 6; tries += 1) {
-      const candidate = addImperfection(pickFrom(candidates, random), random);
+      const candidate = addImperfection(pickFrom(candidates, random), random, profile);
       const key = candidate.toLowerCase();
       if (!usedBodies.has(key)) {
         usedBodies.add(key);
@@ -964,7 +1013,7 @@
       }
     }
 
-    const fallback = addImperfection(pickFrom([...practical, ...personal, ...supportive], random), random);
+    const fallback = addImperfection(pickFrom([...practical, ...personal, ...supportive], random), random, profile);
     usedBodies.add(fallback.toLowerCase());
     return fallback;
   }
@@ -974,6 +1023,7 @@
 
     const total = Math.max(0, Number(item.comments || 0));
     const random = seededValue(item.id);
+    const usedCommenterIds = new Set();
     const replyIndex = total >= 4 && random() < 0.72 ? Math.min(total - 1, 2 + Math.floor(random() * Math.max(1, total - 2))) : -1;
     const replyParentIndex = replyIndex > 1 ? Math.max(0, replyIndex - 1) : -1;
     const disagreeIndex = total >= 3 && random() < 0.36 ? 1 : -1;
@@ -981,6 +1031,8 @@
     const comments = Array.from({ length: total }, (_, index) => {
       const baseMinutes = Math.max(1, Number(item.ageMinutes || 120));
       const ageMinutes = Math.max(1, Math.round(baseMinutes * (0.08 + random() * 0.82)));
+      const commenter = pickCommenterProfile(item, random, usedCommenterIds);
+      if (commenter && commenter.userId) usedCommenterIds.add(commenter.userId);
       let score = 0;
       if (index === 0) score = Math.round(5 + random() * 20);
       else {
@@ -992,17 +1044,19 @@
 
       const mode = index === disagreeIndex ? 'disagree' : index === replyIndex ? 'reply' : 'base';
       const lengthRoll = random();
-      let body = buildCommentBody(item, random, mode, usedBodies);
+      let body = buildCommentBody(item, random, mode, usedBodies, commenter);
       if (lengthRoll < 0.4) {
-        body = buildCommentBody(item, random, mode, usedBodies);
+        body = buildCommentBody(item, random, mode, usedBodies, commenter);
       } else if (lengthRoll > 0.95) {
-        body = `${buildCommentBody(item, random, mode, usedBodies)} ${buildCommentBody(item, random, 'reply', usedBodies)}`;
+        body = `${buildCommentBody(item, random, mode, usedBodies, commenter)} ${buildCommentBody(item, random, 'reply', usedBodies, commenter)}`;
       }
 
       return {
         id: `${item.id}-comment-${index + 1}`,
         parentId: index === replyIndex && replyParentIndex >= 0 ? `${item.id}-comment-${replyParentIndex + 1}` : null,
-        author: buildUsername(random),
+        userId: commenter?.userId || null,
+        author: commenter?.username || buildUsername(random),
+        avatarUrl: commenter?.avatarUrl || '',
         ageLabel: formatAge(ageMinutes),
         score,
         body
@@ -1040,9 +1094,6 @@
 
     return `
       <section class="forum-post-comments${isOpen ? ' is-open' : ''}" id="comments-${escapeHtml(item.id)}" data-comments-for="${escapeHtml(item.id)}"${isOpen ? '' : ' hidden'}>
-        <div class="forum-post-comments-header">
-          <strong>${escapeHtml(formatCompactNumber(item.comments))} comments</strong>
-        </div>
         <div class="forum-post-comments-list">
           ${commentsMarkup}
         </div>
@@ -1068,11 +1119,12 @@
 
   function buildPostMarkup(item, index) {
     const titleTag = index === 0 ? 'h1' : 'h2';
-    const avatarUrl = avatarByCategory[item.category] || avatarByCategory.training;
+    const profile = getPostProfile(item);
+    const avatarUrl = item.avatarUrl || profile?.avatarUrl || avatarByCategory[item.category] || avatarByCategory.training;
     const title = escapeHtml(item.title);
     const body = escapeHtml(item.body);
     const community = escapeHtml(item.community);
-    const author = escapeHtml(item.author || 'communitystarter');
+    const author = escapeHtml(item.author || profile?.username || 'communitystarter');
     const ageLabel = escapeHtml(formatAge(item.ageMinutes));
     const href = escapeHtml(postHref(item));
     const mediaMarkup = item.imageUrl
@@ -1324,7 +1376,7 @@
     feed.innerHTML = '<div class="forum-empty-state">Loading forum posts...</div>';
 
     try {
-      const [forumResponse, imageDbResponse, sharedPostsResponse] = await Promise.all([
+      const [forumResponse, imageDbResponse, sharedPostsResponse, usersResponse] = await Promise.all([
         fetch('/data/forum-posts.json', {
           headers: { Accept: 'application/json' }
         }),
@@ -1334,6 +1386,9 @@
         fetch('/api/forum/posts?limit=80', {
           headers: { Accept: 'application/json' },
           credentials: 'include'
+        }).catch(() => null),
+        fetch('/data/forum-seeded-users.json', {
+          headers: { Accept: 'application/json' }
         }).catch(() => null)
       ]);
 
@@ -1349,6 +1404,20 @@
         const imageItems = Array.isArray(imagePayload.items) ? imagePayload.items : [];
         imageItems.forEach((item) => {
           if (item && item.id) imagePostIndex.set(item.id, item);
+        });
+      }
+
+      seededUsers.length = 0;
+      seededUsersById.clear();
+      seededUsersByName.clear();
+      if (usersResponse && usersResponse.ok) {
+        const usersPayload = await usersResponse.json().catch(() => ({ items: [] }));
+        const users = Array.isArray(usersPayload.items) ? usersPayload.items : [];
+        users.forEach((profile) => {
+          if (!profile || !profile.userId) return;
+          seededUsers.push(profile);
+          seededUsersById.set(profile.userId, profile);
+          if (profile.username) seededUsersByName.set(String(profile.username).toLowerCase(), profile);
         });
       }
 
