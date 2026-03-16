@@ -156,6 +156,12 @@
     return `${days} days ago`;
   }
 
+  function postHref(item) {
+    const slug = String(item?.slug || item?.id || '').trim();
+    if (!slug) return 'forum.html';
+    return `/forum/${encodeURIComponent(slug)}`;
+  }
+
   function setComposePreview(src) {
     if (!composePreview) return;
     if (!src) {
@@ -1068,9 +1074,10 @@
     const community = escapeHtml(item.community);
     const author = escapeHtml(item.author || 'communitystarter');
     const ageLabel = escapeHtml(formatAge(item.ageMinutes));
+    const href = escapeHtml(postHref(item));
     const mediaMarkup = item.imageUrl
       ? `
-        <a class="forum-post-media" href="forum-search.html">
+        <a class="forum-post-media" href="${href}">
           <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.imageAlt || item.title)}" loading="lazy">
         </a>`
       : '';
@@ -1101,7 +1108,7 @@
           </div>
         </div>
 
-        <${titleTag} class="forum-post-title">${title}</${titleTag}>
+        <${titleTag} class="forum-post-title"><a class="forum-post-title-link" href="${href}">${title}</a></${titleTag}>
         <p class="forum-post-copy">${body}</p>
         ${mediaMarkup}
         ${buildCommentsSection(item)}
