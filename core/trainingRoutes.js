@@ -546,10 +546,10 @@ function csvToSet(raw) {
   return out;
 }
 
-const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'odeology,odeology_,odeology_owner,jason');
+const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'STRYVE,STRYVE,STRYVEowner,jason');
 const OWNER_EMAILS = csvToSet(process.env.OWNER_EMAILS || '');
-const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'odeology.com').trim().toLowerCase();
-const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'odeology,odeology_');
+const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'STRYVE.com').trim().toLowerCase();
+const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'STRYVE,STRYVE');
 const OWNER_USER_IDS = csvToSet(process.env.OWNER_USER_IDS || '');
 
 function isOwnerUser(userLike) {
@@ -564,7 +564,7 @@ function isOwnerUser(userLike) {
   if (email && OWNER_EMAILS.has(email)) return true;
   if (displayName && OWNER_DISPLAY_NAMES.has(displayName)) return true;
   if (email && OWNER_EMAIL_DOMAIN && email.endsWith(`@${OWNER_EMAIL_DOMAIN}`)) return true;
-  if (username.includes('odeology') || displayName.includes('odeology')) return true;
+  if (username.includes('STRYVE') || displayName.includes('STRYVE')) return true;
   return false;
 }
 
@@ -737,6 +737,8 @@ function normalizeWorkoutEntry(payload, { fixedId = null } = {}) {
   const primaryMuscles = asTextArray(src.primaryMuscles, { maxItems: 6, maxLen: 48 }).map((x) => x.toLowerCase());
   const secondaryMuscles = asTextArray(src.secondaryMuscles, { maxItems: 8, maxLen: 48 }).map((x) => x.toLowerCase());
   const subMuscleGroups = asTextArray(src.subMuscleGroups, { maxItems: 8, maxLen: 64 }).map((x) => x.toLowerCase());
+  const primaryMuscleGroup = safeText(src.primaryMuscleGroup, 48).toLowerCase() || primaryMuscles[0] || '';
+  const subMuscleGroup = safeText(src.subMuscleGroup, 64).toLowerCase() || subMuscleGroups[0] || '';
   const targetRegion = safeText(src.targetRegion, 80);
   const isStretchRaw = String(src.isStretch ?? '').trim().toLowerCase();
   const isIsometricRaw = String(src.isIsometric ?? '').trim().toLowerCase();
@@ -769,6 +771,8 @@ function normalizeWorkoutEntry(payload, { fixedId = null } = {}) {
       primaryMuscles,
       secondaryMuscles,
       subMuscleGroups,
+      primaryMuscleGroup,
+      subMuscleGroup,
       targetRegion: targetRegion ? String(targetRegion).toLowerCase() : null,
       isStretch,
       isIsometric,
@@ -809,7 +813,7 @@ function normalizeOblueprintExperience(raw) {
     .trim()
     .toLowerCase()
     .replace(/[\u2012\u2013\u2014\u2212]/g, '-')
-    .replace(/â€“|â€”|âˆ’/g, '-')
+    .replace(/\u00e2\u20ac\u201c|\u00e2\u20ac\u201d|\u00e2\u02c6\u2019/g, '-')
     .replace(/\s+/g, '');
   if (v === '<6m' || v === '<6months') return '<6m';
   if (v === '6-24m' || v === '6-24months') return '6-24m';
@@ -3509,6 +3513,8 @@ function normalizeUserCustomWorkoutEntry(payload, { fixedExerciseId = null } = {
     equipment: safeText(payload?.equipment, 80) || '',
     level: normalizeCustomWorkoutLevel(payload?.level),
     primaryMuscles,
+    primaryMuscleGroup: String(payload?.primaryMuscleGroup || primaryMuscles[0] || '').trim().toLowerCase(),
+    subMuscleGroup: String(payload?.subMuscleGroup || '').trim().toLowerCase(),
     secondaryMuscles,
     instructions,
     imageUrl: normalizeCustomWorkoutImageUrl(payload?.imageUrl)
@@ -3525,6 +3531,8 @@ function formatUserCustomWorkoutRow(row) {
     equipment: String(row?.equipment || ''),
     level: String(row?.level || 'beginner'),
     primaryMuscles: Array.isArray(row?.primary_muscles) ? row.primary_muscles : [],
+    primaryMuscleGroup: String(row?.primary_muscle_group || (Array.isArray(row?.primary_muscles) ? row.primary_muscles[0] || '' : '') || ''),
+    subMuscleGroup: String(row?.sub_muscle_group || ''),
     secondaryMuscles: Array.isArray(row?.secondary_muscles) ? row.secondary_muscles : [],
     instructions: Array.isArray(row?.instructions) ? row.instructions : [],
     imageUrl,

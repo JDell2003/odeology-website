@@ -367,7 +367,7 @@
   function mapExperience(raw) {
     const v = lower(raw)
       .replace(/[–—−]/g, '-')
-      .replace(/â€“|â€”|âˆ’/g, '-')
+      .replace(/\u00e2\u20ac\u201c|\u00e2\u20ac\u201d|\u00e2\u02c6\u2019/g, '-')
       .replace(/\s+/g, '');
     if (v === '<6m' || v === '<6months') return '<6m';
     if (v === '6-24m' || v === '6-24months') return '6-24m';
@@ -3209,6 +3209,74 @@ function toFreeExerciseDbRemotePath(src) {
     };
   }
 
+  const EXERCISE_MEDIA_NAME_ALIASES = {
+    machine_chest_press: 'Machine Bench Press',
+    chest_press_machine: 'Machine Bench Press',
+    chest_press: 'Machine Bench Press',
+    incline_chest_press: 'Leverage Incline Chest Press',
+    lat_pulldown: 'Wide-Grip Lat Pulldown',
+    machine_row: 'Seated Cable Rows',
+    seated_cable_row: 'Seated Cable Rows',
+    lying_leg_curl: 'Lying Leg Curls',
+    seated_leg_curl: 'Seated Leg Curl',
+    seated_hamstring_curl: 'Seated Leg Curl',
+    hip_thrust: 'Barbell Hip Thrust',
+    machine_shoulder_press: 'Machine Shoulder Military Press',
+    shoulder_press_machine: 'Machine Shoulder Military Press'
+  };
+
+  function findApproxCatalogExerciseByName(rawName) {
+    const name = String(rawName || '').trim();
+    if (!name || !exerciseCatalog.length) return null;
+    const key = normalizeTextForMatch(name);
+    const aliasName = EXERCISE_MEDIA_NAME_ALIASES[key.replace(/\s+/g, '_')];
+    if (aliasName) {
+      const aliasMatch = exerciseIndexByNameNorm.get(normalizeTextForMatch(aliasName));
+      if (aliasMatch) return aliasMatch;
+    }
+
+    const sourceTokens = normalizeNameTokens(name);
+    if (!sourceTokens.length) return null;
+    const wanted = new Set(sourceTokens);
+    let best = null;
+    let bestScore = -1;
+
+    for (const ex of exerciseCatalog) {
+      const candidateName = String(ex?.name || '').trim();
+      if (!candidateName) continue;
+      const candidateTokens = normalizeNameTokens(candidateName);
+      if (!candidateTokens.length) continue;
+      const tokenSet = new Set(candidateTokens);
+      let overlap = 0;
+      wanted.forEach((token) => {
+        if (tokenSet.has(token)) overlap += 1;
+      });
+      if (!overlap) continue;
+
+      let score = overlap / wanted.size;
+      const candidateNorm = normalizeTextForMatch(candidateName);
+      if (key.includes('chest press') && /(bench press|chest press)/.test(candidateNorm)) score += 0.55;
+      if (key.includes('lat pulldown') && /lat pulldown/.test(candidateNorm)) score += 0.55;
+      if (key.includes('leg curl') && /leg curl/.test(candidateNorm)) score += 0.55;
+      if (key.includes('hip thrust') && /hip thrust/.test(candidateNorm)) score += 0.55;
+      if (key.includes('shoulder press') && /shoulder|military|overhead press/.test(candidateNorm)) score += 0.4;
+      if (sourceTokens.includes('machine') && /(machine|leverage|smith)/.test(candidateNorm)) score += 0.18;
+      if (sourceTokens.includes('lying') && /lying/.test(candidateNorm)) score += 0.18;
+      if (sourceTokens.includes('seated') && /seated/.test(candidateNorm)) score += 0.18;
+      if (sourceTokens.includes('barbell') && /barbell/.test(candidateNorm)) score += 0.18;
+      if (sourceTokens.includes('dumbbell') && /dumbbell/.test(candidateNorm)) score += 0.18;
+      if (candidateTokens.length > wanted.size + 4) score -= 0.08;
+      if (!Array.isArray(ex?.images) || !ex.images[0]) score -= 0.3;
+
+      if (score > bestScore) {
+        best = ex;
+        bestScore = score;
+      }
+    }
+
+    return bestScore >= 0.8 ? best : null;
+  }
+
   function resolveCatalogExerciseForMedia(ex) {
     if (!ex) return null;
     const idCandidates = [
@@ -3234,6 +3302,14 @@ function toFreeExerciseDbRemotePath(src) {
       if (!key) continue;
       const byName = exerciseIndexByNameNorm.get(key);
       if (byName) return byName;
+      const aliasName = EXERCISE_MEDIA_NAME_ALIASES[key.replace(/\s+/g, '_')];
+      if (aliasName) {
+        const aliasKey = normalizeTextForMatch(aliasName);
+        const aliasMatch = exerciseIndexByNameNorm.get(aliasKey);
+        if (aliasMatch) return aliasMatch;
+      }
+      const approx = findApproxCatalogExerciseByName(candidate);
+      if (approx) return approx;
     }
     return null;
   }
@@ -3513,13 +3589,26 @@ function toFreeExerciseDbRemotePath(src) {
     return muscleIconSvg(ex?.bodyPart || ex?.muscle_group || ex?.muscleGroup || 'exercise');
   }
 
-  function openExerciseMediaModal({ type, src, alt }) {
+  function openExerciseMediaModal({ type, src, src0, src1, alt }) {
     try {
       const existing = document.getElementById('exercise-media-modal');
       existing?.remove?.();
     } catch {
       // ignore
     }
+
+    const bodyNode = (() => {
+      if (type === 'video' && src) {
+        return el('video', { class: 'exercise-media-modal-video', src, muted: 'true', loop: 'true', playsinline: 'true', controls: 'true' });
+      }
+      if (type === 'image-pair' && src0 && src1) {
+        return el('div', { class: 'exercise-media-modal-pair' },
+          el('img', { class: 'exercise-media-modal-img exercise-media-modal-img-a', src: src0, alt: String(alt || 'Exercise preview'), loading: 'lazy' }),
+          el('img', { class: 'exercise-media-modal-img exercise-media-modal-img-b', src: src1, alt: String(alt || 'Exercise preview'), loading: 'lazy' })
+        );
+      }
+      return el('img', { class: 'exercise-media-modal-img', src, alt: String(alt || 'Exercise preview'), loading: 'lazy' });
+    })();
 
     const overlay = el('div', { class: 'exercise-media-modal', id: 'exercise-media-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'exercise-media-modal-backdrop', type: 'button', 'aria-label': 'Close preview' }),
@@ -3528,9 +3617,7 @@ function toFreeExerciseDbRemotePath(src) {
           el('div', { class: 'exercise-media-modal-title' }, String(alt || 'Exercise preview')),
           el('button', { class: 'exercise-media-modal-close', type: 'button', 'aria-label': 'Close preview' }, '×')
         ),
-        type === 'video'
-          ? el('video', { class: 'exercise-media-modal-video', src, muted: 'true', loop: 'true', playsinline: 'true', controls: 'true' })
-          : el('img', { class: 'exercise-media-modal-img', src, alt: String(alt || 'Exercise preview'), loading: 'lazy' })
+        bodyNode
       )
     );
 
@@ -3933,6 +4020,248 @@ function toFreeExerciseDbRemotePath(src) {
     return { key: '', specific: false };
   }
 
+  const CONTROLLED_PRIMARY_GROUP_ALIASES = {
+    chest: 'chest',
+    pectorals: 'chest',
+    back: 'back',
+    lats: 'back',
+    middle_back: 'back',
+    mid_back: 'back',
+    upper_back: 'back',
+    lower_back: 'back',
+    traps: 'back',
+    spinal_erectors: 'back',
+    shoulders: 'shoulders',
+    shoulder: 'shoulders',
+    delts: 'shoulders',
+    anterior_delts: 'shoulders',
+    front_delts: 'shoulders',
+    lateral_delts: 'shoulders',
+    side_delts: 'shoulders',
+    rear_delts: 'shoulders',
+    arms: 'arms',
+    arm: 'arms',
+    biceps: 'arms',
+    triceps: 'arms',
+    forearms: 'arms',
+    brachialis: 'arms',
+    legs: 'legs',
+    leg: 'legs',
+    quadriceps: 'legs',
+    quads: 'legs',
+    hamstrings: 'legs',
+    glutes: 'legs',
+    calves: 'legs',
+    adductors: 'legs',
+    abductors: 'legs',
+    core: 'core',
+    abs: 'core',
+    abdominals: 'core',
+    obliques: 'core',
+    hip_flexors: 'core',
+    neck: 'neck',
+    full_body: 'full_body',
+    fullbody: 'full_body'
+  };
+
+  const CONTROLLED_SUBGROUP_ALIASES = {
+    upper_chest: 'upper_chest',
+    clavicular_chest: 'upper_chest',
+    mid_chest: 'mid_chest',
+    middle_chest: 'mid_chest',
+    sternal_chest: 'mid_chest',
+    lower_chest: 'lower_chest',
+    costal_chest: 'lower_chest',
+    lats: 'lats',
+    lat_width: 'lats',
+    teres_major: 'lats',
+    upper_back: 'upper_back',
+    mid_back: 'upper_back',
+    middle_back: 'upper_back',
+    rhomboids: 'upper_back',
+    traps: 'upper_back',
+    rear_delts: 'rear_delts',
+    front_delts: 'front_delts',
+    side_delts: 'side_delts',
+    lateral_delts: 'side_delts',
+    biceps: 'biceps',
+    brachialis: 'biceps',
+    triceps: 'triceps',
+    forearms: 'forearms',
+    quads: 'quads',
+    quadriceps: 'quads',
+    hamstrings: 'hamstrings',
+    glutes: 'glutes',
+    calves: 'calves',
+    adductors: 'adductors',
+    abductors: 'abductors',
+    upper_abs: 'upper_abs',
+    lower_abs: 'lower_abs',
+    obliques: 'obliques',
+    hip_flexors: 'hip_flexors',
+    neck: 'neck',
+    spinal_erectors: 'spinal_erectors'
+  };
+
+  const CONTROLLED_RELATED_SUBGROUPS = {
+    upper_chest: ['mid_chest'],
+    mid_chest: ['upper_chest', 'lower_chest'],
+    lower_chest: ['mid_chest'],
+    lats: ['upper_back'],
+    upper_back: ['lats', 'rear_delts'],
+    front_delts: ['side_delts'],
+    side_delts: ['front_delts', 'rear_delts'],
+    rear_delts: ['side_delts', 'upper_back'],
+    biceps: ['forearms'],
+    triceps: [],
+    forearms: ['biceps'],
+    quads: ['glutes', 'adductors'],
+    hamstrings: ['glutes'],
+    glutes: ['hamstrings', 'quads'],
+    calves: [],
+    adductors: ['quads', 'glutes'],
+    abductors: ['glutes'],
+    upper_abs: ['lower_abs', 'obliques'],
+    lower_abs: ['upper_abs', 'obliques', 'hip_flexors'],
+    obliques: ['upper_abs', 'lower_abs'],
+    hip_flexors: ['lower_abs'],
+    neck: [],
+    spinal_erectors: ['hamstrings', 'glutes']
+  };
+
+  function controlledPrimaryMuscleGroupFromValue(raw) {
+    const token = normalizeTextForMatch(raw || '').replace(/\s+/g, '_');
+    return CONTROLLED_PRIMARY_GROUP_ALIASES[token] || '';
+  }
+
+  function controlledSubMuscleGroupFromValue(raw, primaryGroup = '') {
+    const token = normalizeTextForMatch(raw || '').replace(/\s+/g, '_');
+    if (!token) return '';
+    if (CONTROLLED_SUBGROUP_ALIASES[token]) return CONTROLLED_SUBGROUP_ALIASES[token];
+
+    if (primaryGroup === 'chest') {
+      if (/(upper|clavicular|incline)/.test(token)) return 'upper_chest';
+      if (/(lower|costal|decline)/.test(token)) return 'lower_chest';
+      if (/(mid|middle|stern)/.test(token)) return 'mid_chest';
+      return 'mid_chest';
+    }
+    if (primaryGroup === 'back') {
+      if (/(lat|teres)/.test(token)) return 'lats';
+      if (/(spinal|erector|lower_back)/.test(token)) return 'spinal_erectors';
+      return 'upper_back';
+    }
+    if (primaryGroup === 'shoulders') {
+      if (/(front|anterior)/.test(token)) return 'front_delts';
+      if (/(rear|posterior)/.test(token)) return 'rear_delts';
+      return 'side_delts';
+    }
+    if (primaryGroup === 'arms') {
+      if (/tricep/.test(token)) return 'triceps';
+      if (/(forearm|brachioradialis)/.test(token)) return 'forearms';
+      return 'biceps';
+    }
+    if (primaryGroup === 'legs') {
+      if (/(quad|vastus|rectus_femoris)/.test(token)) return 'quads';
+      if (/(hamstring|biceps_femoris|semitendinosus|semimembranosus)/.test(token)) return 'hamstrings';
+      if (/glute/.test(token)) return 'glutes';
+      if (/(calf|gastrocnemius|soleus)/.test(token)) return 'calves';
+      if (/adductor/.test(token)) return 'adductors';
+      if (/abductor/.test(token)) return 'abductors';
+      if (/hip_flexor|iliopsoas/.test(token)) return 'hip_flexors';
+      return '';
+    }
+    if (primaryGroup === 'core') {
+      if (/oblique/.test(token)) return 'obliques';
+      if (/lower_abs/.test(token)) return 'lower_abs';
+      if (/(upper_abs|abdominals|rectus_abdominis)/.test(token)) return 'upper_abs';
+      if (/(hip_flexor|iliopsoas)/.test(token)) return 'hip_flexors';
+      return 'upper_abs';
+    }
+    if (primaryGroup === 'neck') return 'neck';
+    return '';
+  }
+
+  function deriveControlledSwapTaxonomy(entry, fallbackEx = null) {
+    const explicitPrimary = controlledPrimaryMuscleGroupFromValue(entry?.primaryMuscleGroup || fallbackEx?.primaryMuscleGroup || '');
+    const primaryCandidates = [
+      explicitPrimary,
+      ...(Array.isArray(entry?.primaryMuscles) ? entry.primaryMuscles : []),
+      ...(Array.isArray(fallbackEx?.primaryMuscles) ? fallbackEx.primaryMuscles : []),
+      fallbackEx?.muscle_group,
+      fallbackEx?.muscleGroup,
+      fallbackEx?.muscle
+    ];
+    let primaryMuscleGroup = '';
+    for (const raw of primaryCandidates) {
+      const mapped = controlledPrimaryMuscleGroupFromValue(raw);
+      if (mapped) {
+        primaryMuscleGroup = mapped;
+        break;
+      }
+    }
+
+    if (!primaryMuscleGroup) {
+      const guess = swapMajorFromExercise(entry, fallbackEx);
+      primaryMuscleGroup = controlledPrimaryMuscleGroupFromValue(guess);
+    }
+
+    const explicitSub = controlledSubMuscleGroupFromValue(entry?.subMuscleGroup || fallbackEx?.subMuscleGroup || '', primaryMuscleGroup);
+    const subCandidates = [
+      explicitSub,
+      ...(Array.isArray(entry?.subMuscleGroups) ? entry.subMuscleGroups : []),
+      ...(Array.isArray(fallbackEx?.subMuscleGroups) ? fallbackEx.subMuscleGroups : []),
+      entry?.targetRegion,
+      fallbackEx?.targetRegion
+    ];
+    let subMuscleGroup = '';
+    for (const raw of subCandidates) {
+      const mapped = controlledSubMuscleGroupFromValue(raw, primaryMuscleGroup);
+      if (mapped) {
+        subMuscleGroup = mapped;
+        break;
+      }
+    }
+
+    if (!subMuscleGroup && primaryMuscleGroup) {
+      const fromName = controlledSubMuscleGroupFromValue(entry?.name || fallbackEx?.displayName || fallbackEx?.name || '', primaryMuscleGroup);
+      if (fromName) subMuscleGroup = fromName;
+    }
+
+    return {
+      primaryMuscleGroup: primaryMuscleGroup || '',
+      subMuscleGroup: subMuscleGroup || ''
+    };
+  }
+
+  function mapControlledSubgroupToLegacy(subgroup) {
+    const map = {
+      upper_chest: 'upperchest',
+      mid_chest: 'middlechest',
+      lower_chest: 'lowerchest',
+      lats: 'lats',
+      upper_back: 'upperback',
+      spinal_erectors: 'lowerback',
+      front_delts: 'frontdelts',
+      side_delts: 'sidedelts',
+      rear_delts: 'reardelts',
+      biceps: 'biceps',
+      triceps: 'triceps',
+      forearms: 'forearms',
+      quads: 'quadriceps',
+      hamstrings: 'hamstrings',
+      glutes: 'glutes',
+      calves: 'calves',
+      adductors: 'adductors',
+      abductors: 'abductors',
+      upper_abs: 'upperabs',
+      lower_abs: 'lowerabs',
+      obliques: 'obliques',
+      hip_flexors: 'hipflexors',
+      neck: 'neck'
+    };
+    return map[String(subgroup || '').trim()] || '';
+  }
+
   function rawMuscleTokens(entry, fallbackEx = null) {
     const prim = Array.isArray(entry?.primaryMuscles)
       ? entry.primaryMuscles
@@ -4099,20 +4428,25 @@ function toFreeExerciseDbRemotePath(src) {
   function buildSwapProfile(entry, fallbackEx = null) {
     const fallbackNameFromId = String(fallbackEx?.exerciseId || fallbackEx?.baseId || '').replace(/_/g, ' ');
     const name = String(entry?.name || fallbackEx?.displayName || fallbackEx?.name || fallbackNameFromId || '').trim();
-    let major = swapMajorFromExercise(entry, fallbackEx);
+    const taxonomy = deriveControlledSwapTaxonomy(entry, fallbackEx);
+    let major = taxonomy.primaryMuscleGroup || swapMajorFromExercise(entry, fallbackEx);
     if (!major || major === 'other') {
       major = swapMajorFromIntentKey(fallbackEx?.intentKey || '') || major;
     }
     const { primary, secondary } = rawMuscleTokens(entry, fallbackEx);
 
-    let subgroup = '';
+    let subgroup = mapControlledSubgroupToLegacy(taxonomy.subMuscleGroup);
     let subgroupSpecific = false;
-    for (const token of primary) {
-      const mapped = swapSubgroupFromToken(major, token);
-      if (mapped) {
-        subgroup = mapped;
-        subgroupSpecific = true;
-        break;
+    if (subgroup) {
+      subgroupSpecific = true;
+    } else {
+      for (const token of primary) {
+        const mapped = swapSubgroupFromToken(major, token);
+        if (mapped) {
+          subgroup = mapped;
+          subgroupSpecific = true;
+          break;
+        }
       }
     }
     if (!subgroup) {
@@ -4143,12 +4477,16 @@ function toFreeExerciseDbRemotePath(src) {
     const muscleKeys = new Set();
     if (major && major !== 'other') muscleKeys.add(major);
     if (subgroup) muscleKeys.add(subgroup);
+    if (taxonomy.primaryMuscleGroup) muscleKeys.add(taxonomy.primaryMuscleGroup);
+    if (taxonomy.subMuscleGroup) muscleKeys.add(taxonomy.subMuscleGroup);
 
     return {
       name,
       nameNorm: normalizeTextForMatch(name),
       major,
       subgroup,
+      primaryMuscleGroup: taxonomy.primaryMuscleGroup,
+      subMuscleGroup: taxonomy.subMuscleGroup,
       subgroupSpecific,
       force,
       movementFamily,
@@ -4196,8 +4534,8 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   function majorCompatible(sourceProfile, candidateProfile) {
-    const srcMajor = String(sourceProfile?.major || '');
-    const candMajor = String(candidateProfile?.major || '');
+    const srcMajor = String(sourceProfile?.primaryMuscleGroup || sourceProfile?.major || '');
+    const candMajor = String(candidateProfile?.primaryMuscleGroup || candidateProfile?.major || '');
     if (!srcMajor || srcMajor === 'other') return false;
     if (!candMajor || candMajor === 'other') return false;
     return candMajor === srcMajor;
@@ -4211,11 +4549,13 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   function subgroupSimilarityScore(sourceProfile, candidateProfile) {
-    const srcSubgroup = String(sourceProfile?.subgroup || '').trim();
-    const candSubgroup = String(candidateProfile?.subgroup || '').trim();
+    const srcSubgroup = String(sourceProfile?.subMuscleGroup || sourceProfile?.subgroup || '').trim();
+    const candSubgroup = String(candidateProfile?.subMuscleGroup || candidateProfile?.subgroup || '').trim();
     if (!srcSubgroup || !candSubgroup) return 0.28;
     if (srcSubgroup === candSubgroup) return 1;
-    return 0.6;
+    const related = Array.isArray(CONTROLLED_RELATED_SUBGROUPS[srcSubgroup]) ? CONTROLLED_RELATED_SUBGROUPS[srcSubgroup] : [];
+    if (related.includes(candSubgroup)) return 0.72;
+    return 0.2;
   }
 
   function movementFamilySimilarityScore(sourceProfile, candidateProfile) {
@@ -4236,15 +4576,18 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   function swapTierFromProfiles(sourceProfile, candidateProfile) {
-    const srcSubgroup = String(sourceProfile?.subgroup || '').trim();
-    const candSubgroup = String(candidateProfile?.subgroup || '').trim();
+    const srcPrimary = String(sourceProfile?.primaryMuscleGroup || sourceProfile?.major || '').trim();
+    const candPrimary = String(candidateProfile?.primaryMuscleGroup || candidateProfile?.major || '').trim();
+    const srcSubgroup = String(sourceProfile?.subMuscleGroup || sourceProfile?.subgroup || '').trim();
+    const candSubgroup = String(candidateProfile?.subMuscleGroup || candidateProfile?.subgroup || '').trim();
+    const samePrimary = Boolean(srcPrimary && candPrimary && srcPrimary === candPrimary);
     const subgroupExact = Boolean(srcSubgroup && candSubgroup && srcSubgroup === candSubgroup);
-    const familyMatch = movementFamilyCompatible(sourceProfile, candidateProfile);
-    const forceMatch = forceCompatible(sourceProfile, candidateProfile);
-
-    if (subgroupExact && familyMatch) return 1;
-    if (subgroupExact) return 2;
-    if (familyMatch || forceMatch) return 3;
+    if (samePrimary && subgroupExact) return 1;
+    if (samePrimary) {
+      const related = Array.isArray(CONTROLLED_RELATED_SUBGROUPS[srcSubgroup]) ? CONTROLLED_RELATED_SUBGROUPS[srcSubgroup] : [];
+      if (candSubgroup && related.includes(candSubgroup)) return 2;
+      return 3;
+    }
     return 4;
   }
 
@@ -4256,6 +4599,16 @@ function toFreeExerciseDbRemotePath(src) {
     const scoreB = Number(b?.score || 0);
     if (scoreA !== scoreB) return scoreB - scoreA;
     return String(a?.name || '').localeCompare(String(b?.name || ''));
+  }
+
+  function finalizeRankedSwapCandidates(scored, limit = 6) {
+    const ranked = Array.isArray(scored) ? scored.slice().sort(compareSwapScores) : [];
+    const primary = ranked.filter((item) => Number(item?.tier) === 1);
+    const secondary = ranked.filter((item) => Number(item?.tier) === 2);
+    const ancillary = ranked.filter((item) => Number(item?.tier) === 3);
+    if (primary.length) return primary.concat(secondary).slice(0, limit).map((item) => item.id);
+    if (secondary.length) return secondary.slice(0, limit).map((item) => item.id);
+    return ancillary.slice(0, limit).map((item) => item.id);
   }
 
   function scoreSwapCandidate({
@@ -4275,7 +4628,11 @@ function toFreeExerciseDbRemotePath(src) {
     const familyScore = movementFamilySimilarityScore(sourceProfile, candidateProfile);
     const forceScore = forceSimilarityScore(sourceProfile, candidateProfile);
     const eqScore = sourceProfile?.equipmentClass && sourceProfile.equipmentClass === candidateProfile?.equipmentClass ? 1 : 0.5;
-    const score = (subgroupScore * 0.4) + (familyScore * 0.3) + (forceScore * 0.15) + (eqScore * 0.1) + (tokenOverlap * 0.05) + (muscleOverlap * 0.05);
+    const commonnessScore = commonGymSwapScore(sourceProfile, candidateEntry, candidateProfile);
+    const complianceScore = isLowComplianceSwapEntry(candidateEntry)
+      ? 0.05
+      : (candidateProfile?.equipmentClass === 'other' ? 0.25 : 1);
+    const score = (subgroupScore * 0.28) + (familyScore * 0.24) + (forceScore * 0.1) + (eqScore * 0.1) + (tokenOverlap * 0.04) + (muscleOverlap * 0.04) + (complianceScore * 0.08) + (commonnessScore * 0.12);
 
     return {
       score,
@@ -4290,12 +4647,32 @@ function toFreeExerciseDbRemotePath(src) {
 
   function equipmentAllowed(access, eqClass) {
     const allow = access && typeof access === 'object' ? access : {};
+    const enabledCount = ['bodyweight', 'dumbbell', 'barbell', 'cable', 'machine']
+      .filter((key) => Boolean(allow[key]))
+      .length;
+    if (!enabledCount) return true;
     if (eqClass === 'barbell') return Boolean(allow.barbell);
     if (eqClass === 'dumbbell') return Boolean(allow.dumbbell);
     if (eqClass === 'cable') return Boolean(allow.cable);
     if (eqClass === 'machine') return Boolean(allow.machine);
     if (eqClass === 'bodyweight') return Boolean(allow.bodyweight);
     return true;
+  }
+
+  function effectiveSwapEquipmentAccess(access, sourceProfile) {
+    const allow = access && typeof access === 'object' ? access : {};
+    const standardGymEnabled = Boolean(allow.dumbbell || allow.barbell || allow.cable || allow.machine);
+    const sourceEq = String(sourceProfile?.equipmentClass || '');
+    if (!standardGymEnabled && sourceEq && sourceEq !== 'bodyweight' && sourceEq !== 'other') {
+      return {
+        bodyweight: true,
+        dumbbell: true,
+        barbell: true,
+        cable: true,
+        machine: true
+      };
+    }
+    return allow;
   }
 
   function normalizeAllowedEquipmentClassSet(rawAllowed) {
@@ -4350,6 +4727,56 @@ function toFreeExerciseDbRemotePath(src) {
     return true;
   }
 
+  function isStrongmanLikeEntry(entry) {
+    const text = normalizeTextForMatch([
+      entry?.name,
+      entry?.category,
+      entry?.equipment,
+      entry?.id
+    ].filter(Boolean).join(' '));
+    return /(strongman|atlas stone|circus bell|yoke|farmer s walk|farmers walk|log lift|keg load|conan|husafell|sled drag|sled push|sled row|prowler|tire flip|sandbag carry|stone lift)/.test(text);
+  }
+
+  function isLowComplianceSwapEntry(entry) {
+    const text = normalizeTextForMatch([
+      entry?.name,
+      entry?.category,
+      entry?.equipment,
+      entry?.id
+    ].filter(Boolean).join(' '));
+    return /(chain press|chains|exercise ball|stability ball|bosu|circus bell|prowler|sled|human flag|atlas stone|yoke|tire flip|log lift|keg load|conan|husafell|sandbag carry)/.test(text);
+  }
+
+  function commonGymSwapScore(sourceProfile, candidateEntry, candidateProfile) {
+    const sourceFamily = String(sourceProfile?.movementFamily || '');
+    const sourceEq = String(sourceProfile?.equipmentClass || '');
+    const name = normalizeTextForMatch(candidateEntry?.name || '');
+    const eq = String(candidateProfile?.equipmentClass || '');
+    let score = 0.4;
+
+    if (sourceFamily === 'chest_press') {
+      if (/(bench press|dumbbell bench|smith machine bench|machine bench|chest press)/.test(name)) score = 1;
+      else if (/(press)/.test(name)) score = 0.82;
+      if (sourceEq === 'machine' && (eq === 'barbell' || eq === 'dumbbell' || eq === 'machine')) score += 0.12;
+    } else if (sourceFamily === 'vertical_pull') {
+      if (/(lat pulldown|pull up|chin up|assisted pull up|machine pulldown)/.test(name)) score = 1;
+      else if (/(pulldown|pull up|chin up)/.test(name)) score = 0.84;
+    } else if (sourceFamily === 'row') {
+      if (/(seated row|cable row|chest supported row|barbell row|dumbbell row|machine row|t bar row)/.test(name)) score = 1;
+      else if (/(row)/.test(name)) score = 0.84;
+    } else if (sourceFamily === 'shoulder_press') {
+      if (/(shoulder press|overhead press|military press|machine press|dumbbell press|smith machine press)/.test(name)) score = 1;
+    } else if (sourceFamily === 'knee_dominant') {
+      if (/(hack squat|leg press|back squat|front squat|goblet squat|smith squat|split squat)/.test(name)) score = 1;
+    } else if (sourceFamily === 'hip_hinge') {
+      if (/(romanian deadlift|rdl|deadlift|stiff leg deadlift|good morning|hip thrust)/.test(name)) score = 1;
+    }
+
+    if (isLowComplianceSwapEntry(candidateEntry)) score -= 0.45;
+    if (eq === 'other') score -= 0.2;
+    return Math.max(0, Math.min(score, 1));
+  }
+
   function isSwapCandidateCompatible({
     sourceProfile,
     sourceCategory,
@@ -4357,14 +4784,28 @@ function toFreeExerciseDbRemotePath(src) {
     allowedClasses,
     equipmentAccess
   }) {
+    const resolvedEquipmentAccess = effectiveSwapEquipmentAccess(equipmentAccess, sourceProfile);
     const candidateProfile = buildSwapProfile(candidateEntry);
     if (!sourceProfile || !sourceProfile.major || sourceProfile.major === 'other') return false;
     if (!candidateProfile?.major || candidateProfile.major === 'other') return false;
+    if (isStrongmanLikeEntry(candidateEntry)) return false;
+    if (sourceProfile?.movementFamily) {
+      const sameFamily = String(sourceProfile.movementFamily) === String(candidateProfile?.movementFamily || '');
+      const compatibleFamily = movementFamilyCompatible(sourceProfile, candidateProfile);
+      const samePrimary = String(sourceProfile?.primaryMuscleGroup || '') === String(candidateProfile?.primaryMuscleGroup || '');
+      const sameSub = String(sourceProfile?.subMuscleGroup || '') === String(candidateProfile?.subMuscleGroup || '');
+      const relatedSub = Array.isArray(CONTROLLED_RELATED_SUBGROUPS[String(sourceProfile?.subMuscleGroup || '')])
+        ? CONTROLLED_RELATED_SUBGROUPS[String(sourceProfile?.subMuscleGroup || '')].includes(String(candidateProfile?.subMuscleGroup || ''))
+        : false;
+      if (!sameFamily && !compatibleFamily && !(samePrimary && (sameSub || relatedSub))) return false;
+    }
     const eqClass = candidateProfile.equipmentClass;
     const candidateCategory = classifySwapCategory(candidateEntry);
     if (!swapCategoryCompatible({ sourceCategory, candidateCategory })) return false;
+    const sourceIsStandardGym = sourceCategory === 'free_weights' || sourceCategory === 'machines' || sourceCategory === 'mixed';
+    if (sourceIsStandardGym && isLowComplianceSwapEntry(candidateEntry)) return false;
     if (allowedClasses && !allowedClasses.has(eqClass) && !allowedClasses.has('any')) return false;
-    if (!equipmentAllowed(equipmentAccess, eqClass)) return false;
+    if (!equipmentAllowed(resolvedEquipmentAccess, eqClass)) return false;
     if (!majorCompatible(sourceProfile, candidateProfile)) return false;
     return true;
   }
@@ -4431,8 +4872,8 @@ function toFreeExerciseDbRemotePath(src) {
         tier: scoreData.tier
       });
     }
-    scored.sort(compareSwapScores);
-    if (scored.length) return scored.map((item) => item.id);
+    const rankedIds = finalizeRankedSwapCandidates(scored, scored.length || 6);
+    if (rankedIds.length) return rankedIds;
     if (unresolved.length) return Array.from(new Set(unresolved));
     return [];
   }
@@ -4441,7 +4882,7 @@ function toFreeExerciseDbRemotePath(src) {
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
     const injuryProfile = meta.injuryProfile || {};
-    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
+    const allowedClasses = null;
     const weekIdx = Number(weekIndex) || 1;
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const usedIds = new Set((day?.exercises || []).map((d) => String(d?.exerciseId || '')).filter(Boolean));
@@ -4501,8 +4942,7 @@ function toFreeExerciseDbRemotePath(src) {
       });
     }
 
-    scored.sort(compareSwapScores);
-    return scored.slice(0, 6).map((c) => c.id);
+    return finalizeRankedSwapCandidates(scored, 6);
   }
 
   function applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope }) {
@@ -4545,6 +4985,63 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   function openSwapScopeModal({ ex, dayIndex, weekIndex, newExerciseId, onDone }) {
+    const selectedExercise = findCatalogExerciseById(newExerciseId);
+    const selectedName = getExerciseNameById(newExerciseId) || newExerciseId;
+    const previewExercise = selectedExercise || { id: newExerciseId, name: selectedName, displayName: selectedName };
+    const previewMedia = resolveExerciseMedia(previewExercise);
+    const previewMediaNode = (() => {
+      if (previewMedia?.type === 'local-pair' && previewMedia?.src0 && previewMedia?.src1) {
+        const wrap = el('div', { class: 'swap-scope-preview-pair' });
+        const imgA = el('img', {
+          class: 'swap-scope-preview-img swap-scope-preview-img-a',
+          src: previewMedia.src0,
+          alt: selectedName,
+          loading: 'eager',
+          decoding: 'async'
+        });
+        const imgB = el('img', {
+          class: 'swap-scope-preview-img swap-scope-preview-img-b',
+          src: previewMedia.src1,
+          alt: selectedName,
+          loading: 'eager',
+          decoding: 'async'
+        });
+        wrap.append(imgA, imgB);
+        return wrap;
+      }
+      if (previewMedia?.type === 'image' && previewMedia?.src) {
+        return el('img', {
+          class: 'swap-scope-preview-img',
+          src: previewMedia.src,
+          alt: selectedName,
+          loading: 'eager',
+          decoding: 'async'
+        });
+      }
+      return el(
+        'div',
+        { class: 'swap-scope-preview-fallback' },
+        muscleIconSvg(selectedExercise?.bodyPart || selectedExercise?.muscle_group || selectedExercise?.muscleGroup || 'exercise')
+      );
+    })();
+    const openPreviewModal = () => {
+      if (previewMedia?.type === 'local-pair' && previewMedia?.src0 && previewMedia?.src1) {
+        openExerciseMediaModal({
+          type: 'image-pair',
+          src0: toFreeExerciseDbRemotePath(previewMedia.src0) || previewMedia.src0,
+          src1: toFreeExerciseDbRemotePath(previewMedia.src1) || previewMedia.src1,
+          alt: selectedName
+        });
+        return;
+      }
+      if (previewMedia?.type === 'image' && previewMedia?.src) {
+        openExerciseMediaModal({
+          type: 'image',
+          src: toFreeExerciseDbRemotePath(previewMedia.src) || previewMedia.src,
+          alt: selectedName
+        });
+      }
+    };
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close swap options' }),
       el('div', { class: 'schedule-modal-card swap-scope-modal-card' },
@@ -4553,6 +5050,13 @@ function toFreeExerciseDbRemotePath(src) {
           el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close swap options' }, '×')
         ),
         el('div', { class: 'schedule-modal-body' },
+          el('div', { class: 'swap-scope-preview' },
+            el('button', { type: 'button', class: 'swap-scope-preview-media swap-scope-preview-trigger', onclick: openPreviewModal, 'aria-label': `Open ${selectedName} preview` }, previewMediaNode),
+            el('div', { class: 'swap-scope-preview-copy' },
+              el('div', { class: 'swap-scope-preview-label' }, 'Selected workout'),
+              el('div', { class: 'swap-scope-preview-name' }, selectedName)
+            )
+          ),
           el('div', { class: 'training-muted', style: 'margin-bottom:0.75rem' },
             'Do you want to swap this exercise permanently, or just for today?'
           )
@@ -4585,6 +5089,174 @@ function toFreeExerciseDbRemotePath(src) {
     document.body.appendChild(overlay);
   }
 
+  function openCustomSwapModal({ ex, dayIndex, weekIndex, onDone }) {
+    const customGroupMeta = {
+      chest: { label: 'Chest', order: 1 },
+      back: { label: 'Back', order: 2 },
+      shoulders: { label: 'Shoulders', order: 3 },
+      arms: { label: 'Arms', order: 4 },
+      legs: { label: 'Legs', order: 5 },
+      core: { label: 'Core', order: 6 },
+      full_body: { label: 'Full Body', order: 7 },
+      other: { label: 'Other', order: 99 }
+    };
+
+    const normalizeMuscleToken = (raw) => String(raw || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const formatMuscleLabel = (raw) => {
+      const token = normalizeMuscleToken(raw);
+      if (!token) return 'Uncategorized';
+      const map = {
+        abdominals: 'Abs',
+        abductors: 'Hip Abductors',
+        adductors: 'Adductors',
+        biceps: 'Biceps',
+        calves: 'Calves',
+        chest: 'Chest',
+        forearms: 'Forearms',
+        glutes: 'Glutes',
+        hamstrings: 'Hamstrings',
+        lats: 'Lats',
+        lowerback: 'Lower Back',
+        middleback: 'Mid Back',
+        neck: 'Neck',
+        obliques: 'Obliques',
+        quadriceps: 'Quads',
+        shoulders: 'Shoulders',
+        traps: 'Traps',
+        hipflexors: 'Hip Flexors',
+        serratus: 'Serratus'
+      };
+      return map[token] || String(raw || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+    };
+    const resolveGroupKey = (primaryMuscleRaw) => {
+      const token = normalizeMuscleToken(primaryMuscleRaw);
+      if (!token) return 'other';
+      if (token.includes('chest') || token.includes('pect')) return 'chest';
+      if (token.includes('lat') || token.includes('back') || token.includes('rhomboid') || token.includes('trap')) return 'back';
+      if (token.includes('shoulder') || token.includes('delt')) return 'shoulders';
+      if (token.includes('bicep') || token.includes('tricep') || token.includes('forearm') || token.includes('brach')) return 'arms';
+      if (token.includes('quad') || token.includes('hamstring') || token.includes('glute') || token.includes('calf') || token.includes('adductor') || token.includes('abductor') || token.includes('hipflexor') || token.includes('leg')) return 'legs';
+      if (token.includes('abdominal') || token.includes('oblique') || token.includes('core') || token.includes('serratus')) return 'core';
+      if (token.includes('fullbody') || token.includes('totalbody')) return 'full_body';
+      return 'other';
+    };
+    const buildGroupedItems = (items) => {
+      const groups = new Map();
+      for (const item of items) {
+        const primary = String(item?.primaryMuscleGroup || (Array.isArray(item?.primaryMuscles) ? item.primaryMuscles[0] || '' : '')).trim();
+        const subgroup = String(item?.subMuscleGroup || (Array.isArray(item?.subMuscleGroups) ? item.subMuscleGroups[0] || '' : primary)).trim();
+        const groupKey = resolveGroupKey(primary);
+        const groupMeta = customGroupMeta[groupKey] || customGroupMeta.other;
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, { key: groupKey, label: groupMeta.label, order: groupMeta.order, subgroups: new Map() });
+        }
+        const bucket = groups.get(groupKey);
+        const subgroupKey = normalizeMuscleToken(subgroup) || 'uncategorized';
+        if (!bucket.subgroups.has(subgroupKey)) {
+          bucket.subgroups.set(subgroupKey, { key: subgroupKey, label: formatMuscleLabel(subgroup || primary), items: [] });
+        }
+        bucket.subgroups.get(subgroupKey).items.push(item);
+      }
+      return Array.from(groups.values())
+        .map((group) => ({
+          ...group,
+          subgroups: Array.from(group.subgroups.values())
+            .map((sub) => ({
+              ...sub,
+              items: sub.items.slice().sort((a, b) => String(a?.name || a?.id || '').localeCompare(String(b?.name || b?.id || '')))
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+        }))
+        .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label));
+    };
+
+    const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
+      el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close custom workout picker' }),
+      el('div', { class: 'schedule-modal-card custom-workout-modal-card' },
+        el('div', { class: 'schedule-modal-head' },
+          el('div', { class: 'schedule-modal-title' }, 'Custom workout'),
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close custom workout picker' }, '×')
+        ),
+        el('div', { class: 'schedule-modal-body' },
+          el('input', {
+            type: 'search',
+            class: 'auth-input custom-workout-search',
+            placeholder: 'Search workout database'
+          }),
+          el('div', { class: 'custom-workout-results' })
+        ),
+        el('div', { class: 'schedule-modal-actions' },
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
+        )
+      )
+    );
+
+    const searchInput = overlay.querySelector('.custom-workout-search');
+    const resultsWrap = overlay.querySelector('.custom-workout-results');
+
+    const renderResults = () => {
+      if (!resultsWrap) return;
+      const query = String(searchInput?.value || '').trim().toLowerCase();
+      const filtered = exerciseCatalog
+        .filter((item) => {
+          const name = String(item?.name || '').toLowerCase();
+          const id = String(item?.id || '').toLowerCase();
+          const primary = String(item?.primaryMuscleGroup || (Array.isArray(item?.primaryMuscles) ? item.primaryMuscles.join(' ') : '')).toLowerCase();
+          const subgroup = String(item?.subMuscleGroup || (Array.isArray(item?.subMuscleGroups) ? item.subMuscleGroups.join(' ') : '')).toLowerCase();
+          if (!query) return true;
+          return name.includes(query) || id.includes(query) || primary.includes(query) || subgroup.includes(query);
+        })
+        .slice(0, 80);
+
+      resultsWrap.innerHTML = '';
+
+      if (!filtered.length) {
+        resultsWrap.appendChild(el('div', { class: 'training-muted' }, 'No workouts found.'));
+        return;
+      }
+
+      buildGroupedItems(filtered).forEach((group) => {
+        resultsWrap.appendChild(el('div', { class: 'custom-workout-group' }, group.label));
+        group.subgroups.forEach((subgroup) => {
+          resultsWrap.appendChild(el('div', { class: 'custom-workout-subgroup' }, subgroup.label));
+          subgroup.items.forEach((item) => {
+            const label = String(item?.name || item?.id || 'Exercise');
+            const meta = [item?.primaryMuscleGroup, item?.subMuscleGroup].filter(Boolean).join(' - ');
+            resultsWrap.appendChild(
+              el('button', {
+                type: 'button',
+                class: 'custom-workout-result',
+                onclick: (event) => {
+                  event?.preventDefault?.();
+                  event?.stopPropagation?.();
+                  overlay.remove();
+                  window.setTimeout(() => {
+                    openSwapScopeModal({
+                      ex,
+                      dayIndex,
+                      weekIndex,
+                      newExerciseId: String(item?.id || ''),
+                      onDone
+                    });
+                  }, 0);
+                }
+              },
+              el('span', { class: 'custom-workout-result-name' }, label),
+              meta ? el('span', { class: 'custom-workout-result-meta' }, meta) : null)
+            );
+          });
+        });
+      });
+    };
+
+    searchInput?.addEventListener('input', renderResults);
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+    renderResults();
+    searchInput?.focus();
+  }
+
   async function openSwapModal({ ex, dayIndex, weekIndex }) {
     await ensureExerciseCatalogLoaded();
     let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
@@ -4593,7 +5265,7 @@ function toFreeExerciseDbRemotePath(src) {
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
-    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
+    const allowedClasses = null;
 
     if (candidates.length) {
       candidates = filterSwapCandidatesByCompatibility({
@@ -4608,6 +5280,12 @@ function toFreeExerciseDbRemotePath(src) {
     if (!candidates.length && exerciseCatalog.length) {
       candidates = computeSwapCandidates({ ex, plan, dayIndex, weekIndex }) || [];
     }
+    const swapToneForIndex = (index) => {
+      if (index === 0) return { cls: 'swap-option-best', tag: 'Best match', rank: '01' };
+      if (index === 1) return { cls: 'swap-option-second', tag: 'Next best', rank: '02' };
+      if (index === 2) return { cls: 'swap-option-base', tag: 'Good fit', rank: '03' };
+      return { cls: 'swap-option-rest', tag: 'Fallback', rank: String(index + 1).padStart(2, '0') };
+    };
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close swap' }),
       el('div', { class: 'schedule-modal-card' },
@@ -4618,24 +5296,60 @@ function toFreeExerciseDbRemotePath(src) {
         el('div', { class: 'schedule-modal-body' },
           candidates.length
             ? el('div', { class: 'training-row', style: 'flex-direction:column; gap:0.5rem; align-items:stretch' },
-              candidates.map((id) =>
-                el('button', {
+              candidates.map((id, index) => {
+                const tone = swapToneForIndex(index);
+                return el('button', {
                   type: 'button',
-                  class: 'btn btn-ghost',
-                  onclick: () => {
+                  class: `btn btn-ghost swap-option-card ${tone.cls}`,
+                  onclick: (event) => {
+                    event?.preventDefault?.();
+                    event?.stopPropagation?.();
                     overlay.remove();
-                    openSwapScopeModal({
-                      ex,
-                      dayIndex,
-                      weekIndex,
-                      newExerciseId: id,
-                      onDone: () => render()
-                    });
+                    window.setTimeout(() => {
+                      openSwapScopeModal({
+                        ex,
+                        dayIndex,
+                        weekIndex,
+                        newExerciseId: id,
+                        onDone: () => render()
+                      });
+                    }, 0);
                   }
-                }, getExerciseNameById(id) || id)
-              )
+                },
+                el('span', { class: 'swap-option-rank', 'aria-hidden': 'true' }, tone.rank),
+                el('div', { class: 'swap-option-copy' },
+                  el('span', { class: 'swap-option-tag' }, tone.tag),
+                  el('span', { class: 'swap-option-name' }, getExerciseNameById(id) || id)
+                ));
+              }),
+              el('button', {
+                type: 'button',
+                class: 'custom-workout-trigger',
+                onclick: (event) => {
+                  event?.preventDefault?.();
+                  event?.stopPropagation?.();
+                  overlay.remove();
+                  window.setTimeout(() => {
+                    openCustomSwapModal({ ex, dayIndex, weekIndex, onDone: () => render() });
+                  }, 0);
+                }
+              }, 'Custom workout')
             )
-            : el('div', { class: 'training-muted' }, 'No same-muscle swap options available.')
+            : el('div', { class: 'training-row', style: 'flex-direction:column; gap:0.75rem; align-items:stretch' },
+              el('div', { class: 'training-muted' }, 'No same-muscle swap options available.'),
+              el('button', {
+                type: 'button',
+                class: 'custom-workout-trigger',
+                onclick: (event) => {
+                  event?.preventDefault?.();
+                  event?.stopPropagation?.();
+                  overlay.remove();
+                  window.setTimeout(() => {
+                    openCustomSwapModal({ ex, dayIndex, weekIndex, onDone: () => render() });
+                  }, 0);
+                }
+              }, 'Custom workout')
+            )
         ),
         el('div', { class: 'schedule-modal-actions' },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
@@ -4774,7 +5488,7 @@ function toFreeExerciseDbRemotePath(src) {
     const day = (plan?.weeks?.[weekIdx - 1]?.days || [])[dayIndex - 1] || null;
     const meta = plan?.meta || {};
     const equipmentAccess = meta.equipmentAccess || state.wizard?.equipmentAccess || {};
-    const allowedClasses = normalizeAllowedEquipmentClassSet(ex?.allowedEquipmentClass);
+    const allowedClasses = null;
     let candidates = Array.isArray(ex?.swapCandidates) ? ex.swapCandidates : [];
     if (candidates.length) {
       candidates = filterSwapCandidatesByCompatibility({
@@ -5304,7 +6018,26 @@ function toFreeExerciseDbRemotePath(src) {
 
       btn.addEventListener('click', () => {
         if (!currentSrc || !currentType) return;
-        openExerciseMediaModal({ type: currentType, src: currentSrc, alt: btn.dataset.modalTitle || btn.dataset.alt || 'Exercise preview' });
+        const imageCandidates = candidates
+          .filter((cand) => cand && cand.type !== 'video' && cand.src)
+          .slice(0, 2)
+          .map((cand) => String(cand.src));
+        if (imageCandidates.length >= 2) {
+          openExerciseMediaModal({
+            type: 'image-pair',
+            src0: imageCandidates[0],
+            src1: imageCandidates[1],
+            alt: btn.dataset.modalTitle || btn.dataset.alt || 'Exercise preview'
+          });
+          return;
+        }
+        openExerciseMediaModal({
+          type: currentType,
+          src: currentSrc,
+          src0: btn.dataset.src0 || '',
+          src1: btn.dataset.src1 || '',
+          alt: btn.dataset.modalTitle || btn.dataset.alt || 'Exercise preview'
+        });
       });
 
       tryNext();
@@ -8116,6 +8849,32 @@ function toggleSharePopover(force) {
     return out;
   }
 
+  function previousEntryMapBeforeSlot({ logs, beforeWeekIndex, beforeDayIndex, daysPerWeek }) {
+    const beforeSlot = slotIndexFromWeekDay(beforeWeekIndex, beforeDayIndex, daysPerWeek);
+    if (beforeSlot == null) return new Map();
+    const safeLogs = Array.isArray(logs) ? logs : [];
+
+    const rows = safeLogs.map((row) => {
+      const slot = slotIndexFromWeekDay(row?.week_index, row?.day_index, daysPerWeek);
+      return { row, slot: slot == null ? Infinity : slot };
+    }).filter((x) => Number.isFinite(x.slot) && x.slot < beforeSlot)
+      .sort((a, b) => a.slot - b.slot);
+
+    const out = new Map();
+    for (const { row } of rows) {
+      const entries = Array.isArray(row?.entries) ? row.entries : [];
+      for (const e of entries) {
+        const baseId = String(e?.baseId || '').trim();
+        if (!baseId) continue;
+        out.set(baseId, {
+          sets: Array.isArray(e?.sets) ? e.sets : [],
+          performedAt: row?.performed_at ? String(row.performed_at).slice(0, 10) : null
+        });
+      }
+    }
+    return out;
+  }
+
   async function saveWorkout({ weekIndex, dayIndex, exercises, dayNotes, performedAt }) {
     const built = buildWorkoutLogPayload({
       weekIndex,
@@ -8158,7 +8917,7 @@ function toggleSharePopover(force) {
     const readinessRaw = readinessEl ? Number(readinessEl.value) : null;
     const readiness = Number.isFinite(readinessRaw) ? Math.max(1, Math.min(10, readinessRaw)) : null;
     if (!Number.isFinite(readiness)) {
-      state.planError = 'Add readiness (1â€“10) before saving.';
+      state.planError = 'Add readiness (1-10) before saving.';
       render();
       return;
     }
@@ -8907,7 +9666,7 @@ function toggleSharePopover(force) {
       const workoutLink = buildShareWorkoutLink();
       const imageLink = buildShareWorkoutImageLink();
       return [
-        `Yo ${inviteeName} — join ${inviter} on their workout in odeology_.`,
+        `Yo ${inviteeName} — join ${inviter} on their workout in STRYVE.`,
         `Track your progress, stay accountable, and keep momentum (${discipline}${days ? `, ${days} days/week` : ''}).`,
         `Join link: ${workoutLink}`,
         `Preview image: ${imageLink}`
@@ -9731,7 +10490,7 @@ function toggleSharePopover(force) {
       const log = logsMap.get(key) || null;
       const dispCur = { title: WEEKDAYS[activeWeekday], dayNumber: dayIndex };
       const savedBadge = log ? el('span', { class: 'training-badge good' }, 'Saved') : el('span', { class: 'training-badge' }, 'Not saved');
-      const lastPerfMap = performanceMapBeforeSlot({
+      const previousEntryMap = previousEntryMapBeforeSlot({
         logs: state.logs,
         beforeWeekIndex: activeWeek,
         beforeDayIndex: dayIndex,
@@ -9789,8 +10548,7 @@ function toggleSharePopover(force) {
       const list = el('div', { class: 'exercise-list' });
       (day.exercises || []).forEach((ex, exIdx) => {
         const exerciseKey = resolveWorkoutExerciseKey(ex);
-        const loggedEntries = Array.isArray(log?.entries) ? log.entries : [];
-        const match = loggedEntries.find((e) => String(e?.exerciseId) === String(ex.id) || String(e?.baseId) === String(ex.baseId)) || null;
+        const previousEntry = previousEntryMap.get(String(ex.baseId || '')) || null;
 
         const dec = lastDecisionByBase?.[String(ex.baseId || '')] || null;
         const decText = dec && typeof dec === 'object' && dec.message ? String(dec.message) : '';
@@ -9820,7 +10578,6 @@ function toggleSharePopover(force) {
             ex._baseSets = defaultSetCount;
             return defaultSetCount;
           })();
-          const loggedSets = Array.isArray(match?.sets) ? match.sets : [];
           const addSetForExercise = () => {
             if (!workoutTimer.running) {
               showWorkoutInputGateToast();
@@ -9865,16 +10622,15 @@ function toggleSharePopover(force) {
                 el('span', null, 'Notes')
               ),
               ...Array.from({ length: setCount }, (_, idx) => {
-                const s = loggedSets[idx] && typeof loggedSets[idx] === 'object' ? loggedSets[idx] : {};
-                const wValSaved = Number.isFinite(Number(s.weight)) ? String(s.weight) : '';
-                const rValSaved = Number.isFinite(Number(s.reps)) ? String(s.reps) : '';
-                const noteValSaved = s.note ? String(s.note) : '';
+                const previousSet = previousEntry?.sets?.[idx] && typeof previousEntry.sets[idx] === 'object'
+                  ? previousEntry.sets[idx]
+                  : null;
                 const wVal = getWorkoutInputDraftValue({
                   exId: exerciseKey,
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setWeight',
-                  fallback: wValSaved,
+                  fallback: '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
@@ -9883,7 +10639,7 @@ function toggleSharePopover(force) {
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setReps',
-                  fallback: rValSaved,
+                  fallback: '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
@@ -9892,10 +10648,19 @@ function toggleSharePopover(force) {
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setNote',
-                  fallback: noteValSaved,
+                  fallback: '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
+                const weightPlaceholder = Number.isFinite(Number(previousSet?.weight))
+                  ? `${previousSet.weight} lb last week`
+                  : 'Weight';
+                const repsPlaceholder = Number.isFinite(Number(previousSet?.reps))
+                  ? `${previousSet.reps} reps last week`
+                  : 'Reps';
+                const notePlaceholder = previousSet?.note
+                  ? `${String(previousSet.note).slice(0, 40)} last week`
+                  : 'Notes';
                 const inputIdBase = String(ex.id || ex.baseId || ex.name || 'exercise')
                   .toLowerCase()
                   .replace(/[^a-z0-9_-]+/g, '-')
@@ -9909,7 +10674,7 @@ function toggleSharePopover(force) {
                     inputmode: 'decimal',
                     value: wVal,
                     dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setWeight', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
-                    placeholder: 'Weight'
+                    placeholder: weightPlaceholder
                   }),
                   el('input', {
                     id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-reps`,
@@ -9917,14 +10682,14 @@ function toggleSharePopover(force) {
                     inputmode: 'numeric',
                     value: rVal,
                     dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setReps', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
-                    placeholder: 'Reps'
+                    placeholder: repsPlaceholder
                   }),
                   el('input', {
                     id: `training-set-${activeWeek}-${dayIndex}-${exIdx}-${inputIdBase}-${idx}-note`,
                     class: 'auth-input',
                     value: noteVal,
                     dataset: { exId: exerciseKey, exSlot: String(exIdx), field: 'setNote', setIdx: String(idx), weekIdx: String(activeWeek), dayIdx: String(dayIndex) },
-                    placeholder: 'Notes'
+                    placeholder: notePlaceholder
                   })
                 );
               }),
@@ -9958,7 +10723,7 @@ function toggleSharePopover(force) {
             )
             : null;
         const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
-        const lastPerf = lastPerfMap.get(String(ex.baseId || '')) || null;
+        const lastPerf = null;
         const lastWeekCompact = (() => {
           if (!lastPerf) return '—';
           const parts = [];
@@ -9988,9 +10753,17 @@ function toggleSharePopover(force) {
           'aria-label': `Preview ${String(ex?.name || 'exercise')}`,
           onclick: () => {
             if (!media) return;
+            if (media.type === 'local-pair') {
+              openExerciseMediaModal({
+                type: 'image-pair',
+                src0: toFreeExerciseDbRemotePath(media.src0) || media.src0,
+                src1: toFreeExerciseDbRemotePath(media.src1) || media.src1,
+                alt: String(ex?.name || 'Exercise')
+              });
+              return;
+            }
             const type = media.type === 'video' ? 'video' : 'image';
-            const srcRaw = media.type === 'local-pair' ? media.src0 : media.src;
-            const src = toFreeExerciseDbRemotePath(srcRaw) || srcRaw;
+            const src = toFreeExerciseDbRemotePath(media.src) || media.src;
             if (!src) return;
             openExerciseMediaModal({ type, src: String(src), alt: String(ex?.name || 'Exercise') });
           }
@@ -10011,8 +10784,7 @@ function toggleSharePopover(force) {
                 ? el('div', { class: 'exercise-substitutions' }, `Alt: ${subs.slice(0, 2).join(' • ')}`)
                 : null,
               el('div', { class: 'exercise-badges' },
-                el('span', { class: 'lastweek-pill', title: lastWeekTitle }, `Last week ${lastWeekCompact}`),
-                el('span', { class: 'projected-pill', title: 'Projected weight' }, `Projected ${projected}`)
+                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`)
               ),
               decText ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Next: ${decText}`) : null,
               el('div', { class: 'exercise-action-row' },

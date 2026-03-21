@@ -25,7 +25,7 @@
 
     const svgDataUrl = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     const placeholderImage = (label, accent = '#7C3AED') => {
-        const safe = String(label || 'odeology_').slice(0, 24);
+        const safe = String(label || 'STRYVE').slice(0, 24);
         const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
                 <defs>
@@ -619,7 +619,7 @@
             rememberRecentlyViewed(product);
             renderRecentlyViewed({ excludeId: id });
 
-            document.title = `${product.name} · odeology_`;
+            document.title = `${product.name} · STRYVE`;
             if (titleEl) titleEl.textContent = product.name;
             if (catEl) catEl.textContent = product.category || 'Product';
             if (descEl) descEl.textContent = product.short_description || '';

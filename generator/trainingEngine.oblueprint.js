@@ -486,7 +486,7 @@ function normalizeExperienceTier(raw) {
     .trim()
     .toLowerCase()
     .replace(/[\u2012\u2013\u2014\u2212]/g, '-')
-    .replace(/â€“|â€”|âˆ’/g, '-')
+    .replace(/?|?|?/g, '-')
     .replace(/\s+/g, '');
   if (!compact) return null;
   if (compact === '<6m' || compact === '<6months') return '<6m';

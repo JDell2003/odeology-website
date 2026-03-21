@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>odeology_ Training</title>
+  <title>STRYVE Training</title>
   <link rel="stylesheet" href="css/main.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -660,7 +660,7 @@
   <div class="grain"></div>
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand">odeology_<span class="brand-dot"></span></div>
+      <div class="navbar-brand">STRYVE<span class="brand-dot"></span></div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
       <ul class="nav-menu" id="nav-menu">
         <li><a href="index.html#resources">Home</a></li>
@@ -1694,7 +1694,7 @@
           }
           if(!S.fullName.trim())return toast('Add your name before finishing.');
           if(!String(S.trainingWhy||'').trim())return toast('Tell us why you are doing this before finishing.');
-          if(S.profilePhotoData&&window.__odeologyUploadProfilePhoto){try{window.__odeologyUploadProfilePhoto(S.profilePhotoData)}catch{}}
+          if(S.profilePhotoData&&window.__STRYVEUploadProfilePhoto){try{window.__STRYVEUploadProfilePhoto(S.profilePhotoData)}catch{}}
           done();
           syncProfile();
           try{

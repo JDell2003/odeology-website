@@ -6,7 +6,7 @@ const MAX_STUDIES = Math.max(50, Number.parseInt(process.env.STUDIES_MAX || '183
 const ENRICH_LIMIT = Math.max(0, Number.parseInt(process.env.STUDIES_ENRICH_LIMIT || '0', 10) || 0);
 const OPENALEX_API_KEY = String(process.env.OPENALEX_API_KEY || '').trim();
 const EMAIL = String(process.env.NCBI_EMAIL || process.env.CONTACT_EMAIL || '').trim();
-const TOOL = 'odeology_studies_ingest';
+const TOOL = 'STRYVEstudies_ingest';
 
 const SEARCH_QUERIES = [
   { term: 'resistance training adults', tags: ['training'] },
@@ -337,7 +337,7 @@ async function fetchCrossrefByDoi(doi) {
     const url = `https://api.crossref.org/works/${encodeURIComponent(String(doi || '').trim())}`;
     const json = await fetchJson(url, {
       headers: {
-        'User-Agent': 'odeology-studies-ingest/1.0'
+        'User-Agent': 'STRYVE-studies-ingest/1.0'
       }
     });
     await sleep(120);
@@ -354,7 +354,7 @@ async function fetchOpenAlexByPmid(pmid) {
     url.searchParams.set('api_key', OPENALEX_API_KEY);
     const json = await fetchJson(url.toString(), {
       headers: {
-        'User-Agent': 'odeology-studies-ingest/1.0'
+        'User-Agent': 'STRYVE-studies-ingest/1.0'
       }
     });
     await sleep(120);

@@ -20,7 +20,7 @@
       ]
     },
     {
-      title: 'Most active on Odeology',
+      title: 'Most active on STRYVE',
       copy: 'The broadest conversations right now, useful if you want faster replies and more varied perspectives.',
       items: [
         { slug: 'gym-floor', name: 'Gym Floor', visitors: '24K weekly visitors', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=180&q=80', copy: 'The broad front page lane for lifting, routines, equipment, and everyday training questions.', topics: ['training'] },

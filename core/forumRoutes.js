@@ -5,7 +5,7 @@ const db = require('./db');
 
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.FORUM_MAX_BODY_BYTES || 1_500_000));
 const FORUM_DATA_PATH = path.join(process.cwd(), 'data', 'forum-posts.json');
-const DEFAULT_FORUM_IMAGE = 'https://odeology.up.railway.app/assets/images/exercises/muscle_arms.svg';
+const DEFAULT_FORUM_IMAGE = 'https://STRYVE.up.railway.app/assets/images/exercises/muscle_arms.svg';
 
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
@@ -245,7 +245,7 @@ function formatForumPost(row) {
     body: row.body,
     category: row.category,
     scope: row.category,
-    community: 'r/odeology_forum',
+    community: 'r/STRYVEforum',
     author: row.username || row.display_name || 'member',
     postType: 'personal',
     format: row.image_url ? 'image' : 'text',
@@ -343,10 +343,10 @@ function buildForumPostHtml(post, req) {
   const baseUrl = canonicalBaseUrl(req);
   const postUrl = `${baseUrl}/forum/${encodeURIComponent(post.slug)}`;
   const imageUrl = post.imageUrl || DEFAULT_FORUM_IMAGE;
-  const description = truncate(post.body || post.title || '', 160) || 'Forum discussion on odeology_.';
-  const pageTitle = `${post.title} | odeology_ Forum`;
-  const author = post.author || 'odeology_member';
-  const community = post.community || 'r/odeology_forum';
+  const description = truncate(post.body || post.title || '', 160) || 'Forum discussion on STRYVE.';
+  const pageTitle = `${post.title} | STRYVE Forum`;
+  const author = post.author || 'STRYVEmember';
+  const community = post.community || 'r/STRYVEforum';
   const ageLabel = formatRelativeAge(post.ageMinutes);
   const categoryLabel = String(post.category || 'training');
   const imageMarkup = post.imageUrl
@@ -443,7 +443,7 @@ function buildForumPostHtml(post, req) {
       </div>
       <section class="section">
         <h2>Forum Thread</h2>
-        <p>This is a standalone forum post page for indexing, sharing, and direct linking inside odeology_.</p>
+        <p>This is a standalone forum post page for indexing, sharing, and direct linking inside STRYVE.</p>
       </section>
     </article>
   </main>

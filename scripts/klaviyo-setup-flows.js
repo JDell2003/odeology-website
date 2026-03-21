@@ -36,7 +36,7 @@ const TARGET_EVENTS = [
 
 const FLOW_PREFIX = process.env.KLAVIYO_FLOW_NAME_PREFIX || 'ODE -';
 const TEMPLATE_NAME = String(process.env.KLAVIYO_FLOW_TEMPLATE_NAME || 'ODE - Event Email Template').trim();
-const DEFAULT_CTA_URL = String(process.env.KLAVIYO_FLOW_DEFAULT_CTA_URL || 'https://odeology.up.railway.app/').trim();
+const DEFAULT_CTA_URL = String(process.env.KLAVIYO_FLOW_DEFAULT_CTA_URL || 'https://STRYVE.up.railway.app/').trim();
 
 function normalizeEmail(raw) {
   const email = String(raw || '').trim().toLowerCase();
@@ -149,7 +149,7 @@ async function getSenderDefaults() {
     const account = rows[0] || null;
     const ci = account?.attributes?.contact_information || {};
     const fromEmail = normalizeEmail(ci.default_sender_email || process.env.SUPPORT_EMAIL || process.env.ADMIN_EMAIL || '');
-    const fromLabel = String(ci.default_sender_name || process.env.KLAVIYO_FROM_LABEL || 'ODEOLOGY').trim().slice(0, 120) || 'ODEOLOGY';
+    const fromLabel = String(ci.default_sender_name || process.env.KLAVIYO_FROM_LABEL || 'STRYVE').trim().slice(0, 120) || 'STRYVE';
     if (!fromEmail) {
       throw new Error('No default sender email found in account. Configure a sender in Klaviyo account settings.');
     }
@@ -159,7 +159,7 @@ async function getSenderDefaults() {
     if (!envEmail) throw err;
     return {
       fromEmail: envEmail,
-      fromLabel: String(process.env.KLAVIYO_FROM_LABEL || 'ODEOLOGY').trim().slice(0, 120) || 'ODEOLOGY'
+      fromLabel: String(process.env.KLAVIYO_FROM_LABEL || 'STRYVE').trim().slice(0, 120) || 'STRYVE'
     };
   }
 }
@@ -177,23 +177,23 @@ function buildUniversalTemplateHtml() {
     '<head>',
     '  <meta charset="utf-8"/>',
     '  <meta name="viewport" content="width=device-width,initial-scale=1"/>',
-    '  <title>ODEOLOGY Update</title>',
+    '  <title>STRYVE Update</title>',
     '</head>',
     '<body style="margin:0;padding:0;background:#f5f6f8;font-family:Arial,sans-serif;color:#1f2937;">',
     '  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f5f6f8;padding:24px 10px;">',
     '    <tr>',
     '      <td align="center">',
     '        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">',
-    '          <tr><td style="padding:20px 24px;background:#111827;color:#f9fafb;font-size:22px;font-weight:700;letter-spacing:0.08em;">ODEOLOGY</td></tr>',
+    '          <tr><td style="padding:20px 24px;background:#111827;color:#f9fafb;font-size:22px;font-weight:700;letter-spacing:0.08em;">STRYVE</td></tr>',
     '          <tr>',
     '            <td style="padding:24px;">',
-    '              <div style="font-size:21px;line-height:1.3;font-weight:700;margin:0 0 12px 0;">{{ event.ode_email_subject|default:"ODEOLOGY update" }}</div>',
-    '              <div style="font-size:15px;line-height:1.45;color:#4b5563;margin:0 0 18px 0;">{{ event.ode_email_preheader|default:"You have a new update in ODEOLOGY." }}</div>',
-    '              <div style="font-size:15px;line-height:1.55;white-space:pre-line;color:#111827;margin:0 0 20px 0;">{{ event.ode_email_text|default:"Open ODEOLOGY to view your latest update." }}</div>',
+    '              <div style="font-size:21px;line-height:1.3;font-weight:700;margin:0 0 12px 0;">{{ event.ode_email_subject|default:"STRYVE update" }}</div>',
+    '              <div style="font-size:15px;line-height:1.45;color:#4b5563;margin:0 0 18px 0;">{{ event.ode_email_preheader|default:"You have a new update in STRYVE." }}</div>',
+    '              <div style="font-size:15px;line-height:1.55;white-space:pre-line;color:#111827;margin:0 0 20px 0;">{{ event.ode_email_text|default:"Open STRYVE to view your latest update." }}</div>',
     '              <table role="presentation" cellspacing="0" cellpadding="0" border="0">',
     '                <tr>',
     '                  <td style="background:#d38b2c;border-radius:8px;">',
-    `                    <a href="{{ event.ode_email_cta_url|default:"${DEFAULT_CTA_URL}" }}" style="display:inline-block;padding:12px 18px;color:#111827;font-size:15px;font-weight:700;text-decoration:none;">{{ event.ode_email_cta_label|default:"Open ODEOLOGY" }}</a>`,
+    `                    <a href="{{ event.ode_email_cta_url|default:"${DEFAULT_CTA_URL}" }}" style="display:inline-block;padding:12px 18px;color:#111827;font-size:15px;font-weight:700;text-decoration:none;">{{ event.ode_email_cta_label|default:"Open STRYVE" }}</a>`,
     '                  </td>',
     '                </tr>',
     '              </table>',
@@ -290,8 +290,8 @@ function buildFlowDefinitionForMetric({ metricId, templateId, fromEmail, fromLab
             reply_to_email: fromEmail,
             cc_email: null,
             bcc_email: null,
-            subject_line: '{{ event.ode_email_subject|default:"ODEOLOGY update" }}',
-            preview_text: '{{ event.ode_email_preheader|default:"You have a new ODEOLOGY update." }}',
+            subject_line: '{{ event.ode_email_subject|default:"STRYVE update" }}',
+            preview_text: '{{ event.ode_email_preheader|default:"You have a new STRYVE update." }}',
             template_id: String(templateId),
             smart_sending_enabled: true,
             transactional: false,

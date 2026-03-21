@@ -2289,7 +2289,7 @@ function setupNav() {
 
     // Normalize top-level nav labels across pages:
     // remove legacy tabs and ensure a single "Training" tab exists.
-    const legacyLabels = new Set(['how it works', 'how it works?', 'why odeology', 'why odeology?', 'pricing']);
+    const legacyLabels = new Set(['how it works', 'how it works?', 'why STRYVE', 'why STRYVE?', 'pricing']);
     let trainingLi = null;
     Array.from(navMenu.querySelectorAll('li')).forEach((li) => {
         const link = li.querySelector('a');
@@ -2439,7 +2439,7 @@ function initTrainingHandoffOneOnOne() {
     const render = (user) => {
         const signedIn = Boolean(user);
         if (signedIn) {
-            if (copyEl) copyEl.textContent = 'Thanks â€” youÃ¢â‚¬â„¢re all set. Stand by for a call within 24 hours.';
+            if (copyEl) copyEl.textContent = 'Thanks ? youÃ¢â‚¬â„¢re all set. Stand by for a call within 24 hours.';
             if (cta) {
                 cta.textContent = 'YouÃ¢â‚¬â„¢re signed in';
                 cta.setAttribute('disabled', 'true');
@@ -2659,7 +2659,7 @@ function showBudgetWarningModal(userProtein, maxProtein, weeklyBudget, tier) {
         const modalHtml = `
             <div class="budget-warning-modal" id="budget-warning-modal">
                 <div class="budget-warning-content">
-                    <h3>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Budget vs Protein Mismatch</h3>
+                    <h3>ÃƒÆ’Ã‚Â¢Ãƒ?Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Budget vs Protein Mismatch</h3>
                     <p class="warning-text">
                         Your protein target of <strong>${userProtein}g/day</strong> exceeds what's achievable 
                         with your <strong>$${weeklyBudget}/week</strong> budget.
@@ -2670,13 +2670,13 @@ function showBudgetWarningModal(userProtein, maxProtein, weeklyBudget, tier) {
                     </p>
                     <div class="warning-options">
                         <button class="btn btn-primary" id="budget-lower-protein">
-                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Lower protein to ${maxProtein}g
+                            ÃƒÆ’Ã‚Â¢Ãƒ?Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Lower protein to ${maxProtein}g
                         </button>
                         <button class="btn btn-secondary" id="budget-increase">
-                            ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° I'll increase my budget
+                            ÃƒÆ’Ã‚Â°Ãƒ?Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° I'll increase my budget
                         </button>
                         <button class="btn btn-warning" id="budget-continue-anyway">
-                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continue anyway (survival mode)
+                            ÃƒÆ’Ã‚Â¢Ãƒ?Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continue anyway (survival mode)
                         </button>
                     </div>
                 </div>
@@ -3708,7 +3708,7 @@ function buildSaltWaterHydrationNote({ goal, targets, profile, selections }) {
         type: 'hydration',
         title: 'Salt Water',
         recipe,
-        timing: '30Ã¢â‚¬â€œ60 minutes pre-workout OR with first meal',
+        timing: '30Ã¢â‚¬?60 minutes pre-workout OR with first meal',
         why: 'Cutting + sweating lowers sodium. Low sodium can make workouts feel weak, cause headaches, and increase cravings. This helps training performance and keeps pumps/energy more stable.',
         warning: 'If you have high blood pressure, kidney disease, or are on sodium-restricting meds, skip this unless your doctor says ok. This is for hydration/performance on a cut, not for fat loss.'
     };
@@ -7480,7 +7480,7 @@ function buildPlanHtml(res, selections) {
           <h1>Nutrition Simplified: Baseline Protocol</h1>
           <h2>Personalized output with your exact inputs and math trail.</h2>
         </div>
-        <span class="pill">odeology_ &#8226; Baseline</span>
+        <span class="pill">STRYVE &#8226; Baseline</span>
       </div>
 
       <div class="section">
@@ -7518,7 +7518,7 @@ function buildPlanHtml(res, selections) {
         <div class="macro-note">
           <p>${res.note || 'This is a starting estimate; track the scale for confirmation.'}</p>
           <p>Maintenance estimate: ${res.maintenanceCalories?.toLocaleString() || '—'} kcal (baseline ${res.baselineCalories?.toLocaleString() || '—'} + workout ${res.workoutNetKcalPerDay?.toLocaleString() || '—'} kcal/day, factor ${res.maintenanceFactor?.toFixed(2) || '—'})</p>
-          <p>Adjustment reasoning: ${res.goalReasoning || 'â€”'}</p>
+          <p>Adjustment reasoning: ${res.goalReasoning || '?'}</p>
           ${(res.warnings || []).map(w => `<p class="macro-warning warning">${w}</p>`).join('') || ''}
           ${(res.supplements || []).length ? `<p class="macro-warning supplement">Supplements flagged: ${res.supplements.join(', ')}</p>` : ''}
         </div>
@@ -7716,7 +7716,7 @@ const getContainerInfo = (item) => {
     // Extract size from product name if available
     let displaySize = null;
     const name = String(item.name || '');
-    const sizeMatch = name.match(/(\d+[\.\d]*)\s*[-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ]\s*(\d+[\.\d]*)\s*(lbs?|oz|g|kg)/i);
+    const sizeMatch = name.match(/(\d+[\.\d]*)\s*[-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…?]\s*(\d+[\.\d]*)\s*(lbs?|oz|g|kg)/i);
     if (sizeMatch) {
         displaySize = `${sizeMatch[1]}-${sizeMatch[2]} ${sizeMatch[3]}`;
     } else {
@@ -7795,13 +7795,13 @@ const buildWorkoutPlan = (selection, prefs) => {
     const goalNote = goal === 'CUT'
         ? 'Keep rest tight, finish with light conditioning.'
         : goal === 'BULK'
-            ? 'Push volume and keep rest 90ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ150s on compounds.'
+            ? 'Push volume and keep rest 90ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…?150s on compounds.'
             : goal === 'STRENGTH'
                 ? 'Prioritize heavy sets and long rest.'
                 : 'Balance load and density.';
 
     return {
-        summary: `${days} days/week ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${style.replace('_', ' ').toLowerCase()} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${goal.toLowerCase()}`,
+        summary: `${days} days/week ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? ${style.replace('_', ' ').toLowerCase()} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? ${goal.toLowerCase()}`,
         notes: [timingNote, goalNote],
         days: planDays
     };
@@ -8176,7 +8176,7 @@ function setupBuilderModal() {
     const readText = (id) => {
         const el = document.getElementById(id);
         const t = (el?.textContent || '').trim();
-        return t && t !== 'â€”' ? t : null;
+        return t && t !== '?' ? t : null;
     };
 
     const scrollToResourcesAndGlow = () => {
@@ -8454,7 +8454,7 @@ function setupGetStartedIntake() {
 	        if (step2Next) step2Next.disabled = needsExecutionStyle ? !hasStyle : true;
 	        if (submitBtn) submitBtn.disabled = false;
 
-	        if (trust) trust.textContent = 'This just controls what we show you â€” nothing is locked.';
+	        if (trust) trust.textContent = 'This just controls what we show you ? nothing is locked.';
 
 	        const subhead = form.closest('.offer-save-card')?.querySelector('.intake-subhead');
 	        if (subhead) subhead.textContent = `${needsExecutionStyle ? '3' : '2'} questions. Takes about 30 seconds.`;
@@ -9159,7 +9159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         runIdle(setupShareFlowGlobalDebug, 1000);
         runIdle(setupFormFieldAccessibilityGuard, 1600);
         runIdle(initTrainingHandoffOneOnOne, 1800);
-        console.log('odeology_ site initialized');
+        console.log('STRYVE site initialized');
         return;
     }
 
@@ -9193,7 +9193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupProgressPhotos();
     setupOnboardingTour();
 
-    console.log('odeology_ site initialized');
+    console.log('STRYVE site initialized');
 });
 
 function ensureBasicCheckinModal() {
@@ -11482,7 +11482,7 @@ function setupProgressPhotos() {
 
         const fmt = (iso) => {
             const d = new Date(`${String(iso).slice(0, 10)}T00:00:00`);
-            if (Number.isNaN(d.getTime())) return String(iso || 'â€”');
+            if (Number.isNaN(d.getTime())) return String(iso || '?');
             return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         };
 
@@ -12950,8 +12950,8 @@ function initAuthUi() {
         const uname = String(user?.username || '').trim().toLowerCase();
         const dname = String(user?.displayName || '').trim().toLowerCase();
         if (user?.isOwner) return true;
-        return ['odeology_', 'odeology', 'odeology_owner', 'jason'].includes(uname)
-            || ['odeology_', 'odeology'].includes(dname);
+        return ['STRYVE', 'STRYVE', 'STRYVEowner', 'jason'].includes(uname)
+            || ['STRYVE', 'STRYVE'].includes(dname);
     };
 
     const getImpersonation = (meta) => {
@@ -15839,7 +15839,7 @@ function setupForumPreloaderNavigation() {
         overlay.className = 'preloader';
         overlay.id = 'preloader';
         overlay.innerHTML = `
-            <div class="preloader-word" id="preloader-word">odeology_<span class="brand-dot"></span></div>
+            <div class="preloader-word" id="preloader-word">STRYVE<span class="brand-dot"></span></div>
             <div class="preloader-bar"><div class="fill"></div></div>
         `;
         document.body.appendChild(overlay);
@@ -16184,7 +16184,7 @@ function setupOnboardingTour() {
                     key: 'welcome',
                     url: 'index.html',
                     selector: '.navbar',
-                    title: 'Welcome to ODEOLOGY',
+                    title: 'Welcome to STRYVE',
                     body: 'Fast tour mode is on. Next jumps page-to-page quickly and shows the real core elements for plan, training, progress, and messaging.'
                 },
                 {
@@ -17474,7 +17474,7 @@ function setupCustomFoodsModal() {
                         <div class="food-source-sub">${escapeHtml(store)}</div>
                     </div>
                     <div class="food-source-actions">
-                        <button class="food-source-trash" type="button" data-custom-food-del="${row.id}" aria-label="Delete">ÃƒÂ°Ã…Â¸â€”Ã¢â‚¬Ëœ</button>
+                        <button class="food-source-trash" type="button" data-custom-food-del="${row.id}" aria-label="Delete">ÃƒÂ°Ã…Â¸?Ã¢â‚¬Ëœ</button>
                     </div>
                 </div>
             `;
@@ -18878,7 +18878,7 @@ function setupGroceryFinalPage() {
                 ],
                 lines: [
                     `**Calories target:** [[${Math.round(cals)} kcal/day]] (kept fixed for this tier).`,
-                    `**Macros:** Protein [[${Math.round(bestProtein)}g]] Â· Fat [[${Math.round(bestFat)}g]] Â· Carbs [[${Math.round(bestCarbs)}g]].`,
+                    `**Macros:** Protein [[${Math.round(bestProtein)}g]] ? Fat [[${Math.round(bestFat)}g]] ? Carbs [[${Math.round(bestCarbs)}g]].`,
                     `**Cost simulation used:** planner builds daily servings per food, computes [[days per container]], then applies the same [[30-day normalized inventory model]] used on the final grocery page.`,
                     `**Projected monthly groceries:** [[${formatMoney(optimalMonthly)}]] (includes estimated tax).`,
                     `**What this usually feels like:** best recovery, strongest training consistency, best performance.`
@@ -18899,7 +18899,7 @@ function setupGroceryFinalPage() {
                         : (isRecompGoal
                             ? `**Protein rule:** Balanced Recomp uses [[~1.00 x basis]] protein (clamp [[0.90-1.10 x basis]]).`
                             : `**Protein rule:** keep at least [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}), then use about [[92% of Best protein]] when that is higher.`),
-                    `**Balanced macros:** Protein [[${Math.round(balancedProtein)}g]] Â· Fat [[${Math.round(balancedFat)}g]] Â· Carbs [[${Math.round(balancedCarbs)}g]].`,
+                    `**Balanced macros:** Protein [[${Math.round(balancedProtein)}g]] ? Fat [[${Math.round(balancedFat)}g]] ? Carbs [[${Math.round(balancedCarbs)}g]].`,
                     isBuildLikeGoal
                         ? `**Fat rule:** build uses calorie-based fat targets: [[Best ~30%]], [[Balanced ~27%]], [[Minimum ~25%]], with a [[22% floor]] and [[35% calorie cap]].`
                         : (isRecompGoal
@@ -18924,7 +18924,7 @@ function setupGroceryFinalPage() {
                         : (isRecompGoal
                             ? `**Protein rule:** Minimum Effective Recomp uses about [[0.85 x basis]] protein (clamped near [[0.85-0.95 x basis]]).`
                             : `**Protein rule:** use minimum protein = [[${Math.round(proteinFloor)}g]] (0.75 x ${goalWeightExplain}).`),
-                    `**Minimum Effective macros:** Protein [[${Math.round(minimumProtein)}g]] Â· Fat [[${Math.round(minimumFat)}g]] Â· Carbs [[${Math.round(minimumCarbs)}g]].`,
+                    `**Minimum Effective macros:** Protein [[${Math.round(minimumProtein)}g]] ? Fat [[${Math.round(minimumFat)}g]] ? Carbs [[${Math.round(minimumCarbs)}g]].`,
                     isBuildLikeGoal
                         ? `**Fat rule:** build uses calorie-based fat targets: [[Best ~30%]], [[Balanced ~27%]], [[Minimum ~25%]], with a [[22% floor]] and [[35% calorie cap]].`
                         : (isRecompGoal
@@ -19638,7 +19638,7 @@ function setupGroceryFinalPage() {
                         <div class="food-source-sub">${escapeHtml(String(f.store || ''))}</div>
                     </div>
                     <div class="food-source-actions">
-                        <button class="food-source-trash" type="button" data-food-custom-del="${escapeHtml(row.id)}" aria-label="Delete">ÃƒÂ°Ã…Â¸â€”Ã¢â‚¬Ëœ</button>
+                        <button class="food-source-trash" type="button" data-food-custom-del="${escapeHtml(row.id)}" aria-label="Delete">ÃƒÂ°Ã…Â¸?Ã¢â‚¬Ëœ</button>
                     </div>
                 </div>
             `);
@@ -20042,7 +20042,7 @@ function setupGroceryFinalPage() {
             const value = Number(btn?.dataset?.budget || 0);
             const lowFromData = Number(btn?.dataset?.budgetLow);
             const highFromData = Number(btn?.dataset?.budgetHigh);
-            const rangeMatch = sub.match(/\$?\s*([\d,]+)\s*[-â€“â€”]\s*\$?\s*([\d,]+)/);
+            const rangeMatch = sub.match(/\$?\s*([\d,]+)\s*[-??]\s*\$?\s*([\d,]+)/);
             const lowParsed = rangeMatch ? Number(String(rangeMatch[1]).replace(/,/g, '')) : 0;
             const highParsed = rangeMatch ? Number(String(rangeMatch[2]).replace(/,/g, '')) : 0;
             const low = Number.isFinite(lowFromData) && lowFromData > 0 ? lowFromData : lowParsed;
@@ -20272,7 +20272,7 @@ function setupGroceryFinalPage() {
             userProteinTarget
         });
         
-        console.group('%cÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° BUDGET VALIDATION', 'font-size: 14px; font-weight: bold; color: #f59e0b');
+        console.group('%cÃƒÆ’Ã‚Â°Ãƒ?Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â° BUDGET VALIDATION', 'font-size: 14px; font-weight: bold; color: #f59e0b');
         console.log(`Weekly budget: $${weeklyBudget}`);
         console.log(`Budget tier: ${budgetTier.toUpperCase()}`);
         console.log(`Max achievable protein: ${maxAchievableProtein}g/day`);
@@ -20282,7 +20282,7 @@ function setupGroceryFinalPage() {
         
         // Check if user's protein target exceeds what's achievable with budget
         if (userProteinTarget > maxAchievableProtein) {
-            console.warn(`ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â BUDGET MISMATCH: Protein target ${userProteinTarget}g exceeds max achievable ${maxAchievableProtein}g`);
+            console.warn(`ÃƒÆ’Ã‚Â¢Ãƒ?Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â BUDGET MISMATCH: Protein target ${userProteinTarget}g exceeds max achievable ${maxAchievableProtein}g`);
             
             // Show budget warning modal and wait for user decision
             const decision = await showBudgetWarningModal(userProteinTarget, maxAchievableProtein, weeklyBudget, budgetTier);
@@ -20291,7 +20291,7 @@ function setupGroceryFinalPage() {
                 // Update macros with lowered protein
                 macros.proteinG = decision.newProtein;
                 prefs.macros.proteinG = decision.newProtein;
-                console.log(`ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Protein target lowered to ${decision.newProtein}g`);
+                console.log(`ÃƒÆ’Ã‚Â¢Ãƒ?Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Protein target lowered to ${decision.newProtein}g`);
             } else if (decision.action === 'increase-budget') {
                 // User wants to go back and increase budget - don't proceed
                 console.log('User chose to increase budget - staying on form');
@@ -20299,7 +20299,7 @@ function setupGroceryFinalPage() {
             } else if (decision.action === 'continue-survival') {
                 // Force survival tier rules
                 prefs.budgetTier = 'survival';
-                console.log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continuing with survival tier rules');
+                console.log('ÃƒÆ’Ã‚Â¢Ãƒ?Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Continuing with survival tier rules');
             }
         }
         
@@ -21694,7 +21694,7 @@ async function setupGroceryPlanPage() {
         const selectedValue = Number(selected?.value || 0);
         const hasSelectedValue = Number.isFinite(selectedValue) && selectedValue > 0;
         if (mealBudgetInlineEl) {
-            mealBudgetInlineEl.textContent = hasSelectedValue ? formatCurrency(selectedValue) : 'â€”';
+            mealBudgetInlineEl.textContent = hasSelectedValue ? formatCurrency(selectedValue) : '?';
         }
         updatePlanBudgetStatusBadge({
             budgetOverride: hasSelectedValue ? selectedValue : null
@@ -22092,7 +22092,7 @@ async function setupGroceryPlanPage() {
         const total = Number(monthlyTotalWithTax);
         planBudgetForecastMainEl.textContent = Number.isFinite(total) && total > 0
             ? `Current post-tax price: ${formatCurrency(total)}/month.`
-            : 'Current post-tax price: â€”/month.';
+            : 'Current post-tax price: ?/month.';
     };
     const formatPlanFreqDownLabel = (freq) => {
         if (freq === '5-6') return 'Decrease workouts per week (5-6 -> 3-4)';
@@ -23313,7 +23313,7 @@ async function setupGroceryPlanPage() {
                 if (mealGrid) {
                     mealGrid.innerHTML = `
                         <div class="upgrade-message">
-                            <h4>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Cannot Generate Plan</h4>
+                            <h4>ÃƒÆ’Ã‚Â¢Ãƒ?Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Cannot Generate Plan</h4>
                             <p>With the foods included in the free plan, we cannot fully match your macros.</p>
                         </div>
                     `;
@@ -24713,7 +24713,7 @@ async function setupGroceryPlanPage() {
                 microActualEls[key] = document.getElementById(`actual-${microIdMap[key]}`);
             });
             const formatMicroProjected = (cfg) => {
-                if (!cfg) return 'â€”';
+                if (!cfg) return '?';
                 if (cfg.trackedOnly || String(cfg.goalType || '').toUpperCase() === 'TRACKED') {
                     const capText = Number.isFinite(cfg.ul) ? `Danger limit ${cfg.ul}${cfg.unit}` : 'Danger limit n/a';
                     return `Tracked intake (${cfg.unit}) | ${capText}`;
@@ -24837,7 +24837,7 @@ async function setupGroceryPlanPage() {
             };
             const formatMicroActual = (value, unit, isPartial = false) => {
                 const num = Number(value);
-                if (!Number.isFinite(num)) return 'â€”';
+                if (!Number.isFinite(num)) return '?';
                 const abs = Math.abs(num);
                 let digits = 0;
                 if (unit === 'g') digits = abs < 10 ? 1 : 0;
@@ -24938,9 +24938,9 @@ async function setupGroceryPlanPage() {
                 }
                 if (microActualEls[key]) {
                     const raw = microActuals[key];
-                    const hasValue = raw && raw !== '-' && raw !== 'â€”';
+                    const hasValue = raw && raw !== '-' && raw !== '?';
                     if (!hasValue) {
-                        microActualEls[key].textContent = 'â€”';
+                        microActualEls[key].textContent = '?';
                         applyMicroStatus(microActualEls[key], 'PENDING');
                         return;
                     }
@@ -29658,7 +29658,7 @@ async function setupGroceryPlanPage() {
 
         const listNote = document.getElementById('grocery-list-note');
         if (listNote && Number.isFinite(weeklyTotal)) {
-            listNote.textContent = `Estimated weekly: ${formatCurrency(weeklyTotal)} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· monthly: ${formatCurrency(monthlyTotal)}.`;
+            listNote.textContent = `Estimated weekly: ${formatCurrency(weeklyTotal)} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? monthly: ${formatCurrency(monthlyTotal)}.`;
         }
 
         // Update budget breakdown fields
@@ -30321,7 +30321,7 @@ async function setupGroceryPlanPage() {
                     const monthlyCost = getMonthlyCostForChoice(item, choice);
                     const priceText = Number.isFinite(monthlyCost) ? `${formatCurrency(monthlyCost)}/mo` : '-';
                     const name = choice?.name || item.query || item.name;
-                    return `<option value="${idx}" ${idx === currentIdx ? 'selected' : ''}>${name} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${priceText}</option>`;
+                    return `<option value="${idx}" ${idx === currentIdx ? 'selected' : ''}>${name} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? ${priceText}</option>`;
                 }).join('');
                 const currentChoice = choices[currentIdx] || choices[0] || null;
                 const currentCost = getMonthlyCostForChoice(item, currentChoice);
@@ -30518,7 +30518,7 @@ async function setupGroceryPlanPage() {
             const titleText = sortedEvents.map(event => {
                 const statusText = event.status === 'buy' ? `BUY (${event.price})` : (event.status === 'low' ? 'LOW' : 'OK');
                 const remainingValue = Number.isFinite(event.displayRemaining) ? event.displayRemaining : event.remaining;
-                return `${event.name} ${EM_DASH} ${remainingValue.toFixed(2)} servings left ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${statusText}`;
+                return `${event.name} ${EM_DASH} ${remainingValue.toFixed(2)} servings left ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? ${statusText}`;
             }).join('\n');
 
             cells.push(`
@@ -30765,7 +30765,7 @@ async function setupGroceryPlanPage() {
                                 }
                                 const badgeClass = event.status === 'buy' || event.status === 'expired' ? 'buy' : (event.status === 'low' ? 'low' : '');
                                 const badgeLabel = event.status === 'expired' ? 'Expired' : (event.status === 'buy' ? 'Buy today' : (event.status === 'low' ? 'Low' : 'OK'));
-                                const priceText = event.status === 'buy' || event.status === 'expired' ? ` ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${event.price}` : '';
+                                const priceText = event.status === 'buy' || event.status === 'expired' ? ` ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚? ${event.price}` : '';
                                 return `
                                     <div class="calendar-detail-item">
                                         <div class="calendar-detail-name">${event.name}</div>

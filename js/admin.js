@@ -28,7 +28,7 @@ async function api(path, opts = {}) {
 
 function fmtDate(value) {
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return 'â€”';
+  if (Number.isNaN(d.getTime())) return '?';
   return d.toLocaleString();
 }
 
@@ -70,10 +70,10 @@ function describeEvent(ev) {
   if (name === 'blueprint_click') {
     const action = String(props?.action || '').trim();
     const map = {
-      macros_without_overspending: 'Clicked â€œMacros without overspendingâ€',
-      workout_plan: 'Clicked â€œWorkout planâ€',
-      supplements_store: 'Clicked â€œSupplements â†’ Storeâ€',
-      self_paced_training: 'Clicked â€œSelf-Paced Coachingâ€'
+      macros_without_overspending: 'Clicked ?Macros without overspending?',
+      workout_plan: 'Clicked ?Workout plan?',
+      supplements_store: 'Clicked ?Supplements ? Store?',
+      self_paced_training: 'Clicked ?Self-Paced Coaching?'
     };
     return map[action] || `Blueprint click (${action || 'unknown'})`;
   }
@@ -221,7 +221,7 @@ function setActiveTab(tab) {
 }
 
 async function refresh() {
-  setStatus('Loadingâ€¦');
+  setStatus('Loading?');
   const itemsEl = qs('#admin-items');
   itemsEl.innerHTML = '';
   currentListItems = [];
@@ -349,7 +349,7 @@ async function refresh() {
     currentListItems = (json.users || []).map((u) => ({ id: u.id }));
     (json.users || []).forEach((u) => {
       const title = u.display_name || u.username || u.email || u.phone || u.id;
-      const subtitle = [u.username, u.email, u.phone].filter(Boolean).join(' â€¢ ');
+      const subtitle = [u.username, u.email, u.phone].filter(Boolean).join(' ? ');
       const row = el('div', { class: `admin-item ${selectedId === u.id ? 'active' : ''}` }, [
         el('label', { class: 'admin-item-check' }, [
           el('input', {
@@ -373,7 +373,7 @@ async function refresh() {
           },
           [
             el('div', { class: 'admin-item-title' }, title),
-            el('div', { class: 'admin-item-sub' }, subtitle || 'â€”'),
+            el('div', { class: 'admin-item-sub' }, subtitle || '?'),
             el('div', { class: 'admin-item-meta' }, `Last seen: ${fmtDate(u.last_seen)}`)
           ]
         ),
@@ -411,8 +411,8 @@ async function refresh() {
 	      const title = o.title || o.id;
 	      const amount = Number.isFinite(Number(o.amount_cents))
 	        ? `$${(Number(o.amount_cents) / 100).toFixed(2)} ${String(o.currency || '').toUpperCase()}`
-	        : 'â€”';
-	      const subtitle = [o.email, o.phone].filter(Boolean).join(' â€¢ ') || 'â€”';
+	        : '?';
+	      const subtitle = [o.email, o.phone].filter(Boolean).join(' ? ') || '?';
 	      const row = el('div', { class: `admin-item ${selectedId === o.id ? 'active' : ''}` }, [
 	        el('button', {
 	          class: 'admin-item-main',
@@ -426,7 +426,7 @@ async function refresh() {
 	        }, [
 	          el('div', { class: 'admin-item-title' }, title),
 	          el('div', { class: 'admin-item-sub' }, subtitle),
-	          el('div', { class: 'admin-item-meta' }, `${String(o.status || 'paid').toUpperCase()} â€¢ ${amount}`)
+	          el('div', { class: 'admin-item-meta' }, `${String(o.status || 'paid').toUpperCase()} ? ${amount}`)
 	        ])
 	      ]);
 	      itemsEl.appendChild(row);
@@ -507,7 +507,7 @@ async function refresh() {
       if (g.inferred_user_name) bits.push(`Possible match: ${g.inferred_user_name}`);
       else if (g.inferred_user_id) bits.push(`Possible match: ${g.inferred_user_id}`);
       if (!bits.length) bits.push('Unmatched guest');
-      const subtitle = bits.join(' â€¢ ');
+      const subtitle = bits.join(' ? ');
       const row = el('div', { class: `admin-item ${selectedId === g.id ? 'active' : ''}` }, [
         el('label', { class: 'admin-item-check' }, [
           el('input', {
@@ -559,7 +559,7 @@ async function refresh() {
   (json.leads || []).forEach((l) => {
     const title = [l.first_name, l.last_name].filter(Boolean).join(' ') || l.email || l.phone || l.id;
     const wants = Array.isArray(l.wants) ? l.wants.slice(0, 4).join(', ') : '';
-    const subtitle = [l.email, l.phone].filter(Boolean).join(' â€¢ ');
+    const subtitle = [l.email, l.phone].filter(Boolean).join(' ? ');
     const row = el('div', { class: `admin-item ${selectedId === l.id ? 'active' : ''}` }, [
       el('label', { class: 'admin-item-check' }, [
         el('input', {
@@ -583,8 +583,8 @@ async function refresh() {
         },
         [
           el('div', { class: 'admin-item-title' }, title),
-          el('div', { class: 'admin-item-sub' }, subtitle || 'â€”'),
-          el('div', { class: 'admin-item-meta' }, `${(l.status || 'new').toUpperCase()} â€¢ ${wants}`)
+          el('div', { class: 'admin-item-sub' }, subtitle || '?'),
+          el('div', { class: 'admin-item-meta' }, `${(l.status || 'new').toUpperCase()} ? ${wants}`)
         ]
       ),
       iconButton('Delete lead', async (e) => {
@@ -635,7 +635,7 @@ async function loadMessage(messageId) {
 
 async function loadAccount(userId) {
   const body = qs('#admin-detail-body');
-  body.innerHTML = '<p class="admin-muted">Loadingâ€¦</p>';
+  body.innerHTML = '<p class="admin-muted">Loading?</p>';
   const { ok, json } = await api(`/api/admin/users/${encodeURIComponent(userId)}`);
   if (!ok) return (body.innerHTML = '<p class="admin-muted">Failed to load.</p>');
 
@@ -662,13 +662,13 @@ async function loadAccount(userId) {
   body.innerHTML = '';
   body.appendChild(el('div', { class: 'admin-kv' }, [
     el('div', { class: 'k' }, 'Name'),
-    el('div', { class: 'v' }, u.display_name || 'â€”'),
+    el('div', { class: 'v' }, u.display_name || '?'),
     el('div', { class: 'k' }, 'Username'),
-    el('div', { class: 'v' }, u.username || 'â€”'),
+    el('div', { class: 'v' }, u.username || '?'),
     el('div', { class: 'k' }, 'Email'),
-    el('div', { class: 'v' }, u.email || 'â€”'),
+    el('div', { class: 'v' }, u.email || '?'),
     el('div', { class: 'k' }, 'Phone'),
-    el('div', { class: 'v' }, u.phone || 'â€”'),
+    el('div', { class: 'v' }, u.phone || '?'),
     el('div', { class: 'k' }, 'Created'),
     el('div', { class: 'v' }, fmtDate(u.created_at)),
     el('div', { class: 'k' }, 'Last login'),
@@ -716,7 +716,7 @@ async function loadAccount(userId) {
 
 async function loadLead(leadId) {
   const body = qs('#admin-detail-body');
-  body.innerHTML = '<p class="admin-muted">Loadingâ€¦</p>';
+  body.innerHTML = '<p class="admin-muted">Loading?</p>';
   const { ok, json } = await api(`/api/admin/leads/${encodeURIComponent(leadId)}`);
   if (!ok) return (body.innerHTML = '<p class="admin-muted">Failed to load.</p>');
 
@@ -783,17 +783,17 @@ async function loadLead(leadId) {
   body.innerHTML = '';
   body.appendChild(el('div', { class: 'admin-kv' }, [
     el('div', { class: 'k' }, 'Name'),
-    el('div', { class: 'v' }, [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'â€”'),
+    el('div', { class: 'v' }, [lead.first_name, lead.last_name].filter(Boolean).join(' ') || '?'),
     el('div', { class: 'k' }, 'Email'),
-    el('div', { class: 'v' }, lead.email || 'â€”'),
+    el('div', { class: 'v' }, lead.email || '?'),
     el('div', { class: 'k' }, 'Phone'),
-    el('div', { class: 'v' }, lead.phone || 'â€”'),
+    el('div', { class: 'v' }, lead.phone || '?'),
     el('div', { class: 'k' }, 'Created'),
     el('div', { class: 'v' }, fmtDate(lead.created_at)),
     el('div', { class: 'k' }, 'Status'),
     el('div', { class: 'v' }, statusSel),
     el('div', { class: 'k' }, 'Wants'),
-    el('div', { class: 'v' }, wantsHuman.length ? wantsHuman.join(', ') : (Array.isArray(lead.wants) ? lead.wants.join(', ') : 'â€”'))
+    el('div', { class: 'v' }, wantsHuman.length ? wantsHuman.join(', ') : (Array.isArray(lead.wants) ? lead.wants.join(', ') : '?'))
   ]));
 
   body.appendChild(el('h3', { class: 'admin-h3' }, 'Notes'));
@@ -809,7 +809,7 @@ async function loadLead(leadId) {
 
 async function loadOrder(orderId) {
   const body = qs('#admin-detail-body');
-  body.innerHTML = '<p class="admin-muted">Loadingâ€¦</p>';
+  body.innerHTML = '<p class="admin-muted">Loading?</p>';
   const { ok, json } = await api(`/api/admin/orders/${encodeURIComponent(orderId)}`);
   if (!ok) return (body.innerHTML = '<p class="admin-muted">Failed to load.</p>');
 
@@ -818,20 +818,20 @@ async function loadOrder(orderId) {
 
   const amount = Number.isFinite(Number(order.amount_cents))
     ? `$${(Number(order.amount_cents) / 100).toFixed(2)} ${String(order.currency || '').toUpperCase()}`
-    : 'â€”';
+    : '?';
 
   body.innerHTML = '';
   body.appendChild(el('div', { class: 'admin-kv' }, [
     el('div', { class: 'k' }, 'Title'),
-    el('div', { class: 'v' }, order.title || 'â€”'),
+    el('div', { class: 'v' }, order.title || '?'),
     el('div', { class: 'k' }, 'Status'),
     el('div', { class: 'v' }, String(order.status || 'paid')),
     el('div', { class: 'k' }, 'Amount'),
     el('div', { class: 'v' }, amount),
     el('div', { class: 'k' }, 'Email'),
-    el('div', { class: 'v' }, order.email || 'â€”'),
+    el('div', { class: 'v' }, order.email || '?'),
     el('div', { class: 'k' }, 'Phone'),
-    el('div', { class: 'v' }, order.phone || 'â€”'),
+    el('div', { class: 'v' }, order.phone || '?'),
     el('div', { class: 'k' }, 'Created'),
     el('div', { class: 'v' }, fmtDate(order.created_at)),
   ]));
@@ -847,7 +847,7 @@ async function loadOrder(orderId) {
 
 async function loadGuest(guestId) {
   const body = qs('#admin-detail-body');
-  body.innerHTML = '<p class="admin-muted">Loadingâ€¦</p>';
+  body.innerHTML = '<p class="admin-muted">Loading?</p>';
   const { ok, json } = await api(`/api/admin/guests/${encodeURIComponent(guestId)}`);
   if (!ok) return (body.innerHTML = '<p class="admin-muted">Failed to load.</p>');
 
@@ -877,7 +877,7 @@ async function loadGuest(guestId) {
     el('div', { class: 'k' }, 'Last seen'),
     el('div', { class: 'v' }, fmtDate(g.last_seen)),
     el('div', { class: 'k' }, 'Possible user'),
-    el('div', { class: 'v' }, g.inferred_user_name || g.inferred_user_id || 'â€”')
+    el('div', { class: 'v' }, g.inferred_user_name || g.inferred_user_id || '?')
   ]));
 
   body.appendChild(el('div', { class: 'admin-summary' }, [
@@ -896,13 +896,13 @@ async function loadGuest(guestId) {
     body.appendChild(el('h3', { class: 'admin-h3' }, 'Latest macros'));
     body.appendChild(el('div', { class: 'admin-kv' }, [
       el('div', { class: 'k' }, 'Calories'),
-      el('div', { class: 'v' }, p.calories ? String(p.calories) : 'â€”'),
+      el('div', { class: 'v' }, p.calories ? String(p.calories) : '?'),
       el('div', { class: 'k' }, 'Protein (g)'),
-      el('div', { class: 'v' }, p.proteinG ? String(p.proteinG) : 'â€”'),
+      el('div', { class: 'v' }, p.proteinG ? String(p.proteinG) : '?'),
       el('div', { class: 'k' }, 'Carbs (g)'),
-      el('div', { class: 'v' }, p.carbG ? String(p.carbG) : 'â€”'),
+      el('div', { class: 'v' }, p.carbG ? String(p.carbG) : '?'),
       el('div', { class: 'k' }, 'Fats (g)'),
-      el('div', { class: 'v' }, p.fatG ? String(p.fatG) : 'â€”')
+      el('div', { class: 'v' }, p.fatG ? String(p.fatG) : '?')
     ]));
   }
 
@@ -926,11 +926,11 @@ async function loadGuest(guestId) {
     body.appendChild(el('h3', { class: 'admin-h3' }, 'Grocery summary'));
     body.appendChild(el('div', { class: 'admin-kv' }, [
       el('div', { class: 'k' }, 'Avg weekly'),
-      el('div', { class: 'v' }, p.avgWeeklyCost ? `$${Number(p.avgWeeklyCost).toFixed(2)}` : 'â€”'),
+      el('div', { class: 'v' }, p.avgWeeklyCost ? `$${Number(p.avgWeeklyCost).toFixed(2)}` : '?'),
       el('div', { class: 'k' }, 'Avg monthly'),
-      el('div', { class: 'v' }, p.avgMonthlyCost ? `$${Number(p.avgMonthlyCost).toFixed(2)}` : 'â€”'),
+      el('div', { class: 'v' }, p.avgMonthlyCost ? `$${Number(p.avgMonthlyCost).toFixed(2)}` : '?'),
       el('div', { class: 'k' }, 'Budget delta'),
-      el('div', { class: 'v' }, p.budgetDelta === null || p.budgetDelta === undefined ? 'â€”' : `${Number(p.budgetDelta) >= 0 ? 'Under ' : 'Over '}$${Math.abs(Number(p.budgetDelta)).toFixed(2)}`)
+      el('div', { class: 'v' }, p.budgetDelta === null || p.budgetDelta === undefined ? '?' : `${Number(p.budgetDelta) >= 0 ? 'Under ' : 'Over '}$${Math.abs(Number(p.budgetDelta)).toFixed(2)}`)
     ]));
   }
 
@@ -954,12 +954,12 @@ async function loadGuest(guestId) {
     const formatLeadLine = (l) => {
       const who = [l.first_name, l.last_name].filter(Boolean).join(' ') || l.email || l.phone || l.id;
       const wants = Array.isArray(l.wants) ? l.wants.slice(0, 6).join(', ') : '';
-      return [who, l.source ? `source:${l.source}` : null, wants ? `wants:${wants}` : null].filter(Boolean).join(' â€¢ ');
+      return [who, l.source ? `source:${l.source}` : null, wants ? `wants:${wants}` : null].filter(Boolean).join(' ? ');
     };
     body.appendChild(el('div', { class: 'admin-events' }, leads.slice(0, 20).map((l) =>
       el('div', { class: 'admin-event' }, [
         el('div', { class: 'admin-event-name' }, formatLeadLine(l)),
-        el('div', { class: 'admin-event-meta' }, `${fmtDate(l.created_at)} â€¢ opt-in: ${l.email_optin ? 'yes' : 'no'}`)
+        el('div', { class: 'admin-event-meta' }, `${fmtDate(l.created_at)} ? opt-in: ${l.email_optin ? 'yes' : 'no'}`)
       ])
     )));
 
@@ -977,7 +977,7 @@ async function loadGuest(guestId) {
 
   const stored = Number(summary.eventsStored || eventsAll.length || 0);
   const pruned = Number(summary.eventsPruned || 0);
-  const recentTitle = pruned > 0 ? `Recent activity (showing ${stored} â€¢ pruned ${pruned})` : `Recent activity (showing ${stored})`;
+  const recentTitle = pruned > 0 ? `Recent activity (showing ${stored} ? pruned ${pruned})` : `Recent activity (showing ${stored})`;
   body.appendChild(el('h3', { class: 'admin-h3' }, recentTitle));
 
   body.appendChild(el('div', { class: 'admin-events' }, eventsAll.map((ev) =>

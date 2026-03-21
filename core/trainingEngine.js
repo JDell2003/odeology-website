@@ -760,19 +760,19 @@ function bodybuildingRules(experience) {
   const exp = normalizeExperience(experience);
   if (exp === 'beginner') {
     return {
-      structure: ['3â€“4 training days/week', 'Simple Upper/Lower or PPL', 'Fixed weekly structure'],
-      intensity: ['RPE cap â‰¤ 8', 'No failure training', 'No intensity techniques'],
-      volume: ['2â€“3 working sets/exercise', '4â€“5 exercises/session'],
-      progression: ['Hit top reps on all sets â†’ +2.5â€“5 lb next session', 'Otherwise keep load the same'],
-      deload: ['Every 6â€“8 weeks', 'Volume âˆ’40% â€¢ Load âˆ’10% â€¢ RPE cap â‰¤ 7']
+      structure: ['3?4 training days/week', 'Simple Upper/Lower or PPL', 'Fixed weekly structure'],
+      intensity: ['RPE cap ? 8', 'No failure training', 'No intensity techniques'],
+      volume: ['2?3 working sets/exercise', '4?5 exercises/session'],
+      progression: ['Hit top reps on all sets ? +2.5?5 lb next session', 'Otherwise keep load the same'],
+      deload: ['Every 6?8 weeks', 'Volume ?40% ? Load ?10% ? RPE cap ? 7']
     };
   }
   return {
-    structure: ['Asynchronous microcycle (6â€“10 days)', 'PPL + Arms/Weak points', 'Rest days autoregulated'],
-    intensity: ['Most sets RPE 8â€“9', 'Main lifts final set RPE 9â€“10', 'Failure only on machines/isolations (final set)'],
-    volume: ['2â€“4 working sets/exercise', '4â€“6 exercises/session', 'Max 1 intensity technique/exercise'],
-    progression: ['If performance â†‘ and recovery good â†’ +1 rep OR +2.5â€“5 lb', 'If stall + recovery good â†’ +1 set OR adjust rep target', 'If performance â†“ or recovery poor â†’ reduce volume or load'],
-    deload: ['Trigger: stall 2 exposures OR strength â†“ 2 sessions OR joint pain â†‘ OR RPE harder at same load', 'Deload 1 microcycle: Volume âˆ’40â€“50% â€¢ Load âˆ’10â€“15% â€¢ RPE cap â‰¤ 7']
+    structure: ['Asynchronous microcycle (6?10 days)', 'PPL + Arms/Weak points', 'Rest days autoregulated'],
+    intensity: ['Most sets RPE 8?9', 'Main lifts final set RPE 9?10', 'Failure only on machines/isolations (final set)'],
+    volume: ['2?4 working sets/exercise', '4?6 exercises/session', 'Max 1 intensity technique/exercise'],
+    progression: ['If performance â†‘ and recovery good ? +1 rep OR +2.5?5 lb', 'If stall + recovery good ? +1 set OR adjust rep target', 'If performance â†“ or recovery poor ? reduce volume or load'],
+    deload: ['Trigger: stall 2 exposures OR strength â†“ 2 sessions OR joint pain â†‘ OR RPE harder at same load', 'Deload 1 microcycle: Volume ?40?50% ? Load ?10?15% ? RPE cap ? 7']
   };
 }
 
@@ -818,7 +818,7 @@ function exerciseSubstitutions({ discipline, baseId }) {
     arms: ['Cable Curl', 'Rope Pushdown'],
     calf: ['Seated Calf Raise', 'Leg Press Calf Raise'],
     core: ['Machine Crunch', 'Weighted Cable Crunch'],
-    core2: ['Hanging Knee Raise', 'Captainâ€™s Chair Raise']
+    core2: ['Hanging Knee Raise', 'Captain?s Chair Raise']
   };
 
   return Array.isArray(map[b]) ? map[b] : [];
@@ -975,7 +975,6 @@ function chooseIncrementLb(exp, baseId, defaults, opts = {}) {
   const discipline = String(opts?.discipline || '').trim().toLowerCase();
   const elite = Boolean(opts?.elite);
   if (discipline === 'bodybuilding') {
-    if (elite) return 5;
     if (isArmBaseId(baseId)) return 5;
     if (isLowerBaseId(baseId) || isBackBaseId(baseId)) return 10;
     return 5;
@@ -3111,7 +3110,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '3111',
         coaching: {
-          progress: 'Form â†’ reps â†’ sets â†’ lower the incline (harder lever) â†’ load.',
+          progress: 'Form ? reps ? sets ? lower the incline (harder lever) ? load.',
           regress: 'If you cannot hit 5 clean reps, increase incline or use knees.'
         },
         prescription: rx(scaleSets(3), '6-12', restScheme.strength)
@@ -3125,7 +3124,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '2111',
         coaching: {
-          progress: 'Form â†’ reps â†’ sets â†’ load (small jumps).',
+          progress: 'Form ? reps ? sets ? load (small jumps).',
           regress: 'If reps drop below 5, remove load and rebuild reps.'
         },
         prescription: rx(scaleSets(4), '4-8', restScheme.strength)
@@ -3139,8 +3138,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '2111',
         coaching: {
-          progress: 'Form â†’ reps â†’ sets â†’ leverage (lean/ROM) before load.',
-          regress: 'If you canâ€™t hold positions for 3s, return to strict push-ups.'
+          progress: 'Form ? reps ? sets ? leverage (lean/ROM) before load.',
+          regress: 'If you can?t hold positions for 3s, return to strict push-ups.'
         },
         prescription: rx(scaleSets(4), '4-8', restScheme.strength)
       };
@@ -3184,7 +3183,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '3111',
         coaching: {
-          progress: 'Build strict 3Ã—8 before moving to parallel-bar dips.',
+          progress: 'Build strict 3?8 before moving to parallel-bar dips.',
           regress: 'Shorten ROM or add assistance if reps drop below 5.'
         },
         prescription: rx(scaleSets(3), '6-12', restScheme.strength)
@@ -3198,7 +3197,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '2111',
         coaching: {
-          progress: 'Reps â†’ sets â†’ load (small jumps).',
+          progress: 'Reps ? sets ? load (small jumps).',
           regress: 'If reps fall below 5, remove load.'
         },
         prescription: rx(scaleSets(4), '3-6', restScheme.strength)
@@ -3229,7 +3228,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: equip.bands ? '3111' : '5010',
         coaching: {
-          progress: 'Form â†’ reps. Reduce assistance over time until you can do 5 strict reps.',
+          progress: 'Form ? reps. Reduce assistance over time until you can do 5 strict reps.',
           regress: 'If you cannot control a 3s lower, use more assistance.'
         },
         prescription: rx(scaleSets(4), '3-6', restScheme.strength)
@@ -3243,8 +3242,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         block: 'strength',
         tempo: '2111',
         coaching: {
-          progress: 'Reps â†’ sets â†’ load (2.5â€“5 lb jumps).',
-          regress: 'If reps drop below 3â€“4, remove load and rebuild.'
+          progress: 'Reps ? sets ? load (2.5?5 lb jumps).',
+          regress: 'If reps drop below 3?4, remove load and rebuild.'
         },
         prescription: rx(scaleSets(4), '3-6', restScheme.strength)
       };
@@ -3258,7 +3257,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         tempo: '2111',
         coaching: {
           progress: 'Increase ROM and strictness before adding load.',
-          regress: 'If you canâ€™t get 5 reps, go back to strict pull-ups.'
+          regress: 'If you can?t get 5 reps, go back to strict pull-ups.'
         },
         prescription: rx(scaleSets(4), '4-8', restScheme.strength)
       };
@@ -3284,8 +3283,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
     block: 'assist',
     tempo: '3111',
     coaching: {
-      progress: 'Reps â†’ sets â†’ lever length (feet forward / lower rings).',
-      regress: 'Raise the bar/rings if you canâ€™t get 8 reps.'
+      progress: 'Reps ? sets ? lever length (feet forward / lower rings).',
+      regress: 'Raise the bar/rings if you can?t get 8 reps.'
     },
     prescription: rx(scaleSets(3), repScheme.assist, restScheme.assist)
   });
@@ -3301,8 +3300,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
       block: 'strength',
       tempo: '3111',
       coaching: {
-        progress: 'Form â†’ reps â†’ sets â†’ leverage before load.',
-        regress: 'If you canâ€™t control the bottom, reduce range or add support.'
+        progress: 'Form ? reps ? sets ? leverage before load.',
+        regress: 'If you can?t control the bottom, reduce range or add support.'
       },
       prescription: rx(scaleSets(4), exp === 'beginner' ? '8-12/leg' : '6-10/leg', restScheme.strength)
     };
@@ -3315,7 +3314,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
     block: 'assist',
     tempo: '3111',
     coaching: {
-      progress: 'Reps â†’ sets â†’ ROM before load.',
+      progress: 'Reps ? sets ? ROM before load.',
       regress: 'Shorten ROM if back rounds.'
     },
     prescription: rx(scaleSets(3), exp === 'beginner' ? '10-15' : repScheme.assist, restScheme.assist)
@@ -3331,8 +3330,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
       block: 'assist',
       tempo: 'isometric',
       coaching: {
-        progress: 'Time â†’ lever length. Build to 30â€“45s holds.',
-        regress: 'If you canâ€™t hold 3s, bend knees and tuck.'
+        progress: 'Time ? lever length. Build to 30?45s holds.',
+        regress: 'If you can?t hold 3s, bend knees and tuck.'
       },
       prescription: rx(scaleSets(3), '20-40s', 60)
     };
@@ -3340,13 +3339,13 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
 
   const enduranceBlock = () => ({
     baseId: 'endurance',
-    name: 'Optional Endurance: EMOM / Density (8â€“12 min)',
+    name: 'Optional Endurance: EMOM / Density (8?12 min)',
     kind: 'assist_cond',
     block: 'endurance',
     tempo: 'smooth',
     coaching: {
       progress: 'Increase density before adding difficulty.',
-      regress: 'If soreness persists, skip this block for 1â€“2 weeks.'
+      regress: 'If soreness persists, skip this block for 1?2 weeks.'
     },
     prescription: rx(1, '8-12m', 0)
   });
@@ -3366,8 +3365,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         qualifies: true,
         prescription: rx(5, hsHold >= 20 ? '20-40s' : '10-25s', restScheme.skill),
         coaching: {
-          progress: 'Quality holds â†’ longer holds â†’ harder variations before adding volume.',
-          regress: 'If you canâ€™t hold 3s with form, return to pike holds.'
+          progress: 'Quality holds ? longer holds ? harder variations before adding volume.',
+          regress: 'If you can?t hold 3s with form, return to pike holds.'
         }
       },
       {
@@ -3377,7 +3376,7 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         qualifies: Boolean(equip.bar || equip.rings),
         prescription: rx(4, (pullups >= 10 && dips >= 10) ? '2-4' : '3-5', restScheme.skill),
         coaching: {
-          progress: 'Pull height â†’ transition â†’ dip-out.',
+          progress: 'Pull height ? transition ? dip-out.',
           regress: 'If reps drop below 2, return to transition drills.'
         }
       },
@@ -3388,8 +3387,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         qualifies: true,
         prescription: rx(5, '10-25s', restScheme.skill),
         coaching: {
-          progress: 'Time â†’ extend one leg â†’ full L.',
-          regress: 'If you canâ€™t hold 3s, keep knees tucked.'
+          progress: 'Time ? extend one leg ? full L.',
+          regress: 'If you can?t hold 3s, keep knees tucked.'
         }
       },
       {
@@ -3399,8 +3398,8 @@ function buildCalisthenicsTemplate(daysPerWeek, baselines) {
         qualifies: Boolean(equip.bar || equip.rings),
         prescription: rx(5, pullups >= 8 ? '8-15s' : '6-10', restScheme.skill),
         coaching: {
-          progress: 'Hold time â†’ harder tuck â†’ one-leg â†’ straddle.',
-          regress: 'If you canâ€™t hold 3s, return to scap prep.'
+          progress: 'Hold time ? harder tuck ? one-leg ? straddle.',
+          regress: 'If you can?t hold 3s, return to scap prep.'
         }
       }
     ].filter((s) => s.qualifies);
@@ -4872,6 +4871,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       successStreak: 0,
       lastSuccessWeight: null,
       lastSuccessReps: null,
+      sameWeightNonProgressStreak: 0,
       technique: 'none'
     };
     return states[key];
@@ -4984,6 +4984,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     if (!hasNumbers || !repQualityOk) {
       st.regressStreak = Math.min(6, Number(st.regressStreak || 0) + 1);
       st.successStreak = 0;
+      st.sameWeightNonProgressStreak = 0;
       regressionsThisLog += 1;
       decisionsThisLog[baseId] = {
         type: 'none',
@@ -5003,6 +5004,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.regressStreak = 0;
       st.significantMissStreak = 0;
       st.successStreak = 0;
+      st.sameWeightNonProgressStreak = 0;
       st.technique = 'none';
       decisionsThisLog[baseId] = { type: 'deload', message: 'Deload week; progression paused.' };
       continue;
@@ -5017,11 +5019,13 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.significantMissStreak = 0;
       st.regressStreak = 0;
       st.stallWeeks = 0;
+      st.sameWeightNonProgressStreak = 0;
       st.technique = 'none';
       if (isBodybuilding) {
-        st.successStreak = Math.min(3, Number(st.successStreak || 0) + 1);
-        st.repTarget = Number.isFinite(repTarget) ? repTarget : st.repTarget;
-        decisionsThisLog[baseId] = { type: 'hold', message: 'Exceeded target; holding this load once to confirm.' };
+        st.successStreak = 0;
+        st.workingWeight = roundTo(actualW + inc, inc);
+        st.repTarget = repMid ?? repMin ?? repTarget;
+        decisionsThisLog[baseId] = { type: 'load', message: `PR beat; adding ${inc} lb next session.` };
         continue;
       }
 
@@ -5050,17 +5054,11 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.technique = 'none';
       st.stallWeeks = 0;
       if (isBodybuilding) {
-        st.successStreak = Math.min(3, Number(st.successStreak || 0) + 1);
-        if (st.successStreak >= 2) {
-          st.workingWeight = roundTo((Number.isFinite(st.workingWeight) ? st.workingWeight : actualW) + inc, inc);
-          st.repTarget = repMid ?? repMin ?? repTarget;
-          st.successStreak = 0;
-          decisionsThisLog[baseId] = { type: 'load', message: 'Confirmed target twice; adding weight next session.' };
-        } else {
-          st.workingWeight = Number.isFinite(st.workingWeight) ? st.workingWeight : actualW;
-          st.repTarget = Number.isFinite(repTarget) ? repTarget : st.repTarget;
-          decisionsThisLog[baseId] = { type: 'hold', message: 'Hit target; repeat same load once to confirm.' };
-        }
+        st.successStreak = 0;
+        st.sameWeightNonProgressStreak = 0;
+        st.workingWeight = roundTo((Number.isFinite(st.workingWeight) ? st.workingWeight : actualW) + inc, inc);
+        st.repTarget = repMid ?? repMin ?? repTarget;
+        decisionsThisLog[baseId] = { type: 'load', message: `Hit target; adding ${inc} lb next session.` };
         continue;
       }
 
@@ -5092,6 +5090,11 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       const nextReps = repMax != null ? Math.min(repMax, Math.max(repMin ?? 1, actualR + 1)) : (actualR + 1);
       st.repTarget = nextReps;
       st.stallWeeks = Math.min(6, Number(st.stallWeeks || 0) + 1);
+      if (isBodybuilding && actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
+        st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
+      } else {
+        st.sameWeightNonProgressStreak = 0;
+      }
       decisionsThisLog[baseId] = { type: 'reps', message: 'Slight miss; keep load and push reps next time.' };
       continue;
     }
@@ -5104,13 +5107,18 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.technique = 'none';
       st.workingWeight = Number.isFinite(st.workingWeight) ? st.workingWeight : targetW;
       st.stallWeeks = Math.min(6, Number(st.stallWeeks || 0) + 1);
+      if (isBodybuilding && actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
+        st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
+      } else {
+        st.sameWeightNonProgressStreak = 0;
+      }
 
       if (st.significantMissStreak >= 2) {
         const mult = 0.93; // 7% reset default inside 5-10%
         st.workingWeight = roundTo(st.workingWeight * mult, inc);
         st.repTarget = repMid ?? repTarget;
         st.significantMissStreak = 0;
-        decisionsThisLog[baseId] = { type: 'load', message: 'Missed significantly twice; reduce load 5â€“10% and reset reps to mid-range.' };
+        decisionsThisLog[baseId] = { type: 'load', message: 'Missed significantly twice; reduce load 5?10% and reset reps to mid-range.' };
       } else {
         st.repTarget = repMid ?? repTarget;
         decisionsThisLog[baseId] = { type: 'reps', message: 'Significant miss; keep load and retry with a mid-range rep target.' };
@@ -5121,6 +5129,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     // Unclassified: treat as regression and hold.
     st.regressStreak = Math.min(6, Number(st.regressStreak || 0) + 1);
     st.successStreak = 0;
+    st.sameWeightNonProgressStreak = 0;
     regressionsThisLog += 1;
     st.stallWeeks = Math.min(6, Number(st.stallWeeks || 0) + 1);
     decisionsThisLog[baseId] = { type: 'none', message: 'Performance did not meet target; holding load and reassessing next exposure.' };
@@ -5238,15 +5247,23 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   // Deload scheduling logic (all disciplines).
   let triggerDeload = false;
   if (discipline === 'bodybuilding' || discipline === 'powerlifting' || discipline === 'calisthenics') {
-    // Multiple lifts regressing in same logged workout.
-    if (regressionsThisLog >= 2) triggerDeload = true;
-    if (poorRecoveryFlag) triggerDeload = true;
+    if (discipline === 'bodybuilding') {
+      for (const st of Object.values(states)) {
+        if (!st || typeof st !== 'object') continue;
+        if (Number(st.sameWeightNonProgressStreak || 0) >= 2) triggerDeload = true;
+      }
+    } else {
+      // Multiple lifts regressing in same logged workout.
+      if (regressionsThisLog >= 2) triggerDeload = true;
 
-    // Same lift regresses twice consecutively.
-    for (const [baseId, st] of Object.entries(states)) {
-      if (!st || typeof st !== 'object') continue;
-      if (Number(st.regressStreak || 0) >= 2) triggerDeload = true;
+      // Same lift regresses twice consecutively.
+      for (const st of Object.values(states)) {
+        if (!st || typeof st !== 'object') continue;
+        if (Number(st.regressStreak || 0) >= 2) triggerDeload = true;
+      }
     }
+
+    if (poorRecoveryFlag) triggerDeload = true;
 
     // Scheduled deloads.
     const scheduleEvery = discipline === 'powerlifting'
@@ -5274,6 +5291,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
         st.regressStreak = 0;
         st.stallWeeks = 0;
         st.successStreak = 0;
+        st.sameWeightNonProgressStreak = 0;
         st.technique = 'none';
       }
       weekRegs[String(nextIdx)] = { reason: poorRecoveryFlag ? 'poor_recovery' : (scheduledHit ? 'scheduled' : 'regression'), at: new Date().toISOString() };

@@ -952,7 +952,7 @@
 
         ctx.fillStyle = ink;
         ctx.font = '44px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-        ctx.fillText('odeology_', pad, pad);
+        ctx.fillText('STRYVE', pad, pad);
 
         let y = pad + 56;
         ctx.font = '28px system-ui, -apple-system, Segoe UI, Roboto, Arial';
@@ -2143,8 +2143,8 @@
             const uname = String(user?.username || '').trim().toLowerCase();
             const dname = String(user?.displayName || '').trim().toLowerCase();
             if (user?.isOwner) return true;
-            return ['odeology_', 'odeology', 'odeology_owner', 'jason'].includes(uname)
-                || ['odeology_', 'odeology'].includes(dname);
+            return ['STRYVE', 'STRYVE', 'STRYVEowner', 'jason'].includes(uname)
+                || ['STRYVE', 'STRYVE'].includes(dname);
         };
         try {
             const resp = await fetch('/api/auth/me', { credentials: 'include' });

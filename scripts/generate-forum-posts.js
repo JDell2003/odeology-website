@@ -101,7 +101,7 @@ const typoMap = [
   ['going', 'goign']
 ];
 const cfg = {
-  training: { communities: ['r/odeology_forum', 'r/training', 'r/pushpulllegs', 'r/homegym'], tags: ['training', 'hypertrophy', 'execution'], fallback: ['strength workout gym', 'barbell workout', 'dumbbell training'] },
+  training: { communities: ['r/STRYVEforum', 'r/training', 'r/pushpulllegs', 'r/homegym'], tags: ['training', 'hypertrophy', 'execution'], fallback: ['strength workout gym', 'barbell workout', 'dumbbell training'] },
   nutrition: { communities: ['r/nutrition', 'r/mealprep', 'r/highprotein', 'r/easymeals'], tags: ['nutrition', 'meals', 'protein'], fallback: ['high protein meal prep', 'healthy meal prep', 'protein meal'] },
   recovery: { communities: ['r/recovery', 'r/mobility', 'r/deload', 'r/sleepforgains'], tags: ['recovery', 'sleep', 'mobility'], fallback: ['mobility stretching', 'recovery stretching', 'walking recovery'] },
   cutting: { communities: ['r/cutting', 'r/caloriedeficit', 'r/leaningout', 'r/recompnotes'], tags: ['fat-loss', 'nutrition', 'consistency'], fallback: ['healthy low calorie meal', 'lean meal prep', 'salad protein meal'] },
@@ -1248,7 +1248,7 @@ async function openverse(query, page) {
   url.searchParams.set('page', String(page));
   url.searchParams.set('page_size', String(OPENVERSE_PAGE));
   for (let attempt = 0; attempt < 4; attempt += 1) {
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'odeology-forum-generator/1.0' } });
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'STRYVE-forum-generator/1.0' } });
     if (res.ok) return res.json();
     if ([400, 401, 403, 404, 422].includes(res.status)) {
       return { results: [] };

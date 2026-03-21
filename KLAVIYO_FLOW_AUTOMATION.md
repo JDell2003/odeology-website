@@ -1,6 +1,6 @@
 # Klaviyo Flow Automation
 
-This repo now includes a script to create/update all ODEOLOGY event-triggered flows in Klaviyo.
+This repo now includes a script to create/update all STRYVE event-triggered flows in Klaviyo.
 
 ## Command
 

@@ -36,5 +36,5 @@ CTA links use:
 1. `APP_BASE_URL`
 2. `PUBLIC_APP_URL`
 3. `SITE_URL`
-4. Fallback: `https://odeology.up.railway.app`
+4. Fallback: `https://STRYVE.up.railway.app`
 
