@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Doors · STRYVE</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-23-seo-doors-1">
+  <style>
+    body.owner-doors-page {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(207, 156, 72, 0.16), transparent 34%),
+        linear-gradient(180deg, #f6f2eb 0%, #f4f0ea 45%, #efe8dd 100%);
+    }
+
+    .owner-doors-wrap {
+      max-width: 1600px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 20px 24px;
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+      min-height: calc(100dvh - var(--navbar-height, 72px) - 34px);
+    }
+
+    .owner-doors-head {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 2px;
+    }
+
+    .owner-doors-card {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .owner-doors-eyebrow {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #8d6931;
+      font-weight: 700;
+    }
+
+    .owner-doors-head h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .owner-doors-head p,
+    .owner-doors-muted {
+      margin: 0;
+      color: #666;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .owner-doors-list {
+      margin-top: 12px;
+      counter-reset: door-card;
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - var(--navbar-height, 72px) - 158px);
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .owner-door-item {
+      position: relative;
+      counter-increment: door-card;
+      border: 1px solid rgba(24, 33, 42, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.74);
+      padding: 14px 15px;
+      cursor: pointer;
+      text-align: left;
+      backdrop-filter: blur(8px);
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .owner-door-item::after {
+      content: counter(door-card);
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(24, 33, 42, 0.08);
+      color: #18212a;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .owner-door-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(197, 141, 79, 0.45);
+    }
+
+    .owner-door-item.active {
+      border-color: rgba(197, 141, 79, 0.9);
+      background: linear-gradient(160deg, rgba(197, 141, 79, 0.14), rgba(255, 255, 255, 0.82));
+    }
+
+    .owner-door-item.active::after {
+      background: rgba(197, 141, 79, 0.18);
+      color: #8d5d1f;
+    }
+
+    .owner-door-tag {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(207, 156, 72, 0.12);
+      color: #7b5928;
+      font-weight: 700;
+      font-size: 0.84rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .owner-door-name {
+      margin-top: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #18212a;
+    }
+
+    .owner-door-summary {
+      margin-top: 6px;
+      color: #666;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .owner-door-meta {
+      margin-top: 8px;
+      display: grid;
+      gap: 4px;
+      color: #666;
+      line-height: 1.5;
+      font-size: 12px;
+    }
+
+    .owner-door-meta strong {
+      color: #18212a;
+    }
+
+    .owner-doors-preview-card {
+      display: grid;
+      gap: 10px;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      min-height: calc(100dvh - var(--navbar-height, 72px) - 120px);
+    }
+
+    .owner-doors-preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(24, 33, 42, 0.08);
+    }
+
+    .owner-doors-preview-head h2 {
+      margin: 0;
+    }
+
+    .owner-doors-preview-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .owner-doors-preview-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .owner-doors-device-toggle {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .owner-doors-device-toggle button,
+    .owner-door-open-link {
+      border: 1px solid rgba(19, 35, 50, 0.14);
+      background: rgba(255, 255, 255, 0.78);
+      color: #18212a;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+    }
+
+    .owner-doors-device-toggle button:hover,
+    .owner-door-open-link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(19, 35, 50, 0.22);
+    }
+
+    .owner-doors-device-toggle button.active {
+      background: #18212a;
+      border-color: #18212a;
+      color: #f7f3ed;
+    }
+
+    .owner-doors-stage {
+      min-height: 220px;
+      height: 100%;
+      display: grid;
+      align-content: start;
+      padding: 8px 0 0;
+      border-radius: 0;
+      background:
+        linear-gradient(180deg, rgba(238, 233, 225, 0.32), rgba(229, 223, 214, 0.18));
+      border: 0;
+      overflow: hidden;
+    }
+
+    .owner-doors-stage-frame {
+      width: 100%;
+      height: 100%;
+      border-radius: 22px;
+      border: 1px solid rgba(19, 35, 50, 0.14);
+      background: #ddd8d1;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+      transition: width 180ms ease, border-radius 180ms ease;
+    }
+
+    .owner-doors-stage-frame.is-phone {
+      width: min(100%, 410px);
+      max-width: 410px;
+      justify-self: center;
+      border-radius: 38px;
+      border-width: 8px;
+      border-color: #18212a;
+      background: #18212a;
+    }
+
+    .owner-doors-stage-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(24, 33, 42, 0.96);
+      color: #f7f3ed;
+      font-size: 0.92rem;
+    }
+
+    .owner-doors-stage-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .owner-doors-stage-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(247, 243, 237, 0.58);
+    }
+
+    .owner-doors-stage-label {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .owner-doors-stage iframe {
+      display: block;
+      width: 100%;
+      height: calc(100dvh - var(--navbar-height, 72px) - 210px);
+      min-height: 860px;
+      border: 0;
+      background: #fff;
+    }
+
+    .owner-doors-stage-frame.is-phone iframe {
+      height: 820px;
+    }
+
+    @media (max-width: 980px) {
+      .owner-doors-wrap {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .owner-doors-wrap {
+        padding: 0 14px;
+      }
+    }
+  </style>
+</head>
+<body class="owner-doors-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="STRYVE"><span class="brand-char">S</span><span class="brand-char">T</span><span class="brand-char">R</span><span class="brand-char">Y</span><span class="brand-char">V</span><span class="brand-char">E</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a href="training.html">Training</a></li>
+        <li><a href="macro-calculator.html">Macro Calculator</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section">
+      <p class="section-label section-label-help">HELP</p>
+      <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">DASH</p>
+      <div class="control-pill-row">
+        <button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button>
+      </div>
+    </div>
+    <div class="control-section">
+      <p class="section-label">TRAINING PORTAL</p>
+      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+    </div>
+    <div class="control-section">
+      <p class="section-label">COMMUNITY</p>
+      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
+    </div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <a class="control-link active" id="control-owner-doors-link" href="owner-doors.html" aria-current="true"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="owner-doors-wrap">
+    <header class="owner-doors-head">
+      <div>
+        <p class="owner-doors-eyebrow">SEO Doors</p>
+        <h1>Owner Doors</h1>
+        <p>Click a page on the left to peer into it here. This workspace now includes the original public landing pages plus the new SEO entry pages, all in one preview surface.</p>
+      </div>
+      <div class="owner-doors-device-toggle" aria-label="Preview viewport toggle">
+        <button class="active" id="owner-doors-desktop-toggle" type="button" data-preview-device="desktop">Desktop View</button>
+        <button id="owner-doors-phone-toggle" type="button" data-preview-device="phone">Phone View</button>
+      </div>
+    </header>
+
+    <section class="owner-doors-card">
+      <div>
+        <div>
+          <h2 style="margin:0;">Pages</h2>
+          <p class="owner-doors-muted">Choose an original landing page or an SEO door to preview it on the right.</p>
+        </div>
+      </div>
+      <div class="owner-doors-list">
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="training-coming-soon.html" data-preview-label="Original Training Landing Page" data-preview-slug="/training.html" data-preview-cta="Get My Free Workout Plan" data-preview-route="Existing public workout landing">
+          <span class="owner-door-tag">Original page</span>
+          <div class="owner-door-name">Training OG Page</div>
+          <div class="owner-door-summary">The current public workout landing page used before the SEO variants.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /training.html</div>
+            <div><strong>CTA:</strong> Get My Free Workout Plan</div>
+            <div><strong>Routes into:</strong> Existing public workout landing</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="index.html#resources" data-preview-label="Original Macro Calculator Landing Page" data-preview-slug="/#resources" data-preview-cta="Get My Free Calories & Macros" data-preview-route="Existing public macro and grocery landing">
+          <span class="owner-door-tag">Original page</span>
+          <div class="owner-door-name">Macro Calculator OG Page</div>
+          <div class="owner-door-summary">The current public macro and grocery landing page from the home-page resources section.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /#resources</div>
+            <div><strong>CTA:</strong> Get My Free Calories & Macros</div>
+            <div><strong>Routes into:</strong> Existing public macro and grocery landing</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item active owner-door-preview-trigger" type="button" data-preview-src="workout-plan-generator.html" data-preview-label="Workout Plan Generator" data-preview-slug="/workout-plan-generator" data-preview-cta="Generate My Workout Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Workout intent</span>
+          <div class="owner-door-name">Workout Plan Generator</div>
+          <div class="owner-door-summary">Free workout plan and custom routine SEO door.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /workout-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Workout Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="ai-workout-generator.html" data-preview-label="AI Workout Generator" data-preview-slug="/ai-workout-generator" data-preview-cta="Generate My AI Workout" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">AI workout intent</span>
+          <div class="owner-door-name">AI Workout Generator</div>
+          <div class="owner-door-summary">Instant AI-planning angle with darker gym creative and fast custom setup messaging.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /ai-workout-generator</div>
+            <div><strong>CTA:</strong> Generate My AI Workout</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="home-workout-plan-generator.html" data-preview-label="Home Workout Plan Generator" data-preview-slug="/home-workout-plan-generator" data-preview-cta="Generate My Home Workout Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Home workout intent</span>
+          <div class="owner-door-name">Home Workout Plan Generator</div>
+          <div class="owner-door-summary">No-gym-needed angle for people training at home with dumbbells or bodyweight.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /home-workout-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Home Workout Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="beginner-workout-plan.html" data-preview-label="Beginner Workout Plan" data-preview-slug="/beginner-workout-plan" data-preview-cta="Start My Beginner Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Beginner 30-day intent</span>
+          <div class="owner-door-name">Beginner Workout Plan</div>
+          <div class="owner-door-summary">First-30-days angle with welcoming beginner language and a lower-pressure training setup.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /beginner-workout-plan</div>
+            <div><strong>CTA:</strong> Start My Beginner Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="meal-plan-generator.html" data-preview-label="Meal Plan Generator" data-preview-slug="/meal-plan-generator" data-preview-cta="Generate My Meal Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Meal intent</span>
+          <div class="owner-door-name">Meal Plan Generator</div>
+          <div class="owner-door-summary">Macro, grocery, and meal-planning search intent page.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /meal-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Meal Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="high-protein-meal-plan.html" data-preview-label="High Protein Meal Plan" data-preview-slug="/high-protein-meal-plan" data-preview-cta="Build My High Protein Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">High protein intent</span>
+          <div class="owner-door-name">High Protein Meal Plan</div>
+          <div class="owner-door-summary">Muscle-growth meal-planning angle focused on protein intake and practical grocery prep.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /high-protein-meal-plan</div>
+            <div><strong>CTA:</strong> Build My High Protein Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="fat-loss-meal-plan.html" data-preview-label="Fat Loss Meal Plan" data-preview-slug="/fat-loss-meal-plan" data-preview-cta="Build My Fat Loss Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Fat loss intent</span>
+          <div class="owner-door-name">Fat Loss Meal Plan</div>
+          <div class="owner-door-summary">Calorie-controlled meal-planning angle built around lighter foods and sustainable fat loss.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /fat-loss-meal-plan</div>
+            <div><strong>CTA:</strong> Build My Fat Loss Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="bulking-meal-plan.html" data-preview-label="Bulking Meal Plan" data-preview-slug="/bulking-meal-plan" data-preview-cta="Build My Bulking Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Bulking intent</span>
+          <div class="owner-door-name">Bulking Meal Plan</div>
+          <div class="owner-door-summary">Lean-gain meal-planning angle built around surplus calories, protein, and growth-focused groceries.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /bulking-meal-plan</div>
+            <div><strong>CTA:</strong> Build My Bulking Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="macro-meal-plan-generator.html" data-preview-label="Macro Meal Plan Generator" data-preview-slug="/macro-meal-plan-generator" data-preview-cta="Generate My Macro Meal Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Macro meal intent</span>
+          <div class="owner-door-name">Macro Meal Plan Generator</div>
+          <div class="owner-door-summary">Precise macro, calorie, and grocery-product angle for meal planning searches.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /macro-meal-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Macro Meal Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="free-meal-plan-generator.html" data-preview-label="Free Meal Plan Generator" data-preview-slug="/free-meal-plan-generator" data-preview-cta="Generate My Free Meal Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Free meal intent</span>
+          <div class="owner-door-name">Free Meal Plan Generator</div>
+          <div class="owner-door-summary">Completely free, simple, and fast meal-planning angle for general diet-plan searches.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /free-meal-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Free Meal Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="cheap-meal-plan-bodybuilding.html" data-preview-label="Cheap Meal Plan for Bodybuilding" data-preview-slug="/cheap-meal-plan-bodybuilding" data-preview-cta="Build My Cheap Meal Plan" data-preview-route="Existing macro and grocery planner flow">
+          <span class="owner-door-tag">Budget bulk intent</span>
+          <div class="owner-door-name">Cheap Meal Plan for Bodybuilding</div>
+          <div class="owner-door-summary">Budget-conscious muscle gain page focused on affordable macros and groceries.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /cheap-meal-plan-bodybuilding</div>
+            <div><strong>CTA:</strong> Build My Cheap Meal Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and grocery planner flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="free-grocery-meal-planner.html" data-preview-label="Free Grocery Meal Planner" data-preview-slug="/free-grocery-meal-planner" data-preview-cta="Build My Grocery Plan" data-preview-route="Existing macro and grocery planner flow">
+          <span class="owner-door-tag">Free grocery intent</span>
+          <div class="owner-door-name">Free Grocery Meal Planner</div>
+          <div class="owner-door-summary">Budget-first grocery optimization angle built around calorie needs and real-world shopping.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /free-grocery-meal-planner</div>
+            <div><strong>CTA:</strong> Build My Grocery Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and grocery planner flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="simple-meal-plan-generator.html" data-preview-label="Simple Meal Plan Generator" data-preview-slug="/simple-meal-plan-generator" data-preview-cta="Generate My Simple Meal Plan" data-preview-route="Existing macro and meal-plan flow">
+          <span class="owner-door-tag">Busy schedule intent</span>
+          <div class="owner-door-name">Simple Meal Plan Generator</div>
+          <div class="owner-door-summary">Convenience-first meal-planning angle for people who want fast prep and fewer ingredients.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /simple-meal-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Simple Meal Plan</div>
+            <div><strong>Routes into:</strong> Existing macro and meal-plan flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="free-workout-plan-generator.html" data-preview-label="Free Workout Plan Generator for Beginners" data-preview-slug="/free-workout-plan-generator" data-preview-cta="Generate My Free Workout Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Beginner workout intent</span>
+          <div class="owner-door-name">Free Workout Plan Generator</div>
+          <div class="owner-door-summary">Beginner-focused free workout generator angle for people starting from zero.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /free-workout-plan-generator</div>
+            <div><strong>CTA:</strong> Generate My Free Workout Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="strength-workout-plan.html" data-preview-label="Strength Workout Plan" data-preview-slug="/strength-workout-plan" data-preview-cta="Generate My Strength Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Strength intent</span>
+          <div class="owner-door-name">Strength Workout Plan</div>
+          <div class="owner-door-summary">Performance-focused strength page built around progression, compound lifts, and trackable progress.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /strength-workout-plan</div>
+            <div><strong>CTA:</strong> Generate My Strength Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="fat-loss-workout-plan.html" data-preview-label="Fat Loss Workout Plan" data-preview-slug="/fat-loss-workout-plan" data-preview-cta="Start My Fat Loss Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Fat loss training</span>
+          <div class="owner-door-name">Fat Loss Workout Plan</div>
+          <div class="owner-door-summary">Leaner-body training angle combining calorie burn, structure, and muscle retention.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /fat-loss-workout-plan</div>
+            <div><strong>CTA:</strong> Start My Fat Loss Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="hypertrophy-workout-plan.html" data-preview-label="Hypertrophy Workout Plan" data-preview-slug="/hypertrophy-workout-plan" data-preview-cta="Generate My Muscle Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Hypertrophy intent</span>
+          <div class="owner-door-name">Hypertrophy Workout Plan</div>
+          <div class="owner-door-summary">Aesthetic muscle-building page built around growth work, gym training, and overload.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /hypertrophy-workout-plan</div>
+            <div><strong>CTA:</strong> Generate My Muscle Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+
+        <button class="owner-door-item owner-door-preview-trigger" type="button" data-preview-src="quick-workout-plan.html" data-preview-label="Quick Workout Plan" data-preview-slug="/quick-workout-plan" data-preview-cta="Generate My Quick Plan" data-preview-route="Existing training generator flow">
+          <span class="owner-door-tag">Busy schedule workout</span>
+          <div class="owner-door-name">Quick Workout Plan</div>
+          <div class="owner-door-summary">Time-efficient workout page built for consistency when sessions need to stay short.</div>
+          <div class="owner-door-meta">
+            <div><strong>Slug:</strong> /quick-workout-plan</div>
+            <div><strong>CTA:</strong> Generate My Quick Plan</div>
+            <div><strong>Routes into:</strong> Existing training generator flow</div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section class="owner-doors-card owner-doors-preview-card">
+      <div class="owner-doors-preview-head">
+        <div>
+          <h2 id="owner-doors-preview-title">Workout Plan Generator</h2>
+          <div class="owner-doors-preview-meta">
+            <span id="owner-doors-preview-slug">/workout-plan-generator</span>
+            <span id="owner-doors-preview-cta">Generate My Workout Plan</span>
+            <span id="owner-doors-preview-route">Existing training generator flow</span>
+          </div>
+        </div>
+        <div class="owner-doors-preview-links">
+          <a class="owner-door-open-link" id="owner-doors-open-html" href="workout-plan-generator.html" target="_blank" rel="noopener">Open Page</a>
+          <a class="owner-door-open-link" id="owner-doors-open-slug" href="/workout-plan-generator" target="_blank" rel="noopener">Open Slug</a>
+        </div>
+      </div>
+
+      <div class="owner-doors-stage">
+        <div class="owner-doors-stage-frame" id="owner-doors-stage-frame">
+          <div class="owner-doors-stage-topbar">
+            <div class="owner-doors-stage-dots" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="owner-doors-stage-label" id="owner-doors-stage-label">Desktop preview</div>
+          </div>
+          <iframe id="owner-doors-preview-frame" src="workout-plan-generator.html" title="Workout Plan Generator preview" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-03-23-seo-doors-2"></script>
+  <script>
+    (function () {
+      const previewFrame = document.getElementById('owner-doors-preview-frame');
+      const previewTitle = document.getElementById('owner-doors-preview-title');
+      const previewSlug = document.getElementById('owner-doors-preview-slug');
+      const previewCta = document.getElementById('owner-doors-preview-cta');
+      const previewRoute = document.getElementById('owner-doors-preview-route');
+      const openHtmlLink = document.getElementById('owner-doors-open-html');
+      const openSlugLink = document.getElementById('owner-doors-open-slug');
+      const stageFrame = document.getElementById('owner-doors-stage-frame');
+      const stageLabel = document.getElementById('owner-doors-stage-label');
+      const previewButtons = Array.from(document.querySelectorAll('.owner-door-preview-trigger'));
+      const deviceButtons = Array.from(document.querySelectorAll('[data-preview-device]'));
+
+      if (!previewFrame || !previewTitle || !stageFrame || !stageLabel || !previewSlug || !previewCta || !previewRoute || !openHtmlLink || !openSlugLink) {
+        return;
+      }
+
+      function setActivePreview(button) {
+        const src = button.dataset.previewSrc;
+        const label = button.dataset.previewLabel;
+        const slug = button.dataset.previewSlug;
+        const cta = button.dataset.previewCta;
+        const route = button.dataset.previewRoute;
+        if (!src || !label || !slug || !cta || !route) {
+          return;
+        }
+
+        previewButtons.forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        previewFrame.src = src;
+        previewFrame.title = label + ' preview';
+        previewTitle.textContent = label;
+        previewSlug.textContent = slug;
+        previewCta.textContent = cta;
+        previewRoute.textContent = route;
+        openHtmlLink.href = src;
+        openSlugLink.href = slug;
+      }
+
+      function setDevice(device) {
+        const isPhone = device === 'phone';
+        stageFrame.classList.toggle('is-phone', isPhone);
+        stageLabel.textContent = isPhone ? 'Phone preview' : 'Desktop preview';
+        deviceButtons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.previewDevice === device);
+        });
+      }
+
+      previewButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          setActivePreview(button);
+        });
+      });
+
+      deviceButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          setDevice(button.dataset.previewDevice || 'desktop');
+        });
+      });
+
+      setDevice('desktop');
+    }());
+  </script>
+</body>
+</html>

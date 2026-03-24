@@ -5250,11 +5250,80 @@ section {
 
 .brand-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    margin-left: 6px;
+    width: auto;
+    height: auto;
+    margin-left: 2px;
+    margin-bottom: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    vertical-align: baseline;
+    line-height: 1;
+}
+
+.brand-dot::before {
+    content: '.';
+    display: inline-block;
+    color: #b9782d;
+    font: inherit;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.brand-wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0;
+    letter-spacing: -0.036em;
+    text-transform: none;
+    white-space: nowrap;
+    line-height: 0.92;
+}
+
+.brand-char {
+    display: inline-block;
+    position: relative;
+    background: linear-gradient(180deg, #111111 0%, #111111 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    transform-origin: center 75%;
+}
+
+.brand-char:nth-child(1) { letter-spacing: -0.045em; font-weight: 900; }
+.brand-char:nth-child(2) { opacity: 1; font-weight: 900; }
+.brand-char:nth-child(3) { opacity: 1; font-weight: 900; }
+.brand-char:nth-child(4) { opacity: 1; margin-right: 0.012em; font-weight: 900; }
+.brand-char:nth-child(5) {
+    background: linear-gradient(180deg, #be8540 0%, #94581b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: 0 1px 0 rgba(255, 245, 232, 0.16);
+    font-weight: 700;
+}
+.brand-char:nth-child(6) { opacity: 1; font-weight: 700; }
+.brand-char:nth-child(7) { opacity: 1; font-weight: 700; }
+.brand-char:nth-child(8) { opacity: 1; font-weight: 700; }
+.brand-char:nth-child(9) { opacity: 1; font-weight: 700; }
+
+.navbar-brand .brand-wordmark,
+.preloader-word .brand-wordmark,
+.store-brand-mark .brand-wordmark {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    font-stretch: 105%;
+    letter-spacing: -0.052em;
+}
+
+.navbar-brand .brand-dot,
+.preloader-word .brand-dot,
+.store-brand-mark .brand-dot {
+    opacity: 0.95;
+}
+
+.preloader-word .brand-char {
+    filter: none;
 }
 
 /* Navbar */
@@ -22891,6 +22960,84 @@ body.nav-drawer-open .nav-drawer-backdrop {
     border-top-right-radius: 0;
     margin: 0;
     border-top-width: 0;
+}
+
+body.seo-workout-page,
+body.seo-meal-page {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+}
+
+body.seo-workout-page main,
+body.seo-meal-page main,
+body.seo-workout-page .seo-workout-main {
+    min-height: calc(100dvh - var(--navbar-height, 72px)) !important;
+    overflow: hidden !important;
+}
+
+body.seo-workout-page .seo-workout-hero,
+body.seo-workout-page .seo-workout-hero-copy,
+body.seo-meal-page .seo-meal-hero {
+    min-height: calc(100dvh - var(--navbar-height, 72px)) !important;
+}
+
+@media (max-width: 700px) {
+    body.seo-workout-page .seo-workout-hero,
+    body.seo-workout-page .seo-workout-hero-copy,
+    body.seo-meal-page .seo-meal-hero {
+        min-height: calc(100dvh - var(--navbar-height, 72px)) !important;
+    }
+
+    body.seo-workout-page .seo-workout-hero-copy {
+        padding-top: 18px !important;
+        padding-bottom: 12px !important;
+    }
+
+    body.seo-workout-page .seo-workout-inner {
+        min-height: auto !important;
+        transform: none !important;
+        gap: 0.75rem !important;
+        max-width: min(100%, 320px) !important;
+    }
+
+    body.seo-meal-page .seo-meal-hero {
+        padding-top: 12px !important;
+        padding-bottom: 14px !important;
+    }
+
+    body.seo-meal-page .seo-meal-card {
+        width: min(100%, 340px) !important;
+        padding: 20px 16px 18px !important;
+    }
+
+    body.seo-workout-page .seo-workout-primary,
+    body.seo-workout-page .seo-workout-secondary,
+    body.seo-meal-page .seo-meal-primary {
+        width: auto !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        padding: 0.56rem 0.9rem !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+        text-wrap: balance;
+    }
+
+    body.seo-workout-page .seo-workout-primary,
+    body.seo-meal-page .seo-meal-primary {
+        font-size: 1.14rem !important;
+        border-radius: 12px !important;
+    }
+
+    body.seo-workout-page .seo-workout-primary {
+        width: min(100%, 286px) !important;
+        padding: 0.72rem 1.15rem !important;
+    }
+
+    body.seo-workout-page .seo-workout-secondary {
+        font-size: 0.8rem !important;
+        border-radius: 12px !important;
+    }
 }
 
 

@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    CONFIG
    ============================================ */
 
@@ -2289,7 +2289,7 @@ function setupNav() {
 
     // Normalize top-level nav labels across pages:
     // remove legacy tabs and ensure a single "Training" tab exists.
-    const legacyLabels = new Set(['how it works', 'how it works?', 'why STRYVE', 'why STRYVE?', 'pricing']);
+    const legacyLabels = new Set(['how it works', 'how it works?', 'why RiseForIt', 'why RiseForIt?', 'pricing']);
     let trainingLi = null;
     Array.from(navMenu.querySelectorAll('li')).forEach((li) => {
         const link = li.querySelector('a');
@@ -7480,7 +7480,7 @@ function buildPlanHtml(res, selections) {
           <h1>Nutrition Simplified: Baseline Protocol</h1>
           <h2>Personalized output with your exact inputs and math trail.</h2>
         </div>
-        <span class="pill">STRYVE &#8226; Baseline</span>
+        <span class="pill">RiseForIt &#8226; Baseline</span>
       </div>
 
       <div class="section">
@@ -9159,7 +9159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         runIdle(setupShareFlowGlobalDebug, 1000);
         runIdle(setupFormFieldAccessibilityGuard, 1600);
         runIdle(initTrainingHandoffOneOnOne, 1800);
-        console.log('STRYVE site initialized');
+        console.log('RiseForIt site initialized');
         return;
     }
 
@@ -9193,7 +9193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupProgressPhotos();
     setupOnboardingTour();
 
-    console.log('STRYVE site initialized');
+    console.log('RiseForIt site initialized');
 });
 
 function ensureBasicCheckinModal() {
@@ -12946,12 +12946,40 @@ function initAuthUi() {
     };
 
 
-    const isOwnerClientUser = (user) => {
+    let currentAuthMeta = null;
+
+    const isOwnerClientUser = (user, meta = null) => {
         const uname = String(user?.username || '').trim().toLowerCase();
         const dname = String(user?.displayName || '').trim().toLowerCase();
         if (user?.isOwner) return true;
-        return ['STRYVE', 'STRYVE', 'STRYVEowner', 'jason'].includes(uname)
-            || ['STRYVE', 'STRYVE'].includes(dname);
+        if (meta?.impersonation?.active) return true;
+        return ['riseforit', 'RiseForItOwner', 'jason', 'odeology', 'odeology_'].includes(uname)
+            || ['riseforit', 'odeology', 'odeology_'].includes(dname);
+    };
+
+    const createOwnerDemoAccount = async () => {
+        try {
+            const resp = await fetch('/api/auth/owner/demo-account', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data?.ok) return { ok: false, error: data?.error || 'Could not create demo account.' };
+            try {
+                sessionStorage.setItem('ode_demo_account_creds_v1', JSON.stringify({
+                    userId: String(data?.user?.id || ''),
+                    username: String(data?.credentials?.username || ''),
+                    password: String(data?.credentials?.password || ''),
+                    createdAt: Date.now()
+                }));
+            } catch {
+                // ignore
+            }
+            return { ok: true, returnTo: String(data?.returnTo || '/overview.html') };
+        } catch (err) {
+            return { ok: false, error: err?.message || 'Could not create demo account.' };
+        }
     };
 
     const getImpersonation = (meta) => {
@@ -13006,13 +13034,16 @@ function initAuthUi() {
         }
     };
 
-    const syncOwnerWorkoutDbLink = (user) => {
+    const syncOwnerWorkoutDbLink = (user, meta = null) => {
         const panel = document.getElementById('control-panel');
         if (!panel) return;
+        if (isHomeControlPanelPage()) return;
         let ownerSection = panel.querySelector('#control-owner-section');
         let link = panel.querySelector('#control-workout-db-link');
         let msgLink = panel.querySelector('#control-owner-messaging-link');
+        let doorsLink = panel.querySelector('#control-owner-doors-link');
         let accountsLink = panel.querySelector('#control-owner-accounts-link');
+        let demoBtn = panel.querySelector('#control-owner-demo-btn');
         if (!ownerSection) {
             ownerSection = document.createElement('div');
             ownerSection.className = 'control-section hidden';
@@ -13041,8 +13072,16 @@ function initAuthUi() {
             msgLink.className = 'control-link';
             msgLink.id = 'control-owner-messaging-link';
             msgLink.href = 'owner-messaging.html';
-            msgLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span>';
+            msgLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span>';
             ownerSection.appendChild(msgLink);
+        }
+        if (!doorsLink) {
+            doorsLink = document.createElement('a');
+            doorsLink.className = 'control-link';
+            doorsLink.id = 'control-owner-doors-link';
+            doorsLink.href = 'owner-doors.html';
+            doorsLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span>';
+            ownerSection.appendChild(doorsLink);
         }
         if (!accountsLink) {
             accountsLink = document.createElement('a');
@@ -13052,12 +13091,48 @@ function initAuthUi() {
             accountsLink.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span>';
             ownerSection.appendChild(accountsLink);
         }
-        const isOwner = isOwnerClientUser(user);
-        ownerSection.classList.toggle('hidden', !isOwner);
+        if (!demoBtn) {
+            demoBtn = document.createElement('button');
+            demoBtn.type = 'button';
+            demoBtn.className = 'control-link';
+            demoBtn.id = 'control-owner-demo-btn';
+            demoBtn.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span>';
+            ownerSection.appendChild(demoBtn);
+        }
+        if (demoBtn && demoBtn.dataset.demoBound !== '1') {
+            demoBtn.dataset.demoBound = '1';
+            demoBtn.addEventListener('click', async () => {
+                if (window.__odeOpenDemoSimulator && (currentAuthMeta?.demo?.active || user?.demo?.active)) {
+                    window.__odeOpenDemoSimulator();
+                    return;
+                }
+                demoBtn.disabled = true;
+                const textEl = demoBtn.querySelector('.text');
+                const prev = textEl?.textContent || 'Demo';
+                if (textEl) textEl.textContent = 'Creating...';
+                const result = await createOwnerDemoAccount();
+                if (result?.ok) {
+                    window.location.href = result.returnTo || '/overview.html';
+                    return;
+                }
+                if (textEl) textEl.textContent = result?.error || 'Failed';
+                window.setTimeout(() => {
+                    if (textEl) textEl.textContent = prev;
+                    demoBtn.disabled = false;
+                }, 1800);
+            });
+        }
+        if (demoBtn) {
+            const textEl = demoBtn.querySelector('.text');
+            if (textEl) textEl.textContent = (currentAuthMeta?.demo?.active || user?.demo?.active) ? 'Demo Controls' : 'Demo';
+        }
+        const shouldShowOwnerSection = isOwnerClientUser(user, meta) || Boolean(currentAuthMeta?.demo?.active || user?.demo?.active);
+        ownerSection.classList.toggle('hidden', !shouldShowOwnerSection);
     };
 
     const setSignedOutUi = () => {
         currentUser = null;
+        currentAuthMeta = null;
         window.__odeCurrentUser = null;
         clearAuthUserHint();
         signInBtn.classList.remove('hidden');
@@ -13072,7 +13147,7 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.remove('hidden');
         syncControlPanelLabel(null);
-        syncOwnerWorkoutDbLink(null);
+        syncOwnerWorkoutDbLink(null, null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
         stopMessagePolling();
@@ -13082,6 +13157,7 @@ function initAuthUi() {
 
     let friendsPrefetchTimer = null;
     function queueFriendsPrefetch() {
+        if (shouldSkipBackgroundAuthPolling()) return;
         if (document.body?.classList?.contains('training-page')) return;
         if (friendsPrefetchTimer) return;
         friendsPrefetchTimer = setTimeout(() => {
@@ -13099,6 +13175,7 @@ function initAuthUi() {
 
     const setSignedInUi = (user, meta = null) => {
         currentUser = user;
+        currentAuthMeta = meta || null;
         window.__odeCurrentUser = user;
         writeAuthUserHint(user);
         const label = user?.displayName || user?.username || 'Account';
@@ -13118,7 +13195,7 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.add('hidden');
         syncControlPanelLabel(user);
-        syncOwnerWorkoutDbLink(user);
+        syncOwnerWorkoutDbLink(user, meta);
         setImpersonationUi(user, meta);
 
         menu.innerHTML = `
@@ -13141,20 +13218,27 @@ function initAuthUi() {
         });
 
         emitAuthChanged(user);
-        startIncomingRequestPolling();
-        startMessagePolling();
-        queueFriendsPrefetch();
-        fetchIncomingRequestCounts()
-            .then((counts) => {
-                if (!counts?.ok) {
+        if (shouldSkipBackgroundAuthPolling()) {
+            stopIncomingRequestPolling();
+            stopMessagePolling();
+            updateControlSigninBadge(0, { signedIn: true });
+            updateControlMessagesBadge(0, { signedIn: true });
+        } else {
+            startIncomingRequestPolling();
+            startMessagePolling();
+            queueFriendsPrefetch();
+            fetchIncomingRequestCounts()
+                .then((counts) => {
+                    if (!counts?.ok) {
+                        updateControlSigninBadge(0, { signedIn: true });
+                        return;
+                    }
+                    updateControlSigninBadge(counts.total, { signedIn: true });
+                })
+                .catch(() => {
                     updateControlSigninBadge(0, { signedIn: true });
-                    return;
-                }
-                updateControlSigninBadge(counts.total, { signedIn: true });
-            })
-            .catch(() => {
-                updateControlSigninBadge(0, { signedIn: true });
-            });
+                });
+        }
     };
 
     // Use cached identity immediately so authenticated pages do not prompt
@@ -15221,6 +15305,2197 @@ function initAuthGate() {
     })();
 }
 
+function initAccessGate() {
+    const protectedClasses = ['training-page', 'training-status-page'];
+    const isProtectedPage = document.body?.dataset?.requireAccess === '1'
+        || protectedClasses.some((cls) => document.body?.classList?.contains(cls));
+    const canPreviewFromPage = Boolean(document.getElementById('control-panel'));
+    if (!isProtectedPage && !canPreviewFromPage) return;
+
+    const ACCESS_HEARTBEAT_SECONDS = 15;
+    const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
+    const DEMO_PRESET_NAMES = ['Makayla', 'John', 'Chris', 'Alex', 'Jordan', 'Taylor', 'Sam', 'Devin'];
+    let state = {
+        user: null,
+        payload: null,
+        loading: false,
+        heartbeatTimer: 0,
+        inviteView: false,
+        moreOptionsView: false,
+        promptOpen: false,
+        unlockSuccess: null,
+        countdownTimer: 0,
+        confettiTimer: 0,
+        successRedirectTimer: 0,
+        closeTimer: 0,
+        closeReady: false,
+        forcePreview: false,
+        paymentView: false,
+        paymentLoading: false,
+        paymentSubmitting: false,
+        paymentPlanCode: '',
+        paymentConfig: null,
+        stripeInstance: null,
+        stripeElements: null,
+        stripeCard: null,
+        stripeCardNumber: null,
+        stripeCardExpiry: null,
+        stripeCardCvc: null,
+        stripeMountedKey: '',
+        stripeLoadError: ''
+    };
+    let stripeJsPromise = null;
+
+    const readDemoSim = (userId) => {
+        const id = String(userId || '').trim();
+        if (!id) return null;
+        try {
+            const raw = sessionStorage.getItem(`${DEMO_SIM_PREFIX}${id}`);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return {
+                daysElapsed: Math.max(0, Math.min(365, Number(parsed?.daysElapsed || 0))),
+                qualifiedCount: Math.max(0, Math.min(8, Number(parsed?.qualifiedCount || 0))),
+                pendingCount: Math.max(0, Math.min(8, Number(parsed?.pendingCount || 0)))
+            };
+        } catch {
+            return null;
+        }
+    };
+
+    const labelFromSeconds = (secondsRaw) => {
+        const seconds = Math.max(0, Math.floor(Number(secondsRaw) || 0));
+        if (seconds <= 0) return 'expired';
+        const hours = Math.floor(seconds / 3600);
+        if (hours >= 48) return `${Math.ceil(hours / 24)} days`;
+        if (hours >= 1) return `${hours}h`;
+        return `${Math.max(1, Math.ceil(seconds / 60))}m`;
+    };
+
+    const buildDemoRecent = (qualifiedCount, pendingCount) => {
+        const rows = [];
+        for (let i = 0; i < qualifiedCount; i += 1) {
+            rows.push({
+                id: `demo-qualified-${i}`,
+                status: 'qualified',
+                displayName: DEMO_PRESET_NAMES[i] || `Qualified ${i + 1}`,
+                createdAt: new Date(Date.now() - ((i + 1) * 60 * 60 * 1000)).toISOString()
+            });
+        }
+        for (let i = 0; i < pendingCount; i += 1) {
+            rows.push({
+                id: `demo-pending-${i}`,
+                status: 'pending',
+                displayName: DEMO_PRESET_NAMES[qualifiedCount + i] || `Pending ${i + 1}`,
+                createdAt: new Date(Date.now() - ((qualifiedCount + i + 1) * 30 * 60 * 1000)).toISOString()
+            });
+        }
+        return rows;
+    };
+
+    const applyDemoOverrides = (payloadRaw) => {
+        const payload = payloadRaw && typeof payloadRaw === 'object' ? JSON.parse(JSON.stringify(payloadRaw)) : null;
+        if (!payload || !state.user?.demo?.active) return payload;
+        const sim = readDemoSim(state.user.id) || { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0 };
+        const access = payload.access && typeof payload.access === 'object' ? payload.access : null;
+        if (!access) return payload;
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const trialDays = Math.max(1, Number(access.trialDays || 3));
+        const trialStartedAt = new Date(now - (sim.daysElapsed * dayMs)).toISOString();
+        const trialEndsAt = new Date(Date.parse(trialStartedAt) + (trialDays * dayMs)).toISOString();
+        let grantDays = 0;
+        let nextTier = { rewardKey: 'referral_2', required: 2, days: 7, label: '7 days' };
+        let nextProgressCount = Math.min(2, sim.qualifiedCount);
+        if (sim.qualifiedCount >= 8) {
+            grantDays = 365;
+            nextTier = null;
+            nextProgressCount = 0;
+        } else if (sim.qualifiedCount >= 4) {
+            grantDays = 30;
+            nextTier = { rewardKey: 'referral_8', required: 4, days: 365, label: '1 year' };
+            nextProgressCount = Math.min(4, sim.qualifiedCount - 4);
+        } else if (sim.qualifiedCount >= 2) {
+            grantDays = 7;
+            nextTier = { rewardKey: 'referral_4', required: 2, days: 30, label: '30 days' };
+            nextProgressCount = Math.min(2, sim.qualifiedCount - 2);
+        }
+        const grantStartedAt = grantDays > 0 ? trialStartedAt : null;
+        const grantEndsAt = grantDays > 0 ? new Date(Date.parse(String(grantStartedAt || trialStartedAt)) + (grantDays * dayMs)).toISOString() : null;
+        const currentAccessEndsAt = (() => {
+            const trialTs = Date.parse(trialEndsAt);
+            const grantTs = Date.parse(String(grantEndsAt || ''));
+            if (Number.isFinite(grantTs) && grantTs > trialTs) return new Date(grantTs).toISOString();
+            return trialEndsAt;
+        })();
+        const remainingSeconds = Math.max(0, Math.floor((Date.parse(currentAccessEndsAt) - now) / 1000));
+        access.trialStartedAt = trialStartedAt;
+        access.trialEndsAt = trialEndsAt;
+        access.trialActive = Date.parse(trialEndsAt) > now;
+        access.currentAccessEndsAt = currentAccessEndsAt;
+        access.hasAccess = remainingSeconds > 0;
+        access.accessRemainingSeconds = remainingSeconds;
+        access.accessRemainingLabel = labelFromSeconds(remainingSeconds);
+        access.accessSource = grantEndsAt ? 'grant' : 'trial';
+        if (access.referrals && typeof access.referrals === 'object') {
+            access.referrals.qualifiedCount = sim.qualifiedCount;
+            access.referrals.pendingCount = sim.pendingCount;
+            access.referrals.rejectedCount = 0;
+            access.referrals.rewardedCount = sim.qualifiedCount >= 8 ? 8 : (sim.qualifiedCount >= 4 ? 4 : (sim.qualifiedCount >= 2 ? 2 : 0));
+            access.referrals.nextTier = nextTier;
+            access.referrals.nextProgressCount = nextTier ? nextProgressCount : 0;
+            access.referrals.nextRemainingCount = nextTier ? Math.max(0, nextTier.required - nextProgressCount) : 0;
+        }
+        if (payload.referral && typeof payload.referral === 'object') {
+            payload.referral.goal = nextTier?.required || 0;
+            payload.referral.signupCount = sim.qualifiedCount + sim.pendingCount;
+            payload.referral.qualifiedCount = sim.qualifiedCount;
+            payload.referral.remainingToGoal = nextTier ? Math.max(0, nextTier.required - nextProgressCount) : 0;
+            payload.referral.recent = buildDemoRecent(sim.qualifiedCount, sim.pendingCount);
+        }
+        return payload;
+    };
+
+    const ensureStyles = () => {
+        if (document.getElementById('ode-access-gate-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'ode-access-gate-styles';
+        style.textContent = `
+            body.ode-access-locked{overflow:hidden}
+            .ode-access-target-local{position:relative}
+            .ode-access-program-blur{filter:blur(10px);pointer-events:none;user-select:none;transition:filter .28s ease,opacity .28s ease;opacity:.42}
+            .ode-access-banner{position:fixed;top:calc(var(--navbar-height,72px) + 10px);right:16px;z-index:1200;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+            .ode-access-banner.hidden{display:none}
+            .ode-access-banner-pill{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:rgba(15,23,42,.96);color:#fff;font:800 12px/1.1 Inter,"Space Grotesk",system-ui,sans-serif;box-shadow:0 12px 30px rgba(15,23,42,.18)}
+            .ode-access-banner-pill strong{color:#93c5fd}
+            .ode-access-banner-cta{border:0;border-radius:999px;padding:10px 14px;background:#eff6ff;color:#1d4ed8;font:700 12px/1 Inter,"Space Grotesk",system-ui,sans-serif;box-shadow:0 10px 24px rgba(37,99,235,.12);cursor:pointer}
+            .ode-access-overlay{position:fixed;inset:0;z-index:20000;background:rgba(8,13,20,.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:24px;animation:odeAccessOverlayFade .2s ease}
+            .ode-access-overlay.hidden{display:none}
+            .ode-access-overlay.local{position:absolute;inset:0;z-index:120;align-items:flex-start;justify-content:center;padding:24px 20px 20px;background:rgba(8,13,20,.38);backdrop-filter:blur(4px);border-radius:20px;animation:odeAccessOverlayFade .24s ease;overflow:auto}
+            .ode-access-overlay.local .ode-access-modal{width:min(760px,100%);max-height:none;box-shadow:0 24px 64px rgba(15,23,42,.26);margin:0 auto}
+            .ode-access-modal{position:relative;width:min(720px,100%);max-height:calc(100vh - 48px);overflow:auto;scrollbar-width:none;border-radius:24px;background:#F8F9FB;padding:32px;box-shadow:0 24px 72px rgba(15,23,42,.24);color:#0F172A;border:1px solid #E2E8F0;animation:odeAccessModalIn .28s cubic-bezier(.2,.8,.2,1);font-family:Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-modal::-webkit-scrollbar{width:0;height:0}
+            .ode-access-headline{font:800 clamp(2.25rem,4vw,2.8rem)/1.02 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.06em;margin:0 0 10px;color:#0F172A}
+            .ode-access-sub{font:600 15px/1.55 Inter,"Space Grotesk",system-ui,sans-serif;color:#64748B;margin:0 0 24px}
+            .ode-access-kicker{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#eef2ff;color:#0F172A;font:800 12px/1 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+            .ode-access-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+            .ode-access-option{padding:18px;border-radius:22px;border:1px solid rgba(15,36,53,.12);background:#fff}
+            .ode-access-option h3{margin:0 0 6px;font:900 1.1rem/1.2 "Space Grotesk",sans-serif}
+            .ode-access-option p{margin:0 0 14px;color:#5b6772;font-weight:600}
+            .ode-access-btn{width:100%;border:0;border-radius:999px;padding:14px 24px;font:700 15px/1 Inter,"Space Grotesk",system-ui,sans-serif;cursor:pointer;transition:transform .2s ease, box-shadow .2s ease, opacity .2s ease}
+            .ode-access-btn:hover{transform:scale(1.03);box-shadow:0 12px 24px rgba(15,23,42,.12)}
+            .ode-access-btn:disabled{cursor:not-allowed;opacity:.55;transform:none;box-shadow:none}
+            .ode-access-btn.primary{background:#2563EB;color:#fff}
+            .ode-access-btn.secondary{background:#F1F5F9;color:#0F172A}
+            .ode-access-btn.ghost{background:#fff;border:1px solid #E2E8F0;color:#0F172A}
+            .ode-access-progress{margin-top:18px;padding:20px;border-radius:20px;background:#fff;border:1px solid #E2E8F0;box-shadow:0 10px 30px rgba(15,23,42,.05)}
+            .ode-access-progressbar{height:6px;border-radius:999px;background:#E2E8F0;overflow:hidden;margin:12px 0 10px}
+            .ode-access-progressfill{height:100%;border-radius:999px;background:#2563EB;width:0%}
+            .ode-access-mini{font:600 13px/1.45 Inter,"Space Grotesk",system-ui,sans-serif;color:#64748B}
+            .ode-access-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+            .ode-access-input{width:100%;border-radius:16px;border:1px solid #E2E8F0;padding:14px 16px;font:600 15px/1.4 Inter,"Space Grotesk",system-ui,sans-serif;background:#fff;color:#0F172A}
+            .ode-access-list{display:grid;gap:10px;margin-top:14px}
+            .ode-access-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid rgba(15,36,53,.1)}
+            .ode-access-item-name{font-weight:800}
+            .ode-access-item-sub{font-size:.82rem;color:#66727c;margin-top:2px}
+            .ode-access-pill{padding:6px 10px;border-radius:999px;font:900 .7rem/1 "Space Grotesk",sans-serif;text-transform:uppercase;letter-spacing:.05em;background:rgba(15,36,53,.08);color:#132332}
+            .ode-access-pill.qualified,.ode-access-pill.rewarded{background:rgba(29,143,90,.14);color:#16613c}
+            .ode-access-pill.rejected{background:rgba(190,50,50,.12);color:#8e2929}
+            .ode-access-status{margin-top:12px;font:600 14px/1.5 Inter,"Space Grotesk",system-ui,sans-serif;color:#64748B}
+            .ode-access-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px;padding-right:40px}
+            .ode-access-topbtn{border:0;background:none;font:700 14px/1 Inter,"Space Grotesk",system-ui,sans-serif;color:#64748B;cursor:pointer;padding:0}
+            .ode-access-close{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:999px;border:1px solid #E2E8F0;background:rgba(255,255,255,.92);color:#0F172A;display:flex;align-items:center;justify-content:center;font:700 18px/1 Inter,"Space Grotesk",system-ui,sans-serif;cursor:pointer;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .2s ease,transform .2s ease,box-shadow .2s ease}
+            .ode-access-close.ready{opacity:1;transform:translateY(0);pointer-events:auto}
+            .ode-access-close:hover{box-shadow:0 10px 24px rgba(15,23,42,.12)}
+            .ode-access-choice-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:stretch}
+            .ode-access-hero{display:grid;gap:18px}
+            .ode-access-cta{position:relative;padding:24px;border-radius:26px;border:1px solid rgba(19,35,50,.1);background:linear-gradient(160deg,#132332 0%,#1f3448 100%);color:#fff;overflow:hidden}
+            .ode-access-cta::after{content:"";position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(240,166,74,.22) 0%,rgba(240,166,74,0) 70%)}
+            .ode-access-cta .price{font:900 clamp(3rem,5vw,4.8rem)/.9 "Space Grotesk",sans-serif;letter-spacing:-.08em}
+            .ode-access-cta .meta{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;margin-top:10px}
+            .ode-access-cta .label{font:900 .82rem/1 "Space Grotesk",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#f5d7a2}
+            .ode-access-cta .desc{font:700 1rem/1.35 "Space Grotesk",sans-serif;color:rgba(255,255,255,.76);max-width:26rem}
+            .ode-access-cta .ode-access-btn{margin-top:18px;background:#fff;color:#132332}
+            .ode-access-refer{padding:22px;border-radius:26px;border:1px solid rgba(15,36,53,.1);background:linear-gradient(180deg,#fff 0%,#f8f3ea 100%)}
+            .ode-access-refer h3{margin:0;font:900 1.5rem/1 "Space Grotesk",sans-serif;letter-spacing:-.04em}
+            .ode-access-refer p{margin:10px 0 0;color:#5d6770;font:700 .98rem/1.35 "Space Grotesk",sans-serif}
+            .ode-access-refer .ode-access-btn{margin-top:18px}
+            .ode-access-compact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+            .ode-access-compact-card{padding:14px 16px;border-radius:18px;border:1px solid rgba(15,36,53,.1);background:rgba(255,255,255,.78)}
+            .ode-access-compact-top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+            .ode-access-compact-price{font:900 1.1rem/1 "Space Grotesk",sans-serif}
+            .ode-access-compact-copy{margin-top:8px;color:#66727c;font:700 .84rem/1.35 "Space Grotesk",sans-serif}
+            .ode-access-compact-card .ode-access-btn{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:.92rem}
+            .ode-access-progress.clean{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px}
+            .ode-access-progress.clean .ode-access-progressbar{margin:0;height:8px}
+            .ode-access-progress-copy{flex:1;min-width:0}
+            .ode-access-progress-value{font:800 20px/1 Inter,"Space Grotesk",system-ui,sans-serif;color:#0F172A}
+            .ode-access-progress-note{margin-top:4px;color:#64748B;font:600 13px/1.45 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-stack{display:grid;gap:24px}
+            .ode-access-primary-card,.ode-access-secondary-card,.ode-access-more{padding:28px;border-radius:20px;background:#fff;border:1px solid #E2E8F0;box-shadow:0 10px 30px rgba(0,0,0,.05);transition:transform .2s ease, box-shadow .2s ease}
+            .ode-access-primary-card:hover,.ode-access-secondary-card:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(15,23,42,.08)}
+            .ode-access-primary-card{background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;padding:32px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+            .ode-access-primary-price{font:800 clamp(3rem,6vw,3.5rem)/.94 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.08em}
+            .ode-access-primary-copy{margin-top:8px;color:rgba(255,255,255,.76);font:600 15px/1.55 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-primary-card .ode-access-btn{margin-top:18px;background:#fff;color:#0F172A}
+            .ode-access-inline-payment{display:grid;gap:6px;max-height:0;opacity:0;overflow:hidden;transform:translateY(8px) scale(.985);transform-origin:top center;transition:max-height .5s cubic-bezier(.2,.8,.2,1),margin-top .34s ease;margin-top:0}
+            .ode-access-inline-payment.open{max-height:560px;opacity:1;transform:none;margin-top:12px;animation:odeInlinePaymentIn .42s cubic-bezier(.2,.8,.2,1)}
+            .ode-access-inline-payment-shell{padding:12px 12px 8px;border-radius:15px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);display:grid;gap:6px}
+            .ode-access-inline-payment-shell.ready{background:rgba(255,255,255,.09);border-color:rgba(147,197,253,.38)}
+            .ode-access-inline-payment.light .ode-access-inline-payment-shell{background:#F8FAFC;border-color:#D4DCE7}
+            .ode-access-inline-payment.light .ode-access-inline-payment-shell.ready{background:#F8FAFC;border-color:#0F172A}
+            .ode-access-inline-payment-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+            .ode-access-inline-payment-title{font:800 13px/1.1 Inter,"Space Grotesk",system-ui,sans-serif;color:#fff}
+            .ode-access-inline-payment-meta{font:600 11px/1.35 Inter,"Space Grotesk",system-ui,sans-serif;color:rgba(255,255,255,.66)}
+            .ode-access-inline-payment.light .ode-access-inline-payment-title{color:#0F172A}
+            .ode-access-guarantee{margin-top:12px;font:600 13px/1.5 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:.01em}
+            .ode-access-guarantee.light{color:rgba(255,255,255,.76)}
+            .ode-access-secondary-card h3{margin:0;font:800 22px/1.1 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.04em;color:#0F172A}
+            .ode-access-secondary-card p{margin:10px 0 0;color:#64748B;font:600 15px/1.55 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-secondary-card .ode-access-btn{margin-top:16px}
+            .ode-access-secondary-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+            .ode-access-tier-list{display:grid;gap:8px;margin-top:16px}
+            .ode-access-tier-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font:600 15px/1.5 Inter,"Space Grotesk",system-ui,sans-serif;color:#64748B}
+            .ode-access-tier-row.current{color:#0F172A;font-weight:800}
+            .ode-access-tier-row.done{color:#15803d;font-weight:800}
+            .ode-access-more{padding:0;overflow:hidden}
+            .ode-access-more summary{list-style:none;cursor:pointer;padding:16px 18px;font:900 .98rem/1 "Space Grotesk",sans-serif}
+            .ode-access-more summary::-webkit-details-marker{display:none}
+            .ode-access-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 18px 18px}
+            .ode-access-success{position:relative;overflow:hidden;padding:26px;border-radius:24px;background:radial-gradient(circle at top left,rgba(240,166,74,.22),transparent 34%),radial-gradient(circle at top right,rgba(29,143,90,.18),transparent 30%),#fff;border:1px solid rgba(15,36,53,.08)}
+            .ode-access-success-kicker{font:800 12px/1 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#2563EB}
+            .ode-access-success h3{margin:10px 0 8px;font:800 clamp(1.8rem,3vw,2.4rem)/1.02 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.04em}
+            .ode-access-success p{margin:0;color:#64748B;font:600 15px/1.55 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-success-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+            .ode-access-success-stat{padding:14px;border-radius:18px;background:rgba(19,35,50,.04);border:1px solid rgba(19,35,50,.08)}
+            .ode-access-success-stat-label{font:900 .7rem/1 "Space Grotesk",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#67727b}
+            .ode-access-success-stat-value{margin-top:8px;font:900 1.15rem/1.1 "Space Grotesk",sans-serif;color:#132332}
+            .ode-access-success-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+            .ode-access-confetti{position:absolute;width:10px;height:18px;top:-24px;opacity:.92;border-radius:2px;animation:odeAccessConfetti linear forwards}
+            .ode-access-foot{display:flex;justify-content:center;margin-top:14px}
+            .ode-access-textbtn{border:0;background:none;color:#64748B;font:700 14px/1 Inter,"Space Grotesk",system-ui,sans-serif;cursor:pointer}
+            .ode-access-plan-note{margin-top:10px;color:rgba(255,255,255,.72);font:600 13px/1.5 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-rule{margin-top:12px;padding:14px 16px;border-radius:16px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font:600 13px/1.5 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-linkbox{display:grid;gap:12px}
+            .ode-access-payment-shell{display:grid;gap:18px}
+            .ode-access-payment-summary{padding:26px 28px;border-radius:20px;background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;box-shadow:0 20px 50px rgba(0,0,0,.22)}
+            .ode-access-payment-summary .price{font:800 clamp(3rem,6vw,3.8rem)/.92 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.08em}
+            .ode-access-payment-summary .label{margin-top:8px;color:rgba(255,255,255,.78);font:700 15px/1.45 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-payment-form{padding:0;border-radius:0;background:transparent;border:0;box-shadow:none;display:grid;gap:8px}
+            .ode-access-payment-stage{display:grid;gap:6px}
+            .ode-access-payment-label{font:800 12px/1.1 Inter,"Space Grotesk",system-ui,sans-serif;color:rgba(255,255,255,.84)}
+            .ode-access-inline-payment.light .ode-access-payment-label{color:#334155}
+            .ode-access-card-row,.ode-access-demo-card{display:grid;grid-template-columns:1.5fr .8fr .7fr;gap:10px;align-items:stretch}
+            .ode-access-card-host,.ode-access-demo-card input{border:1px solid rgba(255,255,255,.14);border-radius:15px;background:rgba(248,250,252,.96);box-shadow:none;padding:12px 15px;min-height:46px}
+            .ode-access-card-host{transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+            .ode-access-card-host.ready{border-color:#93C5FD;box-shadow:0 0 0 3px rgba(37,99,235,.10);transform:translateY(-1px)}
+            .ode-access-demo-card input,.ode-access-payment-grid input,.ode-access-payment-grid select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(248,250,252,.96);padding:10px 12px;font:600 14px/1.25 Inter,"Space Grotesk",system-ui,sans-serif;color:#0F172A;outline:none}
+            .ode-access-demo-card input:focus,.ode-access-payment-grid input:focus,.ode-access-payment-grid select:focus{border-color:#93C5FD;box-shadow:0 0 0 4px rgba(37,99,235,.12);background:#fff}
+            .ode-access-inline-payment.light .ode-access-card-host,.ode-access-inline-payment.light .ode-access-demo-card input,.ode-access-inline-payment.light .ode-access-payment-grid input,.ode-access-inline-payment.light .ode-access-payment-grid select{border-color:#0F172A;background:#fff}
+            .ode-access-inline-payment.light .ode-access-card-host.ready{border-color:#0F172A;box-shadow:0 0 0 2px rgba(15,23,42,.14)}
+            .ode-access-payment-extra{display:grid;gap:7px;opacity:0;max-height:0;overflow:hidden;transform:translateY(4px);transition:opacity .34s ease,transform .36s cubic-bezier(.2,.8,.2,1),max-height .42s cubic-bezier(.2,.8,.2,1)}
+            .ode-access-payment-extra.ready{opacity:1;max-height:360px;transform:translateY(0)}
+            .ode-access-payment-extra > *{opacity:0;transform:translateY(6px);transition:opacity .32s ease,transform .34s cubic-bezier(.2,.8,.2,1)}
+            .ode-access-payment-extra.ready > *{opacity:1;transform:translateY(0)}
+            .ode-access-payment-shell.ready .ode-access-payment-summary{transform:translateY(-2px);box-shadow:0 28px 60px rgba(0,0,0,.24)}
+            .ode-access-payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+            .ode-access-payment-grid .full{grid-column:1/-1}
+            .ode-access-payment-note{color:rgba(255,255,255,.58);font:600 12px/1.35 Inter,"Space Grotesk",system-ui,sans-serif}
+            .ode-access-payment-submit{margin-top:-2px;padding:11px 18px;font-size:14px}
+            .ode-access-payment-wallet{margin-top:-2px;background:rgba(255,255,255,.1)!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)}
+            .ode-access-inline-payment.light #ode-access-payment-submit{background:#0F172A!important;color:#fff!important;border:1px solid #0F172A}
+            .ode-access-inline-payment.light .ode-access-payment-wallet{background:#EFF6FF!important;color:#1D4ED8!important;border-color:#BFDBFE}
+            @keyframes odeAccessOverlayFade{from{opacity:0}to{opacity:1}}
+            @keyframes odeAccessModalIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+            @keyframes odeInlinePaymentIn{from{opacity:0;transform:translateY(14px) scale(.982)}to{opacity:1;transform:translateY(0) scale(1)}}
+            @keyframes odeAccessConfetti{0%{transform:translate3d(0,0,0) rotate(0deg)}100%{transform:translate3d(var(--drift,0px),520px,0) rotate(540deg);opacity:0}}
+            @media (max-width: 760px){.ode-access-grid,.ode-access-success-grid,.ode-access-choice-grid,.ode-access-compact,.ode-access-more-grid,.ode-access-payment-grid{grid-template-columns:1fr}.ode-access-modal{padding:20px}.ode-access-topbar{flex-direction:column;align-items:flex-start;padding-right:0}.ode-access-close{top:14px;right:14px}.ode-access-headline{font-size:2.3rem}.ode-access-cta .meta{display:block}.ode-access-secondary-meta{display:grid;gap:10px}.ode-access-card-row,.ode-access-demo-card{grid-template-columns:1.15fr .85fr}.ode-access-card-row > :first-child,.ode-access-demo-card > :first-child{grid-column:1/-1}.ode-access-inline-payment.open{max-height:720px}.ode-access-banner{right:12px;left:12px;z-index:900;justify-content:flex-start}.control-open .ode-access-banner,.control-panel-open .ode-access-banner{z-index:40}}
+        `;
+        document.head.appendChild(style);
+    };
+
+    const ensureUi = () => {
+        ensureStyles();
+        let banner = document.getElementById('ode-access-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'ode-access-banner';
+            banner.className = 'ode-access-banner hidden';
+            document.body.appendChild(banner);
+        }
+        let overlay = document.getElementById('ode-access-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'ode-access-overlay';
+            overlay.className = 'ode-access-overlay hidden';
+            overlay.innerHTML = `
+                <div class="ode-access-modal">
+                    <button type="button" class="ode-access-close" data-access-close aria-label="Close">×</button>
+                    <div class="ode-access-topbar">
+                        <button type="button" class="ode-access-topbtn hidden" data-access-back>Back</button>
+                        <div class="ode-access-mini" id="ode-access-countdown"></div>
+                    </div>
+                    <div id="ode-access-content"></div>
+                </div>
+            `.trim();
+            document.body.appendChild(overlay);
+        }
+        return {
+            banner,
+            overlay,
+            content: overlay.querySelector('#ode-access-content'),
+            backBtn: overlay.querySelector('[data-access-back]'),
+            closeBtn: overlay.querySelector('[data-access-close]'),
+            countdown: overlay.querySelector('#ode-access-countdown')
+        };
+    };
+    const getLocalLockHost = () => document.querySelector('.training-shell .container') || document.querySelector('.training-shell') || document.body;
+    const syncOverlayHost = (ui, useLocal) => {
+        const overlay = ui?.overlay;
+        if (!overlay) return;
+        const localHost = useLocal ? getLocalLockHost() : null;
+        const desiredParent = localHost || document.body;
+        if (overlay.parentElement !== desiredParent) desiredParent.appendChild(overlay);
+        overlay.classList.toggle('local', Boolean(useLocal));
+        if (useLocal && localHost) localHost.classList.add('ode-access-target-local');
+        document.querySelectorAll('.ode-access-target-local').forEach((node) => {
+            if (node !== localHost) node.classList.remove('ode-access-target-local');
+        });
+        const trainingRoot = document.getElementById('training-root');
+        if (trainingRoot) trainingRoot.classList.toggle('ode-access-program-blur', Boolean(useLocal));
+    };
+
+    const formatDateLabel = (raw) => {
+        const ts = Date.parse(String(raw || ''));
+        if (!Number.isFinite(ts)) return '';
+        return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(ts));
+    };
+
+    const buildCaption = (link) => `Overview. This has helped me.\n\nUse my link and build your workout.\n${link}`;
+    const openInstagramCamera = () => {
+        try {
+            const now = Date.now();
+            window.location.href = 'instagram://camera';
+            window.setTimeout(() => {
+                if (Date.now() - now < 1700) window.open('https://www.instagram.com/', '_blank', 'noopener');
+            }, 900);
+            return true;
+        } catch {
+            return false;
+        }
+    };
+    const centsToDollars = (raw) => `$${(Math.max(0, Number(raw) || 0) / 100).toFixed(0)}`;
+    const formatRemaining = (raw) => {
+        const ts = Date.parse(String(raw || ''));
+        if (!Number.isFinite(ts)) return '0m';
+        const secs = Math.max(0, Math.floor((ts - Date.now()) / 1000));
+        const days = Math.floor(secs / 86400);
+        const hours = Math.floor((secs % 86400) / 3600);
+        const mins = Math.floor((secs % 3600) / 60);
+        if (days > 0) return `${days}d ${hours}h`;
+        if (hours > 0) return `${hours}h ${mins}m`;
+        return `${Math.max(1, mins)}m`;
+    };
+    const clearSuccessTimers = () => {
+        if (state.countdownTimer) {
+            window.clearInterval(state.countdownTimer);
+            state.countdownTimer = 0;
+        }
+        if (state.confettiTimer) {
+            window.clearTimeout(state.confettiTimer);
+            state.confettiTimer = 0;
+        }
+        if (state.successRedirectTimer) {
+            window.clearTimeout(state.successRedirectTimer);
+            state.successRedirectTimer = 0;
+        }
+    };
+    const clearMountedPaymentForm = () => {
+        try { state.stripeCard?.destroy?.(); } catch {}
+        try { state.stripeCard?.unmount?.(); } catch {}
+        try { state.stripeCardNumber?.destroy?.(); } catch {}
+        try { state.stripeCardExpiry?.destroy?.(); } catch {}
+        try { state.stripeCardCvc?.destroy?.(); } catch {}
+        state.stripeCard = null;
+        state.stripeCardNumber = null;
+        state.stripeCardExpiry = null;
+        state.stripeCardCvc = null;
+        state.stripeElements = null;
+        state.stripeMountedKey = '';
+        state.paymentSubmitting = false;
+    };
+    const loadStripeJs = async () => {
+        if (window.Stripe) return window.Stripe;
+        if (stripeJsPromise) return stripeJsPromise;
+        stripeJsPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://js.stripe.com/v3/';
+            script.async = true;
+            script.onload = () => resolve(window.Stripe);
+            script.onerror = () => reject(new Error('Could not load Stripe.'));
+            document.head.appendChild(script);
+        });
+        return stripeJsPromise;
+    };
+    const setPaymentFieldsReady = (ready) => {
+        const extra = document.getElementById('ode-access-payment-extra');
+        const payButton = document.getElementById('ode-access-payment-submit');
+        if (extra) extra.classList.toggle('ready', Boolean(ready));
+        if (payButton) payButton.disabled = !ready || state.paymentSubmitting || state.paymentLoading;
+    };
+    const openInlinePayment = async (planCode) => {
+        clearMountedPaymentForm();
+        state.paymentLoading = true;
+        state.paymentSubmitting = false;
+        state.paymentPlanCode = String(planCode || 'quick_unlock');
+        state.paymentConfig = null;
+        state.stripeLoadError = '';
+        render();
+        if (state.user?.demo?.active) {
+            state.paymentLoading = false;
+            state.paymentConfig = {
+                ok: true,
+                demo: true,
+                mode: state.paymentPlanCode === 'monthly_subscription' ? 'subscription' : 'payment',
+                planCode: state.paymentPlanCode
+            };
+            render();
+            return;
+        }
+        try {
+            const resp = await fetch('/api/auth/access/inline-payment', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planCode: state.paymentPlanCode })
+            });
+            const json = await resp.json().catch(() => ({}));
+            state.paymentLoading = false;
+            if (!resp.ok || !json?.ok) {
+                state.stripeLoadError = json?.error || 'Could not open payment form.';
+                render();
+                return;
+            }
+            state.paymentConfig = json;
+            render();
+        } catch {
+            state.paymentLoading = false;
+            state.stripeLoadError = 'Could not open payment form.';
+            render();
+        }
+    };
+    const syncCloseButton = (ui, showOverlay, closable) => {
+        if (!ui?.closeBtn) return;
+        if (!showOverlay || !closable) {
+            if (state.closeTimer) {
+                window.clearTimeout(state.closeTimer);
+                state.closeTimer = 0;
+            }
+            state.closeReady = false;
+            ui.closeBtn.classList.remove('ready');
+            return;
+        }
+        if (state.closeReady) {
+            ui.closeBtn.classList.add('ready');
+            return;
+        }
+        if (state.closeTimer) return;
+        ui.closeBtn.classList.remove('ready');
+        state.closeTimer = window.setTimeout(() => {
+            state.closeTimer = 0;
+            state.closeReady = true;
+            ui.closeBtn?.classList?.add('ready');
+        }, 3000);
+    };
+    const fireConfetti = (host) => {
+        if (!(host instanceof Element)) return;
+        const colors = ['#f0a64a', '#1d8f5a', '#132332', '#f5d7a2', '#7dc8a2'];
+        for (let i = 0; i < 26; i += 1) {
+            const piece = document.createElement('span');
+            piece.className = 'ode-access-confetti';
+            piece.style.left = `${Math.random() * 100}%`;
+            piece.style.background = colors[i % colors.length];
+            piece.style.animationDuration = `${3.2 + Math.random() * 1.5}s`;
+            piece.style.setProperty('--drift', `${-140 + Math.random() * 280}px`);
+            host.appendChild(piece);
+            window.setTimeout(() => {
+                try { piece.remove(); } catch {}
+            }, 4800);
+        }
+    };
+
+    const fetchAccess = async () => {
+        if (state.loading) return state.payload;
+        state.loading = true;
+        try {
+            const resp = await fetch('/api/auth/access', { credentials: 'include', cache: 'no-store' });
+            const json = await resp.json().catch(() => ({}));
+            state.payload = resp.ok ? applyDemoOverrides(json) : null;
+            return state.payload;
+        } catch {
+            state.payload = applyDemoOverrides(state.payload || null);
+            return state.payload;
+        } finally {
+            state.loading = false;
+        }
+    };
+
+    const verifyCheckoutFromUrl = async () => {
+        try {
+            const current = new URL(window.location.href);
+            if (String(current.searchParams.get('unlock') || '') !== 'success') return;
+            const sessionId = String(current.searchParams.get('session_id') || '').trim();
+            if (!sessionId) return;
+            const resp = await fetch(`/api/auth/access/checkout/verify?session_id=${encodeURIComponent(sessionId)}`, {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (resp.ok && json?.ok && json?.access) {
+                state.payload = applyDemoOverrides({
+                    ...(state.payload || {}),
+                    access: json.access
+                });
+                state.unlockSuccess = {
+                    days: Number(json?.grant?.meta?.days || state.payload?.access?.quickUnlock?.days || 7),
+                    endsAt: json?.access?.currentAccessEndsAt || null,
+                    source: 'payment',
+                    planCode: String(json?.grant?.meta?.planCode || 'quick_unlock'),
+                    amountCents: Number(json?.grant?.amount_cents || json?.grant?.amountCents || 0)
+                };
+            }
+            current.searchParams.delete('unlock');
+            current.searchParams.delete('session_id');
+            window.history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`);
+        } catch {
+            // ignore verification failures
+        }
+    };
+
+    const sendHeartbeat = async () => {
+        const pending = state.payload?.referredReferralState;
+        if (!state.user || !pending || String(pending.status || '') !== 'pending' || document.hidden) return;
+        try {
+            const resp = await fetch('/api/auth/access/activity', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seconds: ACCESS_HEARTBEAT_SECONDS })
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (resp.ok && json?.access) {
+                state.payload = applyDemoOverrides({
+                    ...(state.payload || {}),
+                    access: json.access,
+                    referredReferralState: json.referralState || state.payload?.referredReferralState || null
+                });
+                render();
+            }
+        } catch {
+            // ignore heartbeat failures
+        }
+    };
+
+    const syncHeartbeat = () => {
+        if (state.heartbeatTimer) {
+            window.clearInterval(state.heartbeatTimer);
+            state.heartbeatTimer = 0;
+        }
+        const pending = state.payload?.referredReferralState;
+        if (!state.user || !pending || String(pending.status || '') !== 'pending') return;
+        state.heartbeatTimer = window.setInterval(sendHeartbeat, ACCESS_HEARTBEAT_SECONDS * 1000);
+    };
+
+    const writeText = async (text) => {
+        try {
+            await navigator.clipboard.writeText(String(text || ''));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+    const promptKeyForUser = (userId) => `ode_access_prompt_seen_v2:${String(userId || '').trim()}`;
+    const markPromptSeen = () => {
+        const userId = String(state.user?.id || '').trim();
+        if (!userId) return;
+        try {
+            localStorage.setItem(promptKeyForUser(userId), String(Date.now()));
+        } catch {
+            // ignore
+        }
+    };
+    const shouldOpenTrialPromptOnVisit = () => {
+        const userId = String(state.user?.id || '').trim();
+        if (!userId || !isProtectedPage) return false;
+        const access = state.payload?.access || null;
+        if (!access?.hasAccess || !access?.trialActive || access?.accessSource !== 'trial') return false;
+        try {
+            const lastTs = Number(localStorage.getItem(promptKeyForUser(userId)) || 0);
+            return !Number.isFinite(lastTs) || lastTs <= 0 || (Date.now() - lastTs) >= (24 * 60 * 60 * 1000);
+        } catch {
+            return true;
+        }
+    };
+
+    const render = () => {
+        const ui = ensureUi();
+        const access = state.payload?.access || null;
+        const referral = state.payload?.referral || null;
+        if (!state.user || !access?.ok) {
+          ui.banner.classList.add('hidden');
+          ui.overlay.classList.add('hidden');
+          document.body.classList.remove('ode-access-locked');
+          return;
+        }
+
+        const trialDay = Math.max(1, Math.min(Number(access.trialDays || 3), 1 + Math.floor((Date.now() - Date.parse(String(access.trialStartedAt || ''))) / (24 * 60 * 60 * 1000))));
+        const trialLabel = Number(access.trialDays || 3) === 1 ? '1 day trial' : `${Number(access.trialDays || 3)} day trial`;
+        const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        const shouldShowBanner = isProtectedPage && access.hasAccess && !ownerFreeTraining;
+        const bannerAccessLabel = access.accessType === 'quick_unlock'
+            ? '7 day access'
+            : (access.accessType === 'monthly_subscription'
+                ? 'Monthly access'
+                : (access.accessType === 'annual_access' ? 'Annual access' : 'Access active'));
+        if (shouldShowBanner && access.accessSource === 'trial' && access.trialActive) {
+            ui.banner.innerHTML = `
+                <div class="ode-access-banner-pill"><strong>${trialLabel}</strong><span>Day ${trialDay} · Your plan deletes ${access.accessRemainingLabel === 'expired' ? 'now' : `in ${access.accessRemainingLabel}`}</span></div>
+                <button type="button" class="ode-access-banner-cta" data-access-banner-open>Get a year for free?</button>
+            `.trim();
+            ui.banner.classList.remove('hidden');
+        } else if (shouldShowBanner) {
+            ui.banner.innerHTML = `<div class="ode-access-banner-pill"><strong>${bannerAccessLabel}</strong><span>${access.accessRemainingLabel} left in your system</span></div>`;
+            ui.banner.classList.remove('hidden');
+        } else {
+            ui.banner.classList.add('hidden');
+        }
+        ui.banner.querySelector('[data-access-banner-open]')?.addEventListener('click', () => {
+            state.promptOpen = true;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            render();
+        });
+
+        ui.countdown.textContent = access.hasAccess
+            ? `Your plan deletes in ${access.accessRemainingLabel}`
+            : 'Access is locked until you unlock or qualify referrals';
+
+        const nextGoal = Number(access?.referrals?.nextTier?.required || 2);
+        const recent = Array.isArray(referral?.recent) ? referral.recent : [];
+        const link = String(referral?.link || '');
+        const quickUnlockRedeemed = Boolean(access?.quickUnlock?.redeemed);
+        const qualifiedCount = Number(access?.referrals?.qualifiedCount || 0);
+        const achievedTier1 = qualifiedCount >= 2;
+        const achievedTier2 = qualifiedCount >= 4;
+        const achievedTier3 = qualifiedCount >= 8;
+        const activeTierTotal = qualifiedCount < 2
+            ? 2
+            : (qualifiedCount < 4
+                ? 4
+                : (qualifiedCount < 8
+                    ? 8
+                    : (Math.floor(qualifiedCount / 8) + 1) * 8));
+        const progressCurrent = Math.max(0, Math.min(activeTierTotal, qualifiedCount));
+        const progressPct = Math.max(0, Math.min(100, Math.round((progressCurrent / Math.max(1, activeTierTotal)) * 100)));
+        const extraCycleTarget = activeTierTotal > 8 ? activeTierTotal : null;
+        const primaryPlanCode = quickUnlockRedeemed ? 'monthly_subscription' : 'quick_unlock';
+        const primaryPrice = quickUnlockRedeemed
+            ? centsToDollars(access?.offers?.monthlySubscription?.amountCents || 1500)
+            : centsToDollars(access?.offers?.quickUnlock?.amountCents || 100);
+        const primaryLabel = quickUnlockRedeemed ? 'Monthly Access' : 'Instant Access';
+        const primaryButton = quickUnlockRedeemed ? 'Start Monthly' : 'Unlock Now';
+        const primarySubcopy = quickUnlockRedeemed
+            ? 'Keep training active without interruptions.'
+            : 'Unlock 7 days now. No interruptions.';
+        const paymentActive = Boolean(state.paymentPlanCode);
+        const activePlanCode = String(state.paymentPlanCode || primaryPlanCode || 'quick_unlock');
+        const activePayLabel = activePlanCode === 'monthly_subscription' ? 'Start Monthly' : 'Pay Now';
+        const isPrompt = Boolean(state.promptOpen && access.hasAccess);
+        const isSuccess = Boolean(state.unlockSuccess && access.hasAccess);
+        const isPreview = Boolean(state.forcePreview && !isProtectedPage);
+        const headline = 'Don’t lose your plan.';
+        const subline = (isPrompt || isPreview) && access.trialActive
+            ? `Don’t worry, you still have ${access.accessRemainingLabel}. If you want to keep it longer, look below.`
+            : 'Workouts, meal guidance, and accountability stay live here.';
+        const inlinePaymentMarkup = `
+            <div class="ode-access-inline-payment open${state.moreOptionsView ? ' light' : ''}" id="ode-access-inline-payment">
+                <div class="ode-access-inline-payment-shell" id="ode-access-payment-shell">
+                    <div class="ode-access-inline-payment-head">
+                        <div>
+                            <div class="ode-access-inline-payment-title">Pay here</div>
+                        </div>
+                    </div>
+                    <form class="ode-access-payment-form" id="ode-access-payment-form">
+                        <div class="ode-access-payment-stage">
+                            <label class="ode-access-payment-label">Card information</label>
+                            ${state.user?.demo?.active ? `
+                                <div class="ode-access-demo-card" id="ode-access-demo-card">
+                                    <input type="text" id="ode-demo-card-number" placeholder="1234 1234 1234 1234" autocomplete="cc-number" />
+                                    <input type="text" id="ode-demo-card-exp" placeholder="MM / YY" autocomplete="cc-exp" />
+                                    <input type="text" id="ode-demo-card-cvc" placeholder="CVC" autocomplete="cc-csc" />
+                                </div>
+                            ` : `
+                                <div class="ode-access-card-row">
+                                    <div class="ode-access-card-host" id="ode-access-card-number"></div>
+                                    <div class="ode-access-card-host" id="ode-access-card-expiry"></div>
+                                    <div class="ode-access-card-host" id="ode-access-card-cvc"></div>
+                                </div>
+                            `}
+                        </div>
+                        <div class="ode-access-payment-extra" id="ode-access-payment-extra">
+                            <div class="ode-access-payment-grid">
+                                <input type="text" class="full" id="ode-access-billing-name" placeholder="Full name on card" value="${String(state.user?.displayName || state.user?.username || '').replace(/"/g, '&quot;')}" autocomplete="cc-name" />
+                                <input type="email" id="ode-access-billing-email" placeholder="Email" value="${String(state.user?.email || '').replace(/"/g, '&quot;')}" autocomplete="email" />
+                                <input type="text" id="ode-access-billing-zip" placeholder="ZIP / Postal code" autocomplete="postal-code" />
+                                <input type="text" class="full" id="ode-access-billing-line1" placeholder="Address" autocomplete="address-line1" />
+                                <input type="text" id="ode-access-billing-city" placeholder="City" autocomplete="address-level2" />
+                                <select id="ode-access-billing-country" autocomplete="country">
+                                    <option value="US" selected>United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="ode-access-btn" id="ode-access-payment-submit" disabled>${activePayLabel}</button>
+                        <button type="button" class="ode-access-btn ode-access-payment-wallet" id="ode-access-apple-pay">Apple Pay</button>
+                        <div class="ode-access-status" id="ode-access-status">${state.paymentLoading ? 'Preparing secure payment...' : (state.stripeLoadError || '')}</div>
+                    </form>
+                </div>
+            </div>
+        `;
+        const inviteMessages = [
+            `Yo, I used this to build my workout and it actually helped me get structured. It’s free to try and it gives workouts, meal planning help, and accountability. Use my link: ${link}`,
+            `I just built my plan on Odeology. It’s free to start and it helps with workouts, meal guidance, and staying accountable. Join with my link: ${link}`,
+            `If you’re trying to stop guessing in the gym, use this. It builds your workout, helps with meal planning, and keeps you accountable. Try it free here: ${link}`
+        ];
+        const pickInviteMessage = () => inviteMessages[Math.floor(Math.random() * inviteMessages.length)] || `Use my link and build your workout.\n\n${link}`;
+
+        if (state.paymentView && false) {
+            ui.backBtn.classList.remove('hidden');
+            ui.backBtn.textContent = 'Back';
+            const planCode = String(state.paymentPlanCode || primaryPlanCode || 'quick_unlock');
+            const planLabel = planCode === 'monthly_subscription'
+                ? 'Monthly Access'
+                : (planCode === 'annual_access' ? 'Annual Access' : 'Instant Access');
+            const planPrice = planCode === 'monthly_subscription'
+                ? `${centsToDollars(access?.offers?.monthlySubscription?.amountCents || 1500)} / month`
+                : (planCode === 'annual_access'
+                    ? `${centsToDollars(access?.offers?.annualAccess?.amountCents || 12000)} / year`
+                    : centsToDollars(access?.offers?.quickUnlock?.amountCents || 100));
+            const payButtonLabel = planCode === 'monthly_subscription' ? 'Start Monthly' : 'Pay Now';
+            const summaryCopy = planCode === 'monthly_subscription'
+                ? 'Keep your training live without interruptions.'
+                : (planCode === 'annual_access'
+                    ? 'Lock in long-term access right here.'
+                    : 'Unlock 7 days right here. No redirect.');
+            const defaultName = String(state.user?.displayName || state.user?.username || '').trim();
+            const defaultEmail = String(state.user?.email || '').trim();
+            ui.content.innerHTML = `
+                <div class="ode-access-kicker">Secure Checkout</div>
+                <h2 class="ode-access-headline">Finish inside the app.</h2>
+                <p class="ode-access-sub">Enter your card here. You will stay on this page until payment is done.</p>
+                <div class="ode-access-payment-shell" id="ode-access-payment-shell">
+                    <section class="ode-access-payment-summary">
+                        <div class="price">${planPrice}</div>
+                        <div class="label">${planLabel}</div>
+                        <div class="label">${summaryCopy}</div>
+                        <div class="ode-access-guarantee light">100% satisfaction guarantee or your money back.</div>
+                    </section>
+                    <form class="ode-access-payment-form" id="ode-access-payment-form">
+                        <div class="ode-access-payment-stage">
+                            <label class="ode-access-payment-label">Card information</label>
+                            ${state.user?.demo?.active ? `
+                                <div class="ode-access-demo-card" id="ode-access-demo-card">
+                                    <input type="text" id="ode-demo-card-number" placeholder="1234 1234 1234 1234" autocomplete="cc-number" />
+                                    <input type="text" id="ode-demo-card-exp" placeholder="MM / YY" autocomplete="cc-exp" />
+                                    <input type="text" id="ode-demo-card-cvc" placeholder="CVC" autocomplete="cc-csc" />
+                                </div>
+                            ` : `
+                                <div class="ode-access-card-row">
+                                    <div class="ode-access-card-host" id="ode-access-card-number"></div>
+                                    <div class="ode-access-card-host" id="ode-access-card-expiry"></div>
+                                    <div class="ode-access-card-host" id="ode-access-card-cvc"></div>
+                                </div>
+                            `}
+                            <div class="ode-access-payment-note">Once the card is complete, the rest of the checkout details will slide in.</div>
+                        </div>
+                        <div class="ode-access-payment-extra" id="ode-access-payment-extra">
+                            <div class="ode-access-payment-grid">
+                                <input type="text" class="full" id="ode-access-billing-name" placeholder="Full name on card" value="${defaultName.replace(/"/g, '&quot;')}" autocomplete="cc-name" />
+                                <input type="email" id="ode-access-billing-email" placeholder="Email" value="${defaultEmail.replace(/"/g, '&quot;')}" autocomplete="email" />
+                                <input type="text" id="ode-access-billing-zip" placeholder="ZIP / Postal code" autocomplete="postal-code" />
+                                <input type="text" class="full" id="ode-access-billing-line1" placeholder="Address" autocomplete="address-line1" />
+                                <input type="text" id="ode-access-billing-city" placeholder="City" autocomplete="address-level2" />
+                                <select id="ode-access-billing-country" autocomplete="country">
+                                    <option value="US" selected>United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="ode-access-btn primary ode-access-payment-submit" id="ode-access-payment-submit" disabled>${payButtonLabel}</button>
+                        <div class="ode-access-status" id="ode-access-status">${state.paymentLoading ? 'Preparing secure payment...' : (state.stripeLoadError || '')}</div>
+                    </form>
+                </div>
+            `.trim();
+
+            const statusEl = ui.content.querySelector('#ode-access-status');
+            const formEl = ui.content.querySelector('#ode-access-payment-form');
+            const submitBtn = ui.content.querySelector('#ode-access-payment-submit');
+            const paymentShellEl = ui.content.querySelector('#ode-access-payment-shell');
+            const handleConfirmedPayment = async (payload) => {
+                const resp = await fetch('/api/auth/access/inline-confirm', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await resp.json().catch(() => ({}));
+                if (!resp.ok || !json?.ok || !json?.access) {
+                    if (statusEl) statusEl.textContent = json?.error || 'Payment went through, but access could not be applied yet.';
+                    state.paymentSubmitting = false;
+                    setPaymentFieldsReady(true);
+                    return false;
+                }
+                state.payload = applyDemoOverrides({
+                    ...(state.payload || {}),
+                    access: json.access
+                });
+                if (statusEl) statusEl.textContent = 'Payment approved. Redirecting to training...';
+                window.setTimeout(() => {
+                    window.location.href = '/training.html';
+                }, 500);
+                return true;
+            };
+
+            const mountDemoPayment = () => {
+                const numberInput = ui.content.querySelector('#ode-demo-card-number');
+                const expInput = ui.content.querySelector('#ode-demo-card-exp');
+                const cvcInput = ui.content.querySelector('#ode-demo-card-cvc');
+                const cardInputs = [numberInput, expInput, cvcInput].filter(Boolean);
+                const formatCardNumber = (value) => String(value || '').replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+                const formatCardExp = (value) => {
+                    const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
+                    if (digits.length <= 2) return digits;
+                    return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+                };
+                const syncDemoReady = () => {
+                    const ready = String(numberInput?.value || '').replace(/\D/g, '').length === 16
+                        && String(expInput?.value || '').replace(/\D/g, '').length >= 4
+                        && String(cvcInput?.value || '').replace(/\D/g, '').length >= 3;
+                    setPaymentFieldsReady(ready);
+                    paymentShellEl?.classList.toggle('ready', ready);
+                };
+                numberInput?.addEventListener('input', () => {
+                    numberInput.value = formatCardNumber(numberInput.value);
+                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16) expInput?.focus();
+                    syncDemoReady();
+                });
+                expInput?.addEventListener('input', () => {
+                    expInput.value = formatCardExp(expInput.value);
+                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4) cvcInput?.focus();
+                    syncDemoReady();
+                });
+                cvcInput?.addEventListener('input', () => {
+                    cvcInput.value = String(cvcInput.value || '').replace(/\D/g, '').slice(0, 4);
+                    syncDemoReady();
+                });
+                cardInputs.forEach((input, index) => input?.addEventListener('keydown', (event) => {
+                    if (event.key === 'Backspace' && !String(input.value || '').trim() && index > 0) {
+                        cardInputs[index - 1]?.focus();
+                    }
+                }));
+                syncDemoReady();
+            };
+
+            const mountStripeCard = async () => {
+                if (state.paymentLoading || !state.paymentConfig?.clientSecret || !state.paymentConfig?.publishableKey) return;
+                const mountKey = `${state.paymentPlanCode}:${state.paymentConfig.clientSecret}`;
+                if (state.stripeMountedKey === mountKey && state.stripeCardNumber) return;
+                clearMountedPaymentForm();
+                try {
+                    await loadStripeJs();
+                    if (!window.Stripe) throw new Error('Stripe failed to load.');
+                    state.stripeInstance = window.Stripe(state.paymentConfig.publishableKey);
+                    state.stripeElements = state.stripeInstance.elements();
+                    const baseStyle = {
+                        style: {
+                            base: {
+                                color: '#0F172A',
+                                fontFamily: 'Inter, system-ui, sans-serif',
+                                fontSize: '16px',
+                                '::placeholder': { color: '#94A3B8' }
+                            },
+                            invalid: { color: '#B91C1C' }
+                        }
+                    };
+                    state.stripeCardNumber = state.stripeElements.create('cardNumber', baseStyle);
+                    state.stripeCardExpiry = state.stripeElements.create('cardExpiry', baseStyle);
+                    state.stripeCardCvc = state.stripeElements.create('cardCvc', baseStyle);
+                    state.stripeCardNumber.mount('#ode-access-card-number');
+                    state.stripeCardExpiry.mount('#ode-access-card-expiry');
+                    state.stripeCardCvc.mount('#ode-access-card-cvc');
+                    const updateCardHostState = (id, ready) => {
+                        const el = ui.content.querySelector(id);
+                        if (el) el.classList.toggle('ready', Boolean(ready));
+                    };
+                    let completeNumber = false;
+                    let completeExpiry = false;
+                    let completeCvc = false;
+                    const syncStripeReady = () => {
+                        const ready = completeNumber && completeExpiry && completeCvc;
+                        setPaymentFieldsReady(ready);
+                        paymentShellEl?.classList.toggle('ready', ready);
+                    };
+                    state.stripeCardNumber.on('change', (event) => {
+                        completeNumber = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-number', completeNumber);
+                        if (event?.complete) state.stripeCardExpiry?.focus?.();
+                        if (statusEl && event?.error?.message) {
+                            statusEl.textContent = event.error.message;
+                        } else if (statusEl && !state.paymentSubmitting) {
+                            statusEl.textContent = '';
+                        }
+                        syncStripeReady();
+                    });
+                    state.stripeCardExpiry.on('change', (event) => {
+                        completeExpiry = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-expiry', completeExpiry);
+                        if (event?.complete) state.stripeCardCvc?.focus?.();
+                        if (statusEl && event?.error?.message) {
+                            statusEl.textContent = event.error.message;
+                        } else if (statusEl && !state.paymentSubmitting) {
+                            statusEl.textContent = '';
+                        }
+                        syncStripeReady();
+                    });
+                    state.stripeCardCvc.on('change', (event) => {
+                        completeCvc = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-cvc', completeCvc);
+                        if (statusEl && event?.error?.message) {
+                            statusEl.textContent = event.error.message;
+                        } else if (statusEl && !state.paymentSubmitting) {
+                            statusEl.textContent = '';
+                        }
+                        syncStripeReady();
+                    });
+                    state.stripeMountedKey = mountKey;
+                } catch (err) {
+                    if (statusEl) statusEl.textContent = err?.message || 'Could not load Stripe.';
+                }
+            };
+
+            if (state.user?.demo?.active) {
+                mountDemoPayment();
+            } else {
+                window.setTimeout(() => {
+                    mountStripeCard();
+                }, 0);
+            }
+
+            formEl?.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (state.paymentSubmitting || state.paymentLoading) return;
+                state.paymentSubmitting = true;
+                if (submitBtn) submitBtn.disabled = true;
+                if (statusEl) statusEl.textContent = 'Processing payment...';
+
+                const billing = {
+                    name: String(ui.content.querySelector('#ode-access-billing-name')?.value || '').trim(),
+                    email: String(ui.content.querySelector('#ode-access-billing-email')?.value || '').trim(),
+                    zip: String(ui.content.querySelector('#ode-access-billing-zip')?.value || '').trim(),
+                    line1: String(ui.content.querySelector('#ode-access-billing-line1')?.value || '').trim(),
+                    city: String(ui.content.querySelector('#ode-access-billing-city')?.value || '').trim(),
+                    country: String(ui.content.querySelector('#ode-access-billing-country')?.value || 'US').trim().toUpperCase()
+                };
+
+                try {
+                    if (state.user?.demo?.active) {
+                        await handleConfirmedPayment({ planCode: state.paymentPlanCode, demo: true });
+                        return;
+                    }
+                    if (!state.stripeInstance || !state.stripeCardNumber || !state.paymentConfig?.clientSecret) {
+                        if (statusEl) statusEl.textContent = 'Secure payment is not ready yet.';
+                        state.paymentSubmitting = false;
+                        setPaymentFieldsReady(true);
+                        return;
+                    }
+                    const confirmation = await state.stripeInstance.confirmCardPayment(state.paymentConfig.clientSecret, {
+                        payment_method: {
+                            card: state.stripeCardNumber,
+                            billing_details: {
+                                name: billing.name || undefined,
+                                email: billing.email || undefined,
+                                address: {
+                                    line1: billing.line1 || undefined,
+                                    city: billing.city || undefined,
+                                    postal_code: billing.zip || undefined,
+                                    country: billing.country || undefined
+                                }
+                            }
+                        }
+                    });
+                    if (confirmation?.error) {
+                        if (statusEl) statusEl.textContent = confirmation.error.message || 'Payment could not be completed.';
+                        state.paymentSubmitting = false;
+                        setPaymentFieldsReady(true);
+                        return;
+                    }
+                    if (state.paymentConfig?.mode === 'subscription') {
+                        await handleConfirmedPayment({
+                            planCode: state.paymentPlanCode,
+                            subscriptionId: state.paymentConfig.subscriptionId
+                        });
+                        return;
+                    }
+                    await handleConfirmedPayment({
+                        planCode: state.paymentPlanCode,
+                        paymentIntentId: confirmation?.paymentIntent?.id || state.paymentConfig.paymentIntentId
+                    });
+                } catch {
+                    if (statusEl) statusEl.textContent = 'Payment could not be completed.';
+                    state.paymentSubmitting = false;
+                    setPaymentFieldsReady(true);
+                }
+            });
+        } else if (isSuccess) {
+            ui.backBtn.classList.add('hidden');
+            const endsAt = String(state.unlockSuccess?.endsAt || access?.currentAccessEndsAt || '');
+            ui.content.innerHTML = `
+                <section class="ode-access-success" id="ode-access-success-card">
+                    <div class="ode-access-success-kicker">Payment Confirmed</div>
+                    <h3>You're unlocked.</h3>
+                    <p>Your training access is active again. Everything is live and your plan is still here.</p>
+                    <div class="ode-access-success-grid">
+                        <div class="ode-access-success-stat">
+                            <div class="ode-access-success-stat-label">What You Got</div>
+                            <div class="ode-access-success-stat-value">${Number(state.unlockSuccess?.days || access?.quickUnlock?.days || 7)} Days</div>
+                        </div>
+                        <div class="ode-access-success-stat">
+                            <div class="ode-access-success-stat-label">Active Until</div>
+                            <div class="ode-access-success-stat-value">${formatDateLabel(endsAt) || 'Active now'}</div>
+                        </div>
+                        <div class="ode-access-success-stat">
+                            <div class="ode-access-success-stat-label">${centsToDollars(state.unlockSuccess?.amountCents || 0)}</div>
+                            <div class="ode-access-success-stat-value" id="ode-access-success-countdown">${formatRemaining(endsAt)}</div>
+                        </div>
+                    </div>
+                    <div class="ode-access-success-actions">
+                        <button type="button" class="ode-access-btn primary" data-access-success-continue>Continue training</button>
+                        <button type="button" class="ode-access-btn ghost" data-access-success-share>Copy referral link</button>
+                    </div>
+                </section>
+            `.trim();
+            const successCard = ui.content.querySelector('#ode-access-success-card');
+            fireConfetti(successCard);
+            clearSuccessTimers();
+            state.countdownTimer = window.setInterval(() => {
+                const countdownEl = document.getElementById('ode-access-success-countdown');
+                if (countdownEl) countdownEl.textContent = formatRemaining(endsAt);
+            }, 1000);
+            state.confettiTimer = window.setTimeout(() => {
+                clearSuccessTimers();
+            }, 5200);
+            state.successRedirectTimer = window.setTimeout(() => {
+                window.location.href = '/training.html';
+            }, 2200);
+            ui.content.querySelector('[data-access-success-continue]')?.addEventListener('click', () => {
+                clearSuccessTimers();
+                state.unlockSuccess = null;
+                window.location.href = '/training.html';
+            });
+            ui.content.querySelector('[data-access-success-share]')?.addEventListener('click', async () => {
+                const ok = await writeText(link);
+                const button = ui.content.querySelector('[data-access-success-share]');
+                if (button) button.textContent = ok ? 'Referral link copied' : 'Copy failed';
+            });
+        } else if (!state.inviteView && !state.moreOptionsView) {
+            if (isPreview) {
+                ui.backBtn.classList.remove('hidden');
+                ui.backBtn.textContent = 'Close Preview';
+            } else if (isPrompt || !isProtectedPage) {
+                ui.backBtn.classList.remove('hidden');
+                ui.backBtn.textContent = 'Skip';
+            } else {
+                ui.backBtn.classList.remove('hidden');
+                ui.backBtn.textContent = 'Other Plans';
+            }
+            ui.content.innerHTML = `
+                <div class="ode-access-kicker">Training Access</div>
+                <h2 class="ode-access-headline">${headline}</h2>
+                <p class="ode-access-sub">${subline}</p>
+                <div class="ode-access-stack">
+                    <section class="ode-access-primary-card">
+                        <div class="ode-access-primary-price">${primaryPrice}</div>
+                        <div class="ode-access-primary-copy">${primaryLabel}</div>
+                        <div class="ode-access-primary-copy" style="font-size:.92rem">${primarySubcopy}</div>
+                        <div class="ode-access-guarantee light">100% satisfaction guarantee or your money back.</div>
+                        ${quickUnlockRedeemed ? '' : '<div class="ode-access-plan-note">$1 intro unlock. After that, regular access is $15/month.</div>'}
+                        ${paymentActive ? inlinePaymentMarkup : `<button type="button" class="ode-access-btn" data-access-pay-plan="${primaryPlanCode}">${primaryButton}</button>`}
+                    </section>
+                    <section class="ode-access-secondary-card">
+                        <div class="ode-access-mini">Or get it free</div>
+                        <h3>Train with your people</h3>
+                        <p>Bring people in and unlock the next tier.</p>
+                        <div class="ode-access-tier-list">
+                            <div class="ode-access-tier-row ${achievedTier1 ? 'done' : ''} ${!achievedTier1 && activeTierTotal === 2 ? 'current' : ''}"><span>Invite 2 people</span><span>7 days</span></div>
+                            <div class="ode-access-tier-row ${achievedTier2 ? 'done' : ''} ${achievedTier1 && !achievedTier2 ? 'current' : ''}"><span>Invite 4 people</span><span>30 days</span></div>
+                            <div class="ode-access-tier-row ${achievedTier3 ? 'done' : ''} ${achievedTier2 && !achievedTier3 ? 'current' : ''}"><span>Invite 8 people</span><span>1 year</span></div>
+                            ${extraCycleTarget ? `<div class="ode-access-tier-row current"><span>Invite ${extraCycleTarget} people</span><span>${Math.floor(extraCycleTarget / 8)} years</span></div>` : ''}
+                        </div>
+                        <div class="ode-access-secondary-meta">
+                            <div>
+                                <div class="ode-access-progress-value">${progressCurrent} / ${activeTierTotal} completed</div>
+                                <div class="ode-access-progress-note">${activeTierTotal === 2 ? 'Invite 2 people to unlock 7 days.' : (activeTierTotal === 4 ? 'Your 7-day tier is locked in. Reach 4 total for 30 days.' : (activeTierTotal === 8 ? 'Your 30-day tier is locked in. Reach 8 total for 1 year.' : `Your 1-year tier is locked in. Reach ${activeTierTotal} total for another year.`))}</div>
+                            </div>
+                            <div style="width:150px;max-width:40%">
+                                <div class="ode-access-progressbar"><div class="ode-access-progressfill" style="width:${progressPct}%"></div></div>
+                            </div>
+                        </div>
+                        <button type="button" class="ode-access-btn secondary" data-access-invite>Invite Now</button>
+                    </section>
+                </div>
+                ${isPrompt ? '<div class="ode-access-foot"><button type="button" class="ode-access-textbtn" data-access-dismiss>Other Plans</button></div>' : ''}
+                ${paymentActive ? '' : '<div class="ode-access-status" id="ode-access-status"></div>'}
+            `.trim();
+            ui.content.querySelectorAll('[data-access-pay-plan]').forEach((btn) => btn.addEventListener('click', async () => {
+                const planCode = String(btn.getAttribute('data-access-pay-plan') || primaryPlanCode);
+                openInlinePayment(planCode);
+            }));
+            ui.content.querySelector('[data-access-invite]')?.addEventListener('click', () => {
+                state.inviteView = true;
+                render();
+            });
+            ui.content.querySelector('[data-access-dismiss]')?.addEventListener('click', () => {
+                state.moreOptionsView = true;
+                markPromptSeen();
+                render();
+            });
+        } else if (state.moreOptionsView) {
+            ui.backBtn.classList.remove('hidden');
+            ui.backBtn.textContent = 'Back';
+            ui.content.innerHTML = `
+                <div class="ode-access-kicker">More Plans</div>
+                <h2 class="ode-access-headline">Stay on track.</h2>
+                <p class="ode-access-sub">Pick the plan that keeps your training live.</p>
+                <div class="ode-access-stack">
+                    <section class="ode-access-secondary-card">
+                        <h3>${centsToDollars(access?.offers?.monthlySubscription?.amountCents || 1500)} / month</h3>
+                        <p>Consistent access with the full training system live.</p>
+                        <div class="ode-access-guarantee">100% satisfaction guarantee or your money back.</div>
+                        ${paymentActive && activePlanCode === 'monthly_subscription'
+                            ? inlinePaymentMarkup
+                            : '<button type="button" class="ode-access-btn ghost" data-access-pay-plan="monthly_subscription">Start Monthly</button>'}
+                    </section>
+                    <section class="ode-access-secondary-card">
+                        <h3>${centsToDollars(access?.offers?.annualAccess?.amountCents || 12000)} / year</h3>
+                        <p>Best long-term value if you want the full year covered.</p>
+                        <div class="ode-access-guarantee">100% satisfaction guarantee or your money back.</div>
+                        ${paymentActive && activePlanCode === 'annual_access'
+                            ? inlinePaymentMarkup
+                            : '<button type="button" class="ode-access-btn ghost" data-access-pay-plan="annual_access">Unlock Annual</button>'}
+                    </section>
+                </div>
+                <div class="ode-access-status" id="ode-access-status"></div>
+            `.trim();
+            ui.content.querySelectorAll('[data-access-pay-plan]').forEach((btn) => btn.addEventListener('click', async () => {
+                const planCode = String(btn.getAttribute('data-access-pay-plan') || 'monthly_subscription');
+                openInlinePayment(planCode);
+            }));
+        } else {
+            ui.backBtn.classList.remove('hidden');
+            ui.backBtn.textContent = 'Back';
+            ui.content.innerHTML = `
+                <div class="ode-access-kicker">Invite People</div>
+                <h2 class="ode-access-headline">Send your link.</h2>
+                <p class="ode-access-sub">Use my link and build your workout.</p>
+                <div class="ode-access-linkbox">
+                    <input class="ode-access-input" id="ode-access-link" readonly value="${String(link || '').replace(/"/g, '&quot;')}">
+                    <div class="ode-access-actions">
+                        <button type="button" class="ode-access-btn primary" data-access-copy-link>Copy link</button>
+                        <button type="button" class="ode-access-btn secondary" data-access-text>Text</button>
+                        <button type="button" class="ode-access-btn ghost" data-access-email>Email</button>
+                    </div>
+                </div>
+                <div class="ode-access-rule">How invites count: Your invite counts after they sign up, finish onboarding, and create their workout.</div>
+                <div class="ode-access-mini" style="margin-top:12px">Person you invite has to create or add to their workout to get free access.</div>
+                <div class="ode-access-actions">
+                    <button type="button" class="ode-access-btn ghost" data-access-caption>Instagram</button>
+                </div>
+                <section class="ode-access-progress">
+                    <div><strong>${progressCurrent} / ${activeTierTotal} completed</strong></div>
+                    <div class="ode-access-progressbar"><div class="ode-access-progressfill" style="width:${progressPct}%"></div></div>
+                    <div class="ode-access-mini">${activeTierTotal === 2 ? 'Invite 2 people to unlock 7 days.' : (activeTierTotal === 4 ? 'Reach 4 total invites to unlock 30 days.' : (activeTierTotal === 8 ? 'Reach 8 total invites to unlock 1 year.' : `Reach ${activeTierTotal} total invites to unlock another year.`))}</div>
+                </section>
+                <div class="ode-access-list">
+                    ${recent.length ? recent.map((entry) => {
+                        const status = String(entry?.status || 'pending').toLowerCase();
+                        const sub = status === 'qualified' || status === 'rewarded'
+                            ? `Completed workout${entry?.email ? ` • ${entry.email}` : ''}${entry?.qualifiedAt ? ` • ${formatDateLabel(entry.qualifiedAt)}` : ''}`
+                            : (status === 'rejected'
+                                ? `Rejected${entry?.email ? ` • ${entry.email}` : ''}${entry?.rejectedReason ? ` • ${entry.rejectedReason.replace(/_/g, ' ')}` : ''}`
+                                : `Pending${entry?.email ? ` • ${entry.email}` : ''}${entry?.signedUpAt ? ` • ${formatDateLabel(entry.signedUpAt)}` : ''}`);
+                        return `<div class="ode-access-item"><div><div class="ode-access-item-name">${String(entry?.displayName || entry?.username || 'New member').replace(/[<>&]/g, '')}</div><div class="ode-access-item-sub">${sub.replace(/[<>&]/g, '')}</div></div><div class="ode-access-pill ${status}">${status}</div></div>`;
+                    }).join('') : ''}
+                </div>
+                <div class="ode-access-actions" style="justify-content:flex-end">
+                    <button type="button" class="ode-access-btn secondary" style="width:auto" data-access-creator>Get a creator account for free</button>
+                </div>
+                <div class="ode-access-status" id="ode-access-status"></div>
+            `.trim();
+            ui.content.querySelector('[data-access-copy-link]')?.addEventListener('click', async () => {
+                const ok = await writeText(link);
+                const statusEl = ui.content.querySelector('#ode-access-status');
+                if (statusEl) statusEl.textContent = ok ? 'Referral link copied.' : 'Copy failed. Try manual copy.';
+            });
+            ui.content.querySelector('[data-access-text]')?.addEventListener('click', async () => {
+                const statusEl = ui.content.querySelector('#ode-access-status');
+                const body = pickInviteMessage();
+                window.location.href = `sms:?&body=${encodeURIComponent(body)}`;
+                if (statusEl) statusEl.textContent = 'Text message opened.';
+            });
+            ui.content.querySelector('[data-access-email]')?.addEventListener('click', () => {
+                const statusEl = ui.content.querySelector('#ode-access-status');
+                const subject = 'Build your workout with me';
+                const body = pickInviteMessage();
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                if (statusEl) statusEl.textContent = 'Email draft opened.';
+            });
+            ui.content.querySelector('[data-access-caption]')?.addEventListener('click', async () => {
+                const ok = await writeText(buildCaption(link));
+                const statusEl = ui.content.querySelector('#ode-access-status');
+                openInstagramCamera();
+                if (statusEl) statusEl.textContent = ok ? 'Instagram opened. Caption copied with your link.' : 'Instagram opened. Copy failed.';
+            });
+            ui.content.querySelector('[data-access-creator]')?.addEventListener('click', () => {
+                const target = `${window.location.origin}/creators.html`;
+                window.location.href = target;
+            });
+        }
+
+        if (paymentActive) {
+            const statusEl = ui.content.querySelector('#ode-access-status');
+            const formEl = ui.content.querySelector('#ode-access-payment-form');
+            const submitBtn = ui.content.querySelector('#ode-access-payment-submit');
+            const applePayBtn = ui.content.querySelector('#ode-access-apple-pay');
+            const paymentShellEl = ui.content.querySelector('#ode-access-payment-shell');
+            const buildDemoSavedCard = () => {
+                const numberValue = String(ui.content.querySelector('#ode-demo-card-number')?.value || '').replace(/\D/g, '');
+                const expDigits = String(ui.content.querySelector('#ode-demo-card-exp')?.value || '').replace(/\D/g, '');
+                return {
+                    paymentType: 'card',
+                    brand: 'demo',
+                    last4: numberValue.slice(-4) || '4242',
+                    expMonth: Number(expDigits.slice(0, 2) || 12),
+                    expYear: Number(`20${String(expDigits.slice(2, 4) || '30')}`),
+                    displayLabel: `Card on file •••• ${numberValue.slice(-4) || '4242'}`
+                };
+            };
+            const handleConfirmedPayment = async (payload) => {
+                const resp = await fetch('/api/auth/access/inline-confirm', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await resp.json().catch(() => ({}));
+                if (!resp.ok || !json?.ok || !json?.access) {
+                    if (statusEl) statusEl.textContent = json?.error || 'Payment went through, but access could not be applied yet.';
+                    state.paymentSubmitting = false;
+                    setPaymentFieldsReady(true);
+                    return false;
+                }
+                state.payload = applyDemoOverrides({
+                    ...(state.payload || {}),
+                    access: json.access
+                });
+                state.unlockSuccess = {
+                    days: Number(json?.grant?.meta?.days || json?.grant?.meta?.currentPeriodDays || (activePlanCode === 'annual_access' ? 365 : 30) || 7),
+                    endsAt: json?.access?.currentAccessEndsAt || null,
+                    source: 'payment',
+                    planCode: String(json?.grant?.meta?.planCode || activePlanCode || 'quick_unlock'),
+                    amountCents: Number(json?.grant?.amount_cents || json?.grant?.amountCents || 0)
+                };
+                state.paymentSubmitting = false;
+                state.paymentPlanCode = '';
+                state.paymentConfig = null;
+                clearMountedPaymentForm();
+                render();
+                return true;
+            };
+            const mountDemoPayment = () => {
+                const numberInput = ui.content.querySelector('#ode-demo-card-number');
+                const expInput = ui.content.querySelector('#ode-demo-card-exp');
+                const cvcInput = ui.content.querySelector('#ode-demo-card-cvc');
+                const cardInputs = [numberInput, expInput, cvcInput].filter(Boolean);
+                const formatCardNumber = (value) => String(value || '').replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+                const formatCardExp = (value) => {
+                    const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
+                    if (digits.length <= 2) return digits;
+                    return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+                };
+                const syncDemoReady = () => {
+                    const ready = String(numberInput?.value || '').replace(/\D/g, '').length === 16
+                        && String(expInput?.value || '').replace(/\D/g, '').length >= 4
+                        && String(cvcInput?.value || '').replace(/\D/g, '').length >= 3;
+                    setPaymentFieldsReady(ready);
+                    paymentShellEl?.classList.toggle('ready', ready);
+                };
+                numberInput?.addEventListener('input', () => {
+                    numberInput.value = formatCardNumber(numberInput.value);
+                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16) expInput?.focus();
+                    syncDemoReady();
+                });
+                expInput?.addEventListener('input', () => {
+                    expInput.value = formatCardExp(expInput.value);
+                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4) cvcInput?.focus();
+                    syncDemoReady();
+                });
+                cvcInput?.addEventListener('input', () => {
+                    cvcInput.value = String(cvcInput.value || '').replace(/\D/g, '').slice(0, 4);
+                    syncDemoReady();
+                });
+                cardInputs.forEach((input, index) => input?.addEventListener('keydown', (event) => {
+                    if (event.key === 'Backspace' && !String(input.value || '').trim() && index > 0) {
+                        cardInputs[index - 1]?.focus();
+                    }
+                }));
+                syncDemoReady();
+            };
+            const mountStripeCard = async () => {
+                if (state.paymentLoading || !state.paymentConfig?.clientSecret || !state.paymentConfig?.publishableKey) return;
+                const mountKey = `${state.paymentPlanCode}:${state.paymentConfig.clientSecret}`;
+                if (state.stripeMountedKey === mountKey && state.stripeCardNumber) return;
+                clearMountedPaymentForm();
+                try {
+                    await loadStripeJs();
+                    if (!window.Stripe) throw new Error('Stripe failed to load.');
+                    state.stripeInstance = window.Stripe(state.paymentConfig.publishableKey);
+                    state.stripeElements = state.stripeInstance.elements();
+                    const baseStyle = {
+                        style: {
+                            base: {
+                                color: '#0F172A',
+                                fontFamily: 'Inter, system-ui, sans-serif',
+                                fontSize: '16px',
+                                '::placeholder': { color: '#94A3B8' }
+                            },
+                            invalid: { color: '#B91C1C' }
+                        }
+                    };
+                    state.stripeCardNumber = state.stripeElements.create('cardNumber', baseStyle);
+                    state.stripeCardExpiry = state.stripeElements.create('cardExpiry', baseStyle);
+                    state.stripeCardCvc = state.stripeElements.create('cardCvc', baseStyle);
+                    state.stripeCardNumber.mount('#ode-access-card-number');
+                    state.stripeCardExpiry.mount('#ode-access-card-expiry');
+                    state.stripeCardCvc.mount('#ode-access-card-cvc');
+                    const updateCardHostState = (id, ready) => {
+                        const el = ui.content.querySelector(id);
+                        if (el) el.classList.toggle('ready', Boolean(ready));
+                    };
+                    let completeNumber = false;
+                    let completeExpiry = false;
+                    let completeCvc = false;
+                    const syncStripeReady = () => {
+                        const ready = completeNumber && completeExpiry && completeCvc;
+                        setPaymentFieldsReady(ready);
+                        paymentShellEl?.classList.toggle('ready', ready);
+                    };
+                    state.stripeCardNumber.on('change', (event) => {
+                        completeNumber = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-number', completeNumber);
+                        if (event?.complete) state.stripeCardExpiry?.focus?.();
+                        if (statusEl && event?.error?.message) statusEl.textContent = event.error.message;
+                        else if (statusEl && !state.paymentSubmitting) statusEl.textContent = '';
+                        syncStripeReady();
+                    });
+                    state.stripeCardExpiry.on('change', (event) => {
+                        completeExpiry = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-expiry', completeExpiry);
+                        if (event?.complete) state.stripeCardCvc?.focus?.();
+                        if (statusEl && event?.error?.message) statusEl.textContent = event.error.message;
+                        else if (statusEl && !state.paymentSubmitting) statusEl.textContent = '';
+                        syncStripeReady();
+                    });
+                    state.stripeCardCvc.on('change', (event) => {
+                        completeCvc = Boolean(event?.complete);
+                        updateCardHostState('#ode-access-card-cvc', completeCvc);
+                        if (statusEl && event?.error?.message) statusEl.textContent = event.error.message;
+                        else if (statusEl && !state.paymentSubmitting) statusEl.textContent = '';
+                        syncStripeReady();
+                    });
+                    state.stripeMountedKey = mountKey;
+                } catch (err) {
+                    if (statusEl) statusEl.textContent = err?.message || 'Could not load Stripe.';
+                }
+            };
+            if (state.user?.demo?.active) mountDemoPayment();
+            else window.setTimeout(() => { mountStripeCard(); }, 0);
+            formEl?.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (state.paymentSubmitting || state.paymentLoading) return;
+                state.paymentSubmitting = true;
+                if (submitBtn) submitBtn.disabled = true;
+                if (statusEl) statusEl.textContent = 'Processing payment...';
+                const billing = {
+                    name: String(ui.content.querySelector('#ode-access-billing-name')?.value || '').trim(),
+                    email: String(ui.content.querySelector('#ode-access-billing-email')?.value || '').trim(),
+                    zip: String(ui.content.querySelector('#ode-access-billing-zip')?.value || '').trim(),
+                    line1: String(ui.content.querySelector('#ode-access-billing-line1')?.value || '').trim(),
+                    city: String(ui.content.querySelector('#ode-access-billing-city')?.value || '').trim(),
+                    country: String(ui.content.querySelector('#ode-access-billing-country')?.value || 'US').trim().toUpperCase()
+                };
+                try {
+                    if (state.user?.demo?.active) {
+                        await handleConfirmedPayment({ planCode: state.paymentPlanCode, demo: true, savedMethod: buildDemoSavedCard() });
+                        return;
+                    }
+                    if (!state.stripeInstance || !state.stripeCardNumber || !state.paymentConfig?.clientSecret) {
+                        if (statusEl) statusEl.textContent = 'Secure payment is not ready yet.';
+                        state.paymentSubmitting = false;
+                        setPaymentFieldsReady(true);
+                        return;
+                    }
+                    const confirmation = await state.stripeInstance.confirmCardPayment(state.paymentConfig.clientSecret, {
+                        payment_method: {
+                            card: state.stripeCardNumber,
+                            billing_details: {
+                                name: billing.name || undefined,
+                                email: billing.email || undefined,
+                                address: {
+                                    line1: billing.line1 || undefined,
+                                    city: billing.city || undefined,
+                                    postal_code: billing.zip || undefined,
+                                    country: billing.country || undefined
+                                }
+                            }
+                        }
+                    });
+                    if (confirmation?.error) {
+                        if (statusEl) statusEl.textContent = confirmation.error.message || 'Payment could not be completed.';
+                        state.paymentSubmitting = false;
+                        setPaymentFieldsReady(true);
+                        return;
+                    }
+                    if (state.paymentConfig?.mode === 'subscription') {
+                        await handleConfirmedPayment({ planCode: state.paymentPlanCode, subscriptionId: state.paymentConfig.subscriptionId });
+                        return;
+                    }
+                    await handleConfirmedPayment({
+                        planCode: state.paymentPlanCode,
+                        paymentIntentId: confirmation?.paymentIntent?.id || state.paymentConfig.paymentIntentId
+                    });
+                } catch {
+                    if (statusEl) statusEl.textContent = 'Payment could not be completed.';
+                    state.paymentSubmitting = false;
+                    setPaymentFieldsReady(true);
+                }
+            });
+            applePayBtn?.addEventListener('click', async () => {
+                if (state.paymentSubmitting || state.paymentLoading) return;
+                if (state.user?.demo?.active) {
+                    state.paymentSubmitting = true;
+                    if (statusEl) statusEl.textContent = 'Apple Pay approved.';
+                    await handleConfirmedPayment({
+                        planCode: state.paymentPlanCode,
+                        demo: true,
+                        savedMethod: {
+                            paymentType: 'apple_pay',
+                            walletType: 'apple_pay',
+                            displayLabel: 'Apple Pay'
+                        }
+                    });
+                    return;
+                }
+                if (statusEl) statusEl.textContent = 'Apple Pay is not enabled in this browser/device yet.';
+            });
+        }
+
+        ui.backBtn.onclick = () => {
+            if (isPreview) {
+                state.forcePreview = false;
+                state.inviteView = false;
+                state.moreOptionsView = false;
+                state.paymentView = false;
+                state.paymentPlanCode = '';
+                state.paymentConfig = null;
+                clearMountedPaymentForm();
+                render();
+                return;
+            }
+            if (state.paymentView || state.paymentPlanCode) {
+                state.paymentView = false;
+                state.paymentLoading = false;
+                state.paymentSubmitting = false;
+                state.paymentPlanCode = '';
+                state.paymentConfig = null;
+                state.stripeLoadError = '';
+                clearMountedPaymentForm();
+                render();
+                return;
+            }
+            if (state.inviteView) {
+                state.inviteView = false;
+                render();
+                return;
+            }
+            if (state.moreOptionsView) {
+                state.moreOptionsView = false;
+                render();
+                return;
+            }
+            if (isPrompt) {
+                state.moreOptionsView = true;
+                render();
+                return;
+            }
+            if (!isProtectedPage) {
+                state.moreOptionsView = true;
+                render();
+                return;
+            }
+            state.moreOptionsView = true;
+            render();
+        };
+
+        const localLock = Boolean(!access.hasAccess && isProtectedPage && !isPreview && !isPrompt && !isSuccess && !Boolean(state.paymentPlanCode));
+        const showOverlay = (((!access.hasAccess) && (isProtectedPage || state.forcePreview)) || isPrompt || isSuccess || isPreview || Boolean(state.paymentPlanCode));
+        const closeNavigatesAway = !access.hasAccess && isProtectedPage && !isPreview && !localLock;
+        ui.closeBtn.onclick = () => {
+            state.closeReady = false;
+            if (closeNavigatesAway) {
+                window.location.href = '/overview.html';
+                return;
+            }
+            state.promptOpen = false;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            state.paymentView = false;
+            state.paymentLoading = false;
+            state.paymentPlanCode = '';
+            state.paymentConfig = null;
+            state.forcePreview = false;
+            clearMountedPaymentForm();
+            markPromptSeen();
+            render();
+        };
+        syncOverlayHost(ui, localLock);
+        syncCloseButton(ui, showOverlay, !localLock);
+        if (showOverlay) {
+            ui.overlay.classList.remove('hidden');
+            document.body.classList.toggle('ode-access-locked', !localLock);
+        } else {
+            ui.overlay.classList.add('hidden');
+            document.body.classList.remove('ode-access-locked');
+            clearSuccessTimers();
+            clearMountedPaymentForm();
+            syncOverlayHost(ui, false);
+            syncCloseButton(ui, false, false);
+        }
+    };
+
+    const refresh = async () => {
+        const hintedUser = readAuthUserHint();
+        state.user = hintedUser || state.user;
+        if (!state.user) {
+            state.payload = null;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            state.promptOpen = false;
+            state.unlockSuccess = null;
+            clearSuccessTimers();
+            render();
+            return;
+        }
+        await fetchAccess();
+        await verifyCheckoutFromUrl();
+        if (!state.promptOpen && shouldOpenTrialPromptOnVisit()) {
+            state.promptOpen = true;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            markPromptSeen();
+        }
+        render();
+        syncHeartbeat();
+    };
+
+    window.addEventListener('odeauth', (e) => {
+        state.user = e?.detail?.user || null;
+        if (!state.user) {
+            state.payload = null;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            state.unlockSuccess = null;
+            clearSuccessTimers();
+            syncHeartbeat();
+            render();
+            return;
+        }
+        refresh();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) sendHeartbeat();
+    });
+    window.addEventListener('focus', () => {
+        sendHeartbeat();
+        refresh();
+    });
+    window.addEventListener('ode:post-workout-share', async () => {
+        if (!state.user) return;
+        await fetchAccess();
+        const access = state.payload?.access || null;
+        if (access?.hasAccess && access?.trialActive && access?.accessSource === 'trial') {
+            state.promptOpen = true;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            markPromptSeen();
+        }
+        render();
+        syncHeartbeat();
+    });
+    window.addEventListener('ode:demo-sim-change', () => {
+        state.payload = applyDemoOverrides(state.payload);
+        render();
+    });
+    window.addEventListener('ode:demo-access-preview', (e) => {
+        if (!state.user?.demo?.active) return;
+        state.forcePreview = Boolean(e?.detail?.open);
+        state.payload = applyDemoOverrides(state.payload);
+        render();
+    });
+
+    const hintedUser = readAuthUserHint();
+    if (hintedUser) {
+        state.user = hintedUser;
+        refresh();
+    } else {
+        render();
+    }
+}
+
+function initDemoSimulator() {
+    const hostReady = Boolean(document.getElementById('control-panel'));
+    if (!hostReady) return;
+
+    const DEMO_CREDS_KEY = 'ode_demo_account_creds_v1';
+    const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
+    const DEMO_PREFILL_BACKUP_PREFIX = 'ode_demo_prefill_backup_v1:';
+    const DEMO_TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
+    const DEMO_MEAL_PLAN_SNAPSHOT_KEY = 'ode_meal_plan_snapshot_v1';
+    const DEMO_GROCERY_PREFS_KEY = 'groceryPrefs';
+    const DEMO_GROCERY_SESSION_KEY = 'grocerySession';
+
+    const ensureStyles = () => {
+        if (document.getElementById('ode-demo-sim-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'ode-demo-sim-styles';
+        style.textContent = `
+            .ode-demo-sim{position:fixed;top:calc(var(--navbar-height,72px) + 16px);right:16px;bottom:16px;z-index:19000;width:min(390px,calc(100vw - 24px));padding:16px;border-radius:24px;background:rgba(12,20,30,.97);color:#f5f7fa;box-shadow:0 20px 60px rgba(0,0,0,.34);font:700 12px/1.4 "Space Grotesk",sans-serif;transform:translateX(calc(100% + 32px));opacity:0;pointer-events:none;transition:transform .26s ease,opacity .26s ease;overflow:auto}
+            .ode-demo-sim.hidden{display:none}
+            .ode-demo-sim.open{transform:translateX(0);opacity:1;pointer-events:auto}
+            .ode-demo-sim h3{margin:0 0 6px;font:900 1rem/1.1 "Space Grotesk",sans-serif}
+            .ode-demo-sim-kicker{font:900 .68rem/1;text-transform:uppercase;letter-spacing:.12em;color:#f0a64a;margin-bottom:8px}
+            .ode-demo-sim-copy{color:#cad3dc;margin-bottom:10px}
+            .ode-demo-sim-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+            .ode-demo-sim-topbar button{border:1px solid rgba(255,255,255,.14);background:#1d2a36;color:#fff;padding:8px 10px;border-radius:12px}
+            .ode-demo-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+            .ode-demo-sim-grid .span-2{grid-column:1/-1}
+            .ode-demo-sim label{display:grid;gap:4px}
+            .ode-demo-sim input{width:100%;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#111c27;color:#fff;padding:10px 12px;font:800 .92rem/1 "Space Grotesk",sans-serif}
+            .ode-demo-sim-actions,.ode-demo-sim-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+            .ode-demo-sim button,.ode-demo-sim a{border:0;border-radius:12px;padding:10px 12px;background:#f0a64a;color:#132332;text-decoration:none;font:900 .8rem/1 "Space Grotesk",sans-serif;cursor:pointer}
+            .ode-demo-sim button.ghost,.ode-demo-sim a.ghost{background:#1d2a36;color:#fff;border:1px solid rgba(255,255,255,.12)}
+            .ode-demo-sim-pill{padding:8px 10px;border-radius:999px;background:#1d2a36;color:#fff;border:1px solid rgba(255,255,255,.08);cursor:pointer}
+            .ode-demo-sim-pill.is-active{background:rgba(240,166,74,.16);border-color:rgba(240,166,74,.5);color:#ffe0b0}
+            .ode-demo-sim-creds{margin-top:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.06);color:#d7e2eb}
+            .ode-demo-sim-status{margin-top:8px;color:#b8d9bf;min-height:16px}
+            .ode-demo-sim-note{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(240,166,74,.12);color:#ffe0b0}
+            @media (max-width: 700px){.ode-demo-sim{left:12px;right:12px;top:auto;bottom:12px;max-height:min(78vh,640px);width:auto}.ode-demo-sim-grid{grid-template-columns:1fr}}
+        `;
+        document.head.appendChild(style);
+    };
+
+    const ensurePanel = () => {
+        ensureStyles();
+        let panel = document.getElementById('ode-demo-sim');
+        if (!panel) {
+            panel = document.createElement('aside');
+            panel.id = 'ode-demo-sim';
+            panel.className = 'ode-demo-sim hidden';
+            document.body.appendChild(panel);
+        }
+        return panel;
+    };
+
+    const readCreds = (userId) => {
+        try {
+            const raw = sessionStorage.getItem(DEMO_CREDS_KEY);
+            const parsed = raw ? JSON.parse(raw) : null;
+            if (!parsed || String(parsed.userId || '') !== String(userId || '')) return null;
+            return parsed;
+        } catch {
+            return null;
+        }
+    };
+
+    const readSim = (userId) => {
+        try {
+            const raw = sessionStorage.getItem(`${DEMO_SIM_PREFIX}${String(userId || '').trim()}`);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return {
+                daysElapsed: Math.max(0, Math.min(365, Number(parsed?.daysElapsed || 0))),
+                qualifiedCount: Math.max(0, Math.min(8, Number(parsed?.qualifiedCount || 0))),
+                pendingCount: Math.max(0, Math.min(8, Number(parsed?.pendingCount || 0))),
+                workoutReady: Boolean(parsed?.workoutReady),
+                mealPlanReady: Boolean(parsed?.mealPlanReady),
+                note: String(parsed?.note || '').trim().slice(0, 80)
+            };
+        } catch {
+            return { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0, workoutReady: false, mealPlanReady: false, note: '' };
+        }
+    };
+
+    const writeSim = (userId, next) => {
+        try {
+            sessionStorage.setItem(`${DEMO_SIM_PREFIX}${String(userId || '').trim()}`, JSON.stringify(next || {}));
+        } catch {
+            // ignore
+        }
+    };
+
+    const clearSim = (userId) => {
+        try {
+            sessionStorage.removeItem(`${DEMO_SIM_PREFIX}${String(userId || '').trim()}`);
+        } catch {
+            // ignore
+        }
+    };
+
+    const backupKeyFor = (name) => `${DEMO_PREFILL_BACKUP_PREFIX}${name}`;
+    const rememberOriginal = (name, storage, key) => {
+        try {
+            const backupKey = backupKeyFor(name);
+            if (sessionStorage.getItem(backupKey) !== null) return;
+            const existing = storage.getItem(key);
+            sessionStorage.setItem(backupKey, existing === null ? '__ODE_NULL__' : existing);
+        } catch {
+            // ignore
+        }
+    };
+    const restoreOriginal = (name, storage, key) => {
+        try {
+            const backupKey = backupKeyFor(name);
+            const raw = sessionStorage.getItem(backupKey);
+            if (raw === null) return;
+            if (raw === '__ODE_NULL__') storage.removeItem(key);
+            else storage.setItem(key, raw);
+            sessionStorage.removeItem(backupKey);
+        } catch {
+            // ignore
+        }
+    };
+
+    const buildDemoMealSnapshot = () => {
+        const savedAt = new Date().toISOString();
+        return {
+            savedAt,
+            mealsPerDay: 4,
+            macroTargets: { calories: 2480, protein: 210, carbs: 245, fat: 68 },
+            meals: [
+                {
+                    index: 1,
+                    items: [
+                        { foodName: 'Egg whites', measurementText: '1 cup', servings: 1, grams: 240, calories: 120, protein_g: 26, carbs_g: 2, fat_g: 0 },
+                        { foodName: 'Oats', measurementText: '1 cup', servings: 1, grams: 80, calories: 300, protein_g: 10, carbs_g: 54, fat_g: 6 }
+                    ],
+                    plannedText: '- Egg whites - 1 cup\n- Oats - 1 cup'
+                },
+                {
+                    index: 2,
+                    items: [
+                        { foodName: 'Chicken breast', measurementText: '7 oz', servings: 1, grams: 198, calories: 330, protein_g: 62, carbs_g: 0, fat_g: 7 },
+                        { foodName: 'Jasmine rice', measurementText: '2 cups', servings: 1, grams: 320, calories: 410, protein_g: 8, carbs_g: 90, fat_g: 1 }
+                    ],
+                    plannedText: '- Chicken breast - 7 oz\n- Jasmine rice - 2 cups'
+                },
+                {
+                    index: 3,
+                    items: [
+                        { foodName: 'Greek yogurt', measurementText: '1.5 cups', servings: 1, grams: 340, calories: 210, protein_g: 34, carbs_g: 10, fat_g: 4 },
+                        { foodName: 'Blueberries', measurementText: '1 cup', servings: 1, grams: 148, calories: 84, protein_g: 1, carbs_g: 21, fat_g: 0 }
+                    ],
+                    plannedText: '- Greek yogurt - 1.5 cups\n- Blueberries - 1 cup'
+                },
+                {
+                    index: 4,
+                    items: [
+                        { foodName: 'Lean ground beef', measurementText: '6 oz', servings: 1, grams: 170, calories: 340, protein_g: 38, carbs_g: 0, fat_g: 18 },
+                        { foodName: 'Potatoes', measurementText: '12 oz', servings: 1, grams: 340, calories: 290, protein_g: 7, carbs_g: 68, fat_g: 0 }
+                    ],
+                    plannedText: '- Lean ground beef - 6 oz\n- Potatoes - 12 oz'
+                }
+            ]
+        };
+    };
+
+    const buildDemoGroceryPrefs = () => ({
+        calories: 2480,
+        protein: 210,
+        carbs: 245,
+        fat: 68,
+        mealsPerDay: 4,
+        budget: 95,
+        goal: 'build muscle',
+        goalMode: 'bulk'
+    });
+
+    const buildDemoGrocerySession = () => ({
+        createdAt: new Date().toISOString(),
+        planName: 'Demo meal plan',
+        mealsPerDay: 4,
+        macroTargets: { calories: 2480, protein: 210, carbs: 245, fat: 68 }
+    });
+
+    const buildDemoTrainingIntake = (user) => {
+        const displayName = String(user?.displayName || user?.username || 'Demo User').trim() || 'Demo User';
+        return {
+            step: 10,
+            goal: 'build size',
+            timeline: '8 weeks',
+            priority: 'aesthetic',
+            experience: '6-24m',
+            daysPerWeek: 4,
+            preferredDays: [1, 3, 5, 6],
+            location: 'commercial gym',
+            equipment: ['barbell', 'dumbbells', 'machines'],
+            focus: ['back', 'shoulders'],
+            loadStyle: 'mixed',
+            outputStyle: 'RPE/RIR',
+            modality: 'aesthetic bodybuilding',
+            trainToFailure: 'sometimes',
+            injuries: [],
+            injuryDetails: {},
+            avoidMoves: [],
+            sleepHours: 7,
+            activityLevel: 'active',
+            stress: 'medium',
+            fullName: displayName,
+            trainingWhy: 'Demo profile seeded from owner controls.',
+            completedAt: new Date().toISOString()
+        };
+    };
+
+    const syncDemoPrefills = (user, sim) => {
+        if (!user?.demo?.active) return;
+        if (sim?.mealPlanReady) {
+            rememberOriginal('meal_snapshot', localStorage, DEMO_MEAL_PLAN_SNAPSHOT_KEY);
+            rememberOriginal('grocery_prefs', sessionStorage, DEMO_GROCERY_PREFS_KEY);
+            rememberOriginal('grocery_session', sessionStorage, DEMO_GROCERY_SESSION_KEY);
+            try { localStorage.setItem(DEMO_MEAL_PLAN_SNAPSHOT_KEY, JSON.stringify(buildDemoMealSnapshot())); } catch { /* ignore */ }
+            try { sessionStorage.setItem(DEMO_GROCERY_PREFS_KEY, JSON.stringify(buildDemoGroceryPrefs())); } catch { /* ignore */ }
+            try { sessionStorage.setItem(DEMO_GROCERY_SESSION_KEY, JSON.stringify(buildDemoGrocerySession())); } catch { /* ignore */ }
+        } else {
+            restoreOriginal('meal_snapshot', localStorage, DEMO_MEAL_PLAN_SNAPSHOT_KEY);
+            restoreOriginal('grocery_prefs', sessionStorage, DEMO_GROCERY_PREFS_KEY);
+            restoreOriginal('grocery_session', sessionStorage, DEMO_GROCERY_SESSION_KEY);
+        }
+
+        if (sim?.workoutReady) {
+            rememberOriginal('training_intake', localStorage, DEMO_TRAINING_INTAKE_KEY);
+            try { localStorage.setItem(DEMO_TRAINING_INTAKE_KEY, JSON.stringify(buildDemoTrainingIntake(user))); } catch { /* ignore */ }
+            try { sessionStorage.setItem('ode_training_force_autostart', '1'); } catch { /* ignore */ }
+        } else {
+            restoreOriginal('training_intake', localStorage, DEMO_TRAINING_INTAKE_KEY);
+            try { sessionStorage.removeItem('ode_training_force_autostart'); } catch { /* ignore */ }
+        }
+    };
+
+    const clearDemoPrefills = () => {
+        restoreOriginal('meal_snapshot', localStorage, DEMO_MEAL_PLAN_SNAPSHOT_KEY);
+        restoreOriginal('grocery_prefs', sessionStorage, DEMO_GROCERY_PREFS_KEY);
+        restoreOriginal('grocery_session', sessionStorage, DEMO_GROCERY_SESSION_KEY);
+        restoreOriginal('training_intake', localStorage, DEMO_TRAINING_INTAKE_KEY);
+        try { sessionStorage.removeItem('ode_training_force_autostart'); } catch { /* ignore */ }
+    };
+
+    const escapeHtml = (value) => String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    let currentUser = readAuthUserHint();
+    let drawerOpen = Boolean(currentUser?.demo?.active);
+    let demoStatusMessage = '';
+    const demoBusy = new Set();
+
+    const openDrawer = () => {
+        drawerOpen = true;
+        const panel = ensurePanel();
+        if (!currentUser?.demo?.active) return;
+        panel.classList.remove('hidden');
+        panel.classList.add('open');
+    };
+
+    const closeDrawer = () => {
+        drawerOpen = false;
+        const panel = ensurePanel();
+        panel.classList.remove('open');
+    };
+
+    const setDemoStatus = (message) => {
+        demoStatusMessage = String(message || '').trim();
+    };
+
+    const buildDemoTrainingOnboardingPayload = () => ({
+        trainingFeel: 'Aesthetic bodybuilding',
+        primaryGoal: 'Build size',
+        timeline: '8 weeks',
+        focus: 'Aesthetic',
+        experience: '6-24m',
+        location: 'Commercial gym',
+        trainingStyle: 'Balanced mix',
+        outputStyle: 'RPE/RIR cues',
+        closeToFailure: 'No',
+        daysPerWeek: 4,
+        sessionLengthMin: '60',
+        priorityGroups: ['Back', 'Shoulders'],
+        movementsToAvoid: [],
+        preferredDays: ['Mo', 'We', 'Fr', 'Sa'],
+        equipmentAccess: ['barbell', 'dumbbells', 'machines'],
+        painAreas: [],
+        painProfilesByArea: {},
+        sleepHours: 7,
+        activityLevel: 'Active',
+        stress: 'Medium'
+    });
+
+    const buildDemoMealSavePayload = () => ({
+        source: 'grocery_plan',
+        totals: {
+            totalEstimatedWeeklyCost: 94.5,
+            totalEstimatedCost: 378,
+            currency: 'USD'
+        },
+        items: [
+            { name: 'Eggs', quantity: '3 dozen', category: 'protein', estimatedWeeklyCost: 10.5, estimatedCost: 42, image: 'assets/images/products/eggs.jpg', daily: 3, daysPerContainer: 8, containerPrice: 3.5, unit: 'eggs' },
+            { name: 'Jasmine Rice', quantity: '2 large bags', category: 'carb', estimatedWeeklyCost: 12, estimatedCost: 48, image: 'assets/images/products/rice.jpg', daily: 2.3, daysPerContainer: 10, containerPrice: 6, unit: 'cups' },
+            { name: 'Lean Ground Beef', quantity: '5 family packs', category: 'protein_fat', estimatedWeeklyCost: 27.5, estimatedCost: 110, image: 'assets/images/products/ground-beef.jpg', daily: 0.9, daysPerContainer: 6, containerPrice: 5.5, unit: 'lb' },
+            { name: 'Tilapia', quantity: '4 bags', category: 'lean_protein', estimatedWeeklyCost: 18, estimatedCost: 72, image: 'assets/images/products/tilapia.jpg', daily: 0.7, daysPerContainer: 7, containerPrice: 4.5, unit: 'lb' },
+            { name: 'Chocolate Milk', quantity: '4 cartons', category: 'carb_protein', estimatedWeeklyCost: 9.5, estimatedCost: 38, image: 'assets/images/products/chocolate-milk.jpg', daily: 0.45, daysPerContainer: 5, containerPrice: 2.38, unit: 'cartons' },
+            { name: 'Spinach', quantity: '3 tubs', category: 'misc', estimatedWeeklyCost: 7, estimatedCost: 28, image: 'assets/hero-nutrition.jpg', daily: 0.3, daysPerContainer: 6, containerPrice: 2.33, unit: 'tubs' },
+            { name: 'Greek Yogurt', quantity: '5 tubs', category: 'protein', estimatedWeeklyCost: 10, estimatedCost: 40, image: 'assets/hero-nutrition.jpg', daily: 0.6, daysPerContainer: 6, containerPrice: 2, unit: 'cups' }
+        ],
+        meta: {
+            generatedAt: new Date().toISOString(),
+            store: 'Demo Grocery Save',
+            notes: 'Generated from demo controls',
+            macroTargets: {
+                calories: 2480,
+                proteinG: 210,
+                carbG: 245,
+                fatG: 68
+            }
+        }
+    });
+
+    const generateDemoWorkoutPlan = async () => {
+        const resp = await fetch('/api/training/onboarding', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildDemoTrainingOnboardingPayload())
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data?.ok) throw new Error(data?.error || 'Could not create workout plan.');
+        return data;
+    };
+
+    const generateDemoMealPlan = async () => {
+        const payload = buildDemoMealSavePayload();
+        const resp = await fetch('/api/groceries/save', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data?.ok) throw new Error(data?.error || 'Could not save meal plan.');
+        return payload;
+    };
+
+    const runDemoToggleAction = async (key) => {
+        if (!currentUser?.demo?.active || !currentUser?.id || demoBusy.has(key)) return;
+        const next = readSim(currentUser.id);
+        const turningOn = !Boolean(next[key]);
+        if (!turningOn) {
+            next[key] = false;
+            writeSim(currentUser.id, next);
+            setDemoStatus(key === 'workoutReady' ? 'Workout demo flag turned off.' : 'Meal plan demo flag turned off.');
+            render();
+            window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            return;
+        }
+
+        demoBusy.add(key);
+        setDemoStatus(key === 'workoutReady' ? 'Generating workout plan on the demo account...' : 'Generating meal plan on the demo account...');
+        render();
+        try {
+            if (key === 'workoutReady') {
+                await generateDemoWorkoutPlan();
+            } else if (key === 'mealPlanReady') {
+                await generateDemoMealPlan();
+            }
+            const finalState = readSim(currentUser.id);
+            finalState[key] = true;
+            writeSim(currentUser.id, finalState);
+            syncDemoPrefills(currentUser, finalState);
+            setDemoStatus(key === 'workoutReady' ? 'Workout plan generated and saved to the demo account.' : 'Meal plan generated and saved to the demo account.');
+            window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        } catch (err) {
+            setDemoStatus(err?.message || 'Could not generate demo content.');
+        } finally {
+            demoBusy.delete(key);
+            render();
+        }
+    };
+
+    window.__odeOpenDemoSimulator = openDrawer;
+    window.__odeCloseDemoSimulator = closeDrawer;
+
+    const render = () => {
+        const panel = ensurePanel();
+        if (!currentUser?.demo?.active) {
+            clearDemoPrefills();
+            drawerOpen = false;
+            panel.classList.add('hidden');
+            panel.classList.remove('open');
+            return;
+        }
+        panel.classList.remove('hidden');
+        panel.classList.toggle('open', drawerOpen);
+        const sim = readSim(currentUser.id);
+        syncDemoPrefills(currentUser, sim);
+        const creds = readCreds(currentUser.id);
+        const trialDay = Math.max(1, Math.min(3, Number(sim.daysElapsed || 0) + 1));
+        const paywallLive = Number(sim.daysElapsed || 0) >= 3;
+        panel.innerHTML = `
+            <div class="ode-demo-sim-topbar">
+                <div>
+                    <div class="ode-demo-sim-kicker">Demo</div>
+                    <h3>Demo account controls</h3>
+                </div>
+                <button type="button" class="ghost" data-demo-close>Close</button>
+            </div>
+            <div class="ode-demo-sim-copy">Fast-forward days, change invite counts, and manually open the paywall so you can watch the account react live.</div>
+            <div class="ode-demo-sim-grid">
+                <label>Days elapsed<input type="number" min="0" max="365" step="1" data-demo-field="daysElapsed" value="${sim.daysElapsed}"></label>
+                <label>Qualified invites<input type="number" min="0" max="8" step="1" data-demo-field="qualifiedCount" value="${sim.qualifiedCount}"></label>
+                <label>Pending invites<input type="number" min="0" max="8" step="1" data-demo-field="pendingCount" value="${sim.pendingCount}"></label>
+                <label class="span-2">Manual note<input type="text" maxlength="80" data-demo-field="note" value="${escapeHtml(sim.note || '')}"></label>
+            </div>
+            <div class="ode-demo-sim-pills">
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="2">2 days</button>
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="3">3 days</button>
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="7">7 days</button>
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="1">1 qualified</button>
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="2">2 qualified</button>
+                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="4">4 qualified</button>
+            </div>
+            <div class="ode-demo-sim-pills">
+                <button type="button" class="ode-demo-sim-pill ${sim.workoutReady ? 'is-active' : ''}" data-demo-toggle="workoutReady">${demoBusy.has('workoutReady') ? 'Generating workout...' : (sim.workoutReady ? 'Workout already made: on' : 'Workout already made: off')}</button>
+                <button type="button" class="ode-demo-sim-pill ${sim.mealPlanReady ? 'is-active' : ''}" data-demo-toggle="mealPlanReady">${demoBusy.has('mealPlanReady') ? 'Generating meal plan...' : (sim.mealPlanReady ? 'Meal plan already made: on' : 'Meal plan already made: off')}</button>
+            </div>
+            <div class="ode-demo-sim-actions">
+                <button type="button" data-demo-preview>Show Paywall</button>
+                <button type="button" class="ghost" data-demo-prompt>Show Prompt</button>
+                <button type="button" class="ghost" data-demo-reset>Reset</button>
+                <a class="ghost" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Exit demo</a>
+            </div>
+            <div class="ode-demo-sim-creds">${creds ? `Username: <strong>${String(creds.username || '')}</strong><br>Password: <strong>${String(creds.password || '')}</strong>` : 'Credentials were created when this demo account was opened.'}</div>
+            <div class="ode-demo-sim-status">Day ${trialDay} of the 3-day trial. Paywall ${paywallLive ? 'is ready to trigger now' : `goes live after ${Math.max(0, 3 - Number(sim.daysElapsed || 0))} more day${Math.max(0, 3 - Number(sim.daysElapsed || 0)) === 1 ? '' : 's'}`}. Qualified invites: ${sim.qualifiedCount}. Pending invites: ${sim.pendingCount}. Workout ready: ${sim.workoutReady ? 'yes' : 'no'}. Meal plan ready: ${sim.mealPlanReady ? 'yes' : 'no'}.</div>
+            ${demoStatusMessage ? `<div class="ode-demo-sim-note">${escapeHtml(demoStatusMessage)}</div>` : ''}
+            ${sim.note ? `<div class="ode-demo-sim-note">Live note: ${escapeHtml(sim.note)}</div>` : ''}
+        `.trim();
+
+        panel.querySelectorAll('[data-demo-field]').forEach((input) => {
+            input.addEventListener('input', () => {
+                const next = readSim(currentUser.id);
+                const key = String(input.getAttribute('data-demo-field') || '');
+                if (key === 'note') {
+                    next.note = String(input.value || '').trim().slice(0, 80);
+                } else {
+                    next[key] = Math.max(0, Number(input.value || 0));
+                }
+                writeSim(currentUser.id, next);
+                render();
+                window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            });
+        });
+        panel.querySelectorAll('[data-demo-set-days]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = readSim(currentUser.id);
+                next.daysElapsed = Math.max(0, Number(btn.getAttribute('data-demo-set-days') || 0));
+                writeSim(currentUser.id, next);
+                render();
+                window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            });
+        });
+        panel.querySelectorAll('[data-demo-set-qualified]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = readSim(currentUser.id);
+                next.qualifiedCount = Math.max(0, Number(btn.getAttribute('data-demo-set-qualified') || 0));
+                writeSim(currentUser.id, next);
+                render();
+                window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            });
+        });
+        panel.querySelectorAll('[data-demo-toggle]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const key = String(btn.getAttribute('data-demo-toggle') || '');
+                if (!key) return;
+                await runDemoToggleAction(key);
+            });
+        });
+        panel.querySelector('[data-demo-preview]')?.addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: true } }));
+        });
+        panel.querySelector('[data-demo-prompt]')?.addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: true } }));
+        });
+        panel.querySelector('[data-demo-reset]')?.addEventListener('click', () => {
+            clearSim(currentUser.id);
+            clearDemoPrefills();
+            setDemoStatus('Demo controls reset.');
+            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: false } }));
+            render();
+            window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        });
+        panel.querySelector('[data-demo-close]')?.addEventListener('click', () => {
+            closeDrawer();
+        });
+    };
+
+    window.addEventListener('odeauth', (e) => {
+        currentUser = e?.detail?.user || null;
+        if (currentUser?.demo?.active) drawerOpen = true;
+        render();
+    });
+    window.addEventListener('ode:demo-sim-open', () => {
+        openDrawer();
+        render();
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawerOpen) {
+            closeDrawer();
+        }
+    });
+    render();
+}
 function ensureAuthNavbarUi(navbarContainer) {
     let wrapper = document.getElementById('auth-wrap');
     if (!wrapper) {
@@ -15409,9 +17684,50 @@ function ensureFriendsModal() {
     return modal;
 }
 
+function isHomeControlPanelPage() {
+    const path = String(window.location.pathname || '').toLowerCase();
+    return path.endsWith('/index.html')
+        || path.endsWith('index.html')
+        || path === '/'
+        || path === ''
+        || path === '/macro-calculator-meal-plan';
+}
+
+function isPublicSeoLandingPage() {
+    const body = document.body;
+    if (body?.classList?.contains('seo-workout-page')) return true;
+    if (body?.classList?.contains('seo-meal-page')) return true;
+    const path = String(window.location.pathname || '').toLowerCase();
+    return path.endsWith('/workout-plan-generator.html')
+        || path.endsWith('/meal-plan-generator.html')
+        || path.endsWith('/cheap-meal-plan-bodybuilding.html')
+        || path.endsWith('/ai-workout-generator.html')
+        || path.endsWith('/macro-meal-plan-generator.html')
+        || path.endsWith('/free-workout-plan-generator.html')
+        || path.endsWith('/free-meal-plan-generator.html')
+        || path.endsWith('/free-grocery-meal-planner.html')
+        || path.endsWith('/high-protein-meal-plan.html')
+        || path.endsWith('/home-workout-plan-generator.html')
+        || path === '/workout-plan-generator'
+        || path === '/meal-plan-generator'
+        || path === '/cheap-meal-plan-bodybuilding'
+        || path === '/ai-workout-generator'
+        || path === '/macro-meal-plan-generator'
+        || path === '/free-workout-plan-generator'
+        || path === '/free-meal-plan-generator'
+        || path === '/free-grocery-meal-planner'
+        || path === '/high-protein-meal-plan'
+        || path === '/home-workout-plan-generator';
+}
+
+function shouldSkipBackgroundAuthPolling() {
+    return isHomeControlPanelPage() || isPublicSeoLandingPage();
+}
+
 function ensureControlPanelAuthUi() {
     const panel = document.getElementById('control-panel');
     if (!panel) return null;
+    if (isHomeControlPanelPage()) return null;
 
     let signInBtn = panel.querySelector('#control-signin');
     let signUpBtn = panel.querySelector('#control-signup');
@@ -15839,7 +18155,7 @@ function setupForumPreloaderNavigation() {
         overlay.className = 'preloader';
         overlay.id = 'preloader';
         overlay.innerHTML = `
-            <div class="preloader-word" id="preloader-word">STRYVE<span class="brand-dot"></span></div>
+            <div class="preloader-word" id="preloader-word"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
             <div class="preloader-bar"><div class="fill"></div></div>
         `;
         document.body.appendChild(overlay);
@@ -15966,8 +18282,7 @@ function calculateAdjustedBaselineFoods(baselineArray, macroResults, mealsPerDay
    ============================================ */
 function setupControlPanel() {
     if (!controlPanel) return;
-    const path = String(location.pathname || '').toLowerCase();
-    const isHomePage = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
+    const isHomePage = isHomeControlPanelPage();
     const isOverviewPage = document.body?.classList?.contains('overview-page');
     const isMobileControl = (() => {
         try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
@@ -16018,11 +18333,15 @@ function setupControlPanel() {
     if (isHomePage) {
         document.body.classList.remove('has-control-panel', 'control-pinned', 'control-open', 'control-collapsed');
         controlPanel.classList.remove('open', 'collapsed');
+        controlPanel.setAttribute('hidden', 'hidden');
+        controlPanel.style.display = 'none';
         document.getElementById('control-mobile-fab')?.remove();
         return;
     }
 
     // Any page that includes the control panel should show it.
+    controlPanel.removeAttribute('hidden');
+    controlPanel.style.display = '';
     document.body.classList.add('has-control-panel');
     if (isMobileControl) {
         // Phone: keep control panel collapsible.
@@ -16171,7 +18490,8 @@ function setupOnboardingTour() {
         if (page === 'friends.html') return 'Messages';
         if (page === 'account.html') return 'Account';
         if (page === 'grocery-calendar.html') return 'Grocery Calendar';
-        if (page === 'owner-messaging.html') return 'Work Outreach';
+        if (page === 'owner-messaging.html') return 'Outreach';
+        if (page === 'owner-doors.html') return 'Doors';
         const cleaned = page.replace(/\.html$/i, '').replace(/[-_]+/g, ' ').trim();
         if (!cleaned) return 'Dashboard';
         return cleaned.replace(/\b\w/g, (m) => m.toUpperCase());
@@ -16184,7 +18504,7 @@ function setupOnboardingTour() {
                     key: 'welcome',
                     url: 'index.html',
                     selector: '.navbar',
-                    title: 'Welcome to STRYVE',
+                    title: 'Welcome to RiseForIt',
                     body: 'Fast tour mode is on. Next jumps page-to-page quickly and shows the real core elements for plan, training, progress, and messaging.'
                 },
                 {

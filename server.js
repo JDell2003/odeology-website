@@ -1644,7 +1644,12 @@ const maybeRedirectExerciseAsset = (req, res, pathname) => {
 
 const serveStatic = (req, res, pathname) => {
     let filePath = path.join(PUBLIC_DIR, pathname);
-    if (pathname === '/' || pathname === '') {
+    if (
+        pathname === '/'
+        || pathname === ''
+        || pathname === '/macro-calculator-meal-plan'
+        || pathname === '/macro-calculator-meal-plan/'
+    ) {
         filePath = path.join(PUBLIC_DIR, 'index.html');
     }
     const ext = path.extname(filePath).toLowerCase();
@@ -1773,6 +1778,82 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/admin' && req.method === 'GET') {
         return serveStatic(req, res, '/admin.html');
+    }
+
+    if (url.pathname === '/workout-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/workout-plan-generator.html');
+    }
+
+    if (url.pathname === '/meal-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/meal-plan-generator.html');
+    }
+
+    if (url.pathname === '/cheap-meal-plan-bodybuilding' && req.method === 'GET') {
+        return serveStatic(req, res, '/cheap-meal-plan-bodybuilding.html');
+    }
+
+    if (url.pathname === '/ai-workout-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/ai-workout-generator.html');
+    }
+
+    if (url.pathname === '/high-protein-meal-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/high-protein-meal-plan.html');
+    }
+
+    if (url.pathname === '/home-workout-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/home-workout-plan-generator.html');
+    }
+
+    if (url.pathname === '/beginner-workout-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/beginner-workout-plan.html');
+    }
+
+    if (url.pathname === '/fat-loss-meal-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/fat-loss-meal-plan.html');
+    }
+
+    if (url.pathname === '/simple-meal-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/simple-meal-plan-generator.html');
+    }
+
+    if (url.pathname === '/bulking-meal-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/bulking-meal-plan.html');
+    }
+
+    if (url.pathname === '/strength-workout-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/strength-workout-plan.html');
+    }
+
+    if (url.pathname === '/fat-loss-workout-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/fat-loss-workout-plan.html');
+    }
+
+    if (url.pathname === '/hypertrophy-workout-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/hypertrophy-workout-plan.html');
+    }
+
+    if (url.pathname === '/quick-workout-plan' && req.method === 'GET') {
+        return serveStatic(req, res, '/quick-workout-plan.html');
+    }
+
+    if (url.pathname === '/macro-meal-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/macro-meal-plan-generator.html');
+    }
+
+    if (url.pathname === '/free-workout-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/free-workout-plan-generator.html');
+    }
+
+    if (url.pathname === '/free-meal-plan-generator' && req.method === 'GET') {
+        return serveStatic(req, res, '/free-meal-plan-generator.html');
+    }
+
+    if (url.pathname === '/free-grocery-meal-planner' && req.method === 'GET') {
+        return serveStatic(req, res, '/free-grocery-meal-planner.html');
+    }
+
+    if ((url.pathname === '/training' || url.pathname === '/training.html') && req.method === 'GET') {
+        return serveStatic(req, res, '/training-coming-soon.html');
     }
 
     if (url.pathname === '/api/db/health' && req.method === 'GET') {

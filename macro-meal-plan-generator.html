@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Macro-Based Meal Plan Generator That Hits Your Targets | STRYVE</title>
+  <meta name="description" content="Generate a meal plan based on your calorie and macro goals, then match it to real grocery products and pricing.">
+  <link rel="stylesheet" href="css/main.css?v=2026-03-24-seo-public-6">
+  <style>
+    body.seo-meal-page { min-height: 100vh; background: #ece5da; color: #241d18; overflow: hidden; }
+    .seo-meal-hero { position: relative; min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; padding: 24px 16px 40px; overflow: hidden; }
+    .seo-meal-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(25,22,18,.24), rgba(25,22,18,.34)), linear-gradient(180deg, rgba(237,195,122,.12), rgba(237,195,122,.16)); z-index: 1; }
+    .seo-meal-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .seo-meal-card { position: relative; z-index: 2; width: min(840px, calc(100% - 24px)); border-radius: 22px; padding: 28px 34px 26px; background: rgba(255,246,238,.92); box-shadow: 0 28px 60px rgba(25,22,18,.2); text-align: center; border: 1px solid rgba(198,153,88,.16); }
+    .seo-meal-kicker { margin: 0 0 14px; font-size: .82rem; letter-spacing: .22em; text-transform: uppercase; color: #78644f; font-weight: 800; }
+    .seo-meal-card h1 { margin: 0; font-size: clamp(2.5rem, 6vw, 5.1rem); line-height: 1.02; letter-spacing: -.04em; color: #241d18; }
+    .seo-meal-subtitle { max-width: 34ch; margin: 18px auto 0; color: #6d6257; line-height: 1.45; font-size: 1rem; font-weight: 500; }
+    .seo-meal-checks { display: flex; gap: 1.45rem; flex-wrap: wrap; justify-content: center; margin-top: 18px; color: #241d18; font-weight: 700; }
+    .seo-meal-checks span { white-space: nowrap; }
+    .seo-meal-checks strong { color: #d39c3c; margin-right: 6px; }
+    .seo-meal-primary { display: inline-flex; align-items: center; justify-content: center; margin-top: 26px; min-height: 62px; padding: .95rem 1.9rem; border-radius: 16px; background: linear-gradient(180deg,#1c1a18,#11100f); color: #fff; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 18px 40px rgba(0,0,0,.18); text-decoration: none; font-size: 1.42rem; font-weight: 900; letter-spacing: .01em; transition: transform .18s ease, box-shadow .22s ease, filter .22s ease; }
+    .seo-meal-primary:hover { transform: translateY(-2px) scale(1.01); filter: brightness(1.04); box-shadow: 0 22px 44px rgba(0,0,0,.22); }
+    @media (max-width: 700px) {
+      .seo-meal-hero { padding: 18px 10px 26px; }
+      .seo-meal-card { padding: 22px 18px 20px; border-radius: 18px; }
+      .seo-meal-primary { min-height: 52px; width: min(100%, 300px); padding: .72rem 1rem; font-size: .98rem; border-radius: 12px; line-height: 1.2; }
+    }
+  </style>
+</head>
+<body class="seo-meal-page">
+  <div class="grain"></div>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="STRYVE"><span class="brand-char">S</span><span class="brand-char">T</span><span class="brand-char">R</span><span class="brand-char">Y</span><span class="brand-char">V</span><span class="brand-char">E</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="macro-calculator.html" class="active">Macro Calculator</a></li>
+        <li><a href="training.html">Training</a></li>
+        <li><a href="forum.html">FORUM</a></li>
+      </ul>
+    </div>
+  </nav>
+  <main>
+    <section class="seo-meal-hero">
+      <img src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920" alt="Prepared vegetables and meal ingredients arranged across a table">
+      <div class="seo-meal-card">
+        <p class="seo-meal-kicker">Macro Meal Planning</p>
+        <h1>Macro-Based Meal Plan Generator That Hits Your Targets</h1>
+        <p class="seo-meal-subtitle">Generate a meal plan based on your calorie and macro goals, then match it to real grocery products and pricing.</p>
+        <div class="seo-meal-checks" aria-label="Core benefits">
+          <span><strong>&#10003;</strong>Calories matched to your goal</span>
+          <span><strong>&#10003;</strong>Macros built into the plan</span>
+          <span><strong>&#10003;</strong>Groceries aligned to your budget</span>
+        </div>
+        <a class="seo-meal-primary" href="index.html?ns=start#ns-entry">Generate My Macro Meal Plan</a>
+      </div>
+    </section>
+  </main>
+  <script src="js/main.js?v=2026-03-23-seo-public-5"></script>
+</body>
+</html>

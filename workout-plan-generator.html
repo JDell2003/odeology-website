@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Workout Plan Generator | STRYVE</title>
+  <meta name="description" content="Build a free custom workout plan in 30 seconds based on your goals, equipment, schedule, and training experience.">
+  <link rel="stylesheet" href="css/main.css?v=2026-03-24-seo-public-6">
+  <style>
+    body.seo-workout-page {
+      min-height: 100vh;
+      background: #071523;
+      color: #e8f2ff;
+      overflow: hidden;
+    }
+
+    .seo-workout-page .navbar {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .seo-workout-page .navbar-brand,
+    .seo-workout-page .nav-menu a {
+      color: #0f1720;
+    }
+
+    .seo-workout-page .nav-menu a.active,
+    .seo-workout-page .nav-menu a:hover {
+      color: #0f1720;
+    }
+
+    .seo-workout-page .hamburger span {
+      background: #0f1720;
+    }
+
+    .seo-workout-main {
+      padding-top: 0;
+    }
+
+    .seo-workout-hero {
+      position: relative;
+      min-height: 100vh;
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      overflow: hidden;
+    }
+
+    .seo-workout-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(7, 22, 37, 0.82) 0%, rgba(9, 38, 61, 0.76) 45%, rgba(12, 194, 205, 0.58) 100%);
+      z-index: 1;
+    }
+
+    .seo-workout-hero img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 45%;
+    }
+
+    .seo-workout-hero-copy {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: clamp(1rem, 2vw, 1.8rem);
+      padding-top: 84px;
+      min-height: 100vh;
+    }
+
+    .seo-workout-inner {
+      display: grid;
+      gap: 1rem;
+      justify-items: center;
+      max-width: 980px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .seo-workout-inner h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(2.5rem, 6vw, 5.1rem);
+      line-height: 1.02;
+      max-width: 14ch;
+      margin: 0.2rem auto 0.8rem;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .seo-workout-inner p {
+      max-width: 52ch;
+      color: #e6f5ff;
+      line-height: 1.45;
+      margin: 0 auto;
+      font-size: 1rem;
+    }
+
+    .seo-workout-checks {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      color: #ebf8ff;
+      font-weight: 500;
+    }
+
+    .seo-workout-checks span {
+      white-space: nowrap;
+    }
+
+    .seo-workout-primary {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: auto !important;
+      max-width: 100%;
+      min-height: 60px !important;
+      padding: 0.9rem 1.6rem !important;
+      border-radius: 14px !important;
+      font-size: 1.42rem !important;
+      font-weight: 900 !important;
+      background: linear-gradient(135deg, #31475d 0%, #173955 55%, #0b2740 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(167, 224, 255, 0.42) !important;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+      text-transform: none !important;
+      letter-spacing: 0.01em !important;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease;
+    }
+
+    .seo-workout-primary:hover {
+      transform: translateY(-2px) !important;
+      filter: brightness(1.08) !important;
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.44), 0 0 24px rgba(58, 170, 236, 0.3) !important;
+    }
+
+    .seo-workout-secondary {
+      margin-top: 0.25rem;
+      width: auto;
+      max-width: 94%;
+      padding: 0.58rem 1.1rem;
+      font-size: 0.93rem;
+      font-weight: 700;
+      border-radius: 12px;
+      border: 1px solid rgba(173, 218, 246, 0.45);
+      background: rgba(8, 27, 44, 0.62);
+      color: #dff3ff;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+      text-decoration: none;
+      text-align: center;
+      line-height: 1.35;
+      transition: transform 0.16s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .seo-workout-secondary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.34);
+    }
+
+    @media (min-width: 981px) {
+      .seo-workout-inner {
+        transform: translateY(-10vh);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .seo-workout-hero-copy {
+        padding-top: 44px;
+      }
+
+      .seo-workout-inner {
+        transform: translateY(-6vh);
+        min-height: calc(100vh - 80px);
+      }
+
+      .seo-workout-primary {
+        min-height: 0 !important;
+        width: min(100%, 290px) !important;
+        padding: 0.58rem 0.95rem !important;
+        font-size: 0.98rem !important;
+        border-radius: 12px !important;
+        line-height: 1.2 !important;
+      }
+
+      .seo-workout-secondary {
+        width: min(100%, 290px);
+        max-width: 100%;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
+        border-radius: 12px;
+        line-height: 1.25;
+      }
+
+      .seo-workout-hero img {
+        object-position: 45% 30%;
+        transform: scale(1.12);
+      }
+    }
+  </style>
+</head>
+<body class="seo-workout-page">
+  <div class="grain"></div>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="STRYVE"><span class="brand-char">S</span><span class="brand-char">T</span><span class="brand-char">R</span><span class="brand-char">Y</span><span class="brand-char">V</span><span class="brand-char">E</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="macro-calculator.html">Macro Calculator</a></li>
+        <li><a href="training.html" class="active">Training</a></li>
+        <li><a href="forum.html">FORUM</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="seo-workout-main">
+    <section class="seo-workout-hero">
+      <img src="https://images.pexels.com/photos/1552249/pexels-photo-1552249.jpeg?auto=compress&cs=tinysrgb&w=1920" alt="Athlete training with battle ropes in a gym">
+      <div class="seo-workout-hero-copy">
+        <div class="seo-workout-inner">
+          <h1>Free Workout Plan Generator (Custom Plan in 30 Seconds)</h1>
+          <p>Build a free custom workout plan based on your goals, equipment, schedule, and experience level.</p>
+          <div class="seo-workout-checks">
+            <span>✓ Built around your schedule</span>
+            <span>✓ Adjusted to your equipment</span>
+            <span>✓ Personalized for your training goal</span>
+          </div>
+          <a class="seo-workout-primary" href="training.html?start=1">Generate My Workout Plan</a>
+          <a class="seo-workout-secondary" href="training.html">I have my own workout, Track my lifts</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-03-23-seo-public-5"></script>
+</body>
+</html>
