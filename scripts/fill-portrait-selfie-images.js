@@ -414,7 +414,7 @@ async function openverse(query, page = 1) {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'STRYVE-portrait-image-fill/1.0'
+      'User-Agent': 'RiseForIt-portrait-image-fill/1.0'
     }
   });
   if (!response.ok) return { results: [] };

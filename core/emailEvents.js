@@ -203,9 +203,9 @@ function buildOnboardingEmailPayload({ displayName = '' } = {}) {
   const first = name ? name.split(/\s+/g)[0] : '';
   const greetingName = first || 'there';
   return {
-    subject: 'Welcome to STRYVE - your training dashboard is live',
+    subject: 'Welcome to RiseForIt - your training dashboard is live',
     preheader: 'Your free account is active. Start with Dash, Training, Meals, and Progress tracking.',
-    greeting: `Hey ${greetingName}, welcome to STRYVE.`,
+    greeting: `Hey ${greetingName}, welcome to RiseForIt.`,
     intro: 'Your free account is ready. You can run your training, nutrition, and accountability from one place.',
     perks: [
       'Daily Dash check-ins (weight, sleep, stress, water, meal adherence, progress photos)',

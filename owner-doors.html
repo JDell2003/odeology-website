@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SEO Doors · STRYVE</title>
+  <title>SEO Doors · RiseForIt</title>
   <link rel="stylesheet" href="css/main.css?v=2026-03-23-seo-doors-1">
   <style>
     body.owner-doors-page {
@@ -323,7 +323,7 @@
 
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand"><span class="brand-wordmark" aria-label="STRYVE"><span class="brand-char">S</span><span class="brand-char">T</span><span class="brand-char">R</span><span class="brand-char">Y</span><span class="brand-char">V</span><span class="brand-char">E</span></span><span class="brand-dot"></span></div>
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
       <ul class="nav-menu" id="nav-menu">
         <li><a href="index.html">Home</a></li>
@@ -617,7 +617,7 @@
         <div>
           <h2 id="owner-doors-preview-title">Workout Plan Generator</h2>
           <div class="owner-doors-preview-meta">
-            <span id="owner-doors-preview-slug">/workout-plan-generator</span>
+            <span id="owner-doors-preview-slug">http://localhost:3000/workout-plan-generator</span>
             <span id="owner-doors-preview-cta">Generate My Workout Plan</span>
             <span id="owner-doors-preview-route">Existing training generator flow</span>
           </div>
@@ -663,12 +663,35 @@
         return;
       }
 
+      function buildFullUrl(path) {
+        try {
+          return new URL(path, window.location.origin + '/').href;
+        } catch (_) {
+          return path;
+        }
+      }
+
+      function syncCardUrls() {
+        previewButtons.forEach((button) => {
+          const slug = button.dataset.previewSlug;
+          if (!slug) {
+            return;
+          }
+          const slugMeta = button.querySelector('.owner-door-meta div:first-child');
+          if (!slugMeta) {
+            return;
+          }
+          slugMeta.innerHTML = '<strong>URL:</strong> ' + buildFullUrl(slug);
+        });
+      }
+
       function setActivePreview(button) {
         const src = button.dataset.previewSrc;
         const label = button.dataset.previewLabel;
         const slug = button.dataset.previewSlug;
         const cta = button.dataset.previewCta;
         const route = button.dataset.previewRoute;
+        const fullUrl = buildFullUrl(slug);
         if (!src || !label || !slug || !cta || !route) {
           return;
         }
@@ -678,7 +701,7 @@
         previewFrame.src = src;
         previewFrame.title = label + ' preview';
         previewTitle.textContent = label;
-        previewSlug.textContent = slug;
+        previewSlug.textContent = fullUrl;
         previewCta.textContent = cta;
         previewRoute.textContent = route;
         openHtmlLink.href = src;
@@ -694,6 +717,8 @@
         });
       }
 
+      syncCardUrls();
+
       previewButtons.forEach((button) => {
         button.addEventListener('click', function () {
           setActivePreview(button);
@@ -707,6 +732,7 @@
       });
 
       setDevice('desktop');
+      setActivePreview(previewButtons.find((button) => button.classList.contains('active')) || previewButtons[0]);
     }());
   </script>
 </body>

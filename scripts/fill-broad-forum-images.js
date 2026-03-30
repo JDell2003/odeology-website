@@ -34,7 +34,7 @@ function hashValue(value) {
 async function openverse(q, page = 1) {
   const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&license=by,by-sa,cc0,pdm&page=${page}&page_size=20`;
   for (let attempt = 0; attempt < 4; attempt += 1) {
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'STRYVE-forum-broad-image-fill/1.0' } });
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'RiseForIt-forum-broad-image-fill/1.0' } });
     if (res.ok) return res.json();
     if ([400, 401, 403, 404, 422].includes(res.status)) return { results: [] };
     if (![429, 500, 502, 503, 504].includes(res.status)) return { results: [] };

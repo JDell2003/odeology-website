@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = 'https://STRYVE.up.railway.app';
+const DEFAULT_BASE_URL = 'https://RiseForIt.up.railway.app';
 const TEMPLATE_VERSION = 'v1';
 
 function resolveBaseUrl() {
@@ -85,10 +85,10 @@ function eventTemplateSpec({
     case 'Account Created':
       return {
         key: 'account_created',
-        subject: 'Welcome to STRYVE: your dashboard is live',
+        subject: 'Welcome to RiseForIt: your dashboard is live',
         preheader: 'Your free account is active. Start with training, nutrition, and check-ins.',
         greeting: hey,
-        intro: 'Your STRYVE account is ready. You can run training, nutrition, and progress tracking from one place.',
+        intro: 'Your RiseForIt account is ready. You can run training, nutrition, and progress tracking from one place.',
         bullets: [
           'Build or generate your workout plan and track lifts',
           'Log daily compliance, check-ins, and progress photos',
@@ -100,7 +100,7 @@ function eventTemplateSpec({
     case 'Lead Nurture Channel Enrolled':
       return {
         key: 'lead_nurture_enrolled',
-        subject: 'You are in: STRYVE updates and coaching insights',
+        subject: 'You are in: RiseForIt updates and coaching insights',
         preheader: 'We will send practical training and nutrition guidance you can apply right away.',
         greeting: hey,
         intro: 'You are now in our update channel for self-paced progress and coaching support.',
@@ -115,7 +115,7 @@ function eventTemplateSpec({
     case 'Password Reset Requested':
       return {
         key: 'password_reset_requested',
-        subject: 'Reset your STRYVE password',
+        subject: 'Reset your RiseForIt password',
         preheader: 'Use the secure reset link to set a new password.',
         greeting: hey,
         intro: `Use the button below to reset your password. This link expires in ${Math.max(10, resetMins)} minutes.`,
@@ -129,7 +129,7 @@ function eventTemplateSpec({
     case 'Password Reset Completed':
       return {
         key: 'password_reset_completed',
-        subject: 'Your STRYVE password was updated',
+        subject: 'Your RiseForIt password was updated',
         preheader: 'Your account password has been changed successfully.',
         greeting: hey,
         intro: 'Your password is now updated and your account is secure.',
@@ -143,7 +143,7 @@ function eventTemplateSpec({
     case 'Friend Request Received':
       return {
         key: 'friend_request_received',
-        subject: 'New friend request on STRYVE',
+        subject: 'New friend request on RiseForIt',
         preheader: 'You have a new request waiting in your account.',
         greeting: hey,
         intro: `${fromName} sent you a friend request.`,
@@ -172,7 +172,7 @@ function eventTemplateSpec({
       return {
         key: 'message_received',
         subject: 'You received a new message',
-        preheader: preview || 'A teammate sent you a message in STRYVE.',
+        preheader: preview || 'A teammate sent you a message in RiseForIt.',
         greeting: hey,
         intro: preview ? `New message preview: "${preview}"` : 'You have a new message waiting.',
         bullets: [
@@ -199,7 +199,7 @@ function eventTemplateSpec({
     case 'Owner Broadcast Received':
       return {
         key: 'owner_broadcast_received',
-        subject: 'New STRYVE team update',
+        subject: 'New RiseForIt team update',
         preheader: preview || 'A new broadcast update was sent to your account.',
         greeting: hey,
         intro: preview ? `Team update preview: "${preview}"` : 'A new team-wide update is waiting for you.',
@@ -405,7 +405,7 @@ function eventTemplateSpec({
     case 'Lead Submitted':
       return {
         key: 'lead_submitted',
-        subject: 'Your STRYVE intake was received',
+        subject: 'Your RiseForIt intake was received',
         preheader: 'We saved your details and next steps are ready.',
         greeting: hey,
         intro: 'Your intake was submitted. You can continue into training setup right now.',
@@ -433,7 +433,7 @@ function eventTemplateSpec({
     default:
       return {
         key: 'generic_update',
-        subject: 'STRYVE account update',
+        subject: 'RiseForIt account update',
         preheader: 'You have a new update in your account.',
         greeting: hey,
         intro: `New activity detected for "${metric || 'Account Update'}".`,
@@ -464,7 +464,7 @@ function renderEmailHtml(spec) {
       <td align="center">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
           <tr>
-            <td style="background:#111827;color:#f9fafb;padding:18px 24px;font-size:18px;font-weight:700;letter-spacing:1px;">STRYVE</td>
+            <td style="background:#111827;color:#f9fafb;padding:18px 24px;font-size:18px;font-weight:700;letter-spacing:1px;">RiseForIt</td>
           </tr>
           <tr>
             <td style="padding:24px;">
@@ -474,7 +474,7 @@ function renderEmailHtml(spec) {
               <p style="margin:0 0 20px;">
                 <a href="${escapeHtml(spec.ctaUrl)}" style="display:inline-block;background:#d18d2f;color:#111827;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;">${escapeHtml(spec.ctaLabel)}</a>
               </p>
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because of activity on your STRYVE account.</p>
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because of activity on your RiseForIt account.</p>
             </td>
           </tr>
         </table>
@@ -497,7 +497,7 @@ function renderEmailText(spec) {
     '',
     `${spec.ctaLabel}: ${spec.ctaUrl}`,
     '',
-    'You are receiving this because of activity on your STRYVE account.'
+    'You are receiving this because of activity on your RiseForIt account.'
   ].join('\n').trim();
 }
 
@@ -514,7 +514,7 @@ function buildKlaviyoEmailTemplate({
   return {
     key: String(spec.key || 'generic_update'),
     version: TEMPLATE_VERSION,
-    subject: String(spec.subject || 'STRYVE update'),
+    subject: String(spec.subject || 'RiseForIt update'),
     preheader: String(spec.preheader || ''),
     ctaLabel: String(spec.ctaLabel || 'Open Dashboard'),
     ctaUrl: String(spec.ctaUrl || buildUrl('/dashboard.html')),

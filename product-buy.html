@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buy Product | RiseForIt</title>
+  <script src="js/external-keydown-shield.js"></script>
+  <style>
+    :root {
+      --bg: #f3f6f8;
+      --panel: #ffffff;
+      --text: #102433;
+      --muted: rgba(16, 36, 51, 0.62);
+      --line: rgba(16, 36, 51, 0.1);
+      --brand: #16a7ea;
+      --brand-dark: #0f84b9;
+      --shadow: 0 28px 60px rgba(14, 27, 36, 0.12);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(22, 167, 234, 0.12), transparent 30%),
+        linear-gradient(180deg, #f8fbfd 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 18px;
+    }
+    .card {
+      width: min(100%, 920px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 0;
+      min-height: 520px;
+    }
+    .media {
+      background: linear-gradient(150deg, #eef8fd, #ddeef7);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--line);
+    }
+    .media-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(145deg, #16a7ea, #16394a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .media-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .body {
+      padding: 30px 34px 32px;
+      display: grid;
+      gap: 18px;
+    }
+    .eyebrow {
+      margin: 0;
+      color: var(--brand-dark);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    .coach {
+      margin: -6px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .summary-card {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fbfdff;
+    }
+    .summary-label {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .summary-value {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .price-stack {
+      display: grid;
+      gap: 4px;
+    }
+    .price-original {
+      color: rgba(16, 36, 51, 0.5);
+      font-size: 0.86rem;
+      text-decoration: line-through;
+    }
+    .description {
+      margin: 0;
+      color: rgba(16, 36, 51, 0.8);
+      font-size: 0.97rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .discount {
+      display: grid;
+      gap: 8px;
+      padding: 14px 16px;
+      border: 1px dashed rgba(22, 167, 234, 0.4);
+      border-radius: 16px;
+      background: rgba(22, 167, 234, 0.04);
+    }
+    .discount[hidden] {
+      display: none !important;
+    }
+    .discount-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .discount input {
+      flex: 1 1 220px;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 0.95rem;
+    }
+    .discount button,
+    .buy-btn {
+      min-height: 44px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 18px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .discount button {
+      background: #0d2232;
+    }
+    .buy-btn:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+    .notice {
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .notice.info {
+      background: rgba(22, 167, 234, 0.08);
+      color: #0e5f83;
+    }
+    .notice.error {
+      background: rgba(204, 60, 60, 0.08);
+      color: #a23131;
+    }
+    .notice.success {
+      background: rgba(45, 167, 101, 0.1);
+      color: #216d45;
+    }
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    .loading,
+    .missing {
+      padding: 48px 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .media {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .summary {
+        grid-template-columns: 1fr;
+      }
+      .body {
+        padding: 24px 20px 24px;
+      }
+      h1 {
+        font-size: 2rem;
+        line-height: 1.08;
+      }
+      .coach {
+        margin-top: 2px;
+        font-size: 0.94rem;
+        line-height: 1.35;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="loading" id="loading-state">Loading product...</div>
+      <div class="missing" id="missing-state" hidden>This product link is invalid or no longer available.</div>
+      <div class="hero" id="product-card" hidden>
+        <div class="media">
+          <div class="media-box" id="product-image-box">RFI</div>
+        </div>
+        <div class="body">
+          <div>
+            <p class="eyebrow">RiseForIt Product</p>
+            <h1 id="product-name">Product</h1>
+            <p class="coach" id="product-coach">Sold by RiseForIt Coach</p>
+          </div>
+
+          <div class="summary">
+            <div class="summary-card">
+              <p class="summary-label">Price</p>
+              <p class="summary-value" id="product-price">$0.00 USD</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-label">Billing</p>
+              <p class="summary-value" id="product-billing">One-time</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-label">Starts</p>
+              <p class="summary-value" id="product-starts">Day of purchase</p>
+            </div>
+          </div>
+
+          <p class="description" id="product-description">Product details will appear here.</p>
+
+          <div class="discount" id="discount-panel" hidden>
+            <div id="discount-heading">Discount-ready link</div>
+            <div class="discount-row">
+              <input id="discount-code-input" type="number" min="0" max="100" step="1" placeholder="Enter discount percent">
+              <button id="discount-apply-btn" type="button">Apply</button>
+            </div>
+          </div>
+
+          <div class="notice info" id="status-box">You’ll be redirected to secure Stripe checkout to complete payment for this product.</div>
+
+          <div>
+            <button class="buy-btn" id="buy-btn" type="button">Buy now</button>
+          </div>
+
+          <div class="footer-note">
+            Payments are processed securely through the coach’s connected Stripe account. Your card details are collected on Stripe checkout, not stored on RiseForIt.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const loadingState = document.getElementById('loading-state');
+      const missingState = document.getElementById('missing-state');
+      const productCard = document.getElementById('product-card');
+      const productImageBox = document.getElementById('product-image-box');
+      const productName = document.getElementById('product-name');
+      const productCoach = document.getElementById('product-coach');
+      const productPrice = document.getElementById('product-price');
+      const discountHeading = document.getElementById('discount-heading');
+      const productBilling = document.getElementById('product-billing');
+      const productStarts = document.getElementById('product-starts');
+      const productDescription = document.getElementById('product-description');
+      const statusBox = document.getElementById('status-box');
+      const buyBtn = document.getElementById('buy-btn');
+      const discountPanel = document.getElementById('discount-panel');
+      const discountCodeInput = document.getElementById('discount-code-input');
+      const discountApplyBtn = document.getElementById('discount-apply-btn');
+      const params = new URLSearchParams(window.location.search);
+      const token = String(params.get('product') || '').trim();
+      const autoCheckout = params.get('checkout') === '1';
+      const showDiscountPanel = params.get('discount') === '1';
+      const discountPercentFromUrl = Math.max(0, Math.min(100, Number(params.get('discountPct') || 0)));
+      const status = String(params.get('status') || '').trim().toLowerCase();
+      let currentProduct = null;
+
+      const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)} USD`;
+      const buildBillingText = (product) => {
+        const type = String(product?.paymentType || '').trim().toLowerCase();
+        if (type === 'free') return 'Free';
+        if (type === 'one_time') return 'One-time';
+        const count = Math.max(1, Number(product?.billingIntervalCount || 1));
+        const unit = String(product?.billingIntervalUnit || 'month').trim().toLowerCase() === 'week' ? 'week' : 'month';
+        if (count === 1) return unit === 'week' ? 'Weekly' : 'Monthly';
+        return `Every ${count} ${unit}${count === 1 ? '' : 's'}`;
+      };
+      const buildStartText = (product) => {
+        const type = String(product?.startType || '').trim().toLowerCase();
+        if (type === 'next_monday') return 'Next Monday';
+        if (type === 'fixed' && product?.fixedStartDate) return product.fixedStartDate;
+        return 'Day of purchase';
+      };
+      const buildImageAbbr = (name) => String(name || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase() || 'RFI';
+      const setStatus = (text, tone) => {
+        statusBox.textContent = text;
+        statusBox.className = `notice ${tone}`;
+      };
+      const getAppliedDiscountPercent = () => Math.max(0, Math.min(100, Number(discountCodeInput.value || discountPercentFromUrl || 0)));
+      const getDiscountedPrice = (product) => {
+        const basePrice = Number(product?.price || 0);
+        const discountPercent = getAppliedDiscountPercent();
+        return Math.max(0, basePrice * ((100 - discountPercent) / 100));
+      };
+      const syncPriceBlock = () => {
+        if (!currentProduct) return;
+        const discountPercent = getAppliedDiscountPercent();
+        const finalPrice = getDiscountedPrice(currentProduct);
+        if (discountPercent > 0) {
+          productPrice.innerHTML = `<span class="price-stack"><span>${formatCurrency(finalPrice)}</span><span class="price-original">${formatCurrency(currentProduct.price)}</span></span>`;
+        } else {
+          productPrice.textContent = formatCurrency(currentProduct.price);
+        }
+      };
+      const buildThankYouUrl = () => {
+        const nextUrl = new URL('/product-thank-you.html', window.location.origin);
+        if (token) nextUrl.searchParams.set('product', token);
+        if (discountPercentFromUrl > 0) nextUrl.searchParams.set('discountPct', String(discountPercentFromUrl));
+        nextUrl.searchParams.set('status', 'success');
+        return nextUrl.toString();
+      };
+      const fetchProduct = async () => {
+        const response = await fetch(`/api/auth/product-public?token=${encodeURIComponent(token)}`, {
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data?.ok === false || !data?.product) {
+          throw new Error(data?.error || 'Product not found.');
+        }
+        return data.product;
+      };
+      const beginCheckout = async () => {
+        if (!currentProduct) return;
+        buyBtn.disabled = true;
+        setStatus('Redirecting to secure Stripe checkout...', 'info');
+        try {
+          const response = await fetch('/api/auth/product-public/checkout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: currentProduct.publicToken, discountPercent: getAppliedDiscountPercent() })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || data?.ok === false) {
+            throw new Error(data?.error || 'Could not start checkout.');
+          }
+          const checkout = data?.checkout || {};
+          if (checkout.mode === 'free') {
+            setStatus('This product is free. Checkout is not required for this link.', 'success');
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'No payment required';
+            return;
+          }
+          if (!checkout.url) throw new Error('Checkout URL missing.');
+          window.location.href = checkout.url;
+        } catch (err) {
+          setStatus(err?.message || 'Could not start checkout.', 'error');
+          buyBtn.disabled = false;
+        }
+      };
+      const renderProduct = (product) => {
+        currentProduct = product;
+        loadingState.hidden = true;
+        missingState.hidden = true;
+        productCard.hidden = false;
+        productName.textContent = String(product?.name || 'Product');
+        productCoach.textContent = `Sold by ${String(product?.trainer?.name || 'RiseForIt Coach')}`;
+        discountCodeInput.value = discountPercentFromUrl > 0 ? String(discountPercentFromUrl) : '';
+        syncPriceBlock();
+        productBilling.textContent = buildBillingText(product);
+        productStarts.textContent = buildStartText(product);
+        productDescription.textContent = String(product?.description || 'No extra description was provided for this product.');
+        discountPanel.hidden = !showDiscountPanel;
+        discountHeading.textContent = discountPercentFromUrl > 0 ? `Discount applied: ${discountPercentFromUrl}% off` : 'Discount-ready link';
+        if (String(product?.imageDataUrl || '').trim()) {
+          productImageBox.innerHTML = `<img src="${product.imageDataUrl}" alt="">`;
+        } else {
+          productImageBox.textContent = buildImageAbbr(product?.name);
+        }
+        if (status === 'success') {
+          setStatus('Payment completed. Redirecting you to your thank-you page now.', 'success');
+          buyBtn.hidden = true;
+          window.setTimeout(() => {
+            window.location.replace(buildThankYouUrl());
+          }, 700);
+        } else if (status === 'cancel') {
+          setStatus('Checkout was canceled. You can start again whenever you are ready.', 'error');
+        } else {
+          setStatus('You’ll be redirected to secure Stripe checkout to complete payment for this product.', 'info');
+        }
+        if (String(product?.paymentType || '').trim().toLowerCase() === 'free') {
+          buyBtn.textContent = 'Claim product';
+        }
+      };
+
+      buyBtn.addEventListener('click', beginCheckout);
+      discountApplyBtn.addEventListener('click', () => {
+        const discountPercent = Math.max(0, Math.min(100, Number(discountCodeInput.value || 0)));
+        if (!Number.isFinite(discountPercent) || discountPercent <= 0) {
+          setStatus('Enter a valid discount percent first.', 'error');
+          return;
+        }
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('discount', '1');
+        nextUrl.searchParams.set('discountPct', String(discountPercent));
+        window.history.replaceState({}, '', nextUrl.toString());
+        discountHeading.textContent = `Discount applied: ${discountPercent}% off`;
+        syncPriceBlock();
+        setStatus(`Discount set to ${discountPercent}% off for this checkout link.`, 'info');
+      });
+
+      if (!token) {
+        loadingState.hidden = true;
+        missingState.hidden = false;
+        return;
+      }
+
+      fetchProduct()
+        .then((product) => {
+          renderProduct(product);
+          if (autoCheckout && status !== 'success') {
+            beginCheckout();
+          }
+        })
+        .catch(() => {
+          loadingState.hidden = true;
+          missingState.hidden = false;
+        });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coaches · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
+  <script src="js/external-keydown-shield.js?v=2026-03-25-keydown-shield-1"></script>
+  <style>
+    body.coaches-page {
+      background:
+        radial-gradient(circle at top left, rgba(128, 199, 255, 0.12), transparent 24%),
+        radial-gradient(circle at top right, rgba(255, 214, 126, 0.12), transparent 22%),
+        #f7f5f0;
+    }
+    .coaches-main {
+      margin-left: 0;
+      padding: calc(var(--navbar-height, 72px) + 8px) 24px 42px;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .coaches-shell {
+      width: min(100%, 860px);
+      margin: 0 auto;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 12px;
+    }
+    .coaches-shell > section {
+      padding: 0;
+      margin: 0;
+    }
+    .coaches-heading {
+      width: min(100%, 760px);
+      display: grid;
+      justify-items: start;
+      gap: 2px;
+      text-align: left;
+      padding-top: 0;
+    }
+    .coaches-heading-kicker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.42rem 0.78rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      color: #16344d;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .coaches-heading-title {
+      margin: 0;
+      color: #0d2232;
+      font-size: clamp(1.6rem, 4vw, 2.35rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.96;
+    }
+    .coaches-heading-sub {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.45;
+      max-width: 34rem;
+    }
+    .coaches-section-label {
+      width: min(100%, 760px);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .coaches-toolbar {
+      width: min(100%, 760px);
+      display: grid;
+      grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(0, 0.5fr));
+      gap: 10px;
+      align-items: center;
+      justify-items: stretch;
+    }
+    .coaches-input {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 10px 22px rgba(13, 34, 50, 0.06);
+      padding: 0 14px;
+      color: #0d2232;
+      font-size: 0.92rem;
+      font-weight: 700;
+      outline: none;
+    }
+    .coaches-input::placeholder {
+      color: rgba(13, 34, 50, 0.46);
+    }
+    .coaches-input:focus {
+      border-color: rgba(41, 123, 255, 0.32);
+      box-shadow: 0 14px 28px rgba(58, 116, 197, 0.12);
+    }
+    .coaches-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: 18px;
+    }
+    .coaches-card {
+      border-radius: 28px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background:
+        radial-gradient(circle at top right, rgba(123, 179, 255, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.95));
+      box-shadow: 0 30px 56px rgba(8, 22, 34, 0.08);
+      padding: 24px;
+    }
+    .coaches-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(13, 34, 50, 0.05);
+      color: #16344d;
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .coaches-title {
+      margin: 16px 0 0;
+      font-size: clamp(2.4rem, 6vw, 4.4rem);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      color: #0d2232;
+    }
+    .coaches-sub {
+      margin-top: 14px;
+      max-width: 42rem;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+    .coaches-bullets {
+      margin-top: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .coaches-bullet {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(13, 34, 50, 0.76);
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+    .coaches-bullet-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #7fd1ff, #f2c66d);
+      box-shadow: 0 0 0 6px rgba(127, 209, 255, 0.1);
+      flex: 0 0 10px;
+    }
+    .coaches-side {
+      display: grid;
+      gap: 14px;
+    }
+    .coaches-side-card {
+      border-radius: 24px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.94);
+      padding: 18px;
+    }
+    .coaches-side-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: #0d2232;
+    }
+    .coaches-side-card p {
+      margin: 8px 0 0;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .coaches-note-list {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .coaches-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(244, 248, 255, 0.95);
+      color: rgba(13, 34, 50, 0.76);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+    .coaches-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 16px;
+      overflow: visible;
+    }
+    .coaches-review-tabs {
+      display: none;
+      width: 100%;
+      max-width: 760px;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .coaches-review-tabs.is-visible {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .coaches-review-tab {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .coaches-review-tab.is-active {
+      background: #16344d;
+      border-color: #16344d;
+      color: #fff;
+    }
+    .coaches-review-summary {
+      color: rgba(13, 34, 50, 0.58);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .coach-card {
+      width: min(100%, 760px);
+      position: relative;
+      margin-right: 56px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(129, 202, 255, 0.1), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(247, 250, 253, 0.97));
+      box-shadow: 0 10px 22px rgba(7, 20, 31, 0.05);
+      padding: 2px 8px;
+      overflow: visible;
+    }
+    .coach-card.demo {
+      border-style: solid;
+    }
+    .coach-card.is-open {
+      box-shadow: 0 18px 34px rgba(7, 20, 31, 0.08);
+    }
+    .coach-pill {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 0;
+      background: transparent;
+      padding: 5px 8px 5px 4px;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+    .coach-pill:hover {
+      text-decoration: none;
+    }
+    .coach-pill-copy {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+    .coach-pill-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: start;
+    }
+    .coach-name-group {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+    .coach-tier-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .coach-avatar {
+      width: 94px;
+      height: 94px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(244, 247, 251, 0.98);
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      box-shadow: 0 8px 18px rgba(13, 34, 50, 0.08);
+      flex: 0 0 94px;
+    }
+    .coach-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 12%;
+    }
+    .coach-name {
+      font-size: 0.98rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0d2232;
+      line-height: 1;
+    }
+    .coach-handle {
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+    .coach-overview {
+      color: rgba(13, 34, 50, 0.78);
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1.12;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      overflow: hidden;
+    }
+    .coach-mode-line {
+      color: rgba(13, 34, 50, 0.58);
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .coach-side-panel {
+      min-width: 124px;
+      display: grid;
+      gap: 3px;
+      justify-items: end;
+      text-align: right;
+    }
+    .coach-side-label {
+      color: rgba(13, 34, 50, 0.44);
+      font-size: 0.56rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .coach-side-value {
+      color: #0d2232;
+      font-size: 0.88rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.08;
+      white-space: nowrap;
+    }
+    .coach-side-sub {
+      color: rgba(13, 34, 50, 0.58);
+      font-size: 0.6rem;
+      font-weight: 800;
+      line-height: 1.22;
+      white-space: nowrap;
+    }
+    .coach-tier {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.44rem;
+      border-radius: 999px;
+      background: rgba(15, 36, 53, 0.06);
+      color: #16344d;
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .coach-experience {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.44rem;
+      border-radius: 999px;
+      background: rgba(246, 248, 251, 0.92);
+      border: 1px solid rgba(10, 31, 47, 0.07);
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .coach-review-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.44rem;
+      border-radius: 999px;
+      background: rgba(227, 166, 63, 0.14);
+      border: 1px solid rgba(227, 166, 63, 0.22);
+      color: #8a5a12;
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .coach-review-tag.approved {
+      background: rgba(39, 157, 93, 0.12);
+      border-color: rgba(39, 157, 93, 0.2);
+      color: #1e7a4a;
+    }
+    .coach-review-actions {
+      position: absolute;
+      top: 50%;
+      right: -42px;
+      transform: translateY(-50%);
+      display: grid;
+      gap: 8px;
+      z-index: 3;
+    }
+    .coach-review-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(8, 22, 34, 0.08);
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+    .coach-review-btn:hover:not(:disabled) {
+      transform: scale(1.04);
+      box-shadow: 0 14px 24px rgba(8, 22, 34, 0.12);
+    }
+    .coach-review-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .coach-review-btn-approve {
+      background: #15344d;
+      border-color: rgba(21, 52, 77, 0.24);
+      color: #fff;
+    }
+    .coach-review-btn-deny {
+      background: #fff;
+      border-color: rgba(181, 62, 62, 0.22);
+      color: #9a2f2f;
+    }
+    .coach-toggle {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(247, 250, 255, 0.95);
+      color: #16344d;
+      display: grid;
+      place-items: center;
+      font-size: 0.82rem;
+      font-weight: 900;
+      transition: transform 180ms ease;
+      flex: 0 0 26px;
+    }
+    .coach-pill:hover .coach-toggle {
+      background: rgba(234, 242, 250, 0.98);
+    }
+    .coach-card.is-open .coach-toggle {
+      transform: rotate(45deg);
+    }
+    .coach-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .coach-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.5rem 0.76rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(247, 250, 255, 0.95);
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+    .coach-expand {
+      display: none;
+      gap: 14px;
+      padding: 12px 6px 6px;
+    }
+    .coach-card.is-open .coach-expand {
+      display: grid;
+    }
+    .coach-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .coach-panel {
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.88);
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .coach-panel-label {
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.52);
+    }
+    .coach-panel-copy {
+      color: #0d2232;
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .coach-proof-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .coach-proof {
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(244, 248, 255, 0.96);
+      border: 1px solid rgba(10, 31, 47, 0.07);
+    }
+    .coach-proof-label {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.48);
+    }
+    .coach-proof-value {
+      margin-top: 5px;
+      font-size: 1.02rem;
+      font-weight: 900;
+      color: #0d2232;
+      line-height: 1;
+    }
+    .coach-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+    .coach-socials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .coach-social {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.48rem 0.78rem;
+      border-radius: 999px;
+      background: rgba(15, 36, 53, 0.04);
+      border: 1px solid rgba(15, 36, 53, 0.08);
+      color: #0f2435;
+      font-size: 0.76rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .coach-demo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(13, 34, 50, 0.56);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .coaches-status,
+    .coaches-empty {
+      border-radius: 22px;
+      border: 1px dashed rgba(10, 31, 47, 0.16);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 18px;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    @media (max-width: 1100px) {
+      .coaches-hero {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 900px) {
+      .coaches-main {
+        margin-left: 0;
+        padding: calc(var(--navbar-height, 72px) + 8px) 14px 30px;
+        align-items: flex-start;
+      }
+    }
+    @media (max-width: 720px) {
+      .coaches-shell {
+        gap: 10px;
+      }
+      .coaches-heading,
+      .coaches-toolbar,
+      .coaches-section-label {
+        width: 100%;
+      }
+      .coaches-heading {
+        gap: 4px;
+      }
+      .coaches-heading-title {
+        font-size: 2.25rem;
+        line-height: 0.94;
+      }
+      .coaches-heading-sub {
+        font-size: 0.78rem;
+        max-width: 22rem;
+      }
+      .coaches-input {
+        min-height: 44px;
+        border-radius: 15px;
+        font-size: 0.9rem;
+      }
+      .coaches-toolbar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .coach-grid,
+      .coach-proof-row {
+        grid-template-columns: 1fr;
+      }
+      .coach-card {
+        border-radius: 22px;
+        padding: 3px 5px;
+      }
+      .coach-pill {
+        grid-template-columns: 72px minmax(0, 1fr);
+        grid-template-areas: "avatar copy";
+        align-items: start;
+        gap: 6px 12px;
+        padding: 9px 8px 10px 8px;
+      }
+      .coach-avatar {
+        grid-area: avatar;
+        width: 72px;
+        height: 72px;
+        flex-basis: 72px;
+        box-shadow: 0 6px 14px rgba(13, 34, 50, 0.08);
+      }
+      .coach-pill-copy {
+        grid-area: copy;
+        gap: 4px;
+      }
+      .coach-pill-top {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px;
+      }
+      .coach-name {
+        font-size: 0.92rem;
+      }
+      .coach-handle {
+        font-size: 0.66rem;
+      }
+      .coach-tier-row {
+        gap: 5px;
+        justify-content: flex-start;
+      }
+      .coach-tier,
+      .coach-experience {
+        padding: 0.18rem 0.42rem;
+        font-size: 0.54rem;
+      }
+      .coach-overview {
+        font-size: 0.72rem;
+        line-height: 1.28;
+        -webkit-line-clamp: 2;
+      }
+      .coach-mode-line {
+        font-size: 0.64rem;
+      }
+      .coach-toggle {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="coaches-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-bars" viewBox="0 0 24 24">
+      <path d="M5 16.5h14"></path>
+      <path d="M7.5 16.5v-4.5M12 16.5v-7M16.5 16.5v-5.5"></path>
+    </symbol>
+    <symbol id="icon-trend" viewBox="0 0 24 24">
+      <path d="M6.5 15.5 10 12l2.5 2.5 5-6"></path>
+      <path d="M15 8h3v3"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+    <symbol id="icon-chef" viewBox="0 0 24 24">
+      <path d="M8.5 10.5h7a3.5 3.5 0 0 0 0-7 4 4 0 0 0-3.5 2 3 3 0 0 0-5.5 2 3 3 0 0 0 2 3Z"></path>
+      <path d="M8 10.5h8v3.5a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3.5Z"></path>
+      <path d="M10 16v3.5M14 16v3.5"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a href="training.html">Training</a></li>
+        <li><a href="forum.html">FORUM</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">&#x1F319;</span>
+      </button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section">
+      <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">DASH</p>
+      <div class="control-pill-row">
+        <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+          <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+          <span class="text">Dash</span>
+        </button>
+      </div>
+    </div>
+    <div class="control-section">
+      <p class="section-label">TRAINING PORTAL</p>
+      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+    </div>
+    <div class="control-section">
+      <p class="section-label">COMMUNITY</p>
+      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link active" href="coaches.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
+    </div>
+    <div class="control-section hidden" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="coaches-main">
+    <div class="coaches-shell">
+      <section class="coaches-heading" aria-label="Featured trainers">
+        <h1 class="coaches-heading-title">Find your trainer.</h1>
+        <p class="coaches-heading-sub">Search by coaching style or location, then open the profile that feels like the right fit.</p>
+      </section>
+      <section class="coaches-toolbar" aria-label="Coach search and location filters">
+        <input id="coach-search-input" class="coaches-input" type="search" placeholder="Search trainers, specialties, or coaching style">
+        <input id="coach-city-input" class="coaches-input" type="text" placeholder="City">
+        <input id="coach-state-input" class="coaches-input" type="text" placeholder="State">
+        <input id="coach-zip-input" class="coaches-input" type="text" inputmode="numeric" placeholder="ZIP code">
+      </section>
+      <section class="coaches-review-tabs" id="coaches-review-tabs" aria-label="Trainer review filters">
+        <button type="button" class="coaches-review-tab is-active" data-review-tab="all">All coaches</button>
+        <button type="button" class="coaches-review-tab" data-review-tab="review">Review queue</button>
+        <span class="coaches-review-summary" id="coaches-review-summary"></span>
+      </section>
+      <section class="coaches-section-label" aria-label="Featured trainer section">
+        <span class="coaches-heading-kicker">Featured trainers</span>
+      </section>
+      <section id="coaches-grid" class="coaches-grid"></section>
+    </div>
+  </main>
+
+  <script src="js/main.js?v=2026-03-26-owner-demo-39"></script>
+  <script src="js/coaches.js?v=2026-03-29-coaches-23"></script>
+</body>
+</html>

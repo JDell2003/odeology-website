@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trainers - RiseForIt</title>
+  <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-3"></script>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body.trainers-page {
+      background:
+        radial-gradient(circle at top left, rgba(126, 196, 255, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 211, 126, 0.18), transparent 24%),
+        #f7f7f5;
+      color: #0d2232;
+    }
+    .trainers-shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: var(--navbar-height, 72px) auto 52px;
+      display: grid;
+      gap: 28px;
+    }
+    .trainer-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 0.96fr);
+      gap: 34px;
+      align-items: start;
+    }
+    .trainer-card {
+      border-radius: 28px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
+      box-shadow: 0 28px 50px rgba(8, 23, 36, 0.08);
+      padding: 24px;
+    }
+    .trainer-hero-copy {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      padding: 0;
+    }
+    .trainer-kicker {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4rem 0.72rem;
+      border-radius: 999px;
+      background: rgba(13, 34, 50, 0.05);
+      color: #153447;
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-title {
+      margin: 0;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+      color: #0d2232;
+      max-width: 12ch;
+    }
+    .trainer-sub {
+      margin-top: 0;
+      max-width: 42rem;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.68;
+    }
+    .trainer-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .trainer-section-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .trainer-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      border-radius: 999px;
+      padding: 0.88rem 1.18rem;
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.96), rgba(34, 71, 98, 0.96));
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .trainer-btn.ghost {
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+    }
+    .trainer-proof-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .trainer-proof {
+      min-width: 170px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.07);
+      background: rgba(255, 255, 255, 0.66);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 28px rgba(8, 23, 36, 0.06);
+    }
+    .trainer-proof-label {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.52);
+    }
+    .trainer-proof-value {
+      margin-top: 6px;
+      font-size: 0.92rem;
+      font-weight: 900;
+      color: #0d2232;
+      line-height: 1.3;
+    }
+    .trainer-payout-band {
+      display: grid;
+      gap: 14px;
+      padding: 20px 22px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(255, 208, 112, 0.18), transparent 24%),
+        linear-gradient(135deg, rgba(12, 29, 44, 0.98), rgba(23, 52, 74, 0.98));
+      color: #f6f1e8;
+      box-shadow: 0 30px 46px rgba(8, 21, 32, 0.18);
+    }
+    .trainer-payout-label {
+      color: rgba(255, 244, 226, 0.68);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-payout-value {
+      color: #fff6eb;
+      font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.98;
+      max-width: 13ch;
+    }
+    .trainer-payout-copy {
+      color: rgba(255, 244, 226, 0.78);
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.58;
+      max-width: 34rem;
+    }
+    .trainer-payout-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .trainer-payout-step {
+      display: grid;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .trainer-payout-step span {
+      color: rgba(255, 244, 226, 0.62);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-payout-step strong {
+      color: #fff6eb;
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+    .trainer-hero-visual {
+      position: relative;
+      min-height: 560px;
+      align-self: start;
+    }
+    .trainer-collage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: inherit;
+    }
+    .trainer-collage-photo {
+      position: absolute;
+      overflow: hidden;
+      border-radius: 34px;
+      background: rgba(230, 237, 244, 0.92);
+      box-shadow: 0 28px 48px rgba(7, 20, 31, 0.14);
+    }
+    .trainer-collage-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .trainer-collage-photo.is-main {
+      top: 0;
+      right: 0;
+      width: 70%;
+      height: 64%;
+    }
+    .trainer-collage-photo.is-side {
+      left: 2%;
+      top: 18%;
+      width: 34%;
+      height: 28%;
+    }
+    .trainer-collage-photo.is-bottom {
+      right: 6%;
+      bottom: 2%;
+      width: 48%;
+      height: 24%;
+    }
+    .trainer-floating-note {
+      position: absolute;
+      display: grid;
+      gap: 6px;
+      padding: 16px 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      box-shadow: 0 22px 38px rgba(8, 23, 36, 0.12);
+      max-width: 240px;
+      backdrop-filter: blur(14px);
+    }
+    .trainer-floating-note.earnings {
+      left: 6%;
+      top: 10%;
+    }
+    .trainer-floating-note.page {
+      left: 8%;
+      bottom: 16%;
+    }
+    .trainer-floating-kicker {
+      color: rgba(13, 34, 50, 0.46);
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-floating-note strong {
+      color: #0d2232;
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .trainer-floating-note span:last-child {
+      color: rgba(13, 34, 50, 0.66);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .trainer-landing-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+      gap: 34px;
+      align-items: start;
+      padding: 8px 0 4px;
+      position: relative;
+    }
+    .trainer-landing-copy {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .trainer-landing-title {
+      margin: 0;
+      color: #0d2232;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.96;
+      max-width: 14ch;
+    }
+    .trainer-landing-sub {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.65;
+      max-width: 42rem;
+    }
+    .trainer-payout-list {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      position: relative;
+      padding-left: 26px;
+    }
+    .trainer-payout-list::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 8px;
+      width: 1px;
+      background: linear-gradient(
+        180deg,
+        rgba(13, 34, 50, 0),
+        rgba(13, 34, 50, 0.14) 14%,
+        rgba(13, 34, 50, 0.14) 86%,
+        rgba(13, 34, 50, 0)
+      );
+    }
+    .trainer-payout-intro {
+      display: grid;
+      gap: 8px;
+      padding: 0 0 10px;
+    }
+    .trainer-payout-kicker {
+      color: rgba(13, 34, 50, 0.5);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-payout-headline {
+      color: #0d2232;
+      font-size: 1.16rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.18;
+      max-width: 30ch;
+    }
+    .trainer-payout-note {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.86rem;
+      font-weight: 700;
+      line-height: 1.55;
+      max-width: 40rem;
+    }
+    .trainer-payout-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: baseline;
+      padding: 0 0 12px;
+      border-bottom: 1px solid rgba(10, 31, 47, 0.08);
+    }
+    .trainer-payout-row span {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.92rem;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .trainer-payout-row strong {
+      color: #0d2232;
+      font-size: 1.14rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .trainer-compare {
+      display: grid;
+      gap: 16px;
+      padding: 6px 0 2px;
+    }
+    .trainer-compare.wide {
+      grid-column: 1 / -1;
+      padding-top: 2px;
+    }
+    .trainer-compare.wide .trainer-compare-head {
+      max-width: none;
+    }
+    .trainer-compare.wide .trainer-compare-title {
+      max-width: 20ch;
+    }
+    .trainer-compare.inline {
+      width: 100%;
+      padding-top: 4px;
+    }
+    .trainer-compare-head {
+      display: grid;
+      gap: 8px;
+      max-width: 50rem;
+    }
+    .trainer-compare-title {
+      margin: 0;
+      color: #0d2232;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.96;
+      max-width: 14ch;
+    }
+    .trainer-compare-sub {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.65;
+      max-width: 48rem;
+    }
+    .trainer-compare-board {
+      border-radius: 30px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(120, 190, 255, 0.08), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.95));
+      box-shadow: 0 26px 48px rgba(8, 23, 36, 0.08);
+      padding: 18px 18px 12px;
+      overflow: hidden;
+    }
+    .trainer-compare-grid {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.82fr) repeat(3, minmax(0, 1fr));
+      gap: 0;
+    }
+    .trainer-compare-header,
+    .trainer-compare-label,
+    .trainer-compare-cell {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(10, 31, 47, 0.08);
+    }
+    .trainer-compare-header {
+      display: grid;
+      gap: 4px;
+    }
+    .trainer-compare-header strong {
+      color: #0d2232;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .trainer-compare-header span {
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .trainer-compare-header.riseforit {
+      border-radius: 20px 20px 0 0;
+      background: linear-gradient(135deg, rgba(12, 29, 44, 0.98), rgba(23, 52, 74, 0.98));
+      box-shadow: 0 18px 30px rgba(8, 21, 32, 0.16);
+      border-bottom-color: rgba(255, 255, 255, 0.08);
+      margin-bottom: -1px;
+    }
+    .trainer-compare-header.riseforit strong,
+    .trainer-compare-header.riseforit span {
+      color: #fff6eb;
+    }
+    .trainer-compare-label {
+      color: rgba(13, 34, 50, 0.54);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+    }
+    .trainer-compare-cell {
+      color: rgba(13, 34, 50, 0.78);
+      font-size: 0.86rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-compare-cell.price {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 78px;
+    }
+    .trainer-compare-cell strong,
+    .trainer-compare-label strong {
+      color: #0d2232;
+      font-weight: 900;
+    }
+    .trainer-compare-cell.riseforit {
+      background: rgba(12, 29, 44, 0.04);
+    }
+    .trainer-compare-cell.flag {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 78px;
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+    .trainer-compare-flag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      font-size: 0.94rem;
+      font-weight: 900;
+      flex: 0 0 30px;
+    }
+    .trainer-compare-flag.yes {
+      background: rgba(31, 133, 86, 0.12);
+      color: #1f8556;
+    }
+    .trainer-compare-flag.no {
+      background: rgba(186, 80, 55, 0.12);
+      color: #ba5037;
+    }
+    .trainer-compare-flag.partial {
+      background: rgba(227, 166, 63, 0.14);
+      color: #8a5a12;
+    }
+    .trainer-compare-flag-stack {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+    }
+    .trainer-compare-flag-copy {
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.35;
+      max-width: 15ch;
+    }
+    .trainer-compare-foot {
+      padding: 12px 16px 4px;
+      color: rgba(13, 34, 50, 0.52);
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .trainer-compare-mobile {
+      display: none;
+    }
+    .trainer-form-card {
+      padding: 26px;
+    }
+    .trainer-form-card.hidden {
+      display: none;
+    }
+    .trainer-form-progress {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .trainer-form-progress-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .trainer-form-progress-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .trainer-form-step {
+      color: rgba(13, 34, 50, 0.56);
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-form-percent {
+      color: #0d2232;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .trainer-form-step-title {
+      color: #0d2232;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .trainer-step-meter {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(13, 34, 50, 0.08);
+      overflow: hidden;
+    }
+    .trainer-step-meter-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(20, 60, 90, 0.96), rgba(227, 166, 63, 0.96));
+      transition: width 180ms ease;
+    }
+    .trainer-form-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .trainer-form-head h2 {
+      margin: 6px 0 0;
+      font-size: 1.5rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #0d2232;
+    }
+    .trainer-form-note {
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.55;
+      margin-top: 8px;
+      max-width: 46rem;
+    }
+    .trainer-form-status {
+      margin-bottom: 14px;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .trainer-form {
+      display: grid;
+      gap: 18px;
+    }
+    .trainer-form-section {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        radial-gradient(circle at top right, rgba(120, 190, 255, 0.06), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 251, 254, 0.94));
+      box-shadow: 0 18px 34px rgba(8, 23, 36, 0.05);
+    }
+    .trainer-form-section.is-hidden {
+      display: none;
+    }
+    .trainer-account-section.hidden {
+      display: none;
+    }
+    .trainer-form-section h3 {
+      margin: 0;
+      font-size: 0.94rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.56);
+    }
+    .trainer-section-note,
+    .trainer-inline-note,
+    .trainer-auth-note {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    .trainer-field {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      align-self: start;
+    }
+    .trainer-field.full {
+      grid-column: 1 / -1;
+    }
+    .trainer-field label,
+    .trainer-check-title,
+    .trainer-day-window label,
+    .trainer-repeat-title {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.56);
+    }
+    .trainer-field input,
+    .trainer-field textarea,
+    .trainer-field select,
+    .trainer-day-window input {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(248, 251, 255, 0.98);
+      padding: 0.92rem 0.98rem;
+      color: #0d2232;
+      font: inherit;
+      align-self: start;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .trainer-field input:focus,
+    .trainer-field textarea:focus,
+    .trainer-field select:focus,
+    .trainer-day-window input:focus {
+      outline: none;
+      border-color: rgba(24, 61, 89, 0.36);
+      box-shadow: 0 0 0 4px rgba(24, 61, 89, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      background: #ffffff;
+    }
+    .trainer-field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .trainer-check-grid,
+    .trainer-radio-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .trainer-radio-grid.wide {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 10px;
+      max-width: 560px;
+    }
+    .trainer-check,
+    .trainer-radio {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.68rem 0.84rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(248, 251, 255, 0.98);
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: #0d2232;
+      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease;
+    }
+    .trainer-radio-grid.wide .trainer-radio {
+      width: 100%;
+      min-height: 76px;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+      line-height: 1.3;
+      padding: 0.88rem 1rem;
+    }
+    .trainer-radio-grid.wide .trainer-radio input {
+      margin: 0;
+      flex: 0 0 auto;
+      transform: translateY(-1px);
+    }
+    .trainer-check input {
+      accent-color: #183d59;
+    }
+    .trainer-radio input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      margin: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1.2px solid currentColor;
+      background: transparent;
+      display: inline-block;
+      flex: 0 0 10px;
+      color: inherit;
+    }
+    .trainer-radio input[type="radio"]:checked {
+      background: radial-gradient(circle, currentColor 0 36%, transparent 40%);
+    }
+    .trainer-check:has(input:checked),
+    .trainer-radio:has(input:checked) {
+      border-color: rgba(24, 61, 89, 0.28);
+      background: linear-gradient(135deg, rgba(16, 42, 62, 0.96), rgba(27, 67, 98, 0.96));
+      color: #fff6eb;
+      box-shadow: 0 12px 22px rgba(16, 42, 62, 0.14);
+    }
+    .trainer-check.is-disabled {
+      opacity: 0.44;
+      cursor: not-allowed;
+    }
+    .trainer-badge-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .trainer-option-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .trainer-badge-grid .trainer-check {
+      width: 100%;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 6px;
+      padding: 0.82rem 0.8rem;
+      text-align: center;
+      line-height: 1.15;
+      min-height: 60px;
+    }
+    .trainer-badge-grid .trainer-check input {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+    }
+    .trainer-option-grid .trainer-check {
+      width: 100%;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 6px;
+      padding: 0.82rem 0.76rem;
+      text-align: center;
+      line-height: 1.16;
+      min-height: 62px;
+    }
+    .trainer-option-grid .trainer-check input {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+    }
+    .trainer-badge-note {
+      margin-top: 2px;
+    }
+    .trainer-schedule-grid,
+    .trainer-toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .trainer-day-window,
+    .trainer-repeat-card {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(248, 251, 255, 0.96);
+    }
+    .trainer-repeat-list {
+      display: grid;
+      gap: 12px;
+    }
+    .trainer-repeat-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .trainer-upload-stack {
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-upload-preview {
+      position: relative;
+      min-height: 132px;
+      border-radius: 18px;
+      border: 1px dashed rgba(10, 31, 47, 0.18);
+      background:
+        linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(240, 246, 252, 0.92));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: rgba(13, 34, 50, 0.56);
+      font-size: 0.84rem;
+      font-weight: 800;
+      text-align: center;
+      padding: 12px;
+    }
+    .trainer-upload-preview.compact {
+      min-height: 108px;
+    }
+    .trainer-upload-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .trainer-upload-hidden {
+      display: none;
+    }
+    .trainer-mini-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      padding: 0.62rem 0.92rem;
+      font-size: 0.8rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-mini-btn.danger {
+      color: #7d2430;
+      border-color: rgba(125, 36, 48, 0.18);
+      background: rgba(125, 36, 48, 0.05);
+    }
+    .trainer-toggle-grid .trainer-check {
+      justify-content: space-between;
+      width: 100%;
+      border-radius: 18px;
+      min-height: 72px;
+      padding: 0.88rem 0.94rem;
+      line-height: 1.25;
+    }
+    .trainer-toggle-grid .trainer-check input {
+      margin-left: auto;
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+    }
+    .trainer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+    .trainer-actions-main {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .trainer-btn.hidden {
+      display: none;
+    }
+    .trainer-btn[disabled] {
+      opacity: 0.48;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .footer {
+      margin-top: 40px;
+    }
+    @media (max-width: 980px) {
+      body.trainers-page {
+        padding-top: calc(var(--navbar-height, 72px) + 8px) !important;
+      }
+      .trainers-shell {
+        margin: 0 auto 52px !important;
+        padding-top: 4px !important;
+        gap: 20px !important;
+      }
+      .trainer-hero,
+      .trainer-landing-strip,
+      .trainer-form-grid,
+      .trainer-schedule-grid,
+      .trainer-toggle-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-form-section {
+        padding: 18px;
+      }
+      .trainer-radio-grid.wide {
+        grid-template-columns: 1fr;
+        max-width: none;
+      }
+      .trainer-radio-grid.wide .trainer-radio {
+        display: grid;
+        justify-items: center;
+        align-content: center;
+        min-height: 74px;
+        padding: 0.82rem 0.9rem;
+        gap: 6px;
+        text-align: center;
+        line-height: 1.18;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+      }
+      .trainer-radio-grid.wide .trainer-radio input {
+        margin: 0;
+        width: 13px;
+        height: 13px;
+        transform: none;
+      }
+      .trainer-toggle-grid .trainer-check {
+        min-height: 64px;
+        padding: 0.8rem 0.88rem;
+        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+      }
+      .trainer-toggle-grid .trainer-check span {
+        max-width: 14ch;
+      }
+      .trainer-actions {
+        align-items: center;
+      }
+      .trainer-actions-main {
+        width: 100%;
+        display: grid;
+        grid-template-columns: max-content max-content;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-left: 0;
+        flex-wrap: nowrap;
+      }
+      .trainer-actions-main .trainer-btn {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 0;
+        padding: 0.76rem 0.94rem;
+        font-size: 0.82rem;
+        white-space: nowrap;
+      }
+      .trainer-actions-main #trainer-prev-btn {
+        order: 1;
+      }
+      .trainer-actions-main #trainer-next-btn,
+      .trainer-actions-main #trainer-submit-btn {
+        order: 2;
+        margin-left: 0;
+      }
+      .trainer-badge-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .trainer-option-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .trainer-badge-grid .trainer-check {
+        padding: 0.72rem 0.62rem;
+        min-height: 58px;
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+      }
+      .trainer-badge-grid .trainer-check input {
+        width: 13px;
+        height: 13px;
+      }
+      .trainer-option-grid .trainer-check {
+        padding: 0.74rem 0.66rem;
+        min-height: 60px;
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+      }
+      .trainer-option-grid .trainer-check input {
+        width: 13px;
+        height: 13px;
+      }
+      .trainers-shell > :first-child,
+      .trainer-hero {
+        gap: 20px;
+        margin-top: 0 !important;
+        padding: 0 !important;
+      }
+      .trainer-hero-copy,
+      .trainer-hero-copy > :first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+      .trainer-kicker {
+        margin-top: 2px !important;
+      }
+      .trainer-title,
+      .trainer-landing-title {
+        max-width: none;
+      }
+      .trainer-hero-visual {
+        min-height: 430px;
+      }
+      .trainer-collage-photo.is-main {
+        width: 72%;
+        height: 56%;
+        right: 0;
+      }
+      .trainer-collage-photo.is-side {
+        left: 0;
+        top: 16%;
+        width: 34%;
+        height: 24%;
+      }
+      .trainer-collage-photo.is-bottom {
+        width: 46%;
+        height: 20%;
+        right: 4%;
+        bottom: 6%;
+      }
+      .trainer-floating-note {
+        max-width: 210px;
+        padding: 14px 16px;
+      }
+      .trainer-floating-note.earnings {
+        left: 4%;
+        top: 8%;
+        max-width: 190px;
+      }
+      .trainer-floating-note.page {
+        left: 4%;
+        bottom: 18%;
+      }
+      .trainer-floating-note.earnings strong {
+        font-size: 0.92rem;
+      }
+      .trainer-floating-note.earnings span:last-child {
+        font-size: 0.74rem;
+        line-height: 1.35;
+      }
+      .trainer-payout-steps {
+        grid-template-columns: 1fr;
+      }
+      .trainer-payout-list {
+        padding-left: 0;
+      }
+      .trainer-payout-list::before {
+        display: none;
+      }
+      .trainer-compare-board {
+        padding: 12px 10px 8px;
+        overflow-x: auto;
+      }
+      .trainer-compare-grid {
+        min-width: 0;
+        grid-template-columns: minmax(112px, 1fr) repeat(3, 70px);
+      }
+      .trainer-compare-header,
+      .trainer-compare-label,
+      .trainer-compare-cell {
+        padding: 10px 8px;
+        min-width: 0;
+      }
+      .trainer-compare-header {
+        justify-items: center;
+        text-align: center;
+      }
+      .trainer-compare-header strong {
+        font-size: 0.64rem;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+      .trainer-compare-header span,
+      .trainer-compare-flag-copy {
+        display: none;
+      }
+      .trainer-compare-header.riseforit {
+        border-radius: 16px 16px 0 0;
+      }
+      .trainer-compare-label {
+        font-size: 0.58rem;
+        line-height: 1.38;
+        letter-spacing: 0.12em;
+      }
+      .trainer-compare-cell.price {
+        min-height: 62px;
+      }
+      .trainer-compare-cell.price strong {
+        font-size: 0.72rem;
+        line-height: 1.1;
+      }
+      .trainer-compare-cell.flag {
+        min-height: 58px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+      .trainer-compare-flag-stack {
+        gap: 0;
+      }
+      .trainer-compare-flag {
+        width: 26px;
+        height: 26px;
+        font-size: 0.84rem;
+        flex: 0 0 26px;
+      }
+      .trainer-compare-foot {
+        padding: 10px 10px 4px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body class="trainers-page">
+  <div class="grain"></div>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a class="navbar-brand" href="index.html"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="macro-calculator.html">Macro Calculator</a></li>
+        <li><a href="training.html">Training</a></li>
+        <li><a href="forum.html">FORUM</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="trainers-shell">
+    <section class="trainer-hero">
+      <article class="trainer-hero-copy">
+        <span class="trainer-kicker">Trainer onboarding</span>
+        <h1 class="trainer-title">Turn your coaching into a page people book from and a payout stream you can track every month.</h1>
+        <p class="trainer-sub">
+          Set your page, booking dates, results, socials, and offer once. RiseForIt turns that into your live trainer profile, tracks who signs up through you, and shows what you earned from paid clients tied to your code.
+        </p>
+        <div class="trainer-cta-row">
+          <button type="button" class="trainer-btn" id="trainer-start-btn" data-trainer-start aria-controls="onboarding" aria-expanded="false">Start trainer onboarding</button>
+        </div>
+      </article>
+
+      <div class="trainer-hero-visual" aria-hidden="true">
+        <div class="trainer-collage">
+          <figure class="trainer-collage-photo is-main">
+            <img src="assets/images/trainers/trainer-rowing-coach.jpg" alt="">
+          </figure>
+          <figure class="trainer-collage-photo is-side">
+            <img src="assets/images/trainers/trainer-floor-coach.jpg" alt="">
+          </figure>
+          <figure class="trainer-collage-photo is-bottom">
+            <img src="assets/images/trainers/trainer-stepup-coach.jpg" alt="">
+          </figure>
+          <div class="trainer-floating-note earnings">
+            <span class="trainer-floating-kicker">Payout example</span>
+            <strong>50 signups = $250</strong>
+            <span>5,000 views at 1% can do that.</span>
+          </div>
+          <div class="trainer-floating-note page">
+            <span class="trainer-floating-kicker">What goes live</span>
+            <strong>Your own trainer page</strong>
+            <span>Booking, results, socials, pricing controls, and coach bio.</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="trainer-compare wide">
+        <div class="trainer-compare-head">
+          <span class="trainer-kicker">What we offer</span>
+          <h2 class="trainer-compare-title">Why coaches pick RiseForIt when they want growth, speed, and control.</h2>
+          <p class="trainer-compare-sub">
+            RiseForIt is built to help a trainer get clients, save setup time, and keep more upside. The others are useful platforms, but this flow is built to make your page and pipeline work harder for you.
+          </p>
+        </div>
+        <div class="trainer-compare-board">
+          <div class="trainer-compare-grid">
+            <div></div>
+            <div class="trainer-compare-header riseforit">
+              <strong>RiseForIt</strong>
+              <span>Lead generation, automation, booking, and trainer-side payout tracking.</span>
+            </div>
+            <div class="trainer-compare-header">
+              <strong>Trainerize</strong>
+              <span>Strong coaching software, but less built around trainer acquisition.</span>
+            </div>
+            <div class="trainer-compare-header">
+              <strong>TrueCoach</strong>
+              <span>Strong delivery workflow, but not built around this growth model.</span>
+            </div>
+
+            <div class="trainer-compare-label"><strong>Monthly platform cost to start</strong></div>
+            <div class="trainer-compare-cell price riseforit"><strong>$0/mo</strong></div>
+            <div class="trainer-compare-cell price"><strong>starting $9/mo</strong></div>
+            <div class="trainer-compare-cell price"><strong>starting $26.34/mo</strong></div>
+
+            <div class="trainer-compare-label"><strong>Saves time with meal plans and workout plans made for you</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">Automation cuts setup time right away.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">More manual coach setup.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">More manual coach setup.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Public trainer page that helps sell the coach</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">Built around this from the start.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not the main angle.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not the main angle.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Built-in lead generation</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">Made to help coaches get found.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not built around this.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not built around this.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Shows who looked at your trainer page</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">More visibility into interest.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not part of the core pitch.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not part of the core pitch.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Direct access to lead contact details</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">Built for direct trainer follow-up.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not the point of the platform.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not the point of the platform.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Before and after proof on the page</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">Results are part of the page build.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not front and center by default.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Not front and center by default.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Monthly payout view based on paid signups</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">$5 per paid signup tracked by month.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">No trainer-side payout view like this.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">No trainer-side payout view like this.</span></div></div>
+
+            <div class="trainer-compare-label"><strong>Built for growth, not just tracking</strong></div>
+            <div class="trainer-compare-cell flag riseforit"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag yes">&#10003;</span><span class="trainer-compare-flag-copy">The trainer pipeline is part of the product.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Leans more toward coaching operations.</span></div></div>
+            <div class="trainer-compare-cell flag"><div class="trainer-compare-flag-stack"><span class="trainer-compare-flag no">&#10005;</span><span class="trainer-compare-flag-copy">Leans more toward coaching operations.</span></div></div>
+          </div>
+          <div class="trainer-compare-foot">
+            Trainerize notes were framed from their official features pages, and TrueCoach notes from their features and public profile pages. RiseForIt reflects the trainer flow built on this site.
+          </div>
+        </div>
+        <div class="trainer-section-cta">
+          <button type="button" class="trainer-btn" data-trainer-start aria-controls="onboarding" aria-expanded="false">Start trainer onboarding</button>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="trainer-landing-strip">
+      <div class="trainer-landing-copy">
+        <span class="trainer-kicker">What you build</span>
+        <h2 class="trainer-landing-title">A trainer page that sells your coaching without making you explain everything in DMs.</h2>
+        <p class="trainer-landing-sub">
+          Upload your own photos, drop in client proof, set your call windows, and decide what stays public. Once it is live, people can browse you, book you, and the app keeps the trainer-side payout math clean.
+        </p>
+      </div>
+      <div class="trainer-payout-list" aria-label="Trainer payout examples">
+        <div class="trainer-payout-intro">
+          <span class="trainer-payout-kicker">And we also pay you to grow your business</span>
+          <div class="trainer-payout-headline">Post 2 short videos a day. Show how the app builds meal plans and workouts, talk about yourself, and for every user who signs up under your account for a regular membership, you get $5.</div>
+          <div class="trainer-payout-note">Aim for 5,000 views a video. Even a 1% signup rate is 50 memberships = $250 from one video. They can buy coaching from you or just join the software. You still get paid either way.</div>
+        </div>
+        <div class="trainer-payout-row">
+          <span>10 paid memberships in a month</span>
+          <strong>$50</strong>
+        </div>
+        <div class="trainer-payout-row">
+          <span>50 paid memberships in a month</span>
+          <strong>$250</strong>
+        </div>
+        <div class="trainer-payout-row">
+          <span>100 paid memberships in a month</span>
+          <strong>$500</strong>
+        </div>
+        <div class="trainer-payout-row">
+          <span>200 paid memberships in a month</span>
+          <strong>$1,000</strong>
+        </div>
+      </div>
+      <div class="trainer-section-cta">
+        <button type="button" class="trainer-btn" data-trainer-start aria-controls="onboarding" aria-expanded="false">Start trainer onboarding</button>
+      </div>
+    </section>
+
+    <section class="trainer-card trainer-form-card hidden" id="onboarding">
+      <div class="trainer-form-head">
+        <div>
+          <span class="trainer-kicker">Submit trainer profile</span>
+          <h2>Trainer onboarding</h2>
+          <div class="trainer-form-note">Go one panel at a time. At the end, submit the account for review and it will go live with a review tag.</div>
+        </div>
+      </div>
+      <div class="trainer-form-status" id="trainer-form-status">Go panel by panel, then submit the account for review.</div>
+      <div class="trainer-form-progress" id="trainer-form-progress" aria-live="polite">
+        <div class="trainer-form-progress-row">
+          <div class="trainer-form-progress-meta">
+            <span class="trainer-form-step" id="trainer-form-step">Step 1 of 11</span>
+            <span class="trainer-form-percent" id="trainer-form-percent">9% done</span>
+          </div>
+          <span class="trainer-form-step-title" id="trainer-form-step-title">Create trainer account</span>
+        </div>
+        <div class="trainer-step-meter">
+          <span class="trainer-step-meter-fill" id="trainer-step-meter-fill"></span>
+        </div>
+      </div>
+
+      <form class="trainer-form" id="trainer-onboarding-form">
+        <section class="trainer-form-section trainer-account-section" id="trainer-account-section" data-step-title="Create trainer account">
+          <h3>Create trainer account</h3>
+          <div class="trainer-section-note">No account yet? Fill this out and saving the onboarding will create your account, sign you in, and unlock Trainer Access.</div>
+          <div class="trainer-form-grid">
+            <div class="trainer-field">
+              <label for="trainer-username">Username</label>
+              <input id="trainer-username" name="username" type="text" autocomplete="username" placeholder="coachhandle" required>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-phone">Phone</label>
+              <input id="trainer-phone" name="phone" type="tel" autocomplete="tel" placeholder="Optional">
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-password">Password</label>
+              <input id="trainer-password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Coach identity">
+          <h3>Coach identity</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field">
+              <label for="trainer-full-name">Full name</label>
+              <input id="trainer-full-name" name="fullName" type="text" required>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-email">Email</label>
+              <input id="trainer-email" name="email" type="email" required>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-display-name">Display name / brand name</label>
+              <input id="trainer-display-name" name="displayName" type="text" placeholder="Avery Stone Coaching">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-public-handle">Username / handle</label>
+              <input id="trainer-public-handle" name="publicHandle" type="text" placeholder="@averystone">
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-photo">Profile photo</label>
+              <div class="trainer-upload-stack">
+                <input id="trainer-photo-file" type="file" accept="image/*" capture="user" data-image-file="photoDataUrl">
+                <input id="trainer-photo" name="photoDataUrl" type="hidden" class="trainer-upload-hidden">
+                <div class="trainer-inline-note">Take a photo or upload one from this device.</div>
+                <div class="trainer-upload-preview" data-image-preview="photoDataUrl"><span>Add coach photo</span></div>
+              </div>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-coach-custom-tags">Custom tags</label>
+              <input id="trainer-coach-custom-tags" name="coachCustomTags" type="text" placeholder="Comma separated">
+            </div>
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Coach badge / type</div>
+              <div class="trainer-inline-note trainer-badge-note" id="trainer-badge-limit-note">Pick up to 2 badges.</div>
+              <div class="trainer-check-grid trainer-badge-grid">
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Builder"> Builder</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Advanced"> Advanced</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Fat Loss"> Fat Loss</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Muscle Gain"> Muscle Gain</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Strength"> Strength</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Lifestyle"> Lifestyle</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Accountability"> Accountability</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Nutrition"> Nutrition</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Form Fixes"> Form Fixes</label>
+                <label class="trainer-check"><input type="checkbox" name="coachBadgeType" value="Athletes"> Athletes</label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Coach card preview">
+          <h3>Coach card preview</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <label for="trainer-summary">One-line coaching summary</label>
+              <textarea id="trainer-summary" name="brandPositioning" placeholder="High-touch physique coaching for busy professionals who want structure without living in the gym."></textarea>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-top-label">Short sub-label for the top section</label>
+              <input id="trainer-top-label" name="topSectionLabel" type="text" placeholder="1:1 coaching for busy people who want real physique progress">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Hero value statement">
+          <h3>Hero / value statement</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <label for="trainer-hero-headline">Main hero statement</label>
+              <textarea id="trainer-hero-headline" name="heroHeadline" placeholder="I help busy people get leaner, stronger, and more confident with a clear plan that fits real life."></textarea>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-hero-support">Optional supporting sentence under hero</label>
+              <textarea id="trainer-hero-support" name="heroSubheadline" placeholder="It is free to hop on a call to chat. Pick a date that works for you."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Offer basics">
+          <h3>Offer basics</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field">
+              <label for="trainer-city">City</label>
+              <input id="trainer-city" name="city" type="text" placeholder="Miami">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-state">State</label>
+              <input id="trainer-state" name="state" type="text" placeholder="Florida">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-format">Coaching format</label>
+              <select id="trainer-format" name="coachingFormat">
+                <option value="remote_in_person">Remote + in-person</option>
+                <option value="remote_only">Remote only</option>
+                <option value="in_person_only">In-person only</option>
+              </select>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-price">Starting price</label>
+              <input id="trainer-price" name="startingPrice" type="number" min="0" step="1">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-years">Years coaching</label>
+              <input id="trainer-years" name="yearsCoaching" type="number" min="0" step="1">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-active-clients">Number of active clients</label>
+              <input id="trainer-active-clients" name="activeClients" type="number" min="0" step="1">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Scheduling">
+          <h3>Scheduling</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Do you want leads to book directly from your page?</div>
+              <div class="trainer-radio-grid">
+                <label class="trainer-radio"><input type="radio" name="bookingEnabled" value="yes" checked> Yes</label>
+                <label class="trainer-radio"><input type="radio" name="bookingEnabled" value="no"> No</label>
+              </div>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-timezone">Time zone</label>
+              <input id="trainer-timezone" name="timeZone" type="text" placeholder="America/New_York">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-consult-length">Consultation length</label>
+              <input id="trainer-consult-length" name="consultationLength" type="number" min="5" step="5" value="45">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-date-range">Date range to display</label>
+              <input id="trainer-date-range" name="dateRangeDays" type="number" min="1" max="60" step="1" value="14">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-max-consults">Max consults per day</label>
+              <input id="trainer-max-consults" name="maxConsultsPerDay" type="number" min="1" max="20" step="1" value="4">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-buffer">Buffer between calls</label>
+              <input id="trainer-buffer" name="bufferMinutes" type="number" min="0" step="5" value="15">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-booking-notice">Minimum booking notice required</label>
+              <input id="trainer-booking-notice" name="bookingNoticeHours" type="number" min="0" step="1" value="12">
+              <div class="trainer-inline-note">Enter hours before someone can book. Example: <code>12</code> = 12 hours, <code>24</code> = 1 day, <code>48</code> = 2 days.</div>
+            </div>
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Available days of week</div>
+              <div class="trainer-check-grid">
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Monday"> Monday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Tuesday"> Tuesday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Wednesday"> Wednesday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Thursday"> Thursday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Friday"> Friday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Saturday"> Saturday</label>
+                <label class="trainer-check"><input type="checkbox" name="daysAvailable" value="Sunday"> Sunday</label>
+              </div>
+            </div>
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Available time windows for each day</div>
+              <div class="trainer-inline-note">Use comma separated windows like <code>11am-2pm, 5pm-8pm</code>.</div>
+              <div class="trainer-schedule-grid">
+                <div class="trainer-day-window"><label for="trainer-window-monday">Monday</label><input id="trainer-window-monday" data-day-window="Monday" type="text" placeholder="11am-2pm, 5pm-8pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-tuesday">Tuesday</label><input id="trainer-window-tuesday" data-day-window="Tuesday" type="text" placeholder="11am-2pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-wednesday">Wednesday</label><input id="trainer-window-wednesday" data-day-window="Wednesday" type="text" placeholder="11am-2pm, 5pm-8pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-thursday">Thursday</label><input id="trainer-window-thursday" data-day-window="Thursday" type="text" placeholder="11am-2pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-friday">Friday</label><input id="trainer-window-friday" data-day-window="Friday" type="text" placeholder="11am-2pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-saturday">Saturday</label><input id="trainer-window-saturday" data-day-window="Saturday" type="text" placeholder="10am-1pm"></div>
+                <div class="trainer-day-window"><label for="trainer-window-sunday">Sunday</label><input id="trainer-window-sunday" data-day-window="Sunday" type="text" placeholder="Leave blank if off"></div>
+              </div>
+            </div>
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Do you want to manually approve bookings or auto-accept?</div>
+              <div class="trainer-radio-grid wide">
+                <label class="trainer-radio"><input type="radio" name="bookingApprovalMode" value="manual" checked> Manually approve bookings</label>
+                <label class="trainer-radio"><input type="radio" name="bookingApprovalMode" value="auto"> Auto-accept bookings</label>
+              </div>
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-booking-cta">Booking CTA text</label>
+              <input id="trainer-booking-cta" name="bookingCtaText" type="text" placeholder="Find out if this is a fit in 15 minutes.">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-booking-urgency">Optional urgency line</label>
+              <input id="trainer-booking-urgency" name="bookingUrgency" type="text" placeholder="14 consult windows are open right now.">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Results">
+          <h3>Results</h3>
+          <div class="trainer-section-note">Add multiple before and after cards for your trainer page.</div>
+          <div class="trainer-repeat-list" id="trainer-results-list"></div>
+          <button type="button" class="trainer-mini-btn" id="trainer-add-result-btn">Add client result</button>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Specialty clients">
+          <h3>Specialty clients</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <div class="trainer-check-grid trainer-option-grid">
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Muscle gain"> Muscle gain</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Fat loss"> Fat loss</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Body recomposition"> Body recomposition</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Strength"> Strength</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="General fitness"> General fitness</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Postpartum"> Postpartum</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Athletic performance"> Athletic performance</label>
+                <label class="trainer-check"><input type="checkbox" name="specialtyClients" value="Lifestyle / habit change"> Lifestyle / habit change</label>
+              </div>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-specialty-custom">Custom tag option</label>
+              <input id="trainer-specialty-custom" name="specialtyClientsCustom" type="text" placeholder="Comma separated">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="What is included">
+          <h3>What is included</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <div class="trainer-check-grid trainer-option-grid">
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Weekly programming updates"> Weekly programming updates</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Habit review"> Habit review</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Direct message support"> Direct message support</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Monthly video check-ins"> Monthly video check-ins</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Nutrition guidance"> Nutrition guidance</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Form review"> Form review</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Accountability check-ins"> Accountability check-ins</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Supplement guidance"> Supplement guidance</label>
+                <label class="trainer-check"><input type="checkbox" name="includedItems" value="Meal plan support"> Meal plan support</label>
+              </div>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-included-custom">Custom add-on</label>
+              <input id="trainer-included-custom" name="includedItemsCustom" type="text" placeholder="Comma separated">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="About the coach">
+          <h3>About the coach</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field full">
+              <label for="trainer-bio">Coach bio / perspective</label>
+              <textarea id="trainer-bio" name="coachBio"></textarea>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-philosophy">Coaching philosophy</label>
+              <textarea id="trainer-philosophy" name="coachingPhilosophy"></textarea>
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-ideal-client">Ideal client description</label>
+              <textarea id="trainer-ideal-client" name="idealClient"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Social links">
+          <h3>Social links</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field">
+              <label for="trainer-instagram">Instagram URL</label>
+              <input id="trainer-instagram" name="instagramUrl" type="url" placeholder="https://instagram.com/...">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-tiktok">TikTok URL</label>
+              <input id="trainer-tiktok" name="tiktokUrl" type="url" placeholder="https://www.tiktok.com/@...">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-linkedin">LinkedIn URL</label>
+              <input id="trainer-linkedin" name="linkedinUrl" type="url" placeholder="https://linkedin.com/in/...">
+            </div>
+            <div class="trainer-field">
+              <label for="trainer-youtube">YouTube URL</label>
+              <input id="trainer-youtube" name="youtubeUrl" type="url" placeholder="https://youtube.com/...">
+            </div>
+            <div class="trainer-field full">
+              <label for="trainer-website">Website URL</label>
+              <input id="trainer-website" name="websiteUrl" type="url" placeholder="https://...">
+            </div>
+          </div>
+        </section>
+
+        <section class="trainer-form-section" data-step-title="Optional settings">
+          <h3>Optional settings</h3>
+          <div class="trainer-form-grid">
+            <div class="trainer-field">
+              <label for="trainer-accent-color">Accent / theme color</label>
+              <input id="trainer-accent-color" name="accentColor" type="color" value="#e3a63f">
+            </div>
+            <div class="trainer-field full">
+              <div class="trainer-check-title">Public display settings</div>
+              <div class="trainer-toggle-grid">
+                <label class="trainer-check"><span>Show price publicly</span><input type="checkbox" id="trainer-show-price" name="showPricePublic" checked></label>
+                <label class="trainer-check"><span>Show active clients publicly</span><input type="checkbox" id="trainer-show-clients" name="showClientsPublic" checked></label>
+                <label class="trainer-check"><span>Show years coaching publicly</span><input type="checkbox" id="trainer-show-years" name="showYearsPublic" checked></label>
+                <label class="trainer-check"><span>Show booking section publicly</span><input type="checkbox" id="trainer-show-booking" name="showBookingPublic" checked></label>
+                <label class="trainer-check"><span>Show results publicly</span><input type="checkbox" id="trainer-show-results" name="showResultsPublic" checked></label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="trainer-actions">
+          <span class="trainer-auth-note" id="trainer-auth-note"></span>
+          <div class="trainer-actions-main">
+            <button type="button" class="trainer-btn ghost" id="trainer-prev-btn">Back</button>
+            <button type="button" class="trainer-btn ghost" id="trainer-next-btn">Next</button>
+            <button type="submit" class="trainer-btn hidden" id="trainer-submit-btn">Submit account for review</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <template id="trainer-result-template">
+      <article class="trainer-repeat-card" data-result-card>
+        <div class="trainer-repeat-head">
+          <div class="trainer-repeat-title">Client result</div>
+          <button type="button" class="trainer-mini-btn danger" data-remove-result>Remove</button>
+        </div>
+        <div class="trainer-form-grid">
+          <div class="trainer-field">
+            <label>Client result title</label>
+            <input type="text" data-result-field="result" placeholder="-12 lb in 10 weeks">
+          </div>
+          <div class="trainer-field">
+            <label>Client type</label>
+            <input type="text" data-result-field="person" placeholder="Busy professional">
+          </div>
+          <div class="trainer-field">
+            <label>Duration</label>
+            <input type="text" data-result-field="timeline" placeholder="10 weeks">
+          </div>
+          <div class="trainer-field">
+            <label>Before photo</label>
+            <div class="trainer-upload-stack">
+              <input type="file" accept="image/*" capture="environment" data-result-file="beforeImage">
+              <input type="hidden" data-result-field="beforeImage" class="trainer-upload-hidden">
+              <div class="trainer-upload-preview compact" data-result-preview="beforeImage"><span>Add before photo</span></div>
+            </div>
+          </div>
+          <div class="trainer-field">
+            <label>After photo</label>
+            <div class="trainer-upload-stack">
+              <input type="file" accept="image/*" capture="environment" data-result-file="afterImage">
+              <input type="hidden" data-result-field="afterImage" class="trainer-upload-hidden">
+              <div class="trainer-upload-preview compact" data-result-preview="afterImage"><span>Add after photo</span></div>
+            </div>
+          </div>
+          <div class="trainer-field full">
+            <label>Short result description</label>
+            <textarea data-result-field="copy" placeholder="Dropped body fat, tightened waist, and got back into a routine that stuck."></textarea>
+          </div>
+        </div>
+      </article>
+    </template>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>RiseForIt</h4>
+          <p>Systems-first training, luxury presentation, relentless execution.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Links</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="training.html">Training</a></li>
+            <li><a href="macro-calculator.html">Macro Calculator</a></li>
+            <li><a href="trainers.html">Trainers</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+            <li><a href="/admin">Admin</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RiseForIt. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js?v=2026-03-26-owner-demo-39"></script>
+  <script src="js/trainers.js?v=2026-03-29-trainers-7"></script>
+</body>
+</html>

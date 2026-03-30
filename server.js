@@ -1853,7 +1853,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((url.pathname === '/training' || url.pathname === '/training.html') && req.method === 'GET') {
-        return serveStatic(req, res, '/training-coming-soon.html');
+        return serveStatic(req, res, '/training.html');
     }
 
     if (url.pathname === '/api/db/health' && req.method === 'GET') {

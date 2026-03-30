@@ -72,7 +72,7 @@
   };
 
   const fallbackCommunity = {
-    name: 'STRYVE Community',
+    name: 'RiseForIt Community',
     image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=180&q=80',
     description: 'General discussion, active members, and the latest forum messages.',
     members: ['Ari', 'Lena', 'Theo', 'Jade', 'Marco'],

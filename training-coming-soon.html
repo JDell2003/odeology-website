@@ -4,11 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>STRYVE Training</title>
-  <link rel="stylesheet" href="css/main.css" />
+  <title>RiseForIt Training</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <script src="js/external-keydown-shield.js?v=2026-03-25-keydown-shield-1"></script>
   <style>
     :root{--blue:#2f8ce3;--blue2:#55a9ff;--gold:#f2c44e;--ink:#e8f2ff;--muted:#a6bfd8;--line:rgba(137,182,230,.28);--card:rgba(8,28,47,.78);--max:1180px}
     body.training-redesign{background:radial-gradient(circle at 10% 8%,rgba(62,137,211,.25),transparent 32%),radial-gradient(circle at 88% 18%,rgba(245,200,75,.2),transparent 30%),linear-gradient(130deg,#061523 0%,#0b2338 45%,#0a1f33 100%);color:var(--ink);min-height:100vh;overflow:hidden}
@@ -660,12 +661,12 @@
   <div class="grain"></div>
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand">STRYVE<span class="brand-dot"></span></div>
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
       <ul class="nav-menu" id="nav-menu">
         <li><a href="index.html#resources">Home</a></li>
         <li><a href="overview.html">Overview</a></li>
-        <li><a href="training-coming-soon.html" class="active">Training</a></li>
+        <li><a href="training.html" class="active">Training</a></li>
         <li><a href="store.html">Store</a></li>
       </ul>
     </div>
@@ -737,7 +738,7 @@
     </div>
   </div>
   <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-  <script src="js/main.js?v=2026-03-09-tour-fast-pages-1"></script>
+  <script src="js/main.js?v=2026-03-26-owner-demo-39"></script>
   <script>
     (function() {
       const K='ode_training_intake_v2', H='ode_training_intake_history_v2';
@@ -932,6 +933,13 @@
       if(startTop)startTop.addEventListener('click',openIntake);
       if(trackOwnBtn)trackOwnBtn.addEventListener('click',openTrackOwnBuilder);
       if(intakeClose)intakeClose.addEventListener('click',closeIntake);
+      try{
+        const currentUrl=new URL(window.location.href);
+        const startParam=String(currentUrl.searchParams.get('start')||'').toLowerCase();
+        if(startParam==='1'||startParam==='true'){
+          openIntake();
+        }
+      }catch{}
       document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&document.body.classList.contains('intake-open'))closeIntake();if(e.key==='Escape')closeZoom()});
       document.addEventListener('click',(e)=>{
         const info=e.target.closest&&e.target.closest('.info');
@@ -1908,7 +1916,7 @@
             h+='<div class="fg" data-g="phaseRate"><div class="t">Adjust current plan?</div><div class="opts">'+keepBtn+recommendBtn+phaseBtns+'</div></div>';
           }
         }
-        if(s===10)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="profile-panel"><div class="fg profile-name"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg profile-photo-block"><div class="profile-wrap"><label class="profile-avatar" for="profilePhoto"><span class="profile-circle'+(S.profilePhotoData?' has-photo':'')+'"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt="" style="'+(S.profilePhotoData?'':'display:none')+'"/></span><span class="profile-pencil" aria-hidden="true">&#9998;</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div><div class="fg"><div class="t">Why are you doing this? <span class="hint">(required)</span></div><textarea id="trainingWhy" rows="3" placeholder="No BullShit: doing this for your wife, tired of where you&#39;re at, or just want to be better. Go in depth so we remember why we started.">'+(S.trainingWhy||'')+'</textarea></div></div>';
+        if(s===10)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="profile-panel"><div class="fg profile-name"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg profile-photo-block"><div class="profile-wrap"><label class="profile-avatar" for="profilePhoto"><span class="profile-circle'+(S.profilePhotoData?' has-photo':'')+'"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt=" style="'+(S.profilePhotoData?'':'display:none')+'"/></span><span class="profile-pencil" aria-hidden="true">&#9998;</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div><div class="fg"><div class="t">Why are you doing this? <span class="hint">(required)</span></div><textarea id="trainingWhy" rows="3" placeholder="No BullShit: doing this for your wife, tired of where you&#39;re at, or just want to be better. Go in depth so we remember why we started.">'+(S.trainingWhy||'')+'</textarea></div></div>';
         const lockNext=s===9 && S.mealStatus==='signed_out';
         const canUndo=s===9 && S.mealAdjustmentApplied && Number.isFinite(S.mealAdjustment?.prevCalories);
         const undoBtn=s===9?'<button type="button" class="btnx g'+(canUndo?'':' is-disabled')+'" id="undoAdjustment" aria-disabled="'+(canUndo?'false':'true')+'">Undo</button>':'';

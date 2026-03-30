@@ -121,7 +121,7 @@
 
         const apply = () => {
             clampPan();
-            imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale()})`;
+            imgEl.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${currentScale()})`;
         };
 
         const resetLayout = () => {
@@ -134,7 +134,7 @@
             apply();
         };
 
-        // Center + cover: we scale via transform; set image at center baseline.
+        // Keep the image at its natural ratio and scale uniformly from center.
         imgEl.style.transformOrigin = '50% 50%';
         imgEl.style.width = `${img.naturalWidth}px`;
         imgEl.style.height = `${img.naturalHeight}px`;
@@ -251,4 +251,3 @@
 
     window.odeAvatarCropper = { cropToSquare };
 })();
-

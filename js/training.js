@@ -6,6 +6,8 @@
   const TRAINING_BUILDER_PREFILL_KEY = 'ode_training_builder_prefill_v1';
   const TRAINING_OPEN_WIZARD_ONLY_KEY = 'ode_training_open_wizard_only';
   const TRAINING_CONSTRUCTING_KEY = 'ode_training_constructing_v1';
+  const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
+  const WORKOUT_TIMER_STORAGE_PREFIX = 'ode_training_timer_v1:';
 
   function readLocalIntake() {
     try {
@@ -22,6 +24,19 @@
     }
     if (parsed && typeof parsed === 'object') return parsed;
     return null;
+  }
+
+  function readDemoSimState(userId) {
+    const id = String(userId || '').trim();
+    if (!id) return null;
+    try {
+      const raw = sessionStorage.getItem(`${DEMO_SIM_PREFIX}${id}`);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed;
+    } catch {
+      return null;
+    }
   }
 
   let forceAutostartConsumed = false;
@@ -100,6 +115,67 @@
     return Number.isFinite(step) && step >= 10;
   }
 
+  function shouldBootDemoPlan(user, planRow) {
+    if (!(user?.demo?.active || user?.isDemo)) return false;
+    if (hasRenderablePlanRow(planRow)) return false;
+    const sim = readDemoSimState(user.id);
+    if (!sim?.workoutReady) return false;
+    const intake = readLocalIntake();
+    return isIntakeComplete(intake);
+  }
+
+  function shouldSkipDemoUpsell(user = state?.auth?.user) {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('demoPlan') === '1') return true;
+    } catch {
+      // ignore
+    }
+    return Boolean(user?.demo?.active || user?.isDemo);
+  }
+
+  function isDemoDateBlockerDisabled(user = state?.auth?.user) {
+    if (!(user?.demo?.active || user?.isDemo)) return false;
+    const sim = readDemoSimState(user?.id);
+    return Boolean(sim?.disableDateBlocker);
+  }
+
+  let trainingEntryPaywallKey = '';
+
+  async function openTrainingPaywall(reason = 'manual') {
+    if (typeof window.__odeForceOpenAccessPrompt === 'function') {
+      try {
+        const forced = window.__odeForceOpenAccessPrompt({ reason });
+        if (forced) return true;
+      } catch {
+        // ignore
+      }
+    }
+    if (typeof window.__odeOpenAccessPrompt !== 'function') return false;
+    try {
+      const immediate = await window.__odeOpenAccessPrompt({ reason, refreshData: false, forceOpen: true });
+      if (immediate) return true;
+    } catch {
+      // ignore
+    }
+    try {
+      return Boolean(await window.__odeOpenAccessPrompt({ reason, refreshData: true, forceOpen: true }));
+    } catch {
+      return false;
+    }
+  }
+
+  async function maybeOpenTrainingEntryPaywall(reason = 'training_plan_entry') {
+    const userId = String(state?.auth?.user?.id || '').trim();
+    const planId = String(state?.planRow?.id || '').trim();
+    if (!userId || !planId) return false;
+    const nextKey = `${userId}:${planId}`;
+    if (trainingEntryPaywallKey === nextKey) return false;
+    const opened = await openTrainingPaywall(reason);
+    if (opened) trainingEntryPaywallKey = nextKey;
+    return opened;
+  }
+
   function escapeHtml(value) {
     return String(value || '')
       .replaceAll('&', '&amp;')
@@ -160,7 +236,7 @@
         const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
         state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
         const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-        const dismissed = localStorage.getItem(dismissedKey) === '1';
+        const dismissed = shouldSkipDemoUpsell() || localStorage.getItem(dismissedKey) === '1';
         setView(dismissed ? 'plan' : 'upsell');
         return true;
       }
@@ -679,6 +755,7 @@
     profile: null,
     planRow: null,
     logs: [],
+    liftHistory: new Map(),
     workoutInputDrafts: new Map(),
     workoutSetCountDrafts: new Map(),
     workoutReadinessDrafts: new Map(),
@@ -1398,83 +1475,18 @@
     }
   }
 
-  const shareDebugEnabled = (() => {
-    try {
-      const params = new URLSearchParams(String(window.location.search || ''));
-      const param = String(params.get('shareDebug') || '').trim();
-      if (param === '1') return true;
-      if (param === '0') return false;
-      const stored = String(localStorage.getItem('ode_share_debug') || '').trim();
-      if (stored === '1') return true;
-      if (stored === '0') return false;
-      const host = String(window.location.hostname || '').toLowerCase();
-      return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local');
-    } catch {
-      return true;
-    }
-  })();
+  const shareDebugEnabled = false;
   let shareDebugPanel = null;
+  try {
+    shareDebugPanel = document.getElementById('share-debug-panel');
+    shareDebugPanel?.remove?.();
+  } catch {
+    shareDebugPanel = null;
+  }
   function ensureShareDebugPanel() {
-    if (!shareDebugEnabled) return null;
-    if (shareDebugPanel && document.body && document.body.contains(shareDebugPanel)) return shareDebugPanel;
-    const panel = document.createElement('div');
-    panel.id = 'share-debug-panel';
-    panel.setAttribute('aria-live', 'polite');
-    panel.style.position = 'fixed';
-    panel.style.left = '10px';
-    panel.style.bottom = '10px';
-    panel.style.zIndex = '99999';
-    panel.style.width = 'min(460px, calc(100vw - 20px))';
-    panel.style.maxHeight = '42vh';
-    panel.style.overflow = 'auto';
-    panel.style.padding = '8px 10px';
-    panel.style.borderRadius = '10px';
-    panel.style.background = 'rgba(8, 17, 27, 0.92)';
-    panel.style.color = '#b8f3c5';
-    panel.style.font = '12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-    panel.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.35)';
-    panel.style.pointerEvents = 'none';
-    panel.style.whiteSpace = 'pre-wrap';
-    const title = document.createElement('div');
-    title.textContent = `[share-debug] v=${SHARE_DEBUG_VERSION}`;
-    title.style.color = '#f8f8f8';
-    title.style.fontWeight = '700';
-    title.style.marginBottom = '6px';
-    panel.appendChild(title);
-    const lines = document.createElement('div');
-    lines.id = 'share-debug-lines';
-    panel.appendChild(lines);
-    document.body.appendChild(panel);
-    shareDebugPanel = panel;
-    return panel;
+    return null;
   }
-  function shareDebugLog(message, payload) {
-    if (!shareDebugEnabled) return;
-    try {
-      if (payload === undefined) console.log(`[share-debug] ${message}`);
-      else console.log(`[share-debug] ${message}`, payload);
-    } catch {
-      // ignore console failures
-    }
-    try {
-      const panel = ensureShareDebugPanel();
-      const lines = panel?.querySelector('#share-debug-lines');
-      if (!lines) return;
-      const row = document.createElement('div');
-      const ts = new Date().toLocaleTimeString();
-      row.textContent = payload === undefined
-        ? `${ts} ${message}`
-        : `${ts} ${message} ${JSON.stringify(payload)}`;
-      lines.appendChild(row);
-      while (lines.childElementCount > 34) {
-        lines.removeChild(lines.firstChild);
-      }
-      panel.scrollTop = panel.scrollHeight;
-    } catch {
-      // ignore debug panel failures
-    }
-  }
-  shareDebugLog('training.js loaded', { version: SHARE_DEBUG_VERSION });
+  function shareDebugLog() {}
 
   function clearShareConfirmToastTimer() {
     if (!shareUi.confirmToastTimer) return;
@@ -1710,7 +1722,169 @@
   let workoutAutosaveTimer = 0;
   let workoutAutosaveInFlight = false;
   let workoutAutosaveQueued = false;
+  let workoutAutosaveQueuedContext = null;
   let workoutAutosaveContext = null;
+  let floatingWorkoutTimerBound = false;
+  let floatingWorkoutTimerSyncRaf = 0;
+  let floatingWorkoutTimerClickCount = 0;
+  let floatingWorkoutTimerResetTimer = 0;
+
+  function workoutTimerStorageKey(userId = state.auth.user?.id) {
+    const id = String(userId || '').trim();
+    if (!id) return '';
+    return `${WORKOUT_TIMER_STORAGE_PREFIX}${id}`;
+  }
+
+  function clearPersistedWorkoutTimerState(userId = state.auth.user?.id) {
+    const key = workoutTimerStorageKey(userId);
+    if (!key) return;
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  function persistWorkoutTimerState(userId = state.auth.user?.id) {
+    const key = workoutTimerStorageKey(userId);
+    if (!key) return;
+    if (!workoutTimer.running && !workoutTimer.paused) {
+      clearPersistedWorkoutTimerState(userId);
+      return;
+    }
+    const payload = {
+      v: 1,
+      running: Boolean(workoutTimer.running),
+      paused: Boolean(workoutTimer.paused),
+      startedAt: Number(workoutTimer.startedAt) || 0,
+      elapsedMs: Math.max(0, Number(workoutTimer.elapsedMs) || 0),
+      context: {
+        planId: String(workoutTimer.context?.planId || '').trim() || null,
+        weekIndex: Number.isFinite(Number(workoutTimer.context?.weekIndex)) ? Number(workoutTimer.context.weekIndex) : null,
+        dayIndex: Number.isFinite(Number(workoutTimer.context?.dayIndex)) ? Number(workoutTimer.context.dayIndex) : null,
+        activeDate: workoutTimer.context?.activeDate ? String(workoutTimer.context.activeDate).slice(0, 10) : null
+      },
+      events: Array.isArray(workoutTimer.events) ? workoutTimer.events.slice(-300) : [],
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  function readPersistedWorkoutTimerState(userId = state.auth.user?.id) {
+    const key = workoutTimerStorageKey(userId);
+    if (!key) return null;
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function resetWorkoutTimerState({ removePersisted = false, userId = state.auth.user?.id } = {}) {
+    if (workoutTimer.intervalId) {
+      clearInterval(workoutTimer.intervalId);
+      workoutTimer.intervalId = 0;
+    }
+    workoutTimer.running = false;
+    workoutTimer.paused = false;
+    workoutTimer.startedAt = 0;
+    workoutTimer.elapsedMs = 0;
+    workoutTimer.events = [];
+    workoutTimer.context = {};
+    resetFloatingWorkoutTimerClicks({ rerender: false });
+    if (removePersisted) clearPersistedWorkoutTimerState(userId);
+  }
+
+  function restorePersistedWorkoutTimerState({ userId = state.auth.user?.id, planId = state.planRow?.id } = {}) {
+    const stored = readPersistedWorkoutTimerState(userId);
+    if (!stored) return false;
+    const storedPlanId = String(stored?.context?.planId || '').trim();
+    const currentPlanId = String(planId || '').trim();
+    if (!storedPlanId || !currentPlanId || storedPlanId !== currentPlanId) {
+      clearPersistedWorkoutTimerState(userId);
+      return false;
+    }
+    const running = stored?.running === true;
+    const paused = !running && stored?.paused === true;
+    const startedAt = Number(stored?.startedAt || 0);
+    const elapsedMs = Math.max(0, Number(stored?.elapsedMs || 0));
+    const activeDate = stored?.context?.activeDate ? String(stored.context.activeDate).slice(0, 10) : null;
+    if (!running && !paused) {
+      clearPersistedWorkoutTimerState(userId);
+      return false;
+    }
+    if (running && (!Number.isFinite(startedAt) || startedAt <= 0)) {
+      clearPersistedWorkoutTimerState(userId);
+      return false;
+    }
+    if (paused && elapsedMs <= 0 && (!Number.isFinite(startedAt) || startedAt <= 0)) {
+      clearPersistedWorkoutTimerState(userId);
+      return false;
+    }
+    workoutTimer.running = running;
+    workoutTimer.paused = paused;
+    workoutTimer.startedAt = Number.isFinite(startedAt) && startedAt > 0 ? startedAt : 0;
+    workoutTimer.elapsedMs = paused ? elapsedMs : 0;
+    workoutTimer.events = Array.isArray(stored?.events) ? stored.events.slice(-300) : [];
+    workoutTimer.context = {
+      planId: currentPlanId,
+      weekIndex: Number.isFinite(Number(stored?.context?.weekIndex)) ? Number(stored.context.weekIndex) : null,
+      dayIndex: Number.isFinite(Number(stored?.context?.dayIndex)) ? Number(stored.context.dayIndex) : null,
+      activeDate
+    };
+    if (activeDate) {
+      try {
+        sessionStorage.setItem('ode_training_active_date', activeDate);
+      } catch {
+        // ignore
+      }
+    }
+    return true;
+  }
+
+  function getPlanExercisesForWorkoutDay({ weekIndex, dayIndex } = {}) {
+    const weeks = Array.isArray(state.planRow?.plan?.weeks) ? state.planRow.plan.weeks : [];
+    const week = weeks.find((row) => Number(row?.index) === Number(weekIndex)) || null;
+    const day = week && Array.isArray(week.days) ? (week.days[Number(dayIndex) - 1] || null) : null;
+    return Array.isArray(day?.exercises) ? day.exercises : [];
+  }
+
+  function getWorkoutLogDurationMs(log) {
+    const value = Number(log?.duration_ms);
+    return Number.isFinite(value) && value > 0 ? Math.max(0, Math.round(value)) : 0;
+  }
+
+  function getActiveWorkoutTimerDayIso() {
+    if (!workoutTimer.running && !workoutTimer.paused) return '';
+    return String(workoutTimer.context?.activeDate || '').trim();
+  }
+
+  function showWorkoutTimerLockedToast() {
+    const existing = document.getElementById('workout-timer-locked-toast');
+    if (existing) existing.remove();
+    const label = getActiveWorkoutTimerDayIso() || 'this workout day';
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-timer-locked-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '!'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, 'Finish workout first'),
+        el('div', { class: 'workout-saved-sub' }, `Timer is locked to ${label}. Finish it before switching days.`)
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1500);
+    });
+  }
 
   function workoutDayKey({ weekIndex, dayIndex }) {
     const week = Number.isFinite(Number(weekIndex)) ? String(Math.max(1, Math.round(Number(weekIndex)))) : '';
@@ -1733,6 +1907,161 @@
 
   function resolveWorkoutExerciseKey(ex) {
     return String(ex?.id || ex?.baseId || ex?.name || '').trim();
+  }
+
+  function normalizeLiftHistoryKey(raw) {
+    return String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/__d\d+__e\d+$/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 180);
+  }
+
+  function resolveLiftHistoryKeyFromValues({ baseId, exerciseId, exerciseName, name } = {}) {
+    return (
+      normalizeLiftHistoryKey(baseId)
+      || normalizeLiftHistoryKey(exerciseId)
+      || normalizeLiftHistoryKey(exerciseName || name)
+    );
+  }
+
+  function resolveLiftHistoryLookupKeys({ baseId, exerciseId, exerciseName, name } = {}) {
+    const seen = new Set();
+    const keys = [];
+    const push = (raw) => {
+      const key = normalizeLiftHistoryKey(raw);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      keys.push(key);
+    };
+    push(exerciseName || name);
+    push(exerciseId);
+    push(baseId);
+    return keys;
+  }
+
+  function pickLiftHistoryRecord(map, values = {}) {
+    const source = map instanceof Map ? map : null;
+    if (!source || !source.size) return null;
+    const keys = resolveLiftHistoryLookupKeys(values);
+    for (const key of keys) {
+      if (source.has(key)) return source.get(key);
+    }
+    return null;
+  }
+
+  function resolveLiftHistoryKey(record) {
+    return resolveLiftHistoryKeyFromValues({
+      baseId: record?.baseId,
+      exerciseId: record?.exerciseId || record?.id,
+      exerciseName: record?.exerciseName || record?.displayName || record?.name
+    });
+  }
+
+  function normalizeLiftPerformance(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const weightRaw = Number(raw.weight);
+    const repsRaw = Number(raw.reps);
+    const estimatedRaw = Number(raw.estimated1rm);
+    const weight = Number.isFinite(weightRaw) && weightRaw > 0 ? Math.round(weightRaw * 100) / 100 : null;
+    const reps = Number.isFinite(repsRaw) && repsRaw > 0 ? Math.max(1, Math.round(repsRaw)) : null;
+    const estimated1rm = Number.isFinite(estimatedRaw) && estimatedRaw > 0 ? Math.round(estimatedRaw * 100) / 100 : null;
+    const performedAt = raw.performedAt ? String(raw.performedAt).slice(0, 10) : null;
+    if (!Number.isFinite(weight) && !Number.isFinite(reps) && !Number.isFinite(estimated1rm)) return null;
+    return { weight, reps, estimated1rm, performedAt };
+  }
+
+  function extractWorkoutEntryPerformance(entry) {
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    for (let idx = sets.length - 1; idx >= 0; idx -= 1) {
+      const set = sets[idx] && typeof sets[idx] === 'object' ? sets[idx] : null;
+      const perf = normalizeLiftPerformance({
+        weight: set?.weight,
+        reps: set?.reps
+      });
+      if (perf) return perf;
+    }
+    return normalizeLiftPerformance(entry?.actual);
+  }
+
+  function buildLiftHistoryIndex(raw) {
+    const out = new Map();
+    const push = (value, fallbackKey = '') => {
+      const record = value && typeof value === 'object' ? value : null;
+      if (!record) return;
+      const exerciseKey = normalizeLiftHistoryKey(record.exerciseKey || fallbackKey || resolveLiftHistoryKey(record));
+      if (!exerciseKey) return;
+      const normalized = {
+        exerciseKey,
+        exerciseId: String(record.exerciseId || '').trim() || null,
+        baseId: String(record.baseId || '').trim() || null,
+        exerciseName: String(record.exerciseName || record.displayName || record.name || record.exerciseId || record.baseId || 'Exercise').trim(),
+        last: normalizeLiftPerformance(record.last),
+        best: normalizeLiftPerformance(record.best),
+        updatedAt: record.updatedAt || null
+      };
+      if (!normalized.last && !normalized.best) return;
+      out.set(exerciseKey, normalized);
+      resolveLiftHistoryLookupKeys(normalized).forEach((key) => {
+        if (!out.has(key)) out.set(key, normalized);
+      });
+    };
+    if (Array.isArray(raw)) {
+      raw.forEach((row) => push(row));
+      return out;
+    }
+    if (raw && typeof raw === 'object') {
+      Object.entries(raw).forEach(([key, value]) => {
+        push(value, key);
+      });
+    }
+    return out;
+  }
+
+  function rememberLiftHistory(raw, { replace = false } = {}) {
+    const next = replace ? new Map() : new Map(state.liftHistory);
+    const incoming = buildLiftHistoryIndex(raw);
+    incoming.forEach((value, key) => {
+      next.set(key, value);
+    });
+    state.liftHistory = next;
+    return next;
+  }
+
+  function buildWorkoutEntryIndex(entries) {
+    const out = new Map();
+    for (const row of Array.isArray(entries) ? entries : []) {
+      const key = resolveLiftHistoryKey(row);
+      if (key) out.set(key, row);
+      resolveLiftHistoryLookupKeys({
+        baseId: row?.baseId,
+        exerciseId: row?.exerciseId || row?.id,
+        exerciseName: row?.exerciseName || row?.displayName || row?.name
+      }).forEach((alias) => {
+        if (!out.has(alias)) out.set(alias, row);
+      });
+    }
+    return out;
+  }
+
+  function formatPerformanceNumber(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '';
+    const rounded = Math.round(num * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  }
+
+  function formatPerformanceSummary(perf) {
+    if (!perf || typeof perf !== 'object') return '—';
+    const parts = [];
+    if (Number.isFinite(Number(perf.weight))) parts.push(`${formatPerformanceNumber(perf.weight)} lb`);
+    if (Number.isFinite(Number(perf.reps))) parts.push(`x ${Math.max(1, Math.round(Number(perf.reps)))}`);
+    if (!parts.length && Number.isFinite(Number(perf.estimated1rm))) {
+      parts.push(`${formatPerformanceNumber(perf.estimated1rm)} lb e1RM`);
+    }
+    return parts.length ? parts.join(' ') : '—';
   }
 
   function workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex }) {
@@ -1782,6 +2111,18 @@
     return Math.max(0, Math.min(12, Math.round(Number(state.workoutSetCountDrafts.get(key)) || 0)));
   }
 
+  function clearWorkoutDraftStateForDay({ weekIndex, dayIndex }) {
+    const dayKey = workoutDayKey({ weekIndex, dayIndex });
+    if (!dayKey) return;
+    state.workoutReadinessDrafts.delete(dayKey);
+    Array.from(state.workoutInputDrafts.keys()).forEach((key) => {
+      if (String(key || '').startsWith(`${dayKey}:`)) state.workoutInputDrafts.delete(key);
+    });
+    Array.from(state.workoutSetCountDrafts.keys()).forEach((key) => {
+      if (String(key || '').startsWith(`${dayKey}:`)) state.workoutSetCountDrafts.delete(key);
+    });
+  }
+
   function captureVisibleWorkoutInputDrafts() {
     if (!root) return;
     const inputs = root.querySelectorAll('.exercise-set-row input[data-field]');
@@ -1812,7 +2153,18 @@
     }
   }
 
-  function upsertLocalWorkoutLog({ weekIndex, dayIndex, performedAt, entries, notes, readiness, updatedAt = null }) {
+  function upsertLocalWorkoutLog({
+    weekIndex,
+    dayIndex,
+    performedAt,
+    entries,
+    notes,
+    readiness,
+    durationMs = null,
+    timerStartedAt = null,
+    timerEndedAt = null,
+    updatedAt = null
+  }) {
     const next = Array.isArray(state.logs) ? state.logs.slice() : [];
     const idx = next.findIndex((row) => Number(row?.week_index) === Number(weekIndex) && Number(row?.day_index) === Number(dayIndex));
     const normalized = {
@@ -1822,6 +2174,9 @@
       entries: Array.isArray(entries) ? entries : [],
       notes: String(notes || ''),
       readiness: Number.isFinite(Number(readiness)) ? Number(readiness) : null,
+      duration_ms: Number.isFinite(Number(durationMs)) && Number(durationMs) > 0 ? Math.max(0, Math.round(Number(durationMs))) : null,
+      timer_started_at: timerStartedAt || null,
+      timer_ended_at: timerEndedAt || null,
       updated_at: updatedAt || new Date().toISOString()
     };
     if (idx >= 0) next[idx] = { ...next[idx], ...normalized };
@@ -1829,7 +2184,17 @@
     state.logs = next;
   }
 
-  function buildWorkoutLogPayload({ weekIndex, dayIndex, exercises, dayNotes = '', performedAt = null, requireReadiness = true }) {
+  function buildWorkoutLogPayload({
+    weekIndex,
+    dayIndex,
+    exercises,
+    dayNotes = '',
+    performedAt = null,
+    requireReadiness = true,
+    durationMs = null,
+    timerStartedAt = null,
+    timerEndedAt = null
+  }) {
     const planId = state.planRow?.id;
     if (!planId) return { ok: false, error: state.auth.user ? 'No active plan found.' : 'Sign in to save workouts.' };
 
@@ -1843,9 +2208,35 @@
     }
 
     const planRef = state.planRow?.plan || null;
+    const daysPerWeek = Number(planRef?.meta?.daysPerWeek) || (Array.isArray(planRef?.weeks?.[0]?.days) ? planRef.weeks[0].days.length : 1);
+    const historicalPerfMap = performanceMapBeforeSlot({
+      logs: state.logs,
+      beforeWeekIndex: weekIndex,
+      beforeDayIndex: dayIndex,
+      daysPerWeek
+    });
+    const previousEntryMap = previousEntryMapBeforeSlot({
+      logs: state.logs,
+      beforeWeekIndex: weekIndex,
+      beforeDayIndex: dayIndex,
+      daysPerWeek
+    });
     const entries = (exercises || []).map((ex, exIdx) => {
       const exerciseKey = resolveWorkoutExerciseKey(ex);
-      const resolvedProjected = resolveProjectedForExercise(ex, planRef);
+      const lookupValues = {
+        baseId: ex?.baseId,
+        exerciseId: ex?.id,
+        exerciseName: ex?.displayName || ex?.name
+      };
+      const previousEntry = pickLiftHistoryRecord(previousEntryMap, lookupValues);
+      const historicalPerformance = pickLiftHistoryRecord(historicalPerfMap, lookupValues);
+      const persistentLift = pickLiftHistoryRecord(state.liftHistory, lookupValues);
+      const resolvedProjected = resolveProjectedForExercise(ex, planRef, {
+        previousEntry,
+        historicalPerformance,
+        persistentLift,
+        currentPerformedAt: performedAt
+      });
       const resolvedProjectedValue = Number.isFinite(resolvedProjected?.value) ? resolvedProjected.value : null;
       const resolvedProjectedUnit = resolvedProjected?.unit || null;
       const draftSetCount = getWorkoutSetCountDraft({
@@ -1903,6 +2294,7 @@
       return {
         exerciseId: ex.id,
         baseId: ex.baseId,
+        exerciseName: ex.displayName || ex.name || ex.baseId || ex.id || 'Exercise',
         prescribed: {
           sets: draftSetCount,
           reps: ex.reps,
@@ -1930,6 +2322,9 @@
         weekIndex,
         dayIndex,
         performedAt,
+        durationMs: Number.isFinite(Number(durationMs)) && Number(durationMs) > 0 ? Math.max(0, Math.round(Number(durationMs))) : null,
+        timerStartedAt: timerStartedAt || null,
+        timerEndedAt: timerEndedAt || null,
         entries,
         notes: dayNotes,
         readiness
@@ -1937,12 +2332,33 @@
     };
   }
 
-  async function persistWorkoutDraftToAccount() {
+  function cloneWorkoutAutosaveContext(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    return {
+      weekIndex: Number(raw.weekIndex),
+      dayIndex: Number(raw.dayIndex),
+      performedAt: raw.performedAt ? String(raw.performedAt).slice(0, 10) : null,
+      dayNotes: String(raw.dayNotes || ''),
+      exercises: Array.isArray(raw.exercises)
+        ? raw.exercises.map((ex) => (ex && typeof ex === 'object'
+          ? {
+              ...ex,
+              progression: ex.progression && typeof ex.progression === 'object'
+                ? { ...ex.progression }
+                : ex.progression
+            }
+          : ex))
+        : []
+    };
+  }
+
+  async function persistWorkoutDraftToAccount(ctxInput = null) {
     if (workoutAutosaveInFlight) {
       workoutAutosaveQueued = true;
+      workoutAutosaveQueuedContext = cloneWorkoutAutosaveContext(ctxInput || workoutAutosaveContext);
       return;
     }
-    const ctx = workoutAutosaveContext;
+    const ctx = cloneWorkoutAutosaveContext(ctxInput || workoutAutosaveContext);
     if (!ctx || !state.auth.user) return;
     const built = buildWorkoutLogPayload({
       weekIndex: ctx.weekIndex,
@@ -1960,10 +2376,14 @@
         body: JSON.stringify(built.payload)
       });
       if (resp.ok) {
+        if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
         upsertLocalWorkoutLog({
           weekIndex: built.payload.weekIndex,
           dayIndex: built.payload.dayIndex,
           performedAt: built.payload.performedAt,
+          durationMs: built.payload.durationMs,
+          timerStartedAt: built.payload.timerStartedAt,
+          timerEndedAt: built.payload.timerEndedAt,
           entries: built.payload.entries,
           notes: built.payload.notes,
           readiness: built.payload.readiness
@@ -1974,18 +2394,73 @@
     } finally {
       workoutAutosaveInFlight = false;
       if (workoutAutosaveQueued) {
+        const queuedContext = workoutAutosaveQueuedContext;
         workoutAutosaveQueued = false;
-        persistWorkoutDraftToAccount();
+        workoutAutosaveQueuedContext = null;
+        persistWorkoutDraftToAccount(queuedContext);
       }
     }
   }
 
-  function scheduleWorkoutAutosave() {
-    if (!state.auth.user || !workoutAutosaveContext) return;
+  async function persistFinishedWorkoutTimer({ context, durationMs, startedAtMs, endedAtMs } = {}) {
+    const timerContext = context && typeof context === 'object' ? context : null;
+    const planId = String(timerContext?.planId || state.planRow?.id || '').trim();
+    const weekIndex = Number(timerContext?.weekIndex);
+    const dayIndex = Number(timerContext?.dayIndex);
+    if (!state.auth.user || !planId || !Number.isFinite(weekIndex) || !Number.isFinite(dayIndex)) return false;
+    const exercises = getPlanExercisesForWorkoutDay({ weekIndex, dayIndex });
+    if (!exercises.length) return false;
+    const existingLog = (Array.isArray(state.logs) ? state.logs : []).find((row) => (
+      Number(row?.week_index) === Number(weekIndex) && Number(row?.day_index) === Number(dayIndex)
+    )) || null;
+    const built = buildWorkoutLogPayload({
+      weekIndex,
+      dayIndex,
+      exercises,
+      dayNotes: existingLog?.notes || '',
+      performedAt: timerContext?.activeDate || null,
+      requireReadiness: false,
+      durationMs,
+      timerStartedAt: startedAtMs ? new Date(startedAtMs).toISOString() : null,
+      timerEndedAt: endedAtMs ? new Date(endedAtMs).toISOString() : null
+    });
+    if (!built.ok) return false;
+    try {
+      const resp = await api('/api/training/log', {
+        method: 'POST',
+        body: JSON.stringify(built.payload)
+      });
+      if (!resp.ok) return false;
+      if (resp.json?.plan) state.planRow = resp.json.plan;
+      if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
+      upsertLocalWorkoutLog({
+        weekIndex: built.payload.weekIndex,
+        dayIndex: built.payload.dayIndex,
+        performedAt: built.payload.performedAt,
+        durationMs: built.payload.durationMs,
+        timerStartedAt: built.payload.timerStartedAt,
+        timerEndedAt: built.payload.timerEndedAt,
+        entries: built.payload.entries,
+        notes: built.payload.notes,
+        readiness: built.payload.readiness
+      });
+      clearWorkoutDraftStateForDay({
+        weekIndex: built.payload.weekIndex,
+        dayIndex: built.payload.dayIndex
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function scheduleWorkoutAutosave(contextInput = null) {
+    if (!state.auth.user || !(contextInput || workoutAutosaveContext)) return;
     if (workoutAutosaveTimer) clearTimeout(workoutAutosaveTimer);
+    const snapshot = cloneWorkoutAutosaveContext(contextInput || workoutAutosaveContext);
     workoutAutosaveTimer = window.setTimeout(() => {
       workoutAutosaveTimer = 0;
-      persistWorkoutDraftToAccount();
+      persistWorkoutDraftToAccount(snapshot);
     }, 2000);
   }
 
@@ -1995,6 +2470,7 @@
       workoutAutosaveTimer = 0;
     }
     workoutAutosaveQueued = false;
+    workoutAutosaveQueuedContext = null;
   }
 
   function ensureShareOutgoingSyncTimer() {
@@ -2046,17 +2522,139 @@
 
   function updateWorkoutTimerDisplay() {
     const node = document.getElementById('workout-timer-display');
-    if (!node) return;
+    if (!node) {
+      scheduleFloatingWorkoutTimerSync();
+      return;
+    }
     if (!workoutTimer.running && !workoutTimer.paused) {
       node.classList.add('hidden');
+      scheduleFloatingWorkoutTimerSync();
       return;
     }
     node.classList.remove('hidden');
     if (workoutTimer.paused) {
       node.textContent = `Paused ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+      scheduleFloatingWorkoutTimerSync();
       return;
     }
     node.textContent = `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+    scheduleFloatingWorkoutTimerSync();
+  }
+
+  function clearFloatingWorkoutTimerResetTimer() {
+    if (!floatingWorkoutTimerResetTimer) return;
+    window.clearTimeout(floatingWorkoutTimerResetTimer);
+    floatingWorkoutTimerResetTimer = 0;
+  }
+
+  function resetFloatingWorkoutTimerClicks({ rerender = true } = {}) {
+    clearFloatingWorkoutTimerResetTimer();
+    floatingWorkoutTimerClickCount = 0;
+    if (rerender) scheduleFloatingWorkoutTimerSync();
+  }
+
+  function armFloatingWorkoutTimerClicks(count) {
+    floatingWorkoutTimerClickCount = Math.max(0, Number(count || 0));
+    clearFloatingWorkoutTimerResetTimer();
+    floatingWorkoutTimerResetTimer = window.setTimeout(() => {
+      floatingWorkoutTimerResetTimer = 0;
+      floatingWorkoutTimerClickCount = 0;
+      scheduleFloatingWorkoutTimerSync();
+    }, 2600);
+    scheduleFloatingWorkoutTimerSync();
+  }
+
+  function ensureFloatingWorkoutTimerDock() {
+    let node = document.getElementById('workout-floating-timer');
+    if (node) return node;
+    node = document.createElement('button');
+    node.type = 'button';
+    node.id = 'workout-floating-timer';
+    node.className = 'workout-floating-timer hidden';
+    node.setAttribute('aria-live', 'polite');
+    node.innerHTML = `
+      <span class="workout-floating-timer-time" data-workout-floating-time>Workout 0:00</span>
+    `.trim();
+    node.addEventListener('click', () => {
+      if (!workoutTimer.running && !workoutTimer.paused) return;
+      if (workoutTimer.running) {
+        if (floatingWorkoutTimerClickCount <= 0) {
+          armFloatingWorkoutTimerClicks(1);
+          return;
+        }
+        if (floatingWorkoutTimerClickCount === 1) {
+          pauseWorkoutTimer({ reason: 'floating_timer' });
+          armFloatingWorkoutTimerClicks(2);
+          return;
+        }
+        return;
+      }
+      if (workoutTimer.paused && floatingWorkoutTimerClickCount >= 2) {
+        resetFloatingWorkoutTimerClicks({ rerender: false });
+        void confirmEndWorkout({ allowPaused: true, source: 'floating_timer' });
+        return;
+      }
+      resetFloatingWorkoutTimerClicks({ rerender: false });
+      startWorkoutTimer();
+    });
+    document.body.appendChild(node);
+    return node;
+  }
+
+  function syncFloatingWorkoutTimerDock() {
+    const node = ensureFloatingWorkoutTimerDock();
+    const timeNode = node.querySelector('[data-workout-floating-time]');
+    const active = Boolean(workoutTimer.running || workoutTimer.paused);
+    const anchor = document.querySelector('[data-workout-timer-anchor]');
+    const anchorVisible = (() => {
+      if (!anchor) return false;
+      const rect = anchor.getBoundingClientRect();
+      return rect.bottom > 24 && rect.top < (window.innerHeight - 24);
+    })();
+    const shouldShow = active
+      && document.body.classList.contains('training-page')
+      && state.view === 'plan'
+      && !anchorVisible;
+    if (!shouldShow) {
+      node.classList.add('hidden');
+      node.classList.remove('show', 'paused', 'armed');
+      resetFloatingWorkoutTimerClicks({ rerender: false });
+      return;
+    }
+    const wasHidden = node.classList.contains('hidden');
+    node.classList.remove('hidden');
+    if (wasHidden) {
+      node.classList.remove('show');
+      requestAnimationFrame(() => {
+        if (!node.classList.contains('hidden')) node.classList.add('show');
+      });
+    } else {
+      node.classList.add('show');
+    }
+    node.classList.toggle('paused', workoutTimer.paused);
+    node.classList.toggle('armed', floatingWorkoutTimerClickCount > 0);
+    if (timeNode) {
+      timeNode.textContent = workoutTimer.paused
+        ? `Paused ${formatWorkoutElapsed(getWorkoutElapsedMs())}`
+        : `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+    }
+  }
+
+  function scheduleFloatingWorkoutTimerSync() {
+    if (floatingWorkoutTimerSyncRaf) return;
+    floatingWorkoutTimerSyncRaf = requestAnimationFrame(() => {
+      floatingWorkoutTimerSyncRaf = 0;
+      syncFloatingWorkoutTimerDock();
+    });
+  }
+
+  function bindFloatingWorkoutTimerDock() {
+    if (floatingWorkoutTimerBound) return;
+    floatingWorkoutTimerBound = true;
+    const onViewportChange = () => scheduleFloatingWorkoutTimerSync();
+    window.addEventListener('scroll', onViewportChange, true);
+    window.addEventListener('resize', onViewportChange);
+    document.addEventListener('visibilitychange', onViewportChange);
   }
 
   function ensureWorkoutTimerTick() {
@@ -2081,7 +2679,7 @@
           dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null,
           value: target.value
         });
-        if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
+        if (state.auth.user && workoutAutosaveContext) scheduleWorkoutAutosave();
         return;
       }
       if (!target.dataset) return;
@@ -2110,7 +2708,7 @@
         if (Number.isFinite(num)) detail.value = num;
       }
       if (workoutTimer.running) recordWorkoutEvent('input', detail);
-      if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
+      if (state.auth.user && workoutAutosaveContext) scheduleWorkoutAutosave();
     }, true);
   }
 
@@ -2159,12 +2757,21 @@
     document.addEventListener('focusin', handleGateAttempt, true);
   }
 
-  function startWorkoutTimer() {
+  function startWorkoutTimer(contextInput = null) {
     if (workoutTimer.running) return;
+    const nextContext = contextInput && typeof contextInput === 'object'
+      ? {
+          planId: String(contextInput.planId || state.planRow?.id || '').trim() || null,
+          weekIndex: Number.isFinite(Number(contextInput.weekIndex)) ? Number(contextInput.weekIndex) : null,
+          dayIndex: Number.isFinite(Number(contextInput.dayIndex)) ? Number(contextInput.dayIndex) : null,
+          activeDate: contextInput.activeDate ? String(contextInput.activeDate).slice(0, 10) : null
+        }
+      : null;
     if (workoutTimer.paused && Number(workoutTimer.elapsedMs) > 0) {
       workoutTimer.running = true;
       workoutTimer.paused = false;
       workoutTimer.startedAt = Date.now() - Math.max(0, Number(workoutTimer.elapsedMs) || 0);
+      if (!String(workoutTimer.context?.planId || '').trim() && nextContext?.planId) workoutTimer.context = nextContext;
       ensureWorkoutTimerTick();
       logTrainingEvent('workout_resume', {
         planId: workoutTimer.context?.planId || state.planRow?.id || null,
@@ -2173,22 +2780,25 @@
         activeDate: workoutTimer.context?.activeDate || null,
         resumedAt: new Date().toISOString()
       });
+      persistWorkoutTimerState();
       render();
       return;
     }
+    if (nextContext?.planId) workoutTimer.context = nextContext;
     workoutTimer.running = true;
     workoutTimer.paused = false;
     workoutTimer.startedAt = Date.now();
     workoutTimer.elapsedMs = 0;
     workoutTimer.events = [];
     ensureWorkoutTimerTick();
+    persistWorkoutTimerState();
     render();
   }
 
   function pauseWorkoutTimer({ reason = 'manual' } = {}) {
     if (!workoutTimer.running || !workoutTimer.startedAt) return;
     captureVisibleWorkoutInputDrafts();
-    persistWorkoutDraftToAccount();
+    persistWorkoutDraftToAccount(workoutAutosaveContext);
     const now = Date.now();
     workoutTimer.elapsedMs = Math.max(0, now - workoutTimer.startedAt);
     workoutTimer.running = false;
@@ -2206,6 +2816,7 @@
       elapsedSec: Math.round(workoutTimer.elapsedMs / 1000),
       reason
     });
+    persistWorkoutTimerState();
     updateWorkoutTimerDisplay();
     render();
   }
@@ -2219,6 +2830,8 @@
       offsetSec: Math.max(0, Math.round((now - workoutTimer.startedAt) / 1000)),
       details: details || {}
     });
+    if (workoutTimer.events.length > 300) workoutTimer.events = workoutTimer.events.slice(-300);
+    persistWorkoutTimerState();
   }
 
   function showWorkoutSavedToast() {
@@ -2241,8 +2854,8 @@
     });
   }
 
-  async function confirmEndWorkout() {
-    if (!workoutTimer.running) return;
+  async function confirmEndWorkout({ allowPaused = false, source = 'confirmed' } = {}) {
+    if (!workoutTimer.running && !(allowPaused && workoutTimer.paused)) return;
     const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
     let action = 'dismiss';
     if (confirmFn) {
@@ -2250,7 +2863,7 @@
         title: 'Finish workout?',
         message: 'Are you sure you want to finish your workout?\nYour workout timer and input events will be saved to your profile.',
         confirmText: 'Finish workout',
-        cancelText: 'Pause workout',
+        cancelText: workoutTimer.paused ? 'Keep paused' : 'Pause workout',
         danger: false,
         returnAction: true
       });
@@ -2260,19 +2873,32 @@
         : 'dismiss';
     }
     if (action === 'confirm') {
-      endWorkoutTimer({ reason: 'confirmed', showToast: true });
+      await endWorkoutTimer({ reason: source || 'confirmed', showToast: true });
+      window.setTimeout(() => {
+        void openTrainingPaywall('workout_end');
+      }, 220);
+      window.setTimeout(() => {
+        void openTrainingPaywall('workout_end_retry');
+      }, 900);
       return;
     }
-    if (action === 'cancel') {
+    if (action === 'cancel' && !workoutTimer.paused) {
       pauseWorkoutTimer({ reason: 'confirm_cancel' });
     }
   }
 
-  function endWorkoutTimer({ reason = 'manual', showToast = false } = {}) {
-    if (!workoutTimer.running) return;
+  async function endWorkoutTimer({ reason = 'manual', showToast = false } = {}) {
+    if (!workoutTimer.running && !workoutTimer.paused) return;
     cancelWorkoutAutosave();
     const endedAt = Date.now();
-    const durationMs = Math.max(0, endedAt - workoutTimer.startedAt);
+    const startedAtMs = Number(workoutTimer.startedAt) || 0;
+    const durationMs = workoutTimer.paused
+      ? Math.max(0, Number(workoutTimer.elapsedMs) || 0)
+      : Math.max(0, endedAt - workoutTimer.startedAt);
+    const timerContext = workoutTimer.context && typeof workoutTimer.context === 'object'
+      ? { ...workoutTimer.context }
+      : {};
+    const timerDayIso = String(timerContext?.activeDate || '').trim();
     if (durationMs > 0) {
       logTrainingEvent('workout_duration', {
         planId: state.planRow?.id || null,
@@ -2297,14 +2923,21 @@
         events: workoutTimer.events.slice(0, 300)
       });
     }
-    workoutTimer.running = false;
-    workoutTimer.paused = false;
-    workoutTimer.startedAt = 0;
-    workoutTimer.elapsedMs = 0;
-    workoutTimer.events = [];
-    if (workoutTimer.intervalId) {
-      clearInterval(workoutTimer.intervalId);
-      workoutTimer.intervalId = 0;
+    resetWorkoutTimerState({ removePersisted: true });
+    if (durationMs > 0) {
+      await persistFinishedWorkoutTimer({
+        context: timerContext,
+        durationMs,
+        startedAtMs,
+        endedAtMs: endedAt
+      });
+    }
+    if (timerDayIso) {
+      try {
+        sessionStorage.setItem('ode_training_active_date', timerDayIso);
+      } catch {
+        // ignore
+      }
     }
     updateWorkoutTimerDisplay();
     render();
@@ -2836,6 +3469,130 @@
     return '—';
   }
 
+  function targetWeightTextToken(value) {
+    return String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
+  }
+
+  function isLowerBodyTargetExercise(ex) {
+    const movement = targetWeightTextToken(ex?.movementPattern);
+    if (movement === 'squat' || movement === 'hinge' || movement === 'lower') return true;
+
+    const tags = [
+      ex?.bodyPart,
+      ex?.muscle_group,
+      ex?.muscleGroup,
+      ex?.muscle,
+      ex?.primaryMuscleGroup,
+      ex?.subMuscleGroup,
+      ex?.category,
+      ...(Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []),
+      ...(Array.isArray(ex?.primaryMuscles) ? ex.primaryMuscles : []),
+      ...(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [])
+    ].map(targetWeightTextToken).filter(Boolean);
+
+    if (tags.some((tag) => (
+      tag === 'legs'
+      || tag === 'lower'
+      || tag.includes('leg')
+      || tag.includes('lower body')
+      || tag.includes('quad')
+      || tag.includes('hamstring')
+      || tag.includes('glute')
+      || tag.includes('calf')
+      || tag.includes('adductor')
+      || tag.includes('abductor')
+    ))) {
+      return true;
+    }
+
+    const name = targetWeightTextToken(ex?.displayName || ex?.name);
+    return /(squat|deadlift|rdl|romanian deadlift|leg press|lunge|split squat|bulgarian|hip thrust|leg curl|ham curl|leg extension|calf raise|hack squat|good morning|step up)/.test(name);
+  }
+
+  function resolveTargetWeightIncrement(ex) {
+    return isLowerBodyTargetExercise(ex) ? 10 : 5;
+  }
+
+  function resolvePreviousProjectedWeight(options = {}) {
+    const candidates = [
+      Number(options.previousEntry?.prescribed?.projectedWeight),
+      Number(options.previousEntry?.projectedWeight),
+      Number(options.lastPerformance?.prescribed?.projectedWeight),
+      Number(options.lastPerformance?.projectedWeight)
+    ];
+    for (const value of candidates) {
+      if (Number.isFinite(value) && value > 0) return Math.round(value * 100) / 100;
+    }
+    return null;
+  }
+
+  function buildTargetWeightPerformanceCandidate(raw, { projectedWeight = null } = {}) {
+    if (!raw || typeof raw !== 'object') return null;
+    const perf = (Array.isArray(raw?.sets) || (raw?.actual && typeof raw.actual === 'object'))
+      ? extractWorkoutEntryPerformance(raw)
+      : normalizeLiftPerformance(raw);
+    const weight = Number(perf?.weight);
+    if (!Number.isFinite(weight) || weight <= 0) return null;
+    return {
+      ...perf,
+      performedAt: perf?.performedAt || (raw?.performedAt ? String(raw.performedAt).slice(0, 10) : null),
+      projectedWeight: Number.isFinite(Number(projectedWeight)) && Number(projectedWeight) > 0
+        ? Math.round(Number(projectedWeight) * 100) / 100
+        : null
+    };
+  }
+
+  function pickBestTargetWeightCandidate(candidates, { excludePerformedAt = '' } = {}) {
+    const blockedDate = excludePerformedAt ? String(excludePerformedAt).slice(0, 10) : '';
+    const valid = (Array.isArray(candidates) ? candidates : []).filter((candidate) => {
+      const weight = Number(candidate?.weight);
+      if (!Number.isFinite(weight) || weight <= 0) return false;
+      if (blockedDate && candidate?.performedAt && String(candidate.performedAt).slice(0, 10) === blockedDate) return false;
+      return true;
+    });
+    if (!valid.length) return null;
+    const dated = valid
+      .map((candidate, index) => ({
+        candidate,
+        index,
+        stamp: candidate?.performedAt ? Date.parse(`${String(candidate.performedAt).slice(0, 10)}T00:00:00Z`) : NaN
+      }))
+      .filter((entry) => Number.isFinite(entry.stamp));
+    if (dated.length) {
+      dated.sort((a, b) => (b.stamp - a.stamp) || (a.index - b.index));
+      return dated[0].candidate;
+    }
+    return valid[0];
+  }
+
+  function normalizeTargetWeightPerformance(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (Array.isArray(raw?.sets) || (raw?.actual && typeof raw.actual === 'object')) {
+      return extractWorkoutEntryPerformance(raw);
+    }
+    return normalizeLiftPerformance(raw);
+  }
+
+  function resolveTargetSeedForExercise(ex, options = {}) {
+    const persistentLift = options.persistentLift || pickLiftHistoryRecord(state.liftHistory, {
+      baseId: ex?.baseId,
+      exerciseId: ex?.id,
+      exerciseName: ex?.displayName || ex?.name
+    });
+    return pickBestTargetWeightCandidate([
+      buildTargetWeightPerformanceCandidate(options.lastPerformance, {
+        projectedWeight: resolvePreviousProjectedWeight({ lastPerformance: options.lastPerformance })
+      }),
+      buildTargetWeightPerformanceCandidate(options.previousEntry, {
+        projectedWeight: resolvePreviousProjectedWeight({ previousEntry: options.previousEntry })
+      }),
+      buildTargetWeightPerformanceCandidate(options.historicalPerformance),
+      buildTargetWeightPerformanceCandidate(persistentLift?.last)
+    ], {
+      excludePerformedAt: options.currentPerformedAt
+    });
+  }
+
   function roundTo(value, inc) {
     const n = Number(value);
     const step = Number(inc) || 1;
@@ -2889,7 +3646,19 @@
     return { value: Number.isFinite(value) ? value : null, unit: 'lb' };
   }
 
-  function resolveProjectedForExercise(ex, plan) {
+  function resolveProjectedForExercise(ex, plan, options = {}) {
+    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
+    const targetSeed = resolveTargetSeedForExercise(ex, options);
+    if (eqClass !== 'bodyweight' && Number.isFinite(Number(targetSeed?.weight))) {
+      const increment = resolveTargetWeightIncrement(ex);
+      const previousProjectedWeight = Number(targetSeed?.projectedWeight);
+      if (Number.isFinite(previousProjectedWeight) && previousProjectedWeight > 0 && Number(targetSeed.weight) < previousProjectedWeight) {
+        const regressedWeight = Math.max(increment, previousProjectedWeight - increment);
+        return { value: Math.round(regressedWeight * 100) / 100, unit: 'lb' };
+      }
+      const nextWeight = Math.round((Number(targetSeed.weight) + increment) * 100) / 100;
+      return { value: nextWeight, unit: 'lb' };
+    }
     if (ex?.projected && typeof ex.projected === 'object') {
       if (ex.projected.unit === 'bw') return ex.projected;
       if (Number.isFinite(ex.projected.value)) return ex.projected;
@@ -2898,7 +3667,6 @@
     const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
     const exp = plan?.meta?.experience || '';
     const fallback = fallbackBaselinesFromBodyweight(exp, baselines?.bodyweight);
-    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
     if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
     const tm = baselines?.trainingMax || {};
     const baseId = String(ex?.baseId || '');
@@ -6915,9 +7683,11 @@ function toggleSharePopover(force) {
       if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
       shareEventsInFlight = false;
+      resetWorkoutTimerState({ removePersisted: false });
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      state.liftHistory = new Map();
       shareUi.open = false;
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
@@ -6941,9 +7711,11 @@ function toggleSharePopover(force) {
       if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
       shareEventsInFlight = false;
+      resetWorkoutTimerState({ removePersisted: false });
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      state.liftHistory = new Map();
       shareUi.open = false;
       shareUi.loaded = false;
       shareUi.bootstrapRequested = false;
@@ -6991,9 +7763,11 @@ function toggleSharePopover(force) {
       if (s.status === 401) {
         state.auth.user = null;
         shareEventsInFlight = false;
+        resetWorkoutTimerState({ removePersisted: false });
         state.profile = null;
         state.planRow = null;
         state.logs = [];
+        state.liftHistory = new Map();
         shareUi.open = false;
         shareUi.loaded = false;
         shareUi.bootstrapRequested = false;
@@ -7015,6 +7789,7 @@ function toggleSharePopover(force) {
     }
     const fetchedProfile = s.json?.profile || null;
     const fetchedPlanRow = s.json?.plan || null;
+    rememberLiftHistory(s.json?.liftHistory, { replace: true });
     if (silent && hadRenderablePlan && !hasRenderablePlanRow(fetchedPlanRow)) {
       state.profile = fetchedProfile || state.profile;
       state.planRow = previousPlanRow;
@@ -7025,7 +7800,9 @@ function toggleSharePopover(force) {
     state.profile = fetchedProfile;
     state.planRow = fetchedPlanRow;
     if (hasRenderablePlanRow(state.planRow)) state.planError = null;
-    if (forceAutostart) {
+    const shouldAutoBuildDemoPlan = shouldBootDemoPlan(state.auth.user, state.planRow);
+    if (forceAutostart || shouldAutoBuildDemoPlan) {
+      if (shouldAutoBuildDemoPlan) setView('generating');
       const autoOnboarded = await tryAutoOnboardFromIntake(true);
       if (autoOnboarded) return;
     }
@@ -7033,13 +7810,20 @@ function toggleSharePopover(force) {
       maybeArmTrainingQuickTourForFirstPlan();
       const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
       state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+      restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-      const dismissed = localStorage.getItem(dismissedKey) === '1';
+      const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
       setView(dismissed ? 'plan' : 'upsell');
+      if (!hadRenderablePlan) {
+        window.setTimeout(() => {
+          void maybeOpenTrainingEntryPaywall('training_plan_entry');
+        }, 140);
+      }
       return;
     }
-    const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart);
+    const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart || shouldBootDemoPlan(state.auth.user, state.planRow));
     if (autoOnboarded) return;
+    resetWorkoutTimerState({ removePersisted: false });
     setView('wizard');
     applyPendingResumeStepIfPossible();
   }
@@ -8624,9 +9408,10 @@ function toggleSharePopover(force) {
     }
     if (state.planRow?.id) {
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-      localStorage.removeItem(dismissedKey);
+      if (shouldSkipDemoUpsell(state.auth.user)) localStorage.setItem(dismissedKey, '1');
+      else localStorage.removeItem(dismissedKey);
     }
-    setView(state.planRow?.id ? 'upsell' : 'plan');
+    setView(state.planRow?.id ? (shouldSkipDemoUpsell(state.auth.user) ? 'plan' : 'upsell') : 'plan');
   }
 
     function renderUpsell() {
@@ -8833,16 +9618,20 @@ function toggleSharePopover(force) {
     for (const { row } of rows) {
       const entries = Array.isArray(row?.entries) ? row.entries : [];
       for (const e of entries) {
-        const baseId = String(e?.baseId || '').trim();
-        if (!baseId) continue;
-        const w = Number(e?.actual?.weight);
-        const r = Number(e?.actual?.reps);
-        const rpe = Number(e?.actual?.rpe);
-        out.set(baseId, {
-          weight: Number.isFinite(w) ? w : null,
-          reps: Number.isFinite(r) ? r : null,
-          rpe: Number.isFinite(rpe) ? rpe : null,
+        const key = resolveLiftHistoryKey(e);
+        const perf = extractWorkoutEntryPerformance(e);
+        if (!key || !perf) continue;
+        const nextPerf = {
+          ...perf,
           performedAt: row?.performed_at ? String(row.performed_at).slice(0, 10) : null
+        };
+        out.set(key, nextPerf);
+        resolveLiftHistoryLookupKeys({
+          baseId: e?.baseId,
+          exerciseId: e?.exerciseId || e?.id,
+          exerciseName: e?.exerciseName || e?.displayName || e?.name
+        }).forEach((alias) => {
+          if (!out.has(alias)) out.set(alias, nextPerf);
         });
       }
     }
@@ -8864,11 +9653,21 @@ function toggleSharePopover(force) {
     for (const { row } of rows) {
       const entries = Array.isArray(row?.entries) ? row.entries : [];
       for (const e of entries) {
-        const baseId = String(e?.baseId || '').trim();
-        if (!baseId) continue;
-        out.set(baseId, {
+        const key = resolveLiftHistoryKey(e);
+        if (!key) continue;
+        const nextEntry = {
           sets: Array.isArray(e?.sets) ? e.sets : [],
+          actual: e?.actual && typeof e.actual === 'object' ? { ...e.actual } : null,
+          prescribed: e?.prescribed && typeof e.prescribed === 'object' ? { ...e.prescribed } : null,
           performedAt: row?.performed_at ? String(row.performed_at).slice(0, 10) : null
+        };
+        out.set(key, nextEntry);
+        resolveLiftHistoryLookupKeys({
+          baseId: e?.baseId,
+          exerciseId: e?.exerciseId || e?.id,
+          exerciseName: e?.exerciseName || e?.displayName || e?.name
+        }).forEach((alias) => {
+          if (!out.has(alias)) out.set(alias, nextEntry);
         });
       }
     }
@@ -8900,8 +9699,13 @@ function toggleSharePopover(force) {
       return;
     }
     if (resp.json?.plan) state.planRow = resp.json.plan;
+    if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
     const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(built.payload.planId)}`, { method: 'GET' });
     state.logs = logsResp.ok ? (logsResp.json?.logs || []) : state.logs;
+    clearWorkoutDraftStateForDay({
+      weekIndex: built.payload.weekIndex,
+      dayIndex: built.payload.dayIndex
+    });
     render();
     return; /*
 
@@ -9666,7 +10470,7 @@ function toggleSharePopover(force) {
       const workoutLink = buildShareWorkoutLink();
       const imageLink = buildShareWorkoutImageLink();
       return [
-        `Yo ${inviteeName} — join ${inviter} on their workout in STRYVE.`,
+        `Yo ${inviteeName} — join ${inviter} on their workout in RiseForIt.`,
         `Track your progress, stay accountable, and keep momentum (${discipline}${days ? `, ${days} days/week` : ''}).`,
         `Join link: ${workoutLink}`,
         `Preview image: ${imageLink}`
@@ -9964,6 +10768,11 @@ function toggleSharePopover(force) {
       if (!activeDate || Number.isNaN(activeDate.getTime())) {
         activeDate = today;
       }
+      const timerLockedDateIso = getActiveWorkoutTimerDayIso();
+      const timerLockedDate = timerLockedDateIso ? parseISODateLocal(timerLockedDateIso) : null;
+      if (timerLockedDate && !Number.isNaN(timerLockedDate.getTime())) {
+        activeDate = timerLockedDate;
+      }
       activeDate = clampDate(activeDate) || clampDate(today) || minDate;
 
       applyPendingScheduleIfDue(activeDate);
@@ -10058,15 +10867,23 @@ function toggleSharePopover(force) {
 
       const activeDayIndex = dayIndexForDate(activeDate);
       const activeDay = activeDayIndex || -1;
-      workoutTimer.context = {
+      const pageWorkoutContext = {
         planId: state.planRow?.id || null,
         weekIndex: activeWeek,
         dayIndex: activeDayIndex,
         activeDate: toISODateLocal(activeDate)
       };
+      if (!workoutTimer.running && !workoutTimer.paused) {
+        workoutTimer.context = pageWorkoutContext;
+      } else if (String(workoutTimer.context?.planId || '').trim() !== String(state.planRow?.id || '').trim()) {
+        workoutTimer.context = pageWorkoutContext;
+      }
 
       const todayStart = dayStart(today);
       const isToday = dayStart(activeDate).getTime() === todayStart.getTime();
+      const dateBlockerDisabled = isDemoDateBlockerDisabled(state.auth.user);
+      const timerActiveOnThisDay = timerLockedDateIso && timerLockedDateIso === toISODateLocal(activeDate);
+      const canStartWorkoutOnActiveDate = Boolean(isToday || dateBlockerDisabled || timerActiveOnThisDay);
       const activeDayPlan = activeDayIndex ? (days[activeDayIndex - 1] || null) : null;
       const activeDayFocus = String(activeDayPlan?.focus || '').trim() || (activeDayIndex ? `Day ${activeDayIndex}` : 'today');
       const findNextScheduledWorkoutDate = (fromDate) => {
@@ -10181,18 +10998,18 @@ function toggleSharePopover(force) {
       };
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
-      el('div', { class: 'plan-topbar-share-row' },
-        isToday
+      el('div', { class: 'plan-topbar-share-row', 'data-workout-timer-anchor': '1' },
+        canStartWorkoutOnActiveDate
           ? el('button', {
             type: 'button',
             class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : workoutTimer.paused ? ' is-paused' : ''}`,
             onclick: () => {
               if (workoutTimer.running) confirmEndWorkout();
-              else startWorkoutTimer();
+              else startWorkoutTimer(pageWorkoutContext);
             }
           }, workoutTimer.running ? 'End workout' : workoutTimer.paused ? 'Resume workout' : 'Start workout')
           : null,
-        isToday ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null,
+        canStartWorkoutOnActiveDate ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null,
         el('button', {
           type: 'button',
           class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
@@ -10376,6 +11193,12 @@ function toggleSharePopover(force) {
     const setActiveDate = (date) => {
         const clamped = clampDate(date);
         if (!clamped) return;
+        const timerDayIso = getActiveWorkoutTimerDayIso();
+        const nextIso = toISODateLocal(clamped);
+        if (timerDayIso && nextIso && timerDayIso !== nextIso) {
+          showWorkoutTimerLockedToast();
+          return;
+        }
         const nextWeekIndex = weekIndexForDate(clamped, plan);
         const nextWeekday = clamped.getDay();
         sessionStorage.setItem('ode_training_week', String(nextWeekIndex));
@@ -10414,7 +11237,10 @@ function toggleSharePopover(force) {
             ? `${tabDate.getMonth() + 1}/${tabDate.getDate()}`
             : '';
           const key = dayIndex ? `${activeWeek}:${dayIndex}` : null;
-          const saved = key ? Boolean(logsMap.get(key)) : false;
+          const tabLog = key ? (logsMap.get(key) || null) : null;
+          const saved = Boolean(tabLog);
+          const tabDuration = getWorkoutLogDurationMs(tabLog);
+          const tabDurationLabel = tabDuration > 0 ? formatWorkoutElapsed(tabDuration) : '';
           return el('button', {
             type: 'button',
             class: `day-tab ${weekday === activeWeekday ? 'active' : ''}`,
@@ -10430,7 +11256,7 @@ function toggleSharePopover(force) {
         ),
         el('div', { class: 'day-tab-meta' },
             day
-              ? `Day ${dayIndex} • ${day.focus || 'Workout'} • ${day.exercises?.length || 0} exercises`
+              ? `Day ${dayIndex} • ${day.focus || 'Workout'} • ${day.exercises?.length || 0} exercises${tabDurationLabel ? ` • ${tabDurationLabel}` : ''}`
               : 'Workout not scheduled'
           ));
       })
@@ -10489,7 +11315,17 @@ function toggleSharePopover(force) {
       const key = `${activeWeek}:${dayIndex}`;
       const log = logsMap.get(key) || null;
       const dispCur = { title: WEEKDAYS[activeWeekday], dayNumber: dayIndex };
-      const savedBadge = log ? el('span', { class: 'training-badge good' }, 'Saved') : el('span', { class: 'training-badge' }, 'Not saved');
+      const workoutDurationMs = getWorkoutLogDurationMs(log);
+      const savedBadge = log
+        ? el('span', { class: 'training-badge good', title: workoutDurationMs > 0 ? `Workout time ${formatWorkoutElapsed(workoutDurationMs)}` : 'Saved workout' }, workoutDurationMs > 0 ? `Saved • ${formatWorkoutElapsed(workoutDurationMs)}` : 'Saved')
+        : el('span', { class: 'training-badge' }, 'Not saved');
+      const currentEntryMap = buildWorkoutEntryIndex(log?.entries || []);
+      const historicalPerfMap = performanceMapBeforeSlot({
+        logs: state.logs,
+        beforeWeekIndex: activeWeek,
+        beforeDayIndex: dayIndex,
+        daysPerWeek
+      });
       const previousEntryMap = previousEntryMapBeforeSlot({
         logs: state.logs,
         beforeWeekIndex: activeWeek,
@@ -10527,7 +11363,7 @@ function toggleSharePopover(force) {
         ? 'Goal: stay under RPE 8 • hit the top of the rep range with clean form'
         : 'Goal: beat last time (reps first, then load) • main lift can push to RPE 9–10 on final set';
 
-      const performedAtValue = log?.performed_at ? String(log.performed_at).slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const performedAtValue = log?.performed_at ? String(log.performed_at).slice(0, 10) : toISODateLocal(activeDate);
       const dayNotesValue = log?.notes || '';
       workoutAutosaveContext = {
         weekIndex: activeWeek,
@@ -10548,7 +11384,14 @@ function toggleSharePopover(force) {
       const list = el('div', { class: 'exercise-list' });
       (day.exercises || []).forEach((ex, exIdx) => {
         const exerciseKey = resolveWorkoutExerciseKey(ex);
-        const previousEntry = previousEntryMap.get(String(ex.baseId || '')) || null;
+        const lookupValues = {
+          baseId: ex?.baseId,
+          exerciseId: ex?.id,
+          exerciseName: ex?.displayName || ex?.name
+        };
+        const previousEntry = pickLiftHistoryRecord(previousEntryMap, lookupValues);
+        const currentEntry = pickLiftHistoryRecord(currentEntryMap, lookupValues);
+        const persistentLift = pickLiftHistoryRecord(state.liftHistory, lookupValues);
 
         const dec = lastDecisionByBase?.[String(ex.baseId || '')] || null;
         const decText = dec && typeof dec === 'object' && dec.message ? String(dec.message) : '';
@@ -10565,12 +11408,18 @@ function toggleSharePopover(force) {
             if (m) return Math.max(0, Math.min(12, Number(m[1])));
             return 0;
           })();
+          const savedSetCount = (() => {
+            const prescribedCount = Number(currentEntry?.prescribed?.sets);
+            const setsLength = Array.isArray(currentEntry?.sets) ? currentEntry.sets.length : 0;
+            const counts = [prescribedCount, setsLength].filter((value) => Number.isFinite(value) && value > 0);
+            return counts.length ? Math.max(...counts) : 0;
+          })();
           const setCount = getWorkoutSetCountDraft({
             exId: exerciseKey,
             exSlot: exIdx,
             weekIndex: activeWeek,
             dayIndex,
-            fallback: defaultSetCount
+            fallback: Math.max(defaultSetCount, savedSetCount)
           });
         const setsRepsRest = `${setCount} sets \u00D7 ${ex.reps} reps \u00D7 rest ${fmtRest(ex.restSec)}`;
           const baseSetCount = (() => {
@@ -10593,7 +11442,7 @@ function toggleSharePopover(force) {
               dayIndex,
               count: next
             });
-            if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
+            if (state.auth.user && workoutAutosaveContext) scheduleWorkoutAutosave();
             render();
           };
           const removeSetForExercise = () => {
@@ -10610,7 +11459,7 @@ function toggleSharePopover(force) {
               dayIndex,
               count: Math.max(baseSetCount, setCount - 1)
             });
-            if (workoutTimer.running || workoutTimer.paused) scheduleWorkoutAutosave();
+            if (state.auth.user && workoutAutosaveContext) scheduleWorkoutAutosave();
             render();
           };
           const setLog = setCount
@@ -10625,12 +11474,15 @@ function toggleSharePopover(force) {
                 const previousSet = previousEntry?.sets?.[idx] && typeof previousEntry.sets[idx] === 'object'
                   ? previousEntry.sets[idx]
                   : null;
+                const currentSet = currentEntry?.sets?.[idx] && typeof currentEntry.sets[idx] === 'object'
+                  ? currentEntry.sets[idx]
+                  : null;
                 const wVal = getWorkoutInputDraftValue({
                   exId: exerciseKey,
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setWeight',
-                  fallback: '',
+                  fallback: Number.isFinite(Number(currentSet?.weight)) ? String(currentSet.weight) : '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
@@ -10639,7 +11491,7 @@ function toggleSharePopover(force) {
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setReps',
-                  fallback: '',
+                  fallback: Number.isFinite(Number(currentSet?.reps)) ? String(currentSet.reps) : '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
@@ -10648,7 +11500,7 @@ function toggleSharePopover(force) {
                   exSlot: exIdx,
                   setIdx: idx,
                   field: 'setNote',
-                  fallback: '',
+                  fallback: currentSet?.note ? String(currentSet.note) : '',
                   weekIndex: activeWeek,
                   dayIndex
                 });
@@ -10722,19 +11574,36 @@ function toggleSharePopover(force) {
               )
             )
             : null;
-        const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
-        const lastPerf = null;
+        const targetSeed = resolveTargetSeedForExercise(ex, {
+          previousEntry,
+          historicalPerformance: pickLiftHistoryRecord(historicalPerfMap, lookupValues),
+          persistentLift,
+          currentPerformedAt: performedAtValue
+        });
+        const projected = fmtProjected(resolveProjectedForExercise(ex, plan, {
+          previousEntry,
+          historicalPerformance: pickLiftHistoryRecord(historicalPerfMap, lookupValues),
+          persistentLift,
+          lastPerformance: targetSeed,
+          currentPerformedAt: performedAtValue
+        }));
+        const lastPerf = targetSeed
+          || extractWorkoutEntryPerformance(currentEntry)
+          || persistentLift?.last
+          || pickLiftHistoryRecord(historicalPerfMap, lookupValues)
+          || null;
+        const bestPerf = persistentLift?.best || null;
         const lastWeekCompact = (() => {
           if (!lastPerf) return '—';
-          const parts = [];
-          if (Number.isFinite(lastPerf.weight)) parts.push(`${lastPerf.weight} lb`);
-          if (Number.isFinite(lastPerf.reps)) parts.push(`×${lastPerf.reps}`);
-          if (Number.isFinite(lastPerf.rpe)) parts.push(`@${lastPerf.rpe}`);
-          return parts.length ? parts.join(' ') : '—';
+          return formatPerformanceSummary(lastPerf);
         })();
         const lastWeekTitle = lastPerf?.performedAt
           ? `Last performed: ${lastPerf.performedAt}${lastWeekCompact !== '—' ? ` • ${lastWeekCompact}` : ''}`
           : 'No previous performance logged';
+        const bestCompact = bestPerf ? formatPerformanceSummary(bestPerf) : '—';
+        const bestTitle = bestPerf?.performedAt
+          ? `Best logged: ${bestPerf.performedAt}${bestCompact !== '—' ? ` • ${bestCompact}` : ''}`
+          : 'No best performance logged yet';
 
         const subs = Array.isArray(ex.substitutions)
           ? ex.substitutions.map((s) => String(s || '').trim()).filter(Boolean)
@@ -10779,12 +11648,19 @@ function toggleSharePopover(force) {
               ex.coaching?.progress ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Progress: ${String(ex.coaching.progress)}`) : null,
               ex.coaching?.regress ? el('div', { class: 'training-muted' }, `Regress: ${String(ex.coaching.regress)}`) : null,
               Number.isFinite(repsTarget) ? el('div', { class: 'exercise-substitutions' }, `Target reps: ${repsTarget}`) : null,
+              el('div', { class: 'exercise-substitutions', title: lastWeekTitle }, `Last: ${lastWeekCompact}`),
+              bestCompact !== '—'
+                ? el('div', { class: 'exercise-substitutions', title: bestTitle }, `Best: ${bestCompact}`)
+                : null,
               technique ? el('div', { class: 'exercise-substitutions' }, `Final-set technique: ${technique}`) : null,
               subs.length
                 ? el('div', { class: 'exercise-substitutions' }, `Alt: ${subs.slice(0, 2).join(' • ')}`)
                 : null,
               el('div', { class: 'exercise-badges' },
-                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`)
+                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`),
+                isDeloadWeek
+                  ? el('span', { class: 'projected-pill is-deload', title: 'This week is a deload week. Target weights are intentionally reduced.' }, 'Deload week')
+                  : null
               ),
               decText ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Next: ${decText}`) : null,
               el('div', { class: 'exercise-action-row' },
@@ -11192,6 +12068,7 @@ function toggleSharePopover(force) {
         syncWorkoutInputLock();
         updateWorkoutTimerDisplay();
         ensureWorkoutTimerTick();
+        scheduleFloatingWorkoutTimerSync();
       } catch (err) {
         console.error('Training render failed:', err);
       }
@@ -11227,7 +12104,13 @@ function toggleSharePopover(force) {
     const week = state.wizard?.weekIndex + 1 || 1;
     const totalWeeks = state.planRow?.plan?.weeks?.length || 8;
     const estGoal = state.planRow?.plan?.meta?.estGoal || '4 weeks';
-    const deload = (week % 4 === 0);
+    const autoreg = state.planRow?.plan?.meta?.autoreg && typeof state.planRow.plan.meta.autoreg === 'object'
+      ? state.planRow.plan.meta.autoreg
+      : {};
+    const deloadWeeks = Array.isArray(autoreg?.deloadWeeks)
+      ? autoreg.deloadWeeks.map((n) => Number(n)).filter((n) => Number.isFinite(n))
+      : [];
+    const deload = deloadWeeks.includes(week);
     phaseHeader.append(
       el('span', { class: 'phase-type' }, phaseType),
       el('span', { class: 'phase-week' }, `Week ${week} of ${totalWeeks}`),
@@ -11323,7 +12206,14 @@ function toggleSharePopover(force) {
 
   bindShareClose();
   ensureShareOutgoingSyncTimer();
+  bindFloatingWorkoutTimerDock();
+  window.addEventListener('ode:demo-sim-change', () => {
+    if (!(state.auth.user?.demo?.active || state.auth.user?.isDemo)) return;
+    if (state.view !== 'plan') return;
+    render();
+  });
   window.addEventListener('beforeunload', () => {
+    persistWorkoutTimerState();
     if (!shareOutgoingSyncTimer) return;
     window.clearInterval(shareOutgoingSyncTimer);
     shareOutgoingSyncTimer = 0;

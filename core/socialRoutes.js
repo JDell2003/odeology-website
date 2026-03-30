@@ -54,10 +54,10 @@ function csvToSet(raw) {
   return out;
 }
 
-const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'STRYVE,STRYVE,STRYVEowner,jason');
+const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'RiseForIt,RiseForIt,RiseForItOwner,jason,odeology,odeology_');
 const OWNER_EMAILS = csvToSet(process.env.OWNER_EMAILS || '');
-const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'STRYVE.com').trim().toLowerCase();
-const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'STRYVE,STRYVE');
+const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'RiseForIt.com').trim().toLowerCase();
+const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'RiseForIt,RiseForIt,ODeology,ODEOLOGY,ODeology_,ODEOLOGY_');
 const OWNER_USER_IDS = csvToSet(process.env.OWNER_USER_IDS || '');
 
 function isOwnerUser(userLike) {
@@ -72,7 +72,8 @@ function isOwnerUser(userLike) {
   if (email && OWNER_EMAILS.has(email)) return true;
   if (displayName && OWNER_DISPLAY_NAMES.has(displayName)) return true;
   if (email && OWNER_EMAIL_DOMAIN && email.endsWith(`@${OWNER_EMAIL_DOMAIN}`)) return true;
-  if (username.includes('STRYVE') || displayName.includes('STRYVE')) return true;
+  if (username.includes('riseforit') || displayName.includes('riseforit')) return true;
+  if (username.includes('odeology') || displayName.includes('odeology')) return true;
   return false;
 }
 

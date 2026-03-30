@@ -546,10 +546,10 @@ function csvToSet(raw) {
   return out;
 }
 
-const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'STRYVE,STRYVE,STRYVEowner,jason');
+const OWNER_USERNAMES = csvToSet(process.env.OWNER_USERNAMES || 'RiseForIt,RiseForIt,RiseForItOwner,jason,odeology,odeology_');
 const OWNER_EMAILS = csvToSet(process.env.OWNER_EMAILS || '');
-const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'STRYVE.com').trim().toLowerCase();
-const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'STRYVE,STRYVE');
+const OWNER_EMAIL_DOMAIN = String(process.env.OWNER_EMAIL_DOMAIN || 'RiseForIt.com').trim().toLowerCase();
+const OWNER_DISPLAY_NAMES = csvToSet(process.env.OWNER_DISPLAY_NAMES || 'RiseForIt,RiseForIt,ODeology,ODEOLOGY,ODeology_,ODEOLOGY_');
 const OWNER_USER_IDS = csvToSet(process.env.OWNER_USER_IDS || '');
 
 function isOwnerUser(userLike) {
@@ -564,7 +564,8 @@ function isOwnerUser(userLike) {
   if (email && OWNER_EMAILS.has(email)) return true;
   if (displayName && OWNER_DISPLAY_NAMES.has(displayName)) return true;
   if (email && OWNER_EMAIL_DOMAIN && email.endsWith(`@${OWNER_EMAIL_DOMAIN}`)) return true;
-  if (username.includes('STRYVE') || displayName.includes('STRYVE')) return true;
+  if (username.includes('riseforit') || displayName.includes('riseforit')) return true;
+  if (username.includes('odeology') || displayName.includes('odeology')) return true;
   return false;
 }
 
@@ -957,6 +958,76 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     stress: 'Medium',
     planSeed: Number(src?.planSeed) || Date.now()
   }, { relax: false });
+}
+
+function safeLocalReturnTo(raw, fallback = '/training.html?demoPlan=1') {
+  const value = String(raw || '').trim();
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
+  return value;
+}
+
+function buildDemoWorkoutPayload() {
+  return normalizeOblueprintPayload({
+    trainingFeel: 'Aesthetic bodybuilding',
+    primaryGoal: 'Build size',
+    timeline: '8 weeks',
+    focus: 'Aesthetic',
+    experience: '6-24m',
+    location: 'Commercial gym',
+    trainingStyle: 'Balanced mix',
+    outputStyle: 'RPE/RIR cues',
+    closeToFailure: 'No',
+    daysPerWeek: 4,
+    sessionLengthMin: '60',
+    priorityGroups: ['Back', 'Shoulders'],
+    movementsToAvoid: [],
+    preferredDays: ['Mo', 'We', 'Fr', 'Sa'],
+    equipmentAccess: ['barbell', 'dumbbells', 'machines'],
+    painAreas: [],
+    painProfilesByArea: {},
+    sleepHours: 7,
+    activityLevel: 'Active',
+    stress: 'Medium',
+    planSeed: Date.now()
+  }, { relax: false });
+}
+
+async function ensureDemoWorkoutPlanForUser(userId, displayName = 'Demo User') {
+  const existing = await getActivePlan(userId);
+  if (existing?.id) return existing;
+
+  const payload = buildDemoWorkoutPayload();
+  const built = buildOblueprintPlanWithFallback(payload);
+  if (built?.error) {
+    const reason = built.error?.reason || built.error?.error || 'Could not create demo workout plan.';
+    throw new Error(String(reason));
+  }
+
+  const planBuilt = built.plan;
+  const discipline = resolveOblueprintDiscipline(payload.trainingFeel);
+  const daysPerWeek = Number(planBuilt?.meta?.daysPerWeek) || clampInt(payload?.daysPerWeek, 2, 6, 4);
+  if (!discipline || !daysPerWeek) {
+    throw new Error('Demo workout payload is invalid.');
+  }
+
+  await upsertProfile(userId, {
+    discipline,
+    experience: payload.experience || '6-24m',
+    daysPerWeek,
+    strength: {},
+    equipmentAccess: {},
+    profile: { firstName: safeText(displayName || 'Demo User', 80) || 'Demo User' }
+  });
+
+  const created = await createNewOblueprintPlan(userId, {
+    discipline,
+    daysPerWeek,
+    plan: planBuilt
+  });
+  if (!created?.id) {
+    throw new Error('Could not save demo workout plan.');
+  }
+  return created;
 }
 
 const ROUTE_BANNED_NAME_PATTERNS = [
@@ -3073,6 +3144,9 @@ async function ensureSchema() {
         week_index int NOT NULL,
         day_index int NOT NULL,
         readiness int,
+        duration_ms bigint,
+        timer_started_at timestamptz,
+        timer_ended_at timestamptz,
         entries jsonb NOT NULL DEFAULT '[]'::jsonb,
         notes text NOT NULL DEFAULT ''
       );
@@ -3081,6 +3155,33 @@ async function ensureSchema() {
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_workouts_user_id ON app_training_workouts(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_workouts_plan_id ON app_training_workouts(plan_id);');
     await safeQuery('ALTER TABLE app_training_workouts ADD COLUMN IF NOT EXISTS readiness int;');
+    await safeQuery('ALTER TABLE app_training_workouts ADD COLUMN IF NOT EXISTS duration_ms bigint;');
+    await safeQuery('ALTER TABLE app_training_workouts ADD COLUMN IF NOT EXISTS timer_started_at timestamptz;');
+    await safeQuery('ALTER TABLE app_training_workouts ADD COLUMN IF NOT EXISTS timer_ended_at timestamptz;');
+
+    await safeQuery(`
+      CREATE TABLE IF NOT EXISTS app_training_lift_history (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        exercise_key text NOT NULL,
+        exercise_id text,
+        base_id text,
+        exercise_name text NOT NULL DEFAULT '',
+        last_weight_lb numeric,
+        last_reps int,
+        last_estimated_1rm_lb numeric,
+        last_performed_at date,
+        best_weight_lb numeric,
+        best_reps int,
+        best_estimated_1rm_lb numeric,
+        best_performed_at date,
+        last_source text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+    `);
+    await safeQuery('CREATE UNIQUE INDEX IF NOT EXISTS uq_app_training_lift_history_user_key ON app_training_lift_history(user_id, exercise_key);');
+    await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_lift_history_user_updated ON app_training_lift_history(user_id, updated_at DESC);');
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_events (
@@ -3665,34 +3766,324 @@ function buildCustomWorkoutPlan({ discipline, experience, templateDays, preferre
   };
 }
 
-async function upsertWorkoutLog({ userId, planId, weekIndex, dayIndex, performedAt, entries, notes, readiness }) {
+async function upsertWorkoutLog({ userId, planId, weekIndex, dayIndex, performedAt, entries, notes, readiness, durationMs, timerStartedAt, timerEndedAt }) {
   const perfDate = performedAt ? String(performedAt).slice(0, 10) : null;
   const safeEntries = Array.isArray(entries) ? entries : [];
   const safeNotes = safeText(notes, 2000) || '';
   const safeReadiness = Number.isFinite(Number(readiness)) ? Math.max(1, Math.min(10, Number(readiness))) : null;
+  const safeDurationMs = Number.isFinite(Number(durationMs)) && Number(durationMs) > 0
+    ? Math.max(0, Math.round(Number(durationMs)))
+    : null;
+  const parseIsoTimestamp = (raw) => {
+    if (!raw) return null;
+    const parsed = Date.parse(String(raw));
+    if (!Number.isFinite(parsed)) return null;
+    return new Date(parsed).toISOString();
+  };
+  const safeTimerStartedAt = parseIsoTimestamp(timerStartedAt);
+  const safeTimerEndedAt = parseIsoTimestamp(timerEndedAt);
   const result = await db.query(
     `
       INSERT INTO app_training_workouts (
-        user_id, plan_id, updated_at, performed_at, week_index, day_index, readiness, entries, notes
+        user_id, plan_id, updated_at, performed_at, week_index, day_index, readiness, duration_ms, timer_started_at, timer_ended_at, entries, notes
       )
-      VALUES ($1, $2, now(), $3::date, $4, $5, $6, $7::jsonb, $8)
+      VALUES ($1, $2, now(), $3::date, $4, $5, $6, $7, $8::timestamptz, $9::timestamptz, $10::jsonb, $11)
       ON CONFLICT (plan_id, week_index, day_index) DO UPDATE SET
         updated_at = now(),
         performed_at = COALESCE(EXCLUDED.performed_at, app_training_workouts.performed_at),
         readiness = COALESCE(EXCLUDED.readiness, app_training_workouts.readiness),
+        duration_ms = COALESCE(EXCLUDED.duration_ms, app_training_workouts.duration_ms),
+        timer_started_at = COALESCE(EXCLUDED.timer_started_at, app_training_workouts.timer_started_at),
+        timer_ended_at = COALESCE(EXCLUDED.timer_ended_at, app_training_workouts.timer_ended_at),
         entries = EXCLUDED.entries,
         notes = EXCLUDED.notes
-      RETURNING id, updated_at;
+      RETURNING id, updated_at, duration_ms, timer_started_at, timer_ended_at;
     `,
-    [userId, planId, perfDate, weekIndex, dayIndex, safeReadiness, JSON.stringify(safeEntries), safeNotes]
+    [
+      userId,
+      planId,
+      perfDate,
+      weekIndex,
+      dayIndex,
+      safeReadiness,
+      safeDurationMs,
+      safeTimerStartedAt,
+      safeTimerEndedAt,
+      JSON.stringify(safeEntries),
+      safeNotes
+    ]
   );
   return result.rows?.[0] || null;
+}
+
+function normalizeLiftHistoryKey(raw) {
+  return String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/__d\d+__e\d+$/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 180);
+}
+
+function buildLiftHistoryKey(entry) {
+  const baseId = safeText(entry?.baseId, 180);
+  if (baseId) return normalizeLiftHistoryKey(baseId);
+  const exerciseId = safeText(entry?.exerciseId, 180);
+  if (exerciseId) return normalizeLiftHistoryKey(exerciseId);
+  const exerciseName = safeText(entry?.exerciseName || entry?.name, 180);
+  return normalizeLiftHistoryKey(exerciseName);
+}
+
+function normalizeLiftWeight(raw) {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.round(value * 100) / 100;
+}
+
+function normalizeLiftReps(raw) {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.max(1, Math.min(100, Math.round(value)));
+}
+
+function estimateLiftOneRepMax(weightRaw, repsRaw) {
+  const weight = normalizeLiftWeight(weightRaw);
+  if (!Number.isFinite(weight) || weight <= 0) return null;
+  const reps = normalizeLiftReps(repsRaw);
+  const repCount = Number.isFinite(reps) && reps > 0 ? Math.max(1, Math.min(30, reps)) : 1;
+  return Math.round((weight * (1 + (repCount / 30))) * 100) / 100;
+}
+
+function compareLiftPerformance(nextPerf, prevPerf) {
+  const nextEst = Number(nextPerf?.estimated1rm || 0);
+  const prevEst = Number(prevPerf?.estimated1rm || 0);
+  if (nextEst !== prevEst) return nextEst - prevEst;
+  const nextWeight = Number(nextPerf?.weight || 0);
+  const prevWeight = Number(prevPerf?.weight || 0);
+  if (nextWeight !== prevWeight) return nextWeight - prevWeight;
+  const nextReps = Number(nextPerf?.reps || 0);
+  const prevReps = Number(prevPerf?.reps || 0);
+  return nextReps - prevReps;
+}
+
+function extractLastLiftPerformance(entry) {
+  const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+  for (let i = sets.length - 1; i >= 0; i -= 1) {
+    const set = sets[i] && typeof sets[i] === 'object' ? sets[i] : null;
+    const weight = normalizeLiftWeight(set?.weight);
+    const reps = normalizeLiftReps(set?.reps);
+    if (!Number.isFinite(weight) && !Number.isFinite(reps)) continue;
+    return {
+      weight,
+      reps,
+      estimated1rm: estimateLiftOneRepMax(weight, reps)
+    };
+  }
+  const actualWeight = normalizeLiftWeight(entry?.actual?.weight);
+  const actualReps = normalizeLiftReps(entry?.actual?.reps);
+  if (!Number.isFinite(actualWeight) && !Number.isFinite(actualReps)) return null;
+  return {
+    weight: actualWeight,
+    reps: actualReps,
+    estimated1rm: estimateLiftOneRepMax(actualWeight, actualReps)
+  };
+}
+
+function extractBestLiftPerformance(entry) {
+  const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+  let best = null;
+  for (const rawSet of sets) {
+    const set = rawSet && typeof rawSet === 'object' ? rawSet : null;
+    const weight = normalizeLiftWeight(set?.weight);
+    const reps = normalizeLiftReps(set?.reps);
+    if (!Number.isFinite(weight) && !Number.isFinite(reps)) continue;
+    const candidate = {
+      weight,
+      reps,
+      estimated1rm: estimateLiftOneRepMax(weight, reps)
+    };
+    if (!best || compareLiftPerformance(candidate, best) > 0) best = candidate;
+  }
+  const actual = extractLastLiftPerformance(entry);
+  if (actual && (!best || compareLiftPerformance(actual, best) > 0)) {
+    best = actual;
+  }
+  return best;
+}
+
+function formatLiftHistoryRow(row) {
+  return {
+    exerciseKey: String(row?.exercise_key || '').trim(),
+    exerciseId: String(row?.exercise_id || '').trim() || null,
+    baseId: String(row?.base_id || '').trim() || null,
+    exerciseName: String(row?.exercise_name || row?.exercise_id || row?.exercise_key || 'Exercise').trim(),
+    last: {
+      weight: normalizeLiftWeight(row?.last_weight_lb),
+      reps: normalizeLiftReps(row?.last_reps),
+      estimated1rm: normalizeLiftWeight(row?.last_estimated_1rm_lb),
+      performedAt: row?.last_performed_at ? String(row.last_performed_at).slice(0, 10) : null
+    },
+    best: {
+      weight: normalizeLiftWeight(row?.best_weight_lb),
+      reps: normalizeLiftReps(row?.best_reps),
+      estimated1rm: normalizeLiftWeight(row?.best_estimated_1rm_lb),
+      performedAt: row?.best_performed_at ? String(row.best_performed_at).slice(0, 10) : null
+    },
+    updatedAt: row?.updated_at || null
+  };
+}
+
+function buildLiftHistoryPayloadMap(rows) {
+  const out = {};
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const key = String(row?.exerciseKey || '').trim();
+    if (!key) continue;
+    out[key] = row;
+  }
+  return out;
+}
+
+async function listLiftHistory(userId, { limit = 800 } = {}) {
+  const result = await db.query(
+    `
+      SELECT exercise_key, exercise_id, base_id, exercise_name,
+             last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at,
+             best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at,
+             updated_at
+      FROM app_training_lift_history
+      WHERE user_id = $1
+      ORDER BY updated_at DESC
+      LIMIT $2;
+    `,
+    [userId, Math.max(1, Math.min(2000, Number(limit) || 800))]
+  );
+  return (result.rows || []).map((row) => formatLiftHistoryRow(row));
+}
+
+async function upsertLiftHistoryEntries({ userId, performedAt, entries, source = 'draft' }) {
+  const safePerformedAt = performedAt ? String(performedAt).slice(0, 10) : null;
+  const normalizedEntries = [];
+  for (const rawEntry of Array.isArray(entries) ? entries : []) {
+    const entry = rawEntry && typeof rawEntry === 'object' ? rawEntry : null;
+    if (!entry) continue;
+    const exerciseKey = buildLiftHistoryKey(entry);
+    const last = extractLastLiftPerformance(entry);
+    const best = extractBestLiftPerformance(entry);
+    if (!exerciseKey || (!last && !best)) continue;
+    normalizedEntries.push({
+      exerciseKey,
+      exerciseId: safeText(entry?.exerciseId, 180) || null,
+      baseId: safeText(entry?.baseId, 180) || null,
+      exerciseName: safeText(entry?.exerciseName || entry?.name || entry?.exerciseId || entry?.baseId, 180) || 'Exercise',
+      last,
+      best
+    });
+  }
+  if (!normalizedEntries.length) return [];
+
+  const keys = Array.from(new Set(normalizedEntries.map((entry) => entry.exerciseKey)));
+  const existingResult = await db.query(
+    `
+      SELECT exercise_key, exercise_id, base_id, exercise_name,
+             last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at,
+             best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at,
+             updated_at
+      FROM app_training_lift_history
+      WHERE user_id = $1 AND exercise_key = ANY($2::text[]);
+    `,
+    [userId, keys]
+  );
+  const existingByKey = new Map((existingResult.rows || []).map((row) => [String(row.exercise_key || '').trim(), row]));
+  const touchedRows = [];
+
+  for (const entry of normalizedEntries) {
+    const existing = existingByKey.get(entry.exerciseKey) || null;
+    const previousBest = existing ? {
+      weight: normalizeLiftWeight(existing.best_weight_lb),
+      reps: normalizeLiftReps(existing.best_reps),
+      estimated1rm: normalizeLiftWeight(existing.best_estimated_1rm_lb)
+    } : null;
+    const shouldReplaceBest = entry.best && (!previousBest || compareLiftPerformance(entry.best, previousBest) > 0);
+    const nextBest = entry.best
+      ? (shouldReplaceBest ? entry.best : previousBest)
+      : previousBest;
+    const nextBestPerformedAt = shouldReplaceBest
+      ? safePerformedAt
+      : (existing?.best_performed_at ? String(existing.best_performed_at).slice(0, 10) : safePerformedAt);
+
+    const params = [
+      userId,
+      entry.exerciseKey,
+      entry.exerciseId,
+      entry.baseId,
+      entry.exerciseName,
+      entry.last?.weight ?? null,
+      entry.last?.reps ?? null,
+      entry.last?.estimated1rm ?? null,
+      safePerformedAt,
+      nextBest?.weight ?? null,
+      nextBest?.reps ?? null,
+      nextBest?.estimated1rm ?? null,
+      nextBestPerformedAt,
+      String(source || 'draft').slice(0, 40)
+    ];
+
+    const result = existing
+      ? await db.query(
+          `
+            UPDATE app_training_lift_history
+            SET exercise_id = COALESCE($3, exercise_id),
+                base_id = COALESCE($4, base_id),
+                exercise_name = COALESCE(NULLIF($5, ''), exercise_name),
+                last_weight_lb = $6,
+                last_reps = $7,
+                last_estimated_1rm_lb = $8,
+                last_performed_at = COALESCE($9::date, last_performed_at),
+                best_weight_lb = COALESCE($10, best_weight_lb),
+                best_reps = COALESCE($11, best_reps),
+                best_estimated_1rm_lb = COALESCE($12, best_estimated_1rm_lb),
+                best_performed_at = COALESCE($13::date, best_performed_at),
+                last_source = $14,
+                updated_at = now()
+            WHERE user_id = $1 AND exercise_key = $2
+            RETURNING exercise_key, exercise_id, base_id, exercise_name,
+                      last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at,
+                      best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at,
+                      updated_at;
+          `,
+          params
+        )
+      : await db.query(
+          `
+            INSERT INTO app_training_lift_history (
+              user_id, exercise_key, exercise_id, base_id, exercise_name,
+              last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at,
+              best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at,
+              last_source
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10, $11, $12, $13::date, $14)
+            RETURNING exercise_key, exercise_id, base_id, exercise_name,
+                      last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at,
+                      best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at,
+                      updated_at;
+          `,
+          params
+        );
+
+    const row = result.rows?.[0] || null;
+    if (!row) continue;
+    existingByKey.set(entry.exerciseKey, row);
+    touchedRows.push(formatLiftHistoryRow(row));
+  }
+
+  return touchedRows;
 }
 
 async function listWorkoutLogs({ userId, planId }) {
   const result = await db.query(
     `
-      SELECT week_index, day_index, performed_at, readiness, entries, notes, updated_at
+      SELECT week_index, day_index, performed_at, readiness, duration_ms, timer_started_at, timer_ended_at, entries, notes, updated_at
       FROM app_training_workouts
       WHERE user_id = $1 AND plan_id = $2
       ORDER BY week_index ASC, day_index ASC;
@@ -4416,6 +4807,25 @@ async function trainingRoutes(req, res, url) {
   const user = await resolveUserFromSession(req);
   if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
 
+    if (pathname === '/api/training/demo/ensure-workout' && (req.method === 'GET' || req.method === 'POST')) {
+      const returnTo = safeLocalReturnTo(url.searchParams.get('returnTo') || '/training.html?demoPlan=1');
+      try {
+        const plan = await ensureDemoWorkoutPlanForUser(user.id, user.displayName || user.username || 'Demo User');
+        if (req.method === 'POST') {
+          return sendJson(res, 200, {
+            ok: true,
+            redirectTo: returnTo,
+            planId: plan?.id || null
+          });
+        }
+        res.writeHead(302, { Location: returnTo, 'Cache-Control': 'no-store' });
+        res.end();
+        return true;
+      } catch (err) {
+        return sendJson(res, 500, { ok: false, error: err?.message || 'Could not create demo workout plan.' });
+      }
+    }
+
     if (pathname === '/api/training/custom-workouts' && req.method === 'GET') {
       try {
         const items = await listUserCustomWorkouts(user.id);
@@ -4456,6 +4866,7 @@ async function trainingRoutes(req, res, url) {
     if (pathname === '/api/training/state' && req.method === 'GET') {
       const profile = await getProfile(user.id);
       const plan = await getActivePlan(user.id);
+      const liftHistory = await listLiftHistory(user.id);
       try {
         const equipmentAccess = profile?.equipment_access && typeof profile.equipment_access === 'object' ? profile.equipment_access : null;
         const planObj = plan?.plan && typeof plan.plan === 'object' ? plan.plan : null;
@@ -4510,12 +4921,23 @@ async function trainingRoutes(req, res, url) {
           } catch {
             // ignore
           }
-          return sendJson(res, 200, { user, profile, plan: null, error: 'Plan needs a rebuild.' });
+          return sendJson(res, 200, {
+            user,
+            profile,
+            plan: null,
+            error: 'Plan needs a rebuild.',
+            liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+          });
         }
       }
     }
 
-    return sendJson(res, 200, { user, profile, plan });
+    return sendJson(res, 200, {
+      user,
+      profile,
+      plan,
+      liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+    });
   }
 
   if (pathname === '/api/training/share' && req.method === 'POST') {
@@ -5432,9 +5854,21 @@ async function trainingRoutes(req, res, url) {
         performedAt: payload?.performedAt || null,
         entries: payload?.entries || [],
         notes: payload?.notes || '',
-        readiness
+        readiness,
+        durationMs: payload?.durationMs,
+        timerStartedAt: payload?.timerStartedAt || null,
+        timerEndedAt: payload?.timerEndedAt || null
       });
-      return sendJson(res, 200, { ok: true });
+      const liftHistory = await upsertLiftHistoryEntries({
+        userId: user.id,
+        performedAt: payload?.performedAt || null,
+        entries: payload?.entries || [],
+        source: 'draft'
+      });
+      return sendJson(res, 200, {
+        ok: true,
+        liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+      });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-log-draft', 'Failed to save workout draft');
     }
@@ -5462,7 +5896,16 @@ async function trainingRoutes(req, res, url) {
         performedAt: payload?.performedAt || null,
         entries: payload?.entries || [],
         notes: payload?.notes || '',
-        readiness
+        readiness,
+        durationMs: payload?.durationMs,
+        timerStartedAt: payload?.timerStartedAt || null,
+        timerEndedAt: payload?.timerEndedAt || null
+      });
+      const liftHistory = await upsertLiftHistoryEntries({
+        userId: user.id,
+        performedAt: payload?.performedAt || null,
+        entries: payload?.entries || [],
+        source: 'log'
       });
       const updatedPlan = await applyProgressionFromLog({
         userId: user.id,
@@ -5484,7 +5927,11 @@ async function trainingRoutes(req, res, url) {
           dayIndex
         }
       }).catch(() => {});
-      return sendJson(res, 200, { ok: true, plan: updatedPlan });
+      return sendJson(res, 200, {
+        ok: true,
+        plan: updatedPlan,
+        liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+      });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-log', 'Failed to save log');
     }
