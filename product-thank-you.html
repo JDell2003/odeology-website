@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank You | RiseForIt</title>
+  <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-4"></script>
+  <style>
+    :root {
+      --bg: #f4f8fb;
+      --panel: #ffffff;
+      --line: rgba(16, 36, 51, 0.1);
+      --text: #112535;
+      --muted: rgba(17, 37, 53, 0.68);
+      --brand: #1aa5e8;
+      --brand-dark: #0f7eb2;
+      --success-bg: rgba(45, 167, 101, 0.1);
+      --success-text: #1f7145;
+      --shadow: 0 26px 60px rgba(14, 27, 36, 0.14);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(26, 165, 232, 0.14), transparent 32%),
+        linear-gradient(180deg, #f8fbfd 0%, var(--bg) 100%);
+    }
+    .shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 18px;
+    }
+    .card {
+      width: min(100%, 620px);
+      padding: 32px 30px 30px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 18px;
+    }
+    .eyebrow {
+      margin: 0;
+      color: var(--brand-dark);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+    }
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    .success-box {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: var(--success-bg);
+      color: var(--success-text);
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+    .product-row {
+      display: grid;
+      gap: 6px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fbfdff;
+    }
+    .product-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .product-name {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      min-height: 46px;
+      border-radius: 12px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #fff;
+      color: var(--text);
+      border-color: var(--line);
+    }
+    .countdown {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    @media (max-width: 640px) {
+      .card {
+        padding: 26px 22px 24px;
+        border-radius: 22px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .actions {
+        display: grid;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <p class="eyebrow">RiseForIt Purchase</p>
+      <h1>Thank you for your order.</h1>
+      <p class="lead">Your payment went through successfully. We’ll take you back to the RiseForIt home page in a few seconds.</p>
+      <div class="success-box">Your receipt is handled by Stripe and the coach can follow up with any next steps tied to this product.</div>
+      <div class="product-row" id="product-row" hidden>
+        <p class="product-label">Purchased Product</p>
+        <p class="product-name" id="product-name">Product</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="/index.html">Go Home Now</a>
+        <a class="btn btn-secondary" id="view-product-link" href="/product-buy.html">View Product</a>
+      </div>
+      <p class="countdown" id="countdown-text">Redirecting in 6 seconds...</p>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const token = String(params.get('product') || '').trim();
+      const sessionId = String(params.get('session_id') || '').trim();
+      const productRow = document.getElementById('product-row');
+      const productName = document.getElementById('product-name');
+      const viewProductLink = document.getElementById('view-product-link');
+      const countdownText = document.getElementById('countdown-text');
+      const homeUrl = '/index.html';
+      const productUrl = token ? `/product-buy.html?product=${encodeURIComponent(token)}` : '/product-buy.html';
+      let secondsLeft = 6;
+
+      viewProductLink.href = productUrl;
+
+      const redirectHome = () => {
+        window.location.replace(homeUrl);
+      };
+
+      const loadProductName = () => {
+        if (!token) return Promise.resolve();
+        return fetch(`/api/auth/product-public?token=${encodeURIComponent(token)}`, {
+          credentials: 'include',
+          cache: 'no-store'
+        })
+          .then((response) => response.json().catch(() => ({})))
+          .then((data) => {
+            const name = String(data?.product?.name || '').trim();
+            if (!name) return;
+            productName.textContent = name;
+            productRow.hidden = false;
+          })
+          .catch(() => {});
+      };
+
+      const verifyCheckout = () => {
+        if (!token || !sessionId) return Promise.resolve();
+        countdownText.textContent = 'Finalizing your payment confirmation...';
+        return fetch(`/api/auth/product-public/checkout/verify?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(sessionId)}`, {
+          credentials: 'include',
+          cache: 'no-store'
+        })
+          .then((response) => response.json().catch(() => ({})))
+          .then((data) => {
+            if (!data?.ok) return;
+            const name = String(data?.product?.name || '').trim();
+            if (!name) return;
+            productName.textContent = name;
+            productRow.hidden = false;
+          })
+          .catch(() => {});
+      };
+
+      Promise.allSettled([loadProductName(), verifyCheckout()]).catch(() => {});
+
+      countdownText.textContent = `Redirecting in ${secondsLeft} seconds...`;
+      const timer = window.setInterval(() => {
+        secondsLeft -= 1;
+        if (secondsLeft <= 0) {
+          window.clearInterval(timer);
+          redirectHome();
+          return;
+        }
+        countdownText.textContent = `Redirecting in ${secondsLeft} seconds...`;
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>

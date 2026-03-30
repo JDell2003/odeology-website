@@ -966,6 +966,18 @@ function chooseDeloadPct() {
   return { loadMult: 0.88, setMult: 0.65 }; // load -12%, sets -35%
 }
 
+function resolveBodybuildingDeloadBaseWeight(stateLike, fallbackWeight) {
+  const bestSuccessWeight = Number(stateLike?.bestSuccessWeight);
+  if (Number.isFinite(bestSuccessWeight) && bestSuccessWeight > 0) return bestSuccessWeight;
+  const lastSuccessWeight = Number(stateLike?.lastSuccessWeight);
+  if (Number.isFinite(lastSuccessWeight) && lastSuccessWeight > 0) return lastSuccessWeight;
+  const workingWeight = Number(stateLike?.workingWeight);
+  if (Number.isFinite(workingWeight) && workingWeight > 0) return workingWeight;
+  const fallback = Number(fallbackWeight);
+  if (Number.isFinite(fallback) && fallback > 0) return fallback;
+  return null;
+}
+
 function midRange(min, max) {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
   return Math.floor((min + max) / 2);
@@ -4688,7 +4700,7 @@ function generatePlan(input) {
         : discipline === 'bodybuilding'
           ? {
             deloadWeeks: [],
-            nextScheduledDeloadWeek: 6
+            nextScheduledDeloadWeek: 7
           }
           : null,
       schedule: {
@@ -4860,17 +4872,19 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     const repTarget = exp === 'beginner'
       ? (repMax ?? perf?.repsTarget ?? null)
       : (repMin ?? midRange(repMin, repMax) ?? perf?.repsTarget ?? null);
-    states[key] = {
-      workingWeight: seededW,
-      repTarget: Number.isFinite(repTarget) ? repTarget : null,
-      setsTarget: null,
-      setsCap: setsCapByBase.get(key) || BODYBUILDING_MAX_SETS_PER_EXERCISE,
-      stallWeeks: 0,
-      significantMissStreak: 0,
-      regressStreak: 0,
+      states[key] = {
+        workingWeight: seededW,
+        repTarget: Number.isFinite(repTarget) ? repTarget : null,
+        setsTarget: null,
+        setsCap: setsCapByBase.get(key) || BODYBUILDING_MAX_SETS_PER_EXERCISE,
+        stallWeeks: 0,
+        failStreak: 0,
+        significantMissStreak: 0,
+        regressStreak: 0,
       successStreak: 0,
       lastSuccessWeight: null,
       lastSuccessReps: null,
+      bestSuccessWeight: null,
       sameWeightNonProgressStreak: 0,
       technique: 'none'
     };
@@ -5001,6 +5015,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     // No progression changes are applied during a deload week.
     if (isDeloadWeek) {
       st.stallWeeks = 0;
+      st.failStreak = 0;
       st.regressStreak = 0;
       st.significantMissStreak = 0;
       st.successStreak = 0;
@@ -5016,7 +5031,11 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.workingWeight = actualW;
       st.lastSuccessWeight = actualW;
       st.lastSuccessReps = actualR;
+      st.bestSuccessWeight = Number.isFinite(Number(st.bestSuccessWeight))
+        ? Math.max(Number(st.bestSuccessWeight), actualW)
+        : actualW;
       st.significantMissStreak = 0;
+      st.failStreak = 0;
       st.regressStreak = 0;
       st.stallWeeks = 0;
       st.sameWeightNonProgressStreak = 0;
@@ -5049,7 +5068,11 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     if (hits) {
       st.lastSuccessWeight = actualW;
       st.lastSuccessReps = actualR;
+      st.bestSuccessWeight = Number.isFinite(Number(st.bestSuccessWeight))
+        ? Math.max(Number(st.bestSuccessWeight), actualW)
+        : actualW;
       st.significantMissStreak = 0;
+      st.failStreak = 0;
       st.regressStreak = 0;
       st.technique = 'none';
       st.stallWeeks = 0;
@@ -5082,6 +5105,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     }
 
     if (slightMiss) {
+      st.failStreak = Math.min(6, Number(st.failStreak || 0) + 1);
       st.significantMissStreak = 0;
       st.regressStreak = 0;
       st.successStreak = 0;
@@ -5100,6 +5124,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     }
 
     if (significantMiss) {
+      st.failStreak = Math.min(6, Number(st.failStreak || 0) + 1);
       st.significantMissStreak = Math.min(6, Number(st.significantMissStreak || 0) + 1);
       st.regressStreak = Math.min(6, Number(st.regressStreak || 0) + 1);
       st.successStreak = 0;
@@ -5114,11 +5139,15 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       }
 
       if (st.significantMissStreak >= 2) {
-        const mult = 0.93; // 7% reset default inside 5-10%
-        st.workingWeight = roundTo(st.workingWeight * mult, inc);
         st.repTarget = repMid ?? repTarget;
-        st.significantMissStreak = 0;
-        decisionsThisLog[baseId] = { type: 'load', message: 'Missed significantly twice; reduce load 5?10% and reset reps to mid-range.' };
+        if (isBodybuilding) {
+          decisionsThisLog[baseId] = { type: 'deload', message: 'Missed target twice; deload will start next week.' };
+        } else {
+          const mult = 0.93; // 7% reset default inside 5-10%
+          st.workingWeight = roundTo(st.workingWeight * mult, inc);
+          st.significantMissStreak = 0;
+          decisionsThisLog[baseId] = { type: 'load', message: 'Missed significantly twice; reduce load 5?10% and reset reps to mid-range.' };
+        }
       } else {
         st.repTarget = repMid ?? repTarget;
         decisionsThisLog[baseId] = { type: 'reps', message: 'Significant miss; keep load and retry with a mid-range rep target.' };
@@ -5127,6 +5156,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     }
 
     // Unclassified: treat as regression and hold.
+    st.failStreak = Math.min(6, Number(st.failStreak || 0) + 1);
     st.regressStreak = Math.min(6, Number(st.regressStreak || 0) + 1);
     st.successStreak = 0;
     st.sameWeightNonProgressStreak = 0;
@@ -5246,11 +5276,20 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
 
   // Deload scheduling logic (all disciplines).
   let triggerDeload = false;
+  let deloadReason = '';
   if (discipline === 'bodybuilding' || discipline === 'powerlifting' || discipline === 'calisthenics') {
     if (discipline === 'bodybuilding') {
+      let failedTargetTwice = false;
       for (const st of Object.values(states)) {
         if (!st || typeof st !== 'object') continue;
-        if (Number(st.sameWeightNonProgressStreak || 0) >= 2) triggerDeload = true;
+        if (Number(st.failStreak || 0) >= 2) {
+          failedTargetTwice = true;
+          break;
+        }
+      }
+      if (failedTargetTwice) {
+        triggerDeload = true;
+        deloadReason = 'failed_target_twice';
       }
     } else {
       // Multiple lifts regressing in same logged workout.
@@ -5259,23 +5298,32 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       // Same lift regresses twice consecutively.
       for (const st of Object.values(states)) {
         if (!st || typeof st !== 'object') continue;
-        if (Number(st.regressStreak || 0) >= 2) triggerDeload = true;
+          if (Number(st.regressStreak || 0) >= 2) triggerDeload = true;
       }
     }
 
-    if (poorRecoveryFlag) triggerDeload = true;
+    if (poorRecoveryFlag && discipline !== 'bodybuilding') {
+      triggerDeload = true;
+      if (!deloadReason) deloadReason = 'poor_recovery';
+    }
 
     // Scheduled deloads.
     const scheduleEvery = discipline === 'powerlifting'
       ? (exp === 'beginner' ? 6 : 5)
       : discipline === 'bodybuilding'
-        ? 6
+        ? 7
         : exp === 'beginner' ? 7 : 5;
-    const nextScheduled = clampInt(autoreg.nextScheduledDeloadWeek, 2, 52, null) || scheduleEvery;
+    const seededNextScheduled = clampInt(autoreg.nextScheduledDeloadWeek, 2, 52, null);
+    const nextScheduled = discipline === 'bodybuilding'
+      ? Math.max(7, seededNextScheduled || scheduleEvery)
+      : (seededNextScheduled || scheduleEvery);
     const nextWeekIndex = weekIndex + 1;
     const scheduledHit = nextWeekIndex >= nextScheduled;
 
-    if (scheduledHit) triggerDeload = true;
+    if (scheduledHit) {
+      triggerDeload = true;
+      if (!deloadReason) deloadReason = discipline === 'bodybuilding' ? 'scheduled_6_week' : 'scheduled';
+    }
 
     if (triggerDeload) {
       const nextIdx = weekIndex + 1;
@@ -5288,13 +5336,15 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       // Reset regression streaks on deload scheduling.
       for (const st of Object.values(states)) {
         if (!st || typeof st !== 'object') continue;
+        st.failStreak = 0;
         st.regressStreak = 0;
+        st.significantMissStreak = 0;
         st.stallWeeks = 0;
         st.successStreak = 0;
         st.sameWeightNonProgressStreak = 0;
         st.technique = 'none';
       }
-      weekRegs[String(nextIdx)] = { reason: poorRecoveryFlag ? 'poor_recovery' : (scheduledHit ? 'scheduled' : 'regression'), at: new Date().toISOString() };
+      weekRegs[String(nextIdx)] = { reason: deloadReason || 'regression', at: new Date().toISOString() };
     }
   }
 
@@ -5330,6 +5380,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
           const repMax = rr?.max ?? null;
 
           const baseWorking = Number.isFinite(st.workingWeight) ? st.workingWeight : ex.projected.value;
+          const deloadBaseWorking = resolveBodybuildingDeloadBaseWeight(st, baseWorking);
           const setsBase = Number.isFinite(st.setsTarget) ? st.setsTarget : ex.sets;
           const repsTarget = Number.isFinite(st.repTarget)
             ? st.repTarget
@@ -5343,7 +5394,10 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
 
           if (deload) {
             ex.sets = clampInt(Math.round(Number(setsBase || ex.sets) * deloadPct.setMult), 1, maxCap, ex.sets);
-            ex.projected.value = roundTo(baseWorking * deloadPct.loadMult, inc);
+            const nextDeloadWeight = Number.isFinite(deloadBaseWorking)
+              ? roundTo(deloadBaseWorking * 0.7, inc)
+              : roundTo(baseWorking * 0.7, inc);
+            ex.projected.value = Number.isFinite(nextDeloadWeight) ? nextDeloadWeight : ex.projected.value;
           } else {
             ex.sets = clampInt(Number(setsBase || ex.sets), 1, maxCap, ex.sets);
             ex.projected.value = roundTo(baseWorking, inc);

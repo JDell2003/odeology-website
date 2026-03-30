@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Owner Accounts � STRYVE</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-03-08-checkin-rings-1">
+  <title>Owner Accounts � RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-23-riseforit-3">
   <style>
     body.owner-accounts-page {
       overflow: auto !important;
@@ -156,7 +156,7 @@
 
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand">STRYVE<span class="brand-dot"></span></div>
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>
@@ -176,11 +176,14 @@
     <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
     <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a></div>
     <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
     <div class="control-section" id="control-owner-section">
       <p class="section-label">OWNER</p>
       <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
-      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
       <a class="control-link active" id="control-owner-accounts-link" href="owner-accounts.html" aria-current="true"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
     </div>
   </aside>
 
@@ -191,7 +194,8 @@
         <div class="owner-accounts-muted">Click any account to open their normal Overview view.</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn btn-ghost" href="owner-messaging.html">Work Outreach</a>
+        <a class="btn btn-ghost" href="owner-messaging.html">Outreach</a>
+        <a class="btn btn-ghost" href="owner-doors.html">Doors</a>
         <a class="btn btn-ghost" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Return to Owner Session</a>
       </div>
     </header>
@@ -203,11 +207,18 @@
       </div>
       <div class="owner-accounts-status" id="owner-accounts-status"></div>
       <div id="owner-accounts-list" class="owner-accounts-list"></div>
+      <div class="owner-demo-wrap">
+        <div class="owner-demo-copy">
+          <div style="font-weight:700;">Demo</div>
+          <div class="owner-accounts-muted">Creates a temporary test user, signs you into it instantly, and opens a bottom-right demo control panel for days, invites, and paywall testing.</div>
+        </div>
+        <button class="btn btn-primary" type="button" id="owner-create-demo-btn">Demo</button>
+      </div>
     </section>
   </main>
 
-  <script src="js/main.js?v=2026-03-09-tour-fast-pages-1"></script>
-  <script src="js/ownerAccounts.js?v=2026-03-05-owner-3"></script>
+  <script src="js/main.js?v=2026-03-28-owner-demo-41"></script>
+  <script src="js/ownerAccounts.js?v=2026-03-23-owner-demo-1"></script>
 </body>
 </html>
 

@@ -364,6 +364,302 @@
     });
   }
 
+  function formatLiftNumber(raw) {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) return '';
+    const rounded = Math.round(value * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  }
+
+  function normalizeLiftPerformance(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const weight = Number(raw.weight);
+    const reps = Number(raw.reps);
+    const estimated1rm = Number(raw.estimated1rm);
+    const normalized = {
+      weight: Number.isFinite(weight) && weight > 0 ? Math.round(weight * 100) / 100 : null,
+      reps: Number.isFinite(reps) && reps > 0 ? Math.max(1, Math.round(reps)) : null,
+      estimated1rm: Number.isFinite(estimated1rm) && estimated1rm > 0 ? Math.round(estimated1rm * 100) / 100 : null,
+      performedAt: raw.performedAt ? String(raw.performedAt).slice(0, 10) : null
+    };
+    if (!Number.isFinite(normalized.weight) && !Number.isFinite(normalized.reps) && !Number.isFinite(normalized.estimated1rm)) return null;
+    return normalized;
+  }
+
+  function formatLiftPerformance(raw) {
+    const perf = normalizeLiftPerformance(raw);
+    if (!perf) return '—';
+    const parts = [];
+    if (Number.isFinite(perf.weight)) parts.push(`${formatLiftNumber(perf.weight)} lb`);
+    if (Number.isFinite(perf.reps)) parts.push(`x ${perf.reps}`);
+    if (!parts.length && Number.isFinite(perf.estimated1rm)) parts.push(`${formatLiftNumber(perf.estimated1rm)} lb e1RM`);
+    return parts.length ? parts.join(' ') : '—';
+  }
+
+  function normalizeLiftHistoryRows(raw) {
+    const rows = Array.isArray(raw)
+      ? raw
+      : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+    return rows
+      .map((row) => {
+        const best = normalizeLiftPerformance(row?.best);
+        const last = normalizeLiftPerformance(row?.last);
+        return {
+          exerciseKey: String(row?.exerciseKey || '').trim(),
+          exerciseName: String(row?.exerciseName || row?.baseId || row?.exerciseId || 'Exercise').trim() || 'Exercise',
+          best,
+          last
+        };
+      })
+      .filter((row) => row.best)
+      .sort((a, b) => {
+        const weightDelta = Number(b.best?.weight || 0) - Number(a.best?.weight || 0);
+        if (weightDelta !== 0) return weightDelta;
+        const repsDelta = Number(b.best?.reps || 0) - Number(a.best?.reps || 0);
+        if (repsDelta !== 0) return repsDelta;
+        const estDelta = Number(b.best?.estimated1rm || 0) - Number(a.best?.estimated1rm || 0);
+        if (estDelta !== 0) return estDelta;
+        return String(a.exerciseName || '').localeCompare(String(b.exerciseName || ''));
+      });
+  }
+
+  function normalizeLiftHistoryKey(raw) {
+    return String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/__d\d+__e\d+$/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 180);
+  }
+
+  function compareLiftPerformance(nextPerf, prevPerf) {
+    const nextWeight = Number(nextPerf?.weight || 0);
+    const prevWeight = Number(prevPerf?.weight || 0);
+    if (nextWeight !== prevWeight) return nextWeight - prevWeight;
+    const nextReps = Number(nextPerf?.reps || 0);
+    const prevReps = Number(prevPerf?.reps || 0);
+    if (nextReps !== prevReps) return nextReps - prevReps;
+    const nextEst = Number(nextPerf?.estimated1rm || 0);
+    const prevEst = Number(prevPerf?.estimated1rm || 0);
+    return nextEst - prevEst;
+  }
+
+  function extractBestPerformanceFromEntry(entry, performedAt) {
+    let best = null;
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    sets.forEach((set) => {
+      const perf = normalizeLiftPerformance({
+        weight: set?.weight,
+        reps: set?.reps,
+        estimated1rm: set?.estimated1rm,
+        performedAt
+      });
+      if (!perf) return;
+      if (!best || compareLiftPerformance(perf, best) > 0) best = perf;
+    });
+    const actual = normalizeLiftPerformance({
+      weight: entry?.actual?.weight,
+      reps: entry?.actual?.reps,
+      estimated1rm: entry?.actual?.estimated1rm,
+      performedAt
+    });
+    if (actual && (!best || compareLiftPerformance(actual, best) > 0)) best = actual;
+    return best;
+  }
+
+  function extractLastPerformanceFromEntry(entry, performedAt) {
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    for (let idx = sets.length - 1; idx >= 0; idx -= 1) {
+      const perf = normalizeLiftPerformance({
+        weight: sets[idx]?.weight,
+        reps: sets[idx]?.reps,
+        estimated1rm: sets[idx]?.estimated1rm,
+        performedAt
+      });
+      if (perf) return perf;
+    }
+    return normalizeLiftPerformance({
+      weight: entry?.actual?.weight,
+      reps: entry?.actual?.reps,
+      estimated1rm: entry?.actual?.estimated1rm,
+      performedAt
+    });
+  }
+
+  function mergeLiftHistoryRows(...groups) {
+    const byKey = new Map();
+    const newerThan = (nextRaw, prevRaw) => {
+      const nextTs = nextRaw ? Date.parse(String(nextRaw)) : NaN;
+      const prevTs = prevRaw ? Date.parse(String(prevRaw)) : NaN;
+      if (Number.isFinite(nextTs) && Number.isFinite(prevTs)) return nextTs > prevTs;
+      if (Number.isFinite(nextTs) && !Number.isFinite(prevTs)) return true;
+      return false;
+    };
+    groups.forEach((group) => {
+      (Array.isArray(group) ? group : []).forEach((row) => {
+        const key = String(row?.exerciseKey || '').trim();
+        if (!key) return;
+        const existing = byKey.get(key) || null;
+        if (!existing) {
+          byKey.set(key, { ...row });
+          return;
+        }
+        const merged = { ...existing };
+        if (row.exerciseName && (!merged.exerciseName || merged.exerciseName === 'Exercise')) merged.exerciseName = row.exerciseName;
+        if (row.best && (!merged.best || compareLiftPerformance(row.best, merged.best) > 0)) merged.best = row.best;
+        if (row.last && (!merged.last || newerThan(row.last?.performedAt, merged.last?.performedAt))) merged.last = row.last;
+        byKey.set(key, merged);
+      });
+    });
+    return Array.from(byKey.values()).sort((a, b) => {
+      const bestDiff = compareLiftPerformance(b.best, a.best);
+      if (bestDiff !== 0) return bestDiff;
+      return String(a.exerciseName || '').localeCompare(String(b.exerciseName || ''));
+    });
+  }
+
+  function deriveLiftHistoryRowsFromLogs(logs) {
+    const byKey = new Map();
+    const rows = Array.isArray(logs) ? logs : [];
+    rows.forEach((log) => {
+      const performedAt = log?.performed_at ? String(log.performed_at).slice(0, 10) : null;
+      const entries = Array.isArray(log?.entries) ? log.entries : [];
+      entries.forEach((entry) => {
+        const key = normalizeLiftHistoryKey(entry?.baseId || entry?.exerciseId || entry?.exerciseName || entry?.name);
+        if (!key) return;
+        const incoming = {
+          exerciseKey: key,
+          exerciseName: String(entry?.exerciseName || entry?.name || entry?.baseId || entry?.exerciseId || 'Exercise').trim() || 'Exercise',
+          best: extractBestPerformanceFromEntry(entry, performedAt),
+          last: extractLastPerformanceFromEntry(entry, performedAt)
+        };
+        if (!incoming.best && !incoming.last) return;
+        const existing = byKey.get(key) || null;
+        if (!existing) {
+          byKey.set(key, incoming);
+          return;
+        }
+        if (incoming.best && (!existing.best || compareLiftPerformance(incoming.best, existing.best) > 0)) existing.best = incoming.best;
+        if (incoming.last) {
+          const existingTs = existing.last?.performedAt ? Date.parse(String(existing.last.performedAt)) : NaN;
+          const nextTs = incoming.last?.performedAt ? Date.parse(String(incoming.last.performedAt)) : NaN;
+          if (!existing.last || (Number.isFinite(nextTs) && (!Number.isFinite(existingTs) || nextTs >= existingTs))) {
+            existing.last = incoming.last;
+          }
+        }
+        if (incoming.exerciseName && (!existing.exerciseName || existing.exerciseName === 'Exercise')) existing.exerciseName = incoming.exerciseName;
+      });
+    });
+    return Array.from(byKey.values());
+  }
+
+  function initPrUi() {
+    const btn = $('#account-pr-btn');
+    const modal = $('#account-pr-modal');
+    const backdrop = $('#account-pr-backdrop');
+    const closeBtn = $('#account-pr-close');
+    const bodyEl = $('#account-pr-body');
+    if (!btn || !modal || !backdrop || !closeBtn || !bodyEl) return;
+
+    let loading = false;
+    let rows = [];
+
+    const renderLoading = () => {
+      bodyEl.innerHTML = '<div class="account-pr-status">Loading PRs...</div>';
+    };
+
+    const renderError = (message) => {
+      bodyEl.innerHTML = `<div class="account-pr-status">${escapeHtml(message || 'Could not load PRs.')}</div>`;
+    };
+
+    const renderRows = () => {
+      if (!rows.length) {
+        bodyEl.innerHTML = '<div class="account-pr-empty">No saved PRs yet. Finish some workouts first.</div>';
+        return;
+      }
+      bodyEl.innerHTML = `
+        <div class="account-pr-list">
+          ${rows.map((row, idx) => {
+            const best = formatLiftPerformance(row.best);
+            const last = row.last ? formatLiftPerformance(row.last) : '—';
+            const bestDate = row.best?.performedAt ? escapeHtml(row.best.performedAt) : '';
+            const lastDate = row.last?.performedAt ? escapeHtml(row.last.performedAt) : '';
+            return `
+              <article class="account-pr-item">
+                <div class="account-pr-mainrow">
+                  <div class="account-pr-left">
+                    <div class="account-pr-rank">#${idx + 1}</div>
+                    <div class="account-pr-copy">
+                      <div class="account-pr-name">${escapeHtml(row.exerciseName)}</div>
+                      <div class="account-pr-meta">
+                        ${row.last ? `<span class="account-pr-pill">Last ${escapeHtml(last)}</span>` : ''}
+                        ${bestDate ? `<span class="account-pr-pill is-muted">Saved ${bestDate}</span>` : '<span class="account-pr-pill is-muted">Workout history</span>'}
+                        ${row.last && lastDate ? `<span class="account-pr-pill is-muted">Last ${escapeHtml(lastDate)}</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="account-pr-value">
+                    <div class="account-pr-best">${escapeHtml(best)}</div>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join('')}
+        </div>
+      `;
+    };
+
+    const close = () => {
+      modal.classList.add('hidden');
+      document.body.classList.remove('account-pr-open');
+    };
+
+    const open = async () => {
+      modal.classList.remove('hidden');
+      document.body.classList.add('account-pr-open');
+      if (loading) return;
+      loading = true;
+      renderLoading();
+      try {
+        const resp = await api('/api/training/state', { method: 'GET' });
+        if (!resp.ok) {
+          renderError(resp.json?.error || 'Could not load PRs.');
+          return;
+        }
+        const stateRows = normalizeLiftHistoryRows(resp.json?.liftHistory);
+        const planId = String(resp.json?.plan?.id || '').trim();
+        let logRows = [];
+        if (planId) {
+          const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(planId)}`, { method: 'GET' });
+          if (logsResp.ok) {
+            logRows = deriveLiftHistoryRowsFromLogs(logsResp.json?.logs);
+          }
+        }
+        rows = mergeLiftHistoryRows(stateRows, logRows);
+        renderRows();
+      } catch {
+        renderError('Could not load PRs.');
+      } finally {
+        loading = false;
+      }
+    };
+
+    btn.classList.remove('hidden');
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      open();
+    });
+    backdrop.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+    });
+  }
+
   async function lookupPhotoFromAccounts(user) {
     const userId = String(user?.id || '').trim();
     const username = String(user?.username || '').trim();
@@ -783,6 +1079,7 @@
     }
 
     initRequestsUi();
+    initPrUi();
 
     if (statusEl) statusEl.textContent = '';
   }

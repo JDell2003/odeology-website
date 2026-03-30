@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiseForIt Creator Program</title>
+    <meta name="description" content="Apply for the RiseForIt creator sponsor program. Get a custom affiliate code, earn per qualified user, and build with RiseForIt.">
+    <link rel="canonical" href="https://RiseForIt.up.railway.app/creators.html">
+    <meta property="og:title" content="RiseForIt Creator Program">
+    <meta property="og:description" content="Join the RiseForIt creator sponsor program with your own affiliate code and a clean application flow.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://RiseForIt.up.railway.app/creators.html">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1600">
+    <link rel="stylesheet" href="css/main.css?v=2026-03-23-riseforit-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html:has(body.creators-page) { background: #f8fafc; }
+        body.creators-page {
+            --creator-bg: #f8fafc;
+            --creator-surface: #ffffff;
+            --creator-surface-soft: #f1f5f9;
+            --creator-border: #dbe4ee;
+            --creator-text: #17212b;
+            --creator-muted: #617180;
+            --creator-accent: #2563eb;
+            --creator-accent-soft: #dbeafe;
+            --creator-ink: #0f172a;
+            --creator-shadow: 0 22px 50px rgba(15, 23, 42, 0.08);
+            background: var(--creator-bg);
+            color: var(--creator-text);
+            min-height: 100vh;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+        .creators-page .grain,
+        .creators-page::before,
+        .creators-page::after { display: none; content: none; }
+        .creator-page-shell {
+            width: 100vw;
+            max-width: none;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 272px minmax(0, 1fr);
+            background: var(--creator-bg);
+        }
+        .creator-rail {
+            padding: 0.9rem 1rem 0;
+            position: sticky;
+            top: calc(var(--navbar-height, 72px) + 1px);
+            align-self: start;
+            max-height: calc(100vh - var(--navbar-height, 72px) - 1px);
+            overflow: auto;
+            border-right: 1px solid var(--creator-border);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            background: rgba(255,255,255,0.82);
+            backdrop-filter: blur(14px);
+        }
+        .creator-rail::-webkit-scrollbar { display: none; }
+        .creator-rail-group { display: grid; gap: 0.2rem; padding: 0.55rem 0 0.95rem; }
+        .creator-rail-group + .creator-rail-group { border-top: 1px solid var(--creator-border); }
+        .creator-rail-label {
+            margin: 0 0 0.35rem;
+            padding: 0 0.35rem;
+            color: var(--creator-muted);
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .creator-rail-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.72rem 0.9rem;
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--creator-text);
+            font-size: 0.98rem;
+        }
+        .creator-rail-link:hover,
+        .creator-rail-link.is-active { background: #eef4ff; }
+        .creator-rail-icon {
+            width: 26px;
+            height: 26px;
+            display: grid;
+            place-items: center;
+            color: #1f2937;
+            flex-shrink: 0;
+        }
+        .creator-rail-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .creator-main { min-width: 0; padding: 0 1.4rem 2.2rem; }
+        .creator-main-inner { width: min(1140px, 100%); margin: 0 auto; }
+        .creator-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            padding: 1rem 0 1.2rem;
+        }
+        .creator-toolbar-meta { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+        .creator-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 0.55rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid var(--creator-border);
+            background: rgba(255,255,255,0.86);
+            color: var(--creator-text);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .creator-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0.75rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--creator-border);
+            background: #ffffff;
+            color: var(--creator-text);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .creator-btn.is-primary {
+            background: var(--creator-accent);
+            border-color: var(--creator-accent);
+            color: #ffffff;
+        }
+        .creator-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 1.75rem;
+            align-items: stretch;
+            padding-bottom: 2rem;
+        }
+        .creator-hero-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0.6rem 0;
+        }
+        .creator-eyebrow {
+            margin: 0;
+            color: var(--creator-accent);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .creator-hero-copy h1,
+        .creator-section-head h2,
+        .creator-card h3,
+        .creator-form-shell h2 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            line-height: 1.02;
+            letter-spacing: -0.05em;
+        }
+        .creator-hero-copy h1 { font-size: clamp(2.5rem, 5vw, 4.4rem); color: var(--creator-ink); }
+        .creator-hero-copy p,
+        .creator-section-head p,
+        .creator-card p,
+        .creator-form-shell p { margin: 0; color: var(--creator-muted); line-height: 1.7; }
+        .creator-hero-points {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.95rem 1.1rem;
+            margin-top: 0.35rem;
+        }
+        .creator-point {
+            padding-left: 1rem;
+            border-left: 2px solid #bfdbfe;
+        }
+        .creator-point strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            font-family: "Space Grotesk", sans-serif;
+            color: var(--creator-ink);
+        }
+        .creator-point span { color: var(--creator-muted); font-size: 0.92rem; line-height: 1.55; }
+        .creator-hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .creator-hero-media {
+            position: relative;
+            min-height: 620px;
+            border-radius: 30px;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(15,23,42,0.28)),
+                url("https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=1200&h=1500") center/cover no-repeat;
+            box-shadow: var(--creator-shadow);
+        }
+        .creator-media-card,
+        .creator-media-note {
+            position: absolute;
+            padding: 0.95rem 1rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.92);
+            color: #334155;
+            line-height: 1.55;
+            border: 1px solid rgba(219,228,238,0.9);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+        }
+        .creator-media-card {
+            left: 1rem;
+            bottom: 1rem;
+            max-width: 300px;
+        }
+        .creator-media-note {
+            right: 1rem;
+            top: 1rem;
+            max-width: 220px;
+        }
+        .creator-stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.8rem;
+        }
+        .creator-stat,
+        .creator-card,
+        .creator-form-shell {
+            border: 1px solid var(--creator-border);
+            border-radius: 24px;
+            background: rgba(255,255,255,0.92);
+            box-shadow: var(--creator-shadow);
+        }
+        .creator-stat {
+            padding: 1.15rem 1.2rem;
+        }
+        .creator-stat strong {
+            display: block;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.6rem;
+            color: var(--creator-ink);
+            letter-spacing: -0.04em;
+        }
+        .creator-stat span {
+            display: block;
+            margin-top: 0.35rem;
+            color: var(--creator-muted);
+            line-height: 1.55;
+        }
+        .creator-section {
+            display: grid;
+            gap: 1.15rem;
+            padding: 0 0 2rem;
+        }
+        .creator-section-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .creator-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+        .creator-card {
+            padding: 1.35rem;
+            overflow: hidden;
+        }
+        .creator-card-media {
+            height: 180px;
+            border-radius: 18px;
+            margin-bottom: 1rem;
+            background-size: cover;
+            background-position: center;
+        }
+        .creator-card h3 { font-size: 1.45rem; color: var(--creator-ink); }
+        .creator-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 0.95rem;
+        }
+        .creator-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: var(--creator-accent-soft);
+            color: #1d4ed8;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .creator-apply-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+            gap: 1.2rem;
+            align-items: start;
+        }
+        .creator-form-shell {
+            padding: 1.45rem;
+        }
+        .creator-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin-top: 1rem;
+        }
+        .creator-form-shell label {
+            display: grid;
+            gap: 0.42rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--creator-ink);
+        }
+        .creator-form-shell input,
+        .creator-form-shell textarea {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--creator-border);
+            background: #ffffff;
+            color: var(--creator-ink);
+            font: inherit;
+            padding: 0.9rem 0.95rem;
+        }
+        .creator-form-shell textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+        .creator-affiliate-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 18px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+        .creator-affiliate-label {
+            margin: 0 0 0.3rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #1d4ed8;
+        }
+        .creator-affiliate-link {
+            font-weight: 700;
+            color: var(--creator-ink);
+            word-break: break-all;
+        }
+        .creator-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .creator-status {
+            margin: 0;
+            color: var(--creator-muted);
+            font-size: 0.9rem;
+        }
+        .creator-side-note {
+            padding: 1.3rem;
+            border-radius: 24px;
+            border: 1px solid var(--creator-border);
+            background: linear-gradient(180deg, #ffffff, #f8fbff);
+            box-shadow: var(--creator-shadow);
+        }
+        .creator-side-note ul {
+            margin: 0.9rem 0 0;
+            padding-left: 1rem;
+            color: var(--creator-muted);
+            line-height: 1.7;
+        }
+        .creator-side-note li + li { margin-top: 0.45rem; }
+        @media (max-width: 1100px) {
+            .creator-page-shell { grid-template-columns: 1fr; }
+            .creator-rail { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--creator-border); }
+            .creator-hero,
+            .creator-apply-layout { grid-template-columns: 1fr; }
+            .creator-hero-media { min-height: 440px; }
+        }
+        @media (max-width: 760px) {
+            .creator-main { padding: 0 0.95rem 1.5rem; }
+            .creator-stat-row,
+            .creator-card-grid,
+            .creator-form-grid,
+            .creator-hero-points { grid-template-columns: 1fr; }
+            .creator-toolbar { padding-top: 0.8rem; }
+            .creator-hero-media { min-height: 360px; }
+            .creator-affiliate-box,
+            .creator-actions { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body class="forum-home-page creators-page">
+    <div class="grain"></div>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="training.html">Training</a></li>
+                <li><a href="forum.html">FORUM</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="creator-page-shell">
+        <aside class="creator-rail" aria-label="Creator navigation">
+            <div class="creator-rail-group">
+                <p class="creator-rail-label">Explore</p>
+                <a class="creator-rail-link" href="index.html"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"></path><path d="M6.5 9.5V20h11V9.5"></path></svg></span><span>Home</span></a>
+                <a class="creator-rail-link" href="forum.html"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9 9h6l-6 6"></path></svg></span><span>Forum</span></a>
+                <a class="creator-rail-link" href="forum-about-stryve.html"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 10c0-2.2 2.2-4 5-4 1.3 0 2.5.4 3.4 1.1C15.3 8 17 8 18 8c0 1.7-1 3-2.5 3.7.3.5.5 1.1.5 1.8 0 2.5-2.2 4.5-5 4.5-1.2 0-2.2-.3-3.1-.9L5 18l1-2.6C6 14.8 6 14.4 6 14Z"></path></svg></span><span>About RiseForIt</span></a>
+                <a class="creator-rail-link is-active" href="creators.html"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 18h10"></path><path d="M12 6v8"></path><path d="m8.5 10.5 3.5-4 3.5 4"></path></svg></span><span>Creator Program</span></a>
+            </div>
+            <div class="creator-rail-group">
+                <p class="creator-rail-label">Why It Works</p>
+                <a class="creator-rail-link" href="#program-overview"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7h14"></path><path d="M5 12h14"></path><path d="M5 17h10"></path></svg></span><span>Program overview</span></a>
+                <a class="creator-rail-link" href="#creator-perks"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 14.5 9l5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8Z"></path></svg></span><span>Perks</span></a>
+                <a class="creator-rail-link" href="#creator-apply"><span class="creator-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path></svg></span><span>Apply</span></a>
+            </div>
+        </aside>
+
+        <main class="creator-main">
+            <div class="creator-main-inner">
+                <div class="creator-toolbar">
+                    <div class="creator-toolbar-meta">
+                        <span class="creator-chip">Custom affiliate code</span>
+                        <span class="creator-chip">Set payout per qualified user</span>
+                        <span class="creator-chip">Built for fitness creators</span>
+                    </div>
+                    <a class="creator-btn" href="index.html">Back to home</a>
+                </div>
+
+                <section class="creator-hero" id="program-overview" aria-label="Creator program hero">
+                    <div class="creator-hero-copy">
+                        <p class="creator-eyebrow">RiseForIt Creators</p>
+                        <h1>Build your code. Get paid when your people join.</h1>
+                        <p>We sponsor creators who can bring real people into the RiseForIt system. Your audience gets workouts, meal guidance, and accountability. You get a custom code, clean affiliate tracking, and a set payout for every qualified user under your link.</p>
+                        <div class="creator-hero-points">
+                            <div class="creator-point"><strong>Real payouts</strong><span>You earn for qualified users under your affiliate code, not vanity metrics.</span></div>
+                            <div class="creator-point"><strong>Clean link flow</strong><span>Your audience signs up from your link and stays attached through onboarding.</span></div>
+                            <div class="creator-point"><strong>On-brand assets</strong><span>Use your link with your own content, stories, screenshots, and training posts.</span></div>
+                            <div class="creator-point"><strong>Fast approval path</strong><span>Send your info, get your link, and start posting immediately.</span></div>
+                        </div>
+                        <div class="creator-hero-actions">
+                            <a class="creator-btn is-primary" href="#creator-apply">Apply to the program</a>
+                            <a class="creator-btn" href="forum-about-stryve.html">See the RiseForIt story</a>
+                        </div>
+                    </div>
+                    <div class="creator-hero-media" aria-hidden="true">
+                        <div class="creator-media-note"><strong>What we want</strong><br>Creators with real trust, clear physique or training content, and an audience that actually clicks.</div>
+                        <div class="creator-media-card"><strong>What you get</strong><br>A custom affiliate link, a clean sponsor page, and a system you can confidently show without it looking cheap.</div>
+                    </div>
+                </section>
+
+                <section class="creator-stat-row" aria-label="Creator stats">
+                    <article class="creator-stat"><strong>1 code</strong><span>Your own affiliate code that matches your handle or name.</span></article>
+                    <article class="creator-stat"><strong>Set payout</strong><span>We pay a fixed amount for each qualified user under your code.</span></article>
+                    <article class="creator-stat"><strong>Clean tracking</strong><span>Signups stay tied to your link through signup and onboarding.</span></article>
+                </section>
+
+                <section class="creator-section" id="creator-perks">
+                    <div class="creator-section-head">
+                        <div>
+                            <p class="creator-eyebrow">Sponsor Program</p>
+                            <h2>What the creator page needs to make obvious</h2>
+                            <p>This is not a generic ambassador page. It is a sponsor page for people who can actually move traffic and convert it.</p>
+                        </div>
+                    </div>
+                    <div class="creator-card-grid">
+                        <article class="creator-card">
+                            <div class="creator-card-media" style="background-image:url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=900');"></div>
+                            <h3>Bring real users in</h3>
+                            <p>Your code should be used in stories, posts, reels, and captions that get people into the app and through the workout flow.</p>
+                            <div class="creator-pill-row">
+                                <span class="creator-pill">Trackable link</span>
+                                <span class="creator-pill">Real conversions</span>
+                            </div>
+                        </article>
+                        <article class="creator-card">
+                            <div class="creator-card-media" style="background-image:url('https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=900');"></div>
+                            <h3>Show the product well</h3>
+                            <p>Use screenshots, progress, gym content, or talking-head content that makes the system feel premium and serious.</p>
+                            <div class="creator-pill-row">
+                                <span class="creator-pill">Stories</span>
+                                <span class="creator-pill">Reels</span>
+                                <span class="creator-pill">Screenshots</span>
+                            </div>
+                        </article>
+                        <article class="creator-card">
+                            <div class="creator-card-media" style="background-image:url('https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&fm=jpg&ixlib=rb-4.0.3&q=80&w=900');"></div>
+                            <h3>Get paid on outcomes</h3>
+                            <p>The model is simple: qualified users under your code. No fluff, no fake engagement rewards, no wasted incentives.</p>
+                            <div class="creator-pill-row">
+                                <span class="creator-pill">Qualified users</span>
+                                <span class="creator-pill">Sponsor payouts</span>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="creator-section" id="creator-apply">
+                    <div class="creator-section-head">
+                        <div>
+                            <p class="creator-eyebrow">Apply</p>
+                            <h2>Get your creator link</h2>
+                            <p>Tell us who you are, what you post, and what kind of audience you have. Your affiliate link generates as you fill this out.</p>
+                        </div>
+                    </div>
+                    <div class="creator-apply-layout">
+                        <aside class="creator-side-note">
+                            <h3>What we look for</h3>
+                            <p>Strong audience trust beats raw follower count. A smaller creator with a real audience is better than a big page with weak conversion.</p>
+                            <ul>
+                                <li>Fitness, physique, training, lifestyle, or self-improvement content.</li>
+                                <li>Followers who actually respond to recommendations.</li>
+                                <li>Willingness to post your link consistently.</li>
+                                <li>Clean fit with the RiseForIt brand.</li>
+                            </ul>
+                        </aside>
+                        <form class="creator-form-shell" id="creator-application-form">
+                            <p class="creator-eyebrow">Creator application</p>
+                            <h2>Apply for the sponsor program</h2>
+                            <p>You will receive a clean affiliate link to use in posts, stories, or your bio.</p>
+                            <div class="creator-form-grid">
+                                <label>
+                                    <span>Name</span>
+                                    <input type="text" id="creator-name" placeholder="Your name" required>
+                                </label>
+                                <label>
+                                    <span>Handle</span>
+                                    <input type="text" id="creator-handle" placeholder="@yourhandle" required>
+                                </label>
+                                <label>
+                                    <span>Follower count</span>
+                                    <input type="text" id="creator-followers" placeholder="12,500" required>
+                                </label>
+                                <label>
+                                    <span>What do you post?</span>
+                                    <input type="text" id="creator-content" placeholder="Fitness, training, lifestyle" required>
+                                </label>
+                            </div>
+                            <label style="margin-top:0.95rem;">
+                                <span>Tell us about yourself</span>
+                                <textarea id="creator-about" rows="5" placeholder="What kind of audience do you have, how do you post, and why are you a fit for RiseForIt?" required></textarea>
+                            </label>
+                            <div class="creator-affiliate-box">
+                                <div>
+                                    <p class="creator-affiliate-label">Affiliate link</p>
+                                    <div class="creator-affiliate-link" id="creator-affiliate-link">Fill out the form to generate your link.</div>
+                                </div>
+                                <button type="button" class="creator-btn" id="creator-copy-link">Copy link</button>
+                            </div>
+                            <div class="creator-actions">
+                                <button type="submit" class="creator-btn is-primary">Apply now</button>
+                                <p class="creator-status" id="creator-status">Your affiliate link auto-generates as you type.</p>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js?v=2026-03-21-creators-1"></script>
+</body>
+</html>

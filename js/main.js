@@ -1,3 +1,26 @@
+if (!window.__odeMainJsLoaded_v20260323) {
+window.__odeMainJsLoaded_v20260323 = true;
+
+window.addEventListener('keydown', (event) => {
+    if (typeof event?.key === 'string') return;
+    try {
+        Object.defineProperty(event, 'key', {
+            configurable: true,
+            enumerable: true,
+            value: ''
+        });
+    } catch {
+        // ignore
+    }
+}, true);
+
+window.addEventListener('error', (event) => {
+    const src = String(event?.filename || '').toLowerCase();
+    if (!src.includes('page-events.js')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation?.();
+}, true);
+
 /* ============================================
    CONFIG
    ============================================ */
@@ -8798,7 +8821,7 @@ function setupCounters() {
    ============================================ */
 
 function setupTrialBadge() {
-    const shouldShow = document.body.classList.contains('training-status-page');
+    const shouldShow = document.body.classList.contains('training-page') || document.body.classList.contains('training-status-page');
     if (!shouldShow) {
         const existing = document.getElementById('trial-badge');
         if (existing) existing.remove();
@@ -8811,14 +8834,160 @@ function setupTrialBadge() {
     // Remove legacy/duplicate badge if present (older Training UI injected this).
     document.querySelectorAll('.training-free-badge').forEach((n) => n.remove());
 
-    if (document.getElementById('trial-badge')) return;
-    const badge = document.createElement('div');
-    badge.id = 'trial-badge';
-    badge.className = 'trial-badge';
-    badge.textContent = 'Coming soon';
-    badge.setAttribute('role', 'status');
-    badge.setAttribute('aria-label', 'Trial badge');
-    document.body.appendChild(badge);
+    let badge = document.getElementById('trial-badge');
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'trial-badge';
+        badge.className = 'trial-badge';
+        badge.setAttribute('role', 'button');
+        badge.setAttribute('tabindex', '0');
+        badge.setAttribute('aria-haspopup', 'dialog');
+        badge.setAttribute('aria-label', 'Open training paywall');
+        document.body.appendChild(badge);
+    }
+    const openBadgePaywall = () => {
+        if (typeof window.__odeForceOpenAccessPrompt === 'function') {
+            return window.__odeForceOpenAccessPrompt({ reason: 'trial_badge' });
+        }
+        return window.__odeOpenAccessPrompt?.({ reason: 'trial_badge', forceOpen: true });
+    };
+    badge.onclick = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        openBadgePaywall();
+    };
+    badge.onkeydown = (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openBadgePaywall();
+    };
+    badge.onpointerdown = (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openBadgePaywall();
+    };
+    badge.dataset.paywallBound = '1';
+    if (!window.__odeTrialBadgeDocBound) {
+        window.__odeTrialBadgeDocBound = true;
+        document.addEventListener('pointerdown', (event) => {
+            const target = event?.target;
+            const badgeEl = target instanceof Element ? target.closest('#trial-badge') : null;
+            if (!badgeEl) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof window.__odeForceOpenAccessPrompt === 'function') {
+                window.__odeForceOpenAccessPrompt({ reason: 'trial_badge' });
+                return;
+            }
+            window.__odeOpenAccessPrompt?.({ reason: 'trial_badge', forceOpen: true });
+        }, true);
+    }
+
+    const readDemoTrialSim = (userId) => {
+        const id = String(userId || '').trim();
+        if (!id) return null;
+        try {
+            const raw = sessionStorage.getItem(`ode_demo_sim_v1:${id}`);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return {
+                daysElapsed: Math.max(0, Math.min(365, Number(parsed?.daysElapsed || 0))),
+                qualifiedCount: Math.max(0, Math.min(999, Number(parsed?.qualifiedCount || 0))),
+                pendingCount: Math.max(0, Math.min(999, Number(parsed?.pendingCount || 0)))
+            };
+        } catch {
+            return null;
+        }
+    };
+
+    const formatRemainingLabel = (secondsRaw) => {
+        const seconds = Math.max(0, Math.floor(Number(secondsRaw) || 0));
+        if (seconds <= 0) return 'expired';
+        const hours = Math.floor(seconds / 3600);
+        if (hours >= 48) return `${Math.ceil(hours / 24)} days left`;
+        if (hours >= 1) return `${hours}h left`;
+        return `${Math.max(1, Math.ceil(seconds / 60))}m left`;
+    };
+
+    const updateBadge = () => {
+        const currentUser = window.__odeCurrentUser || readAuthUserHint() || null;
+        const accessPayload = window.__odeGetAccessState?.()?.payload || null;
+        const access = accessPayload?.access || null;
+        const ownerFreeTraining = Boolean(currentUser?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        if (!(currentUser?.demo?.active || currentUser?.isDemo) && !(access?.hasAccess && access?.trialActive && access?.accessSource === 'trial' && !ownerFreeTraining)) {
+            badge.style.display = 'none';
+            return;
+        }
+
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        let badgeLabel = 'Trial';
+        let badgeTitle = 'Trial active';
+        let badgeSubline = '';
+        let badgeState = 'trial';
+
+        if (currentUser?.demo?.active || currentUser?.isDemo) {
+            const sim = readDemoTrialSim(currentUser.id) || { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0 };
+            const qualifiedCount = Math.max(0, Number(sim.qualifiedCount || 0));
+            const trialDays = 3;
+            const trialStartedAt = now - (Math.max(0, Number(sim.daysElapsed || 0)) * dayMs);
+            const trialEndsAt = trialStartedAt + (trialDays * dayMs);
+
+            let grantDays = 0;
+            let accessLabel = `${trialDays}-day trial`;
+            if (qualifiedCount >= 8) {
+                grantDays = 365;
+                accessLabel = '1 year unlocked';
+            } else if (qualifiedCount >= 4) {
+                grantDays = 30;
+                accessLabel = '30 days unlocked';
+            } else if (qualifiedCount >= 2) {
+                grantDays = 7;
+                accessLabel = '7 days unlocked';
+            }
+
+            const grantEndsAt = grantDays > 0 ? (trialStartedAt + (grantDays * dayMs)) : 0;
+            const activeEndsAt = Math.max(trialEndsAt, grantEndsAt || 0);
+            const remainingSeconds = Math.max(0, Math.floor((activeEndsAt - now) / 1000));
+            const remainingLabel = formatRemainingLabel(remainingSeconds);
+            const trialDay = Math.max(1, Math.min(trialDays, 1 + Math.floor((now - trialStartedAt) / dayMs)));
+            badgeLabel = grantDays > 0 ? 'Access' : 'Trial';
+            badgeTitle = remainingLabel === 'expired' ? 'Expired' : remainingLabel;
+            badgeSubline = grantDays > 0 ? accessLabel : `Day ${trialDay} of ${trialDays}`;
+            badgeState = grantDays > 0 ? 'unlocked' : 'trial';
+        } else {
+            const trialDays = Math.max(1, Number(access?.trialDays || 3));
+            const trialStartedAt = Date.parse(String(access?.trialStartedAt || ''));
+            const trialDay = Number.isFinite(trialStartedAt)
+                ? Math.max(1, Math.min(trialDays, 1 + Math.floor((Date.now() - trialStartedAt) / dayMs)))
+                : 1;
+            badgeLabel = 'Trial';
+            badgeTitle = String(access?.accessRemainingLabel || '').trim() || 'Trial active';
+            badgeSubline = `Day ${trialDay} of ${trialDays}`;
+            badgeState = 'trial';
+        }
+
+        badge.style.display = '';
+        badge.dataset.state = badgeState;
+        badge.innerHTML = `
+            <span class="trial-badge-dot" aria-hidden="true"></span>
+            <span class="trial-badge-copy">
+                <span class="trial-badge-label">${badgeLabel}</span>
+                <span class="trial-badge-title">${badgeTitle}</span>
+                <span class="trial-badge-sub">${badgeSubline}</span>
+            </span>
+        `.trim();
+    };
+
+    updateBadge();
+    if (!window.__odeTrialBadgeBound) {
+        window.__odeTrialBadgeBound = true;
+        window.addEventListener('odeauth', updateBadge);
+        window.addEventListener('ode:demo-sim-change', updateBadge);
+        window.addEventListener('ode:access-updated', updateBadge);
+        window.addEventListener('focus', updateBadge);
+    }
 }
 
 function setupComingSoonLinks() {
@@ -9145,8 +9314,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupForumPreloaderNavigation();
     setupNav();
     setupTrainingNavRouting();
+    injectTrainerFooterLinks();
     initAuthUi();
     initAuthGate();
+    initAccessGate();
     setupControlPanel();
 
     if (isTrainingPage) {
@@ -12593,11 +12764,25 @@ function readAuthUserHint() {
         if (!user || typeof user !== 'object') return null;
         const id = String(user.id || '').trim();
         if (!id) return null;
+        let inferredDemo = Boolean(user.isDemo || user?.demo?.active);
+        if (!inferredDemo) {
+            try {
+                const demoRaw = sessionStorage.getItem('ode_demo_account_creds_v1');
+                const demoParsed = demoRaw ? JSON.parse(demoRaw) : null;
+                inferredDemo = String(demoParsed?.userId || '').trim() === id;
+            } catch {
+                inferredDemo = false;
+            }
+        }
         return {
             id,
             username: String(user.username || '').trim(),
             displayName: String(user.displayName || '').trim(),
-            isOwner: Boolean(user.isOwner)
+            isOwner: Boolean(user.isOwner),
+            isTrainer: Boolean(user.isTrainer || user?.trainer?.active),
+            isDemo: inferredDemo,
+            demo: { active: inferredDemo },
+            trainer: { active: Boolean(user.isTrainer || user?.trainer?.active) }
         };
     } catch {
         return null;
@@ -12614,7 +12799,11 @@ function writeAuthUserHint(user) {
                 id,
                 username: String(user?.username || '').trim(),
                 displayName: String(user?.displayName || '').trim(),
-                isOwner: Boolean(user?.isOwner)
+                isOwner: Boolean(user?.isOwner),
+                isTrainer: Boolean(user?.isTrainer || user?.trainer?.active),
+                isDemo: Boolean(user?.isDemo || user?.demo?.active),
+                demo: { active: Boolean(user?.isDemo || user?.demo?.active) },
+                trainer: { active: Boolean(user?.isTrainer || user?.trainer?.active) }
             }
         };
         localStorage.setItem(AUTH_USER_HINT_KEY, JSON.stringify(payload));
@@ -12688,6 +12877,7 @@ function initAuthUi() {
     let requestCountBaselineReady = false;
     let lastKnownRequestTotal = 0;
     let requestToastHideTimer = 0;
+    let shownTrainerReviewNoticeKey = '';
     const FRIENDS_CACHE_KEY = 'ode_friends_cache_v1';
     const FRIENDS_CACHE_TTL = 1000 * 60 * 10;
     const readFriendsCache = () => {
@@ -12822,6 +13012,7 @@ function initAuthUi() {
 
     const fetchIncomingRequestCounts = async () => {
         if (!currentUser) return { friend: 0, workout: 0, total: 0, ok: false };
+        if (isDemoClientUser()) return { friend: 0, workout: 0, total: 0, ok: true };
         try {
             const [friendResp, workoutResp] = await Promise.all([
                 fetch('/api/friends/requests?fresh=1', { credentials: 'include', cache: 'no-store' }),
@@ -12842,6 +13033,7 @@ function initAuthUi() {
 
     const fetchUnreadMessageCount = async () => {
         if (!currentUser) return { total: 0, ok: false };
+        if (isDemoClientUser()) return { total: 0, ok: true };
         try {
             const resp = await fetch('/api/messages/threads?fresh=1', {
                 credentials: 'include',
@@ -12957,29 +13149,16 @@ function initAuthUi() {
             || ['riseforit', 'odeology', 'odeology_'].includes(dname);
     };
 
-    const createOwnerDemoAccount = async () => {
-        try {
-            const resp = await fetch('/api/auth/owner/demo-account', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await resp.json().catch(() => ({}));
-            if (!resp.ok || !data?.ok) return { ok: false, error: data?.error || 'Could not create demo account.' };
-            try {
-                sessionStorage.setItem('ode_demo_account_creds_v1', JSON.stringify({
-                    userId: String(data?.user?.id || ''),
-                    username: String(data?.credentials?.username || ''),
-                    password: String(data?.credentials?.password || ''),
-                    createdAt: Date.now()
-                }));
-            } catch {
-                // ignore
-            }
-            return { ok: true, returnTo: String(data?.returnTo || '/overview.html') };
-        } catch (err) {
-            return { ok: false, error: err?.message || 'Could not create demo account.' };
-        }
+    const OWNER_DEMO_OPEN_KEY = 'ode_demo_open_on_arrival_v1';
+
+    const currentPageReturnTo = () => {
+        const path = `${window.location.pathname || '/'}${window.location.search || ''}${window.location.hash || ''}`;
+        return path.startsWith('/') ? path : '/training.html';
+    };
+
+    const buildOwnerDemoStartHref = () => {
+        const returnTo = currentPageReturnTo();
+        return `/api/auth/owner/demo-account/start?returnTo=${encodeURIComponent(returnTo)}`;
     };
 
     const getImpersonation = (meta) => {
@@ -12987,6 +13166,111 @@ function initAuthUi() {
         const imp = meta.impersonation;
         if (!imp || imp.active !== true) return null;
         return imp;
+    };
+
+    const isDemoClientUser = (user = currentUser, meta = currentAuthMeta) => (
+        Boolean(meta?.demo?.active || user?.demo?.active)
+    );
+
+    const isTrainerClientUser = (user = currentUser) => (
+        Boolean(user?.isTrainer || user?.trainer?.active)
+    );
+
+    const canUseTrainingPortal = (user = currentUser, meta = currentAuthMeta) => (
+        isOwnerClientUser(user, meta) || isDemoClientUser(user, meta)
+    );
+
+    const getTrainerQuickActionHref = (user = currentUser) => (
+        isTrainerClientUser(user)
+            ? 'trainer-dashboard.html'
+            : 'trainers.html#onboarding'
+    );
+
+    const syncTrainingPortalSection = (user = currentUser, meta = currentAuthMeta) => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        const trainingSection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+            const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+            return label === 'training portal';
+        });
+        if (!trainingSection) return;
+        trainingSection.classList.toggle('hidden', !canUseTrainingPortal(user, meta));
+    };
+
+    const syncTrainerSidebarSection = (user = currentUser, meta = currentAuthMeta) => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        let trainerSection = panel.querySelector('#control-trainer-section');
+        let trainerLink = panel.querySelector('#control-trainer-dashboard-link');
+        let trainerSettingsLink = panel.querySelector('#control-trainer-settings-link');
+
+        if (!trainerSection) {
+            trainerSection = document.createElement('div');
+            trainerSection.className = 'control-section hidden';
+            trainerSection.id = 'control-trainer-section';
+            trainerSection.innerHTML = '<p class="section-label">TRAINER</p>';
+            const ownerSection = panel.querySelector('#control-owner-section');
+            const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+                const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+                return label === 'community';
+            });
+            if (ownerSection?.parentElement) {
+                ownerSection.insertAdjacentElement('beforebegin', trainerSection);
+            } else if (communitySection?.parentElement) {
+                communitySection.insertAdjacentElement('afterend', trainerSection);
+            } else {
+                panel.appendChild(trainerSection);
+            }
+        }
+
+        if (!trainerLink) {
+            trainerLink = document.createElement('a');
+            trainerLink.className = 'control-link';
+            trainerLink.id = 'control-trainer-dashboard-link';
+            trainerLink.href = 'trainer-dashboard.html';
+            trainerLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span>';
+            trainerSection.appendChild(trainerLink);
+        }
+
+        if (!trainerSettingsLink) {
+            trainerSettingsLink = document.createElement('a');
+            trainerSettingsLink.className = 'control-link';
+            trainerSettingsLink.id = 'control-trainer-settings-link';
+            trainerSettingsLink.href = 'payment-settings.html';
+            trainerSettingsLink.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Payment Settings</span>';
+            trainerSection.appendChild(trainerSettingsLink);
+        }
+
+        trainerSection.classList.toggle('hidden', !(isTrainerClientUser(user) || isOwnerClientUser(user, meta)));
+    };
+
+    const syncTrainerQuickActionButtons = (user = currentUser) => {
+        const trainerMode = isTrainerClientUser(user);
+        if (friendsBtn) {
+            friendsBtn.setAttribute('aria-label', trainerMode ? 'Manage clients' : 'Trainers');
+            friendsBtn.setAttribute('title', trainerMode ? 'Manage clients' : 'Trainers');
+        }
+        if (mobileFriendsBtn) {
+            mobileFriendsBtn.setAttribute('aria-label', trainerMode ? 'Manage clients' : 'Trainers');
+            const textEl = mobileFriendsBtn.querySelector('span:last-child');
+            if (textEl) textEl.textContent = trainerMode ? 'Clients' : 'Trainers';
+        }
+    };
+
+    const openTrainerQuickAction = () => {
+        menu.classList.add('hidden');
+        window.location.href = getTrainerQuickActionHref();
+    };
+
+    const buildOwnerExitHref = (returnTo = '/owner-accounts.html', user = currentUser, meta = currentAuthMeta) => {
+        const safeReturnTo = String(returnTo || '/owner-accounts.html').trim() || '/owner-accounts.html';
+        const params = new URLSearchParams();
+        params.set('returnTo', safeReturnTo.startsWith('/') ? safeReturnTo : '/owner-accounts.html');
+        if (isDemoClientUser(user, meta) && user?.id) {
+            params.set('cleanupUserId', String(user.id));
+            params.set('cleanup', 'demo');
+        }
+        return `/api/auth/owner/impersonation/exit?${params.toString()}`;
     };
 
     const ensureOwnerViewNote = () => {
@@ -13004,7 +13288,7 @@ function initAuthUi() {
         const note = ensureOwnerViewNote();
         const imp = getImpersonation(meta);
         const viewedLabel = user?.displayName || user?.username || 'account';
-        const returnHref = '/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html';
+        const returnHref = buildOwnerExitHref('/owner-accounts.html', user, meta);
 
         note.innerHTML = '';
         if (!imp) {
@@ -13101,32 +13385,23 @@ function initAuthUi() {
         }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
-            demoBtn.addEventListener('click', async () => {
-                if (window.__odeOpenDemoSimulator && (currentAuthMeta?.demo?.active || user?.demo?.active)) {
+            demoBtn.addEventListener('click', () => {
+                if (window.__odeOpenDemoSimulator && isDemoClientUser()) {
                     window.__odeOpenDemoSimulator();
                     return;
                 }
                 demoBtn.disabled = true;
                 const textEl = demoBtn.querySelector('.text');
-                const prev = textEl?.textContent || 'Demo';
                 if (textEl) textEl.textContent = 'Creating...';
-                const result = await createOwnerDemoAccount();
-                if (result?.ok) {
-                    window.location.href = result.returnTo || '/overview.html';
-                    return;
-                }
-                if (textEl) textEl.textContent = result?.error || 'Failed';
-                window.setTimeout(() => {
-                    if (textEl) textEl.textContent = prev;
-                    demoBtn.disabled = false;
-                }, 1800);
+                try { sessionStorage.setItem(OWNER_DEMO_OPEN_KEY, '1'); } catch { /* ignore */ }
+                window.location.href = buildOwnerDemoStartHref();
             });
         }
         if (demoBtn) {
             const textEl = demoBtn.querySelector('.text');
-            if (textEl) textEl.textContent = (currentAuthMeta?.demo?.active || user?.demo?.active) ? 'Demo Controls' : 'Demo';
+            if (textEl) textEl.textContent = isDemoClientUser(user, meta) ? 'Demo Controls' : 'Demo';
         }
-        const shouldShowOwnerSection = isOwnerClientUser(user, meta) || Boolean(currentAuthMeta?.demo?.active || user?.demo?.active);
+        const shouldShowOwnerSection = isOwnerClientUser(user, meta) || isDemoClientUser(user, meta);
         ownerSection.classList.toggle('hidden', !shouldShowOwnerSection);
     };
 
@@ -13147,6 +13422,9 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.remove('hidden');
         syncControlPanelLabel(null);
+        syncTrainerQuickActionButtons(null);
+        syncTrainingPortalSection(null, null);
+        syncTrainerSidebarSection(null);
         syncOwnerWorkoutDbLink(null, null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
@@ -13173,6 +13451,45 @@ function initAuthUi() {
         }, 120);
     }
 
+    async function markTrainerReviewNoticeSeen() {
+        try {
+            await fetch('/api/auth/trainer/review-notice/seen', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+        } catch {
+            // ignore
+        }
+    }
+
+    function showTrainerReviewNoticeIfNeeded(user) {
+        const notice = user?.trainer?.reviewNotice || null;
+        const status = String(notice?.status || '').trim().toLowerCase();
+        if ((status !== 'approved' && status !== 'denied') || notice?.seenAt) return;
+        const noticeKey = [user?.id || '', status, notice?.decidedAt || '', notice?.reason || ''].join(':');
+        if (!noticeKey || shownTrainerReviewNoticeKey === noticeKey) return;
+        shownTrainerReviewNoticeKey = noticeKey;
+        window.setTimeout(async () => {
+            if (status === 'approved') {
+                window.alert('Your trainer application was approved. You are no longer in review.');
+            } else {
+                const reasonLine = String(notice?.reason || '').trim()
+                    ? `\n\nReason: ${String(notice.reason).trim()}`
+                    : '';
+                window.alert(`Your trainer application was denied. You need to go through the trainer signup process again.${reasonLine}`);
+                try {
+                    localStorage.setItem('ode_onboarding_force_v1', '1');
+                    localStorage.removeItem('ode_onboarding_done_v1');
+                } catch {
+                    // ignore
+                }
+            }
+            await markTrainerReviewNoticeSeen();
+        }, 180);
+    }
+
     const setSignedInUi = (user, meta = null) => {
         currentUser = user;
         currentAuthMeta = meta || null;
@@ -13195,11 +13512,15 @@ function initAuthUi() {
         if (controlAuth?.signInBtn) controlAuth.signInBtn.classList.remove('hidden');
         if (controlAuth?.signUpBtn) controlAuth.signUpBtn.classList.add('hidden');
         syncControlPanelLabel(user);
+        syncTrainerQuickActionButtons(user);
+        syncTrainingPortalSection(user, meta);
+        syncTrainerSidebarSection(user);
         syncOwnerWorkoutDbLink(user, meta);
         setImpersonationUi(user, meta);
+        showTrainerReviewNoticeIfNeeded(user);
 
         menu.innerHTML = `
-            ${imp ? '<a class="auth-menu-item" id="auth-menu-return-owner" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Return to Owner Account</a>' : ''}
+            ${imp ? `<a class="auth-menu-item" id="auth-menu-return-owner" href="${buildOwnerExitHref('/owner-accounts.html', user, meta)}">Return to Owner Account</a>` : ''}
             <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
             <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="overview.html#control-panel">Dashboard</a>
         `;
@@ -13328,7 +13649,10 @@ function initAuthUi() {
 
     [friendsBtn, mobileFriendsBtn].forEach((btn) => {
         if (!btn) return;
-        btn.addEventListener('click', () => openFriendsModal(btn));
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openTrainerQuickAction();
+        });
     });
 
     if (friendsModal && friendsModal.dataset.bound !== '1') {
@@ -13915,6 +14239,12 @@ function initAuthUi() {
             if (friendRequestsLoading) return;
             friendRequestsLoading = true;
             if (friendRequestsStatus) friendRequestsStatus.textContent = 'Loading friend requests...';
+            if (isDemoClientUser()) {
+                setModalRequestsTabLabel(0);
+                renderFriendRequests([], 'Friend requests are unavailable in demo mode.');
+                friendRequestsLoading = false;
+                return;
+            }
             try {
                 const resp = await fetch('/api/friends/requests?fresh=1', { credentials: 'include', cache: 'no-store' });
                 if (resp.status === 401) {
@@ -13998,6 +14328,11 @@ function initAuthUi() {
         loadThreads = async () => {
             if (threadsLoading) return;
             threadsLoading = true;
+            if (isDemoClientUser()) {
+                renderThreads([]);
+                threadsLoading = false;
+                return;
+            }
             try {
                 const resp = await fetch('/api/messages/threads', { credentials: 'include' });
                 if (resp.status === 401) {
@@ -14228,6 +14563,12 @@ function initAuthUi() {
             if (requestsLoading) return;
             requestsLoading = true;
             if (requestsStatus) requestsStatus.textContent = 'Loading invites...';
+            if (isDemoClientUser()) {
+                latestWorkoutInvites = [];
+                renderRequests([], 'Workout invites are unavailable in demo mode.');
+                requestsLoading = false;
+                return;
+            }
             try {
                 const resp = await fetch('/api/training/share/requests?fresh=1', { credentials: 'include', cache: 'no-store' });
                 if (resp.status === 401) {
@@ -14935,6 +15276,13 @@ function initFriendsPage() {
     }
 
     async function loadThreadSummaries() {
+        if (isDemoClientUser()) {
+            mergeThreadSummaries([]);
+            if (typeof window.__odeSetMessageUnreadCount === 'function') {
+                window.__odeSetMessageUnreadCount(0);
+            }
+            return;
+        }
         const resp = await api('/api/messages/threads');
         if (!resp.ok) {
             mergeThreadSummaries([]);
@@ -14955,6 +15303,12 @@ function initFriendsPage() {
 
     async function loadFriendRequests() {
         if (friendReqStatusEl) friendReqStatusEl.textContent = 'Loading friend requests...';
+        if (isDemoClientUser()) {
+            state.pendingFriendRequests = 0;
+            updateRequestBadge();
+            renderFriendRequests([], 'Friend requests are unavailable in demo mode.');
+            return;
+        }
         const resp = await api('/api/friends/requests?fresh=1');
         if (!resp.ok) {
             state.pendingFriendRequests = 0;
@@ -14970,6 +15324,13 @@ function initFriendsPage() {
 
     async function loadWorkoutInvites() {
         if (workoutReqStatusEl) workoutReqStatusEl.textContent = 'Loading workout invites...';
+        if (isDemoClientUser()) {
+            state.workoutInvites = [];
+            state.pendingWorkoutInvites = 0;
+            updateRequestBadge();
+            renderWorkoutInvites([], 'Workout invites are unavailable in demo mode.');
+            return;
+        }
         const resp = await api('/api/training/share/requests?fresh=1');
         if (!resp.ok) {
             state.workoutInvites = [];
@@ -15325,6 +15686,7 @@ function initAccessGate() {
         promptOpen: false,
         unlockSuccess: null,
         countdownTimer: 0,
+        trialPromptTimer: 0,
         confettiTimer: 0,
         successRedirectTimer: 0,
         closeTimer: 0,
@@ -15345,6 +15707,7 @@ function initAccessGate() {
         stripeLoadError: ''
     };
     let stripeJsPromise = null;
+    const isDemoAccessUser = (user = state.user) => Boolean(user?.demo?.active || user?.isDemo);
 
     const readDemoSim = (userId) => {
         const id = String(userId || '').trim();
@@ -15393,9 +15756,116 @@ function initAccessGate() {
         return rows;
     };
 
+    const buildDemoAccessPreviewPayload = () => {
+        const userId = String(state.user?.id || '').trim();
+        const sim = readDemoSim(userId) || { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0 };
+        const dayMs = 24 * 60 * 60 * 1000;
+        const trialDays = 3;
+        const trialStartedAt = new Date(Date.now() - (Math.max(0, Number(sim.daysElapsed || 0)) * dayMs)).toISOString();
+        const trialEndsAt = new Date(Date.parse(trialStartedAt) + (trialDays * dayMs)).toISOString();
+        return {
+            ok: true,
+            access: {
+                ok: true,
+                hasAccess: false,
+                trialActive: true,
+                trialDays,
+                trialStartedAt,
+                trialEndsAt,
+                accessEndsAt: trialEndsAt,
+                accessRemainingSeconds: Math.max(0, Math.floor((Date.parse(trialEndsAt) - Date.now()) / 1000)),
+                accessRemainingLabel: labelFromSeconds(Math.max(0, Math.floor((Date.parse(trialEndsAt) - Date.now()) / 1000))),
+                accessSource: 'trial',
+                accessType: 'trial',
+                freeTrainingEnabled: false,
+                quickUnlock: { redeemed: false },
+                referrals: {
+                    qualifiedCount: Number(sim.qualifiedCount || 0),
+                    nextTier: { rewardKey: 'referral_2', required: 2, days: 7, label: '7 days' },
+                    nextRemainingCount: Math.max(0, 2 - Number(sim.qualifiedCount || 0))
+                },
+                offers: {
+                    quickUnlock: { amountCents: 100 },
+                    monthlySubscription: { amountCents: 1500 },
+                    annualAccess: { amountCents: 12000 }
+                }
+            },
+            referral: {
+                ok: true,
+                code: 'demo',
+                link: `${window.location.origin}/signup.html?ref=demo`,
+                goal: 2,
+                signupCount: Number(sim.pendingCount || 0) + Number(sim.qualifiedCount || 0),
+                qualifiedCount: Number(sim.qualifiedCount || 0),
+                remainingToGoal: Math.max(0, 2 - Number(sim.qualifiedCount || 0)),
+                recent: buildDemoRecent(Number(sim.qualifiedCount || 0), Number(sim.pendingCount || 0))
+            }
+        };
+    };
+
+    const buildFallbackAccessPromptPayload = () => {
+        if (!state.user) return null;
+        if (isDemoAccessUser()) return buildDemoAccessPreviewPayload();
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const badge = document.getElementById('trial-badge');
+        const titleText = String(badge?.querySelector('.trial-badge-title')?.textContent || '').trim();
+        const subText = String(badge?.querySelector('.trial-badge-sub')?.textContent || '').trim();
+        const titleMatch = titleText.match(/(\d+)\s+days?\s+left/i);
+        const dayMatch = subText.match(/day\s+(\d+)\s+of\s+(\d+)/i);
+        const trialDays = Math.max(1, Number(dayMatch?.[2] || 3));
+        const dayIndex = Math.max(1, Math.min(trialDays, Number(dayMatch?.[1] || 1)));
+        const daysLeft = Math.max(1, Number(titleMatch?.[1] || (trialDays - dayIndex + 1) || 1));
+        const trialStartedAt = new Date(now - ((dayIndex - 1) * dayMs)).toISOString();
+        const trialEndsAt = new Date(now + (daysLeft * dayMs)).toISOString();
+        return {
+            ok: true,
+            access: {
+                ok: true,
+                hasAccess: true,
+                trialActive: true,
+                trialDays,
+                trialStartedAt,
+                trialEndsAt,
+                currentAccessEndsAt: trialEndsAt,
+                accessEndsAt: trialEndsAt,
+                accessRemainingSeconds: Math.max(0, Math.floor((Date.parse(trialEndsAt) - now) / 1000)),
+                accessRemainingLabel: labelFromSeconds(Math.max(0, Math.floor((Date.parse(trialEndsAt) - now) / 1000))),
+                accessSource: 'trial',
+                accessType: 'trial',
+                freeTrainingEnabled: false,
+                quickUnlock: { redeemed: false, days: 7, amountCents: 100 },
+                referrals: {
+                    signupCount: 0,
+                    qualifiedCount: 0,
+                    nextTier: { rewardKey: 'referral_2', required: 2, days: 7, label: '7 days' },
+                    nextRemainingCount: 2
+                },
+                offers: {
+                    quickUnlock: { amountCents: 100 },
+                    monthlySubscription: { amountCents: 1500 },
+                    annualAccess: { amountCents: 12000 }
+                }
+            },
+            referral: {
+                ok: true,
+                code: '',
+                link: `${window.location.origin}/index.html#signup`,
+                goal: 2,
+                signupCount: 0,
+                qualifiedCount: 0,
+                remainingToGoal: 2,
+                recent: []
+            },
+            referredReferralState: null
+        };
+    };
+
     const applyDemoOverrides = (payloadRaw) => {
-        const payload = payloadRaw && typeof payloadRaw === 'object' ? JSON.parse(JSON.stringify(payloadRaw)) : null;
-        if (!payload || !state.user?.demo?.active) return payload;
+        const payload = payloadRaw && typeof payloadRaw === 'object'
+            ? JSON.parse(JSON.stringify(payloadRaw))
+            : (isDemoAccessUser() ? buildDemoAccessPreviewPayload() : null);
+        if (!payload || !isDemoAccessUser()) return payload;
         const sim = readDemoSim(state.user.id) || { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0 };
         const access = payload.access && typeof payload.access === 'object' ? payload.access : null;
         if (!access) return payload;
@@ -15561,7 +16031,7 @@ function initAccessGate() {
             .ode-access-more{padding:0;overflow:hidden}
             .ode-access-more summary{list-style:none;cursor:pointer;padding:16px 18px;font:900 .98rem/1 "Space Grotesk",sans-serif}
             .ode-access-more summary::-webkit-details-marker{display:none}
-            .ode-access-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 18px 18px}
+            .ode-access-more-grid{display:grid;grid-template-columns:1fr;gap:12px;padding:0 18px 18px}
             .ode-access-success{position:relative;overflow:hidden;padding:26px;border-radius:24px;background:radial-gradient(circle at top left,rgba(240,166,74,.22),transparent 34%),radial-gradient(circle at top right,rgba(29,143,90,.18),transparent 30%),#fff;border:1px solid rgba(15,36,53,.08)}
             .ode-access-success-kicker{font:800 12px/1 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#2563EB}
             .ode-access-success h3{margin:10px 0 8px;font:800 clamp(1.8rem,3vw,2.4rem)/1.02 Inter,"Space Grotesk",system-ui,sans-serif;letter-spacing:-.04em}
@@ -15586,10 +16056,10 @@ function initAccessGate() {
             .ode-access-payment-label{font:800 12px/1.1 Inter,"Space Grotesk",system-ui,sans-serif;color:rgba(255,255,255,.84)}
             .ode-access-inline-payment.light .ode-access-payment-label{color:#334155}
             .ode-access-card-row,.ode-access-demo-card{display:grid;grid-template-columns:1.5fr .8fr .7fr;gap:10px;align-items:stretch}
-            .ode-access-card-host,.ode-access-demo-card input{border:1px solid rgba(255,255,255,.14);border-radius:15px;background:rgba(248,250,252,.96);box-shadow:none;padding:12px 15px;min-height:46px}
+            .ode-access-card-host,.ode-access-demo-card input{border:1px solid #0F172A;border-radius:15px;background:rgba(248,250,252,.96);box-shadow:none;padding:12px 15px;min-height:46px}
             .ode-access-card-host{transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
             .ode-access-card-host.ready{border-color:#93C5FD;box-shadow:0 0 0 3px rgba(37,99,235,.10);transform:translateY(-1px)}
-            .ode-access-demo-card input,.ode-access-payment-grid input,.ode-access-payment-grid select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(248,250,252,.96);padding:10px 12px;font:600 14px/1.25 Inter,"Space Grotesk",system-ui,sans-serif;color:#0F172A;outline:none}
+            .ode-access-demo-card input,.ode-access-payment-grid input,.ode-access-payment-grid select{width:100%;border:1px solid #0F172A;border-radius:13px;background:rgba(248,250,252,.96);padding:10px 12px;font:600 14px/1.25 Inter,"Space Grotesk",system-ui,sans-serif;color:#0F172A;outline:none}
             .ode-access-demo-card input:focus,.ode-access-payment-grid input:focus,.ode-access-payment-grid select:focus{border-color:#93C5FD;box-shadow:0 0 0 4px rgba(37,99,235,.12);background:#fff}
             .ode-access-inline-payment.light .ode-access-card-host,.ode-access-inline-payment.light .ode-access-demo-card input,.ode-access-inline-payment.light .ode-access-payment-grid input,.ode-access-inline-payment.light .ode-access-payment-grid select{border-color:#0F172A;background:#fff}
             .ode-access-inline-payment.light .ode-access-card-host.ready{border-color:#0F172A;box-shadow:0 0 0 2px rgba(15,23,42,.14)}
@@ -15751,7 +16221,7 @@ function initAccessGate() {
         state.paymentConfig = null;
         state.stripeLoadError = '';
         render();
-        if (state.user?.demo?.active) {
+        if (isDemoAccessUser()) {
             state.paymentLoading = false;
             state.paymentConfig = {
                 ok: true,
@@ -15840,6 +16310,49 @@ function initAccessGate() {
         }
     };
 
+    const syncDemoAccessGate = ({ openLocked = false } = {}) => {
+        const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
+        if (liveUser) state.user = liveUser;
+        if (!isDemoAccessUser()) {
+            syncTrialPromptTimer();
+            render();
+            return false;
+        }
+        if (!state.payload?.access?.ok) {
+            state.payload = buildDemoAccessPreviewPayload();
+        }
+        state.payload = applyDemoOverrides(state.payload || buildDemoAccessPreviewPayload());
+        const access = state.payload?.access || null;
+        const locked = Boolean(access?.ok && !access?.hasAccess);
+        if (locked) {
+            state.forcePreview = true;
+            state.promptOpen = false;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            state.paymentView = false;
+            state.paymentLoading = false;
+            state.paymentPlanCode = '';
+            state.paymentConfig = null;
+            clearMountedPaymentForm();
+            state.promptOpen = false;
+        } else {
+            if (shouldOpenTrialPromptOnVisit()) {
+                openTrialPrompt();
+            } else if (openLocked || state.forcePreview) {
+                state.forcePreview = false;
+            }
+            if (!access?.hasAccess || !access?.trialActive || access?.accessSource !== 'trial') {
+                state.promptOpen = false;
+            }
+        }
+        if (!locked && (openLocked || state.forcePreview) && !state.promptOpen) {
+            state.forcePreview = false;
+        }
+        syncTrialPromptTimer();
+        render();
+        return locked;
+    };
+
     const verifyCheckoutFromUrl = async () => {
         try {
             const current = new URL(window.location.href);
@@ -15889,6 +16402,12 @@ function initAccessGate() {
                     access: json.access,
                     referredReferralState: json.referralState || state.payload?.referredReferralState || null
                 });
+                if (shouldOpenTrialPromptOnVisit()) {
+                    openTrialPrompt();
+                } else if (!state.payload?.access?.hasAccess || !state.payload?.access?.trialActive || state.payload?.access?.accessSource !== 'trial') {
+                    state.promptOpen = false;
+                }
+                syncTrialPromptTimer();
                 render();
             }
         } catch {
@@ -15914,12 +16433,44 @@ function initAccessGate() {
             return false;
         }
     };
+    const buildAccessReferralLink = () => {
+        const referralLink = String(state.payload?.referral?.link || '').trim();
+        if (referralLink) return referralLink;
+        if (isDemoAccessUser()) return `${window.location.origin}/signup.html?ref=demo`;
+        return `${window.location.origin}/signup.html`;
+    };
+    const buildAccessInviteMessages = (inviteLink = buildAccessReferralLink()) => ([
+        `Yo, I used this to build my workout and it actually helped me get structured. It's free to try and it gives workouts, meal planning help, and accountability. Use my link: ${inviteLink}`,
+        `I just built my plan on Odeology. It's free to start and it helps with workouts, meal guidance, and staying accountable. Join with my link: ${inviteLink}`,
+        `If you're trying to stop guessing in the gym, use this. It builds your workout, helps with meal planning, and keeps you accountable. Try it free here: ${inviteLink}`
+    ]);
+    const pickAccessInviteMessage = (inviteLink = buildAccessReferralLink()) => {
+        const inviteMessages = buildAccessInviteMessages(inviteLink);
+        return inviteMessages[Math.floor(Math.random() * inviteMessages.length)] || `Use my link and build your workout.\n\n${inviteLink}`;
+    };
+    const openAccessSmsDraft = (inviteLink = buildAccessReferralLink()) => {
+        const body = pickAccessInviteMessage(inviteLink);
+        window.location.href = `sms:?&body=${encodeURIComponent(body)}`;
+        return body;
+    };
     const promptKeyForUser = (userId) => `ode_access_prompt_seen_v2:${String(userId || '').trim()}`;
+    const promptDayKeyForUser = (userId) => `ode_access_prompt_day_v1:${String(userId || '').trim()}`;
+    const getCurrentTrialPromptToken = (access = state.payload?.access || null) => {
+        const userId = String(state.user?.id || '').trim();
+        if (!userId) return '';
+        if (!access?.hasAccess || !access?.trialActive || access?.accessSource !== 'trial') return '';
+        const trialStartedTs = Date.parse(String(access?.trialStartedAt || ''));
+        if (!Number.isFinite(trialStartedTs)) return '';
+        const dayIndex = Math.max(1, Math.min(Number(access?.trialDays || 3), 1 + Math.floor((Date.now() - trialStartedTs) / (24 * 60 * 60 * 1000))));
+        return `${trialStartedTs}:${dayIndex}`;
+    };
     const markPromptSeen = () => {
         const userId = String(state.user?.id || '').trim();
         if (!userId) return;
         try {
             localStorage.setItem(promptKeyForUser(userId), String(Date.now()));
+            const token = getCurrentTrialPromptToken();
+            if (token) localStorage.setItem(promptDayKeyForUser(userId), token);
         } catch {
             // ignore
         }
@@ -15929,12 +16480,121 @@ function initAccessGate() {
         if (!userId || !isProtectedPage) return false;
         const access = state.payload?.access || null;
         if (!access?.hasAccess || !access?.trialActive || access?.accessSource !== 'trial') return false;
+        const token = getCurrentTrialPromptToken(access);
+        if (!token) return false;
         try {
+            const lastToken = String(localStorage.getItem(promptDayKeyForUser(userId)) || '').trim();
+            if (lastToken !== token) return true;
             const lastTs = Number(localStorage.getItem(promptKeyForUser(userId)) || 0);
             return !Number.isFinite(lastTs) || lastTs <= 0 || (Date.now() - lastTs) >= (24 * 60 * 60 * 1000);
         } catch {
             return true;
         }
+    };
+    const openTrialPrompt = () => {
+        state.promptOpen = true;
+        state.forcePreview = false;
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        markPromptSeen();
+    };
+    const shouldAllowAccessPrompt = (access = state.payload?.access || null) => {
+        const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        if (!state.user || ownerFreeTraining || !access?.ok) return false;
+        if (!access?.hasAccess) return true;
+        return Boolean(access?.trialActive && access?.accessSource === 'trial');
+    };
+    const openAccessPrompt = async ({ reason = 'manual', refreshData = true, forceOpen = false } = {}) => {
+        const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
+        if (liveUser) state.user = liveUser;
+        if (!state.user) return false;
+        if (refreshData || !state.payload?.access?.ok) {
+            await fetchAccess();
+        }
+        const fallbackPayload = buildFallbackAccessPromptPayload();
+        const nextPayload = state.payload?.access?.ok
+            ? state.payload
+            : (fallbackPayload || (isDemoAccessUser() ? buildDemoAccessPreviewPayload() : null) || state.payload);
+        state.payload = applyDemoOverrides(nextPayload);
+        const access = state.payload?.access || null;
+        const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        const canForceOpen = Boolean(
+            forceOpen
+            && state.user
+            && !ownerFreeTraining
+            && (access?.ok || fallbackPayload?.access?.ok || isDemoAccessUser())
+        );
+        if (!shouldAllowAccessPrompt(access) && !canForceOpen) {
+            render();
+            return false;
+        }
+        state.forcePreview = false;
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        state.paymentView = false;
+        state.paymentLoading = false;
+        state.paymentSubmitting = false;
+        state.paymentPlanCode = '';
+        state.paymentConfig = null;
+        state.stripeLoadError = '';
+        clearMountedPaymentForm();
+        if ((access?.hasAccess && access?.trialActive && access?.accessSource === 'trial') || (forceOpen && access?.trialActive)) {
+            openTrialPrompt();
+        } else {
+            state.promptOpen = true;
+        }
+        render();
+        return true;
+    };
+    const forceOpenAccessPrompt = ({ reason = 'manual' } = {}) => {
+        const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
+        if (liveUser) state.user = liveUser;
+        if (!state.user) return false;
+        const fallbackPayload = buildFallbackAccessPromptPayload();
+        const basePayload = state.payload?.access?.ok
+            ? state.payload
+            : (fallbackPayload || (isDemoAccessUser() ? buildDemoAccessPreviewPayload() : null));
+        const nextPayload = applyDemoOverrides(basePayload);
+        const access = nextPayload?.access || null;
+        const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        if (!nextPayload?.access?.ok || ownerFreeTraining) return false;
+        state.payload = nextPayload;
+        state.forcePreview = false;
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        state.paymentView = false;
+        state.paymentLoading = false;
+        state.paymentSubmitting = false;
+        state.paymentPlanCode = '';
+        state.paymentConfig = null;
+        state.stripeLoadError = '';
+        clearMountedPaymentForm();
+        if (access?.trialActive && access?.accessSource === 'trial') {
+            openTrialPrompt();
+        } else {
+            state.promptOpen = true;
+        }
+        render();
+        window.setTimeout(() => {
+            void openAccessPrompt({ reason, refreshData: true, forceOpen: true });
+        }, 0);
+        return true;
+    };
+    const syncTrialPromptTimer = () => {
+        if (state.trialPromptTimer) {
+            window.clearInterval(state.trialPromptTimer);
+            state.trialPromptTimer = 0;
+        }
+        if (!state.user || !isProtectedPage) return;
+        const access = state.payload?.access || null;
+        const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
+        if (!access?.hasAccess || !access?.trialActive || access?.accessSource !== 'trial' || ownerFreeTraining) return;
+        state.trialPromptTimer = window.setInterval(() => {
+            if (document.hidden) return;
+            if (!shouldOpenTrialPromptOnVisit()) return;
+            openTrialPrompt();
+            render();
+        }, 30000);
     };
 
     const render = () => {
@@ -15982,7 +16642,7 @@ function initAccessGate() {
 
         const nextGoal = Number(access?.referrals?.nextTier?.required || 2);
         const recent = Array.isArray(referral?.recent) ? referral.recent : [];
-        const link = String(referral?.link || '');
+        const link = buildAccessReferralLink();
         const quickUnlockRedeemed = Boolean(access?.quickUnlock?.redeemed);
         const qualifiedCount = Number(access?.referrals?.qualifiedCount || 0);
         const achievedTier1 = qualifiedCount >= 2;
@@ -16010,9 +16670,13 @@ function initAccessGate() {
         const paymentActive = Boolean(state.paymentPlanCode);
         const activePlanCode = String(state.paymentPlanCode || primaryPlanCode || 'quick_unlock');
         const activePayLabel = activePlanCode === 'monthly_subscription' ? 'Start Monthly' : 'Pay Now';
+        const primaryPaymentActive = paymentActive && activePlanCode === primaryPlanCode;
+        const monthlyPaymentActive = paymentActive && activePlanCode === 'monthly_subscription';
+        const annualPaymentActive = paymentActive && activePlanCode === 'annual_access';
         const isPrompt = Boolean(state.promptOpen && access.hasAccess);
         const isSuccess = Boolean(state.unlockSuccess && access.hasAccess);
-        const isPreview = Boolean(state.forcePreview && !isProtectedPage);
+        const demoExpiredLock = Boolean(isDemoAccessUser() && !access.hasAccess && !isProtectedPage);
+        const isPreview = Boolean((state.forcePreview || demoExpiredLock) && !isProtectedPage);
         const headline = 'Don’t lose your plan.';
         const subline = (isPrompt || isPreview) && access.trialActive
             ? `Don’t worry, you still have ${access.accessRemainingLabel}. If you want to keep it longer, look below.`
@@ -16028,7 +16692,7 @@ function initAccessGate() {
                     <form class="ode-access-payment-form" id="ode-access-payment-form">
                         <div class="ode-access-payment-stage">
                             <label class="ode-access-payment-label">Card information</label>
-                            ${state.user?.demo?.active ? `
+                            ${isDemoAccessUser() ? `
                                 <div class="ode-access-demo-card" id="ode-access-demo-card">
                                     <input type="text" id="ode-demo-card-number" placeholder="1234 1234 1234 1234" autocomplete="cc-number" />
                                     <input type="text" id="ode-demo-card-exp" placeholder="MM / YY" autocomplete="cc-exp" />
@@ -16105,7 +16769,7 @@ function initAccessGate() {
                     <form class="ode-access-payment-form" id="ode-access-payment-form">
                         <div class="ode-access-payment-stage">
                             <label class="ode-access-payment-label">Card information</label>
-                            ${state.user?.demo?.active ? `
+                            ${isDemoAccessUser() ? `
                                 <div class="ode-access-demo-card" id="ode-access-demo-card">
                                     <input type="text" id="ode-demo-card-number" placeholder="1234 1234 1234 1234" autocomplete="cc-number" />
                                     <input type="text" id="ode-demo-card-exp" placeholder="MM / YY" autocomplete="cc-exp" />
@@ -16174,12 +16838,35 @@ function initAccessGate() {
                 const numberInput = ui.content.querySelector('#ode-demo-card-number');
                 const expInput = ui.content.querySelector('#ode-demo-card-exp');
                 const cvcInput = ui.content.querySelector('#ode-demo-card-cvc');
+                const nameInput = ui.content.querySelector('#ode-access-billing-name');
+                const emailInput = ui.content.querySelector('#ode-access-billing-email');
+                const zipInput = ui.content.querySelector('#ode-access-billing-zip');
+                const line1Input = ui.content.querySelector('#ode-access-billing-line1');
+                const cityInput = ui.content.querySelector('#ode-access-billing-city');
+                const countryInput = ui.content.querySelector('#ode-access-billing-country');
                 const cardInputs = [numberInput, expInput, cvcInput].filter(Boolean);
                 const formatCardNumber = (value) => String(value || '').replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
                 const formatCardExp = (value) => {
                     const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
                     if (digits.length <= 2) return digits;
                     return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+                };
+                const focusNextField = (field) => {
+                    if (!field) return;
+                    window.setTimeout(() => {
+                        try {
+                            field.focus({ preventScroll: true });
+                        } catch {
+                            try { field.focus(); } catch {}
+                        }
+                    }, 0);
+                };
+                const bindEnterAdvance = (field, nextField) => {
+                    field?.addEventListener('keydown', (event) => {
+                        if (event.key !== 'Enter' || !nextField) return;
+                        event.preventDefault();
+                        focusNextField(nextField);
+                    });
                 };
                 const syncDemoReady = () => {
                     const ready = String(numberInput?.value || '').replace(/\D/g, '').length === 16
@@ -16190,23 +16877,40 @@ function initAccessGate() {
                 };
                 numberInput?.addEventListener('input', () => {
                     numberInput.value = formatCardNumber(numberInput.value);
-                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16) expInput?.focus();
+                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16 && document.activeElement === numberInput) {
+                        focusNextField(expInput);
+                    }
                     syncDemoReady();
                 });
                 expInput?.addEventListener('input', () => {
                     expInput.value = formatCardExp(expInput.value);
-                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4) cvcInput?.focus();
+                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4 && document.activeElement === expInput) {
+                        focusNextField(cvcInput);
+                    }
                     syncDemoReady();
                 });
                 cvcInput?.addEventListener('input', () => {
                     cvcInput.value = String(cvcInput.value || '').replace(/\D/g, '').slice(0, 4);
+                    if (String(cvcInput.value || '').replace(/\D/g, '').length >= 3 && document.activeElement === cvcInput) {
+                        focusNextField(nameInput);
+                    }
                     syncDemoReady();
+                });
+                zipInput?.addEventListener('input', () => {
+                    if (String(zipInput.value || '').replace(/\D/g, '').length >= 5 && document.activeElement === zipInput) {
+                        focusNextField(line1Input);
+                    }
                 });
                 cardInputs.forEach((input, index) => input?.addEventListener('keydown', (event) => {
                     if (event.key === 'Backspace' && !String(input.value || '').trim() && index > 0) {
                         cardInputs[index - 1]?.focus();
                     }
                 }));
+                bindEnterAdvance(nameInput, emailInput);
+                bindEnterAdvance(emailInput, zipInput);
+                bindEnterAdvance(zipInput, line1Input);
+                bindEnterAdvance(line1Input, cityInput);
+                bindEnterAdvance(cityInput, countryInput);
                 syncDemoReady();
             };
 
@@ -16287,7 +16991,7 @@ function initAccessGate() {
                 }
             };
 
-            if (state.user?.demo?.active) {
+            if (isDemoAccessUser()) {
                 mountDemoPayment();
             } else {
                 window.setTimeout(() => {
@@ -16312,7 +17016,7 @@ function initAccessGate() {
                 };
 
                 try {
-                    if (state.user?.demo?.active) {
+                    if (isDemoAccessUser()) {
                         await handleConfirmedPayment({ planCode: state.paymentPlanCode, demo: true });
                         return;
                     }
@@ -16412,7 +17116,9 @@ function initAccessGate() {
                 if (button) button.textContent = ok ? 'Referral link copied' : 'Copy failed';
             });
         } else if (!state.inviteView && !state.moreOptionsView) {
-            if (isPreview) {
+            if (demoExpiredLock) {
+                ui.backBtn.classList.add('hidden');
+            } else if (isPreview) {
                 ui.backBtn.classList.remove('hidden');
                 ui.backBtn.textContent = 'Close Preview';
             } else if (isPrompt || !isProtectedPage) {
@@ -16433,7 +17139,7 @@ function initAccessGate() {
                         <div class="ode-access-primary-copy" style="font-size:.92rem">${primarySubcopy}</div>
                         <div class="ode-access-guarantee light">100% satisfaction guarantee or your money back.</div>
                         ${quickUnlockRedeemed ? '' : '<div class="ode-access-plan-note">$1 intro unlock. After that, regular access is $15/month.</div>'}
-                        ${paymentActive ? inlinePaymentMarkup : `<button type="button" class="ode-access-btn" data-access-pay-plan="${primaryPlanCode}">${primaryButton}</button>`}
+                        ${primaryPaymentActive ? inlinePaymentMarkup : `<button type="button" class="ode-access-btn" data-access-pay-plan="${primaryPlanCode}">${primaryButton}</button>`}
                     </section>
                     <section class="ode-access-secondary-card">
                         <div class="ode-access-mini">Or get it free</div>
@@ -16454,9 +17160,13 @@ function initAccessGate() {
                                 <div class="ode-access-progressbar"><div class="ode-access-progressfill" style="width:${progressPct}%"></div></div>
                             </div>
                         </div>
-                        <button type="button" class="ode-access-btn secondary" data-access-invite>Invite Now</button>
+                        <div class="ode-access-actions">
+                            <button type="button" class="ode-access-btn secondary" data-access-invite>Invite Now</button>
+                            <button type="button" class="ode-access-btn ghost" data-access-quick-text>Text Invite</button>
+                        </div>
                     </section>
                 </div>
+                <div class="ode-access-foot"><button type="button" class="ode-access-textbtn" data-access-regular-plans>Regular Plans</button></div>
                 ${isPrompt ? '<div class="ode-access-foot"><button type="button" class="ode-access-textbtn" data-access-dismiss>Other Plans</button></div>' : ''}
                 ${paymentActive ? '' : '<div class="ode-access-status" id="ode-access-status"></div>'}
             `.trim();
@@ -16468,6 +17178,15 @@ function initAccessGate() {
                 state.inviteView = true;
                 render();
             });
+            ui.content.querySelector('[data-access-quick-text]')?.addEventListener('click', () => {
+                const statusEl = ui.content.querySelector('#ode-access-status');
+                openAccessSmsDraft(link);
+                if (statusEl) statusEl.textContent = 'Text message opened with your referral link.';
+            });
+            ui.content.querySelector('[data-access-regular-plans]')?.addEventListener('click', () => {
+                state.moreOptionsView = true;
+                render();
+            });
             ui.content.querySelector('[data-access-dismiss]')?.addEventListener('click', () => {
                 state.moreOptionsView = true;
                 markPromptSeen();
@@ -16477,9 +17196,9 @@ function initAccessGate() {
             ui.backBtn.classList.remove('hidden');
             ui.backBtn.textContent = 'Back';
             ui.content.innerHTML = `
-                <div class="ode-access-kicker">More Plans</div>
-                <h2 class="ode-access-headline">Stay on track.</h2>
-                <p class="ode-access-sub">Pick the plan that keeps your training live.</p>
+                <div class="ode-access-kicker">Regular Plans</div>
+                <h2 class="ode-access-headline">Regular plans.</h2>
+                <p class="ode-access-sub">Pick the monthly or annual plan that keeps training live.</p>
                 <div class="ode-access-stack">
                     <section class="ode-access-secondary-card">
                         <h3>${centsToDollars(access?.offers?.monthlySubscription?.amountCents || 1500)} / month</h3>
@@ -16552,8 +17271,7 @@ function initAccessGate() {
             });
             ui.content.querySelector('[data-access-text]')?.addEventListener('click', async () => {
                 const statusEl = ui.content.querySelector('#ode-access-status');
-                const body = pickInviteMessage();
-                window.location.href = `sms:?&body=${encodeURIComponent(body)}`;
+                openAccessSmsDraft(link);
                 if (statusEl) statusEl.textContent = 'Text message opened.';
             });
             ui.content.querySelector('[data-access-email]')?.addEventListener('click', () => {
@@ -16629,12 +17347,35 @@ function initAccessGate() {
                 const numberInput = ui.content.querySelector('#ode-demo-card-number');
                 const expInput = ui.content.querySelector('#ode-demo-card-exp');
                 const cvcInput = ui.content.querySelector('#ode-demo-card-cvc');
+                const nameInput = ui.content.querySelector('#ode-access-billing-name');
+                const emailInput = ui.content.querySelector('#ode-access-billing-email');
+                const zipInput = ui.content.querySelector('#ode-access-billing-zip');
+                const line1Input = ui.content.querySelector('#ode-access-billing-line1');
+                const cityInput = ui.content.querySelector('#ode-access-billing-city');
+                const countryInput = ui.content.querySelector('#ode-access-billing-country');
                 const cardInputs = [numberInput, expInput, cvcInput].filter(Boolean);
                 const formatCardNumber = (value) => String(value || '').replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
                 const formatCardExp = (value) => {
                     const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
                     if (digits.length <= 2) return digits;
                     return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+                };
+                const focusNextField = (field) => {
+                    if (!field) return;
+                    window.setTimeout(() => {
+                        try {
+                            field.focus({ preventScroll: true });
+                        } catch {
+                            try { field.focus(); } catch {}
+                        }
+                    }, 0);
+                };
+                const bindEnterAdvance = (field, nextField) => {
+                    field?.addEventListener('keydown', (event) => {
+                        if (event.key !== 'Enter' || !nextField) return;
+                        event.preventDefault();
+                        focusNextField(nextField);
+                    });
                 };
                 const syncDemoReady = () => {
                     const ready = String(numberInput?.value || '').replace(/\D/g, '').length === 16
@@ -16645,23 +17386,40 @@ function initAccessGate() {
                 };
                 numberInput?.addEventListener('input', () => {
                     numberInput.value = formatCardNumber(numberInput.value);
-                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16) expInput?.focus();
+                    if (String(numberInput.value || '').replace(/\D/g, '').length >= 16 && document.activeElement === numberInput) {
+                        focusNextField(expInput);
+                    }
                     syncDemoReady();
                 });
                 expInput?.addEventListener('input', () => {
                     expInput.value = formatCardExp(expInput.value);
-                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4) cvcInput?.focus();
+                    if (String(expInput.value || '').replace(/\D/g, '').length >= 4 && document.activeElement === expInput) {
+                        focusNextField(cvcInput);
+                    }
                     syncDemoReady();
                 });
                 cvcInput?.addEventListener('input', () => {
                     cvcInput.value = String(cvcInput.value || '').replace(/\D/g, '').slice(0, 4);
+                    if (String(cvcInput.value || '').replace(/\D/g, '').length >= 3 && document.activeElement === cvcInput) {
+                        focusNextField(nameInput);
+                    }
                     syncDemoReady();
+                });
+                zipInput?.addEventListener('input', () => {
+                    if (String(zipInput.value || '').replace(/\D/g, '').length >= 5 && document.activeElement === zipInput) {
+                        focusNextField(line1Input);
+                    }
                 });
                 cardInputs.forEach((input, index) => input?.addEventListener('keydown', (event) => {
                     if (event.key === 'Backspace' && !String(input.value || '').trim() && index > 0) {
                         cardInputs[index - 1]?.focus();
                     }
                 }));
+                bindEnterAdvance(nameInput, emailInput);
+                bindEnterAdvance(emailInput, zipInput);
+                bindEnterAdvance(zipInput, line1Input);
+                bindEnterAdvance(line1Input, cityInput);
+                bindEnterAdvance(cityInput, countryInput);
                 syncDemoReady();
             };
             const mountStripeCard = async () => {
@@ -16731,7 +17489,7 @@ function initAccessGate() {
                     if (statusEl) statusEl.textContent = err?.message || 'Could not load Stripe.';
                 }
             };
-            if (state.user?.demo?.active) mountDemoPayment();
+            if (isDemoAccessUser()) mountDemoPayment();
             else window.setTimeout(() => { mountStripeCard(); }, 0);
             formEl?.addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -16748,7 +17506,7 @@ function initAccessGate() {
                     country: String(ui.content.querySelector('#ode-access-billing-country')?.value || 'US').trim().toUpperCase()
                 };
                 try {
-                    if (state.user?.demo?.active) {
+                    if (isDemoAccessUser()) {
                         await handleConfirmedPayment({ planCode: state.paymentPlanCode, demo: true, savedMethod: buildDemoSavedCard() });
                         return;
                     }
@@ -16795,7 +17553,7 @@ function initAccessGate() {
             });
             applePayBtn?.addEventListener('click', async () => {
                 if (state.paymentSubmitting || state.paymentLoading) return;
-                if (state.user?.demo?.active) {
+                if (isDemoAccessUser()) {
                     state.paymentSubmitting = true;
                     if (statusEl) statusEl.textContent = 'Apple Pay approved.';
                     await handleConfirmedPayment({
@@ -16814,7 +17572,7 @@ function initAccessGate() {
         }
 
         ui.backBtn.onclick = () => {
-            if (isPreview) {
+            if (isPreview && !demoExpiredLock) {
                 state.forcePreview = false;
                 state.inviteView = false;
                 state.moreOptionsView = false;
@@ -16860,8 +17618,8 @@ function initAccessGate() {
             render();
         };
 
-        const localLock = Boolean(!access.hasAccess && isProtectedPage && !isPreview && !isPrompt && !isSuccess && !Boolean(state.paymentPlanCode));
-        const showOverlay = (((!access.hasAccess) && (isProtectedPage || state.forcePreview)) || isPrompt || isSuccess || isPreview || Boolean(state.paymentPlanCode));
+        const localLock = Boolean(!access.hasAccess && !isPrompt && !isSuccess && !Boolean(state.paymentPlanCode) && ((isProtectedPage && !isPreview) || demoExpiredLock));
+        const showOverlay = (((!access.hasAccess) && (isProtectedPage || state.forcePreview || demoExpiredLock)) || isPrompt || isSuccess || isPreview || Boolean(state.paymentPlanCode));
         const closeNavigatesAway = !access.hasAccess && isProtectedPage && !isPreview && !localLock;
         ui.closeBtn.onclick = () => {
             state.closeReady = false;
@@ -16894,6 +17652,60 @@ function initAccessGate() {
             syncOverlayHost(ui, false);
             syncCloseButton(ui, false, false);
         }
+        try {
+            window.dispatchEvent(new CustomEvent('ode:access-updated', {
+                detail: {
+                    user: state.user || null,
+                    payload: state.payload || null
+                }
+            }));
+        } catch {
+            // ignore
+        }
+    };
+
+    window.__odeSyncDemoAccessGate = syncDemoAccessGate;
+    window.__odeGetAccessState = () => ({
+        user: state.user || null,
+        payload: state.payload || null
+    });
+    window.__odeOpenAccessPrompt = openAccessPrompt;
+    window.__odeForceOpenAccessPrompt = forceOpenAccessPrompt;
+    window.__odeOpenAccessPaymentPreview = async (planCode = 'quick_unlock') => {
+        const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
+        if (liveUser) state.user = liveUser;
+        if (!isDemoAccessUser()) return false;
+        if (!state.payload?.access?.ok) {
+            state.payload = applyDemoOverrides(buildDemoAccessPreviewPayload());
+        }
+        state.forcePreview = true;
+        state.promptOpen = false;
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        state.paymentView = false;
+        state.payload = applyDemoOverrides(state.payload || buildDemoAccessPreviewPayload());
+        render();
+        await openInlinePayment(planCode);
+        return true;
+    };
+    window.__odeGetAccessReferralLink = () => buildAccessReferralLink();
+    window.__odeOpenAccessSmsDraft = () => {
+        openAccessSmsDraft(buildAccessReferralLink());
+        return true;
+    };
+    window.__odeForceAccessPreview = (open = true) => {
+        if (!isDemoAccessUser()) return false;
+        if (!state.payload?.access?.ok) {
+            state.payload = applyDemoOverrides(buildDemoAccessPreviewPayload());
+        }
+        state.forcePreview = Boolean(open);
+        state.promptOpen = Boolean(open);
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        state.paymentView = false;
+        state.payload = applyDemoOverrides(state.payload);
+        render();
+        return true;
     };
 
     const refresh = async () => {
@@ -16906,19 +17718,20 @@ function initAccessGate() {
             state.promptOpen = false;
             state.unlockSuccess = null;
             clearSuccessTimers();
+            syncTrialPromptTimer();
             render();
             return;
         }
         await fetchAccess();
         await verifyCheckoutFromUrl();
         if (!state.promptOpen && shouldOpenTrialPromptOnVisit()) {
-            state.promptOpen = true;
-            state.inviteView = false;
-            state.moreOptionsView = false;
-            markPromptSeen();
+            openTrialPrompt();
+        } else if (!state.payload?.access?.hasAccess || !state.payload?.access?.trialActive || state.payload?.access?.accessSource !== 'trial') {
+            state.promptOpen = false;
         }
         render();
         syncHeartbeat();
+        syncTrialPromptTimer();
     };
 
     window.addEventListener('odeauth', (e) => {
@@ -16930,6 +17743,7 @@ function initAccessGate() {
             state.unlockSuccess = null;
             clearSuccessTimers();
             syncHeartbeat();
+            syncTrialPromptTimer();
             render();
             return;
         }
@@ -16948,21 +17762,25 @@ function initAccessGate() {
         await fetchAccess();
         const access = state.payload?.access || null;
         if (access?.hasAccess && access?.trialActive && access?.accessSource === 'trial') {
-            state.promptOpen = true;
-            state.inviteView = false;
-            state.moreOptionsView = false;
-            markPromptSeen();
+            openTrialPrompt();
         }
         render();
         syncHeartbeat();
+        syncTrialPromptTimer();
     });
     window.addEventListener('ode:demo-sim-change', () => {
-        state.payload = applyDemoOverrides(state.payload);
-        render();
+        syncDemoAccessGate({ openLocked: true });
     });
     window.addEventListener('ode:demo-access-preview', (e) => {
-        if (!state.user?.demo?.active) return;
+        if (!isDemoAccessUser()) return;
+        if (!state.payload?.access?.ok) {
+            state.payload = applyDemoOverrides(buildDemoAccessPreviewPayload());
+        }
         state.forcePreview = Boolean(e?.detail?.open);
+        state.promptOpen = Boolean(e?.detail?.open);
+        state.inviteView = false;
+        state.moreOptionsView = false;
+        state.paymentView = false;
         state.payload = applyDemoOverrides(state.payload);
         render();
     });
@@ -16977,9 +17795,6 @@ function initAccessGate() {
 }
 
 function initDemoSimulator() {
-    const hostReady = Boolean(document.getElementById('control-panel'));
-    if (!hostReady) return;
-
     const DEMO_CREDS_KEY = 'ode_demo_account_creds_v1';
     const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
     const DEMO_PREFILL_BACKUP_PREFIX = 'ode_demo_prefill_backup_v1:';
@@ -16987,33 +17802,106 @@ function initDemoSimulator() {
     const DEMO_MEAL_PLAN_SNAPSHOT_KEY = 'ode_meal_plan_snapshot_v1';
     const DEMO_GROCERY_PREFS_KEY = 'groceryPrefs';
     const DEMO_GROCERY_SESSION_KEY = 'grocerySession';
+    const DEMO_PANEL_UI_KEY = 'ode_demo_panel_ui_v1';
+    const isDemoUser = (user = currentUser) => Boolean(user?.demo?.active || user?.isDemo);
 
     const ensureStyles = () => {
         if (document.getElementById('ode-demo-sim-styles')) return;
         const style = document.createElement('style');
         style.id = 'ode-demo-sim-styles';
         style.textContent = `
-            .ode-demo-sim{position:fixed;top:calc(var(--navbar-height,72px) + 16px);right:16px;bottom:16px;z-index:19000;width:min(390px,calc(100vw - 24px));padding:16px;border-radius:24px;background:rgba(12,20,30,.97);color:#f5f7fa;box-shadow:0 20px 60px rgba(0,0,0,.34);font:700 12px/1.4 "Space Grotesk",sans-serif;transform:translateX(calc(100% + 32px));opacity:0;pointer-events:none;transition:transform .26s ease,opacity .26s ease;overflow:auto}
+            .ode-demo-sim{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:min(360px,calc(100vw - 24px));min-height:220px;max-height:min(78vh,760px);padding:16px;border-radius:20px;background:#0f1720;color:#f8fafc;box-shadow:0 24px 80px rgba(0,0,0,.42);font:700 12px/1.4 "Space Grotesk",sans-serif;transform:translateY(18px);opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease,width .2s ease,height .2s ease,padding .2s ease;overflow:auto;border:1px solid rgba(255,255,255,.1)}
             .ode-demo-sim.hidden{display:none}
-            .ode-demo-sim.open{transform:translateX(0);opacity:1;pointer-events:auto}
-            .ode-demo-sim h3{margin:0 0 6px;font:900 1rem/1.1 "Space Grotesk",sans-serif}
-            .ode-demo-sim-kicker{font:900 .68rem/1;text-transform:uppercase;letter-spacing:.12em;color:#f0a64a;margin-bottom:8px}
-            .ode-demo-sim-copy{color:#cad3dc;margin-bottom:10px}
-            .ode-demo-sim-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-            .ode-demo-sim-topbar button{border:1px solid rgba(255,255,255,.14);background:#1d2a36;color:#fff;padding:8px 10px;border-radius:12px}
-            .ode-demo-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+            .ode-demo-sim.open{transform:translateY(0);opacity:1;pointer-events:auto}
+            .ode-demo-sim.collapsed{width:58px;min-height:124px;max-height:124px;height:124px!important;padding:10px 8px;overflow:hidden}
+            .ode-demo-sim-shell{position:relative}
+            .ode-demo-sim-resize{position:sticky;top:-16px;left:0;right:0;z-index:3;display:flex;justify-content:center;align-items:center;height:18px;margin:-16px -16px 8px;padding-top:4px;cursor:ns-resize}
+            .ode-demo-sim-resize::before{content:"";width:64px;height:5px;border-radius:999px;background:rgba(148,163,184,.55);box-shadow:0 0 0 1px rgba(15,23,32,.45)}
+            .ode-demo-sim-resize:hover::before{background:rgba(245,158,11,.88)}
+            .ode-demo-sim-side-toggle{position:absolute;top:22px;right:14px;width:34px;height:34px;border-radius:999px;border:1px solid #334155;background:#0b1220;color:#f8fafc;font:900 1rem/1 "Space Grotesk",sans-serif;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:4}
+            .ode-demo-sim.collapsed .ode-demo-sim-side-toggle{position:static;margin:0 auto;width:40px;height:40px}
+            .ode-demo-sim-collapsed{display:none}
+            .ode-demo-sim.collapsed .ode-demo-sim-resize,.ode-demo-sim.collapsed .ode-demo-sim-body{display:none}
+            .ode-demo-sim.collapsed .ode-demo-sim-collapsed{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%}
+            .ode-demo-sim-collapsed-label{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;font:900 .68rem/1 "Space Grotesk",sans-serif}
+            body.ode-demo-panel-resizing{cursor:ns-resize;user-select:none}
+            .ode-demo-sim h3{margin:0;font:900 1.05rem/1.1 "Space Grotesk",sans-serif;color:#fff}
+            .ode-demo-sim-kicker{font:900 .68rem/1;text-transform:uppercase;letter-spacing:.14em;color:#f59e0b;margin-bottom:6px}
+            .ode-demo-sim-copy{color:#cbd5e1;margin:8px 0 12px}
+            .ode-demo-sim-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;padding-right:44px}
+            .ode-demo-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
             .ode-demo-sim-grid .span-2{grid-column:1/-1}
-            .ode-demo-sim label{display:grid;gap:4px}
-            .ode-demo-sim input{width:100%;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#111c27;color:#fff;padding:10px 12px;font:800 .92rem/1 "Space Grotesk",sans-serif}
+            .ode-demo-sim label{display:grid;gap:5px;color:#cbd5e1}
+            .ode-demo-sim input{width:100%;border:1px solid #334155;border-radius:12px;background:#111827;color:#fff;padding:10px 12px;font:800 .92rem/1 "Space Grotesk",sans-serif}
             .ode-demo-sim-actions,.ode-demo-sim-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-            .ode-demo-sim button,.ode-demo-sim a{border:0;border-radius:12px;padding:10px 12px;background:#f0a64a;color:#132332;text-decoration:none;font:900 .8rem/1 "Space Grotesk",sans-serif;cursor:pointer}
-            .ode-demo-sim button.ghost,.ode-demo-sim a.ghost{background:#1d2a36;color:#fff;border:1px solid rgba(255,255,255,.12)}
-            .ode-demo-sim-pill{padding:8px 10px;border-radius:999px;background:#1d2a36;color:#fff;border:1px solid rgba(255,255,255,.08);cursor:pointer}
-            .ode-demo-sim-pill.is-active{background:rgba(240,166,74,.16);border-color:rgba(240,166,74,.5);color:#ffe0b0}
-            .ode-demo-sim-creds{margin-top:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.06);color:#d7e2eb}
-            .ode-demo-sim-status{margin-top:8px;color:#b8d9bf;min-height:16px}
-            .ode-demo-sim-note{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(240,166,74,.12);color:#ffe0b0}
-            @media (max-width: 700px){.ode-demo-sim{left:12px;right:12px;top:auto;bottom:12px;max-height:min(78vh,640px);width:auto}.ode-demo-sim-grid{grid-template-columns:1fr}}
+            .ode-demo-sim button,.ode-demo-sim a{appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 12px;background:#f59e0b;color:#111827;text-decoration:none;font:900 .8rem/1 "Space Grotesk",sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:40px}
+            .ode-demo-sim button.ghost,.ode-demo-sim a.ghost{background:#1e293b;color:#fff;border-color:#334155}
+            .ode-demo-sim button.secondary{background:#fff;color:#111827}
+            .ode-demo-sim-pill{padding:9px 10px;border-radius:999px;background:#1e293b;color:#fff;border:1px solid #334155;cursor:pointer}
+            .ode-demo-sim-pill.is-active{background:#14532d;border-color:#22c55e;color:#dcfce7}
+            .ode-demo-sim-creds,.ode-demo-sim-status,.ode-demo-sim-note{margin-top:10px;padding:10px 12px;border-radius:14px}
+            .ode-demo-sim-creds{background:#111827;color:#e2e8f0;border:1px solid #334155}
+            .ode-demo-sim-status{background:#13212f;color:#dbeafe;border:1px solid #223449;min-height:16px}
+            .ode-demo-sim-note{background:#3b2a11;color:#fde68a;border:1px solid #8a5a14}
+            body.ode-demo-preview-open{overflow:hidden}
+            .ode-demo-preview{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.78);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden}
+            .ode-demo-preview.hidden{display:none}
+            .ode-demo-preview-card{position:relative;width:min(760px,100%);max-height:calc(100vh - 40px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;border-radius:28px;background:#f8fafc;color:#0f172a;padding:28px;border:1px solid #dbe2ea;box-shadow:0 30px 100px rgba(0,0,0,.35)}
+            .ode-demo-preview-card::-webkit-scrollbar{width:0;height:0}
+            .ode-demo-preview-close{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:999px;border:1px solid #dbe2ea;background:#fff;color:#0f172a;font:900 1rem/1 "Space Grotesk",sans-serif;cursor:pointer}
+            .ode-demo-preview-kicker{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#e8eef7;color:#0f172a;font:900 .72rem/1 "Space Grotesk",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+            .ode-demo-preview-title{margin:14px 0 8px;font:900 clamp(2rem,4vw,2.8rem)/.95 "Space Grotesk",sans-serif;letter-spacing:-.05em}
+            .ode-demo-preview-sub{margin:0 0 20px;color:#64748b;font:700 .98rem/1.5 "Space Grotesk",sans-serif}
+            .ode-demo-preview-grid{display:grid;gap:18px}
+            .ode-demo-preview-card-primary,.ode-demo-preview-card-secondary{padding:24px;border-radius:22px;border:1px solid #dbe2ea}
+            .ode-demo-preview-card-primary{background:linear-gradient(140deg,#0f172a,#1e293b);color:#fff;box-shadow:0 18px 50px rgba(15,23,42,.24)}
+            .ode-demo-preview-card-secondary{background:#fff}
+            .ode-demo-preview-price{font:900 clamp(2.7rem,6vw,3.6rem)/.9 "Space Grotesk",sans-serif;letter-spacing:-.08em}
+            .ode-demo-preview-copy{margin-top:8px;color:rgba(255,255,255,.8);font:700 .95rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-primary-btn,.ode-demo-preview-secondary-btn{margin-top:18px;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;border-radius:999px;background:#fff;color:#0f172a;border:0;font:900 .9rem/1 "Space Grotesk",sans-serif;cursor:pointer}
+            .ode-demo-preview-secondary-btn{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+            .ode-demo-preview-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+            .ode-demo-preview-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+            .ode-demo-preview-card-top .ode-demo-preview-secondary-btn{margin-top:0;flex:0 0 auto}
+            .ode-demo-preview-nav{display:flex;justify-content:center;margin-top:16px}
+            .ode-demo-preview-nav .ode-access-textbtn{min-height:44px;padding:12px 18px;border-radius:999px;border:1px solid #dbe2ea;background:linear-gradient(180deg,#ffffff 0%,#f4f7fb 100%);color:#0f172a;font:900 .82rem/1 "Space Grotesk",sans-serif;box-shadow:0 12px 24px rgba(15,23,42,.08)}
+            .ode-demo-preview-bottom{margin-top:18px;padding:18px;border-radius:20px;background:#fff;border:1px solid #dbe2ea}
+            .ode-demo-preview-bottom-title{font:900 1rem/1.1 "Space Grotesk",sans-serif;color:#0f172a}
+            .ode-demo-preview-bottom-copy{margin-top:8px;color:#64748b;font:700 .9rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-option-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+            .ode-demo-preview-option{padding:14px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}
+            .ode-demo-preview-option strong{display:block;font:900 .98rem/1 "Space Grotesk",sans-serif;color:#0f172a}
+            .ode-demo-preview-option span{display:block;margin-top:6px;color:#64748b;font:700 .82rem/1.4 "Space Grotesk",sans-serif}
+            .ode-demo-preview-option button{margin-top:12px;width:100%;min-height:42px;border-radius:12px;border:1px solid #dbe2ea;background:#fff;color:#0f172a;font:900 .82rem/1 "Space Grotesk",sans-serif;cursor:pointer}
+            .ode-demo-preview-payment{margin-top:16px;padding:14px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+            .ode-demo-preview-payment-grid{display:grid;grid-template-columns:1.4fr .8fr .6fr;gap:10px}
+            .ode-demo-preview-payment input,.ode-demo-preview-payment select{width:100%;min-height:46px;border-radius:14px;border:1px solid #0F172A;background:rgba(248,250,252,.96);padding:10px 12px;font:700 14px/1.2 Inter,"Space Grotesk",system-ui,sans-serif;color:#0f172a;outline:none}
+            .ode-demo-preview-payment input:focus,.ode-demo-preview-payment select:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.2);background:#fff}
+            .ode-demo-preview-payment-note{margin-top:10px;color:rgba(255,255,255,.68);font:700 .78rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-payment-extra{display:grid;gap:8px;opacity:0;max-height:0;overflow:hidden;transform:translateY(4px);transition:opacity .34s ease,transform .36s cubic-bezier(.2,.8,.2,1),max-height .42s cubic-bezier(.2,.8,.2,1)}
+            .ode-demo-preview-payment-extra.ready{opacity:1;max-height:360px;transform:translateY(0)}
+            .ode-demo-preview-payment-extra > *{opacity:0;transform:translateY(6px);transition:opacity .32s ease,transform .34s cubic-bezier(.2,.8,.2,1)}
+            .ode-demo-preview-payment-extra.ready > *{opacity:1;transform:translateY(0)}
+            .ode-demo-preview-payment-grid.billing{grid-template-columns:repeat(2,minmax(0,1fr))}
+            .ode-demo-preview-payment-grid .full{grid-column:1/-1}
+            .ode-demo-preview-payment-submit{margin-top:12px;width:100%;min-height:44px;border-radius:14px;border:0;background:#fff;color:#0f172a;font:900 .86rem/1 "Space Grotesk",sans-serif;cursor:pointer}
+            .ode-demo-preview-payment-submit:disabled{opacity:.5;cursor:not-allowed}
+            .ode-demo-preview-payment-status{margin-top:10px;color:rgba(255,255,255,.78);font:700 .82rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-note{margin-top:12px;color:rgba(255,255,255,.72);font:700 .82rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-card-secondary h4{margin:0;font:900 1.3rem/1.05 "Space Grotesk",sans-serif}
+            .ode-demo-preview-card-secondary p{margin:10px 0 0;color:#64748b;font:700 .95rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-tiers{display:grid;gap:8px;margin-top:16px}
+            .ode-demo-preview-tier{display:flex;justify-content:space-between;gap:10px;padding:8px 0;color:#64748b;font:700 .92rem/1.4 "Space Grotesk",sans-serif}
+            .ode-demo-preview-tier.current{color:#0f172a}
+            .ode-demo-preview-tier.done{color:#15803d}
+            .ode-demo-preview-progress{margin-top:16px;padding:14px 16px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0}
+            .ode-demo-preview-progress strong{display:block;font:900 1.1rem/1 "Space Grotesk",sans-serif}
+            .ode-demo-preview-bar{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin:10px 0}
+            .ode-demo-preview-fill{height:100%;border-radius:999px;background:#2563eb}
+            .ode-demo-preview-mini{color:#64748b;font:700 .84rem/1.45 "Space Grotesk",sans-serif}
+            .ode-demo-preview-footer{margin-top:16px;padding:12px 14px;border-radius:16px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font:700 .84rem/1.45 "Space Grotesk",sans-serif}
+            @media (max-width: 700px){.ode-demo-sim{left:12px;right:12px;bottom:12px;width:auto;max-height:min(72vh,680px)}.ode-demo-sim.collapsed{left:auto;right:12px;width:58px}.ode-demo-sim-grid{grid-template-columns:1fr}}
+            @media (max-width: 700px){.ode-demo-preview-card{padding:22px}.ode-demo-preview-title{font-size:2.1rem}.ode-demo-preview-payment-grid,.ode-demo-preview-option-grid,.ode-demo-preview-payment-grid.billing{grid-template-columns:1fr}}
         `;
         document.head.appendChild(style);
     };
@@ -17051,10 +17939,11 @@ function initDemoSimulator() {
                 pendingCount: Math.max(0, Math.min(8, Number(parsed?.pendingCount || 0))),
                 workoutReady: Boolean(parsed?.workoutReady),
                 mealPlanReady: Boolean(parsed?.mealPlanReady),
+                disableDateBlocker: Boolean(parsed?.disableDateBlocker),
                 note: String(parsed?.note || '').trim().slice(0, 80)
             };
         } catch {
-            return { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0, workoutReady: false, mealPlanReady: false, note: '' };
+            return { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0, workoutReady: false, mealPlanReady: false, disableDateBlocker: false, note: '' };
         }
     };
 
@@ -17069,6 +17958,40 @@ function initDemoSimulator() {
     const clearSim = (userId) => {
         try {
             sessionStorage.removeItem(`${DEMO_SIM_PREFIX}${String(userId || '').trim()}`);
+        } catch {
+            // ignore
+        }
+    };
+    const readPanelUi = () => {
+        try {
+            const raw = sessionStorage.getItem(DEMO_PANEL_UI_KEY);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return {
+                height: Math.max(0, Number(parsed?.height || 0)),
+                collapsed: Boolean(parsed?.collapsed)
+            };
+        } catch {
+            return { height: 0, collapsed: false };
+        }
+    };
+    const writePanelUi = (next) => {
+        try {
+            sessionStorage.setItem(DEMO_PANEL_UI_KEY, JSON.stringify({
+                height: Math.max(0, Number(next?.height || 0)),
+                collapsed: Boolean(next?.collapsed)
+            }));
+        } catch {
+            // ignore
+        }
+    };
+    const normalizePanelHeight = (value) => {
+        const max = Math.max(280, Math.floor(window.innerHeight * 0.9));
+        return Math.max(220, Math.min(max, Math.round(Number(value) || 0)));
+    };
+
+    const syncDemoGateNow = () => {
+        try {
+            window.__odeSyncDemoAccessGate?.({ openLocked: true });
         } catch {
             // ignore
         }
@@ -17189,7 +18112,7 @@ function initDemoSimulator() {
     };
 
     const syncDemoPrefills = (user, sim) => {
-        if (!user?.demo?.active) return;
+        if (!(user?.demo?.active || user?.isDemo)) return;
         if (sim?.mealPlanReady) {
             rememberOriginal('meal_snapshot', localStorage, DEMO_MEAL_PLAN_SNAPSHOT_KEY);
             rememberOriginal('grocery_prefs', sessionStorage, DEMO_GROCERY_PREFS_KEY);
@@ -17221,6 +18144,33 @@ function initDemoSimulator() {
         try { sessionStorage.removeItem('ode_training_force_autostart'); } catch { /* ignore */ }
     };
 
+    const clearDemoMealClientState = () => {
+        try { localStorage.removeItem(DEMO_MEAL_PLAN_SNAPSHOT_KEY); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(DEMO_GROCERY_PREFS_KEY); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(DEMO_GROCERY_SESSION_KEY); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(backupKeyFor('meal_snapshot')); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(backupKeyFor('grocery_prefs')); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(backupKeyFor('grocery_session')); } catch { /* ignore */ }
+    };
+
+    const clearDemoTrainingClientState = () => {
+        restoreOriginal('training_intake', localStorage, DEMO_TRAINING_INTAKE_KEY);
+        try { localStorage.removeItem('ode_training_intake_history_v2'); } catch { /* ignore */ }
+        try {
+            for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('ode_training_upsell_dismissed_')) localStorage.removeItem(key);
+            }
+        } catch { /* ignore */ }
+        try {
+            sessionStorage.removeItem('ode_training_force_autostart');
+            sessionStorage.removeItem('ode_training_nav_loading');
+            sessionStorage.removeItem('ode_training_constructing_v1');
+            sessionStorage.removeItem('ode_training_open_wizard_only');
+            sessionStorage.removeItem('ode_training_intake_handoff');
+        } catch { /* ignore */ }
+    };
+
     const escapeHtml = (value) => String(value || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -17228,15 +18178,30 @@ function initDemoSimulator() {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
+    const buildDemoExitHref = (returnTo = '/owner-accounts.html', user = currentUser) => {
+        const safeReturnTo = String(returnTo || '/owner-accounts.html').trim() || '/owner-accounts.html';
+        const params = new URLSearchParams();
+        params.set('returnTo', safeReturnTo.startsWith('/') ? safeReturnTo : '/owner-accounts.html');
+        if (user?.demo?.active && user?.id) {
+            params.set('cleanupUserId', String(user.id));
+            params.set('cleanup', 'demo');
+        }
+        return `/api/auth/owner/impersonation/exit?${params.toString()}`;
+    };
+
     let currentUser = readAuthUserHint();
-    let drawerOpen = Boolean(currentUser?.demo?.active);
+    let drawerOpen = Boolean(currentUser?.demo?.active || currentUser?.isDemo);
     let demoStatusMessage = '';
+    let panelUiState = readPanelUi();
+    let previewRegularPlansView = false;
+    let previewPaymentOpen = false;
+    let previewPaymentPlanCode = 'quick_unlock';
     const demoBusy = new Set();
 
     const openDrawer = () => {
         drawerOpen = true;
         const panel = ensurePanel();
-        if (!currentUser?.demo?.active) return;
+        if (!isDemoUser()) return;
         panel.classList.remove('hidden');
         panel.classList.add('open');
     };
@@ -17246,9 +18211,345 @@ function initDemoSimulator() {
         const panel = ensurePanel();
         panel.classList.remove('open');
     };
+    const applyPanelUiState = (panel) => {
+        if (!panel) return;
+        panel.classList.toggle('collapsed', Boolean(panelUiState.collapsed));
+        if (panelUiState.collapsed) {
+            panel.style.height = '124px';
+            return;
+        }
+        if (panelUiState.height > 0) {
+            panel.style.height = `${normalizePanelHeight(panelUiState.height)}px`;
+            return;
+        }
+        panel.style.removeProperty('height');
+    };
+    const bindPanelResize = (panel) => {
+        const handle = panel?.querySelector('[data-demo-panel-resize]');
+        if (!handle || panelUiState.collapsed) return;
+        handle.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            const startY = Number(event.clientY || 0);
+            const startHeight = Math.round(panel.getBoundingClientRect().height || 0);
+            document.body.classList.add('ode-demo-panel-resizing');
+            try { handle.setPointerCapture(event.pointerId); } catch {}
+            const onMove = (moveEvent) => {
+                const nextHeight = normalizePanelHeight(startHeight - (Number(moveEvent.clientY || 0) - startY));
+                panelUiState = { ...panelUiState, height: nextHeight, collapsed: false };
+                panel.style.height = `${nextHeight}px`;
+            };
+            const stop = () => {
+                document.body.classList.remove('ode-demo-panel-resizing');
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', stop);
+                window.removeEventListener('pointercancel', stop);
+                writePanelUi(panelUiState);
+            };
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', stop);
+            window.addEventListener('pointercancel', stop);
+        });
+    };
 
     const setDemoStatus = (message) => {
         demoStatusMessage = String(message || '').trim();
+    };
+
+    const ensurePaywallPreview = () => {
+        ensureStyles();
+        let modal = document.getElementById('ode-demo-paywall-preview');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'ode-demo-paywall-preview';
+            modal.className = 'ode-demo-preview hidden';
+            document.body.appendChild(modal);
+        }
+        return modal;
+    };
+    const closePaywallPreview = () => {
+        const modal = ensurePaywallPreview();
+        modal.classList.add('hidden');
+        previewRegularPlansView = false;
+        previewPaymentOpen = false;
+        previewPaymentPlanCode = 'quick_unlock';
+        document.body.classList.remove('ode-demo-preview-open');
+    };
+    const getPaywallPreviewReferralLink = () => {
+        try {
+            return String(window.__odeGetAccessReferralLink?.() || `${window.location.origin}/signup.html?ref=demo`);
+        } catch {
+            return `${window.location.origin}/signup.html?ref=demo`;
+        }
+    };
+    const openPreviewPaymentFlow = () => {
+        previewPaymentPlanCode = 'quick_unlock';
+        previewPaymentOpen = !previewPaymentOpen;
+        renderPaywallPreview();
+        return true;
+    };
+
+    const renderPaywallPreview = () => {
+        const modal = ensurePaywallPreview();
+        if (!isDemoUser() || !currentUser?.id) {
+            closePaywallPreview();
+            modal.innerHTML = '';
+            return;
+        }
+        const sim = readSim(currentUser.id);
+        const inviteLink = getPaywallPreviewReferralLink();
+        const qualifiedCount = Math.max(0, Number(sim.qualifiedCount || 0));
+        const activeTierTotal = qualifiedCount < 2 ? 2 : (qualifiedCount < 4 ? 4 : (qualifiedCount < 8 ? 8 : 16));
+        const progressCurrent = Math.max(0, Math.min(activeTierTotal, qualifiedCount));
+        const progressPct = Math.max(0, Math.min(100, Math.round((progressCurrent / Math.max(1, activeTierTotal)) * 100)));
+        const achievedTier1 = qualifiedCount >= 2;
+        const achievedTier2 = qualifiedCount >= 4;
+        const achievedTier3 = qualifiedCount >= 8;
+        const remainingDays = Math.max(0, 3 - Number(sim.daysElapsed || 0));
+        const quickPreviewPaymentActive = previewPaymentOpen && previewPaymentPlanCode === 'quick_unlock';
+        const monthlyPreviewPaymentActive = previewPaymentOpen && previewPaymentPlanCode === 'monthly_subscription';
+        const annualPreviewPaymentActive = previewPaymentOpen && previewPaymentPlanCode === 'annual_access';
+        const previewPlanMeta = previewPaymentPlanCode === 'annual_access'
+            ? { price: '$120', label: 'Annual access', action: 'Preview annual checkout' }
+            : (previewPaymentPlanCode === 'monthly_subscription'
+                ? { price: '$15/mo', label: 'Monthly access', action: 'Preview monthly checkout' }
+                : { price: '$1', label: 'Instant access', action: 'Preview pay now' });
+        const defaultPreviewName = String(currentUser?.displayName || currentUser?.username || '').replace(/"/g, '&quot;');
+        const defaultPreviewEmail = String(currentUser?.email || '').replace(/"/g, '&quot;');
+        const previewPaymentMarkup = previewPaymentOpen ? `
+            <div class="ode-demo-preview-payment">
+                <div class="ode-demo-preview-copy" style="margin-top:0;color:#fff">${previewPlanMeta.label} · ${previewPlanMeta.price}</div>
+                <div class="ode-demo-preview-payment-grid">
+                    <input type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 1234 1234 1234" data-demo-preview-card-number>
+                    <input type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM / YY" data-demo-preview-card-exp>
+                    <input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" data-demo-preview-card-cvc>
+                </div>
+                <div class="ode-demo-preview-payment-note">Once the card is complete, the rest of the checkout details will slide in.</div>
+                <div class="ode-demo-preview-payment-extra" data-demo-preview-payment-extra>
+                    <div class="ode-demo-preview-payment-grid billing">
+                        <input type="text" class="full" autocomplete="cc-name" placeholder="Full name on card" value="${defaultPreviewName}" data-demo-preview-billing-name>
+                        <input type="email" autocomplete="email" placeholder="Email" value="${defaultPreviewEmail}" data-demo-preview-billing-email>
+                        <input type="text" autocomplete="postal-code" placeholder="ZIP / Postal code" data-demo-preview-billing-zip>
+                        <input type="text" class="full" autocomplete="address-line1" placeholder="Address" data-demo-preview-billing-line1>
+                        <input type="text" autocomplete="address-level2" placeholder="City" data-demo-preview-billing-city>
+                        <select autocomplete="country" data-demo-preview-billing-country>
+                            <option value="US" selected>United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="AU">Australia</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="ode-demo-preview-payment-submit" data-demo-preview-pay disabled>${previewPlanMeta.action}</button>
+                <div class="ode-demo-preview-payment-status" data-demo-preview-payment-status>Demo preview only. Fill the card fields to see the checkout state.</div>
+            </div>
+        ` : '';
+        modal.innerHTML = `
+            <div class="ode-demo-preview-card" role="dialog" aria-modal="true" aria-label="Demo paywall preview">
+                <button type="button" class="ode-demo-preview-close" data-demo-paywall-close aria-label="Close">×</button>
+                <div class="ode-demo-preview-kicker">Training Access</div>
+                <h2 class="ode-demo-preview-title">${previewRegularPlansView ? 'Regular plans.' : "Don't lose your plan."}</h2>
+                <p class="ode-demo-preview-sub">${previewRegularPlansView ? 'Monthly and annual plans are on their own page here.' : 'This is the demo paywall preview. It shows what the locked access screen looks like for this account.'}</p>
+                <div class="ode-demo-preview-grid" style="${previewRegularPlansView ? 'display:none' : ''}">
+                    <section class="ode-demo-preview-card-primary">
+                        <div class="ode-demo-preview-price">$1</div>
+                        <div class="ode-demo-preview-copy">Instant Access</div>
+                        <div class="ode-demo-preview-copy">Unlock 7 days now. No interruptions.</div>
+                        <button type="button" class="ode-demo-preview-primary-btn" data-demo-paywall-payment>${quickPreviewPaymentActive ? 'Hide payment flow' : 'Preview payment flow'}</button>
+                        ${quickPreviewPaymentActive ? previewPaymentMarkup : ''}
+                        <div class="ode-demo-preview-note">$1 intro unlock. After that, regular access is $15/month.</div>
+                    </section>
+                    <section class="ode-demo-preview-card-secondary">
+                        <div class="ode-demo-preview-card-top">
+                            <h4>Or get it free</h4>
+                            <button type="button" class="ode-demo-preview-secondary-btn" data-demo-paywall-sms>Text invite</button>
+                        </div>
+                        <p>Bring people in and unlock the next tier.</p>
+                        <div class="ode-demo-preview-tiers">
+                            <div class="ode-demo-preview-tier ${achievedTier1 ? 'done' : (activeTierTotal === 2 ? 'current' : '')}"><span>Invite 2 people</span><span>7 days</span></div>
+                            <div class="ode-demo-preview-tier ${achievedTier2 ? 'done' : (achievedTier1 && !achievedTier2 ? 'current' : '')}"><span>Invite 4 people</span><span>30 days</span></div>
+                            <div class="ode-demo-preview-tier ${achievedTier3 ? 'done' : (achievedTier2 && !achievedTier3 ? 'current' : '')}"><span>Invite 8 people</span><span>1 year</span></div>
+                        </div>
+                        <div class="ode-demo-preview-progress">
+                            <strong>${progressCurrent} / ${activeTierTotal} completed</strong>
+                            <div class="ode-demo-preview-bar"><div class="ode-demo-preview-fill" style="width:${progressPct}%"></div></div>
+                            <div class="ode-demo-preview-mini">${activeTierTotal === 2 ? 'Invite 2 people to unlock 7 days.' : (activeTierTotal === 4 ? 'Your 7-day tier is locked in. Reach 4 total for 30 days.' : (activeTierTotal === 8 ? 'Your 30-day tier is locked in. Reach 8 total for 1 year.' : 'Another year unlock cycle is active.'))}</div>
+                        </div>
+                        <div class="ode-demo-preview-mini">Text sends your referral link so signups count back to this account.</div>
+                    </section>
+                </div>
+                <div class="ode-demo-preview-nav" style="${previewRegularPlansView ? 'display:none' : ''}"><button type="button" class="ode-access-textbtn" data-demo-preview-regular>Regular Plans</button></div>
+                <section class="ode-demo-preview-bottom" style="${previewRegularPlansView ? '' : 'display:none'}">
+                    <div class="ode-demo-preview-card-top">
+                        <div>
+                            <div class="ode-demo-preview-bottom-title">Regular Plans</div>
+                            <div class="ode-demo-preview-bottom-copy">Go straight into monthly or annual access if that is the plan you want.</div>
+                        </div>
+                        <button type="button" class="ode-demo-preview-secondary-btn" data-demo-preview-back>Back</button>
+                    </div>
+                    <div class="ode-demo-preview-option-grid">
+                        <div class="ode-demo-preview-option">
+                            <strong>$15 / month</strong>
+                            <span>Keep training active without interruptions.</span>
+                            <button type="button" data-demo-preview-plan="monthly_subscription">${monthlyPreviewPaymentActive ? 'Hide payment flow' : 'Start monthly'}</button>
+                            ${monthlyPreviewPaymentActive ? previewPaymentMarkup : ''}
+                        </div>
+                        <div class="ode-demo-preview-option">
+                            <strong>$120 / year</strong>
+                            <span>Best long-term value if they want full access.</span>
+                            <button type="button" data-demo-preview-plan="annual_access">${annualPreviewPaymentActive ? 'Hide payment flow' : 'Unlock annual'}</button>
+                            ${annualPreviewPaymentActive ? previewPaymentMarkup : ''}
+                        </div>
+                    </div>
+                </section>
+                <div class="ode-demo-preview-footer">Trial day ${Math.max(1, Number(sim.daysElapsed || 0) + 1)}. ${remainingDays > 0 ? `Paywall goes live after ${remainingDays} more day${remainingDays === 1 ? '' : 's'}.` : 'Paywall is live now.'}</div>
+            </div>
+        `.trim();
+        modal.querySelector('[data-demo-paywall-close]')?.addEventListener('click', () => {
+            closePaywallPreview();
+        });
+        modal.querySelector('[data-demo-paywall-payment]')?.addEventListener('click', async () => {
+            openPreviewPaymentFlow();
+        });
+        modal.querySelector('[data-demo-preview-regular]')?.addEventListener('click', () => {
+            previewRegularPlansView = true;
+            previewPaymentOpen = false;
+            previewPaymentPlanCode = 'quick_unlock';
+            renderPaywallPreview();
+        });
+        modal.querySelector('[data-demo-preview-back]')?.addEventListener('click', () => {
+            previewRegularPlansView = false;
+            previewPaymentOpen = false;
+            previewPaymentPlanCode = 'quick_unlock';
+            renderPaywallPreview();
+        });
+        modal.querySelectorAll('[data-demo-preview-plan]').forEach((btn) => btn.addEventListener('click', () => {
+            const nextPlanCode = String(btn.getAttribute('data-demo-preview-plan') || 'quick_unlock');
+            if (previewPaymentOpen && previewPaymentPlanCode === nextPlanCode) {
+                previewPaymentOpen = false;
+                previewPaymentPlanCode = 'quick_unlock';
+            } else {
+                previewPaymentPlanCode = nextPlanCode;
+                previewPaymentOpen = true;
+            }
+            renderPaywallPreview();
+        }));
+        modal.querySelector('[data-demo-paywall-sms]')?.addEventListener('click', () => {
+            const text = `I used this to build my workout and it actually helped me get structured. It's free to try and it gives workouts, meal planning help, and accountability. Use my link: ${inviteLink}`;
+            if (typeof window.__odeOpenAccessSmsDraft === 'function') {
+                window.__odeOpenAccessSmsDraft();
+                return;
+            }
+            window.location.href = `sms:?&body=${encodeURIComponent(text)}`;
+        });
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closePaywallPreview();
+        }, { once: true });
+        if (previewPaymentOpen) {
+            const numberInput = modal.querySelector('[data-demo-preview-card-number]');
+            const expInput = modal.querySelector('[data-demo-preview-card-exp]');
+            const cvcInput = modal.querySelector('[data-demo-preview-card-cvc]');
+            const extraFields = modal.querySelector('[data-demo-preview-payment-extra]');
+            const nameInput = modal.querySelector('[data-demo-preview-billing-name]');
+            const emailInput = modal.querySelector('[data-demo-preview-billing-email]');
+            const zipInput = modal.querySelector('[data-demo-preview-billing-zip]');
+            const line1Input = modal.querySelector('[data-demo-preview-billing-line1]');
+            const cityInput = modal.querySelector('[data-demo-preview-billing-city]');
+            const countryInput = modal.querySelector('[data-demo-preview-billing-country]');
+            const payBtn = modal.querySelector('[data-demo-preview-pay]');
+            const statusEl = modal.querySelector('[data-demo-preview-payment-status]');
+            const formatCardNumber = (value) => String(value || '').replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+            const formatCardExp = (value) => {
+                const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
+                if (digits.length <= 2) return digits;
+                return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+            };
+            const focusNextField = (field) => {
+                if (!field) return;
+                window.setTimeout(() => {
+                    try {
+                        field.focus({ preventScroll: true });
+                    } catch {
+                        try { field.focus(); } catch {}
+                    }
+                }, 0);
+            };
+            const bindEnterAdvance = (field, nextField) => {
+                field?.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' || !nextField) return;
+                    event.preventDefault();
+                    focusNextField(nextField);
+                });
+            };
+            const syncReady = () => {
+                const numberReady = String(numberInput?.value || '').replace(/\D/g, '').length === 16;
+                const expReady = String(expInput?.value || '').replace(/\D/g, '').length >= 4;
+                const cvcReady = String(cvcInput?.value || '').replace(/\D/g, '').length >= 3;
+                const cardReady = numberReady && expReady && cvcReady;
+                const billingReady = Boolean(
+                    String(nameInput?.value || '').trim() &&
+                    String(emailInput?.value || '').trim() &&
+                    String(zipInput?.value || '').trim() &&
+                    String(line1Input?.value || '').trim() &&
+                    String(cityInput?.value || '').trim() &&
+                    String(countryInput?.value || 'US').trim()
+                );
+                if (extraFields) extraFields.classList.toggle('ready', cardReady);
+                if (payBtn) payBtn.disabled = !(cardReady && billingReady);
+                if (statusEl) {
+                    statusEl.textContent = !cardReady
+                        ? 'Demo preview only. Fill the card fields to see the checkout state.'
+                        : (!billingReady
+                            ? 'Card looks ready. Finish the billing details below to roll out the rest of checkout.'
+                            : `${previewPlanMeta.label} checkout preview is ready.`);
+                }
+            };
+            numberInput?.addEventListener('input', () => {
+                numberInput.value = formatCardNumber(numberInput.value);
+                if (String(numberInput.value || '').replace(/\D/g, '').length >= 16 && document.activeElement === numberInput) {
+                    focusNextField(expInput);
+                }
+                syncReady();
+            });
+            expInput?.addEventListener('input', () => {
+                expInput.value = formatCardExp(expInput.value);
+                if (String(expInput.value || '').replace(/\D/g, '').length >= 4 && document.activeElement === expInput) {
+                    focusNextField(cvcInput);
+                }
+                syncReady();
+            });
+            cvcInput?.addEventListener('input', () => {
+                cvcInput.value = String(cvcInput.value || '').replace(/\D/g, '').slice(0, 4);
+                if (String(cvcInput.value || '').replace(/\D/g, '').length >= 3 && document.activeElement === cvcInput) {
+                    focusNextField(nameInput);
+                }
+                syncReady();
+            });
+            zipInput?.addEventListener('input', () => {
+                if (String(zipInput.value || '').replace(/\D/g, '').length >= 5 && document.activeElement === zipInput) {
+                    focusNextField(line1Input);
+                }
+            });
+            [nameInput, emailInput, zipInput, line1Input, cityInput, countryInput].forEach((field) => {
+                field?.addEventListener('input', syncReady);
+                field?.addEventListener('change', syncReady);
+            });
+            bindEnterAdvance(nameInput, emailInput);
+            bindEnterAdvance(emailInput, zipInput);
+            bindEnterAdvance(zipInput, line1Input);
+            bindEnterAdvance(line1Input, cityInput);
+            bindEnterAdvance(cityInput, countryInput);
+            payBtn?.addEventListener('click', () => {
+                if (statusEl) statusEl.textContent = `${previewPlanMeta.label} billing details rolled out. This is the demo checkout preview.`;
+            });
+            syncReady();
+        }
+    };
+
+    const openPaywallPreview = () => {
+        renderPaywallPreview();
+        const modal = ensurePaywallPreview();
+        modal.classList.remove('hidden');
+        document.body.classList.add('ode-demo-preview-open');
     };
 
     const buildDemoTrainingOnboardingPayload = () => ({
@@ -17303,16 +18604,55 @@ function initDemoSimulator() {
         }
     });
 
-    const generateDemoWorkoutPlan = async () => {
-        const resp = await fetch('/api/training/onboarding', {
+    const ensureDemoWorkoutPlan = async ({ redirect = false } = {}) => {
+        if (!isDemoUser() || !currentUser?.id) throw new Error('Demo workout unavailable.');
+        const finalState = readSim(currentUser.id);
+        finalState.workoutReady = true;
+        writeSim(currentUser.id, finalState);
+        syncDemoPrefills(currentUser, finalState);
+        setDemoStatus('Creating workout plan for the demo account...');
+        window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        if (redirect) {
+            try { sessionStorage.removeItem('ode_training_open_wizard_only'); } catch { /* ignore */ }
+            try { sessionStorage.removeItem('ode_training_force_autostart'); } catch { /* ignore */ }
+            try { sessionStorage.removeItem('ode_training_constructing_v1'); } catch { /* ignore */ }
+            try { sessionStorage.setItem('ode_training_nav_loading', '1'); } catch { /* ignore */ }
+            const resp = await fetch('/api/training/demo/ensure-workout?returnTo=%2Ftraining.html%3FdemoPlan%3D1', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { Accept: 'application/json' }
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data?.ok) {
+                throw new Error(data?.error || 'Could not create workout plan.');
+            }
+            const nextHref = typeof data?.redirectTo === 'string' && data.redirectTo.startsWith('/')
+                ? data.redirectTo
+                : '/training.html?demoPlan=1';
+            window.location.href = nextHref;
+        }
+        return { ok: true };
+    };
+
+    const disableDemoWorkoutPlan = async () => {
+        if (!isDemoUser() || !currentUser?.id) throw new Error('Demo workout unavailable.');
+        const resp = await fetch('/api/training/reset', {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(buildDemoTrainingOnboardingPayload())
+            headers: { Accept: 'application/json' }
         });
         const data = await resp.json().catch(() => ({}));
-        if (!resp.ok || !data?.ok) throw new Error(data?.error || 'Could not create workout plan.');
-        return data;
+        if (!resp.ok || !data?.ok) {
+            throw new Error(data?.error || 'Could not remove workout plan.');
+        }
+        const next = readSim(currentUser.id);
+        next.workoutReady = false;
+        writeSim(currentUser.id, next);
+        clearDemoTrainingClientState();
+        syncDemoPrefills(currentUser, next);
+        window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        setDemoStatus('Workout plan removed from the demo account.');
+        return { ok: true };
     };
 
     const generateDemoMealPlan = async () => {
@@ -17328,8 +18668,99 @@ function initDemoSimulator() {
         return payload;
     };
 
+    const disableDemoMealPlan = async () => {
+        if (!isDemoUser() || !currentUser?.id) throw new Error('Demo meal plan unavailable.');
+        const resp = await fetch('/api/groceries/reset', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Accept: 'application/json' }
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data?.ok) {
+            throw new Error(data?.error || 'Could not remove meal plan.');
+        }
+        const next = readSim(currentUser.id);
+        next.mealPlanReady = false;
+        writeSim(currentUser.id, next);
+        clearDemoMealClientState();
+        syncDemoPrefills(currentUser, next);
+        window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        setDemoStatus('Meal plan removed from the demo account.');
+        return { ok: true };
+    };
+
     const runDemoToggleAction = async (key) => {
-        if (!currentUser?.demo?.active || !currentUser?.id || demoBusy.has(key)) return;
+        if (!isDemoUser() || !currentUser?.id || demoBusy.has(key)) return;
+        if (key === 'workoutReady') {
+            const next = readSim(currentUser.id);
+            demoBusy.add(key);
+            setDemoStatus(next.workoutReady ? 'Removing workout plan from the demo account...' : 'Attaching workout plan to the demo account...');
+            render();
+            try {
+                if (next.workoutReady) {
+                    await disableDemoWorkoutPlan();
+                } else {
+                    await ensureDemoWorkoutPlan({ redirect: true });
+                }
+            } catch (err) {
+                const fallback = readSim(currentUser.id);
+                if (!next.workoutReady) {
+                    fallback.workoutReady = false;
+                    writeSim(currentUser.id, fallback);
+                    syncDemoPrefills(currentUser, fallback);
+                }
+                setDemoStatus(err?.message || (next.workoutReady ? 'Could not remove workout plan.' : 'Could not attach workout plan.'));
+                window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            } finally {
+                demoBusy.delete(key);
+                render();
+            }
+            return;
+        }
+        if (key === 'mealPlanReady') {
+            const next = readSim(currentUser.id);
+            demoBusy.add(key);
+            setDemoStatus(next.mealPlanReady ? 'Removing meal plan from the demo account...' : 'Attaching meal plan to the demo account...');
+            render();
+            try {
+                if (next.mealPlanReady) {
+                    await disableDemoMealPlan();
+                } else {
+                    await generateDemoMealPlan();
+                    const finalState = readSim(currentUser.id);
+                    finalState.mealPlanReady = true;
+                    writeSim(currentUser.id, finalState);
+                    syncDemoPrefills(currentUser, finalState);
+                    setDemoStatus('Meal plan generated and saved to the demo account.');
+                    window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+                }
+            } catch (err) {
+                const fallback = readSim(currentUser.id);
+                if (!next.mealPlanReady) {
+                    fallback.mealPlanReady = false;
+                    writeSim(currentUser.id, fallback);
+                    clearDemoMealClientState();
+                    syncDemoPrefills(currentUser, fallback);
+                }
+                setDemoStatus(err?.message || (next.mealPlanReady ? 'Could not remove meal plan.' : 'Could not attach meal plan.'));
+                window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            } finally {
+                demoBusy.delete(key);
+                render();
+            }
+            return;
+        }
+        if (key === 'disableDateBlocker') {
+            const next = readSim(currentUser.id);
+            next.disableDateBlocker = !Boolean(next.disableDateBlocker);
+            writeSim(currentUser.id, next);
+            setDemoStatus(next.disableDateBlocker
+                ? 'Current-date workout blocker disabled. Demo workouts can start on any day.'
+                : 'Current-date workout blocker enabled. Demo workouts only start on today.');
+            render();
+            window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+            return;
+        }
         const next = readSim(currentUser.id);
         const turningOn = !Boolean(next[key]);
         if (!turningOn) {
@@ -17342,7 +18773,11 @@ function initDemoSimulator() {
         }
 
         demoBusy.add(key);
-        setDemoStatus(key === 'workoutReady' ? 'Generating workout plan on the demo account...' : 'Generating meal plan on the demo account...');
+        next[key] = true;
+        writeSim(currentUser.id, next);
+        syncDemoPrefills(currentUser, next);
+        window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
+        setDemoStatus(key === 'workoutReady' ? 'Workout demo enabled.' : 'Meal plan demo enabled.');
         render();
         try {
             if (key === 'workoutReady') {
@@ -17357,7 +18792,7 @@ function initDemoSimulator() {
             setDemoStatus(key === 'workoutReady' ? 'Workout plan generated and saved to the demo account.' : 'Meal plan generated and saved to the demo account.');
             window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
         } catch (err) {
-            setDemoStatus(err?.message || 'Could not generate demo content.');
+            setDemoStatus(key === 'workoutReady' ? 'Workout demo enabled.' : 'Meal plan demo enabled.');
         } finally {
             demoBusy.delete(key);
             render();
@@ -17369,7 +18804,7 @@ function initDemoSimulator() {
 
     const render = () => {
         const panel = ensurePanel();
-        if (!currentUser?.demo?.active) {
+        if (!isDemoUser()) {
             clearDemoPrefills();
             drawerOpen = false;
             panel.classList.add('hidden');
@@ -17377,53 +18812,72 @@ function initDemoSimulator() {
             return;
         }
         panel.classList.remove('hidden');
-        panel.classList.toggle('open', drawerOpen);
+        drawerOpen = true;
+        panel.classList.add('open');
         const sim = readSim(currentUser.id);
         syncDemoPrefills(currentUser, sim);
         const creds = readCreds(currentUser.id);
         const trialDay = Math.max(1, Math.min(3, Number(sim.daysElapsed || 0) + 1));
         const paywallLive = Number(sim.daysElapsed || 0) >= 3;
         panel.innerHTML = `
-            <div class="ode-demo-sim-topbar">
-                <div>
-                    <div class="ode-demo-sim-kicker">Demo</div>
-                    <h3>Demo account controls</h3>
+            <button type="button" class="ode-demo-sim-side-toggle" data-demo-panel-collapse aria-label="${panelUiState.collapsed ? 'Expand demo controls' : 'Collapse demo controls'}">${panelUiState.collapsed ? '‹' : '›'}</button>
+            <div class="ode-demo-sim-collapsed">
+                <div class="ode-demo-sim-collapsed-label">Demo</div>
+            </div>
+            <div class="ode-demo-sim-shell">
+                <div class="ode-demo-sim-resize" data-demo-panel-resize title="Drag to resize"></div>
+                <div class="ode-demo-sim-body">
+                    <div class="ode-demo-sim-topbar">
+                        <div>
+                            <div class="ode-demo-sim-kicker">Demo</div>
+                            <h3>Demo account controls</h3>
+                        </div>
+                        <button type="button" class="secondary" data-demo-preview>Show paywall</button>
+                    </div>
+                    <div class="ode-demo-sim-copy">Bottom-right owner tools for this demo account.</div>
+                    <div class="ode-demo-sim-grid">
+                        <label>Days elapsed<input type="number" min="0" max="365" step="1" data-demo-field="daysElapsed" value="${sim.daysElapsed}"></label>
+                        <label>Qualified invites<input type="number" min="0" max="8" step="1" data-demo-field="qualifiedCount" value="${sim.qualifiedCount}"></label>
+                        <label>Pending invites<input type="number" min="0" max="8" step="1" data-demo-field="pendingCount" value="${sim.pendingCount}"></label>
+                        <label class="span-2">Manual note<input type="text" maxlength="80" data-demo-field="note" value="${escapeHtml(sim.note || '')}"></label>
+                    </div>
+                    <div class="ode-demo-sim-pills">
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-days="2">2 days</button>
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-days="3">3 days</button>
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-days="7">7 days</button>
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="1">1 qualified</button>
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="2">2 qualified</button>
+                        <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="4">4 qualified</button>
+                    </div>
+                    <div class="ode-demo-sim-pills">
+                        <button type="button" class="ode-demo-sim-pill ${sim.workoutReady ? 'is-active' : ''}" data-demo-toggle="workoutReady">${demoBusy.has('workoutReady') ? 'Generating workout...' : (sim.workoutReady ? 'Workout already made: on' : 'Workout already made: off')}</button>
+                        <button type="button" class="ode-demo-sim-pill ${sim.mealPlanReady ? 'is-active' : ''}" data-demo-toggle="mealPlanReady">${demoBusy.has('mealPlanReady') ? 'Generating meal plan...' : (sim.mealPlanReady ? 'Meal plan already made: on' : 'Meal plan already made: off')}</button>
+                        <button type="button" class="ode-demo-sim-pill ${sim.disableDateBlocker ? 'is-active' : ''}" data-demo-toggle="disableDateBlocker">Current-date blocker: ${sim.disableDateBlocker ? 'off' : 'on'}</button>
+                    </div>
+                    <div class="ode-demo-sim-actions">
+                        <button type="button" data-demo-toggle="workoutReady">${demoBusy.has('workoutReady') ? 'Making workout...' : (sim.workoutReady ? 'Workout ready' : 'Make workout')}</button>
+                        <button type="button" data-demo-toggle="mealPlanReady">${demoBusy.has('mealPlanReady') ? 'Making meal...' : (sim.mealPlanReady ? 'Meal ready' : 'Make meal')}</button>
+                        <button type="button" class="ghost" data-demo-prompt>Show prompt</button>
+                        <button type="button" class="ghost" data-demo-reset>Reset demo</button>
+                        <a class="ghost" href="${buildDemoExitHref('/owner-accounts.html', currentUser)}">Exit demo</a>
+                    </div>
+                    <div class="ode-demo-sim-creds">${creds ? `Username: <strong>${String(creds.username || '')}</strong><br>Password: <strong>${String(creds.password || '')}</strong>` : 'Credentials were created when this demo account was opened.'}</div>
+                    <div class="ode-demo-sim-status">Day ${trialDay} of the 3-day trial. Paywall ${paywallLive ? 'is ready to trigger now' : `goes live after ${Math.max(0, 3 - Number(sim.daysElapsed || 0))} more day${Math.max(0, 3 - Number(sim.daysElapsed || 0)) === 1 ? '' : 's'}`}. Qualified invites: ${sim.qualifiedCount}. Pending invites: ${sim.pendingCount}. Workout ready: ${sim.workoutReady ? 'yes' : 'no'}. Meal plan ready: ${sim.mealPlanReady ? 'yes' : 'no'}. Current-date blocker: ${sim.disableDateBlocker ? 'off' : 'on'}.</div>
+                    ${demoStatusMessage ? `<div class="ode-demo-sim-note">${escapeHtml(demoStatusMessage)}</div>` : ''}
+                    ${sim.note ? `<div class="ode-demo-sim-note">Live note: ${escapeHtml(sim.note)}</div>` : ''}
                 </div>
-                <button type="button" class="ghost" data-demo-close>Close</button>
             </div>
-            <div class="ode-demo-sim-copy">Fast-forward days, change invite counts, and manually open the paywall so you can watch the account react live.</div>
-            <div class="ode-demo-sim-grid">
-                <label>Days elapsed<input type="number" min="0" max="365" step="1" data-demo-field="daysElapsed" value="${sim.daysElapsed}"></label>
-                <label>Qualified invites<input type="number" min="0" max="8" step="1" data-demo-field="qualifiedCount" value="${sim.qualifiedCount}"></label>
-                <label>Pending invites<input type="number" min="0" max="8" step="1" data-demo-field="pendingCount" value="${sim.pendingCount}"></label>
-                <label class="span-2">Manual note<input type="text" maxlength="80" data-demo-field="note" value="${escapeHtml(sim.note || '')}"></label>
-            </div>
-            <div class="ode-demo-sim-pills">
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="2">2 days</button>
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="3">3 days</button>
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-days="7">7 days</button>
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="1">1 qualified</button>
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="2">2 qualified</button>
-                <button type="button" class="ode-demo-sim-pill" data-demo-set-qualified="4">4 qualified</button>
-            </div>
-            <div class="ode-demo-sim-pills">
-                <button type="button" class="ode-demo-sim-pill ${sim.workoutReady ? 'is-active' : ''}" data-demo-toggle="workoutReady">${demoBusy.has('workoutReady') ? 'Generating workout...' : (sim.workoutReady ? 'Workout already made: on' : 'Workout already made: off')}</button>
-                <button type="button" class="ode-demo-sim-pill ${sim.mealPlanReady ? 'is-active' : ''}" data-demo-toggle="mealPlanReady">${demoBusy.has('mealPlanReady') ? 'Generating meal plan...' : (sim.mealPlanReady ? 'Meal plan already made: on' : 'Meal plan already made: off')}</button>
-            </div>
-            <div class="ode-demo-sim-actions">
-                <button type="button" data-demo-preview>Show Paywall</button>
-                <button type="button" class="ghost" data-demo-prompt>Show Prompt</button>
-                <button type="button" class="ghost" data-demo-reset>Reset</button>
-                <a class="ghost" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Exit demo</a>
-            </div>
-            <div class="ode-demo-sim-creds">${creds ? `Username: <strong>${String(creds.username || '')}</strong><br>Password: <strong>${String(creds.password || '')}</strong>` : 'Credentials were created when this demo account was opened.'}</div>
-            <div class="ode-demo-sim-status">Day ${trialDay} of the 3-day trial. Paywall ${paywallLive ? 'is ready to trigger now' : `goes live after ${Math.max(0, 3 - Number(sim.daysElapsed || 0))} more day${Math.max(0, 3 - Number(sim.daysElapsed || 0)) === 1 ? '' : 's'}`}. Qualified invites: ${sim.qualifiedCount}. Pending invites: ${sim.pendingCount}. Workout ready: ${sim.workoutReady ? 'yes' : 'no'}. Meal plan ready: ${sim.mealPlanReady ? 'yes' : 'no'}.</div>
-            ${demoStatusMessage ? `<div class="ode-demo-sim-note">${escapeHtml(demoStatusMessage)}</div>` : ''}
-            ${sim.note ? `<div class="ode-demo-sim-note">Live note: ${escapeHtml(sim.note)}</div>` : ''}
         `.trim();
+        applyPanelUiState(panel);
+        bindPanelResize(panel);
+        panel.querySelector('[data-demo-panel-collapse]')?.addEventListener('click', () => {
+            panelUiState = { ...panelUiState, collapsed: !panelUiState.collapsed };
+            writePanelUi(panelUiState);
+            render();
+        });
 
         panel.querySelectorAll('[data-demo-field]').forEach((input) => {
-            input.addEventListener('input', () => {
+            const handleFieldUpdate = () => {
                 const next = readSim(currentUser.id);
                 const key = String(input.getAttribute('data-demo-field') || '');
                 if (key === 'note') {
@@ -17433,8 +18887,11 @@ function initDemoSimulator() {
                 }
                 writeSim(currentUser.id, next);
                 render();
+                syncDemoGateNow();
                 window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
-            });
+            };
+            input.addEventListener('input', handleFieldUpdate);
+            input.addEventListener('change', handleFieldUpdate);
         });
         panel.querySelectorAll('[data-demo-set-days]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -17442,6 +18899,7 @@ function initDemoSimulator() {
                 next.daysElapsed = Math.max(0, Number(btn.getAttribute('data-demo-set-days') || 0));
                 writeSim(currentUser.id, next);
                 render();
+                syncDemoGateNow();
                 window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
             });
         });
@@ -17451,6 +18909,7 @@ function initDemoSimulator() {
                 next.qualifiedCount = Math.max(0, Number(btn.getAttribute('data-demo-set-qualified') || 0));
                 writeSim(currentUser.id, next);
                 render();
+                syncDemoGateNow();
                 window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
             });
         });
@@ -17461,28 +18920,32 @@ function initDemoSimulator() {
                 await runDemoToggleAction(key);
             });
         });
-        panel.querySelector('[data-demo-preview]')?.addEventListener('click', () => {
-            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: true } }));
-        });
-        panel.querySelector('[data-demo-prompt]')?.addEventListener('click', () => {
-            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: true } }));
-        });
+        const previewHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try { document.activeElement?.blur?.(); } catch {}
+            openPaywallPreview();
+        };
+        const previewBtn = panel.querySelector('[data-demo-preview]');
+        previewBtn?.addEventListener('pointerdown', previewHandler);
+        previewBtn?.addEventListener('click', previewHandler);
+        const promptBtn = panel.querySelector('[data-demo-prompt]');
+        promptBtn?.addEventListener('pointerdown', previewHandler);
+        promptBtn?.addEventListener('click', previewHandler);
         panel.querySelector('[data-demo-reset]')?.addEventListener('click', () => {
             clearSim(currentUser.id);
             clearDemoPrefills();
             setDemoStatus('Demo controls reset.');
-            window.dispatchEvent(new CustomEvent('ode:demo-access-preview', { detail: { open: false } }));
+            closePaywallPreview();
             render();
+            syncDemoGateNow();
             window.dispatchEvent(new CustomEvent('ode:demo-sim-change'));
-        });
-        panel.querySelector('[data-demo-close]')?.addEventListener('click', () => {
-            closeDrawer();
         });
     };
 
     window.addEventListener('odeauth', (e) => {
         currentUser = e?.detail?.user || null;
-        if (currentUser?.demo?.active) drawerOpen = true;
+        if (isDemoUser()) drawerOpen = true;
         render();
     });
     window.addEventListener('ode:demo-sim-open', () => {
@@ -17494,8 +18957,17 @@ function initDemoSimulator() {
             closeDrawer();
         }
     });
+    try {
+        if (sessionStorage.getItem(OWNER_DEMO_OPEN_KEY) === '1' && isDemoUser()) {
+            sessionStorage.removeItem(OWNER_DEMO_OPEN_KEY);
+            drawerOpen = true;
+        }
+    } catch {
+        // ignore
+    }
     render();
 }
+initDemoSimulator();
 function ensureAuthNavbarUi(navbarContainer) {
     let wrapper = document.getElementById('auth-wrap');
     if (!wrapper) {
@@ -17594,8 +19066,8 @@ function ensureFriendsButton(wrapper) {
         btn.type = 'button';
         btn.id = 'auth-friends-btn';
         btn.className = 'auth-nav-btn auth-friends-btn';
-        btn.setAttribute('aria-label', 'Messages');
-        btn.innerHTML = '<svg aria-hidden="true"><use href="#icon-users"></use></svg>';
+        btn.setAttribute('aria-label', 'Trainers');
+        btn.innerHTML = '<span class="auth-plus-mark" aria-hidden="true">+</span>';
         const signInBtn = wrapper.querySelector('#auth-signin-btn');
         if (signInBtn) wrapper.insertBefore(btn, signInBtn);
         else wrapper.insertBefore(btn, wrapper.firstChild);
@@ -17611,8 +19083,8 @@ function ensureMobileFriendsButton(wrap) {
         btn.type = 'button';
         btn.id = 'auth-mobile-friends';
         btn.className = 'auth-mobile-btn auth-mobile-btn-ghost auth-mobile-friends';
-        btn.setAttribute('aria-label', 'Messages');
-        btn.innerHTML = '<span class="auth-mobile-icon"><svg aria-hidden="true"><use href="#icon-users"></use></svg></span><span>Messages</span>';
+        btn.setAttribute('aria-label', 'Trainers');
+        btn.innerHTML = '<span class="auth-mobile-icon auth-plus-mark" aria-hidden="true">+</span><span>Trainers</span>';
     }
     const userRow = wrap.querySelector('#auth-mobile-user-row');
     const dashboardLink = wrap.querySelector('#auth-mobile-dashboard');
@@ -17626,6 +19098,28 @@ function ensureMobileFriendsButton(wrap) {
         else wrap.insertBefore(btn, wrap.firstChild);
     }
     return btn;
+}
+
+function injectTrainerFooterLinks() {
+    const footerSections = Array.from(document.querySelectorAll('.footer .footer-section'));
+    const linksSection = footerSections.find((section) => (
+        String(section.querySelector('h4')?.textContent || '').trim().toLowerCase() === 'links'
+    ));
+    const fallbackSection = footerSections.find((section) => section.querySelector('ul'));
+    const list = (linksSection || fallbackSection)?.querySelector('ul');
+    if (list && !list.querySelector('a[href="trainers.html"]')) {
+        const item = document.createElement('li');
+        item.innerHTML = '<a href="trainers.html">Trainers</a>';
+        list.appendChild(item);
+    }
+
+    document.querySelectorAll('.store-footer-legal-links').forEach((wrapEl) => {
+        if (wrapEl.querySelector('a[href="trainers.html"]')) return;
+        const link = document.createElement('a');
+        link.href = 'trainers.html';
+        link.textContent = 'Trainers';
+        wrapEl.appendChild(link);
+    });
 }
 
 function ensureFriendsModal() {
@@ -17803,6 +19297,8 @@ function ensureAuthModal() {
                 <input id="auth-signup-phone" class="auth-input" type="tel" autocomplete="tel" placeholder="e.g. 5551234567">
                 <label class="auth-label">Display name</label>
                 <input id="auth-signup-displayname" class="auth-input" autocomplete="name" required>
+                <label class="auth-label">Referral code (optional)</label>
+                <input id="auth-signup-referral" class="auth-input" autocomplete="off" placeholder="Enter referral code">
                 <label class="auth-label">Password</label>
                 <input id="auth-signup-password" class="auth-input" type="password" autocomplete="new-password" required>
                 <button type="submit" class="btn btn-primary auth-submit">Create account</button>
@@ -17909,8 +19405,9 @@ function wireAuthModal(modal, { onSignedIn } = {}) {
         const email = modal.querySelector('#auth-signup-email')?.value || '';
         const phone = modal.querySelector('#auth-signup-phone')?.value || '';
         const displayName = modal.querySelector('#auth-signup-displayname')?.value || '';
+        const referralCode = modal.querySelector('#auth-signup-referral')?.value || '';
         const password = modal.querySelector('#auth-signup-password')?.value || '';
-        const result = await authSignup({ username, email, phone, displayName, password });
+        const result = await authSignup({ username, email, phone, displayName, password, referralCode });
         if (result?.ok && result.user) {
             closeModal();
             if (typeof onSignedIn === 'function') onSignedIn(result.user);
@@ -17940,6 +19437,23 @@ function setAuthModalMode(modal, mode) {
     signupTab?.classList.toggle('active', isSignup);
     loginForm?.classList.toggle('hidden', isSignup);
     signupForm?.classList.toggle('hidden', !isSignup);
+    const referralInput = modal.querySelector('#auth-signup-referral');
+    if (referralInput) {
+        let referralCode = '';
+        try {
+            const currentUrl = new URL(window.location.href);
+            referralCode = String(currentUrl.searchParams.get('ref') || '').trim().toUpperCase();
+        } catch {
+            referralCode = '';
+        }
+        if (referralCode) {
+            referralInput.value = referralCode;
+            referralInput.readOnly = true;
+        } else {
+            referralInput.readOnly = false;
+            if (!String(referralInput.value || '').trim()) referralInput.value = '';
+        }
+    }
     forgotBox?.classList.add('hidden');
     if (forgotStatus) {
         forgotStatus.textContent = '';
@@ -17996,13 +19510,24 @@ async function authLogin({ username, password }) {
     }
 }
 
-async function authSignup({ username, email, phone, displayName, password }) {
+async function authSignup({ username, email, phone, displayName, password, referralCode: referralCodeInput }) {
     try {
+        const currentUrl = new URL(window.location.href);
+        const referralCode = String(referralCodeInput || currentUrl.searchParams.get('ref') || '').trim();
+        const coachInvite = String(currentUrl.searchParams.get('coachInvite') || '').trim();
         const resp = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username, email, phone, displayName, password })
+            body: JSON.stringify({
+                username,
+                email,
+                phone,
+                displayName,
+                password,
+                referralCode,
+                coachInvite
+            })
         });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok) return { ok: false, error: data?.error || 'Sign up failed' };
@@ -33393,6 +34918,7 @@ function initForumRailDrawer() {
 }
 
 initForumRailDrawer();
+}
 
 
 

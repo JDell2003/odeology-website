@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trainer Dashboard · RiseForIt</title>
+  <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-3"></script>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
+  <style>
+    body.trainer-dashboard-page {
+      overflow: auto !important;
+    }
+    body.trainer-dashboard-choice-open {
+      overflow: hidden !important;
+    }
+    .trainer-dashboard-main {
+      max-width: 1180px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 18px 22px;
+      display: grid;
+      gap: 18px;
+    }
+    .trainer-dashboard-top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    body.trainer-dashboard-page #auth-friends-btn {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      min-height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: #e3a63f;
+      color: #111;
+      box-shadow: 0 10px 22px rgba(227, 166, 63, 0.22);
+    }
+    body.trainer-dashboard-page #auth-friends-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(227, 166, 63, 0.3);
+      background: #e8af4f;
+    }
+    body.trainer-dashboard-page #auth-friends-btn .auth-plus-mark {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+    .trainer-dashboard-plus-panel {
+      position: fixed;
+      top: calc(var(--navbar-height, 72px) + 20px);
+      right: 24px;
+      z-index: 1300;
+      width: min(420px, calc(100vw - 20px));
+      margin-top: 0;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(227, 166, 63, 0.24);
+      background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 248, 239, 0.96));
+      box-shadow: 0 16px 28px rgba(8, 22, 33, 0.08);
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-dashboard-plus-panel.hidden {
+      display: none;
+    }
+    .trainer-dashboard-plus-panel::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: var(--trainer-plus-arrow-left, 24px);
+      width: 16px;
+      height: 16px;
+      background: rgba(255, 251, 243, 0.98);
+      border-top: 1px solid rgba(227, 166, 63, 0.24);
+      border-left: 1px solid rgba(227, 166, 63, 0.24);
+      transform: rotate(45deg);
+    }
+    .trainer-dashboard-plus-kicker {
+      color: #b66714;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-dashboard-plus-panel h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #0d2232;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .trainer-dashboard-plus-panel p {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-plus-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .trainer-dashboard-plus-grid input,
+    .trainer-dashboard-plus-grid textarea {
+      width: 100%;
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      padding: 0 12px;
+      color: #102738;
+      font-size: 0.78rem;
+      font-weight: 700;
+      outline: none;
+      font-family: inherit;
+    }
+    .trainer-dashboard-plus-grid input::placeholder,
+    .trainer-dashboard-plus-grid textarea::placeholder {
+      color: rgba(16, 39, 56, 0.72);
+      font-size: 0.76rem;
+      font-weight: 700;
+      opacity: 1;
+    }
+    .trainer-dashboard-plus-grid textarea {
+      min-height: 72px;
+      padding: 10px 12px;
+      resize: vertical;
+      grid-column: 1 / -1;
+    }
+    .trainer-dashboard-plus-grid input:focus,
+    .trainer-dashboard-plus-grid textarea:focus {
+      border-color: rgba(227, 166, 63, 0.42);
+      box-shadow: 0 0 0 3px rgba(227, 166, 63, 0.14);
+    }
+    .trainer-dashboard-plus-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .trainer-dashboard-plus-submit,
+    .trainer-dashboard-plus-cancel {
+      min-height: 38px;
+      padding: 0.58rem 0.82rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      font-size: 0.76rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-plus-form .trainer-dashboard-plus-submit,
+    .trainer-dashboard-plus-form .trainer-dashboard-plus-cancel {
+      flex: 1 1 0;
+    }
+    .trainer-dashboard-plus-submit {
+      background: linear-gradient(135deg, #10283c, #183a58);
+      color: #f7fbff;
+      box-shadow: 0 14px 24px rgba(10, 31, 47, 0.12);
+    }
+    .trainer-dashboard-plus-cancel {
+      background: rgba(255, 255, 255, 0.9);
+      color: #102738;
+    }
+    .trainer-dashboard-plus-status {
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.45;
+      min-height: 1.2em;
+      margin-top: 2px;
+    }
+    .trainer-dashboard-plus-choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .trainer-dashboard-plus-choice {
+      flex: 1 1 240px;
+      min-height: 88px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.9);
+      color: #102738;
+      text-align: left;
+      cursor: pointer;
+    }
+    .trainer-dashboard-plus-choice.active {
+      border-color: rgba(227, 166, 63, 0.42);
+      box-shadow: 0 0 0 3px rgba(227, 166, 63, 0.14);
+      background: rgba(255, 252, 245, 0.96);
+    }
+    .trainer-dashboard-plus-choice strong {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 900;
+      color: #0d2232;
+      letter-spacing: -0.02em;
+    }
+    .trainer-dashboard-plus-choice span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      line-height: 1.4;
+      color: rgba(13, 34, 50, 0.7);
+      font-weight: 700;
+    }
+    .trainer-dashboard-plus-form.hidden {
+      display: none;
+    }
+    .trainer-dashboard-plus-setup {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(227, 166, 63, 0.22);
+      background: rgba(255, 251, 243, 0.96);
+    }
+    .trainer-dashboard-plus-setup.hidden {
+      display: none;
+    }
+    .trainer-dashboard-plus-setup-head {
+      display: grid;
+      gap: 4px;
+    }
+    .trainer-dashboard-plus-setup-head strong {
+      color: #0d2232;
+      font-size: 0.88rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .trainer-dashboard-plus-setup-head span {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-plus-setup-steps {
+      margin: 0;
+      padding-left: 1rem;
+      display: grid;
+      gap: 4px;
+      color: rgba(13, 34, 50, 0.76);
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-plus-setup-note {
+      color: #9a5c15;
+      font-size: 0.74rem;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .trainer-dashboard-plus-setup-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .account-trainer-stripe-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(227, 166, 63, 0.24);
+      background: linear-gradient(180deg, rgba(255, 249, 240, 0.96), rgba(255, 244, 227, 0.92));
+      display: grid;
+      gap: 10px;
+    }
+    .account-trainer-stripe-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .account-trainer-stripe-top strong {
+      color: #412203;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .account-trainer-stripe-copy {
+      color: rgba(65, 34, 3, 0.82);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .account-trainer-stripe-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .account-trainer-stripe-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0.36rem 0.66rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.76);
+      color: #7a4e11;
+      font-size: 0.72rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .account-trainer-stripe-issues {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding-left: 1rem;
+      color: rgba(65, 34, 3, 0.82);
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-readonly {
+      display: grid;
+      gap: 4px;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .trainer-dashboard-readonly label {
+      color: rgba(13, 34, 50, 0.52);
+      font-size: 0.64rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-dashboard-readonly strong,
+    .trainer-dashboard-readonly a,
+    .trainer-dashboard-readonly p {
+      margin: 0;
+      color: #0d2232;
+      font-size: 0.78rem;
+      font-weight: 800;
+      word-break: break-word;
+      text-decoration: none;
+    }
+    .trainer-dashboard-readonly a:hover {
+      text-decoration: underline;
+    }
+    .account-trainer-summary-grid,
+    .account-trainer-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .account-trainer-summary-grid {
+      margin-bottom: 16px;
+    }
+    .account-trainer-tabbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .account-trainer-tab {
+      min-height: 40px;
+      padding: 0.72rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .account-trainer-tab.active {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      border-color: rgba(15, 36, 53, 0.18);
+      color: #f7fbff;
+      box-shadow: 0 14px 28px rgba(10, 31, 47, 0.12);
+    }
+    .account-trainer-tab-panel {
+      display: none;
+    }
+    .account-trainer-tab-panel.active {
+      display: block;
+    }
+    .account-trainer-summary-card,
+    .account-trainer-metric-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-summary-card span,
+    .account-trainer-metric-card span {
+      color: rgba(13, 34, 50, 0.54);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .account-trainer-summary-card strong,
+    .account-trainer-metric-card strong {
+      color: #0d2232;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .account-trainer-metric-card small,
+    .account-trainer-summary-card small {
+      color: rgba(13, 34, 50, 0.66);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .account-trainer-banner {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(227, 166, 63, 0.24);
+      background: linear-gradient(180deg, rgba(255, 249, 240, 0.96), rgba(255, 244, 227, 0.92));
+      color: #7a4e11;
+      font-size: 0.86rem;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+    .account-trainer-banner strong {
+      color: #412203;
+    }
+    .account-trainer-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .account-trainer-table th,
+    .account-trainer-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(10, 31, 47, 0.08);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgba(13, 34, 50, 0.78);
+    }
+    .account-trainer-table th {
+      color: rgba(13, 34, 50, 0.54);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .account-trainer-table td strong {
+      display: block;
+      color: #0d2232;
+      font-size: 0.86rem;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+    .trainer-dashboard-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.8rem 1.05rem;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 36, 53, 0.14);
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.96), rgba(34, 71, 98, 0.96));
+      color: #f6fbff;
+      font-size: 0.86rem;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 16px 28px rgba(10, 31, 47, 0.12);
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    }
+    .trainer-dashboard-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 34px rgba(10, 31, 47, 0.16);
+      filter: brightness(1.02);
+    }
+    .trainer-dashboard-action.ghost {
+      background: rgba(255, 255, 255, 0.76);
+      color: #102738;
+      box-shadow: none;
+    }
+    .trainer-dashboard-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-content: start;
+      padding-top: 28px;
+      border-left: 1px solid rgba(10, 31, 47, 0.08);
+      padding-left: 22px;
+    }
+    .trainer-dashboard-meta-card {
+      min-height: 132px;
+      padding: 16px;
+      border-radius: 0;
+      border: 0;
+      border-top: 1px solid rgba(10, 31, 47, 0.08);
+      background: transparent;
+      box-shadow: none;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .trainer-dashboard-meta-card span {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.54);
+    }
+    .trainer-dashboard-meta-card strong {
+      font-size: 1rem;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      color: #0d2232;
+    }
+    .trainer-dashboard-meta-card p {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .trainer-dashboard-shell {
+      border-radius: 0;
+      border: 0;
+      border-top: 1px solid rgba(10, 31, 47, 0.12);
+      background: transparent;
+      box-shadow: none;
+      padding: 22px 0 0;
+    }
+    .trainer-dashboard-shell-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .trainer-dashboard-shell-kicker {
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #1f4f78;
+    }
+    .trainer-dashboard-shell-head h2 {
+      margin: 4px 0 0;
+      font-size: clamp(1.45rem, 2.5vw, 2.05rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      color: #0d2232;
+    }
+    .trainer-dashboard-shell-head p {
+      margin: 8px 0 0;
+      max-width: 720px;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-dashboard-shell-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0.72rem 0.95rem;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: rgba(15, 36, 53, 0.05);
+      color: #102738;
+      font-size: 0.82rem;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .trainer-dashboard-choice-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1250;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .trainer-dashboard-choice-modal.hidden {
+      display: none;
+    }
+    .trainer-dashboard-choice-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: rgba(5, 13, 22, 0.54);
+      cursor: pointer;
+    }
+    .trainer-dashboard-choice-card {
+      position: relative;
+      z-index: 1;
+      width: min(520px, calc(100vw - 28px));
+      border-radius: 24px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background:
+        radial-gradient(circle at top right, rgba(123, 179, 255, 0.14), transparent 32%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 254, 0.96));
+      box-shadow: 0 34px 64px rgba(6, 21, 33, 0.24);
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+    }
+    .trainer-dashboard-choice-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.86);
+      color: #0d2232;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-choice-kicker {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #1f4f78;
+    }
+    .trainer-dashboard-choice-card h3 {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      color: #0d2232;
+    }
+    .trainer-dashboard-choice-card p {
+      margin: 0;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+    .trainer-dashboard-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .trainer-dashboard-choice-option {
+      min-height: 122px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 16px;
+      color: #0d2232;
+      text-decoration: none;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+    .trainer-dashboard-choice-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(15, 36, 53, 0.18);
+      box-shadow: 0 18px 30px rgba(10, 31, 47, 0.08);
+    }
+    .trainer-dashboard-choice-option-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .trainer-dashboard-choice-option-copy {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .trainer-dashboard-choice-option.is-primary {
+      background: linear-gradient(145deg, rgba(15, 36, 53, 0.98), rgba(34, 71, 98, 0.95));
+      color: #f7fbff;
+      box-shadow: 0 18px 32px rgba(10, 31, 47, 0.16);
+    }
+    .trainer-dashboard-choice-option.is-primary .trainer-dashboard-choice-option-copy {
+      color: rgba(244, 250, 255, 0.82);
+    }
+    .account-trainer-status {
+      margin-bottom: 14px;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .account-trainer-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px dashed rgba(15, 36, 53, 0.18);
+      background: rgba(255, 255, 255, 0.82);
+    }
+    .account-trainer-cta-copy {
+      flex: 1 1 320px;
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .account-trainer-chip-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .account-trainer-chip {
+      padding: 16px 0;
+      border-radius: 0;
+      border: 0;
+      border-top: 1px solid rgba(10, 31, 47, 0.08);
+      background: transparent;
+      box-shadow: none;
+    }
+    .account-trainer-chip-label {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.52);
+    }
+    .account-trainer-chip-value {
+      margin-top: 6px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #0d2232;
+      line-height: 1.1;
+    }
+    .account-trainer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .account-trainer-panel {
+      border-radius: 0;
+      border: 0;
+      border-top: 1px solid rgba(10, 31, 47, 0.1);
+      background: transparent;
+      padding: 18px 0 0;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      box-shadow: none;
+    }
+    .account-trainer-panel-wide {
+      margin-bottom: 16px;
+    }
+    .account-trainer-panel h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #112c41;
+      letter-spacing: -0.02em;
+    }
+    .account-trainer-muted {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.83rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .account-trainer-form {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .account-trainer-form input,
+    .account-trainer-form textarea,
+    .account-trainer-linkbox {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(248, 251, 255, 0.98);
+      padding: 0.78rem 0.88rem;
+      color: #0d2232;
+      font: inherit;
+    }
+    .account-trainer-form textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+    .account-trainer-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.78rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff;
+      font-size: 0.86rem;
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .account-trainer-btn.ghost {
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      box-shadow: none;
+    }
+    .account-trainer-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .account-trainer-list,
+    .account-trainer-billing-list,
+    .account-trainer-signup-list {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-client,
+    .account-trainer-month,
+    .account-trainer-signup,
+    .account-trainer-referral {
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+      padding: 12px;
+    }
+    .account-trainer-client {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-client-row,
+    .account-trainer-month-row,
+    .account-trainer-signup {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .account-trainer-client-name,
+    .account-trainer-signup-name,
+    .account-trainer-month-title {
+      font-size: 0.92rem;
+      font-weight: 900;
+      color: #0c2030;
+    }
+    .account-trainer-client-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .account-trainer-client-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(10, 31, 47, 0.06);
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .account-trainer-remove {
+      border: 1px solid rgba(177, 52, 52, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 245, 245, 0.96);
+      color: #a32b2b;
+      font-size: 0.76rem;
+      font-weight: 900;
+      padding: 0.62rem 0.84rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .account-trainer-code {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #0d2232;
+      letter-spacing: 0.02em;
+    }
+    .account-trainer-month-payout {
+      font-size: 0.98rem;
+      font-weight: 900;
+      color: #0d2232;
+    }
+    .account-trainer-month-sub,
+    .account-trainer-conversion,
+    .account-trainer-signup {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: rgba(13, 34, 50, 0.74);
+    }
+    .account-trainer-conversion {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .account-trainer-empty {
+      border: 1px dashed rgba(10, 31, 47, 0.16);
+      border-radius: 16px;
+      padding: 14px;
+      color: rgba(13, 34, 50, 0.66);
+      background: rgba(255, 255, 255, 0.74);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .account-trainer-roster,
+    .account-trainer-warning-list {
+      display: grid;
+      gap: 10px;
+    }
+    .account-trainer-roster-card,
+    .account-trainer-warning-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+      display: grid;
+      gap: 10px;
+    }
+    .account-trainer-roster-head,
+    .account-trainer-warning-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .account-trainer-roster-name {
+      color: #0c2030;
+      font-size: 0.96rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .account-trainer-roster-sub {
+      margin-top: 4px;
+      color: rgba(13, 34, 50, 0.66);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .account-trainer-roster-meta,
+    .account-trainer-warning-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .account-trainer-roster-pill,
+    .account-trainer-warning-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0.42rem 0.74rem;
+      border-radius: 999px;
+      background: rgba(10, 31, 47, 0.06);
+      color: rgba(13, 34, 50, 0.78);
+      font-size: 0.74rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .account-trainer-roster-pill.amount {
+      background: rgba(227, 166, 63, 0.16);
+      color: #7a4e11;
+      white-space: nowrap;
+    }
+    .account-trainer-warning-pill {
+      background: rgba(255, 239, 223, 0.92);
+      color: #9a4f14;
+    }
+    @media (max-width: 980px) {
+      .account-trainer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .trainer-dashboard-main {
+        margin-top: calc(var(--navbar-height, 72px) + 18px);
+        padding: 0 14px 18px;
+      }
+      .trainer-dashboard-shell {
+        border-radius: 0;
+        padding: 16px 0;
+      }
+      .account-trainer-chip-row,
+      .account-trainer-grid,
+      .account-trainer-form-grid,
+      .account-trainer-summary-grid,
+      .account-trainer-metric-grid {
+        grid-template-columns: 1fr;
+      }
+      .account-trainer-roster-head,
+      .account-trainer-warning-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trainer-dashboard-plus-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-dashboard-plus-panel {
+        width: min(400px, calc(100vw - 14px));
+      }
+      .trainer-dashboard-shell-head,
+      .trainer-dashboard-top-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trainer-dashboard-choice-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-dashboard-shell-head p {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body class="trainer-dashboard-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+    <symbol id="icon-chef" viewBox="0 0 24 24">
+      <path d="M8.5 10.5h7a3.5 3.5 0 0 0 0-7 4 4 0 0 0-3.5 2 3 3 0 0 0-5.5 2 3 3 0 0 0 2 3Z"></path>
+      <path d="M8 10.5h8v3.5a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3.5Z"></path>
+      <path d="M10 16v3.5M14 16v3.5"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section" data-auth-section="1">
+      <p class="section-label">ACCOUNT</p>
+      <button class="control-link" id="control-signin" type="button">
+        <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+        <span class="text">Account</span>
+      </button>
+      <button class="control-link hidden" id="control-signup" type="button">
+        <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+        <span class="text">Sign up</span>
+      </button>
+    </div>
+    <div class="control-section">
+      <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
+    </div>
+    <div class="control-section">
+      <p class="section-label">DASH</p>
+      <div class="control-pill-row">
+        <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+          <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+          <span class="text">Dash</span>
+        </button>
+      </div>
+    </div>
+    <div class="control-section">
+      <p class="section-label">TRAINING PORTAL</p>
+      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+    </div>
+    <div class="control-section">
+      <p class="section-label">COMMUNITY</p>
+      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
+    </div>
+    <div class="control-section hidden" id="control-trainer-section">
+      <p class="section-label">TRAINER</p>
+      <a class="control-link active" id="control-trainer-dashboard-link" href="trainer-dashboard.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a>
+      <a class="control-link" id="control-trainer-settings-link" href="payment-settings.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Payment Settings</span></a>
+    </div>
+    <div class="control-section hidden" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="trainer-dashboard-main">
+    <section class="trainer-dashboard-shell">
+      <div class="trainer-dashboard-shell-head">
+        <div>
+          <div class="trainer-dashboard-shell-kicker">Trainer hub</div>
+          <h2>Trainer growth + earnings</h2>
+          <p id="trainer-dashboard-headline">Trainer growth + earnings</p>
+        </div>
+        <div class="trainer-dashboard-top-actions">
+          <a class="trainer-dashboard-action" href="trainers.html#onboarding">Edit trainer page</a>
+          <a class="trainer-dashboard-action ghost" href="coaches.html" id="trainer-dashboard-view-coaches">View coaches page</a>
+        </div>
+      </div>
+      <div class="account-trainer-status" id="account-trainer-status">Loading trainer dashboard...</div>
+      <div id="account-trainer-shell"></div>
+    </section>
+  </main>
+
+  <div class="trainer-dashboard-plus-panel hidden" id="trainer-dashboard-add-panel">
+    <div class="trainer-dashboard-plus-kicker">Invite center</div>
+    <h3>Pick invite type.</h3>
+    <div class="trainer-dashboard-plus-choice-row">
+      <button type="button" class="trainer-dashboard-plus-choice" id="trainer-dashboard-add-app-option">
+        <strong>Invite to App</strong>
+        <span>Send with your code.</span>
+      </button>
+      <button type="button" class="trainer-dashboard-plus-choice" id="trainer-dashboard-add-coaching-option">
+        <strong>Add Coaching Client</strong>
+        <span>Invite as your client.</span>
+      </button>
+    </div>
+    <div id="trainer-dashboard-app-invite-form" class="trainer-dashboard-plus-form hidden">
+      <div class="trainer-dashboard-plus-grid">
+        <div class="trainer-dashboard-readonly">
+          <label>Referral code</label>
+          <strong id="trainer-dashboard-app-ref-code">LOADING</strong>
+        </div>
+        <div class="trainer-dashboard-readonly">
+          <label>Referral link</label>
+          <a href="#" id="trainer-dashboard-app-ref-link" target="_blank" rel="noopener">Loading...</a>
+        </div>
+      </div>
+      <div class="trainer-dashboard-plus-actions">
+        <button type="button" class="trainer-dashboard-plus-cancel" id="trainer-dashboard-app-text">Invite by text</button>
+        <button type="button" class="trainer-dashboard-plus-cancel" id="trainer-dashboard-app-email">Email</button>
+        <button type="button" class="trainer-dashboard-plus-submit" id="trainer-dashboard-app-copy">Copy</button>
+      </div>
+    </div>
+    <form id="trainer-dashboard-coaching-invite-form" class="trainer-dashboard-plus-form hidden">
+      <div class="trainer-dashboard-plus-grid">
+        <input type="text" id="trainer-dashboard-coaching-first-name" placeholder="Client first name" required>
+        <input type="text" id="trainer-dashboard-coaching-last-name" placeholder="Client last name" required>
+        <input type="email" id="trainer-dashboard-coaching-email" placeholder="Email" required>
+        <input type="text" id="trainer-dashboard-coaching-phone" placeholder="Phone number">
+        <input type="text" id="trainer-dashboard-coaching-package" placeholder="Package name or coaching offer" required>
+        <input type="number" id="trainer-dashboard-coaching-price" min="0" step="0.01" placeholder="Package price">
+        <input type="text" id="trainer-dashboard-coaching-frequency" placeholder="Billing frequency: one-time / monthly / custom recurring" required>
+        <input type="date" id="trainer-dashboard-coaching-start-date">
+      </div>
+      <div class="trainer-dashboard-plus-actions">
+        <button type="submit" class="trainer-dashboard-plus-submit">Create coaching invite</button>
+        <button type="button" class="trainer-dashboard-plus-cancel" id="trainer-dashboard-add-cancel">Close</button>
+      </div>
+    </form>
+    <div id="trainer-dashboard-coaching-stripe-gate" class="trainer-dashboard-plus-setup hidden">
+      <div class="trainer-dashboard-plus-setup-head">
+        <strong>Finish payout setup first</strong>
+        <span>Paid coaching invites stay locked until your Stripe payout details are connected.</span>
+      </div>
+      <ol class="trainer-dashboard-plus-setup-steps">
+        <li>Click Connect Stripe.</li>
+        <li>Finish Stripe onboarding.</li>
+        <li>Return here once setup is finished.</li>
+      </ol>
+      <div class="trainer-dashboard-plus-setup-note" id="trainer-dashboard-stripe-next-action">Connect Stripe before sending paid coaching invites.</div>
+      <div class="trainer-dashboard-plus-setup-actions">
+        <button type="button" class="trainer-dashboard-plus-submit" id="trainer-dashboard-stripe-connect">Connect Stripe</button>
+        <button type="button" class="trainer-dashboard-plus-cancel" id="trainer-dashboard-stripe-refresh">Refresh status</button>
+        <button type="button" class="trainer-dashboard-plus-cancel" id="trainer-dashboard-stripe-close">Close</button>
+      </div>
+    </div>
+    <div class="trainer-dashboard-plus-status" id="trainer-dashboard-add-status"></div>
+  </div>
+
+  <div class="trainer-dashboard-choice-modal hidden" id="trainer-dashboard-choice-modal" aria-hidden="true">
+    <button type="button" class="trainer-dashboard-choice-backdrop" id="trainer-dashboard-choice-backdrop" aria-label="Close trainer page chooser"></button>
+    <div class="trainer-dashboard-choice-card" role="dialog" aria-modal="true" aria-labelledby="trainer-dashboard-choice-title">
+      <button type="button" class="trainer-dashboard-choice-close" id="trainer-dashboard-choice-close" aria-label="Close trainer page chooser">×</button>
+      <div class="trainer-dashboard-choice-kicker">Trainer pages</div>
+      <h3 id="trainer-dashboard-choice-title">Pick which trainer page you want to open.</h3>
+      <p>Owner + TECH accounts can jump into the demo trainer page or open their own trainer page flow from here.</p>
+      <div class="trainer-dashboard-choice-grid">
+        <a class="trainer-dashboard-choice-option is-primary" id="trainer-dashboard-demo-option" href="trainer-profile.html?trainer=averystone">
+          <div class="trainer-dashboard-choice-option-title">Demo Trainer</div>
+          <div class="trainer-dashboard-choice-option-copy">Open the Avery Stone demo trainer page.</div>
+        </a>
+        <a class="trainer-dashboard-choice-option" id="trainer-dashboard-own-option" href="trainers.html#onboarding">
+          <div class="trainer-dashboard-choice-option-title">Make a Trainer Page</div>
+          <div class="trainer-dashboard-choice-option-copy">Create your own trainer page from onboarding.</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-03-29-owner-demo-42"></script>
+  <script src="js/account-trainer.js?v=2026-03-29-account-trainer-25"></script>
+</body>
+</html>

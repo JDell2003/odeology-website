@@ -3,11 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account · STRYVE</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-03-08-checkin-rings-1">
+  <title>Account · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
   <style>
     body.account-page {
       overflow: auto !important;
+    }
+    body.account-page.account-pr-open {
+      overflow: hidden !important;
     }
     .account-main {
       max-width: 920px;
@@ -26,6 +29,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 14px;
+    }
+    .account-row-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .account-row-main {
       display: flex;
@@ -94,6 +104,192 @@
     .account-requests-btn:focus-visible {
       outline: 2px solid rgba(19, 92, 152, 0.45);
       outline-offset: 1px;
+    }
+    .account-pr-btn {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.92), rgba(34, 71, 98, 0.92));
+      color: #f7fbff;
+      border-color: rgba(15, 36, 53, 0.58);
+      box-shadow: 0 10px 24px rgba(15, 36, 53, 0.16);
+    }
+    .account-pr-btn:hover {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.98), rgba(34, 71, 98, 0.98));
+    }
+    .account-pr-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .account-pr-modal.hidden {
+      display: none;
+    }
+    .account-pr-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: rgba(5, 13, 22, 0.52);
+      cursor: pointer;
+    }
+    .account-pr-card {
+      position: relative;
+      z-index: 1;
+      width: min(720px, calc(100vw - 28px));
+      max-height: min(78vh, 760px);
+      border-radius: 24px;
+      border: 1px solid rgba(10, 31, 47, 0.14);
+      background:
+        radial-gradient(circle at top left, rgba(126, 196, 255, 0.14), transparent 38%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.96));
+      box-shadow: 0 34px 64px rgba(6, 21, 33, 0.22);
+      overflow: hidden;
+    }
+    .account-pr-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid rgba(10, 31, 47, 0.08);
+    }
+    .account-pr-kicker {
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #1f4f78;
+    }
+    .account-pr-title {
+      margin: 4px 0 0;
+      font-size: 1.45rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #0d2232;
+      font-weight: 900;
+    }
+    .account-pr-sub {
+      margin-top: 6px;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .account-pr-close {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.86);
+      color: #0d2232;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+      flex: 0 0 40px;
+    }
+    .account-pr-body {
+      padding: 12px 18px 18px;
+      overflow-y: auto;
+      max-height: calc(min(78vh, 760px) - 92px);
+      display: grid;
+      gap: 8px;
+    }
+    .account-pr-status,
+    .account-pr-empty {
+      border: 1px dashed rgba(10, 31, 47, 0.18);
+      border-radius: 18px;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.84);
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .account-pr-list {
+      display: grid;
+      gap: 8px;
+    }
+    .account-pr-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 248, 252, 0.94));
+    }
+    .account-pr-mainrow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-width: 0;
+    }
+    .account-pr-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .account-pr-copy {
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+      flex: 1 1 auto;
+    }
+    .account-pr-rank {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(15, 36, 53, 0.08);
+      color: #16334a;
+      font-size: 0.7rem;
+      font-weight: 900;
+      flex: 0 0 26px;
+    }
+    .account-pr-name {
+      font-size: 0.97rem;
+      font-weight: 900;
+      color: #0c2030;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .account-pr-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: rgba(13, 34, 50, 0.7);
+      font-weight: 800;
+    }
+    .account-pr-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(17, 44, 65, 0.06);
+      border: 1px solid rgba(17, 44, 65, 0.08);
+      line-height: 1.1;
+    }
+    .account-pr-pill.is-muted {
+      background: rgba(17, 44, 65, 0.035);
+      color: rgba(13, 34, 50, 0.62);
+    }
+    .account-pr-value {
+      text-align: right;
+      min-width: 118px;
+      flex: 0 0 auto;
+    }
+    .account-pr-best {
+      font-size: 1.04rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: #0d2232;
     }
     .account-requests-btn.has-pending {
       border-color: rgba(214, 40, 40, 0.45);
@@ -294,6 +490,10 @@
       .account-row {
         align-items: flex-start;
       }
+      .account-row-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
       .account-requests-btn {
         font-size: 0.8rem;
         padding: 0.32rem 0.58rem;
@@ -307,6 +507,26 @@
       .account-requests-ping {
         right: 10px;
         left: 10px;
+        min-width: 0;
+      }
+      .account-pr-card {
+        width: min(100%, calc(100vw - 20px));
+        border-radius: 20px;
+      }
+      .account-pr-body {
+        padding: 12px 14px 14px;
+      }
+      .account-pr-head {
+        padding: 16px 16px 12px;
+      }
+      .account-pr-mainrow {
+        align-items: flex-start;
+      }
+      .account-pr-left {
+        align-items: flex-start;
+      }
+      .account-pr-value {
+        text-align: left;
         min-width: 0;
       }
     }
@@ -412,6 +632,328 @@
       font-size: 13px;
       background: rgba(0, 0, 0, 0.03);
     }
+    .account-trainer-card {
+      background:
+        radial-gradient(circle at top right, rgba(123, 179, 255, 0.12), transparent 32%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.96));
+      border: 1px solid rgba(10, 31, 47, 0.1);
+    }
+    .account-trainer-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .account-trainer-kicker {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #1f4f78;
+    }
+    .account-trainer-head h2 {
+      margin: 4px 0 0;
+      font-size: 1.28rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #0d2232;
+    }
+    .account-trainer-sub {
+      margin-top: 6px;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .account-trainer-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 36, 53, 0.14);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      font-size: 0.8rem;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .account-trainer-link:hover {
+      background: rgba(15, 36, 53, 0.09);
+    }
+    .account-trainer-status {
+      margin-bottom: 12px;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .account-trainer-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px dashed rgba(15, 36, 53, 0.18);
+      background: rgba(255, 255, 255, 0.82);
+    }
+    .account-trainer-cta-copy {
+      flex: 1 1 320px;
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .account-trainer-chip-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .account-trainer-chip {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .account-trainer-chip-label {
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.52);
+    }
+    .account-trainer-chip-value {
+      margin-top: 5px;
+      font-size: 1.02rem;
+      font-weight: 900;
+      color: #0d2232;
+      line-height: 1.1;
+    }
+    .account-trainer-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 12px;
+    }
+    .account-trainer-panel {
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.88);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .account-trainer-panel h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #112c41;
+      letter-spacing: -0.02em;
+    }
+    .account-trainer-muted {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .account-trainer-form {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .account-trainer-form input,
+    .account-trainer-form textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(248, 251, 255, 0.98);
+      padding: 0.72rem 0.82rem;
+      color: #0d2232;
+      font: inherit;
+    }
+    .account-trainer-form textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+    .account-trainer-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.72rem 0.95rem;
+      border-radius: 12px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff;
+      font-size: 0.86rem;
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .account-trainer-btn.ghost {
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      box-shadow: none;
+    }
+    .account-trainer-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .account-trainer-list {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-client {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+    }
+    .account-trainer-client-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .account-trainer-client-name {
+      font-size: 0.92rem;
+      font-weight: 900;
+      color: #0c2030;
+    }
+    .account-trainer-client-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .account-trainer-client-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(17, 44, 65, 0.05);
+      border: 1px solid rgba(17, 44, 65, 0.08);
+      color: rgba(13, 34, 50, 0.74);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .account-trainer-remove {
+      border: 0;
+      background: transparent;
+      color: #a12727;
+      font-size: 0.76rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .account-trainer-referral {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(244, 248, 255, 0.96);
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-code {
+      font-size: 1rem;
+      font-weight: 900;
+      color: #0d2232;
+      letter-spacing: 0.04em;
+    }
+    .account-trainer-linkbox {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.96);
+      padding: 0.68rem 0.8rem;
+      color: rgba(13, 34, 50, 0.72);
+      font: inherit;
+    }
+    .account-trainer-billing-list,
+    .account-trainer-signup-list {
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-month {
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .account-trainer-month-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+    }
+    .account-trainer-month-title {
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: #0d2232;
+    }
+    .account-trainer-month-payout {
+      font-size: 0.96rem;
+      font-weight: 900;
+      color: #0d2232;
+    }
+    .account-trainer-month-sub {
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: rgba(13, 34, 50, 0.62);
+    }
+    .account-trainer-conversion {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: rgba(13, 34, 50, 0.74);
+    }
+    .account-trainer-empty {
+      border: 1px dashed rgba(10, 31, 47, 0.16);
+      border-radius: 14px;
+      padding: 12px;
+      color: rgba(13, 34, 50, 0.66);
+      background: rgba(255, 255, 255, 0.74);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .account-trainer-signup {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: rgba(13, 34, 50, 0.74);
+    }
+    .account-trainer-signup-name {
+      color: #0d2232;
+      font-weight: 900;
+    }
+    @media (max-width: 860px) {
+      .account-trainer-chip-row,
+      .account-trainer-grid,
+      .account-trainer-form-grid {
+        grid-template-columns: 1fr;
+      }
+      .account-trainer-head {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body class="account-page" data-require-auth="1">
@@ -449,7 +991,7 @@
 
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand">STRYVE<span class="brand-dot"></span></div>
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>
@@ -500,6 +1042,18 @@
       <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
     </div>
+    <div class="control-section hidden" id="control-trainer-section">
+      <p class="section-label">TRAINER</p>
+      <a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a>
+    </div>
+    <div class="control-section hidden" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
   </aside>
 
   <main class="account-main">
@@ -513,10 +1067,15 @@
               <div class="account-friends" id="account-friends">0 friends</div>
             </div>
           </div>
-          <button type="button" class="account-requests-btn hidden" id="account-requests-btn" aria-label="Requests">
-            <span>Requests</span>
-            <span class="account-requests-count hidden" id="account-requests-count">0</span>
-          </button>
+          <div class="account-row-actions">
+            <button type="button" class="account-requests-btn account-pr-btn hidden" id="account-pr-btn" aria-label="Personal records">
+              <span>PR</span>
+            </button>
+            <button type="button" class="account-requests-btn hidden" id="account-requests-btn" aria-label="Requests">
+              <span>Requests</span>
+              <span class="account-requests-count hidden" id="account-requests-count">0</span>
+            </button>
+          </div>
         </div>
         <div class="account-requests-popover hidden" id="account-requests-popover" aria-hidden="true">
           <div class="account-req-tabs" role="tablist" aria-label="Request types">
@@ -529,9 +1088,26 @@
         <div class="account-status" id="account-status"></div>
       </section>
 
+      <div class="account-pr-modal hidden" id="account-pr-modal" role="dialog" aria-modal="true" aria-labelledby="account-pr-title">
+        <button type="button" class="account-pr-backdrop" id="account-pr-backdrop" aria-label="Close personal records"></button>
+        <div class="account-pr-card">
+          <div class="account-pr-head">
+            <div>
+              <div class="account-pr-kicker">Lift history</div>
+              <div class="account-pr-title" id="account-pr-title">Personal records</div>
+              <div class="account-pr-sub">Your strongest saved lifts pulled from workout history.</div>
+            </div>
+            <button type="button" class="account-pr-close" id="account-pr-close" aria-label="Close personal records">×</button>
+          </div>
+          <div class="account-pr-body" id="account-pr-body">
+            <div class="account-pr-status">Loading PRs...</div>
+          </div>
+        </div>
+      </div>
+
       <section class="account-card">
         <div class="account-warnings-head">
-          <h2>Warnings</h2>
+          <h2>Pending</h2>
           <div class="account-warnings-status" id="account-warnings-status">Checking warnings...</div>
         </div>
         <div class="account-warnings-list" id="account-warnings-list"></div>
@@ -539,7 +1115,12 @@
     </div>
   </main>
 
-  <script src="js/main.js?v=2026-03-09-tour-fast-pages-1"></script>
-  <script src="js/account.js?v=2026-03-08-warning-sms-4"></script>
+  <script>
+    if (window.location.hash === '#trainer-hub') {
+      window.location.replace('trainer-dashboard.html');
+    }
+  </script>
+  <script src="js/main.js?v=2026-03-28-owner-demo-41"></script>
+  <script src="js/account.js?v=2026-03-26-account-pr-2"></script>
 </body>
 </html>

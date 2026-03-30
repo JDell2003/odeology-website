@@ -952,7 +952,7 @@
 
         ctx.fillStyle = ink;
         ctx.font = '44px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-        ctx.fillText('STRYVE', pad, pad);
+        ctx.fillText('RiseForIt', pad, pad);
 
         let y = pad + 56;
         ctx.font = '28px system-ui, -apple-system, Segoe UI, Roboto, Arial';
@@ -2143,8 +2143,8 @@
             const uname = String(user?.username || '').trim().toLowerCase();
             const dname = String(user?.displayName || '').trim().toLowerCase();
             if (user?.isOwner) return true;
-            return ['STRYVE', 'STRYVE', 'STRYVEowner', 'jason'].includes(uname)
-                || ['STRYVE', 'STRYVE'].includes(dname);
+            return ['RiseForIt', 'RiseForIt', 'RiseForItOwner', 'jason'].includes(uname)
+                || ['RiseForIt', 'RiseForIt'].includes(dname);
         };
         try {
             const resp = await fetch('/api/auth/me', { credentials: 'include' });
@@ -2369,6 +2369,8 @@
         const trainingDetailsEl = $('#overview-training-details-list');
         const trainingLastPill = $('#overview-training-last');
         const trainingWeekPill = $('#overview-training-week');
+        const trainingAccessWrap = $('#overview-training-access-wrap');
+        const trainingAccessEl = $('#overview-training-access');
 
         const api = async (path) => {
             try {
@@ -2432,6 +2434,92 @@
         const setPill = (el, text) => {
             if (!el) return;
             el.textContent = text || '—';
+        };
+
+        const renderTrainingAccessRows = (rows) => {
+            if (!trainingAccessWrap || !trainingAccessEl) return;
+            const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+            trainingAccessWrap.classList.toggle('hidden', list.length === 0);
+            renderSummaryList(trainingAccessEl, list);
+        };
+
+        const readDemoSim = (userId) => {
+            const id = String(userId || '').trim();
+            if (!id) return null;
+            try {
+                const raw = sessionStorage.getItem(`ode_demo_sim_v1:${id}`);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return {
+                    daysElapsed: Math.max(0, Math.min(365, Number(parsed?.daysElapsed || 0))),
+                    qualifiedCount: Math.max(0, Math.min(999, Number(parsed?.qualifiedCount || 0))),
+                    pendingCount: Math.max(0, Math.min(999, Number(parsed?.pendingCount || 0)))
+                };
+            } catch {
+                return null;
+            }
+        };
+
+        const labelFromSeconds = (secondsRaw) => {
+            const seconds = Math.max(0, Math.floor(Number(secondsRaw) || 0));
+            if (seconds <= 0) return 'expired';
+            const hours = Math.floor(seconds / 3600);
+            if (hours >= 48) return `${Math.ceil(hours / 24)} days`;
+            if (hours >= 1) return `${hours}h`;
+            return `${Math.max(1, Math.ceil(seconds / 60))}m`;
+        };
+
+        const buildDemoTrainingAccessRows = (user) => {
+            if (!(user?.demo?.active || user?.isDemo)) return [];
+            const sim = readDemoSim(user?.id) || { daysElapsed: 0, qualifiedCount: 0, pendingCount: 0 };
+            const now = Date.now();
+            const dayMs = 24 * 60 * 60 * 1000;
+            const trialDays = 3;
+            const qualifiedCount = Math.max(0, Number(sim.qualifiedCount || 0));
+            const pendingCount = Math.max(0, Number(sim.pendingCount || 0));
+            const trialStartedAt = now - (Math.max(0, Number(sim.daysElapsed || 0)) * dayMs);
+            const trialEndsAt = trialStartedAt + (trialDays * dayMs);
+
+            let grantDays = 0;
+            let nextTier = { required: 2, label: '7 days' };
+            let nextProgressCount = Math.min(2, qualifiedCount);
+            if (qualifiedCount >= 8) {
+                grantDays = 365;
+                nextTier = null;
+                nextProgressCount = 0;
+            } else if (qualifiedCount >= 4) {
+                grantDays = 30;
+                nextTier = { required: 4, label: '1 year' };
+                nextProgressCount = Math.min(4, qualifiedCount - 4);
+            } else if (qualifiedCount >= 2) {
+                grantDays = 7;
+                nextTier = { required: 2, label: '30 days' };
+                nextProgressCount = Math.min(2, qualifiedCount - 2);
+            }
+
+            const grantEndsAt = grantDays > 0 ? (trialStartedAt + (grantDays * dayMs)) : 0;
+            const currentAccessEndsAt = Math.max(trialEndsAt, grantEndsAt || 0);
+            const remainingSeconds = Math.max(0, Math.floor((currentAccessEndsAt - now) / 1000));
+            const remainingLabel = labelFromSeconds(remainingSeconds);
+            const trialDay = Math.max(1, Math.min(trialDays, 1 + Math.floor((now - trialStartedAt) / dayMs)));
+            const nextRemainingCount = nextTier ? Math.max(0, nextTier.required - nextProgressCount) : 0;
+
+            return [
+                {
+                    title: grantDays > 0 ? 'Training access unlocked' : 'Trial countdown',
+                    sub: grantDays > 0
+                        ? `Invite unlock active${remainingLabel === 'expired' ? '' : ` | ${remainingLabel} left`}`
+                        : `Day ${trialDay} of the ${trialDays}-day trial${remainingLabel === 'expired' ? '' : ` | ${remainingLabel} left`}`,
+                    right: remainingLabel === 'expired' ? '0 left' : remainingLabel
+                },
+                {
+                    title: `Qualified invites: ${qualifiedCount}${pendingCount ? ` | Pending: ${pendingCount}` : ''}`,
+                    sub: nextTier
+                        ? `${nextRemainingCount} more qualified invite${nextRemainingCount === 1 ? '' : 's'} unlock ${nextTier.label}. 2 unlock 7 days | 4 unlock 30 days | 8 unlock 1 year.`
+                        : 'Max invite tier unlocked. 2 unlock 7 days | 4 unlock 30 days | 8 unlock 1 year.',
+                    right: nextTier ? `${nextRemainingCount} left` : 'Max'
+                }
+            ];
         };
 
         const renderLeaderboard = async () => {
@@ -2847,6 +2935,7 @@
                 todayBtn.onclick = null;
             }
             if (!user) {
+                renderTrainingAccessRows([]);
                 setPill(trainingLastPill, 'Last: —');
                 setPill(trainingWeekPill, '7d: —');
                 if (cta) cta.classList.add('hidden');
@@ -2863,6 +2952,7 @@
             const state = await api('/api/training/state');
             const planRow = state.ok ? (state.json?.plan || null) : null;
             const hasPlan = !!planRow?.id;
+            renderTrainingAccessRows(buildDemoTrainingAccessRows(user));
             if (!state.ok || !hasPlan) {
                 setPill(trainingLastPill, 'Last: —');
                 setPill(trainingWeekPill, '7d: —');

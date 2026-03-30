@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Custom Workout Builder | STRYVE</title>
+  <title>Custom Workout Builder | RiseForIt</title>
   <link rel="stylesheet" href="css/main.css" />
   <style>
     body.custom-builder-page {
@@ -2589,7 +2589,7 @@
 <body class="custom-builder-page">
   <nav class="navbar">
     <div class="navbar-container">
-      <a class="navbar-brand" href="index.html">STRYVE<span class="brand-dot"></span></a>
+      <a class="navbar-brand" href="index.html"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></a>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
       <ul class="nav-menu" id="nav-menu">
         <li><a href="overview.html">Overview</a></li>
@@ -5630,7 +5630,7 @@ Last week: 80 lb</pre>
                   <label class="builder-import-select-wrap">
                     <span class="builder-import-select-wrap-label">Matched workout</span>
                     <select data-import-select="${escapeHtml(row.id)}">
-                      ${options || '<option value="">No matches yet</option>'}
+                      ${options || '<option value=">No matches yet</option>'}
                     </select>
                   </label>
                   <label class="builder-import-lastlift">
@@ -5642,7 +5642,7 @@ Last week: 80 lb</pre>
                   <label class="builder-import-dayassign">
                     <span class="builder-import-dayassign-label">What day?</span>
                     <select data-import-day-assign="${escapeHtml(row.id)}">
-                      <option value="">Select a day</option>
+                      <option value=">Select a day</option>
                       ${dayOptions}
                     </select>
                   </label>
@@ -5681,7 +5681,7 @@ Last week: 80 lb</pre>
                 <label class="builder-import-add-field">
                   <span>Workout</span>
                   <select data-import-add-select="${escapeHtml(addGroupKey)}">
-                    <option value="">Choose workout...</option>
+                    <option value=">Choose workout...</option>
                     ${addWorkoutOptions}
                   </select>
                 </label>

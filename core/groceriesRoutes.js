@@ -504,6 +504,18 @@ module.exports = async function groceriesRoutes(req, res, url) {
     }
   }
 
+  if (url.pathname === '/api/groceries/reset' && req.method === 'POST') {
+    const userId = await resolveUserIdFromSession(req);
+    if (!userId) return sendJson(res, 401, { error: 'Not signed in' });
+    try {
+      await db.query('DELETE FROM app_grocery_lists WHERE user_id = $1;', [userId]);
+      return sendJson(res, 200, { ok: true });
+    } catch (err) {
+      console.error('[groceries-reset]', err?.message || err);
+      return sendJson(res, 500, { error: 'Failed to reset grocery list' });
+    }
+  }
+
   if (url.pathname === '/api/groceries/adjust' && req.method === 'POST') {
     const userId = await resolveUserIdFromSession(req);
     if (!userId) return sendJson(res, 401, { error: 'Not signed in' });
