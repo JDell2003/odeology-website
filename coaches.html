@@ -629,14 +629,19 @@
     @media (max-width: 720px) {
       .coaches-shell {
         gap: 10px;
+        justify-items: center;
       }
       .coaches-heading,
       .coaches-toolbar,
       .coaches-section-label {
-        width: 100%;
+        width: min(100%, 360px);
+        margin-left: auto;
+        margin-right: auto;
       }
       .coaches-heading {
         gap: 4px;
+        justify-items: center;
+        text-align: center;
       }
       .coaches-heading-title {
         font-size: 2.25rem;
@@ -644,7 +649,10 @@
       }
       .coaches-heading-sub {
         font-size: 0.78rem;
-        max-width: 22rem;
+        max-width: 20rem;
+      }
+      .coaches-section-label {
+        justify-content: center;
       }
       .coaches-input {
         min-height: 44px;
@@ -660,6 +668,9 @@
         grid-template-columns: 1fr;
       }
       .coach-card {
+        width: min(100%, 360px);
+        margin: 0 auto;
+        margin-right: 0;
         border-radius: 22px;
         padding: 3px 5px;
       }
@@ -682,8 +693,8 @@
         gap: 4px;
       }
       .coach-pill-top {
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 6px;
+        grid-template-columns: 1fr;
+        gap: 5px;
       }
       .coach-name {
         font-size: 0.92rem;
@@ -709,6 +720,9 @@
         font-size: 0.64rem;
       }
       .coach-toggle {
+        display: none;
+      }
+      .coach-side-panel {
         display: none;
       }
     }

@@ -5013,6 +5013,9 @@ async function requireTrainerActor(req, res) {
     sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     return null;
   }
+  if (actor.isOwner) {
+    return actor;
+  }
   const profile = await getTrainerProfile(actor.id);
   if (!actor?.isTrainer && !profile) {
     sendJson(res, 403, { ok: false, error: 'TRAINER_REQUIRED' });
