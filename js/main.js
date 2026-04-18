@@ -2243,6 +2243,28 @@ function closeGroceryPage() { return; }   // Permanently disabled
 function persistGrocerySession() { return; } // Permanently disabled
 // Any attempt to open food wizard will silently fail
 
+function getDashboardNavHref(user = null) {
+    return Boolean(user?.isTrainer || user?.trainer?.active)
+        ? 'trainer-dashboard.html'
+        : 'overview.html#control-panel';
+}
+
+function syncNavbarDashboardLink(user = null) {
+    const navMenu = document.getElementById('nav-menu');
+    if (!navMenu) return;
+    const href = getDashboardNavHref(user);
+    let link = navMenu.querySelector('a[data-nav-dashboard="1"]');
+    if (!link) {
+        const li = document.createElement('li');
+        link = document.createElement('a');
+        link.dataset.navDashboard = '1';
+        link.textContent = 'Dashboard';
+        li.appendChild(link);
+        navMenu.appendChild(li);
+    }
+    link.href = href;
+}
+
 function setupNav() {
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
@@ -2255,13 +2277,12 @@ function setupNav() {
     const isIndex = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
     const homeHref = isIndex ? '#' : 'index.html';
     const macroHref = isIndex ? '#resources' : 'index.html#resources';
-    const forumHref = 'forum.html';
     const trainingHref = 'training-coming-soon.html';
     navMenu.innerHTML = `
         <li><a href="${homeHref}">Home</a></li>
         <li><a href="${macroHref}">Macro Calculator</a></li>
         <li><a href="${trainingHref}">Training</a></li>
-        <li><a href="${forumHref}">FORUM</a></li>
+        <li><a href="${getDashboardNavHref()}" data-nav-dashboard="1">Dashboard</a></li>
     `;
 
     let backdrop = document.querySelector('.nav-drawer-backdrop');
@@ -2338,17 +2359,10 @@ function setupNav() {
         a.href = 'training-coming-soon.html';
         a.textContent = 'Training';
         li.appendChild(a);
-        const forumLi = Array.from(navMenu.querySelectorAll('li')).find((item) => {
-            const link = item.querySelector('a');
-            const label = String(link?.textContent || '').trim().toLowerCase();
-            return label === 'forum';
-        });
-        if (forumLi && forumLi.parentElement === navMenu) {
-            navMenu.insertBefore(li, forumLi);
-        } else {
-            navMenu.appendChild(li);
-        }
+        navMenu.appendChild(li);
     }
+
+    syncNavbarDashboardLink(window.__odeCurrentUser || null);
 }
 
 function setupMacroNavLink() {
@@ -11176,6 +11190,11 @@ function setupBasicCheckin() {
 
     checkinControl.addEventListener('click', (e) => {
         e.preventDefault();
+        const signedIn = Boolean(window.__odeCurrentUser?.id || window.__odeCurrentUser?.username || window.__odeCurrentUser?.displayName);
+        if (!signedIn) {
+            window.location.href = 'overview.html';
+            return;
+        }
         open();
     });
 
@@ -13176,10 +13195,6 @@ function initAuthUi() {
         Boolean(user?.isTrainer || user?.trainer?.active)
     );
 
-    const canUseTrainingPortal = (user = currentUser, meta = currentAuthMeta) => (
-        isOwnerClientUser(user, meta) || isDemoClientUser(user, meta)
-    );
-
     const getTrainerQuickActionHref = (user = currentUser) => (
         isTrainerClientUser(user)
             ? 'trainer-dashboard.html'
@@ -13194,7 +13209,7 @@ function initAuthUi() {
             return label === 'training portal';
         });
         if (!trainingSection) return;
-        trainingSection.classList.toggle('hidden', !canUseTrainingPortal(user, meta));
+        trainingSection.classList.remove('hidden');
     };
 
     const syncTrainerSidebarSection = (user = currentUser, meta = currentAuthMeta) => {
@@ -13247,10 +13262,12 @@ function initAuthUi() {
     const syncTrainerQuickActionButtons = (user = currentUser) => {
         const trainerMode = isTrainerClientUser(user);
         if (friendsBtn) {
+            friendsBtn.classList.toggle('hidden', !trainerMode);
             friendsBtn.setAttribute('aria-label', trainerMode ? 'Manage clients' : 'Trainers');
             friendsBtn.setAttribute('title', trainerMode ? 'Manage clients' : 'Trainers');
         }
         if (mobileFriendsBtn) {
+            mobileFriendsBtn.classList.toggle('hidden', !trainerMode);
             mobileFriendsBtn.setAttribute('aria-label', trainerMode ? 'Manage clients' : 'Trainers');
             const textEl = mobileFriendsBtn.querySelector('span:last-child');
             if (textEl) textEl.textContent = trainerMode ? 'Clients' : 'Trainers';
@@ -13328,6 +13345,7 @@ function initAuthUi() {
         let doorsLink = panel.querySelector('#control-owner-doors-link');
         let accountsLink = panel.querySelector('#control-owner-accounts-link');
         let demoBtn = panel.querySelector('#control-owner-demo-btn');
+        let workoutTestLink = panel.querySelector('#control-owner-workout-test-link');
         if (!ownerSection) {
             ownerSection = document.createElement('div');
             ownerSection.className = 'control-section hidden';
@@ -13383,6 +13401,16 @@ function initAuthUi() {
             demoBtn.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span>';
             ownerSection.appendChild(demoBtn);
         }
+        if (!workoutTestLink) {
+            workoutTestLink = document.createElement('a');
+            workoutTestLink.className = 'control-link';
+            workoutTestLink.id = 'control-owner-workout-test-link';
+            workoutTestLink.href = 'workout-test.html';
+            workoutTestLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Test</span>';
+        }
+        if (demoBtn && workoutTestLink && demoBtn.nextElementSibling !== workoutTestLink) {
+            demoBtn.insertAdjacentElement('afterend', workoutTestLink);
+        }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
             demoBtn.addEventListener('click', () => {
@@ -13426,6 +13454,8 @@ function initAuthUi() {
         syncTrainingPortalSection(null, null);
         syncTrainerSidebarSection(null);
         syncOwnerWorkoutDbLink(null, null);
+        syncNavbarDashboardLink(null);
+        if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
         stopMessagePolling();
@@ -13516,13 +13546,15 @@ function initAuthUi() {
         syncTrainingPortalSection(user, meta);
         syncTrainerSidebarSection(user);
         syncOwnerWorkoutDbLink(user, meta);
+        syncNavbarDashboardLink(user);
+        if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(user);
         setImpersonationUi(user, meta);
         showTrainerReviewNoticeIfNeeded(user);
 
         menu.innerHTML = `
             ${imp ? `<a class="auth-menu-item" id="auth-menu-return-owner" href="${buildOwnerExitHref('/owner-accounts.html', user, meta)}">Return to Owner Account</a>` : ''}
             <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
-            <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="overview.html#control-panel">Dashboard</a>
+            <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="${getDashboardNavHref(user)}">Dashboard</a>
         `;
         const dashboardLink = menu.querySelector('#auth-menu-dashboard');
         dashboardLink?.addEventListener('click', () => {
@@ -14863,8 +14895,12 @@ function initFriendsPage() {
     const workoutReqListEl = root.querySelector('#user-msg-workout-requests-list');
     const friendReqStatusEl = root.querySelector('#user-msg-friend-requests-status');
     const friendReqListEl = root.querySelector('#user-msg-friend-requests-list');
+    const guestOverlayEl = root.querySelector('#user-msg-guest-overlay');
+    const guestSignupBtn = root.querySelector('#user-msg-guest-signup');
+    const guestSigninBtn = root.querySelector('#user-msg-guest-signin');
 
     const myId = String(window.__odeCurrentUser?.id || '');
+    let guestDataLoaded = false;
 
     const isMobileThreadUi = () => {
         try {
@@ -14981,6 +15017,50 @@ function initFriendsPage() {
         const total = Math.max(0, Number(state.pendingFriendRequests || 0)) + Math.max(0, Number(state.pendingWorkoutInvites || 0));
         requestBadgeEl.textContent = String(total);
         requestBadgeEl.classList.toggle('hidden', total <= 0);
+    };
+
+    const applyGuestOverlay = (locked) => {
+        root.classList.toggle('user-msg-guest-locked', Boolean(locked));
+        guestOverlayEl?.classList.toggle('hidden', !locked);
+        if (locked) {
+            setStatus('');
+            setCount('Create an account to message friends and trainers.');
+        }
+    };
+
+    const resetGuestState = () => {
+        state.friends = [];
+        state.isFriendsLoading = false;
+        state.selectedFriendId = null;
+        state.selectedFriend = null;
+        state.messages = [];
+        state.isThreadLoading = false;
+        state.pendingFriendRequests = 0;
+        state.pendingWorkoutInvites = 0;
+        state.workoutInvites = [];
+        state.summaries = new Map();
+        clearPendingImage();
+        setMessageText('');
+        updateRequestBadge();
+        renderAccounts();
+        renderThread();
+        renderFriendRequests([], 'Create an account to manage requests.');
+        renderWorkoutInvites([], 'Create an account to manage invites.');
+    };
+
+    const syncGuestAccess = async (user = window.__odeCurrentUser || null) => {
+        const signedIn = Boolean(user?.id || user?.username || user?.displayName);
+        applyGuestOverlay(!signedIn);
+        if (!signedIn) {
+            guestDataLoaded = false;
+            resetGuestState();
+            setCount('Make an account to message friends and trainers.');
+            return;
+        }
+        if (guestDataLoaded) return;
+        guestDataLoaded = true;
+        await loadFriends();
+        await loadIncomingRequests();
     };
 
     const setActiveTab = (tabKey) => {
@@ -15602,6 +15682,16 @@ function initFriendsPage() {
         setMobileView('list');
     });
 
+    guestSignupBtn?.addEventListener('click', () => {
+        if (typeof odeOpenAuthModal === 'function') odeOpenAuthModal('signup');
+        else document.getElementById('control-signup')?.click?.();
+    });
+
+    guestSigninBtn?.addEventListener('click', () => {
+        if (typeof odeOpenAuthModal === 'function') odeOpenAuthModal('login');
+        else document.getElementById('control-signin')?.click?.();
+    });
+
     window.addEventListener('resize', () => {
         syncMobileInputHeight();
         updateMobileActionUi();
@@ -15613,12 +15703,17 @@ function initFriendsPage() {
     });
 
     sendForm?.addEventListener('submit', sendDirectMessage);
+    window.addEventListener('odeauth', (e) => {
+        void syncGuestAccess(e?.detail?.user || null);
+    });
 
     updateImageMeta();
     syncMobileInputHeight();
     setActiveTab('messages');
-    loadFriends();
-    loadIncomingRequests();
+    renderAccounts();
+    renderThread();
+    void syncGuestAccess(window.__odeCurrentUser || null);
+    void getAuthMeBootstrapSnapshot().then((snap) => syncGuestAccess(snap?.user || null));
 }
 function initAuthGate() {
     const requiresAuth = document.body?.dataset?.requireAuth === '1';
@@ -19038,7 +19133,7 @@ function ensureMobileAuthUi(navMenu) {
                     <a href="/api/auth/owner/impersonation/exit?returnTo=/friends.html" id="auth-mobile-owner-return">Return to owner account</a>
                 </div>
                 <button type="button" class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-logout">Sign out</button>
-                <a class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-dashboard" href="overview.html#control-panel">Dashboard</a>
+                <a class="auth-mobile-btn auth-mobile-btn-primary" id="auth-mobile-dashboard" href="${getDashboardNavHref()}">Dashboard</a>
             </div>
         `.trim();
         navMenu.appendChild(wrap);
@@ -19065,7 +19160,7 @@ function ensureFriendsButton(wrapper) {
         btn = document.createElement('button');
         btn.type = 'button';
         btn.id = 'auth-friends-btn';
-        btn.className = 'auth-nav-btn auth-friends-btn';
+        btn.className = 'auth-nav-btn auth-friends-btn hidden';
         btn.setAttribute('aria-label', 'Trainers');
         btn.innerHTML = '<span class="auth-plus-mark" aria-hidden="true">+</span>';
         const signInBtn = wrapper.querySelector('#auth-signin-btn');
@@ -19082,7 +19177,7 @@ function ensureMobileFriendsButton(wrap) {
         btn = document.createElement('button');
         btn.type = 'button';
         btn.id = 'auth-mobile-friends';
-        btn.className = 'auth-mobile-btn auth-mobile-btn-ghost auth-mobile-friends';
+        btn.className = 'auth-mobile-btn auth-mobile-btn-ghost auth-mobile-friends hidden';
         btn.setAttribute('aria-label', 'Trainers');
         btn.innerHTML = '<span class="auth-mobile-icon auth-plus-mark" aria-hidden="true">+</span><span>Trainers</span>';
     }

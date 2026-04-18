@@ -2930,6 +2930,22 @@
             const user = me.ok ? (me.json?.user || null) : null;
             const cta = $('#overview-training-cta');
             const todayBtn = $('#overview-training-today-btn');
+            const bindGuestTrainingAuthButtons = () => {
+                document.querySelectorAll('[data-overview-auth]').forEach((btn) => {
+                    if (btn.dataset.authBound === '1') return;
+                    btn.dataset.authBound = '1';
+                    btn.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const mode = String(btn.getAttribute('data-overview-auth') || 'login').trim().toLowerCase();
+                        if (typeof window.odeOpenAuthModal === 'function') {
+                            window.odeOpenAuthModal(mode === 'signup' ? 'signup' : 'login');
+                            return;
+                        }
+                        const fallbackId = mode === 'signup' ? 'control-signup' : 'control-signin';
+                        document.getElementById(fallbackId)?.click?.();
+                    });
+                });
+            };
             if (todayBtn) {
                 todayBtn.classList.add('hidden');
                 todayBtn.onclick = null;
@@ -2940,12 +2956,18 @@
                 setPill(trainingWeekPill, '7d: —');
                 if (cta) cta.classList.add('hidden');
                 const rows = [{
-                    title: 'Sign in to see training status',
-                    sub: 'Workouts, weigh-ins, and auto-adjust warnings show here.',
-                    right: ''
+                    title: 'Sign up / sign in to save your workout',
+                    sub: 'Create a free workout and add it to your account.',
+                    right: `
+                        <div class="overview-auth-actions">
+                            <button type="button" class="btn btn-primary" data-overview-auth="signup">Sign up</button>
+                            <button type="button" class="btn btn-ghost" data-overview-auth="login">Sign in</button>
+                        </div>
+                    `
                 }];
                 renderSummaryList(trainingSummaryEl, rows);
                 renderSummaryList(trainingDetailsEl, rows);
+                bindGuestTrainingAuthButtons();
                 return;
             }
 

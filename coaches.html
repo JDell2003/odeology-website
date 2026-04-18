@@ -614,6 +614,170 @@
       font-size: 0.92rem;
       font-weight: 700;
     }
+    .coaches-access-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .coaches-access-modal.hidden {
+      display: none;
+    }
+    .coaches-access-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(9, 20, 30, 0.42);
+      backdrop-filter: blur(8px);
+    }
+    .coaches-access-card {
+      position: relative;
+      width: min(100%, 480px);
+      padding: 30px 26px 22px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 126, 0.28), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 157, 230, 0.14), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 251, 0.95));
+      box-shadow:
+        0 30px 80px rgba(8, 22, 34, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      text-align: center;
+      overflow: hidden;
+    }
+    .coaches-access-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent 34%),
+        linear-gradient(180deg, transparent 72%, rgba(12, 31, 47, 0.03));
+      pointer-events: none;
+    }
+    .coaches-access-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      color: #183248;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(11, 26, 40, 0.08);
+    }
+    .coaches-access-card h3 {
+      margin: 0;
+      color: #11293d;
+      font-size: clamp(1.6rem, 4vw, 2.28rem);
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 0.96;
+      max-width: 10.5em;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .coaches-access-copy {
+      margin: 12px auto 0;
+      max-width: 22rem;
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.88rem;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+    .coaches-access-benefits {
+      margin: 18px 0 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .coaches-access-benefit {
+      position: relative;
+      padding: 16px 12px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(13, 34, 50, 0.07);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 252, 0.9));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 12px 24px rgba(13, 34, 50, 0.05);
+      overflow: hidden;
+    }
+    .coaches-access-benefit::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(240, 173, 73, 0.95), rgba(125, 176, 238, 0.9));
+    }
+    .coaches-access-benefit-icon {
+      width: 34px;
+      height: 34px;
+      margin: 2px auto 10px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(255, 247, 230, 0.98), rgba(245, 250, 255, 0.92));
+      border: 1px solid rgba(13, 34, 50, 0.06);
+      color: #8c5a1d;
+      font-size: 0.98rem;
+      font-weight: 900;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .coaches-access-benefit strong {
+      display: block;
+      color: #10283b;
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .coaches-access-benefit span {
+      display: block;
+      margin-top: 5px;
+      color: rgba(13, 34, 50, 0.52);
+      font-size: 0.69rem;
+      font-weight: 800;
+      line-height: 1.28;
+    }
+    .coaches-access-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .coaches-access-actions .btn {
+      min-width: 138px;
+      min-height: 46px;
+      border-radius: 14px;
+      font-weight: 900;
+      box-shadow: 0 12px 22px rgba(13, 34, 50, 0.08);
+    }
+    .coaches-access-actions .btn-primary {
+      background: linear-gradient(135deg, #f0ad49, #d88a21);
+      border-color: rgba(181, 110, 16, 0.46);
+      color: #1f1407;
+    }
+    .coaches-access-actions .btn-ghost {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(13, 34, 50, 0.1);
+      color: #183248;
+    }
+    .coaches-access-note {
+      margin: 12px 0 0;
+      color: rgba(13, 34, 50, 0.5);
+      font-size: 0.74rem;
+      font-weight: 800;
+    }
     @media (max-width: 1100px) {
       .coaches-hero {
         grid-template-columns: 1fr;
@@ -725,10 +889,74 @@
       .coach-side-panel {
         display: none;
       }
+      .coaches-access-card {
+        width: min(100%, 360px);
+        padding: 20px 16px 16px;
+        border-radius: 24px;
+        margin-top: 20px;
+        overflow: visible;
+      }
+      .coaches-access-close {
+        top: -43px;
+        right: 10px;
+        opacity: 0;
+        transform: translateY(4px);
+        animation: coachesAccessCloseReveal 220ms ease forwards;
+        animation-delay: 2s;
+      }
+      .coaches-access-card h3 {
+        font-size: 1.95rem;
+        line-height: 0.94;
+        max-width: 9.2em;
+      }
+      .coaches-access-benefits {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .coaches-access-benefit {
+        padding: 10px 8px 9px;
+        border-radius: 16px;
+      }
+      .coaches-access-benefit-icon {
+        width: 28px;
+        height: 28px;
+        margin: 0 auto 8px;
+        border-radius: 10px;
+        font-size: 0.86rem;
+      }
+      .coaches-access-benefit strong {
+        font-size: 0.74rem;
+      }
+      .coaches-access-benefit span {
+        margin-top: 3px;
+        font-size: 0.63rem;
+        line-height: 1.18;
+      }
+      .coaches-access-actions {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .coaches-access-actions .btn {
+        width: 100%;
+        min-height: 42px;
+      }
+      .coaches-access-note {
+        margin-top: 10px;
+        font-size: 0.7rem;
+        line-height: 1.25;
+      }
+      @keyframes coachesAccessCloseReveal {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     }
   </style>
 </head>
-<body class="coaches-page" data-require-auth="1">
+<body class="coaches-page">
   <div class="grain"></div>
 
   <svg aria-hidden="true" class="icon-sprite">
@@ -849,6 +1077,36 @@
       <section id="coaches-grid" class="coaches-grid"></section>
     </div>
   </main>
+
+  <div class="coaches-access-modal hidden" id="coaches-access-modal" aria-hidden="true">
+    <div class="coaches-access-backdrop" data-coaches-access-close></div>
+    <div class="coaches-access-card" role="dialog" aria-modal="true" aria-labelledby="coaches-access-title">
+      <button class="coaches-access-close" type="button" data-coaches-access-close aria-label="Close">&times;</button>
+      <h3 id="coaches-access-title">Open trainer profiles with a free account.</h3>
+      <div class="coaches-access-benefits" aria-hidden="true">
+        <div class="coaches-access-benefit">
+          <div class="coaches-access-benefit-icon">W</div>
+          <strong>Workouts</strong>
+          <span>Saved together</span>
+        </div>
+        <div class="coaches-access-benefit">
+          <div class="coaches-access-benefit-icon">M</div>
+          <strong>Meal Plans</strong>
+          <span>All in one spot</span>
+        </div>
+        <div class="coaches-access-benefit">
+          <div class="coaches-access-benefit-icon">F</div>
+          <strong>Friends</strong>
+          <span>Messages and connections</span>
+        </div>
+      </div>
+      <div class="coaches-access-actions">
+        <button type="button" class="btn btn-primary" id="coaches-access-signup">Sign up</button>
+        <button type="button" class="btn btn-ghost" id="coaches-access-signin">Sign in</button>
+      </div>
+      <p class="coaches-access-note">You can still browse the directory without logging in.</p>
+    </div>
+  </div>
 
   <script src="js/main.js?v=2026-03-26-owner-demo-39"></script>
   <script src="js/coaches.js?v=2026-03-29-coaches-23"></script>

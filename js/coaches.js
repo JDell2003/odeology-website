@@ -252,15 +252,58 @@
     const zipInput = $('#coach-zip-input');
     const reviewTabsEl = $('#coaches-review-tabs');
     const reviewSummaryEl = $('#coaches-review-summary');
+    const accessModalEl = $('#coaches-access-modal');
+    const accessSignupBtn = $('#coaches-access-signup');
+    const accessSigninBtn = $('#coaches-access-signin');
     if (!gridEl) return;
 
     let cards = [];
     let currentUser = null;
     let activeReviewTab = 'all';
+    let lastFocusedCoachLink = null;
     const meResp = await api('/api/auth/me');
     currentUser = meResp.ok ? (meResp.json?.user || null) : null;
     const canModerate = canModerateTrainerReviews(currentUser);
     if (reviewTabsEl) reviewTabsEl.classList.toggle('is-visible', canModerate);
+
+    const hasAccountAccess = () => Boolean(currentUser?.id || currentUser?.username || currentUser?.displayName);
+    const closeAccessModal = () => {
+      if (!accessModalEl) return;
+      accessModalEl.classList.add('hidden');
+      accessModalEl.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (lastFocusedCoachLink instanceof HTMLElement) {
+        try { lastFocusedCoachLink.focus(); } catch {}
+      }
+    };
+    const openAccessModal = (triggerEl = null) => {
+      if (!accessModalEl) return;
+      lastFocusedCoachLink = triggerEl instanceof HTMLElement ? triggerEl : null;
+      accessModalEl.classList.remove('hidden');
+      accessModalEl.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    };
+
+    accessModalEl?.querySelectorAll('[data-coaches-access-close]').forEach((el) => {
+      el.addEventListener('click', closeAccessModal);
+    });
+    accessSignupBtn?.addEventListener('click', () => {
+      closeAccessModal();
+      if (typeof window.odeOpenAuthModal === 'function') window.odeOpenAuthModal('signup');
+      else document.getElementById('control-signup')?.click?.();
+    });
+    accessSigninBtn?.addEventListener('click', () => {
+      closeAccessModal();
+      if (typeof window.odeOpenAuthModal === 'function') window.odeOpenAuthModal('login');
+      else document.getElementById('control-signin')?.click?.();
+    });
+    accessModalEl?.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeAccessModal();
+    });
+    window.addEventListener('odeauth', (event) => {
+      currentUser = event?.detail?.user || null;
+      if (hasAccountAccess()) closeAccessModal();
+    });
 
     const loadCards = async () => {
       const resp = await api('/api/auth/trainers');
@@ -301,6 +344,12 @@
     };
 
     gridEl.addEventListener('click', async (event) => {
+      const coachLink = event.target instanceof Element ? event.target.closest('.coach-pill') : null;
+      if (coachLink instanceof HTMLAnchorElement && !hasAccountAccess()) {
+        event.preventDefault();
+        openAccessModal(coachLink);
+        return;
+      }
       const button = event.target instanceof Element ? event.target.closest('[data-review-action]') : null;
       if (!(button instanceof HTMLButtonElement)) return;
       event.preventDefault();

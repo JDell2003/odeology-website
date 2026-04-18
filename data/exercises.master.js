@@ -14,7 +14,7 @@ export const exercises = [
       "free-exercise-db/exercises/3_4_Sit-Up/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -40,7 +40,7 @@ export const exercises = [
       "free-exercise-db/exercises/90_90_Hamstring/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 1,
     "style": "Mobility",
@@ -93,7 +93,7 @@ export const exercises = [
       "free-exercise-db/exercises/Ab_Roller/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -1506,7 +1506,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
+    ],
+    "glutePrimaryStrength": "primary",
+    "supportType": "other",
+    "overloadFriendliness": "high",
+    "fatigueClass": "medium"
   },
   {
     "name": "Barbell Guillotine Bench Press",
@@ -3479,8 +3483,7 @@ export const exercises = [
       "free-exercise-db/exercises/Cable_Crunch/1.jpg"
     ],
     "equipment": [
-      "Cable",
-      "Bodyweight"
+      "Cable"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -3844,7 +3847,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "coreFamily": "flexion",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Cable Rope Overhead Triceps Extension",
@@ -3931,7 +3938,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+      ],
+      "pullRole": "back_builder",
+      "supportType": "cable_supported",
+      "overloadFriendliness": "high",
+      "fatigueClass": "low"
   },
   {
     "name": "Cable Russian Twists",
@@ -3986,7 +3997,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "coreFamily": "flexion",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Cable Seated Lateral Raise",
@@ -4820,7 +4835,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "freeWeight"
-    ]
+    ],
+    "pullRole": "back_builder",
+    "supportType": "chest_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Chest-to-Bar Pull-up",
@@ -6981,7 +7000,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
+    ],
+    "pullRole": "back_builder",
+    "supportType": "chest_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Dumbbell Incline Shoulder Raise",
@@ -7291,7 +7314,7 @@ export const exercises = [
     "sub": "Glutes",
     "pattern": "Lunge",
     "spine": 2,
-    "knee": 2,
+    "knee": 3,
     "hip": 2,
     "shoulder": 0,
     "elbow": 0,
@@ -8980,7 +9003,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
+    ],
+    "glutePrimaryStrength": "assist",
+    "supportType": "machine_supported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "medium"
   },
   {
     "name": "Glute Kickback",
@@ -9006,7 +9033,11 @@ export const exercises = [
     ],
     "movementTags": [
       "unilateral"
-    ]
+    ],
+    "glutePrimaryStrength": "primary",
+    "supportType": "other",
+    "overloadFriendliness": "low",
+    "fatigueClass": "low"
   },
   {
     "name": "Goblet Squat",
@@ -10034,8 +10065,8 @@ export const exercises = [
     "spine": 0,
     "knee": 0,
     "hip": 0,
-    "shoulder": 1,
-    "elbow": 2,
+    "shoulder": 2,
+    "elbow": 3,
     "images": [
       "free-exercise-db/exercises/Incline_Barbell_Triceps_Extension/0.jpg",
       "free-exercise-db/exercises/Incline_Barbell_Triceps_Extension/1.jpg"
@@ -10043,7 +10074,7 @@ export const exercises = [
     "equipment": [
       "Barbell"
     ],
-    "difficulty": 3,
+    "difficulty": 4,
     "style": "Isolation",
     "secondaryMuscles": [
       "Forearms",
@@ -10977,8 +11008,8 @@ export const exercises = [
     "spine": 1,
     "knee": 0,
     "hip": 0,
-    "shoulder": 2,
-    "elbow": 2,
+    "shoulder": 3,
+    "elbow": 3,
     "images": [
       "free-exercise-db/exercises/JM_Press/0.jpg",
       "free-exercise-db/exercises/JM_Press/1.jpg"
@@ -10986,7 +11017,7 @@ export const exercises = [
     "equipment": [
       "Barbell"
     ],
-    "difficulty": 2,
+    "difficulty": 3,
     "style": "Compound",
     "secondaryMuscles": [
       "Chest",
@@ -12226,7 +12257,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
+    ],
+    "glutePrimaryStrength": "none",
+    "supportType": "machine_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Leg Lift",
@@ -12846,7 +12881,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "pullRole": "rear_delt",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "low",
+    "fatigueClass": "medium"
   },
   {
     "name": "Lower Back Curl",
@@ -13624,7 +13663,7 @@ export const exercises = [
     "spine": 1,
     "knee": 0,
     "hip": 0,
-    "shoulder": 3,
+    "shoulder": 4,
     "elbow": 1,
     "images": [
       "free-exercise-db/exercises/Machine_Shoulder_Military_Press/0.jpg",
@@ -13633,7 +13672,7 @@ export const exercises = [
     "equipment": [
       "Machine"
     ],
-    "difficulty": 3,
+    "difficulty": 4,
     "style": "Compound",
     "secondaryMuscles": [
       "Triceps"
@@ -14632,7 +14671,11 @@ export const exercises = [
     "movementTags": [
       "unilateral",
       "freeWeight"
-    ]
+    ],
+    "pullRole": "back_builder",
+    "supportType": "unsupported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "medium"
   },
   {
     "name": "One-Arm Flat Bench Dumbbell Flye",
@@ -15281,7 +15324,11 @@ export const exercises = [
     "movementTags": [
       "unilateral",
       "supported"
-    ]
+    ],
+    "glutePrimaryStrength": "primary",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "low"
   },
   {
     "name": "Open Palm Kettlebell Clean",
@@ -16073,7 +16120,11 @@ export const exercises = [
     "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
-    ]
+    ],
+    "coreFamily": "stability",
+    "supportType": "other",
+    "overloadFriendliness": "low",
+    "fatigueClass": "low"
   },
   {
     "name": "Plate Pinch",
@@ -18096,7 +18147,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "coreFamily": "flexion",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Rope Jumping",
@@ -19141,7 +19196,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
+    ],
+    "glutePrimaryStrength": "assist",
+    "supportType": "machine_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Seated Leg Tucks",
@@ -21629,7 +21688,7 @@ export const exercises = [
     "sub": "Quads",
     "pattern": "Squat",
     "spine": 2,
-    "knee": 3,
+    "knee": 4,
     "hip": 2,
     "shoulder": 0,
     "elbow": 0,
@@ -23707,7 +23766,11 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
+    ],
+    "coreFamily": "stability",
+    "supportType": "other",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "medium"
   },
   {
     "name": "Suspended Push-Up",
@@ -23960,7 +24023,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
+    ],
+    "glutePrimaryStrength": "secondary",
+    "supportType": "machine_supported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "low"
   },
   {
     "name": "Thigh Adductor",
@@ -23989,7 +24056,11 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
+    ],
+    "glutePrimaryStrength": "none",
+    "supportType": "machine_supported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "low"
   },
   {
     "name": "Tire Flip",
@@ -25727,6 +25798,388 @@ export const exercises = [
       "bilateral",
       "supported",
       "freeWeight"
+    ]
+  },
+  {
+    "name": "Cable Reverse Wrist Curl",
+    "primary": "Forearms",
+    "sub": "Extensors",
+    "pattern": "Isolation",
+    "spine": 0,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 1,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
+    ],
+    "contraindications": [
+      "acute wrist flexor/extensor irritation"
+    ],
+    "suitsLevels": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Standing Cable Supination",
+    "primary": "Forearms",
+    "sub": "Supinators",
+    "pattern": "Isolation",
+    "spine": 0,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 1,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
+    ],
+    "contraindications": [
+      "acute elbow tendon flare"
+    ],
+    "suitsLevels": [
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Standing Cable Pronation",
+    "primary": "Forearms",
+    "sub": "Pronators",
+    "pattern": "Isolation",
+    "spine": 0,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 1,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Forearms"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported",
+      "machineStable"
+    ],
+    "contraindications": [
+      "acute elbow tendon flare"
+    ],
+    "suitsLevels": [
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Plate Neck Flexion",
+    "primary": "Neck",
+    "sub": "Flexors",
+    "pattern": "Isolation",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Barbell"
+    ],
+    "requiredEquipment": [
+      "barbell"
+    ],
+    "difficulty": 2,
+    "complexityRating": 1,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
+    ],
+    "contraindications": [
+      "acute cervical pain",
+      "recent concussion"
+    ],
+    "suitsLevels": [
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Plate Neck Extension",
+    "primary": "Neck",
+    "sub": "Extensors",
+    "pattern": "Isolation",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Barbell"
+    ],
+    "requiredEquipment": [
+      "barbell"
+    ],
+    "difficulty": 2,
+    "complexityRating": 1,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "bilateral",
+      "supported"
+    ],
+    "contraindications": [
+      "acute cervical pain",
+      "recent concussion"
+    ],
+    "suitsLevels": [
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Plate Neck Lateral Flexion",
+    "primary": "Neck",
+    "sub": "LateralFlexors",
+    "pattern": "Isolation",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Barbell"
+    ],
+    "requiredEquipment": [
+      "barbell"
+    ],
+    "difficulty": 2,
+    "complexityRating": 1,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+    "movementTags": [
+      "unilateral",
+      "supported"
+    ],
+    "contraindications": [
+      "acute cervical pain",
+      "recent concussion"
+    ],
+    "suitsLevels": [
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Side Plank Reach-Through",
+    "primary": "Core",
+    "sub": "Obliques",
+    "pattern": "CoreRotation",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 1,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Shoulders"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
+    ],
+    "contraindications": [
+      "acute shoulder instability"
+    ],
+    "suitsLevels": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Cable Bench Reverse Crunch",
+    "primary": "Core",
+    "sub": "LowerAbs",
+    "pattern": "CoreFlexion",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "HipFlexors"
+    ],
+      "movementTags": [
+        "bilateral",
+        "supported",
+        "machineStable"
+      ],
+      "coreFamily": "flexion",
+      "supportType": "cable_supported",
+      "overloadFriendliness": "high",
+      "fatigueClass": "low",
+      "contraindications": [
+        "acute hip flexor irritation"
+      ],
+    "suitsLevels": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Cable Oblique Crunch",
+    "primary": "Core",
+    "sub": "Obliques",
+    "pattern": "CoreRotation",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 2,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [],
+      "movementTags": [
+        "unilateral",
+        "supported"
+      ],
+      "coreFamily": "stability",
+      "supportType": "cable_supported",
+      "overloadFriendliness": "medium",
+      "fatigueClass": "low",
+      "contraindications": [
+        "acute lumbar rotation pain"
+      ],
+    "suitsLevels": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ]
+  },
+  {
+    "name": "Cable Pallof Hold",
+    "primary": "Core",
+    "sub": "TVA",
+    "pattern": "CoreStability",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Cable"
+    ],
+    "requiredEquipment": [
+      "cable"
+    ],
+    "difficulty": 2,
+    "complexityRating": 1,
+    "stabilityRating": 4,
+    "fatigueCost": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Obliques"
+    ],
+    "movementTags": [
+      "unilateral",
+      "supported"
+    ],
+    "contraindications": [
+      "acute lumbar rotation pain"
+    ],
+    "suitsLevels": [
+      "beginner",
+      "intermediate",
+      "advanced"
     ]
   }
 ];

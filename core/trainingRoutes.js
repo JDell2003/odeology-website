@@ -844,13 +844,17 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     back: 'Back',
     legs: 'Legs',
     glutes: 'Glutes',
+    quads: 'Legs',
+    hamstrings: 'Glutes',
+    hamstrings_glutes: 'Glutes',
+    calves: 'Calves',
     shoulders: 'Shoulders',
     shoulder: 'Shoulders',
     arms: 'Arms',
     abs: 'Core',
     core: 'Core'
   };
-  const painAreaAllowed = new Set(['Back', 'Knee', 'Hip', 'Shoulder', 'Elbow', 'Wrist']);
+  const painAreaAllowed = new Set(['Back', 'Knee', 'Hip', 'Shoulder', 'Elbow', 'Wrist', 'Ankle']);
   const priorityGroups = uniqueStrings(asArray(src.priorityGroups || src.focus).map((x) => {
     const key = String(x || '').trim().toLowerCase();
     return priorityAlias[key] || '';
@@ -864,7 +868,8 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     if (!Number.isFinite(severity)) continue;
     painProfilesByArea[area] = {
       severity: Math.max(1, Math.min(10, Math.round(severity))),
-      recency: raw?.recency === 'Recent' || raw?.recency === 'Old' ? raw.recency : ''
+      recency: raw?.recency === 'Recent' || raw?.recency === 'Old' ? raw.recency : '',
+      notes: String(raw?.notes || raw?.avoidNotes || raw?.whatHurts || raw?.avoid || '').trim()
     };
   }
 
@@ -915,6 +920,9 @@ function buildOblueprintPlanWithFallback(payload) {
   };
   const out = buildOblueprintPlan(nextPayload);
   if (out?.error) return { error: out };
+  if (out?.meta?.plannerStages?.safeBasePlanner && out?.meta?.plannerStages?.qualityUpgradePass) {
+    return { plan: out, usedPayload: nextPayload };
+  }
   const repaired = repairOblueprintBodybuildingPlan(out);
   const stabilized = repairOblueprintBodybuildingPlan(repaired);
   return { plan: stabilized, usedPayload: nextPayload };
@@ -931,28 +939,116 @@ function equipmentAccessToList(raw) {
   return out;
 }
 
+function mapClassicSessionBucketToOblueprint(raw) {
+  const key = String(raw || '').trim().toLowerCase();
+  if (key === '30_45' || key === '30') return '30';
+  if (key === '45_60' || key === '45') return '45';
+  if (key === '60_75' || key === '60') return '60';
+  if (key === '75_90_plus' || key === '75_90' || key === '75+' || key === '75') return '75+';
+  return '60';
+}
+
+function mapClassicTrainingAgeToOblueprint(raw, fallbackExperience = '') {
+  const key = String(raw || '').trim().toLowerCase();
+  if (key === '0_6') return '<6m';
+  if (key === '6_18') return '6-24m';
+  if (key === '18_36' || key === '3_5') return '2-5y';
+  if (key === '5_plus') return '5y+';
+  return normalizeOblueprintExperience(fallbackExperience);
+}
+
+function mapClassicPhaseToPrimaryGoal(raw) {
+  const key = String(raw || '').trim().toLowerCase();
+  if (key === 'cut') return 'Cut fat';
+  if (key === 'maintain' || key === 'recomp') return 'Recomp';
+  return 'Build size';
+}
+
+function mapClassicEquipmentStyleToTrainingStyle(raw) {
+  const key = String(raw || '').trim().toLowerCase();
+  if (key === 'machine') return 'Mostly machines/cables';
+  if (key === 'barbell' || key === 'dumbbell') return 'Mostly free weights';
+  return 'Balanced mix';
+}
+
+function buildPreferredDaysFromUnavailable(daysPerWeek, unavailableDays) {
+  const n = clampInt(daysPerWeek, 2, 6, null);
+  if (!n) return [];
+  const blocked = new Set(normalizeWeekdayIndexList(unavailableDays));
+  const schedule = buildTrainingWeekdays(n, Array.from(blocked));
+  return (Array.isArray(schedule) ? schedule : [])
+    .map((idx) => TRAINING_WEEKDAY_CODES[idx])
+    .filter(Boolean);
+}
+
+function mapClassicInjuryToOblueprint(strength) {
+  const injury = strength?.injury && typeof strength.injury === 'object' ? strength.injury : null;
+  const severityMap = strength?.injurySeverityByJoint && typeof strength.injurySeverityByJoint === 'object'
+    ? strength.injurySeverityByJoint
+    : {};
+  const jointAlias = {
+    shoulder: 'Shoulder',
+    elbow: 'Elbow',
+    wrist: 'Wrist',
+    back: 'Back',
+    lower_back: 'Back',
+    hip: 'Hip',
+    knee: 'Knee',
+    ankle: 'Ankle'
+  };
+  const painAreas = [];
+  const painProfilesByArea = {};
+  const note = String(injury?.note || '').trim();
+  const joints = Array.isArray(injury?.joints) ? injury.joints : [];
+  joints.forEach((jointKey) => {
+    const area = jointAlias[String(jointKey || '').trim().toLowerCase()];
+    if (!area || painAreas.includes(area)) return;
+    painAreas.push(area);
+    const severity = Math.max(1, Math.min(10, Math.round(Number(severityMap?.[jointKey]) || 0)));
+    if (severity) {
+      painProfilesByArea[area] = {
+        severity,
+        recency: severity >= 7 ? 'Recent' : '',
+        notes: note
+      };
+    }
+  });
+  const movementsToAvoid = [];
+  const lowerNote = note.toLowerCase();
+  if (/overhead|shoulder press|upright row/.test(lowerNote)) movementsToAvoid.push('overhead press');
+  if (/bench|press/.test(lowerNote) && /shoulder|pinch/.test(lowerNote)) movementsToAvoid.push('flat bench');
+  if (/deadlift|axial|hinge|lower back/.test(lowerNote)) movementsToAvoid.push('barbell hinge');
+  if (/deep knee|deep squat|knee flexion|ankle/.test(lowerNote)) movementsToAvoid.push('deep squat');
+  if (/dip/.test(lowerNote)) movementsToAvoid.push('dips');
+  return { painAreas, painProfilesByArea, movementsToAvoid };
+}
+
 function coerceClassicBodybuildingToOblueprintPayload(payload) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const discipline = String(src?.discipline || '').trim().toLowerCase();
   const trainingFeel = discipline === 'powerbuilding' ? 'Powerbuilding' : 'Aesthetic bodybuilding';
+  const strength = src?.strength && typeof src.strength === 'object' ? src.strength : {};
+  const phase = String(strength?.phase || src?.phase || '').trim().toLowerCase();
+  const equipmentStylePref = String(strength?.equipmentStylePref || src?.equipmentStylePref || 'mix').trim().toLowerCase();
+  const classicInjury = mapClassicInjuryToOblueprint(strength);
   return normalizeOblueprintPayload({
     trainingFeel,
-    primaryGoal: String(src?.phase || '').toLowerCase() === 'cut' ? 'Cut fat' : 'Build size',
+    primaryGoal: mapClassicPhaseToPrimaryGoal(phase),
     timeline: '8 weeks',
     focus: 'Aesthetic',
-    experience: src?.experience,
-    location: 'Commercial gym',
-    trainingStyle: 'Balanced mix',
+    experience: mapClassicTrainingAgeToOblueprint(strength?.trainingAgeBucket, src?.experience),
+    location: equipmentAccessToList(src?.equipmentAccess).some((token) => /machine|cable/i.test(String(token || ''))) ? 'Commercial gym' : 'Home',
+    trainingStyle: mapClassicEquipmentStyleToTrainingStyle(equipmentStylePref),
     outputStyle: 'RPE/RIR cues',
     closeToFailure: 'No',
     daysPerWeek: src?.daysPerWeek,
-    sessionLengthMin: src?.timePerSession || src?.sessionLength || '60',
+    sessionLengthMin: mapClassicSessionBucketToOblueprint(strength?.timePerSession || src?.timePerSession || src?.sessionLength || '60'),
     priorityGroups: src?.emphasis || src?.priorityGroups || [],
-    movementsToAvoid: [],
-    preferredDays: [],
+    movementsToAvoid: classicInjury.movementsToAvoid,
+    preferredDays: buildPreferredDaysFromUnavailable(src?.daysPerWeek, src?.unavailableDays),
     equipmentAccess: equipmentAccessToList(src?.equipmentAccess),
-    painAreas: [],
-    painProfilesByArea: {},
+    painAreas: classicInjury.painAreas,
+    painProfilesByArea: classicInjury.painProfilesByArea,
     sleepHours: 7,
     activityLevel: 'Active',
     stress: 'Medium',
@@ -4458,6 +4554,91 @@ async function trainingRoutes(req, res, url) {
     return { ok: true, discipline, experience, daysPerWeek, strength };
   }
 
+  if (pathname === '/api/training/workout-test-batch' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+
+    const profiles = Array.isArray(payload?.profiles) ? payload.profiles.slice(0, 20) : [];
+    if (!profiles.length) return sendJson(res, 400, { error: 'No workout test profiles provided' });
+
+    const results = [];
+    for (let index = 0; index < profiles.length; index += 1) {
+      const profile = profiles[index] && typeof profiles[index] === 'object' ? profiles[index] : {};
+      const rawPayload = profile?.payload && typeof profile.payload === 'object' ? profile.payload : {};
+      try {
+        let built;
+        if (String(rawPayload?.discipline || '').trim().toLowerCase() === 'bodybuilding') {
+          const directPlan = buildOblueprintPlan(coerceClassicBodybuildingToOblueprintPayload(rawPayload));
+          built = directPlan?.error ? { error: directPlan.error } : { plan: directPlan };
+        } else if (isOblueprintRequest(rawPayload)) {
+          const directPlan = buildOblueprintPlan(rawPayload);
+          built = directPlan?.error ? { error: directPlan.error } : { plan: directPlan };
+        } else {
+          const validated = validatePlanInputs(rawPayload);
+          if (!validated.ok) {
+            results.push({
+              ok: false,
+              index,
+              label: String(profile?.label || `Simulation ${index + 1}`),
+              summary: profile?.summary || null,
+              error: validated.error
+            });
+            continue;
+          }
+          const plan = generatePlan({
+            discipline: validated.discipline,
+            daysPerWeek: validated.daysPerWeek,
+            experience: validated.experience,
+            strength: validated.strength
+          });
+          built = { plan };
+        }
+
+        if (built?.error || !built?.plan) {
+          results.push({
+            ok: false,
+            index,
+            label: String(profile?.label || `Simulation ${index + 1}`),
+            summary: profile?.summary || null,
+            error: built?.error?.reason || built?.error?.error || 'Failed to build plan'
+          });
+          continue;
+        }
+
+        const plan = built.plan;
+        results.push({
+          ok: true,
+          index,
+          label: String(profile?.label || `Simulation ${index + 1}`),
+          summary: profile?.summary || null,
+          plan: {
+            id: null,
+            version: 0,
+            discipline: plan?.meta?.discipline || String(rawPayload?.discipline || '').trim().toLowerCase(),
+            days_per_week: Number(plan?.meta?.daysPerWeek) || Number(rawPayload?.daysPerWeek) || 0,
+            plan,
+            updated_at: new Date().toISOString(),
+            preview: true
+          }
+        });
+      } catch (err) {
+        results.push({
+          ok: false,
+          index,
+          label: String(profile?.label || `Simulation ${index + 1}`),
+          summary: profile?.summary || null,
+          error: err?.message || 'Failed to build plan'
+        });
+      }
+    }
+
+    return sendJson(res, 200, { ok: true, results });
+  }
+
   // Public, no-account preview plan. Does not write to DB.
   if (pathname === '/api/training/preview' && req.method === 'POST') {
     let payload;
@@ -6013,5 +6194,10 @@ async function trainingRoutes(req, res, url) {
     throw err;
   }
 }
+
+trainingRoutes._private = {
+  buildOblueprintPlanWithFallback,
+  coerceClassicBodybuildingToOblueprintPayload
+};
 
 module.exports = trainingRoutes;

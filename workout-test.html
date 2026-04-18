@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Test - STRYVE</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-04-09-workout-test-2">
+  <link rel="stylesheet" href="css/workout-test.css?v=2026-04-09-workout-test-2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="workout-test-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24"><path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path><path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path><path d="M15.5 12H7.5"></path><path d="m12 9.5 3.5 2.5-3.5 2.5"></path></symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24"><rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect><path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="10" cy="9" r="2.5"></circle><path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path><circle cx="16.5" cy="10.5" r="2"></circle><path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path></symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path></symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">STRYVE<span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="doors.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Doors</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button" data-demo-bound="1"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+      <a class="control-link active" id="control-owner-workout-test-link" href="workout-test.html" aria-current="true"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Test</span></a>
+    </div>
+  </aside>
+
+  <main class="workout-test-main">
+    <section class="workout-test-hero">
+      <div>
+        <p class="workout-test-kicker">Owner Tool</p>
+        <h1>Workout Test</h1>
+        <p class="workout-test-sub">Run 10 simulated users through the real workout generator, review the plan text, then export selected results into one PDF for grading and troubleshooting.</p>
+      </div>
+      <div class="workout-test-hero-actions">
+        <a class="btn btn-ghost" href="workout-database.html">Open Workout Database</a>
+      </div>
+    </section>
+
+    <section class="workout-test-toolbar plan-card">
+      <div class="workout-test-toolbar-top">
+        <div>
+          <h2>Simulation Controls</h2>
+          <p class="ns-muted">Use the same preset batch to compare engine changes, or randomize new combinations.</p>
+        </div>
+        <div class="workout-test-badge-row">
+          <span class="workout-test-badge" id="workout-test-run-mode">Waiting</span>
+          <span class="workout-test-badge" id="workout-test-count-badge">0 selected</span>
+        </div>
+      </div>
+
+      <div class="workout-test-toolbar-actions">
+        <button class="btn btn-primary" type="button" id="workout-test-run-same">Run Same 10</button>
+        <button class="btn btn-ghost" type="button" id="workout-test-run-random">Run Random 10</button>
+        <button class="btn btn-ghost" type="button" id="workout-test-select-all">Select All</button>
+        <button class="btn btn-ghost" type="button" id="workout-test-select-none">Clear Selection</button>
+        <button class="btn btn-ghost" type="button" id="workout-test-copy-selected">Copy Text</button>
+        <button class="btn btn-primary" type="button" id="workout-test-pdf-selected">Copy PDF</button>
+      </div>
+
+      <div class="workout-test-status" id="workout-test-status">Ready. Run a batch to generate 10 simulated workout plans.</div>
+    </section>
+
+    <section class="workout-test-summary-grid" id="workout-test-summary-grid">
+      <article class="workout-test-summary-card">
+        <span>Last batch</span>
+        <strong id="workout-test-summary-batch">None</strong>
+        <small>Shows whether the current set is rerun or randomized.</small>
+      </article>
+      <article class="workout-test-summary-card">
+        <span>Results loaded</span>
+        <strong id="workout-test-summary-count">0</strong>
+        <small>Each result is a full generated plan using the actual preview endpoint.</small>
+      </article>
+      <article class="workout-test-summary-card">
+        <span>Selected for export</span>
+        <strong id="workout-test-summary-selected">0</strong>
+        <small>Export all selected plans into one print-friendly PDF.</small>
+      </article>
+    </section>
+
+    <section class="workout-test-results" id="workout-test-results" aria-live="polite"></section>
+  </main>
+
+  <script src="js/main.js?v=2026-04-10-owner-workout-test-1"></script>
+  <script src="js/workoutTest.js?v=2026-04-10-workout-test-web-1"></script>
+</body>
+</html>

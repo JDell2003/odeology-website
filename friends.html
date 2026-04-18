@@ -37,6 +37,91 @@
             gap: 12px;
             align-items: stretch;
             min-height: calc(100dvh - var(--navbar-height, 72px) - 34px);
+            position: relative;
+        }
+
+        .user-msg-guest-locked > :not(.user-msg-guest-overlay) {
+            filter: blur(10px);
+            opacity: 0.28;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .user-msg-guest-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at top left, rgba(197, 141, 79, 0.16), transparent 36%),
+                radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.08), transparent 34%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.54));
+            backdrop-filter: blur(8px);
+        }
+
+        .user-msg-guest-overlay.hidden {
+            display: none;
+        }
+
+        .user-msg-guest-card {
+            width: min(100%, 520px);
+            padding: 28px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            background:
+                linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(250, 245, 237, 0.9)),
+                linear-gradient(135deg, rgba(197, 141, 79, 0.18), rgba(255, 255, 255, 0));
+            box-shadow:
+                0 28px 60px rgba(47, 34, 18, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            text-align: center;
+        }
+
+        .user-msg-guest-kicker {
+            margin: 0 0 10px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(116, 80, 38, 0.86);
+        }
+
+        .user-msg-guest-card h2 {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 40px);
+            line-height: 0.98;
+            letter-spacing: -0.03em;
+            color: #1f1a16;
+        }
+
+        .user-msg-guest-copy {
+            margin: 14px auto 0;
+            max-width: 36ch;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #5c534a;
+        }
+
+        .user-msg-guest-actions {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .user-msg-guest-btn {
+            min-width: 144px;
+        }
+
+        .user-msg-guest-note {
+            margin: 14px 0 0;
+            font-size: 12px;
+            color: #7c7065;
         }
 
         .user-msg-head {
@@ -573,6 +658,10 @@
             .user-msg-bubble {
                 max-width: 92%;
             }
+
+            .user-msg-guest-overlay {
+                padding: 12px;
+            }
         }
 
         @media (max-width: 640px) {
@@ -592,6 +681,28 @@
                 margin: 6px auto 14px;
                 padding: 0 6px 10px;
                 min-height: calc(100dvh - var(--navbar-height, 72px) - 8px);
+            }
+
+            .user-msg-guest-overlay {
+                position: fixed;
+                top: calc(var(--navbar-height, 72px) + 6px);
+                left: 6px;
+                right: 6px;
+                bottom: 12px;
+                border-radius: 18px;
+            }
+
+            .user-msg-guest-card {
+                padding: 24px 18px;
+                border-radius: 20px;
+            }
+
+            .user-msg-guest-actions {
+                flex-direction: column;
+            }
+
+            .user-msg-guest-btn {
+                width: 100%;
             }
 
             body.user-mobile-thread .user-msg-head,
@@ -793,7 +904,7 @@
         }
     </style>
 </head>
-<body class="friends-page user-messaging-page" data-require-auth="1">
+<body class="friends-page user-messaging-page">
     <div class="grain"></div>
 
     <svg aria-hidden="true" class="icon-sprite">
@@ -941,6 +1052,19 @@
                 <h2 class="user-msg-requests-title">Friend Requests</h2>
                 <div class="user-msg-muted" id="user-msg-friend-requests-status">Loading friend requests...</div>
                 <div class="user-msg-request-list" id="user-msg-friend-requests-list"></div>
+            </div>
+        </section>
+
+        <section class="user-msg-guest-overlay hidden" id="user-msg-guest-overlay" aria-live="polite">
+            <div class="user-msg-guest-card">
+                <p class="user-msg-guest-kicker">Messages Locked</p>
+                <h2>Make an account to start messaging.</h2>
+                <p class="user-msg-guest-copy">Create an account to message your friends or trainers on the app, keep conversations synced, and send workout invites.</p>
+                <div class="user-msg-guest-actions">
+                    <button type="button" class="btn btn-primary user-msg-guest-btn" id="user-msg-guest-signup">Sign up</button>
+                    <button type="button" class="btn btn-ghost user-msg-guest-btn" id="user-msg-guest-signin">Sign in</button>
+                </div>
+                <p class="user-msg-guest-note">You can browse the page first. Messaging unlocks after account creation.</p>
             </div>
         </section>
     </main>
