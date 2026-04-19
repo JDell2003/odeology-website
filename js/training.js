@@ -3716,6 +3716,119 @@
     return { value: Number.isFinite(est) ? est : null, unit: 'lb' };
   }
 
+  function formatProjectionModeLabel(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'On track';
+    return raw.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+
+  function buildProgressionProjectionCard(plan, activeWeek) {
+    const projection = plan?.meta?.progressionProjection;
+    if (!projection || typeof projection !== 'object') return null;
+    const previewWeek = Math.max(1, Math.min(16, Number(state.projectionPreviewWeek || activeWeek || 1)));
+    const weekRows = (Array.isArray(projection.weeklyTable) ? projection.weeklyTable : [])
+      .filter((row) => Number(row?.week) === previewWeek)
+      .slice(0, 10);
+    const summaryRows = (Array.isArray(projection.exerciseSummaries) ? projection.exerciseSummaries : []).slice(0, 6);
+    const anchors = projection.anchorInputs || {};
+    const deloadWeeks = Array.isArray(projection.deloadWeeks) ? projection.deloadWeeks : [];
+    const previewIsDeload = deloadWeeks.includes(previewWeek);
+    const classificationConfidence = formatProjectionModeLabel(projection.classificationConfidence || 'low');
+    const classificationReason = String(projection.classificationReason || 'Anchor confidence is limited, so projections stay conservative.');
+    return el('div', { class: 'training-subcard training-projection-card' },
+      el('div', { class: 'training-projection-head' },
+        el('div', null,
+          el('div', { class: 'training-projection-eyebrow' }, '16-Week Load Projection'),
+          el('div', { class: 'training-projection-title' }, previewIsDeload ? 'Recovery week with a planned return target' : 'Anchor-lift baseline + double progression'),
+          el('div', { class: 'training-muted' }, `Bench ${anchors.inputBench || anchors.bench1rm || 'N/A'} • Squat ${anchors.inputSquat || anchors.squat1rm || 'N/A'} • Deadlift ${anchors.inputDeadlift || anchors.deadlift1rm || 'N/A'}`),
+          el('div', { class: 'training-projection-submeta' },
+            el('span', { class: 'projected-pill' }, `Anchor source ${formatProjectionModeLabel(anchors.anchorSource || 'unknown')}`),
+            el('span', { class: 'projected-pill' }, `Status ${formatProjectionModeLabel(projection.modeledAs)}`),
+            el('span', { class: 'projected-pill' }, `Confidence ${classificationConfidence}`)
+          ),
+          el('div', { class: 'training-muted', style: 'margin-top:0.45rem' }, classificationReason)
+        ),
+        el('div', { class: 'training-projection-statuses' },
+          previewIsDeload
+            ? el('span', { class: 'projected-pill is-deload' }, `Deload Week ${previewWeek}`)
+            : el('span', { class: 'projected-pill' }, `Week ${previewWeek} progression`),
+          ...deloadWeeks.map((week) => el('button', {
+            type: 'button',
+            class: `projected-pill is-deload ${previewWeek === Number(week) ? 'is-active' : ''}`.trim(),
+            onclick: () => {
+              state.projectionPreviewWeek = Number(week);
+              render();
+            }
+          }, `Deload ${week}`))
+        )
+      ),
+      el('div', { class: 'training-projection-week-strip' },
+        ...Array.from({ length: 16 }).map((_, idx) => {
+          const week = idx + 1;
+          const isDeload = deloadWeeks.includes(week);
+          return el('button', {
+            type: 'button',
+            class: `training-projection-week-chip ${previewWeek === week ? 'is-active' : ''} ${isDeload ? 'is-deload' : ''}`.trim(),
+            onclick: () => {
+              state.projectionPreviewWeek = week;
+              render();
+            }
+          }, `W${week}`);
+        })
+      ),
+      el('div', { class: 'training-projection-grid' },
+        el('div', { class: 'training-projection-panel' },
+          el('div', { class: 'training-projection-panel-title' }, 'Week Snapshot'),
+          previewIsDeload
+            ? el('div', { class: 'training-projection-banner is-deload' }, 'Reduced-fatigue week: lower targets are intentional. Return targets show where normal loading resumes.')
+            : el('div', { class: 'training-projection-banner' }, 'Normal week: build reps first, then move load once all work sets own the top of the range.'),
+          el('div', { class: 'training-projection-table-wrap' },
+            el('table', { class: 'training-projection-table' },
+              el('thead', null,
+                el('tr', null,
+                  el('th', null, 'Week'),
+                  el('th', null, 'Exercise'),
+                  el('th', null, 'Target'),
+                  el('th', null, 'Reps'),
+                  el('th', null, 'Sets'),
+                  el('th', null, 'Tag'),
+                  el('th', null, 'Note')
+                )
+              ),
+              el('tbody', null,
+                ...(weekRows.length
+                  ? weekRows.map((row) => el('tr', null,
+                    el('td', null, String(row.week)),
+                    el('td', null, String(row.exercise || 'Exercise')),
+                    el('td', null, String(row.displayTarget || fmtProjected(Number.isFinite(Number(row.targetLoad)) ? { value: Number(row.targetLoad), unit: 'lb' } : { value: null, unit: row?.tag === 'normal' ? 'lb' : 'bw' }))),
+                    el('td', null, String(row.repRange || '')),
+                    el('td', null, String(row.sets || '')),
+                    el('td', null, String(row.deloadLabel || formatProjectionModeLabel(row.tag || 'normal'))),
+                    el('td', null, String(row.postDeloadReturnTarget ? `${row.note || ''} Return target: ${row.postDeloadReturnTarget}`.trim() : row.note || ''))
+                  ))
+                  : [el('tr', null, el('td', { colspan: '7' }, 'No projection rows available for this week.'))])
+              )
+            )
+          )
+        ),
+        el('div', { class: 'training-projection-panel' },
+          el('div', { class: 'training-projection-panel-title' }, 'Week 1 / 8 / 16 Load Path'),
+          el('div', { class: 'training-projection-summary-list' },
+            ...summaryRows.map((entry) => el('div', { class: 'training-projection-summary-item' },
+              el('div', { class: 'training-projection-summary-name' }, String(entry.exercise || 'Exercise')),
+              el('div', { class: 'training-projection-summary-meta' }, `${String(entry.family || 'general').replace(/_/g, ' ')} • ${String(entry.repRange || '')} • ${entry.sets || 0} sets`),
+              el('div', { class: 'training-projection-summary-values' },
+                el('span', null, `W1 ${entry.progressionMode === 'external_load' || entry.progressionMode === 'loaded_bodyweight' ? fmtProjected(Number.isFinite(Number(entry.week1Load)) ? { value: Number(entry.week1Load), unit: 'lb' } : { value: null, unit: entry.loadUnitNote === 'bodyweight' ? 'bw' : 'lb' }) : String(entry.repRange || 'Bodyweight progression')}`),
+                el('span', null, `W8 ${entry.progressionMode === 'external_load' || entry.progressionMode === 'loaded_bodyweight' ? fmtProjected(Number.isFinite(Number(entry.week8Load)) ? { value: Number(entry.week8Load), unit: 'lb' } : { value: null, unit: entry.loadUnitNote === 'bodyweight' ? 'bw' : 'lb' }) : 'Rep / tempo progression'}`),
+                el('span', null, `W16 ${entry.progressionMode === 'external_load' || entry.progressionMode === 'loaded_bodyweight' ? fmtProjected(Number.isFinite(Number(entry.week16Load)) ? { value: Number(entry.week16Load), unit: 'lb' } : { value: null, unit: entry.loadUnitNote === 'bodyweight' ? 'bw' : 'lb' }) : 'Advanced progression state'}`)
+              )
+            ))
+          )
+        )
+      )
+    );
+  }
+
   function parseRepsTarget(reps) {
     const s = String(reps || '').trim();
     const range = s.match(/(\\d+)\\s*-\\s*(\\d+)/);
@@ -3727,6 +3840,369 @@
     if (!m) return null;
     const n = Number(m[1]);
     return Number.isFinite(n) ? n : null;
+  }
+
+  function parseRepWindow(reps) {
+    const s = String(reps || '').trim();
+    const range = s.match(/(\d+)\s*-\s*(\d+)/);
+    if (range) return { min: Number(range[1]), max: Number(range[2]) };
+    const n = s.match(/(\d+)/);
+    const value = n ? Number(n[1]) : 10;
+    return { min: value, max: value };
+  }
+
+  function projectionRowForExercise(plan, ex, week) {
+    const rows = Array.isArray(plan?.meta?.progressionProjection?.weeklyTable) ? plan.meta.progressionProjection.weeklyTable : [];
+    return rows.find((row) => Number(row?.week) === Number(week) && String(row?.canonicalExerciseId || '') === String(ex?.canonicalExerciseId || '')) || null;
+  }
+
+  function summarizeEntrySetsForDecision(entry, prescribedSets = 0) {
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    const completed = sets
+      .map((set) => ({ weight: Number(set?.weight || 0), reps: Number(set?.reps || 0) }))
+      .filter((set) => Number.isFinite(set.reps) && set.reps > 0);
+    const considered = prescribedSets > 0 ? completed.slice(0, prescribedSets) : completed;
+    const reps = considered.map((set) => set.reps).filter((value) => Number.isFinite(value) && value > 0);
+    const weights = considered.map((set) => set.weight).filter((value) => Number.isFinite(value) && value > 0);
+    return {
+      completedSets: considered.length,
+      minReps: reps.length ? Math.min(...reps) : null,
+      maxReps: reps.length ? Math.max(...reps) : null,
+      avgReps: reps.length ? Math.round((reps.reduce((sum, value) => sum + value, 0) / reps.length) * 10) / 10 : null,
+      topWeight: weights.length ? Math.max(...weights) : null
+    };
+  }
+
+  function buildHistorySnapshot(entry, prescribedSets = 0) {
+    if (!entry || typeof entry !== 'object') return null;
+    return summarizeEntrySetsForDecision(entry, prescribedSets);
+  }
+
+  function familyTrendLabel(adjustment = 1) {
+    const value = Number(adjustment || 1);
+    if (value >= 1.06) return 'Above projection';
+    if (value <= 0.94) return 'Below projection';
+    return 'On track';
+  }
+
+  function bodyweightRecommendationText(mode, direction, currentRow) {
+    const range = parseRepWindow(currentRow?.repRange);
+    if (mode === 'bodyweight_tempo_progression') {
+      if (direction === 'increase') return 'Add 5-10s or slow the lowering phase';
+      if (direction === 'decrease') return 'Shorten hold slightly and clean up control';
+      if (direction === 'deload' || direction === 'continue_deload') return 'Use a shorter hold / easier tempo this week';
+      return 'Repeat the same tempo target';
+    }
+    if (mode === 'assisted_bodyweight') {
+      if (direction === 'increase') return 'Use slightly less assistance';
+      if (direction === 'decrease') return 'Use slightly more assistance';
+      if (direction === 'deload' || direction === 'continue_deload') return 'Use more assistance for recovery';
+      return `${range.min}-${range.max} reps`;
+    }
+    if (direction === 'increase') return `${range.min + 1}-${range.max + 1} reps`;
+    if (direction === 'decrease') return `${Math.max(1, range.min - 2)}-${Math.max(range.min, range.max - 2)} reps`;
+    if (direction === 'deload' || direction === 'continue_deload') return `${Math.max(1, range.min - 2)}-${Math.max(range.min, range.max - 1)} easy reps`;
+    return `${range.min}-${range.max} reps`;
+  }
+
+  function decisionMovementFamilyForName(name = '', fallbackFamily = '') {
+    const n = normalizeName(name);
+    if (!n) return String(fallbackFamily || 'general');
+    if (/(bench press|incline .*press|incline .*bench|chest press|machine chest press|cable chest press|leverage chest press|dumbbell press)/.test(n)) return 'chest_press';
+    if (/(shoulder press|overhead press|military press)/.test(n)) return 'shoulder_press';
+    if (/(chest supported|incline row|seal row|dumbbell row|cable row|machine row|\brow\b)/.test(n)) return 'horizontal_pull';
+    if (/(pulldown|pull down|pull up|chin up|lat pull)/.test(n)) return 'vertical_pull';
+    if (/(front squat|hack squat|leg press|goblet squat|back squat|\bsquat\b)/.test(n)) return 'squat_pattern';
+    if (/(romanian deadlift|\brdl\b|hip thrust|glute bridge|pull through|deadlift)/.test(n)) return 'hinge_pattern';
+    if (/(hammer curl|preacher curl|incline curl|\bcurl\b)/.test(n) && !/(leg curl|hamstring curl)/.test(n)) return 'biceps_iso';
+    if (/(pushdown|pressdown|skull crusher|triceps|extension)/.test(n) && !/(leg extension|neck extension|back extension)/.test(n)) return 'triceps_iso';
+    if (/\bcalf\b/.test(n)) return 'calves';
+    if (/(pallof|rotation|wood chop|oblique|side bend)/.test(n)) return 'core_rotation';
+    if (/(plank|dead bug|vacuum|fallout|anti extension)/.test(n)) return 'core_stability';
+    if (/(crunch|reverse crunch|leg raise|ab wheel|rollout)/.test(n)) return 'core_flexion';
+    return String(fallbackFamily || 'general');
+  }
+
+  function normalizeName(name = '') {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function decisionVariantGroupForName(name = '', fallbackFamily = '') {
+    const n = normalizeName(name);
+    const family = decisionMovementFamilyForName(n, fallbackFamily);
+    if (!n) return family;
+    if (/(barbell bench press|bench press medium grip|barbell bench press medium grip|medium grip barbell bench press)/.test(n)) return 'barbell_bench_press';
+    if (/(cable chest press|standing cable chest press)/.test(n)) return 'cable_chest_press';
+    if (/(barbell shoulder press|seated military press|seated barbell military press)/.test(n)) return 'barbell_shoulder_press';
+    if (/(chest supported dumbbell row|dumbbell incline row)/.test(n)) return 'chest_supported_dumbbell_row';
+    if (/(machine chest press|leverage chest press)/.test(n)) return 'machine_chest_press';
+    if (/(back squat|back squat volume|front squat)/.test(n)) return 'barbell_squat_variant';
+    if (/(hack squat|barbell hack squat)/.test(n)) return 'hack_squat_variant';
+    return family;
+  }
+
+  function isExplicitDecisionVariantGroup(variantGroup, family) {
+    return Boolean(variantGroup) && String(variantGroup) !== String(family || '');
+  }
+
+  function isCloseDecisionVariantPair(sourceExerciseName = '', candidateExerciseName = '', family = '') {
+    const sourceName = String(sourceExerciseName || '').trim();
+    const candidateName = String(candidateExerciseName || '').trim();
+    if (!sourceName || !candidateName) return false;
+    if (normalizeName(sourceName) === normalizeName(candidateName)) return false;
+    const sourceFamily = decisionMovementFamilyForName(sourceName, family);
+    const candidateFamily = decisionMovementFamilyForName(candidateName, family);
+    if (sourceFamily !== candidateFamily) return false;
+    const sourceGroup = decisionVariantGroupForName(sourceName, sourceFamily);
+    const candidateGroup = decisionVariantGroupForName(candidateName, candidateFamily);
+    if (!isExplicitDecisionVariantGroup(sourceGroup, sourceFamily)) return false;
+    return sourceGroup === candidateGroup;
+  }
+
+  function safeDecisionSourceExerciseLabel(decisionSource, decisionSourceExercise, fallbackFamily = '') {
+    const label = String(decisionSourceExercise || '').trim();
+    if (label && label.toLowerCase() !== 'undefined') return label;
+    if (String(decisionSource || '') === 'anchor_fallback') {
+      return fallbackFamily === 'bodyweight' ? 'Bodyweight progression' : 'Anchor fallback';
+    }
+    if (String(decisionSource || '') === 'movement_family') return 'Movement-family fallback';
+    if (String(decisionSource || '') === 'close_variant') return 'Close variant fallback';
+    return 'No direct logged exercise available';
+  }
+
+  function normalizeDecisionSourceRecord(record = {}, fallbackFamily = '') {
+    const name = String(record?.exerciseName || record?.displayName || record?.name || '').trim();
+    const family = String(record?.projectionFamily || decisionMovementFamilyForName(name, fallbackFamily) || fallbackFamily || 'general');
+    return {
+      ...record,
+      exerciseName: name || 'Unknown exercise',
+      canonicalExerciseId: String(record?.canonicalExerciseId || record?.exerciseId || record?.id || '').trim(),
+      projectionFamily: family,
+      variantGroup: String(record?.variantGroup || decisionVariantGroupForName(name, family) || family)
+    };
+  }
+
+  function collectUniqueDecisionRecords(...sources) {
+    const seen = new Set();
+    const out = [];
+    sources.flat().forEach((source) => {
+      if (!source) return;
+      if (source instanceof Map) {
+        source.forEach((record) => {
+          const key = String(record?.exerciseKey || record?.exerciseId || record?.baseId || record?.exerciseName || record?.name || '');
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          out.push(record);
+        });
+        return;
+      }
+      if (Array.isArray(source)) {
+        source.forEach((record) => {
+          const key = String(record?.exerciseKey || record?.exerciseId || record?.baseId || record?.exerciseName || record?.name || '');
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          out.push(record);
+        });
+        return;
+      }
+      const key = String(source?.exerciseKey || source?.exerciseId || source?.baseId || source?.exerciseName || source?.name || '');
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(source);
+    });
+    return out;
+  }
+
+  function resolveDecisionSourceRecord({ ex, currentRow, exactRecords = [], candidateSources = [] }) {
+    const exerciseName = String(ex?.displayName || ex?.name || currentRow?.exercise || '').trim();
+    const exerciseId = String(ex?.canonicalExerciseId || currentRow?.canonicalExerciseId || '').trim();
+    const family = String(ex?.projectionFamily || currentRow?.family || decisionMovementFamilyForName(exerciseName, 'general'));
+    const exact = collectUniqueDecisionRecords(exactRecords)
+      .map((record) => normalizeDecisionSourceRecord(record, family))
+      .find((record) => record.exerciseName);
+    if (exact) {
+      return { decisionSource: 'exact_exercise', decisionSourceExercise: safeDecisionSourceExerciseLabel('exact_exercise', exact.exerciseName, family), primaryRecord: exact };
+    }
+    const candidates = collectUniqueDecisionRecords(candidateSources)
+      .map((record) => normalizeDecisionSourceRecord(record, family))
+      .filter((record) => record.exerciseName && String(record.canonicalExerciseId || '') !== exerciseId);
+    const closeVariant = candidates.find((record) => isCloseDecisionVariantPair(exerciseName, record.exerciseName, family));
+    if (closeVariant) {
+      return { decisionSource: 'close_variant', decisionSourceExercise: safeDecisionSourceExerciseLabel('close_variant', closeVariant.exerciseName, family), primaryRecord: closeVariant };
+    }
+    const familyRecord = candidates.find((record) => record.projectionFamily === family);
+    if (familyRecord) {
+      return { decisionSource: 'movement_family', decisionSourceExercise: safeDecisionSourceExerciseLabel('movement_family', familyRecord.exerciseName, family), primaryRecord: familyRecord };
+    }
+    return { decisionSource: 'anchor_fallback', decisionSourceExercise: safeDecisionSourceExerciseLabel('anchor_fallback', '', family), primaryRecord: null };
+  }
+
+  function snapshotFromDecisionRecord(record, prescribedSets = 0) {
+    if (!record) return null;
+    if (Array.isArray(record?.sets)) return summarizeEntrySetsForDecision(record, prescribedSets);
+    const last = record?.last && typeof record.last === 'object' ? record.last : null;
+    if (last && (Number.isFinite(Number(last?.weight)) || Number.isFinite(Number(last?.reps)))) {
+      const reps = Number(last?.reps || 0);
+      const weight = Number(last?.weight || 0);
+      return {
+        completedSets: prescribedSets || 1,
+        minReps: reps || null,
+        maxReps: reps || null,
+        avgReps: reps || null,
+        topWeight: weight || null
+      };
+    }
+    return null;
+  }
+
+  function coerceDecisionTargetConsistency({ recommendation, nextTarget, currentRow, nextRow, progressionMode }) {
+    if (progressionMode !== 'external_load' && progressionMode !== 'loaded_bodyweight') return String(nextTarget || '');
+    const currentLoad = Number(currentRow?.targetLoad || 0);
+    const nextLoad = Number(nextRow?.targetLoad || 0);
+    if (!Number.isFinite(currentLoad) || currentLoad <= 0) return String(nextTarget || '');
+    if (recommendation === 'increase') {
+      const enforced = Number.isFinite(nextLoad) && nextLoad > currentLoad ? nextLoad : (currentLoad + 5);
+      return `${enforced} lb`;
+    }
+    if (recommendation === 'hold') return `${currentLoad} lb`;
+    if (recommendation === 'decrease') {
+      const enforced = Number.isFinite(nextLoad) && nextLoad < currentLoad ? nextLoad : Math.max(2.5, currentLoad - 5);
+      return `${enforced} lb`;
+    }
+    if (recommendation === 'deload' || recommendation === 'continue_deload') return `${Math.max(2.5, Math.round(currentLoad * 0.88 * 2) / 2)} lb`;
+    return String(nextTarget || '');
+  }
+
+  function buildNextSessionDecisionForExercise({ plan, ex, week, currentEntry, previousEntry, historicalPerformance, persistentLift, candidateSources = [] }) {
+    const currentRow = projectionRowForExercise(plan, ex, week);
+    const nextRow = projectionRowForExercise(plan, ex, Math.min(16, Number(week) + 1));
+    const progressionMode = String(ex?.progression?.progressionMode || currentRow?.progressionMode || 'external_load');
+    const repWindow = parseRepWindow(currentRow?.repRange || ex?.reps);
+    const prescribedSets = Number(currentRow?.sets || ex?.sets || 0) || 0;
+    const source = resolveDecisionSourceRecord({
+      ex,
+      currentRow,
+      exactRecords: [currentEntry, previousEntry, historicalPerformance, persistentLift],
+      candidateSources
+    });
+    const logged = snapshotFromDecisionRecord(source.primaryRecord, prescribedSets) || summarizeEntrySetsForDecision(currentEntry || previousEntry || null, prescribedSets);
+    const history = [
+      snapshotFromDecisionRecord(source.primaryRecord, prescribedSets),
+      buildHistorySnapshot(previousEntry, prescribedSets),
+      buildHistorySnapshot(historicalPerformance, prescribedSets),
+      snapshotFromDecisionRecord(persistentLift, prescribedSets)
+    ].filter(Boolean);
+    const underperformCount = history.filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repWindow.min).length;
+    const overperformCount = history.filter((item) => Number(item?.minReps || 0) >= repWindow.max).length;
+    const familyAdjustment = Number(plan?.meta?.autoreg?.familyAdjustments?.[String(ex?.projectionFamily || currentRow?.family || '')] || 1);
+    const fatigueStacked = underperformCount >= 2;
+    const allSetsAtTop = logged.completedSets >= prescribedSets && prescribedSets > 0 && Number(logged.minReps || 0) >= repWindow.max;
+    const insideRange = logged.completedSets >= Math.max(1, prescribedSets - 1) && Number(logged.avgReps || 0) >= repWindow.min;
+    const severeMiss = logged.completedSets > 0 && Number(logged.minReps || 0) < Math.max(1, repWindow.min - 2);
+    let recommendation = 'hold';
+    let reason = 'Keep the same target and keep building clean reps.';
+    let confidence = 'medium';
+    let shortNote = 'No clear reason to change the target yet.';
+    let adaptiveChanged = false;
+    let deloadState = String(currentRow?.tag || '') === 'deload' ? 'deload_week' : 'normal';
+    if (String(currentRow?.tag || '') === 'deload') {
+      if (logged.completedSets >= Math.max(1, prescribedSets - 1) && Number(logged.minReps || 0) >= repWindow.min) {
+        recommendation = 'exit_deload';
+        reason = 'Recovery work was completed cleanly, so the next session can return to normal progression.';
+        shortNote = 'Deload succeeded. Resume the normal track next time.';
+        confidence = 'high';
+        deloadState = 'exit_deload';
+      } else {
+        recommendation = 'continue_deload';
+        reason = 'Recovery still looked incomplete, so keep the reduced-fatigue week going for one more session.';
+        shortNote = 'Stay easy one more time.';
+        confidence = 'high';
+        deloadState = 'continue_deload';
+      }
+    } else if (fatigueStacked) {
+      recommendation = 'deload';
+      reason = 'Repeated underperformance suggests fatigue is stacking enough to justify a recovery week.';
+      shortNote = 'Pull back and recover instead of forcing progress.';
+      confidence = 'high';
+      deloadState = 'triggered';
+    } else if (allSetsAtTop) {
+      recommendation = 'increase';
+      reason = 'You hit the top of the rep range across the prescribed work sets.';
+      shortNote = 'Load increase earned.';
+      confidence = 'high';
+      if (overperformCount >= 2 || familyAdjustment > 1.05) {
+        adaptiveChanged = true;
+        reason = 'Recent overperformance on this exercise or family supports a modest accelerated jump.';
+        shortNote = 'Adaptive logic nudged the jump slightly upward.';
+      }
+    } else if (severeMiss && underperformCount >= 1) {
+      recommendation = 'decrease';
+      reason = 'The last session missed the bottom of the range badly enough to justify a small reset.';
+      shortNote = 'Reduce the target slightly and rebuild clean reps.';
+      confidence = 'high';
+    } else if (insideRange) {
+      recommendation = 'hold';
+      reason = 'You were inside the range, but did not clearly earn a jump yet.';
+      shortNote = 'Hold the load and keep pushing reps.';
+      confidence = 'high';
+    }
+    let nextTarget = 'N/A';
+    if (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') {
+      if (recommendation === 'hold' && Number.isFinite(Number(currentRow?.targetLoad))) nextTarget = `${Number(currentRow.targetLoad)} lb`;
+      else if (recommendation === 'decrease' && Number.isFinite(Number(currentRow?.targetLoad))) nextTarget = `${Math.max(2.5, Number(currentRow.targetLoad) - 5)} lb`;
+      else if ((recommendation === 'deload' || recommendation === 'continue_deload') && Number.isFinite(Number(currentRow?.targetLoad))) nextTarget = `${Math.round(Number(currentRow.targetLoad) * 0.88 * 2) / 2} lb`;
+      else if (recommendation === 'exit_deload') nextTarget = String(currentRow?.postDeloadReturnTarget || nextRow?.displayTarget || 'Resume normal target');
+      else nextTarget = String(nextRow?.displayTarget || (Number.isFinite(Number(nextRow?.targetLoad)) ? `${Number(nextRow.targetLoad)} lb` : 'N/A'));
+    } else {
+      nextTarget = bodyweightRecommendationText(progressionMode, recommendation, currentRow);
+    }
+    if (source.decisionSource === 'movement_family') {
+      reason = `${reason} This used a movement-family fallback because no exact or close-variant history was available.`;
+    } else if (source.decisionSource === 'anchor_fallback') {
+      reason = `${reason} This used an anchor fallback because no usable logged signal was available.`;
+    }
+    nextTarget = coerceDecisionTargetConsistency({ recommendation, nextTarget, currentRow, nextRow, progressionMode });
+    return {
+      progressionMode,
+      recommendation,
+      nextTarget,
+      decisionSource: source.decisionSource,
+      decisionSourceExercise: safeDecisionSourceExerciseLabel(
+        source.decisionSource,
+        source.decisionSourceExercise,
+        progressionMode !== 'external_load' && progressionMode !== 'loaded_bodyweight' ? 'bodyweight' : ''
+      ),
+      reason,
+      confidence,
+      shortNote,
+      adaptiveChanged,
+      familyTrend: familyTrendLabel(familyAdjustment),
+      familyAdjustment,
+      fatigueFlags: `${underperformCount} exercise misses`,
+      deloadState,
+      targetRepRange: String(currentRow?.repRange || ex?.reps || ''),
+      prescribedSets,
+      lastTarget: progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight'
+        ? (Number.isFinite(Number(currentRow?.targetLoad)) ? `${Number(currentRow.targetLoad)} lb` : 'N/A')
+        : String(currentRow?.displayTarget || currentRow?.repRange || 'N/A'),
+      lastPerformedWeight: logged.completedSets
+        ? (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight'
+          ? `${logged.topWeight || 'N/A'} lb`
+          : String(currentRow?.displayTarget || 'Bodyweight'))
+        : 'No logged result yet',
+      repsAchieved: logged.completedSets
+        ? `${logged.minReps || logged.avgReps || 0}-${logged.maxReps || logged.avgReps || 0} reps`
+        : 'No logged result yet',
+      actualResult: logged.completedSets
+        ? (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight'
+          ? `${logged.topWeight || 'N/A'} lb • ${logged.minReps || logged.avgReps || 0}-${logged.maxReps || logged.avgReps || 0} reps`
+          : `${logged.minReps || logged.avgReps || 0}-${logged.maxReps || logged.avgReps || 0} reps`)
+        : 'No logged result yet'
+    };
   }
 
   /* ============================================================
@@ -11392,9 +11868,8 @@ function toggleSharePopover(force) {
         const previousEntry = pickLiftHistoryRecord(previousEntryMap, lookupValues);
         const currentEntry = pickLiftHistoryRecord(currentEntryMap, lookupValues);
         const persistentLift = pickLiftHistoryRecord(state.liftHistory, lookupValues);
+        const historicalPerformance = pickLiftHistoryRecord(historicalPerfMap, lookupValues);
 
-        const dec = lastDecisionByBase?.[String(ex.baseId || '')] || null;
-        const decText = dec && typeof dec === 'object' && dec.message ? String(dec.message) : '';
         const repsTarget = Number.isFinite(ex?.progression?.repsTarget) ? ex.progression.repsTarget : parseRepsTarget(ex.reps);
         const technique = ex?.progression?.technique && String(ex.progression.technique).trim().toLowerCase() !== 'none'
           ? String(ex.progression.technique).trim()
@@ -11576,13 +12051,13 @@ function toggleSharePopover(force) {
             : null;
         const targetSeed = resolveTargetSeedForExercise(ex, {
           previousEntry,
-          historicalPerformance: pickLiftHistoryRecord(historicalPerfMap, lookupValues),
+          historicalPerformance,
           persistentLift,
           currentPerformedAt: performedAtValue
         });
         const projected = fmtProjected(resolveProjectedForExercise(ex, plan, {
           previousEntry,
-          historicalPerformance: pickLiftHistoryRecord(historicalPerfMap, lookupValues),
+          historicalPerformance,
           persistentLift,
           lastPerformance: targetSeed,
           currentPerformedAt: performedAtValue
@@ -11590,7 +12065,7 @@ function toggleSharePopover(force) {
         const lastPerf = targetSeed
           || extractWorkoutEntryPerformance(currentEntry)
           || persistentLift?.last
-          || pickLiftHistoryRecord(historicalPerfMap, lookupValues)
+          || historicalPerformance
           || null;
         const bestPerf = persistentLift?.best || null;
         const lastWeekCompact = (() => {
@@ -11662,7 +12137,6 @@ function toggleSharePopover(force) {
                   ? el('span', { class: 'projected-pill is-deload', title: 'This week is a deload week. Target weights are intentionally reduced.' }, 'Deload week')
                   : null
               ),
-              decText ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Next: ${decText}`) : null,
               el('div', { class: 'exercise-action-row' },
                 el('button', {
                   type: 'button',

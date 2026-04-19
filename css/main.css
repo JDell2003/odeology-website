@@ -20293,6 +20293,222 @@ html[data-theme="light"] .ode-tour-btn.primary {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
+.training-page .projected-pill.is-active {
+    outline: 2px solid color-mix(in srgb, #f0b429 60%, white);
+    outline-offset: 1px;
+}
+
+.training-page .training-projection-card {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(245, 186, 84, 0.12), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--training-surface) 82%, #0f172a 18%), var(--training-surface-2));
+    border: 1px solid color-mix(in srgb, var(--training-accent) 24%, var(--training-border));
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+.training-page .training-projection-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.training-page .training-projection-eyebrow {
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--training-accent);
+}
+
+.training-page .training-projection-title {
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+
+.training-page .training-projection-statuses,
+.training-page .training-projection-week-strip,
+.training-page .training-projection-summary-values,
+.training-page .training-projection-submeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.training-page .training-projection-week-chip {
+    border: 1px solid var(--training-border);
+    background: color-mix(in srgb, var(--training-surface-2) 82%, transparent);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.training-page .training-projection-week-chip.is-active {
+    background: linear-gradient(135deg, var(--training-accent), color-mix(in srgb, var(--training-accent) 62%, white));
+    color: #111827;
+    border-color: color-mix(in srgb, var(--training-accent) 70%, white);
+}
+
+.training-page .training-projection-week-chip.is-deload {
+    border-color: rgba(232, 176, 35, 0.48);
+}
+
+.training-page .training-projection-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.training-page .training-projection-panel {
+    border: 1px solid color-mix(in srgb, var(--training-border) 82%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--training-surface-2) 88%, transparent);
+    padding: 0.95rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.training-page .training-projection-panel-title {
+    font-weight: 850;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.training-page .training-projection-banner {
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--training-border) 74%, transparent);
+    background: color-mix(in srgb, var(--training-surface) 65%, transparent);
+    color: var(--muted);
+    padding: 0.8rem 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.training-page .training-projection-banner.is-deload {
+    border-color: rgba(232, 176, 35, 0.45);
+    background: linear-gradient(135deg, rgba(255, 246, 209, 0.96), rgba(247, 219, 138, 0.9));
+    color: #6f4300;
+}
+
+.training-page .training-projection-table-wrap {
+    overflow: auto;
+}
+
+.training-page .training-projection-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+
+.training-page .training-projection-table th,
+.training-page .training-projection-table td {
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--training-border) 78%, transparent);
+    text-align: left;
+    vertical-align: top;
+    font-size: 0.92rem;
+}
+
+.training-page .training-projection-table th {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.training-page .training-projection-summary-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.training-page .training-projection-summary-item {
+    border: 1px solid color-mix(in srgb, var(--training-border) 70%, transparent);
+    border-radius: 16px;
+    padding: 0.8rem;
+    background: color-mix(in srgb, var(--training-surface) 68%, transparent);
+}
+
+.training-page .training-projection-summary-name {
+    font-weight: 850;
+    color: var(--ink);
+}
+
+.training-page .training-projection-summary-meta {
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.training-page .exercise-recommend-card {
+    margin-top: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--training-accent) 20%, var(--training-border));
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--training-surface) 80%, #0f172a 20%), var(--training-surface-2));
+    padding: 0.9rem;
+    display: grid;
+    gap: 0.7rem;
+}
+
+.training-page .exercise-recommend-title {
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.training-page .exercise-recommend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.training-page .exercise-recommend-item {
+    border: 1px solid color-mix(in srgb, var(--training-border) 76%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--training-surface-2) 84%, transparent);
+    padding: 0.72rem 0.8rem;
+    display: grid;
+    gap: 0.2rem;
+}
+
+.training-page .exercise-recommend-item span {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.training-page .exercise-recommend-item strong {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--ink);
+}
+
+@media (max-width: 920px) {
+    .training-page .training-projection-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .training-page .exercise-recommend-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .training-page .exercise-recommend-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .training-page .exercise-fields input[readonly] {
     cursor: default;
     opacity: 0.9;

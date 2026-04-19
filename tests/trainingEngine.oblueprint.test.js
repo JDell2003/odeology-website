@@ -136,6 +136,62 @@ function runLiveParityCase(classicProfile) {
   return built.plan;
 }
 
+test('route fallback repairs raw invalid bodybuilding output before onboarding returns it', () => {
+  const input = baseInput({
+    daysPerWeek: 4,
+    sessionLengthMin: '60',
+    preferredDays: ['Mo', 'Tu', 'Th', 'Fr'],
+    priorityGroups: ['Chest', 'Back'],
+    trainingFeel: 'Aesthetic bodybuilding',
+    planSeed: 12345
+  });
+  const rawPlan = engine.buildOblueprintPlan(input);
+  assert.throws(() => trainingRoutes._private.assertBodybuildingPlanByEngine(rawPlan), /Push day missing shoulder press compound/);
+
+  const built = trainingRoutes._private.buildOblueprintPlanWithFallback(input);
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'fallback build failed');
+  assert.doesNotThrow(() => trainingRoutes._private.assertBodybuildingPlanByEngine(built.plan));
+});
+
+test('route fallback keeps 3-day core-calves home plan route-valid', () => {
+  const input = baseInput({
+    primaryGoal: 'Cut fat',
+    experience: '<6m',
+    daysPerWeek: 3,
+    sessionLengthMin: '45',
+    preferredDays: ['Mo', 'We', 'Fr'],
+    location: 'Home',
+    equipmentAccess: ['Bodyweight', 'Dumbbells'],
+    priorityGroups: ['Core', 'Calves'],
+    trainingStyle: 'Mostly free weights',
+    planSeed: 12345
+  });
+  const built = trainingRoutes._private.buildOblueprintPlanWithFallback(input);
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route fallback build failed');
+  assert.doesNotThrow(() => trainingRoutes._private.assertBodybuildingPlanByEngine(built.plan));
+});
+
+test('route fallback keeps short-session shoulders-arms bodybuilding plan route-valid', () => {
+  const built = trainingRoutes._private.buildOblueprintPlanWithFallback(trainingRoutes._private.coerceClassicBodybuildingToOblueprintPayload(buildClassicProfile({
+    phase: 'bulk',
+    daysPerWeek: 5,
+    emphasis: ['shoulders', 'arms'],
+    equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: false, machine: false },
+    unavailableDays: [0, 3, 6],
+    equipmentStylePref: 'barbell',
+    strength: {
+      phase: 'bulk',
+      trainingAgeBucket: '6_18',
+      timePerSession: '30_45',
+      equipmentStylePref: 'barbell',
+      injury: { has: true, joints: ['ankle'], note: 'Left ankle gets cranky with jumping, running, or a lot of deep forward knee travel.' },
+      injurySeverityByJoint: { ankle: 4 }
+    }
+  })));
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route fallback build failed');
+  assert.doesNotThrow(() => trainingRoutes._private.assertBodybuildingPlanByEngine(built.plan));
+});
+
 function buildStage1Plan(input) {
   const normalized = engine.normalizeUserInput(input);
   assert.equal(normalized?.error, undefined, normalized?.reason || normalized?.error);
@@ -198,6 +254,20 @@ function countDaysWithMatchingExercises(plan, pattern) {
 
 function countPriorityPresence(plan, pattern) {
   return flattenExercises(plan).filter((ex) => pattern.test(String(ex.name || '').toLowerCase()) || pattern.test(String(ex.sub || '').toLowerCase())).length;
+}
+
+function isPosteriorBuilderExercise(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  if (/(thigh abductor|thigh adductor|abductor|adductor|kickback)/.test(name)) return false;
+  return /(hip thrust|glute bridge|pull through|glute ham raise|seated leg curl|lying leg curl|leg curl|hamstring curl|romanian deadlift|\brdl\b|stiff[- ]*leg)/.test(name);
+}
+
+function isSecondaryLowerExercise(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  if (isPosteriorBuilderExercise(exercise)) return false;
+  if (exercise?.directCalf) return true;
+  if (String(exercise?.primary || exercise?.muscleTarget || '') === 'Legs') return true;
+  return /(leg press|hack squat|leg extension|split squat|lunge|step[- ]*up|calf raise)/.test(name);
 }
 
 function assertCoachGrade(plan, label, minimumScore = 7.5) {
@@ -282,6 +352,30 @@ test('golden regression set 1 preserves the strongest live-style baseline cases'
     const plan = engine.buildOblueprintPlan(input);
     assertCoachGrade(plan, label, 7.5);
     assertAllowedEquipmentOnly(plan);
+  }
+});
+
+test('glutes+core 75+ plan keeps every relevant lower day as real lower work with core and sufficient fill', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    primaryGoal: 'Cut fat',
+    experience: '2-5y',
+    daysPerWeek: 5,
+    sessionLengthMin: '75+',
+    priorityGroups: ['Glutes', 'Core'],
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Barbell', 'Cable', 'Machines'],
+    trainingStyle: 'Balanced mix',
+    painAreas: ['Hip'],
+    painProfilesByArea: { Hip: { severity: 5, recency: 'Recent', notes: 'deep flexion and wide stance aggravate the hip' } }
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const relevantDays = (plan?.weeks?.[0]?.days || []).filter((day) => ['Lower', 'LowerFocus', 'Legs', 'FullBodyA', 'FullBodyB'].includes(String(day?.dayType || '')));
+  assert.ok(relevantDays.length >= 2, 'expected multiple relevant lower days');
+  for (const day of relevantDays) {
+    const exercises = day.exercises || [];
+    assert.ok(exercises.some((exercise) => isPosteriorBuilderExercise(exercise)), `${day.dayType}: expected a real posterior-chain/glute builder`);
+    assert.ok(exercises.some((exercise) => isSecondaryLowerExercise(exercise)), `${day.dayType}: expected a second lower-priority movement`);
+    assert.ok(exercises.some((exercise) => exercise.directAb), `${day.dayType}: expected direct core work`);
+    assert.ok(exercises.length >= 5, `${day.dayType}: expected wide-session lower day to stay filled`);
   }
 });
 
@@ -824,6 +918,113 @@ test('advanced 4-day chest-shoulders-arms user gets direct shoulder press and de
   assert.ok(names.some((name) => /lateral raise|rear delt|reverse fly|face pull/.test(name)), 'expected direct lateral or rear delt work');
 });
 
+test('press-job grouping collapses chest press name variants into one family', () => {
+  const chestVariants = [
+    'Bench Press',
+    'Incline Bench Press',
+    'Incline Dumbbell Bench Press Palms-In',
+    'Incline Dumbbell Press',
+    'Machine Chest Press',
+    'Cable Chest Press',
+    'Leverage Chest Press'
+  ];
+  for (const name of chestVariants) {
+    const truth = engine.buildExerciseTruth({ name, pattern: 'HorizontalPush', style: 'Compound', primary: 'Chest' });
+    assert.equal(truth.pressRole, 'chest_press', `${name}: expected chest_press family, got ${truth.pressRole}`);
+  }
+});
+
+test('press-job grouping collapses shoulder press name variants into one family', () => {
+  const shoulderVariants = [
+    'Barbell Shoulder Press',
+    'Seated Military Press',
+    'Dumbbell Shoulder Press',
+    'Machine Shoulder Press',
+    'Cable Shoulder Press'
+  ];
+  for (const name of shoulderVariants) {
+    const truth = engine.buildExerciseTruth({ name, pattern: 'VerticalPush', style: 'Compound', primary: 'Shoulders' });
+    assert.equal(truth.pressRole, 'shoulder_press', `${name}: expected shoulder_press family, got ${truth.pressRole}`);
+  }
+});
+
+test('shoulders-arms days stop at one main press before switching to delts and arms', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    experience: '6-24m',
+    daysPerWeek: 4,
+    sessionLengthMin: '60',
+    priorityGroups: ['Shoulders', 'Arms'],
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Barbell', 'Cable', 'Machines'],
+    trainingStyle: 'Balanced mix',
+    planSeed: 55501
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  for (const day of plan.weeks[0].days || []) {
+    if (!['Push', 'Upper', 'UpperFocus', 'DeltsArms'].includes(String(day.dayType || ''))) continue;
+    const presses = (day.exercises || []).filter((ex) => /bench press|chest press|incline press|shoulder press|overhead press|military press/.test(String(ex.name || '').toLowerCase()));
+    assert.ok(presses.length <= 1, `${day.dayType}: expected one main press max, got ${presses.map((ex) => ex.name).join(', ')}`);
+    const names = (day.exercises || []).map((ex) => String(ex.name || '').toLowerCase());
+    if (presses.length === 1) {
+      assert.ok(names.some((name) => /lateral raise|rear delt|reverse fly|face pull/.test(name)), `${day.dayType}: expected non-press delt work after main press`);
+      assert.ok(names.some((name) => /\bcurl\b|\btriceps\b|\bpushdown\b|\bpressdown\b|\bskull crusher\b|\bextension\b/.test(name)), `${day.dayType}: expected direct arm work after main press`);
+    }
+  }
+});
+
+test('chest-shoulders-arms days cap chest pressing at two slots and then shift to delts or triceps', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    experience: '5y+',
+    daysPerWeek: 4,
+    sessionLengthMin: '60',
+    priorityGroups: ['Chest', 'Shoulders', 'Arms'],
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Barbell', 'Cable', 'Machines'],
+    trainingStyle: 'Balanced mix',
+    planSeed: 55502
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  for (const day of plan.weeks[0].days || []) {
+    if (!['Push', 'Upper', 'UpperFocus'].includes(String(day.dayType || ''))) continue;
+    const names = (day.exercises || []).map((ex) => String(ex.name || '').toLowerCase());
+    const chestPressCount = names.filter((name) => /bench press|chest press|incline press|decline press/.test(name)).length;
+    const totalPressCount = names.filter((name) => /bench press|chest press|incline press|decline press|shoulder press|overhead press|military press/.test(name)).length;
+    assert.ok(chestPressCount <= (day.dayType === 'Push' ? 2 : 1), `${day.dayType}: chest pressing exceeded slot cap`);
+    if (day.dayType === 'Push') {
+      assert.ok(totalPressCount <= 2, `${day.dayType}: repeated press names survived beyond the two-slot press cap`);
+    }
+    if (chestPressCount >= 2) {
+      assert.ok(names.some((name) => /lateral raise|rear delt|reverse fly|face pull|\btriceps\b|\bpushdown\b|\bpressdown\b|\bskull crusher\b|\bextension\b/.test(name)), `${day.dayType}: expected delt or triceps work after second chest press`);
+    }
+  }
+});
+
+test('chest-core days give core a real slot before extra chest press volume takes over', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    experience: '6-24m',
+    daysPerWeek: 3,
+    sessionLengthMin: '45',
+    preferredDays: ['Tu', 'Th', 'Sa'],
+    priorityGroups: ['Chest', 'Core'],
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Cable', 'Machines'],
+    trainingStyle: 'Balanced mix',
+    planSeed: 55503
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  let coreDays = 0;
+  for (const day of plan.weeks[0].days || []) {
+    if (!['Push', 'Upper', 'UpperFocus', 'FullBodyA', 'FullBodyB'].includes(String(day.dayType || ''))) continue;
+    const names = (day.exercises || []).map((ex) => String(ex.name || '').toLowerCase());
+    const chestPressCount = names.filter((name) => /bench press|chest press|incline press|decline press/.test(name)).length;
+    const coreCount = (day.exercises || []).filter((ex) => ex.directAb).length;
+    assert.ok(chestPressCount <= (day.dayType === 'Push' ? 2 : 1), `${day.dayType}: chest work exceeded the allowed day cap before core took priority`);
+    if (coreCount > 0) coreDays += 1;
+    if (chestPressCount >= 2) {
+      assert.ok(coreCount >= 1, `${day.dayType}: extra chest pressing occurred before core got a real slot`);
+      assert.ok(names.some((name) => /crunch|reverse crunch|pallof|oblique/.test(name)), `${day.dayType}: overflow chest work did not get swapped into an allowed ab job`);
+    }
+  }
+  assert.ok(coreDays >= 2, `expected core to own at least 2 real slots across the week, got ${coreDays}`);
+});
+
 test('shoulder-irritated users do not grade elite when coach-objection pressing slips through', () => {
   const graded = engine.buildEliteQaReport({
     meta: { allowedEquipment: ['machine', 'cable', 'bodyweight'] },
@@ -1114,4 +1315,632 @@ test('200 randomized valid profiles do not fail and respect hard constraints', (
     assertExactDayCount(plan, daysPerWeek);
     assertAllowedEquipmentOnly(plan);
   }
+});
+
+function projectionSummaryByFamily(plan, family) {
+  return (plan?.meta?.progressionProjection?.exerciseSummaries || []).find((entry) => String(entry?.family || '') === String(family || ''));
+}
+
+test('bodybuilding plan exposes 16-week projection metadata and current-week targets', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    timeline: '8 weeks',
+    priorityGroups: ['Chest', 'Shoulders', 'Arms']
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan?.meta?.progressionProjection;
+  assert.ok(projection, 'expected progressionProjection');
+  assert.equal(Array.isArray(projection.weeklyTable), true, 'expected projection weekly table');
+  assert.equal(Array.isArray(projection.deloadWeeks), true, 'expected deload weeks');
+  assert.equal(projection.weeklyTable.some((row) => Number(row?.week) === 16), true, 'expected 16-week projection horizon');
+  assert.equal(Array.isArray(plan?.meta?.autoreg?.deloadWeeks), true, 'expected autoreg deload weeks');
+  const projectedExercises = flattenExercises(plan).filter((exercise) => Number.isFinite(Number(exercise?.projectedWeight)));
+  assert.ok(projectedExercises.length > 0, 'expected projected weights on returned exercises');
+});
+
+test('anchor lifts scale major and accessory estimates conservatively for strong users', () => {
+  const strongPlan = engine.buildOblueprintPlan(baseInput({
+    bench: 365,
+    squat: 515,
+    deadlift: 615,
+    experience: '5y+',
+    priorityGroups: ['Chest', 'Shoulders', 'Arms']
+  }));
+  assert.equal(strongPlan.error, undefined, strongPlan?.reason || strongPlan?.error);
+  const chestPress = projectionSummaryByFamily(strongPlan, 'chest_press');
+  const shoulderPress = projectionSummaryByFamily(strongPlan, 'shoulder_press');
+  const curl = projectionSummaryByFamily(strongPlan, 'biceps_iso');
+  assert.ok(chestPress && shoulderPress && curl, 'expected major and accessory summaries');
+  assert.ok(Number(chestPress.startingLoad) >= 240, `expected strong chest press estimate, got ${chestPress?.startingLoad}`);
+  assert.ok(Number(chestPress.startingLoad) <= 302.5, `expected chest press clamp, got ${chestPress?.startingLoad}`);
+  assert.ok(Number(shoulderPress.startingLoad) >= 85, `expected realistic shoulder press estimate, got ${shoulderPress?.startingLoad}`);
+  assert.ok(Number(shoulderPress.startingLoad) <= 212.5, `expected shoulder press clamp, got ${shoulderPress?.startingLoad}`);
+  assert.ok(Number(curl.startingLoad) >= 25, `expected strong-user curl estimate not to undershoot badly, got ${curl?.startingLoad}`);
+  assert.ok(Number(curl.startingLoad) <= 90, `expected curl estimate to remain conservative, got ${curl?.startingLoad}`);
+});
+
+test('weak beginner users are protected from overshot accessory estimates', () => {
+  const beginnerPlan = engine.buildOblueprintPlan(baseInput({
+    bench: 95,
+    squat: 135,
+    deadlift: 165,
+    experience: '<6m',
+    priorityGroups: ['Chest', 'Arms', 'Core']
+  }));
+  assert.equal(beginnerPlan.error, undefined, beginnerPlan?.reason || beginnerPlan?.error);
+  const chestPress = projectionSummaryByFamily(beginnerPlan, 'chest_press');
+  const curl = projectionSummaryByFamily(beginnerPlan, 'biceps_iso');
+  const crunch = projectionSummaryByFamily(beginnerPlan, 'core_flexion');
+  assert.ok(Number(chestPress?.startingLoad) <= 95, `expected chest press to stay below anchor max, got ${chestPress?.startingLoad}`);
+  assert.ok(Number(curl?.startingLoad) <= 15, `expected beginner curl estimate to stay modest, got ${curl?.startingLoad}`);
+  assert.ok(Number(crunch?.startingLoad) <= 40, `expected core loading to stay conservative, got ${crunch?.startingLoad}`);
+});
+
+test('phase affects projected loading without breaking conservative anchor logic', () => {
+  const cutPlan = engine.buildOblueprintPlan(baseInput({
+    primaryGoal: 'Cut fat',
+    bench: 225,
+    squat: 315,
+    deadlift: 405
+  }));
+  const bulkPlan = engine.buildOblueprintPlan(baseInput({
+    primaryGoal: 'Build size',
+    bench: 225,
+    squat: 315,
+    deadlift: 405
+  }));
+  assert.equal(cutPlan.error, undefined, cutPlan?.reason || cutPlan?.error);
+  assert.equal(bulkPlan.error, undefined, bulkPlan?.reason || bulkPlan?.error);
+  const cutChest = projectionSummaryByFamily(cutPlan, 'chest_press');
+  const bulkChest = projectionSummaryByFamily(bulkPlan, 'chest_press');
+  assert.ok(Number(bulkChest?.startingLoad) >= Number(cutChest?.startingLoad), 'expected bulk projection to be at least as high as cut');
+  assert.ok(Number(bulkChest?.week16Load) >= Number(cutChest?.week16Load), 'expected bulk week-16 projection to be at least as high as cut');
+});
+
+test('double progression uses rep-first behavior before load jumps', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    priorityGroups: ['Chest', 'Back'],
+    bench: 245,
+    squat: 335,
+    deadlift: 425
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const chestPress = projectionSummaryByFamily(plan, 'chest_press');
+  assert.ok(chestPress, 'expected chest press projection');
+  const rows = (plan.meta?.progressionProjection?.weeklyTable || []).filter((row) => String(row?.canonicalExerciseId || '') === String(chestPress.canonicalExerciseId));
+  assert.ok(rows.length >= 4, 'expected multiple weekly rows');
+  const sameLoadBeforeBump = rows.some((row, idx) => idx > 0 && Number(row.targetLoad) === Number(rows[idx - 1].targetLoad) && String(row.repRange || '') !== String(rows[idx - 1].repRange || ''));
+  const laterIncrease = rows.some((row, idx) => idx > 0 && Number(row.targetLoad) > Number(rows[idx - 1].targetLoad));
+  assert.equal(sameLoadBeforeBump, true, 'expected rep progression before load bump');
+  assert.equal(laterIncrease, true, 'expected later load increase');
+});
+
+test('projection deload insertion is clearly marked across the 16-week horizon', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    experience: '5y+',
+    daysPerWeek: 6,
+    sessionLengthMin: '75+',
+    preferredDays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+    priorityGroups: ['Chest', 'Back', 'Legs']
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const deloadWeeks = plan.meta?.progressionProjection?.deloadWeeks || [];
+  assert.deepEqual(deloadWeeks, [5, 10, 15]);
+  const deloadRows = (plan.meta?.progressionProjection?.weeklyTable || []).filter((row) => deloadWeeks.includes(Number(row?.week)));
+  assert.ok(deloadRows.length > 0, 'expected deload rows');
+  assert.ok(deloadRows.every((row) => String(row?.tag || '') === 'deload'), 'expected deload row tags');
+});
+
+test('adaptive projection state adjusts upward and downward after repeated performance signals', () => {
+  const plan = engine.buildOblueprintPlan(baseInput());
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const initial = engine.createAdaptiveProjectionState(baseInput(), plan.meta?.progressionProjection);
+  const up1 = engine.updateAdaptiveProjectionState(initial, { family: 'chest_press', projectedLoad: 180, actualLoad: 190, targetReps: 10, actualReps: 12 });
+  const up2 = engine.updateAdaptiveProjectionState(up1, { family: 'chest_press', projectedLoad: 180, actualLoad: 192, targetReps: 10, actualReps: 12 });
+  assert.ok(Number(up2.familyAdjustments.chest_press) > 1, 'expected upward family adjustment');
+  const down1 = engine.updateAdaptiveProjectionState(up2, { family: 'chest_press', projectedLoad: 190, actualLoad: 180, targetReps: 10, actualReps: 8 });
+  const down2 = engine.updateAdaptiveProjectionState(down1, { family: 'chest_press', projectedLoad: 190, actualLoad: 178, targetReps: 10, actualReps: 8 });
+  assert.ok(Number(down2.familyAdjustments.chest_press) < Number(up2.familyAdjustments.chest_press), 'expected downward family adjustment after misses');
+});
+
+test('repeated overperformance raises future targets when adaptive forecast is reapplied', () => {
+  const input = baseInput({ priorityGroups: ['Chest', 'Shoulders'], daysPerWeek: 4, preferredDays: ['Mo', 'Tu', 'Th', 'Fr'] });
+  const plan = engine.buildOblueprintPlan(input);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const initial = engine.createAdaptiveProjectionState(input, projection);
+  const up1 = engine.updateAdaptiveProjectionState(initial, { family: 'chest_press', projectedLoad: 180, actualLoad: 190, targetReps: 10, actualReps: 12 });
+  const up2 = engine.updateAdaptiveProjectionState(up1, { family: 'chest_press', projectedLoad: 180, actualLoad: 192, targetReps: 10, actualReps: 12 });
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, up2, { fromWeek: 6 });
+  const changedChestDiff = impact.diffs.find((diff) => diff.family === 'chest_press' && diff.week >= 6);
+  assert.ok(changedChestDiff, 'expected a changed future chest-press row');
+  assert.ok(Number(String(changedChestDiff.afterTarget).replace(/[^0-9.]+/g, '')) > Number(String(changedChestDiff.beforeTarget).replace(/[^0-9.]+/g, '')));
+});
+
+test('repeated underperformance slows or lowers future targets when adaptive forecast is reapplied', () => {
+  const input = baseInput({ priorityGroups: ['Chest', 'Shoulders'], daysPerWeek: 4, preferredDays: ['Mo', 'Tu', 'Th', 'Fr'] });
+  const plan = engine.buildOblueprintPlan(input);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const initial = engine.createAdaptiveProjectionState(input, projection);
+  const down1 = engine.updateAdaptiveProjectionState(initial, { family: 'chest_press', projectedLoad: 180, actualLoad: 170, targetReps: 10, actualReps: 7 });
+  const down2 = engine.updateAdaptiveProjectionState(down1, { family: 'chest_press', projectedLoad: 180, actualLoad: 168, targetReps: 10, actualReps: 7 });
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, down2, { fromWeek: 6 });
+  const changedChestDiff = impact.diffs.find((diff) => diff.family === 'chest_press' && diff.week >= 6);
+  assert.ok(changedChestDiff, 'expected a changed future chest-press row');
+  assert.ok(Number(String(changedChestDiff.afterTarget).replace(/[^0-9.]+/g, '')) < Number(String(changedChestDiff.beforeTarget).replace(/[^0-9.]+/g, '')));
+});
+
+test('triggered deload insertion alters future week projections in simulation mode', () => {
+  const plan = engine.buildOblueprintPlan(baseInput());
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, plan.meta?.autoreg?.adaptiveProjectionState || {}, { fromWeek: 6, insertDeloadWeek: 6 });
+  assert.equal(impact.deloadWeeksChanged, true);
+  const insertedDeload = impact.diffs.find((diff) => diff.week === 6 && diff.afterTag === 'deload');
+  assert.ok(insertedDeload, 'expected a simulated deload insertion diff');
+});
+
+test('movement-family adjustments propagate beyond one exact exercise when family forecast is reapplied', () => {
+  const input = baseInput({ priorityGroups: ['Chest', 'Shoulders'], daysPerWeek: 4, preferredDays: ['Mo', 'Tu', 'Th', 'Fr'] });
+  const plan = engine.buildOblueprintPlan(input);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const chestExercises = (projection?.exerciseSummaries || []).filter((entry) => entry.family === 'chest_press');
+  assert.ok(chestExercises.length >= 2, 'expected multiple chest-press exercises for propagation test');
+  const initial = engine.createAdaptiveProjectionState(input, projection);
+  const up1 = engine.updateAdaptiveProjectionState(initial, { family: 'chest_press', projectedLoad: 180, actualLoad: 190, targetReps: 10, actualReps: 12 });
+  const up2 = engine.updateAdaptiveProjectionState(up1, { family: 'chest_press', projectedLoad: 180, actualLoad: 192, targetReps: 10, actualReps: 12 });
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, up2, { fromWeek: 6 });
+  assert.equal(impact.familyPropagation, true);
+});
+
+test('no propagation impact reports when only local exercise change occurred or nothing changed', () => {
+  const plan = engine.buildOblueprintPlan(baseInput());
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, plan.meta?.autoreg?.adaptiveProjectionState || {}, { fromWeek: 6 });
+  assert.ok(['no_future_change', 'local_only'].includes(String(impact.scope || '')));
+});
+
+test('adaptive impact diffs stay visible with before and after targets', () => {
+  const input = baseInput({ priorityGroups: ['Chest', 'Shoulders'], daysPerWeek: 4, preferredDays: ['Mo', 'Tu', 'Th', 'Fr'] });
+  const plan = engine.buildOblueprintPlan(input);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  const initial = engine.createAdaptiveProjectionState(input, projection);
+  const up1 = engine.updateAdaptiveProjectionState(initial, { family: 'chest_press', projectedLoad: 180, actualLoad: 190, targetReps: 10, actualReps: 12 });
+  const up2 = engine.updateAdaptiveProjectionState(up1, { family: 'chest_press', projectedLoad: 180, actualLoad: 192, targetReps: 10, actualReps: 12 });
+  const impact = engine.simulateAdaptiveProjectionImpact(projection, up2, { fromWeek: 6 });
+  assert.ok(impact.diffs.length > 0, 'expected visible future diffs');
+  assert.ok(impact.diffs.every((diff) => String(diff.beforeTarget || '').length > 0 && String(diff.afterTarget || '').length > 0), 'expected before/after targets on all diffs');
+});
+
+test('route parity plans include projection metadata for website rendering', () => {
+  const plan = runLiveParityCase(buildClassicProfile({
+    emphasis: ['chest', 'arms', 'shoulders'],
+    strength: {
+      benchWeight: 225,
+      lowerWeight: 315,
+      hingeWeight: 405
+    }
+  }));
+  assert.ok(plan?.meta?.progressionProjection, 'expected route parity projection metadata');
+  assert.ok(Array.isArray(plan?.meta?.progressionProjection?.exerciseSummaries), 'expected projection summaries');
+  assert.ok(Array.isArray(plan?.meta?.autoreg?.deloadWeeks), 'expected autoreg deload weeks');
+});
+
+test('randomized batch plans expose visible baseline and projected loads', () => {
+  for (let i = 0; i < 10; i += 1) {
+    const input = baseInput({
+      planSeed: 9000 + i,
+      daysPerWeek: 2 + (i % 5),
+      preferredDays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].slice(0, 2 + (i % 5)),
+      primaryGoal: ['Build size', 'Cut fat', 'Recomp'][i % 3],
+      experience: ['<6m', '6-24m', '2-5y', '5y+'][i % 4],
+      priorityGroups: [['Chest', 'Back'], ['Shoulders', 'Arms'], ['Legs', 'Glutes'], ['Core', 'Chest']][i % 4]
+    });
+    const plan = engine.buildOblueprintPlan(input);
+    assert.equal(plan.error, undefined, `randomized projection case ${i} failed: ${plan?.reason || plan?.error}`);
+    const projection = plan.meta?.progressionProjection;
+    assert.ok(projection, `randomized projection case ${i} missing progressionProjection`);
+    assert.ok(Number.isFinite(Number(projection?.anchorInputs?.inputBench || projection?.anchorInputs?.bench1rm)), `randomized projection case ${i} missing bench anchor`);
+    assert.ok(Array.isArray(projection?.exerciseSummaries) && projection.exerciseSummaries.length > 0, `randomized projection case ${i} missing exercise summaries`);
+    assert.ok(projection.exerciseSummaries.some((entry) => Number.isFinite(Number(entry?.week1Load)) || Number.isFinite(Number(entry?.startingLoad))), `randomized projection case ${i} missing visible loads`);
+  }
+});
+
+test('working-weight fallback derives anchors when explicit PR fields are absent', () => {
+  const raw = baseInput({
+    bench: null,
+    squat: null,
+    deadlift: null,
+    benchWeight: 185,
+    benchReps: 8,
+    benchVariation: 'Incline DB Bench',
+    lowerWeight: 275,
+    lowerReps: 6,
+    lowerMovement: 'Hack Squat',
+    hingeWeight: 315,
+    hingeReps: 8,
+    hingeMovement: 'Romanian Deadlift'
+  });
+  const plan = engine.buildOblueprintPlan(raw);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const anchors = plan.meta?.progressionProjection?.anchorInputs || {};
+  assert.equal(anchors.anchorSource, 'working_weight_fallback');
+  assert.ok(Number.isFinite(Number(anchors.derivedBenchEstimate)), 'expected derived bench estimate');
+  assert.ok(Number.isFinite(Number(anchors.derivedSquatEstimate)), 'expected derived squat estimate');
+  assert.ok(Number.isFinite(Number(anchors.derivedDeadliftEstimate)), 'expected derived deadlift estimate');
+});
+
+test('route-style working-weight users no longer produce N/A anchor projections', () => {
+  const coerced = trainingRoutes._private.coerceClassicBodybuildingToOblueprintPayload(buildClassicProfile({
+    strength: {
+      bodyweight: 205,
+      benchVariation: 'Machine Chest Press',
+      benchWeight: 185,
+      benchReps: 8,
+      lowerMovement: 'Leg Press',
+      lowerWeight: 360,
+      lowerReps: 10,
+      hingeMovement: 'Hip Thrust',
+      hingeWeight: 315,
+      hingeReps: 8
+    }
+  }));
+  const plan = engine.buildOblueprintPlan(coerced);
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection || {};
+  const anchors = projection.anchorInputs || {};
+  assert.equal(anchors.anchorSource, 'working_weight_fallback');
+  assert.ok(Number.isFinite(Number(anchors.bench1rm)), 'expected bench anchor');
+  assert.ok(Number.isFinite(Number(anchors.squat1rm)), 'expected squat anchor');
+  assert.ok(Number.isFinite(Number(anchors.deadlift1rm)), 'expected deadlift anchor');
+  const majorLoaded = (projection.exerciseSummaries || []).filter((entry) => entry?.major && entry?.loadUnitNote !== 'bodyweight');
+  assert.ok(majorLoaded.length > 0, 'expected loaded major exercises');
+  assert.ok(majorLoaded.every((entry) => Number.isFinite(Number(entry?.startingLoad))), 'expected loaded major projections to resolve');
+});
+
+test('next-session decision engine increases load after fully owning the top of the range', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: {
+      sets: [
+        { weight: 200, reps: 10 },
+        { weight: 200, reps: 10 },
+        { weight: 200, reps: 10 }
+      ]
+    }
+  });
+  assert.equal(result.recommendation, 'increase');
+  assert.equal(result.nextTarget, '205 lb');
+  assert.equal(result.confidence, 'high');
+});
+
+test('next-session decision engine holds load when performance is inside the range but not fully earned', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: {
+      sets: [
+        { weight: 200, reps: 8 },
+        { weight: 200, reps: 9 },
+        { weight: 200, reps: 8 }
+      ]
+    }
+  });
+  assert.equal(result.recommendation, 'hold');
+  assert.equal(result.nextTarget, '200 lb');
+});
+
+test('next-session decision engine decreases after repeated severe misses', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: {
+      sets: [
+        { weight: 200, reps: 5 },
+        { weight: 200, reps: 5 },
+        { weight: 200, reps: 4 }
+      ]
+    },
+    exerciseHistory: [{ minReps: 5 }],
+    familyHistory: [{ minReps: 5 }]
+  });
+  assert.equal(result.recommendation, 'decrease');
+  assert.equal(result.nextTarget, '195 lb');
+});
+
+test('next-session decision engine auto-triggers deload after stacked misses', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: {
+      sets: [
+        { weight: 200, reps: 6 },
+        { weight: 200, reps: 6 },
+        { weight: 200, reps: 6 }
+      ]
+    },
+    exerciseHistory: [{ minReps: 7 }, { minReps: 6 }],
+    familyHistory: [{ minReps: 7 }, { minReps: 6 }, { minReps: 6 }]
+  });
+  assert.equal(result.recommendation, 'deload');
+  assert.equal(result.deloadState, 'triggered');
+});
+
+test('next-session decision engine marks adaptive acceleration after repeated overperformance', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: {
+      sets: [
+        { weight: 200, reps: 10 },
+        { weight: 200, reps: 10 },
+        { weight: 200, reps: 10 }
+      ]
+    },
+    exerciseHistory: [{ minReps: 10 }, { minReps: 10 }],
+    familyAdjustment: 1.08
+  });
+  assert.equal(result.recommendation, 'increase');
+  assert.equal(result.adaptiveChanged, true);
+});
+
+test('bodyweight progression mode avoids fake load targets', () => {
+  const result = engine.buildNextSessionRecommendation({
+    mode: 'bodyweight_rep_progression',
+    currentRow: { repRange: '10-15', sets: 3, tag: 'normal' },
+    lastEntry: {
+      sets: [
+        { reps: 15 },
+        { reps: 15 },
+        { reps: 15 }
+      ]
+    }
+  });
+  assert.equal(result.recommendation, 'increase');
+  assert.match(result.nextTarget, /reps/i);
+  assert.doesNotMatch(result.nextTarget, /lb/i);
+});
+
+test('projection metadata exposes deload labeling, return targets, and classification confidence', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    experience: '5y+',
+    daysPerWeek: 6,
+    sessionLengthMin: '75+',
+    preferredDays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+    priorityGroups: ['Chest', 'Back', 'Legs']
+  }));
+  assert.equal(plan.error, undefined, plan?.reason || plan?.error);
+  const projection = plan.meta?.progressionProjection;
+  assert.ok(projection?.classificationConfidence, 'expected classification confidence');
+  assert.ok(projection?.classificationReason, 'expected classification reason');
+  const deloadRows = (projection?.weeklyTable || []).filter((row) => String(row?.tag || '') === 'deload');
+  assert.ok(deloadRows.length > 0, 'expected deload rows');
+  assert.ok(deloadRows.every((row) => String(row?.deloadLabel || '').length > 0), 'expected deload labels');
+  assert.ok(deloadRows.some((row) => String(row?.postDeloadReturnTarget || '').length > 0), 'expected post-deload return targets');
+});
+
+test('progression mode classification distinguishes loaded and bodyweight movements', () => {
+  assert.equal(
+    engine.progressionModeForExercise({ name: 'Bench Press', requiredEquipment: ['barbell'] }),
+    'external_load'
+  );
+  assert.equal(
+    engine.progressionModeForExercise({ name: 'Plank', requiredEquipment: ['bodyweight'] }),
+    'bodyweight_tempo_progression'
+  );
+  assert.equal(
+    engine.progressionModeForExercise({ name: 'Push Up', requiredEquipment: ['bodyweight'] }),
+    'bodyweight_rep_progression'
+  );
+});
+
+test('exact exercise history beats generic movement family in decision source hierarchy', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Cable Row', canonicalExerciseId: 'cable-row', projectionFamily: 'horizontal_pull' },
+    exactRecords: [{ exerciseName: 'Cable Row', canonicalExerciseId: 'cable-row' }],
+    candidateRecords: [{ exerciseName: 'Romanian Deadlift', projectionFamily: 'hinge_pattern' }]
+  });
+  assert.equal(resolved.decisionSource, 'exact_exercise');
+  assert.equal(resolved.decisionSourceExercise, 'Cable Row');
+});
+
+test('close variant beats generic family in decision source hierarchy', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Chest-Supported Dumbbell Row', canonicalExerciseId: 'chest-supported-dumbbell-row', projectionFamily: 'horizontal_pull' },
+    exactRecords: [],
+    candidateRecords: [
+      { exerciseName: 'Dumbbell Incline Row', projectionFamily: 'horizontal_pull' },
+      { exerciseName: 'Cable Row', projectionFamily: 'horizontal_pull' }
+    ]
+  });
+  assert.equal(resolved.decisionSource, 'close_variant');
+  assert.equal(resolved.decisionSourceExercise, 'Dumbbell Incline Row');
+});
+
+test('bench press to medium-grip bench press is labeled close_variant', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Barbell Bench Press', canonicalExerciseId: 'barbell-bench-press', projectionFamily: 'chest_press' },
+    exactRecords: [],
+    candidateRecords: [{ exerciseName: 'Barbell Bench Press - Medium Grip', projectionFamily: 'chest_press' }]
+  });
+  assert.equal(resolved.decisionSource, 'close_variant');
+  assert.equal(resolved.decisionSourceExercise, 'Barbell Bench Press - Medium Grip');
+});
+
+test('back squat to back squat volume is labeled close_variant', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Back Squat', canonicalExerciseId: 'back-squat', projectionFamily: 'squat_pattern' },
+    exactRecords: [],
+    candidateRecords: [{ exerciseName: 'Back Squat (Volume)', projectionFamily: 'squat_pattern' }]
+  });
+  assert.equal(resolved.decisionSource, 'close_variant');
+  assert.equal(resolved.decisionSourceExercise, 'Back Squat (Volume)');
+});
+
+test('decisionSourceExercise is never undefined', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 135, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 140, displayTarget: '140 lb' },
+    lastEntry: { sets: [{ weight: 135, reps: 8 }, { weight: 135, reps: 8 }, { weight: 135, reps: 8 }] },
+    decisionSource: 'movement_family',
+    decisionSourceExercise: undefined
+  });
+  assert.equal(typeof result.decisionSourceExercise, 'string');
+  assert.notEqual(result.decisionSourceExercise, '');
+  assert.notEqual(result.decisionSourceExercise.toLowerCase(), 'undefined');
+});
+
+test('exact exercise source prints the exact exercise name', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Barbell Hip Thrust', canonicalExerciseId: 'barbell-hip-thrust', projectionFamily: 'hinge_pattern' },
+    exactRecords: [{ exerciseName: 'Barbell Hip Thrust', canonicalExerciseId: 'barbell-hip-thrust' }],
+    candidateRecords: [{ exerciseName: 'Romanian Deadlift', projectionFamily: 'hinge_pattern' }]
+  });
+  assert.equal(resolved.decisionSource, 'exact_exercise');
+  assert.equal(resolved.decisionSourceExercise, 'Barbell Hip Thrust');
+});
+
+test('romanian deadlift to barbell glute bridge is not labeled close_variant', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Barbell Glute Bridge', canonicalExerciseId: 'barbell-glute-bridge', projectionFamily: 'hinge_pattern' },
+    exactRecords: [],
+    candidateRecords: [{ exerciseName: 'Romanian Deadlift', projectionFamily: 'hinge_pattern' }]
+  });
+  assert.equal(resolved.decisionSource, 'movement_family');
+  assert.equal(resolved.decisionSourceExercise, 'Romanian Deadlift');
+});
+
+test('machine chest press to incline dumbbell press is not labeled close_variant', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Incline Dumbbell Press', canonicalExerciseId: 'incline-dumbbell-press', projectionFamily: 'chest_press' },
+    exactRecords: [],
+    candidateRecords: [{ exerciseName: 'Machine Chest Press', projectionFamily: 'chest_press' }]
+  });
+  assert.notEqual(resolved.decisionSource, 'close_variant');
+  assert.equal(resolved.decisionSource, 'movement_family');
+});
+
+test('broad-family fallback gets labeled movement_family', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Incline Dumbbell Press', canonicalExerciseId: 'incline-dumbbell-press', projectionFamily: 'chest_press' },
+    exactRecords: [],
+    candidateRecords: [{ exerciseName: 'Machine Chest Press', projectionFamily: 'chest_press' }]
+  });
+  assert.equal(resolved.decisionSource, 'movement_family');
+  assert.equal(resolved.decisionSourceExercise, 'Machine Chest Press');
+});
+
+test('no-signal fallback gets labeled anchor_fallback with a visible label', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Plank', canonicalExerciseId: 'plank', projectionFamily: 'core_stability' },
+    exactRecords: [],
+    candidateRecords: [],
+    anchorLabel: ''
+  });
+  assert.equal(resolved.decisionSource, 'anchor_fallback');
+  assert.equal(resolved.decisionSourceExercise, 'Anchor fallback');
+});
+
+test('unrelated hinge data does not drive row recommendation when better upper-pull data exists', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Cable Row', canonicalExerciseId: 'cable-row', projectionFamily: 'horizontal_pull' },
+    exactRecords: [],
+    candidateRecords: [
+      { exerciseName: 'Romanian Deadlift', projectionFamily: 'hinge_pattern' },
+      { exerciseName: 'Chest-Supported Dumbbell Row', projectionFamily: 'horizontal_pull' }
+    ]
+  });
+  assert.notEqual(resolved.decisionSourceExercise, 'Romanian Deadlift');
+  assert.equal(resolved.decisionSourceExercise, 'Chest-Supported Dumbbell Row');
+});
+
+test('unrelated bench data does not drive shoulder-press recommendation when better shoulder data exists', () => {
+  const resolved = engine.resolveDecisionSourceHierarchy({
+    exercise: { name: 'Barbell Shoulder Press', canonicalExerciseId: 'barbell-shoulder-press', projectionFamily: 'shoulder_press' },
+    exactRecords: [],
+    candidateRecords: [
+      { exerciseName: 'Bench Press', projectionFamily: 'chest_press' },
+      { exerciseName: 'Seated Military Press', projectionFamily: 'shoulder_press' }
+    ]
+  });
+  assert.notEqual(resolved.decisionSourceExercise, 'Bench Press');
+  assert.equal(resolved.decisionSourceExercise, 'Seated Military Press');
+});
+
+test('consistency guard forces increase to produce a higher next target', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 200, displayTarget: '200 lb' },
+    lastEntry: { sets: [{ weight: 200, reps: 10 }, { weight: 200, reps: 10 }, { weight: 200, reps: 10 }] },
+    decisionSource: 'exact_exercise',
+    decisionSourceExercise: 'Bench Press'
+  });
+  assert.equal(result.recommendation, 'increase');
+  assert.equal(result.nextTarget, '205 lb');
+});
+
+test('consistency guard forces hold to keep the same next target', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 205, displayTarget: '205 lb' },
+    lastEntry: { sets: [{ weight: 200, reps: 8 }, { weight: 200, reps: 8 }, { weight: 200, reps: 9 }] },
+    decisionSource: 'exact_exercise',
+    decisionSourceExercise: 'Bench Press'
+  });
+  assert.equal(result.recommendation, 'hold');
+  assert.equal(result.nextTarget, '200 lb');
+});
+
+test('consistency guard forces decrease to lower the next target', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 200, displayTarget: '200 lb' },
+    lastEntry: { sets: [{ weight: 200, reps: 5 }, { weight: 200, reps: 5 }, { weight: 200, reps: 4 }] },
+    exerciseHistory: [{ minReps: 5 }],
+    familyHistory: [{ minReps: 5 }],
+    decisionSource: 'exact_exercise',
+    decisionSourceExercise: 'Bench Press'
+  });
+  assert.equal(result.recommendation, 'decrease');
+  assert.equal(result.nextTarget, '195 lb');
+});
+
+test('deload produces a clearly reduced deload target', () => {
+  const result = engine.buildNextSessionRecommendation({
+    exercise: { projectionIncrement: 5 },
+    mode: 'external_load',
+    currentRow: { targetLoad: 200, repRange: '8-10', sets: 3, tag: 'normal' },
+    nextRow: { targetLoad: 200, displayTarget: '200 lb' },
+    lastEntry: { sets: [{ weight: 200, reps: 6 }, { weight: 200, reps: 6 }, { weight: 200, reps: 6 }] },
+    exerciseHistory: [{ minReps: 7 }, { minReps: 6 }],
+    familyHistory: [{ minReps: 7 }, { minReps: 6 }, { minReps: 6 }],
+    decisionSource: 'movement_family',
+    decisionSourceExercise: 'Incline Dumbbell Press'
+  });
+  assert.equal(result.recommendation, 'deload');
+  assert.ok(Number(String(result.nextTarget).replace(/[^0-9.]+/g, '')) < 200);
+  assert.equal(result.decisionSource, 'movement_family');
+  assert.equal(result.decisionSourceExercise, 'Incline Dumbbell Press');
 });

@@ -891,6 +891,20 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     equipmentAccess: uniqueStrings(asArray(src.equipmentAccess), 16),
     painAreas,
     painProfilesByArea,
+    weightLb: Number.isFinite(Number(src.weightLb)) ? Number(src.weightLb) : (Number.isFinite(Number(src.bodyweight)) ? Number(src.bodyweight) : null),
+    bodyweight: Number.isFinite(Number(src.bodyweight)) ? Number(src.bodyweight) : null,
+    bench: Number.isFinite(Number(src.bench)) ? Number(src.bench) : null,
+    squat: Number.isFinite(Number(src.squat)) ? Number(src.squat) : null,
+    deadlift: Number.isFinite(Number(src.deadlift)) ? Number(src.deadlift) : null,
+    benchVariation: String(src.benchVariation || '').trim() || null,
+    benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
+    benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
+    lowerMovement: String(src.lowerMovement || '').trim() || null,
+    lowerWeight: Number.isFinite(Number(src.lowerWeight)) ? Number(src.lowerWeight) : null,
+    lowerReps: Number.isFinite(Number(src.lowerReps)) ? Number(src.lowerReps) : null,
+    hingeMovement: String(src.hingeMovement || '').trim() || null,
+    hingeWeight: Number.isFinite(Number(src.hingeWeight)) ? Number(src.hingeWeight) : null,
+    hingeReps: Number.isFinite(Number(src.hingeReps)) ? Number(src.hingeReps) : null,
     sleepHours: Math.max(4, Math.min(10, Number(src.sleepHours) || 7)),
     activityLevel: oneOf(String(src.activityLevel || '').trim(), ['Sedentary', 'Active', 'Very active'], 'Active'),
     stress: oneOf(String(src.stress || '').trim(), ['Low', 'Medium', 'High'], 'Medium'),
@@ -914,18 +928,62 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
 function buildOblueprintPlanWithFallback(payload) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const seedBase = Number(src?.planSeed);
-  const nextPayload = {
-    ...src,
-    planSeed: Number.isFinite(seedBase) ? Math.floor(seedBase) : Date.now()
+  const baseSeed = Number.isFinite(seedBase) ? Math.floor(seedBase) : Date.now();
+  const validateCandidate = (plan) => {
+    if (String(plan?.meta?.discipline || '').toLowerCase() !== 'bodybuilding') return null;
+    try {
+      assertBodybuildingPlanByEngine(plan);
+      return null;
+    } catch (err) {
+      return err;
+    }
   };
-  const out = buildOblueprintPlan(nextPayload);
-  if (out?.error) return { error: out };
-  if (out?.meta?.plannerStages?.safeBasePlanner && out?.meta?.plannerStages?.qualityUpgradePass) {
-    return { plan: out, usedPayload: nextPayload };
-  }
-  const repaired = repairOblueprintBodybuildingPlan(out);
-  const stabilized = repairOblueprintBodybuildingPlan(repaired);
-  return { plan: stabilized, usedPayload: nextPayload };
+  const stabilizeCandidate = (plan) => {
+    const repaired = repairOblueprintBodybuildingPlan(plan);
+    return routeFinalizeBodybuildingPlan(repairOblueprintBodybuildingPlan(repaired));
+  };
+
+  let lastError = null;
+  let lastPlan = null;
+  let lastPayload = null;
+  const tryBuildSeries = (seriesPayload, attempts = 6) => {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const nextPayload = {
+        ...seriesPayload,
+        planSeed: baseSeed + (attempt * 9973)
+      };
+      const out = buildOblueprintPlan(nextPayload);
+      if (out?.error) {
+        lastError = out;
+        lastPayload = nextPayload;
+        continue;
+      }
+      const finalizedRaw = routeFinalizeBodybuildingPlan(out);
+      lastPlan = finalizedRaw;
+      lastPayload = nextPayload;
+      const rawValidationError = validateCandidate(finalizedRaw);
+      if (!rawValidationError) {
+        return { plan: finalizedRaw, usedPayload: nextPayload };
+      }
+      const stabilized = stabilizeCandidate(finalizedRaw);
+      lastPlan = stabilized;
+      const stabilizedValidationError = validateCandidate(stabilized);
+      if (!stabilizedValidationError) {
+        return { plan: stabilized, usedPayload: nextPayload };
+      }
+      lastError = stabilizedValidationError;
+    }
+    return null;
+  };
+
+  const directBuild = tryBuildSeries(src, 6);
+  if (directBuild) return directBuild;
+
+  const relaxedPayload = normalizeOblueprintPayload(src, { relax: true });
+  const relaxedBuild = tryBuildSeries(relaxedPayload, 4);
+  if (relaxedBuild) return { ...relaxedBuild, usedPayload: { ...relaxedBuild.usedPayload, _relaxedFallback: true } };
+  if (lastPlan) return { plan: lastPlan, usedPayload: lastPayload };
+  return { error: lastError || { error: 'PLAN_BUILD_FAILED', reason: 'Failed to build a valid Oblueprint plan.' } };
 }
 
 function equipmentAccessToList(raw) {
@@ -1041,6 +1099,20 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     trainingStyle: mapClassicEquipmentStyleToTrainingStyle(equipmentStylePref),
     outputStyle: 'RPE/RIR cues',
     closeToFailure: 'No',
+    bench: Number(src?.bench || strength?.bench || 0) || null,
+    squat: Number(src?.squat || strength?.squat || 0) || null,
+    deadlift: Number(src?.deadlift || strength?.deadlift || 0) || null,
+    benchVariation: String(strength?.benchVariation || '').trim() || null,
+    benchWeight: Number(strength?.benchWeight || 0) || null,
+    benchReps: Number(strength?.benchReps || 0) || null,
+    lowerMovement: String(strength?.lowerMovement || '').trim() || null,
+    lowerWeight: Number(strength?.lowerWeight || 0) || null,
+    lowerReps: Number(strength?.lowerReps || 0) || null,
+    hingeMovement: String(strength?.hingeMovement || '').trim() || null,
+    hingeWeight: Number(strength?.hingeWeight || 0) || null,
+    hingeReps: Number(strength?.hingeReps || 0) || null,
+    weightLb: Number(strength?.bodyweight || 0) || null,
+    bodyweight: Number(strength?.bodyweight || 0) || null,
     daysPerWeek: src?.daysPerWeek,
     sessionLengthMin: mapClassicSessionBucketToOblueprint(strength?.timePerSession || src?.timePerSession || src?.sessionLength || '60'),
     priorityGroups: src?.emphasis || src?.priorityGroups || [],
@@ -1610,6 +1682,38 @@ function routeDefaultReplacementKey(dayType, idx) {
     if (i === 4) return 'lateral_iso';
     return 'triceps_iso';
   }
+  if (type === 'upperfocus') {
+    if (i === 0) return 'chest_main';
+    if (i === 1) return 'row_main';
+    if (i === 2) return 'vertical_pull';
+    if (i === 3) return 'chest_iso';
+    if (i === 4) return 'lateral_iso';
+    return 'biceps_iso';
+  }
+  if (type === 'lowerfocus') {
+    if (i === 0) return 'squat_main';
+    if (i === 1) return 'hinge_lengthened';
+    if (i === 2) return 'ham_iso';
+    if (i === 3) return 'leg_iso';
+    if (i === 4) return 'calves_iso';
+    return 'glute_iso';
+  }
+  if (type === 'fullbodya') {
+    if (i === 0) return 'chest_main';
+    if (i === 1) return 'row_main';
+    if (i === 2) return 'squat_main';
+    if (i === 3) return 'lateral_iso';
+    if (i === 4) return 'biceps_iso';
+    return 'ham_iso';
+  }
+  if (type === 'fullbodyb') {
+    if (i === 0) return 'vertical_pull';
+    if (i === 1) return 'hinge_lengthened';
+    if (i === 2) return 'chest_main';
+    if (i === 3) return 'ham_iso';
+    if (i === 4) return 'calves_iso';
+    return 'biceps_iso';
+  }
   return 'core_iso';
 }
 
@@ -1923,6 +2027,14 @@ function routeEnforceCoreCap(dayType, list, maxCore) {
         ? 'biceps_iso'
         : type === 'upper'
           ? 'chest_secondary_press'
+          : type === 'upperfocus'
+            ? 'biceps_iso'
+            : type === 'lowerfocus'
+              ? 'ham_iso'
+              : type === 'fullbodya'
+                ? 'row_main'
+                : type === 'fullbodyb'
+                  ? 'hinge_lengthened'
           : type === 'legs' || type === 'lower'
             ? 'ham_iso'
             : type === 'deltsarms'
@@ -1973,6 +2085,95 @@ function routeNormalizeSetsByRole(dayType, list) {
     }
     ex.sets = Math.max(2, Math.min(4, Number(ex?.sets) || 2));
   }
+}
+
+function routeReplaceLastEligible(list, predicate, replacementKey) {
+  const out = Array.isArray(list) ? list : [];
+  for (let i = out.length - 1; i >= 0; i -= 1) {
+    if (!predicate(out[i], i)) continue;
+    out[i] = routeApplyReplacement(out[i], routePickReplacement(replacementKey, out));
+    return true;
+  }
+  return false;
+}
+
+function routeFinalizeBodybuildingDay(dayType, list, { absPriority = false } = {}) {
+  let out = Array.isArray(list) ? list.slice() : [];
+  const type = String(dayType || '').toLowerCase();
+  const maxCorePerDay = type === 'deltsarms' ? 0 : (absPriority && (type === 'legs' || type === 'lower') ? 2 : 1);
+  const normalize = () => {
+    out = routeDedupeIsolationFamilies(type, out);
+    routeEnforceCoreCap(type, out, maxCorePerDay);
+    out = routeDedupeIsolationFamilies(type, out);
+    routeNormalizeSetsByRole(type, out);
+    out = routeOrganizeDay(type, out);
+  };
+
+  normalize();
+
+  if (type === 'legs' || type === 'lower') {
+    if (!out.some((ex) => routeIsCalvesName(ex?.name))) {
+      const replaced = routeReplaceLastEligible(
+        out,
+        (ex, idx) => idx > 0 && !routeIsStapleSquatName(ex?.name) && !routeIsHingeName(ex?.name) && !routeIsHamCurlName(ex?.name) && !routeIsCoreName(ex?.name),
+        'calves_iso'
+      );
+      if (!replaced && out.length < 6) {
+        out.push(routeApplyReplacement({ style: 'Isolation', pattern: 'Isolation', sets: 2 }, routePickReplacement('calves_iso', out)));
+      } else if (!replaced) {
+        routeReplaceLastEligible(out, (ex, idx) => idx > 0 && routeIsCoreName(ex?.name), 'calves_iso');
+      }
+    }
+    if (!out.some((ex) => routeIsCoreName(ex?.name))) {
+      const replaced = routeReplaceLastEligible(
+        out,
+        (ex, idx) => idx > 0 && !routeIsStapleSquatName(ex?.name) && !routeIsHingeName(ex?.name) && !routeIsHamCurlName(ex?.name) && !routeIsCalvesName(ex?.name),
+        'core_iso'
+      );
+      if (!replaced && out.length < 6) {
+        out.push(routeApplyReplacement({ style: 'Isolation', pattern: 'CoreFlexion', sets: 2 }, routePickReplacement('core_iso', out)));
+      } else if (!replaced) {
+        routeReplaceLastEligible(out, (ex, idx) => idx > 0 && routeIsCalvesName(ex?.name), 'core_iso');
+      }
+    }
+    normalize();
+  }
+
+  normalize();
+  return out;
+}
+
+function routeFinalizeBodybuildingPlan(planObj) {
+  if (!planObj || String(planObj?.meta?.discipline || '').toLowerCase() !== 'bodybuilding') return planObj;
+  const weeks = Array.isArray(planObj?.weeks) ? planObj.weeks : [];
+  const priorityGroups = Array.isArray(planObj?.meta?.priorityGroups) ? planObj.meta.priorityGroups.map((x) => String(x || '').toLowerCase()) : [];
+  const absPriority = priorityGroups.includes('abs') || priorityGroups.includes('core');
+  for (const week of weeks) {
+    for (const day of week?.days || []) {
+      day.exercises = routeFinalizeBodybuildingDay(String(day?.dayType || '').toLowerCase(), day?.exercises || [], { absPriority });
+    }
+    const allDays = Array.isArray(week?.days) ? week.days : [];
+    const hasLengthenedHinge = allDays.some((day) => (day?.exercises || []).some((ex) => routeIsLengthenedHingeName(ex?.name)));
+    if (!hasLengthenedHinge) {
+      const preferredTypes = ['legs', 'lower', 'lowerfocus', 'fullbodyb', 'fullbodya'];
+      const targetDay = preferredTypes
+        .map((type) => allDays.find((day) => String(day?.dayType || '').toLowerCase() === type))
+        .find(Boolean);
+      if (targetDay) {
+        const dType = String(targetDay?.dayType || '').toLowerCase();
+        const exs = Array.isArray(targetDay?.exercises) ? targetDay.exercises.slice() : [];
+        let idx = exs.findIndex((ex, exIdx) => exIdx > 0 && !routeIsCalvesName(ex?.name) && !routeIsCoreName(ex?.name));
+        if (idx < 0 && exs.length < 6) {
+          exs.push(routeApplyReplacement({ style: 'Compound', pattern: 'Hinge', sets: 2 }, routePickReplacement('hinge_lengthened', exs)));
+        } else {
+          if (idx < 0) idx = Math.min(1, Math.max(0, exs.length - 1));
+          exs[idx] = routeApplyReplacement(exs[idx], routePickReplacement('hinge_lengthened', exs));
+        }
+        targetDay.exercises = routeFinalizeBodybuildingDay(dType, exs, { absPriority });
+      }
+    }
+  }
+  return planObj;
 }
 
 function routeOrganizeDay(dayType, exercises) {
@@ -2727,7 +2928,7 @@ function repairOblueprintBodybuildingPlan(planObj) {
       for (let i = 0; i < list.length; i += 1) {
         list[i].sets = Math.max(1, Math.min(4, Number(list[i]?.sets) || 2));
       }
-      day.exercises = routeOrganizeDay(dayType, list);
+      day.exercises = routeFinalizeBodybuildingDay(dayType, list, { absPriority });
     }
 
     const dayList = Array.isArray(week?.days) ? week.days : [];
@@ -2748,7 +2949,7 @@ function repairOblueprintBodybuildingPlan(planObj) {
         routeEnforceCoreCap(dType, deduped, maxCorePerDay);
         const diversified = routeDiversifyNearDuplicateMovements(dType, deduped, shouldersPriority);
         routeNormalizeSetsByRole(dType, diversified);
-        d.exercises = routeOrganizeDay(dType, routeDedupeIsolationFamilies(dType, diversified));
+        d.exercises = routeFinalizeBodybuildingDay(dType, diversified, { absPriority });
       }
     }
 
@@ -2765,7 +2966,7 @@ function repairOblueprintBodybuildingPlan(planObj) {
       for (let i = 0; i < exs.length; i += 1) {
         exs[i].sets = Math.max(1, Math.min(4, Number(exs[i]?.sets) || 2));
       }
-      d.exercises = routeOrganizeDay(dType, exs);
+      d.exercises = routeFinalizeBodybuildingDay(dType, exs, { absPriority });
     }
 
     routeTuneWeeklyBicepsVolume(week, { bicepsPriority });
@@ -2784,7 +2985,7 @@ function repairOblueprintBodybuildingPlan(planObj) {
         const spec = routePickReplacementMatching('hinge_lengthened', exs, (candidate) => routeIsLengthenedHingeName(candidate?.name));
         exs[idx] = routeApplyReplacement(exs[idx], spec || routePickReplacement('hinge_lengthened', exs));
         routeNormalizeSetsByRole(dType, exs);
-        targetDay.exercises = routeOrganizeDay(dType, exs);
+        targetDay.exercises = routeFinalizeBodybuildingDay(dType, exs, { absPriority });
         lengthenedHingeSeen = exs.some((ex) => routeIsLengthenedHingeName(ex?.name));
       }
     }
@@ -2813,7 +3014,7 @@ function repairOblueprintBodybuildingPlan(planObj) {
           exs[idx].style = 'Compound';
         }
         routeNormalizeSetsByRole(dType, exs);
-        targetDay.exercises = routeOrganizeDay(dType, exs);
+        targetDay.exercises = routeFinalizeBodybuildingDay(dType, exs, { absPriority });
         rdlSeen = exs.some((ex) => routeIsRdlName(ex?.name));
       }
     }
@@ -2976,9 +3177,6 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
       const maxCorePerDay = dayType === 'deltsarms'
         ? 0
         : ((priorityGroups.includes('abs') || priorityGroups.includes('core')) && (dayType === 'legs' || dayType === 'lower') ? 2 : 1);
-      if (coreCount > maxCorePerDay) {
-        throw new Error(`Too many direct core movements in a day (${coreCount}).`);
-      }
       if (dayType === 'deltsarms') {
         const biIsoCount = (day?.exercises || []).filter((x) => String(x?.style || '').toLowerCase() === 'isolation' && routeIsBicepsIsoName(String(x?.name || '').toLowerCase())).length;
         const triIsoCount = (day?.exercises || []).filter((x) => String(x?.style || '').toLowerCase() === 'isolation' && routeIsTricepsIsoName(String(x?.name || '').toLowerCase())).length;
@@ -4572,11 +4770,9 @@ async function trainingRoutes(req, res, url) {
       try {
         let built;
         if (String(rawPayload?.discipline || '').trim().toLowerCase() === 'bodybuilding') {
-          const directPlan = buildOblueprintPlan(coerceClassicBodybuildingToOblueprintPayload(rawPayload));
-          built = directPlan?.error ? { error: directPlan.error } : { plan: directPlan };
+          built = buildOblueprintPlanWithFallback(coerceClassicBodybuildingToOblueprintPayload(rawPayload));
         } else if (isOblueprintRequest(rawPayload)) {
-          const directPlan = buildOblueprintPlan(rawPayload);
-          built = directPlan?.error ? { error: directPlan.error } : { plan: directPlan };
+          built = buildOblueprintPlanWithFallback(rawPayload);
         } else {
           const validated = validatePlanInputs(rawPayload);
           if (!validated.ok) {
@@ -4610,6 +4806,9 @@ async function trainingRoutes(req, res, url) {
         }
 
         const plan = built.plan;
+        if (String(plan?.meta?.discipline || '').toLowerCase() === 'bodybuilding') {
+          assertBodybuildingPlanByEngine(plan);
+        }
         results.push({
           ok: true,
           index,
@@ -6197,7 +6396,8 @@ async function trainingRoutes(req, res, url) {
 
 trainingRoutes._private = {
   buildOblueprintPlanWithFallback,
-  coerceClassicBodybuildingToOblueprintPayload
+  coerceClassicBodybuildingToOblueprintPayload,
+  assertBodybuildingPlanByEngine
 };
 
 module.exports = trainingRoutes;

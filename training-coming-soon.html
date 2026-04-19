@@ -927,17 +927,26 @@
           }
         });
       };
+      const redirectToRealTrainingFlow=()=>{
+        try{
+          const target=new URL('training.html',window.location.href);
+          target.searchParams.set('start','1');
+          window.location.href=target.toString();
+        }catch{
+          window.location.href='training.html?start=1';
+        }
+      };
       const startTop=document.getElementById('start-top') || document.getElementById('ns-start');
       const trackOwnBtn=document.getElementById('ns-track-own');
       const intakeClose=document.getElementById('intake-close');
-      if(startTop)startTop.addEventListener('click',openIntake);
+      if(startTop)startTop.addEventListener('click',redirectToRealTrainingFlow);
       if(trackOwnBtn)trackOwnBtn.addEventListener('click',openTrackOwnBuilder);
       if(intakeClose)intakeClose.addEventListener('click',closeIntake);
       try{
         const currentUrl=new URL(window.location.href);
         const startParam=String(currentUrl.searchParams.get('start')||'').toLowerCase();
         if(startParam==='1'||startParam==='true'){
-          openIntake();
+          redirectToRealTrainingFlow();
         }
       }catch{}
       document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&document.body.classList.contains('intake-open'))closeIntake();if(e.key==='Escape')closeZoom()});

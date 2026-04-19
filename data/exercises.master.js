@@ -25810,7 +25810,9 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 1,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Cable_Reverse_Wrist_Curl/0.jpg"
+    ],
     "equipment": [
       "Cable"
     ],
@@ -25849,7 +25851,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 1,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Standing_Cable_Supination/0.jpg",
+      "free-exercise-db/exercises/Standing_Cable_Supination/1.jpg"
+    ],
     "equipment": [
       "Cable"
     ],
@@ -25887,7 +25892,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 1,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Standing_Cable_Pronation/0.jpg",
+      "free-exercise-db/exercises/Standing_Cable_Pronation/1.jpg"
+    ],
     "equipment": [
       "Cable"
     ],
@@ -25925,7 +25933,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Plate_Neck_Flexion/0.jpg",
+      "free-exercise-db/exercises/Plate_Neck_Flexion/1.jpg"
+    ],
     "equipment": [
       "Barbell"
     ],
@@ -25961,7 +25972,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Plate_Neck_Extension/0.jpg",
+      "free-exercise-db/exercises/Plate_Neck_Extension/1.jpg"
+    ],
     "equipment": [
       "Barbell"
     ],
@@ -25997,7 +26011,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Plate_Neck_Lateral_Flexion/0.jpg",
+      "free-exercise-db/exercises/Plate_Neck_Lateral_Flexion/1.jpg"
+    ],
     "equipment": [
       "Barbell"
     ],
@@ -26033,7 +26050,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 1,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Side_Plank_Reach-Through/0.jpg",
+      "free-exercise-db/exercises/Side_Plank_Reach-Through/1.jpg"
+    ],
     "equipment": [
       "Bodyweight"
     ],
@@ -26071,7 +26091,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Cable_Bench_Reverse_Crunch/0.jpg",
+      "free-exercise-db/exercises/Cable_Bench_Reverse_Crunch/1.jpg"
+    ],
     "equipment": [
       "Cable"
     ],
@@ -26114,7 +26137,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Cable_Oblique_Crunch/0.jpg",
+      "free-exercise-db/exercises/Cable_Oblique_Crunch/1.jpg"
+    ],
     "equipment": [
       "Cable"
     ],
@@ -26154,7 +26180,10 @@ export const exercises = [
     "hip": 0,
     "shoulder": 0,
     "elbow": 0,
-    "images": [],
+    "images": [
+      "free-exercise-db/exercises/Cable_Pallof_Hold/0.jpg",
+      "free-exercise-db/exercises/Cable_Pallof_Hold/1.jpg"
+    ],
     "equipment": [
       "Cable"
     ],

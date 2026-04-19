@@ -1283,6 +1283,755 @@
     `;
   }
 
+  function projectionSummary(result) {
+    return result?.planRow?.plan?.meta?.progressionProjection && typeof result.planRow.plan.meta.progressionProjection === 'object'
+      ? result.planRow.plan.meta.progressionProjection
+      : null;
+  }
+
+  function formatProjectionLoad(value, unitNote = '') {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return unitNote === 'bodyweight' ? 'Bodyweight' : 'N/A';
+    if (unitNote === 'per hand') return `${numeric} lb/hand`;
+    return `${numeric} lb`;
+  }
+
+  function parseProjectionRepRange(repsText) {
+    const src = String(repsText || '').trim();
+    const match = src.match(/(\d+)\s*-\s*(\d+)/);
+    if (match) return { min: Number(match[1]), max: Number(match[2]) };
+    const single = src.match(/(\d+)/);
+    const value = single ? Number(single[1]) : 10;
+    return { min: value, max: value };
+  }
+
+  function decisionMovementFamilyForName(name = '', fallbackFamily = '') {
+    const n = String(name || '').toLowerCase();
+    if (!n) return String(fallbackFamily || 'general');
+    if (/(bench press|incline .*press|incline .*bench|chest press|machine chest press|cable chest press|leverage chest press|dumbbell press)/.test(n)) return 'chest_press';
+    if (/(shoulder press|overhead press|military press)/.test(n)) return 'shoulder_press';
+    if (/(chest supported|incline row|seal row|dumbbell row|cable row|machine row|\brow\b)/.test(n)) return 'horizontal_pull';
+    if (/(pulldown|pull down|pull up|chin up|lat pull)/.test(n)) return 'vertical_pull';
+    if (/(front squat|hack squat|leg press|goblet squat|back squat|\bsquat\b)/.test(n)) return 'squat_pattern';
+    if (/(romanian deadlift|\brdl\b|hip thrust|glute bridge|pull through|deadlift)/.test(n)) return 'hinge_pattern';
+    return String(fallbackFamily || 'general');
+  }
+
+  function normalizeName(name = '') {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function decisionVariantGroupForName(name = '', fallbackFamily = '') {
+    const n = String(name || '').toLowerCase();
+    const family = decisionMovementFamilyForName(n, fallbackFamily);
+    if (!n) return family;
+    if (/(barbell bench press|bench press medium grip|barbell bench press medium grip|medium grip barbell bench press)/.test(n)) return 'barbell_bench_press';
+    if (/(cable chest press|standing cable chest press)/.test(n)) return 'cable_chest_press';
+    if (/(barbell shoulder press|seated military press|seated barbell military press)/.test(n)) return 'barbell_shoulder_press';
+    if (/(chest supported dumbbell row|dumbbell incline row)/.test(n)) return 'chest_supported_dumbbell_row';
+    if (/(machine chest press|leverage chest press)/.test(n)) return 'machine_chest_press';
+    if (/(back squat|back squat volume|front squat)/.test(n)) return 'barbell_squat_variant';
+    if (/(hack squat|barbell hack squat)/.test(n)) return 'hack_squat_variant';
+    return family;
+  }
+
+  function isExplicitDecisionVariantGroup(variantGroup, family) {
+    return Boolean(variantGroup) && String(variantGroup) !== String(family || '');
+  }
+
+  function isCloseDecisionVariantPair(sourceExerciseName = '', candidateExerciseName = '', family = '') {
+    const sourceName = String(sourceExerciseName || '').trim();
+    const candidateName = String(candidateExerciseName || '').trim();
+    if (!sourceName || !candidateName) return false;
+    if (normalizeName(sourceName) === normalizeName(candidateName)) return false;
+    const sourceFamily = decisionMovementFamilyForName(sourceName, family);
+    const candidateFamily = decisionMovementFamilyForName(candidateName, family);
+    if (sourceFamily !== candidateFamily) return false;
+    const sourceGroup = decisionVariantGroupForName(sourceName, sourceFamily);
+    const candidateGroup = decisionVariantGroupForName(candidateName, candidateFamily);
+    if (!isExplicitDecisionVariantGroup(sourceGroup, sourceFamily)) return false;
+    return sourceGroup === candidateGroup;
+  }
+
+  function safeDecisionSourceExerciseLabel(decisionSource, decisionSourceExercise, fallbackFamily = '') {
+    const label = String(decisionSourceExercise || '').trim();
+    if (label && label.toLowerCase() !== 'undefined') return label;
+    if (String(decisionSource || '') === 'anchor_fallback') {
+      return fallbackFamily === 'bodyweight' ? 'Bodyweight progression' : 'Anchor fallback';
+    }
+    if (String(decisionSource || '') === 'movement_family') return 'Movement-family fallback';
+    if (String(decisionSource || '') === 'close_variant') return 'Close variant fallback';
+    return 'No direct logged exercise available';
+  }
+
+  function rawDecisionSignalForEntry(summary = {}, projection = {}, entry = {}) {
+    const anchors = projection?.anchorInputs || {};
+    const entryName = String(entry?.exercise || '').trim();
+    const family = String(entry?.family || decisionMovementFamilyForName(entryName, 'general'));
+    const variantGroup = decisionVariantGroupForName(entryName, family);
+    const candidates = [
+      {
+        source: 'exact_exercise',
+        exercise: summary?.benchVariation || anchors?.benchVariation || '',
+        family: 'chest_press',
+        variantGroup: decisionVariantGroupForName(summary?.benchVariation || anchors?.benchVariation || '', 'chest_press'),
+        load: Number(summary?.benchWeight || anchors?.benchWorkingWeight || 0),
+        reps: Number(summary?.benchReps || anchors?.benchWorkingReps || 0)
+      },
+      {
+        source: 'exact_exercise',
+        exercise: summary?.lowerMovement || anchors?.lowerVariation || '',
+        family: 'squat_pattern',
+        variantGroup: decisionVariantGroupForName(summary?.lowerMovement || anchors?.lowerVariation || '', 'squat_pattern'),
+        load: Number(summary?.lowerWeight || anchors?.lowerWorkingWeight || 0),
+        reps: Number(summary?.lowerReps || anchors?.lowerWorkingReps || 0)
+      },
+      {
+        source: 'exact_exercise',
+        exercise: summary?.hingeMovement || anchors?.hingeVariation || '',
+        family: 'hinge_pattern',
+        variantGroup: decisionVariantGroupForName(summary?.hingeMovement || anchors?.hingeVariation || '', 'hinge_pattern'),
+        load: Number(summary?.hingeWeight || anchors?.hingeWorkingWeight || 0),
+        reps: Number(summary?.hingeReps || anchors?.hingeWorkingReps || 0)
+      }
+    ].filter((candidate) => candidate.exercise && Number.isFinite(candidate.load) && candidate.load > 0 && Number.isFinite(candidate.reps) && candidate.reps > 0);
+    const exact = candidates.find((candidate) => String(candidate.exercise || '').toLowerCase() === entryName.toLowerCase());
+    if (exact) return { ...exact, decisionSource: 'exact_exercise', decisionSourceExercise: exact.exercise };
+    const closeVariant = candidates.find((candidate) => isCloseDecisionVariantPair(entryName, candidate.exercise, family));
+    if (closeVariant) return { ...closeVariant, decisionSource: 'close_variant', decisionSourceExercise: safeDecisionSourceExerciseLabel('close_variant', closeVariant.exercise, family) };
+    const familyCandidate = candidates.find((candidate) => candidate.family === family);
+    if (familyCandidate) return { ...familyCandidate, decisionSource: 'movement_family', decisionSourceExercise: safeDecisionSourceExerciseLabel('movement_family', familyCandidate.exercise, family) };
+    if (String(entry?.progressionMode || '') !== 'external_load' && String(entry?.progressionMode || '') !== 'loaded_bodyweight') {
+      return { load: null, reps: parseProjectionRepRange('').max, exercise: 'Bodyweight progression', decisionSource: 'anchor_fallback', decisionSourceExercise: safeDecisionSourceExerciseLabel('anchor_fallback', 'Bodyweight progression', 'bodyweight') };
+    }
+    return { load: null, reps: null, exercise: 'Anchor fallback', decisionSource: 'anchor_fallback', decisionSourceExercise: safeDecisionSourceExerciseLabel('anchor_fallback', 'Anchor fallback', family) };
+  }
+
+  function previewRecommendationForEntry(summary, projection, entry) {
+    const rows = Array.isArray(projection?.weeklyTable) ? projection.weeklyTable : [];
+    const row = rows.find((item) => Number(item?.week) === 1 && String(item?.canonicalExerciseId || '') === String(entry?.canonicalExerciseId || '')) || null;
+    if (!row) return null;
+    const mode = String(entry?.progressionMode || row?.progressionMode || 'external_load');
+    const repRange = parseProjectionRepRange(row?.repRange || entry?.repRange);
+    const rawSignal = rawDecisionSignalForEntry(summary, projection, entry);
+    let recommendation = 'hold';
+    let reason = 'Projected target is still in the rep-building zone.';
+    let actualResult = 'No working-lift signal available';
+    let nextTarget = String(row?.displayTarget || formatProjectionLoad(row?.targetLoad, entry?.loadUnitNote || ''));
+    let adaptiveChanged = false;
+    if (rawSignal && Number.isFinite(Number(rawSignal.reps)) && rawSignal.reps > 0) {
+      actualResult = Number.isFinite(Number(rawSignal.load)) && rawSignal.load > 0
+        ? `${rawSignal.load} lb x ${rawSignal.reps} from ${safeDecisionSourceExerciseLabel(rawSignal?.decisionSource, rawSignal?.decisionSourceExercise || rawSignal?.exercise, mode !== 'external_load' && mode !== 'loaded_bodyweight' ? 'bodyweight' : '')}`
+        : `${rawSignal.reps} reps from ${safeDecisionSourceExerciseLabel(rawSignal?.decisionSource, rawSignal?.decisionSourceExercise || rawSignal?.exercise, mode !== 'external_load' && mode !== 'loaded_bodyweight' ? 'bodyweight' : '')}`;
+      if (rawSignal.reps >= repRange.max) {
+        recommendation = 'increase';
+        reason = rawSignal?.decisionSource === 'movement_family'
+          ? 'Movement-family fallback signal reaches the top of the projected rep window.'
+          : rawSignal?.decisionSource === 'anchor_fallback'
+            ? 'Anchor fallback is conservative, so the preview does not overstate certainty.'
+            : 'Working-lift signal already reaches the top of the projected rep window.';
+        adaptiveChanged = String(projection?.modeledAs || '') === 'above_standard';
+        nextTarget = mode === 'external_load' || mode === 'loaded_bodyweight'
+          ? formatProjectionLoad(Math.max(Number(row?.targetLoad || 0) + 5, Number(entry?.week1Load || 0) || 0), entry?.loadUnitNote || '')
+          : `${repRange.min + 1}-${repRange.max + 1} reps`;
+      } else if (rawSignal.reps < Math.max(1, repRange.min - 2)) {
+        recommendation = 'decrease';
+        reason = rawSignal?.decisionSource === 'movement_family'
+          ? 'Movement-family fallback signal is materially below the projected rep floor.'
+          : 'Working-lift signal is materially below the projected rep floor.';
+        nextTarget = mode === 'external_load' || mode === 'loaded_bodyweight'
+          ? formatProjectionLoad(Math.max(0, Number(row?.targetLoad || entry?.week1Load || 0) - 5), entry?.loadUnitNote || '')
+          : `${Math.max(1, repRange.min - 2)}-${Math.max(repRange.min, repRange.max - 1)} easy reps`;
+      } else {
+        recommendation = 'hold';
+        reason = rawSignal?.decisionSource === 'movement_family'
+          ? 'Movement-family fallback signal is inside the projected rep window but has not clearly earned a jump yet.'
+          : 'Working-lift signal is inside the projected rep window but has not clearly earned a jump yet.';
+      }
+    } else if (mode !== 'external_load' && mode !== 'loaded_bodyweight') {
+      actualResult = 'Bodyweight movement uses rep / tempo progression';
+      nextTarget = mode === 'bodyweight_tempo_progression' ? 'Add time or slower tempo' : `${repRange.min}-${repRange.max} reps`;
+      reason = 'No fake load is assigned because this movement progresses through reps, tempo, control, or assistance.';
+    }
+    const lastTargetNumeric = Number(row?.targetLoad || 0);
+    const nextTargetNumeric = Number(String(nextTarget || '').replace(/[^0-9.]+/g, ''));
+    if ((mode === 'external_load' || mode === 'loaded_bodyweight') && Number.isFinite(lastTargetNumeric) && lastTargetNumeric > 0) {
+      if (recommendation === 'increase' && (!Number.isFinite(nextTargetNumeric) || nextTargetNumeric <= lastTargetNumeric)) {
+        nextTarget = formatProjectionLoad(lastTargetNumeric + 5, entry?.loadUnitNote || '');
+      } else if (recommendation === 'hold') {
+        nextTarget = formatProjectionLoad(lastTargetNumeric, entry?.loadUnitNote || '');
+      } else if (recommendation === 'decrease' && (!Number.isFinite(nextTargetNumeric) || nextTargetNumeric >= lastTargetNumeric)) {
+        nextTarget = formatProjectionLoad(Math.max(0, lastTargetNumeric - 5), entry?.loadUnitNote || '');
+      }
+    }
+    return {
+      exercise: String(entry?.exercise || 'Exercise'),
+      mode,
+      lastTarget: String(row?.displayTarget || formatProjectionLoad(row?.targetLoad, entry?.loadUnitNote || '')),
+      actualResult,
+      recommendation,
+      nextTarget,
+      decisionSource: rawSignal?.decisionSource || 'anchor_fallback',
+      decisionSourceExercise: safeDecisionSourceExerciseLabel(
+        rawSignal?.decisionSource || 'anchor_fallback',
+        rawSignal?.decisionSourceExercise || rawSignal?.exercise,
+        mode !== 'external_load' && mode !== 'loaded_bodyweight' ? 'bodyweight' : ''
+      ),
+      reason,
+      adaptiveChanged
+    };
+  }
+
+  function projectionRowForWeekExercise(projection, week, canonicalExerciseId) {
+    const rows = Array.isArray(projection?.weeklyTable) ? projection.weeklyTable : [];
+    return rows.find((item) => Number(item?.week) === Number(week) && String(item?.canonicalExerciseId || '') === String(canonicalExerciseId || '')) || null;
+  }
+
+  function deterministicScenarioSeed(result, week, dayIndex, exerciseIndex) {
+    const base = Number(result?.index || 1) * 131;
+    return (base + (Number(week) * 17) + (Number(dayIndex) * 7) + (Number(exerciseIndex) * 3)) % 11;
+  }
+
+  function behaviorPatternForResult(result) {
+    const patterns = ['on_track', 'exceeding', 'underperforming', 'fatigued', 'inconsistent'];
+    return patterns[(Math.max(0, Number(result?.index || 1) - 1)) % patterns.length];
+  }
+
+  function projectionIncrementForSummary(summary = {}) {
+    const equipmentClass = String(summary?.equipmentClass || '').trim();
+    if (equipmentClass === 'machine' || equipmentClass === 'cable') return 5;
+    return 2.5;
+  }
+
+  function roundSimulationLoad(value, increment = 2.5) {
+    const step = Number(increment || 2.5) || 2.5;
+    return Math.round(Number(value || 0) / step) * step;
+  }
+
+  function cloneProjectionForSimulation(projection = {}) {
+    return {
+      ...projection,
+      anchorInputs: projection?.anchorInputs ? { ...projection.anchorInputs } : {},
+      familyAdjustments: { ...(projection?.familyAdjustments || {}) },
+      exerciseSummaries: Array.isArray(projection?.exerciseSummaries)
+        ? projection.exerciseSummaries.map((entry) => ({ ...entry }))
+        : [],
+      weeklyTable: Array.isArray(projection?.weeklyTable)
+        ? projection.weeklyTable.map((row) => ({ ...row }))
+        : [],
+      projectionByExerciseWeek: { ...(projection?.projectionByExerciseWeek || {}) },
+      deloadWeeks: Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks.slice() : []
+    };
+  }
+
+  function updateAdaptiveStateForSimulation(state = {}, payload = {}) {
+    const next = {
+      familyAdjustments: { ...(state?.familyAdjustments || {}) },
+      overperformanceStreaks: { ...(state?.overperformanceStreaks || {}) },
+      underperformanceStreaks: { ...(state?.underperformanceStreaks || {}) },
+      history: Array.isArray(state?.history) ? state.history.slice() : []
+    };
+    const family = String(payload?.family || '').trim() || 'general';
+    const projectedLoad = Number(payload?.projectedLoad || 0);
+    const actualLoad = Number(payload?.actualLoad || 0);
+    const targetReps = Number(payload?.targetReps || 0);
+    const actualReps = Number(payload?.actualReps || 0);
+    const overperformed = (Number.isFinite(actualLoad) && Number.isFinite(projectedLoad) && projectedLoad > 0 && actualLoad >= projectedLoad * 1.03)
+      || (Number.isFinite(actualReps) && Number.isFinite(targetReps) && actualReps >= targetReps + 2);
+    const underperformed = (Number.isFinite(actualLoad) && Number.isFinite(projectedLoad) && projectedLoad > 0 && actualLoad <= projectedLoad * 0.97)
+      || (Number.isFinite(actualReps) && Number.isFinite(targetReps) && actualReps <= Math.max(1, targetReps - 2));
+    next.familyAdjustments[family] = Number(next.familyAdjustments[family] || 1);
+    if (overperformed && !underperformed) {
+      next.overperformanceStreaks[family] = Number(next.overperformanceStreaks[family] || 0) + 1;
+      next.underperformanceStreaks[family] = 0;
+      if (next.overperformanceStreaks[family] >= 2) {
+        next.familyAdjustments[family] = Math.min(1.15, Number(next.familyAdjustments[family] || 1) + 0.03);
+        next.overperformanceStreaks[family] = 0;
+      }
+    } else if (underperformed && !overperformed) {
+      next.underperformanceStreaks[family] = Number(next.underperformanceStreaks[family] || 0) + 1;
+      next.overperformanceStreaks[family] = 0;
+      if (next.underperformanceStreaks[family] >= 2) {
+        next.familyAdjustments[family] = Math.max(0.85, Number(next.familyAdjustments[family] || 1) - 0.03);
+        next.underperformanceStreaks[family] = 0;
+      }
+    } else {
+      next.overperformanceStreaks[family] = 0;
+      next.underperformanceStreaks[family] = 0;
+    }
+    next.history.push({
+      family,
+      projectedLoad: Number.isFinite(projectedLoad) ? projectedLoad : null,
+      actualLoad: Number.isFinite(actualLoad) ? actualLoad : null,
+      targetReps: Number.isFinite(targetReps) ? targetReps : null,
+      actualReps: Number.isFinite(actualReps) ? actualReps : null,
+      familyAdjustment: next.familyAdjustments[family]
+    });
+    return next;
+  }
+
+  function simulateAdaptiveProjectionImpact(projection = {}, adaptiveState = {}, opts = {}) {
+    const next = cloneProjectionForSimulation(projection);
+    const fromWeek = Math.max(1, Number(opts?.fromWeek || 1));
+    const insertedDeloadWeek = Number.isFinite(Number(opts?.insertDeloadWeek)) ? Number(opts.insertDeloadWeek) : null;
+    const familyAdjustments = {
+      ...(projection?.familyAdjustments || {}),
+      ...(adaptiveState?.familyAdjustments || {})
+    };
+    Object.keys(familyAdjustments).forEach((family) => {
+      familyAdjustments[family] = Number(familyAdjustments[family] || 1);
+    });
+    next.familyAdjustments = familyAdjustments;
+    const summaryByExercise = new Map((next.exerciseSummaries || []).map((entry) => [String(entry?.canonicalExerciseId || ''), entry]));
+    const originalRows = Array.isArray(projection?.weeklyTable) ? projection.weeklyTable : [];
+    const deloadWeekSet = new Set(Array.isArray(next?.deloadWeeks) ? next.deloadWeeks : []);
+    if (insertedDeloadWeek && insertedDeloadWeek >= fromWeek) deloadWeekSet.add(insertedDeloadWeek);
+    next.deloadWeeks = Array.from(deloadWeekSet).sort((a, b) => a - b);
+    const diffs = [];
+    next.weeklyTable = (next.weeklyTable || []).map((row, index) => {
+      const original = originalRows[index] || row;
+      const summary = summaryByExercise.get(String(row?.canonicalExerciseId || '')) || null;
+      const progressionMode = String(row?.progressionMode || summary?.progressionMode || 'external_load');
+      const family = String(summary?.family || row?.family || 'general');
+      const increment = projectionIncrementForSummary(summary);
+      const familyAdjustment = Number(familyAdjustments[family] || 1);
+      const nextRow = { ...row };
+      const originalTarget = Number(original?.targetLoad || 0);
+      const shouldSimulateDeload = insertedDeloadWeek && Number(row?.week || 0) === insertedDeloadWeek;
+      if (shouldSimulateDeload) {
+        nextRow.tag = 'deload';
+        nextRow.deloadLabel = 'Triggered Recovery Week';
+        nextRow.note = 'Simulation inserted a recovery week after fatigue accumulation.';
+        nextRow.sets = Math.max(1, Math.round(Number(nextRow?.sets || 1) * 0.6));
+        if ((progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(originalTarget) && originalTarget > 0) {
+          const deloadTarget = roundSimulationLoad(originalTarget * 0.88, increment);
+          nextRow.targetLoad = deloadTarget;
+          nextRow.displayTarget = formatProjectionLoad(deloadTarget, summary?.loadUnitNote || '');
+          nextRow.postDeloadReturnTarget = formatProjectionLoad(roundSimulationLoad(originalTarget * familyAdjustment, increment), summary?.loadUnitNote || '');
+        } else {
+          nextRow.displayTarget = String(nextRow?.displayTarget || 'Recovery week');
+        }
+      } else if (Number(row?.week || 0) >= fromWeek && (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(originalTarget) && originalTarget > 0) {
+        const adjustedTarget = roundSimulationLoad(originalTarget * familyAdjustment, increment);
+        nextRow.targetLoad = adjustedTarget;
+        nextRow.displayTarget = formatProjectionLoad(adjustedTarget, summary?.loadUnitNote || '');
+      }
+      if (
+        Number(row?.week || 0) >= fromWeek
+        && (
+          String(original?.displayTarget || '') !== String(nextRow?.displayTarget || '')
+          || String(original?.tag || '') !== String(nextRow?.tag || '')
+        )
+      ) {
+        diffs.push({
+          week: Number(row?.week || 0),
+          exercise: String(row?.exercise || ''),
+          canonicalExerciseId: String(row?.canonicalExerciseId || ''),
+          family,
+          beforeTarget: String(original?.displayTarget || 'N/A'),
+          afterTarget: String(nextRow?.displayTarget || 'N/A'),
+          beforeTag: String(original?.tag || 'normal'),
+          afterTag: String(nextRow?.tag || 'normal')
+        });
+      }
+      return nextRow;
+    });
+    next.projectionByExerciseWeek = Object.fromEntries(
+      next.weeklyTable.map((row) => [`${String(row?.canonicalExerciseId || '')}:${Number(row?.week || 0)}`, row])
+    );
+    next.exerciseSummaries = (next.exerciseSummaries || []).map((summary) => {
+      const rows = next.weeklyTable.filter((row) => String(row?.canonicalExerciseId || '') === String(summary?.canonicalExerciseId || ''));
+      const byWeek = new Map(rows.map((row) => [Number(row.week), row]));
+      return {
+        ...summary,
+        week1Load: byWeek.get(1)?.targetLoad ?? null,
+        week8Load: byWeek.get(8)?.targetLoad ?? null,
+        week16Load: byWeek.get(16)?.targetLoad ?? null
+      };
+    });
+    const changedExerciseIds = new Set(diffs.map((diff) => String(diff?.canonicalExerciseId || '')));
+    const changedFamilies = Array.from(new Set(diffs.map((diff) => String(diff?.family || '')))).filter(Boolean);
+    const familyPropagation = changedFamilies.some((family) => new Set(diffs.filter((diff) => String(diff?.family || '') === family).map((diff) => String(diff?.canonicalExerciseId || ''))).size > 1);
+    return {
+      projection: next,
+      diffs,
+      changedFamilies,
+      familyPropagation,
+      deloadWeeksChanged: JSON.stringify(Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks : []) !== JSON.stringify(next.deloadWeeks || []),
+      scope: familyPropagation ? 'family_propagated' : changedExerciseIds.size > 1 ? 'global_multiple_exercises' : changedExerciseIds.size === 1 ? 'local_only' : 'no_future_change'
+    };
+  }
+
+  function classifySimulationResult(row, simulated) {
+    const repRange = parseProjectionRepRange(row?.repRange);
+    const minReps = Number(simulated?.minReps || 0);
+    const actualLoad = Number(simulated?.actualLoad || 0);
+    const targetLoad = Number(row?.targetLoad || 0);
+    if ((Number.isFinite(targetLoad) && targetLoad > 0 && Number.isFinite(actualLoad) && actualLoad >= targetLoad * 1.03) || minReps >= repRange.max) return 'exceeded';
+    if ((Number.isFinite(targetLoad) && targetLoad > 0 && Number.isFinite(actualLoad) && actualLoad <= targetLoad * 0.97) || minReps < repRange.min) return 'missed';
+    return 'on_target';
+  }
+
+  function simulateClientEntryForRow({ result, row, week, dayIndex, exerciseIndex, behaviorPattern = 'on_track' }) {
+    const repRange = parseProjectionRepRange(row?.repRange);
+    const prescribedSets = Math.max(1, Number(row?.sets || 3));
+    const seed = deterministicScenarioSeed(result, week, dayIndex, exerciseIndex);
+    const isDeload = String(row?.tag || '') === 'deload';
+    const mode = String(row?.progressionMode || 'external_load');
+    let repOffset = 0;
+    let loadDelta = 0;
+    if (isDeload) {
+      repOffset = seed % 2;
+    } else if (behaviorPattern === 'exceeding') {
+      repOffset = seed % 4 === 0 ? 1 : 2;
+      loadDelta = seed % 3 === 0 ? 2.5 : 0;
+    } else if (behaviorPattern === 'underperforming') {
+      repOffset = seed % 3 === 0 ? -3 : -2;
+      loadDelta = seed % 2 === 0 ? -5 : -2.5;
+    } else if (behaviorPattern === 'fatigued') {
+      if (week <= 2) repOffset = 0;
+      else if (week <= 4) repOffset = -1;
+      else repOffset = seed % 2 === 0 ? -3 : -2;
+      loadDelta = week >= 5 ? -5 : 0;
+    } else if (behaviorPattern === 'inconsistent') {
+      repOffset = week % 2 === 0 ? 2 : -2;
+      loadDelta = week % 3 === 0 ? -2.5 : week % 2 === 0 ? 2.5 : 0;
+    } else {
+      repOffset = seed % 5 === 0 ? -1 : 0;
+      loadDelta = seed % 6 === 0 ? 2.5 : 0;
+    }
+    const baseReps = Math.max(1, Math.min(repRange.max + 1, repRange.min + repOffset));
+    const repsBySet = Array.from({ length: prescribedSets }).map((_, idx) => {
+      const delta = idx === prescribedSets - 1 && repOffset < 0 ? -1 : idx === 0 && repOffset > 0 ? 1 : 0;
+      return Math.max(1, Math.min(repRange.max + 1, baseReps + delta));
+    });
+    const actualLoad = (mode === 'external_load' || mode === 'loaded_bodyweight') && Number.isFinite(Number(row?.targetLoad))
+      ? Math.max(0, Number(row.targetLoad) + loadDelta)
+      : null;
+    return {
+      prescribedSets,
+      repsBySet,
+      minReps: repsBySet.length ? Math.min(...repsBySet) : null,
+      maxReps: repsBySet.length ? Math.max(...repsBySet) : null,
+      avgReps: repsBySet.length ? Math.round((repsBySet.reduce((sum, value) => sum + value, 0) / repsBySet.length) * 10) / 10 : null,
+      actualLoad,
+      mode,
+      behaviorPattern
+    };
+  }
+
+  function decideScenarioAction({ row, nextRow, simulated, exerciseHistory = [], familyHistory = [], decisionSource = 'anchor_fallback', decisionSourceExercise = 'Anchor fallback' }) {
+    const repRange = parseProjectionRepRange(row?.repRange);
+    const underperformCount = exerciseHistory.filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length;
+    const familyUnderperformCount = familyHistory.filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length;
+    const allTop = Number(simulated?.minReps || 0) >= repRange.max;
+    const severeMiss = Number(simulated?.minReps || 0) < Math.max(1, repRange.min - 2);
+    const insideRange = Number(simulated?.minReps || 0) >= repRange.min;
+    const mode = String(simulated?.mode || row?.progressionMode || 'external_load');
+    let action = 'hold';
+    let note = 'Stay on the same target and keep accumulating quality reps.';
+    let nextTarget = String(nextRow?.displayTarget || row?.displayTarget || 'N/A');
+    if (String(row?.tag || '') === 'deload') {
+      action = insideRange ? 'exit_deload' : 'continue_deload';
+      note = insideRange
+        ? 'Recovery week completed cleanly, so the engine resumes normal progression.'
+        : 'Recovery still looks incomplete, so the engine keeps deload targets in place.';
+      nextTarget = insideRange
+        ? String(row?.postDeloadReturnTarget || nextRow?.displayTarget || 'Resume normal target')
+        : String(row?.displayTarget || 'Deload target');
+    } else if (underperformCount >= 2 || familyUnderperformCount >= 3) {
+      action = 'auto_deload';
+      note = 'Repeated misses stacked enough fatigue flags to trigger an auto-deload.';
+      nextTarget = String(nextRow?.displayTarget || row?.displayTarget || 'Deload target');
+    } else if (allTop) {
+      action = 'increase_weight';
+      note = 'Client owned the top of the range, so the engine moved load up.';
+      if (mode === 'external_load' || mode === 'loaded_bodyweight') {
+        const currentLoad = Number(row?.targetLoad || 0);
+        const nextLoad = Number(nextRow?.targetLoad || 0);
+        nextTarget = formatProjectionLoad((Number.isFinite(nextLoad) && nextLoad > currentLoad) ? nextLoad : currentLoad + 5, row?.loadUnitNote || '');
+      }
+    } else if (severeMiss && underperformCount >= 1) {
+      action = 'decrease_load';
+      note = 'Client missed the floor badly enough that the engine pulled weight down slightly.';
+      if (mode === 'external_load' || mode === 'loaded_bodyweight') {
+        nextTarget = formatProjectionLoad(Math.max(0, Number(row?.targetLoad || 0) - 5), row?.loadUnitNote || '');
+      } else {
+        nextTarget = `${Math.max(1, repRange.min - 2)}-${Math.max(repRange.min, repRange.max - 1)} easy reps`;
+      }
+    } else if (insideRange) {
+      action = 'hold';
+      note = 'Client stayed in range but did not clearly earn a jump yet.';
+      nextTarget = mode === 'external_load' || mode === 'loaded_bodyweight'
+        ? formatProjectionLoad(Number(row?.targetLoad || 0), row?.loadUnitNote || '')
+        : String(row?.displayTarget || nextTarget);
+    }
+    if (mode !== 'external_load' && mode !== 'loaded_bodyweight') {
+      if (action === 'increase_weight') {
+        action = mode === 'bodyweight_tempo_progression' ? 'increase_tempo' : 'increase_reps';
+        nextTarget = mode === 'bodyweight_tempo_progression'
+          ? 'Longer hold / slower tempo'
+          : `${repRange.min + 1}-${repRange.max + 1} reps`;
+      } else if (action === 'decrease_load') {
+        action = 'reduce_difficulty';
+      }
+    }
+    const recommendation = action === 'increase_weight' || action === 'increase_reps' || action === 'increase_tempo'
+      ? 'increase'
+      : action === 'decrease_load' || action === 'reduce_difficulty'
+        ? 'decrease'
+        : action === 'auto_deload' || action === 'continue_deload'
+          ? 'deload'
+          : 'hold';
+    return {
+      action,
+      recommendation,
+      note,
+      reason: note,
+      nextTarget,
+      decisionSource,
+      decisionSourceExercise: safeDecisionSourceExerciseLabel(
+        decisionSource,
+        decisionSourceExercise,
+        mode !== 'external_load' && mode !== 'loaded_bodyweight' ? 'bodyweight' : ''
+      )
+    };
+  }
+
+  function formatSimulatedClientLog(simulated) {
+    if (!simulated) return 'No client log';
+    if (simulated.mode === 'external_load' || simulated.mode === 'loaded_bodyweight') {
+      return `${formatProjectionLoad(simulated.actualLoad)} • ${simulated.repsBySet.join(' / ')} reps`;
+    }
+    return `${simulated.repsBySet.join(' / ')} reps`;
+  }
+
+  function buildTenWeekScenario(result) {
+    const plan = result?.planRow?.plan;
+    const startingProjection = projectionSummary(result);
+    if (!plan || !startingProjection) return '';
+    const behaviorPattern = behaviorPatternForResult(result);
+    let currentProjection = cloneProjectionForSimulation(startingProjection);
+    let adaptiveState = {
+      ...(plan?.meta?.autoreg?.adaptiveProjectionState || {}),
+      familyAdjustments: { ...(plan?.meta?.autoreg?.adaptiveProjectionState?.familyAdjustments || currentProjection?.familyAdjustments || {}) },
+      overperformanceStreaks: { ...(plan?.meta?.autoreg?.adaptiveProjectionState?.overperformanceStreaks || {}) },
+      underperformanceStreaks: { ...(plan?.meta?.autoreg?.adaptiveProjectionState?.underperformanceStreaks || {}) },
+      history: Array.isArray(plan?.meta?.autoreg?.adaptiveProjectionState?.history) ? plan.meta.autoreg.adaptiveProjectionState.history.slice() : []
+    };
+    const exerciseHistory = new Map();
+    const familyHistory = new Map();
+    const simulationSummary = {
+      exactExerciseChanges: 0,
+      familyChanges: 0,
+      deloadChanges: 0,
+      futureProjectionChanges: 0,
+      exceededWeeks: 0,
+      missedWeeks: 0
+    };
+    const weeksHtml = [];
+    for (let week = 1; week <= 10; week += 1) {
+      const sourceWeek = (plan.weeks || [])[((week - 1) % Math.max(1, (plan.weeks || []).length))] || null;
+      const days = Array.isArray(sourceWeek?.days) ? sourceWeek.days.slice(0, 2) : [];
+      let insertedDeloadWeek = null;
+      const coefficientChanges = [];
+      const weeklyDiffs = [];
+      const dayCards = days.map((day, dayIdx) => {
+        const exerciseRows = (day?.exercises || []).slice(0, 2).map((exercise, exerciseIdx) => {
+          const row = projectionRowForWeekExercise(currentProjection, week, exercise?.canonicalExerciseId);
+          const nextRow = projectionRowForWeekExercise(currentProjection, Math.min(16, week + 1), exercise?.canonicalExerciseId);
+          if (!row) return '';
+          const exKey = String(exercise?.canonicalExerciseId || exercise?.name || `${week}-${dayIdx}-${exerciseIdx}`);
+          const familyKey = String(row?.family || exercise?.projectionFamily || 'general');
+          const summary = (currentProjection?.exerciseSummaries || []).find((entry) => String(entry?.canonicalExerciseId || '') === String(exercise?.canonicalExerciseId || row?.canonicalExerciseId || '')) || {};
+          const familyAdjustmentBefore = Number(adaptiveState?.familyAdjustments?.[familyKey] || 1);
+          const exHist = exerciseHistory.get(exKey) || [];
+          const famHist = familyHistory.get(familyKey) || [];
+          const fatigueBefore = `${exHist.filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < parseProjectionRepRange(row?.repRange).min).length}/${famHist.filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < parseProjectionRepRange(row?.repRange).min).length}`;
+          const simulated = simulateClientEntryForRow({ result, row, week, dayIndex: dayIdx, exerciseIndex: exerciseIdx, behaviorPattern });
+          const resultClassification = classifySimulationResult(row, simulated);
+          if (resultClassification === 'exceeded') simulationSummary.exceededWeeks += 1;
+          if (resultClassification === 'missed') simulationSummary.missedWeeks += 1;
+          const decisionPreview = previewRecommendationForEntry(result?.summary || {}, currentProjection, {
+            exercise: exercise?.name || row?.exercise,
+            family: row?.family || exercise?.projectionFamily,
+            progressionMode: row?.progressionMode,
+            canonicalExerciseId: exercise?.canonicalExerciseId || row?.canonicalExerciseId,
+            week1Load: row?.targetLoad,
+            loadUnitNote: row?.loadUnitNote
+          }) || {};
+          const decision = decideScenarioAction({
+            row,
+            nextRow,
+            simulated,
+            exerciseHistory: exHist,
+            familyHistory: famHist,
+            decisionSource: decisionPreview.decisionSource,
+            decisionSourceExercise: decisionPreview.decisionSourceExercise
+          });
+          const repRange = parseProjectionRepRange(row?.repRange);
+          adaptiveState = updateAdaptiveStateForSimulation(adaptiveState, {
+            family: familyKey,
+            projectedLoad: Number(row?.targetLoad || 0),
+            actualLoad: Number(simulated?.actualLoad || row?.targetLoad || 0),
+            targetReps: Number(repRange.max || 0),
+            actualReps: Number(simulated?.maxReps || simulated?.avgReps || 0)
+          });
+          const familyAdjustmentAfter = Number(adaptiveState?.familyAdjustments?.[familyKey] || 1);
+          if (familyAdjustmentBefore !== familyAdjustmentAfter) {
+            coefficientChanges.push(`${familyKey}: ${familyAdjustmentBefore.toFixed(2)} → ${familyAdjustmentAfter.toFixed(2)}`);
+          }
+          if (!insertedDeloadWeek && decision.recommendation === 'deload') insertedDeloadWeek = Math.min(16, week + 1);
+          const snapshot = { minReps: simulated.minReps, maxReps: simulated.maxReps };
+          exerciseHistory.set(exKey, [...exHist, snapshot].slice(-3));
+          familyHistory.set(familyKey, [...famHist, snapshot].slice(-4));
+          const fatigueAfter = `${(exerciseHistory.get(exKey) || []).filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length}/${(familyHistory.get(familyKey) || []).filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length}`;
+          return `
+            <div class="workout-test-scenario-exercise">
+              <div class="workout-test-scenario-exercise-head">
+                <strong>${escapeHtml(String(exercise?.name || row?.exercise || 'Exercise'))}</strong>
+                <span>${escapeHtml(String(row?.progressionMode || 'external_load').replace(/_/g, ' '))}</span>
+              </div>
+              <div class="workout-test-scenario-grid">
+                <div><span>Software Target</span><strong>${escapeHtml(String(row.displayTarget || formatProjectionLoad(row.targetLoad, row.loadUnitNote || '')))}</strong></div>
+                <div><span>Client Logged</span><strong>${escapeHtml(formatSimulatedClientLog(simulated))}</strong></div>
+                <div><span>Result</span><strong>${escapeHtml(String(resultClassification).replace(/_/g, ' '))}</strong></div>
+                <div><span>Recommendation</span><strong>${escapeHtml(String(decision.recommendation).replace(/_/g, ' '))}</strong></div>
+                <div><span>Next Target</span><strong>${escapeHtml(decision.nextTarget)}</strong></div>
+              </div>
+              <div class="workout-test-scenario-source">Source: ${escapeHtml(String(decision.decisionSource || 'anchor_fallback').replace(/_/g, ' '))} via ${escapeHtml(String(decision.decisionSourceExercise || 'Anchor fallback'))}</div>
+              <div class="workout-test-scenario-note">${escapeHtml(decision.reason || decision.note || 'No reason provided.')}</div>
+              <div class="workout-test-scenario-note">Family coefficient: ${escapeHtml(familyKey)} ${escapeHtml(familyAdjustmentBefore.toFixed(2))} → ${escapeHtml(familyAdjustmentAfter.toFixed(2))} | fatigue ${escapeHtml(fatigueBefore)} → ${escapeHtml(fatigueAfter)}</div>
+            </div>
+          `;
+        }).filter(Boolean).join('');
+        if (!exerciseRows) return '';
+        return `
+          <div class="workout-test-scenario-day">
+            <div class="workout-test-scenario-day-head">
+              <strong>Week ${week} Day ${dayIdx + 1}</strong>
+              <span>${escapeHtml(String(day?.dayType || 'Training Day'))}</span>
+            </div>
+            ${exerciseRows}
+          </div>
+        `;
+      }).filter(Boolean).join('');
+      const impact = simulateAdaptiveProjectionImpact(currentProjection, adaptiveState, {
+        fromWeek: Math.min(16, week + 1),
+        insertDeloadWeek: insertedDeloadWeek
+      });
+      currentProjection = impact.projection;
+      weeklyDiffs.push(...impact.diffs.filter((diff) => diff.week > week));
+      if (impact.diffs.some((diff) => diff.week > week)) simulationSummary.futureProjectionChanges += 1;
+      if (impact.familyPropagation) simulationSummary.familyChanges += 1;
+      if (impact.deloadWeeksChanged) simulationSummary.deloadChanges += 1;
+      if (impact.scope === 'local_only' || impact.scope === 'no_future_change') simulationSummary.exactExerciseChanges += 1;
+      const futureDiffPreview = weeklyDiffs.slice(0, 3).map((diff) => `Week ${diff.week} ${diff.exercise}: ${diff.beforeTarget} → ${diff.afterTarget}${diff.afterTag !== diff.beforeTag ? ` (${diff.beforeTag} → ${diff.afterTag})` : ''}`);
+      weeksHtml.push(`
+        <section class="workout-test-scenario-week ${Array.isArray(currentProjection.deloadWeeks) && currentProjection.deloadWeeks.includes(week) ? 'is-deload' : ''}">
+          <div class="workout-test-scenario-week-head">
+            <div>
+              <div class="workout-test-scenario-week-label">Week ${week}</div>
+              <div class="workout-test-scenario-week-sub">${Array.isArray(currentProjection.deloadWeeks) && currentProjection.deloadWeeks.includes(week) ? 'Deload / recovery week' : 'Projected client input vs engine decision'}</div>
+            </div>
+            <span class="workout-test-scenario-week-pill">${Array.isArray(currentProjection.deloadWeeks) && currentProjection.deloadWeeks.includes(week) ? 'Recovery' : 'Progression'}</span>
+          </div>
+          <div class="workout-test-scenario-days">${dayCards || '<div class="workout-test-scenario-empty">No day preview available.</div>'}</div>
+          <div class="workout-test-scenario-note">
+            Pattern: ${escapeHtml(String(behaviorPattern).replace(/_/g, ' '))} |
+            coefficients changed: ${escapeHtml(coefficientChanges.length ? 'yes' : 'no')} |
+            future weeks recalculated: ${escapeHtml(weeklyDiffs.length ? 'yes' : 'no')} |
+            deload timing changed: ${escapeHtml(impact.deloadWeeksChanged ? 'yes' : 'no')}
+          </div>
+          <div class="workout-test-scenario-note">
+            Scope: ${escapeHtml(String(impact.scope || 'no_future_change').replace(/_/g, ' '))}
+            ${weeklyDiffs.length ? '' : ' | Only the immediate next-session call changed; no broader future projection moved this week.'}
+          </div>
+          ${futureDiffPreview.length ? `<div class="workout-test-scenario-note">${escapeHtml(futureDiffPreview.join(' | '))}</div>` : ''}
+        </section>
+      `);
+    }
+    return `
+      <section class="workout-test-scenario">
+        <div class="workout-test-scenario-head">
+          <div>
+            <h4>10-Week Client Input vs Software Response</h4>
+            <p>Pattern: ${escapeHtml(String(behaviorPattern).replace(/_/g, ' '))}. This simulation shows local next-session calls, family coefficient changes, and whether a re-applied future forecast would move later weeks.</p>
+          </div>
+        </div>
+        <div class="workout-test-scenario-note">
+          Summary: exact/local-only weeks ${escapeHtml(String(simulationSummary.exactExerciseChanges))} | family propagation weeks ${escapeHtml(String(simulationSummary.familyChanges))} | deload-schedule changes ${escapeHtml(String(simulationSummary.deloadChanges))} | future projection changes ${escapeHtml(String(simulationSummary.futureProjectionChanges))}.
+        </div>
+        <div class="workout-test-scenario-note">
+          Current engine behavior: next-session decisions adapt locally, family coefficients update globally in adaptive state, and this debug view reapplies those coefficients to show whether later same-family targets would change. The committed plan is not silently rewritten here.
+        </div>
+        <div class="workout-test-scenario-weeks">${weeksHtml.join('')}</div>
+      </section>
+    `;
+  }
+
+  function projectionDebugLines(result) {
+    const projection = projectionSummary(result);
+    if (!projection) return ['Projection Debug: Not available'];
+    const anchors = projection.anchorInputs || {};
+    const major = Array.isArray(projection.exerciseSummaries)
+      ? projection.exerciseSummaries.filter((entry) => entry?.major).slice(0, 4)
+      : [];
+    const accessories = Array.isArray(projection.exerciseSummaries)
+      ? projection.exerciseSummaries.filter((entry) => !entry?.major).slice(0, 4)
+      : [];
+    const lines = [
+      'PROJECTION DEBUG',
+      `Modeled As: ${String(projection.modeledAs || 'anchor_limited')}`,
+      `Classification Confidence: ${String(projection.classificationConfidence || 'low')}`,
+      `Classification Reason: ${String(projection.classificationReason || 'N/A')}`,
+      `Anchor Source: ${String(anchors.anchorSource || 'unknown')}`,
+      `Anchor Bench: ${anchors.inputBench || anchors.bench1rm || 'N/A'} lb`,
+      `Anchor Squat: ${anchors.inputSquat || anchors.squat1rm || 'N/A'} lb`,
+      `Anchor Deadlift: ${anchors.inputDeadlift || anchors.deadlift1rm || 'N/A'} lb`,
+      `Raw Press Working Data: ${anchors.benchVariation || 'N/A'} | ${anchors.benchWorkingWeight || 'N/A'} lb x ${anchors.benchWorkingReps || 'N/A'}`,
+      `Raw Lower Working Data: ${anchors.lowerVariation || 'N/A'} | ${anchors.lowerWorkingWeight || 'N/A'} lb x ${anchors.lowerWorkingReps || 'N/A'}`,
+      `Raw Hinge Working Data: ${anchors.hingeVariation || 'N/A'} | ${anchors.hingeWorkingWeight || 'N/A'} lb x ${anchors.hingeWorkingReps || 'N/A'}`,
+      `Derived Bench Estimate: ${anchors.derivedBenchEstimate || anchors.bodyweightFallbackBench || 'N/A'} lb`,
+      `Derived Squat Estimate: ${anchors.derivedSquatEstimate || anchors.bodyweightFallbackSquat || 'N/A'} lb`,
+      `Derived Deadlift Estimate: ${anchors.derivedDeadliftEstimate || anchors.bodyweightFallbackDeadlift || 'N/A'} lb`,
+      `Deload Weeks: ${Array.isArray(projection.deloadWeeks) && projection.deloadWeeks.length ? projection.deloadWeeks.join(', ') : 'None'}`
+    ];
+    if (major.length) {
+      lines.push('', 'Major Exercise Projections');
+      major.forEach((entry) => {
+        lines.push(
+          `${entry.exercise}: mode ${String(entry.progressionMode || 'external_load')} | start ${formatProjectionLoad(entry.startingLoad, entry.loadUnitNote)} | week 1 ${formatProjectionLoad(entry.week1Load, entry.loadUnitNote)} | week 8 ${formatProjectionLoad(entry.week8Load, entry.loadUnitNote)} | week 16 ${formatProjectionLoad(entry.week16Load, entry.loadUnitNote)}`
+        );
+      });
+    }
+    if (accessories.length) {
+      lines.push('', 'Accessory Exercise Projections');
+      accessories.forEach((entry) => {
+        lines.push(
+          `${entry.exercise}: mode ${String(entry.progressionMode || 'external_load')} | start ${formatProjectionLoad(entry.startingLoad, entry.loadUnitNote)} | week 1 ${formatProjectionLoad(entry.week1Load, entry.loadUnitNote)} | week 8 ${formatProjectionLoad(entry.week8Load, entry.loadUnitNote)} | week 16 ${formatProjectionLoad(entry.week16Load, entry.loadUnitNote)}`
+        );
+      });
+    }
+    const decisionPreviews = (Array.isArray(projection.exerciseSummaries) ? projection.exerciseSummaries : [])
+      .slice(0, 4)
+      .map((entry) => previewRecommendationForEntry(result?.summary || {}, projection, entry))
+      .filter(Boolean);
+    if (decisionPreviews.length) {
+      lines.push('', 'Decision Preview');
+      decisionPreviews.forEach((preview) => {
+        lines.push(`${preview.exercise}: mode ${preview.mode} | last target ${preview.lastTarget} | actual ${preview.actualResult}`);
+        lines.push(`  source ${preview.decisionSource} via ${preview.decisionSourceExercise} | recommendation ${preview.recommendation} | next ${preview.nextTarget}`);
+        lines.push(`  ${preview.reason}${preview.adaptiveChanged ? ' Adaptive logic changed the call.' : ''}`);
+      });
+    }
+    return lines;
+  }
+
   function formatPlanText(result) {
     const summary = result.summary || {};
     const injury = summary.injury || {};
@@ -1324,6 +2073,9 @@
       '',
       'GENERATED WORKOUT RESULT',
       ...formatGeneratedWorkoutResult(result),
+      '',
+      ...projectionDebugLines(result),
+      '',
       `Status: ${qa.status}`,
       qa.findings.length ? 'Why Flagged:' : 'Why Flagged: None',
       ...(qa.findings.length ? qa.findings.map((finding, idx) => `${idx + 1}. ${finding.message}`) : []),
@@ -1335,6 +2087,8 @@
 
   function resultMetaBoxes(result) {
     const summary = result.summary || {};
+    const projection = projectionSummary(result);
+    const anchors = projection?.anchorInputs || {};
     return [
       { label: 'Phase', value: formatPhase(summary.phase) },
       { label: 'Skill', value: formatExperience(summary.experience) },
@@ -1343,6 +2097,11 @@
       { label: 'Training Age', value: formatTrainingAge(summary.trainingAgeBucket) },
       { label: 'Emphasis', value: formatEmphasis(summary.emphasis) },
       { label: 'Equipment', value: equipmentLabel(summary.equipmentAccess) },
+      { label: 'Bench / Sq / DL', value: `${anchors.inputBench || anchors.bench1rm || 'N/A'} / ${anchors.inputSquat || anchors.squat1rm || 'N/A'} / ${anchors.inputDeadlift || anchors.deadlift1rm || 'N/A'}` },
+      { label: 'Anchor Source', value: anchors.anchorSource || 'N/A' },
+      { label: 'Modeled', value: projection?.modeledAs ? String(projection.modeledAs).replace(/_/g, ' ') : 'N/A' },
+      { label: 'Confidence', value: projection?.classificationConfidence ? String(projection.classificationConfidence) : 'N/A' },
+      { label: 'Deloads', value: Array.isArray(projection?.deloadWeeks) && projection.deloadWeeks.length ? projection.deloadWeeks.join(', ') : 'None' },
       { label: 'Injury Flag', value: summary.injury?.has ? 'Yes' : 'No' },
       { label: 'Status', value: result?.qa?.status || 'Pending' }
     ];
@@ -1376,6 +2135,7 @@
           <strong>${escapeHtml(row.value)}</strong>
         </div>
       `).join('');
+      const scenario = buildTenWeekScenario(result);
       return `
         <article class="workout-test-card" data-result-id="${escapeHtml(result.id)}">
           <div class="workout-test-card-head">
@@ -1392,7 +2152,11 @@
             </label>
           </div>
           <div class="workout-test-meta-grid">${boxes}</div>
-          <pre class="workout-test-text">${escapeHtml(result.text)}</pre>
+          ${scenario}
+          <details class="workout-test-details">
+            <summary>Open full debug transcript</summary>
+            <pre class="workout-test-text">${escapeHtml(result.text)}</pre>
+          </details>
           <div class="workout-test-card-actions">
             <button class="btn btn-ghost" type="button" data-copy-one="${escapeHtml(result.id)}">Copy Text</button>
             <button class="btn btn-primary" type="button" data-pdf-one="${escapeHtml(result.id)}">Copy PDF</button>

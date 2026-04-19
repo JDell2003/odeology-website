@@ -254,6 +254,207 @@ body.workout-test-page {
   overflow-x: auto;
 }
 
+.workout-test-details {
+  border: 1px solid rgba(12, 32, 48, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+
+.workout-test-details summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  font-weight: 900;
+  color: #102738;
+}
+
+.workout-test-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.workout-test-scenario {
+  display: grid;
+  gap: 14px;
+}
+
+.workout-test-scenario-head h4 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+  color: #102738;
+}
+
+.workout-test-scenario-head p {
+  margin: 6px 0 0;
+  color: rgba(13, 34, 50, 0.66);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.workout-test-scenario-weeks {
+  display: grid;
+  gap: 12px;
+}
+
+.workout-test-scenario-week {
+  border: 1px solid rgba(12, 32, 48, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.workout-test-scenario-week.is-deload {
+  background: linear-gradient(180deg, rgba(255, 250, 232, 0.98), rgba(255, 245, 211, 0.94));
+  border-color: rgba(193, 145, 37, 0.22);
+}
+
+.workout-test-scenario-week-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.workout-test-scenario-week-label {
+  font-size: 0.94rem;
+  font-weight: 900;
+  color: #102738;
+}
+
+.workout-test-scenario-week-sub {
+  margin-top: 3px;
+  color: rgba(13, 34, 50, 0.62);
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.workout-test-scenario-week-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #102738;
+  color: #f8fbff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workout-test-scenario-days {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workout-test-scenario-day {
+  border: 1px solid rgba(12, 32, 48, 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(255, 255, 255, 0.94));
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.workout-test-scenario-day-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.workout-test-scenario-day-head strong {
+  color: #102738;
+  font-size: 0.85rem;
+}
+
+.workout-test-scenario-day-head span {
+  color: rgba(13, 34, 50, 0.6);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.workout-test-scenario-exercise {
+  border: 1px solid rgba(12, 32, 48, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.workout-test-scenario-exercise-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.workout-test-scenario-exercise-head strong {
+  color: #102738;
+  font-size: 0.82rem;
+}
+
+.workout-test-scenario-exercise-head span {
+  color: rgba(13, 34, 50, 0.56);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.workout-test-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workout-test-scenario-grid div {
+  border-radius: 14px;
+  background: #f7fafc;
+  padding: 9px 10px;
+  display: grid;
+  gap: 3px;
+}
+
+.workout-test-scenario-grid span {
+  color: rgba(13, 34, 50, 0.5);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workout-test-scenario-grid strong {
+  color: #102738;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.workout-test-scenario-note {
+  color: rgba(13, 34, 50, 0.76);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.workout-test-scenario-next {
+  color: #102738;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.workout-test-scenario-empty {
+  color: rgba(13, 34, 50, 0.58);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .workout-test-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -281,6 +482,11 @@ body.workout-test-page {
 
   .workout-test-summary-grid,
   .workout-test-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workout-test-scenario-days,
+  .workout-test-scenario-grid {
     grid-template-columns: 1fr;
   }
 
