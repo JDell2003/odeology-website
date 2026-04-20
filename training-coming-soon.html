@@ -699,7 +699,7 @@
       <div class="intake-shell">
         <div>
           <div class="progress">
-            <div class="progress-top"><span id="pStep">Step 1 of 10</span><span id="pTitle">Timeline + focus</span></div>
+            <div class="progress-top"><span id="pTitle">Timeline + focus</span></div>
             <div class="bar"><div class="fill" id="pFill"></div></div>
           </div>
           <div class="step-card" id="stepCard"></div>
@@ -742,7 +742,7 @@
   <script>
     (function() {
       const K='ode_training_intake_v2', H='ode_training_intake_history_v2';
-      const el={c:document.getElementById('stepCard'),f:document.getElementById('pFill'),s:document.getElementById('pStep'),t:document.getElementById('pTitle'),toast:document.getElementById('toast')};
+      const el={c:document.getElementById('stepCard'),f:document.getElementById('pFill'),t:document.getElementById('pTitle'),toast:document.getElementById('toast')};
       const zoomEl=document.getElementById('imgZoom');
       const zoomImg=document.getElementById('imgZoomTarget');
       const decisionOverlay=document.getElementById('decisionOverlay');
@@ -944,7 +944,11 @@
       if(intakeClose)intakeClose.addEventListener('click',closeIntake);
       try{
         const currentUrl=new URL(window.location.href);
+        const restartParam=String(currentUrl.searchParams.get('restart')||'').toLowerCase();
         const startParam=String(currentUrl.searchParams.get('start')||'').toLowerCase();
+        if(restartParam==='1'||restartParam==='true'){
+          openIntake();
+        }
         if(startParam==='1'||startParam==='true'){
           redirectToRealTrainingFlow();
         }
@@ -1015,7 +1019,7 @@
         render();
       });
       window.addEventListener('odeauth',()=>loadMealData(true));
-      window.addEventListener('focus',()=>{if(S.step===9&&S.mealStatus!=='ready')loadMealData(true)});
+      window.addEventListener('focus',()=>{});
 
       const D={step:1,goal:'build size',timeline:'8 weeks',priority:'aesthetic',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'aesthetic bodybuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
       let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem(K)||'{}'))}catch{S=Object.assign({},D)}
@@ -1050,7 +1054,6 @@
         {t:'Bodybuilding preferences',h:'Exercise bias',x:'Priorities and weak points shape where we allocate your best effort and accessory focus.'},
         {t:'Injury + pain screening',h:'Constraint layer',x:'Movement restrictions are applied early to avoid loading patterns that aggravate joints.'},
         {t:'Recovery + lifestyle',h:'Volume ceiling',x:'Sleep, stress, and daily activity cap your recoverable volume for better week-to-week adherence.'},
-        {t:'Nutrition + meal data',h:'Phase behavior',x:'We sync your meal data and compare it to your goal to keep nutrition aligned.'},
         {t:'Profile finish',h:'Final handoff',x:'Only name and profile photo are manual inputs here. Everything else is slider/button driven.'}
       ];
       const formatNumber=(n,d=0)=>Number.isFinite(n)?n.toFixed(d):'?';
@@ -1464,7 +1467,7 @@
         if(S.mealStatus==='ready') return;
         mealRetryTimer=setTimeout(()=>{
           mealRetryTimer=null;
-          if(S.step===9 && S.mealStatus!=='ready') loadMealData(true);
+          if(S.mealStatus!=='ready') loadMealData(true);
         },4000);
       };
       const applyMealAdjustment=async(calories,opts={})=>{
@@ -1703,7 +1706,7 @@
       function nav(){
         const b=el.c.querySelector('[data-a="b"]'),n=el.c.querySelector('[data-a="n"]');
         const advance=()=>{
-          if(S.step<10){
+          if(S.step<9){
             S.step+=1;
             save();
             render();
@@ -1723,64 +1726,14 @@
         };
         if(b)b.addEventListener('click',()=>{S.step=Math.max(1,S.step-1);save();render()});
         if(n)n.addEventListener('click',()=>{
-          if(S.step===9 && S.mealStatus==='signed_out'){
-            openDecision({
-              title:'Create a meal plan first',
-              body:'Create a meal plan before finishing this step.',
-              primaryLabel:'Got it',
-              secondaryLabel:'Close',
-              onPrimary:()=>{pulseAuthButtons();},
-              onSecondary:()=>{pulseAuthButtons();}
-            });
-            pulseAuthButtons();
-            return;
-          }
-          if(S.step!==9) return advance();
-          const summary=getMealSummary();
-
-          const planDir=rateToDirection(summary?.predicted);
-          const trainDir=rateToDirection(summary?.target);
-          const supportsTraining=!!(planDir && trainDir && planDir===trainDir);
-          const mismatch=!!(planDir && trainDir && planDir!==trainDir);
-          const wanted=getGoalMode()==='bulk'?'gain muscle':'lose weight';
-          const current=summary?.predicted>0.05?'lose weight':summary?.predicted<-0.05?'gain weight':'maintain';
-          const targetLabel=S.keepPlanSame
-            ? 'keep your current meal plan'
-            : (S.phaseRate
-              ? String(S.phaseRate).replace('% bodyweight/week','%/week')
-              : (Number.isFinite(summary?.target)?rateToPhrase(summary.target):'your target'));
-          const applyCalories=getPreviewTargetCalories(summary) || summary?.recommendedCalories;
-          const canApply=Number.isFinite(applyCalories);
-          if(!S.keepPlanSame && !canApply){
-            toast('Select a plan option to continue.');
-            return;
-          }
-          openDecision({
-            title:'Confirm nutrition choice',
-            body: S.keepPlanSame
-              ? 'Keep your current meal plan as-is and continue?'
-              : `Apply your selected nutrition target (${targetLabel}) and continue?`,
-            primaryLabel: S.keepPlanSame ? 'Keep plan' : 'Apply + Continue',
-            secondaryLabel:'Go back',
-            onPrimary:()=>{
-              if(S.keepPlanSame){
-                S.mealPlanAlignment=`wanted_${wanted}_kept_${current}`;
-                S.mealPlanResolution='kept_plan_same';
-                save();
-                return advance();
-              }
-              if(canApply){
-                applyMealAdjustment(applyCalories,{prevCalories:summary.calories});
-                return advance();
-              }
-            },
-            onSecondary:()=>{}
-          });
+          return advance();
         });
       }
 
       function render(){
-        const s=S.step,m=M[s-1];el.s.textContent='Step '+s+' of 10';el.t.textContent=m.t;el.f.style.width=(s*10)+'%';
+        const s=Math.max(1,Math.min(9,Number(S.step)||1));
+        if(S.step!==s) S.step=s;
+        const m=M[s-1];el.t.textContent=m.t;el.f.style.width=(s*(100/9))+'%';
         let h='';
         if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Strength = heavier lifts',v:'strength',soon:true},{l:'Powerbuilding',v:'size',soon:true}],S.priority,false,false)+'</div>';
         if(s===2)h='<h3>Body stats snapshot</h3><p class="d">No perfect numbers needed. We just need a realistic baseline.</p><div class="fg" data-g="sex"><div class="t">Sex</div>'+btns([{l:'Male',v:'male'},{l:'Female',v:'female'}],S.sex,false,true)+'</div><div class="g2"><div><div class="t">Age: <strong id="ageO">'+S.age+'</strong></div><input id="age" type="range" min="16" max="70" value="'+S.age+'"/></div><div><div class="t">Height: <strong id="hO">'+S.heightIn+' in</strong></div><input id="heightIn" type="range" min="55" max="82" value="'+S.heightIn+'"/></div></div><div class="g2"><div><div class="t">Current weight: <strong id="wO">'+S.weightLb+' lb</strong></div><input id="weightLb" type="range" min="90" max="360" value="'+S.weightLb+'"/></div><div><div class="t" id="bfLabel">Estimated body fat <span class="hint">see image</span>: <strong id="bfO">'+S.bodyFatPct+'%</strong></div><input id="bodyFatPct" type="range" min="5" max="45" value="'+S.bodyFatPct+'"/></div></div><div class="sex-visual '+(S.sex?'show':'hidden')+'" id="sexVisual"><img id="sexImage" src="'+(S.sex==='female'?'assets/bodyfat-female-cropped.jpg':'assets/bodyfat-male.png')+'" alt="Body fat reference chart"/></div>';
@@ -1807,7 +1760,7 @@
           h='<h3>Injury and pain screening</h3><p class="d">We use this to avoid movements that aggravate joints.</p><div class="injury-block"><div class="fg"><div class="t">Pain areas (multi-select)</div>'+mb([{l:'Shoulder',v:'shoulder'},{l:'Elbow',v:'elbow'},{l:'Wrist',v:'wrist'},{l:'Back',v:'back'},{l:'Hip',v:'hip'},{l:'Knee',v:'knee'}],S.injuries,'injuries')+'</div>'+follow+'</div><div class="fg"><div class="t">Movements to avoid</div>'+mb([{l:'Overhead press',v:'overhead press'},{l:'Deep squat',v:'deep squat'},{l:'Barbell hinge',v:'barbell hinge'},{l:'Dips',v:'dips'},{l:'Flat barbell bench',v:'flat bench'}],S.avoidMoves,'avoidMoves')+'</div>';
         }
         if(s===8)h='<h3>Recovery and lifestyle</h3><p class="d">Your volume ceiling is set by sleep, stress, and daily activity load.</p><div><div class="t">Average sleep: <strong id="slO">'+S.sleepHours+' hrs/night</strong></div><input id="sleepHours" type="range" min="4" max="10" value="'+S.sleepHours+'"/></div><div class="fg" data-g="activityLevel"><div class="t">Job / activity level</div>'+btns([{l:'Sedentary',v:'sedentary'},{l:'Active',v:'active'},{l:'Very active',v:'very active'}],S.activityLevel,false,true)+'</div><div class="fg" data-g="stress"><div class="t">Stress</div>'+btns([{l:'Low',v:'low'},{l:'Medium',v:'medium'},{l:'High',v:'high'}],S.stress,false,true)+'</div>';
-        if(s===9){
+        if(false && s===10){
           if(!S.mealOptionTouched){
             S.keepPlanSame=true;
             S.mealOptionTouched=true;
@@ -1925,11 +1878,8 @@
             h+='<div class="fg" data-g="phaseRate"><div class="t">Adjust current plan?</div><div class="opts">'+keepBtn+recommendBtn+phaseBtns+'</div></div>';
           }
         }
-        if(s===10)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="profile-panel"><div class="fg profile-name"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg profile-photo-block"><div class="profile-wrap"><label class="profile-avatar" for="profilePhoto"><span class="profile-circle'+(S.profilePhotoData?' has-photo':'')+'"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt=" style="'+(S.profilePhotoData?'':'display:none')+'"/></span><span class="profile-pencil" aria-hidden="true">&#9998;</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div><div class="fg"><div class="t">Why are you doing this? <span class="hint">(required)</span></div><textarea id="trainingWhy" rows="3" placeholder="No BullShit: doing this for your wife, tired of where you&#39;re at, or just want to be better. Go in depth so we remember why we started.">'+(S.trainingWhy||'')+'</textarea></div></div>';
-        const lockNext=s===9 && S.mealStatus==='signed_out';
-        const canUndo=s===9 && S.mealAdjustmentApplied && Number.isFinite(S.mealAdjustment?.prevCalories);
-        const undoBtn=s===9?'<button type="button" class="btnx g'+(canUndo?'':' is-disabled')+'" id="undoAdjustment" aria-disabled="'+(canUndo?'false':'true')+'">Undo</button>':'';
-        h+='<div class="acts"><div class="row"><button type="button" class="btnx g" data-a="r">Restart</button>'+undoBtn+(s>1?'<button type="button" class="btnx g" data-a="b">Back</button>':'')+'</div><button type="button" class="btnx p'+(lockNext?' is-disabled':'')+'" data-a="n" aria-disabled="'+(lockNext?'true':'false')+'">'+(s===10?'Save + Enter Engine':'Next')+'</button></div>';
+        if(s===9)h='<h3>Finish profile and continue</h3><p class="d">Confirm your name and set a profile picture.</p><div class="profile-panel"><div class="fg profile-name"><div class="t">Your name</div><input id="fullName" type="text" placeholder="Jason" value="'+(S.fullName||'').replace(/"/g,'&quot;')+'"/></div><div class="fg profile-photo-block"><div class="profile-wrap"><label class="profile-avatar" for="profilePhoto"><span class="profile-circle'+(S.profilePhotoData?' has-photo':'')+'"><span id="profileInitials">'+((S.fullName||'').trim()?((S.fullName.trim().split(/\s+/)[0]||'').charAt(0)+(S.fullName.trim().split(/\s+/)[1]||'').charAt(0)).toUpperCase():'')+'</span><img id="profilePreview" src="'+(S.profilePhotoData||'')+'" alt=" style="'+(S.profilePhotoData?'':'display:none')+'"/></span><span class="profile-pencil" aria-hidden="true">&#9998;</span></label><input id="profilePhoto" type="file" accept="image/*" style="display:none"/><small style="color:var(--muted)">Tap to upload</small></div></div><div class="fg" data-g="modality"><div class="t">Training feel</div>'+btns([{l:'Aesthetic bodybuilding',v:'aesthetic bodybuilding'},{l:'Powerbuilding',v:'powerbuilding'}],S.modality,false,true)+'</div><div class="fg"><div class="t">Why are you doing this? <span class="hint">(required)</span></div><textarea id="trainingWhy" rows="3" placeholder="No BullShit: doing this for your wife, tired of where you&#39;re at, or just want to be better. Go in depth so we remember why we started.">'+(S.trainingWhy||'')+'</textarea></div></div>';
+        h+='<div class="acts"><div class="row"><button type="button" class="btnx g" data-a="r">Restart</button>'+(s>1?'<button type="button" class="btnx g" data-a="b">Back</button>':'')+'</div><button type="button" class="btnx p" data-a="n" aria-disabled="false">'+(s===9?'Save + Enter Engine':'Next')+'</button></div>';
         el.c.innerHTML=h;
 
         if(s===1){bindSingle('timeline',v=>S.timeline=v);bindSingle('priority',v=>{S.priority=v;if(v==='aesthetic')S.modality='aesthetic bodybuilding'})}
@@ -2003,7 +1953,7 @@
           });
         }
         if(s===8){bindSingle('activityLevel',v=>S.activityLevel=v);bindSingle('stress',v=>S.stress=v);const sl=el.c.querySelector('#sleepHours');sl.addEventListener('input',()=>{S.sleepHours=Number(sl.value);el.c.querySelector('#slO').textContent=S.sleepHours+' hrs/night';save()})}
-        if(s===9){
+        if(false && s===10){
           el.c.querySelectorAll('[data-g="phaseRate"] .opt').forEach(b=>b.addEventListener('click',()=>{
             if(b.id==='keepPlanSame'){
               S.keepPlanSame=true;
@@ -2088,7 +2038,7 @@
           });
           scheduleMealRetry();
         }
-        if(s===10){
+        if(s===9){
           el.c.classList.add('profile-step');
           bindSingle('modality',v=>S.modality=v);
           const n=el.c.querySelector('#fullName');
@@ -2119,7 +2069,7 @@
             reader.readAsDataURL(f);
           });
         }
-        if(s!==10){
+        if(s!==9){
           el.c.classList.remove('profile-step');
         }
         if(s===7){

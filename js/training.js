@@ -764,6 +764,7 @@
     generating: {
       startedAt: 0,
       minMs: 9_000,
+      timeoutMs: 60_000,
       raf: 0
     },
     mealService: {
@@ -7991,8 +7992,11 @@ function toggleSharePopover(force) {
       if (state.view !== 'generating') return;
       const elapsed = Math.max(0, Date.now() - (state.generating.startedAt || Date.now()));
       const minMs = Math.max(2500, Number(state.generating.minMs) || 9_000);
+      const timeoutMs = Math.max(minMs + 5_000, Number(state.generating.timeoutMs) || 60_000);
       const estimateSec = Math.max(3, Math.round(minMs / 1000));
-      const pct = Math.min(100, Math.round((elapsed / minMs) * 100));
+      const elapsedSec = Math.max(0, Math.round(elapsed / 1000));
+      const progressWindowMs = Math.max(minMs, Math.min(timeoutMs - 5_000, 20_000));
+      const pct = Math.min(95, Math.round((Math.min(elapsed, progressWindowMs) / progressWindowMs) * 95));
 
       const bar = document.getElementById('training-gen-bar');
       const msg = document.getElementById('training-gen-msg');
@@ -8001,7 +8005,11 @@ function toggleSharePopover(force) {
 
       if (bar) bar.style.width = `${pct}%`;
       if (prog) prog.setAttribute('aria-valuenow', String(pct));
-      if (meta) meta.textContent = `${pct}% - This takes ~${estimateSec} seconds.`;
+      if (meta) {
+        meta.textContent = elapsed < minMs
+          ? `${pct}% - ${elapsedSec}s elapsed. Usually about ${estimateSec}s.`
+          : `${pct}% - Still building... ${elapsedSec}s elapsed.`;
+      }
 
       const idx = Math.min(messages.length - 1, Math.floor(elapsed / 6500));
       if (msg) msg.textContent = messages[idx] || messages[messages.length - 1] || 'Working...';
@@ -8017,6 +8025,8 @@ function toggleSharePopover(force) {
     if (engineRetryInFlight) return;
     engineRetryInFlight = true;
     state.planError = null;
+    state.generating.minMs = 9_000;
+    state.generating.timeoutMs = 60_000;
     setView('generating');
     Promise.resolve().then(async () => {
       try {
@@ -8024,16 +8034,11 @@ function toggleSharePopover(force) {
         if (force) clearForceAutostart();
         const autoOnboarded = await tryAutoOnboardFromIntake(force);
         if (autoOnboarded) return;
-        const ready = await pollForPlanReady({ maxMs: 12000, intervalMs: 1200 });
+        const ready = await pollForPlanReady({ maxMs: 60_000, intervalMs: 1500 });
         if (ready) return;
-        const hasIntake = !!readLocalIntake();
-        if (hasIntake) {
-          window.setTimeout(() => {
-            if (state.view === 'generating') keepOnEngineAndRetry();
-          }, 1500);
-          return;
-        }
-        state.planError = 'No saved setup found. Complete setup, then tap Enter Engine.';
+        state.planError = readLocalIntake()
+          ? 'Workout build is taking longer than expected. Please try again.'
+          : 'No saved setup found. Complete setup, then tap Enter Engine.';
         setView('plan');
       } finally {
         engineRetryInFlight = false;
@@ -9637,7 +9642,7 @@ function toggleSharePopover(force) {
         },
         el('div', { class: 'training-progressbar-bar', id: 'training-gen-bar', style: 'width:0%' })
         ),
-        el('div', { class: 'training-muted', id: 'training-gen-meta', style: 'font-size:12px;' }, `0% - This takes ~${estimateSec} seconds.`)
+        el('div', { class: 'training-muted', id: 'training-gen-meta', style: 'font-size:12px;' }, `0% - 0s elapsed. Usually about ${estimateSec}s.`)
       )
     );
   }
@@ -9789,9 +9794,11 @@ function toggleSharePopover(force) {
     const requestStartedAt = Date.now();
     const isAuthed = Boolean(state.auth.user);
     const minMs = isAuthed ? Math.max(2500, Number(state.generating?.minMs) || 9_000) : 1200;
+    state.generating.minMs = minMs;
+    state.generating.timeoutMs = isAuthed ? 60_000 : 25_000;
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
-    const totalTimeoutMs = isAuthed ? Math.max(minMs + 5000, 12_000) : (minMs + 2800);
+    const totalTimeoutMs = isAuthed ? Math.max(minMs + 5_000, 60_000) : Math.max(minMs + 2_800, 25_000);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), totalTimeoutMs);
     let resp;
@@ -10452,6 +10459,16 @@ function toggleSharePopover(force) {
     async function resetTrainingPlanAndRestart() {
       const confirmFn = typeof window.odeConfirm === 'function' ? window.odeConfirm : null;
 
+      const openRestartSetup = () => {
+        try {
+          sessionStorage.removeItem('ode_training_force_autostart');
+          sessionStorage.removeItem(TRAINING_CONSTRUCTING_KEY);
+        } catch {
+          // ignore
+        }
+        window.location.href = 'training-coming-soon.html?restart=1';
+      };
+
       if (isPreview || !state.auth.user) {
         stashIntakeForRestart();
         clearTrainingClientStorage({ keepIntake: true });
@@ -10511,7 +10528,7 @@ function toggleSharePopover(force) {
       state.logs = [];
       state.planError = null;
       state.wizard = makeDefaultWizard();
-      window.location.href = 'training-coming-soon.html';
+      openRestartSetup();
     }
 
     const logsMap = buildLogsMap(state.logs);
