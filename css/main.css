@@ -20225,6 +20225,62 @@ html[data-theme="light"] .ode-tour-btn.primary {
     gap: 0.95rem;
 }
 
+.training-page .history-exercise-card {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--training-border) 82%, transparent);
+    border-radius: 14px;
+    background: var(--training-surface-2);
+    margin-bottom: 1rem;
+}
+
+.training-page .history-exercise-title {
+    font-size: 0.98rem;
+    line-height: 1.35;
+    margin-bottom: 0.35rem;
+}
+
+.training-page .history-exercise-summary {
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.training-page .history-exercise-best {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-top: 0.2rem;
+    margin-bottom: 0.6rem;
+}
+
+.training-page .history-exercise-sets {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+}
+
+.training-page .history-exercise-set-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid color-mix(in srgb, var(--training-border) 70%, transparent);
+}
+
+.training-page .history-exercise-set-index {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--training-muted);
+    white-space: nowrap;
+}
+
+.training-page .history-exercise-set-value {
+    font-size: 0.92rem;
+    line-height: 1.35;
+    text-align: right;
+}
+
 .training-page .training-subcard {
     border: 1px solid color-mix(in srgb, var(--training-border) 85%, transparent);
     border-radius: 14px;

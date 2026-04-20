@@ -697,7 +697,22 @@ function epley1rm(weight, reps) {
 function normalizeWeekdayIndexList(input) {
   const raw = Array.isArray(input) ? input : [];
   const out = [];
+  const codeToIndex = {
+    su: 0, sun: 0, sunday: 0,
+    m: 1, mo: 1, mon: 1, monday: 1,
+    t: 2, tu: 2, tue: 2, tues: 2, tuesday: 2,
+    w: 3, we: 3, wed: 3, wednesday: 3,
+    th: 4, thu: 4, thur: 4, thurs: 4, thursday: 4,
+    f: 5, fr: 5, fri: 5, friday: 5,
+    s: 6, sa: 6, sat: 6, saturday: 6
+  };
   for (const x of raw) {
+    const key = String(x || '').trim().toLowerCase();
+    if (key && Object.prototype.hasOwnProperty.call(codeToIndex, key)) {
+      const idx = codeToIndex[key];
+      if (!out.includes(idx)) out.push(idx);
+      continue;
+    }
     const n = Number(x);
     if (!Number.isFinite(n)) continue;
     const i = Math.max(0, Math.min(6, Math.floor(n)));

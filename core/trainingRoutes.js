@@ -424,7 +424,22 @@ const TRAINING_WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thu
 function normalizeWeekdayIndexList(raw) {
   const src = Array.isArray(raw) ? raw : [];
   const out = [];
+  const codeToIndex = {
+    su: 0, sun: 0, sunday: 0,
+    m: 1, mo: 1, mon: 1, monday: 1,
+    t: 2, tu: 2, tue: 2, tues: 2, tuesday: 2,
+    w: 3, we: 3, wed: 3, wednesday: 3,
+    th: 4, thu: 4, thur: 4, thurs: 4, thursday: 4,
+    f: 5, fr: 5, fri: 5, friday: 5,
+    s: 6, sa: 6, sat: 6, saturday: 6
+  };
   for (const x of src) {
+    const key = String(x || '').trim().toLowerCase();
+    if (key && Object.prototype.hasOwnProperty.call(codeToIndex, key)) {
+      const idx = codeToIndex[key];
+      if (!out.includes(idx)) out.push(idx);
+      continue;
+    }
     const n = Number(x);
     if (!Number.isFinite(n)) continue;
     const i = Math.max(0, Math.min(6, Math.floor(n)));
@@ -445,14 +460,19 @@ function preferredWeekdayPattern(daysPerWeek) {
   return [0, 1, 2, 3, 4, 5, 6];
 }
 
-function buildTrainingWeekdays(daysPerWeek, unavailableDays) {
+function buildTrainingWeekdays(daysPerWeek, unavailableDays, preferredDays) {
   const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
   if (!n) return [];
   const unavailable = new Set(normalizeWeekdayIndexList(unavailableDays));
+  const preferred = normalizeWeekdayIndexList(preferredDays).filter((d) => !unavailable.has(d));
   const available = [1, 2, 3, 4, 5, 6, 0].filter((d) => !unavailable.has(d));
   if (available.length < n) return [];
 
   const chosen = [];
+  for (const d of preferred) {
+    if (chosen.length >= n) break;
+    if (!chosen.includes(d)) chosen.push(d);
+  }
   const pattern = preferredWeekdayPattern(n);
   for (const d of pattern) {
     if (chosen.length >= n) break;
@@ -513,7 +533,8 @@ function buildShareWelcomePayload({ snapshot, fromDisplayName, fromUsername }) {
     ? snapshot.meta.schedule
     : null;
   const unavailableDays = schedule?.unavailableDays ?? snapshot?.meta?.unavailableDays ?? [];
-  const weekdays = daysPerWeek ? buildTrainingWeekdays(daysPerWeek, unavailableDays) : [];
+  const preferredDays = schedule?.preferredDays ?? snapshot?.meta?.preferredDays ?? [];
+  const weekdays = daysPerWeek ? buildTrainingWeekdays(daysPerWeek, unavailableDays, preferredDays) : [];
   const dayCodes = weekdays.map((idx) => TRAINING_WEEKDAY_CODES[idx]).filter(Boolean);
   const todayIdx = new Date().getDay();
   const todayCode = TRAINING_WEEKDAY_CODES[todayIdx] || '';
@@ -1183,6 +1204,7 @@ async function ensureDemoWorkoutPlanForUser(userId, displayName = 'Demo User') {
     experience: payload.experience || '6-24m',
     daysPerWeek,
     strength: {},
+    preferredDays: payload?.preferredDays,
     equipmentAccess: {},
     profile: { firstName: safeText(displayName || 'Demo User', 80) || 'Demo User' }
   });
@@ -3256,7 +3278,22 @@ function planNeedsResolution(plan) {
 function normalizeWeekdayIndexList(input) {
   const raw = Array.isArray(input) ? input : [];
   const out = [];
+  const codeToIndex = {
+    su: 0, sun: 0, sunday: 0,
+    m: 1, mo: 1, mon: 1, monday: 1,
+    t: 2, tu: 2, tue: 2, tues: 2, tuesday: 2,
+    w: 3, we: 3, wed: 3, wednesday: 3,
+    th: 4, thu: 4, thur: 4, thurs: 4, thursday: 4,
+    f: 5, fr: 5, fri: 5, friday: 5,
+    s: 6, sa: 6, sat: 6, saturday: 6
+  };
   for (const x of raw) {
+    const key = String(x || '').trim().toLowerCase();
+    if (key && Object.prototype.hasOwnProperty.call(codeToIndex, key)) {
+      const idx = codeToIndex[key];
+      if (!out.includes(idx)) out.push(idx);
+      continue;
+    }
     const n = Number(x);
     if (!Number.isFinite(n)) continue;
     const i = Math.max(0, Math.min(6, Math.floor(n)));
@@ -3622,6 +3659,7 @@ async function upsertProfile(userId, data) {
   const daysPerWeek = clampInt(data?.daysPerWeek, 1, 7, null);
   const strength = data?.strength && typeof data.strength === 'object' ? data.strength : {};
   strength.unavailableDays = normalizeWeekdayIndexList(data?.unavailableDays ?? strength?.unavailableDays);
+  strength.preferredDays = normalizeWeekdayIndexList(data?.preferredDays ?? strength?.preferredDays);
   const equipmentAccess = normalizeEquipmentAccess(data?.equipmentAccess);
   const firstName = safeText(data?.profile?.firstName, 80);
   const age = clampInt(data?.profile?.age, 13, 120, null);
@@ -4374,15 +4412,18 @@ async function upsertLiftHistoryEntries({ userId, performedAt, entries, source =
   return touchedRows;
 }
 
-async function listWorkoutLogs({ userId, planId }) {
+async function listWorkoutLogs({ userId, planId = null }) {
+  const hasPlanId = String(planId || '').trim().length > 0;
+  const params = hasPlanId ? [userId, planId] : [userId];
   const result = await db.query(
     `
-      SELECT week_index, day_index, performed_at, readiness, duration_ms, timer_started_at, timer_ended_at, entries, notes, updated_at
+      SELECT plan_id, week_index, day_index, performed_at, readiness, duration_ms, timer_started_at, timer_ended_at, entries, notes, updated_at
       FROM app_training_workouts
-      WHERE user_id = $1 AND plan_id = $2
-      ORDER BY week_index ASC, day_index ASC;
+      WHERE user_id = $1
+      ${hasPlanId ? 'AND plan_id = $2' : ''}
+      ORDER BY COALESCE(performed_at::timestamp, updated_at) ASC, week_index ASC, day_index ASC;
     `,
-    [userId, planId]
+    params
   );
   return result.rows || [];
 }
@@ -6077,6 +6118,7 @@ async function trainingRoutes(req, res, url) {
           experience: usedPayload?.experience || '6-24m',
           daysPerWeek,
           strength: {},
+          preferredDays: usedPayload?.preferredDays,
           equipmentAccess: {},
           profile: { firstName: usedPayload?.name || '' }
         });
@@ -6106,6 +6148,7 @@ async function trainingRoutes(req, res, url) {
             experience: coerced?.experience || '6-24m',
             daysPerWeek,
             strength: {},
+            preferredDays: coerced?.preferredDays,
             equipmentAccess: {},
             profile: { firstName: payload?.name || '' }
           });
@@ -6203,10 +6246,12 @@ async function trainingRoutes(req, res, url) {
 
   if (pathname === '/api/training/logs' && req.method === 'GET') {
     const planId = String(url.searchParams.get('planId') || '').trim();
-    if (!planId) return sendJson(res, 400, { error: 'Missing planId' });
+    const includeAll = String(url.searchParams.get('includeAll') || '').trim() === '1';
+    if (!planId && !includeAll) return sendJson(res, 400, { error: 'Missing planId' });
     try {
-      const logs = await listWorkoutLogs({ userId: user.id, planId });
-      return sendJson(res, 200, { logs });
+      const logs = planId ? await listWorkoutLogs({ userId: user.id, planId }) : [];
+      const allLogs = includeAll ? await listWorkoutLogs({ userId: user.id }) : null;
+      return sendJson(res, 200, includeAll ? { logs, allLogs } : { logs });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-logs', 'Failed to load logs');
     }

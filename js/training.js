@@ -233,8 +233,7 @@
       if (resp?.ok && resp.json?.plan?.id) {
         state.profile = resp.json?.profile || state.profile;
         state.planRow = resp.json?.plan || null;
-        const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
-        state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+        await refreshTrainingLogs(state.planRow.id);
         const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
         const dismissed = shouldSkipDemoUpsell() || localStorage.getItem(dismissedKey) === '1';
         setView(dismissed ? 'plan' : 'upsell');
@@ -755,6 +754,7 @@
     profile: null,
     planRow: null,
     logs: [],
+    allLogs: [],
     liftHistory: new Map(),
     workoutInputDrafts: new Map(),
     workoutSetCountDrafts: new Map(),
@@ -3002,6 +3002,15 @@
 
   const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const WEEKDAYS_SHORT = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
+  const WEEKDAY_CODE_TO_INDEX = {
+    su: 0, sun: 0, sunday: 0,
+    m: 1, mo: 1, mon: 1, monday: 1,
+    t: 2, tu: 2, tue: 2, tues: 2, tuesday: 2,
+    w: 3, we: 3, wed: 3, wednesday: 3,
+    th: 4, thu: 4, thur: 4, thurs: 4, thursday: 4,
+    f: 5, fr: 5, fri: 5, friday: 5,
+    s: 6, sa: 6, sat: 6, saturday: 6
+  };
   const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon -> Sun
   const UNAVAIL_DAYS_KEY = 'ode_training_unavailable_days_v1';
   const GUEST_PAYLOAD_KEY = 'ode_training_guest_payload_v1';
@@ -3067,6 +3076,12 @@
     const raw = Array.isArray(input) ? input : [];
     const out = [];
     for (const x of raw) {
+      const key = String(x || '').trim().toLowerCase();
+      if (key && Object.prototype.hasOwnProperty.call(WEEKDAY_CODE_TO_INDEX, key)) {
+        const idx = WEEKDAY_CODE_TO_INDEX[key];
+        if (!out.includes(idx)) out.push(idx);
+        continue;
+      }
       const n = Number(x);
       if (!Number.isFinite(n)) continue;
       const i = Math.max(0, Math.min(6, Math.floor(n)));
@@ -3122,15 +3137,20 @@
     return [0, 1, 2, 3, 4, 5, 6];
   }
 
-  function buildTrainingSchedule(daysPerWeek, unavailableDays) {
+  function buildTrainingSchedule(daysPerWeek, unavailableDays, preferredDays) {
     const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
     const unavailable = new Set(normalizeWeekdayIndexList(unavailableDays));
+    const preferred = normalizeWeekdayIndexList(preferredDays).filter((d) => !unavailable.has(d));
     const available = [1, 2, 3, 4, 5, 6, 0].filter((d) => !unavailable.has(d));
     if (!n) return [];
     if (available.length < n) return [];
 
-    const pattern = preferredWeekdayPattern(n);
     const chosen = [];
+    for (const d of preferred) {
+      if (chosen.length >= n) break;
+      if (!chosen.includes(d)) chosen.push(d);
+    }
+    const pattern = preferredWeekdayPattern(n);
     for (const d of pattern) {
       if (chosen.length >= n) break;
       if (!unavailable.has(d) && !chosen.includes(d)) chosen.push(d);
@@ -3164,6 +3184,18 @@
     return base;
   }
 
+  function schedulePreferredDays() {
+    const plan = state.planRow?.plan;
+    const schedule = plan?.meta?.schedule && typeof plan.meta.schedule === 'object' ? plan.meta.schedule : null;
+    const planPreferred = schedule?.preferredDays ?? plan?.meta?.preferredDays ?? null;
+    const profilePreferred = state.profile?.strength?.preferredDays ?? null;
+    return normalizeWeekdayIndexList(
+      planPreferred != null ? planPreferred
+        : profilePreferred != null ? profilePreferred
+          : []
+    );
+  }
+
   function applyPendingScheduleIfDue(refDate = new Date()) {
     const plan = state.planRow?.plan;
     if (!plan) return false;
@@ -3191,7 +3223,7 @@
   }
 
   function scheduleWeekdays(daysPerWeek, refDate = new Date()) {
-    return buildTrainingSchedule(daysPerWeek, scheduleUnavailableDaysForDate(refDate));
+    return buildTrainingSchedule(daysPerWeek, scheduleUnavailableDaysForDate(refDate), schedulePreferredDays());
   }
 
   function scheduledWeekdayLabel(dayIndex, daysPerWeek, refDate = new Date()) {
@@ -3360,7 +3392,7 @@
     const next = new Date(fromDate);
     for (let i = 0; i < 14; i += 1) {
       next.setDate(next.getDate() + direction);
-      const schedule = buildTrainingSchedule(daysPerWeek, scheduleUnavailableDaysForDate(next));
+      const schedule = buildTrainingSchedule(daysPerWeek, scheduleUnavailableDaysForDate(next), schedulePreferredDays());
       if (schedule.includes(next.getDay())) return next;
     }
     return fromDate;
@@ -8168,6 +8200,7 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      state.allLogs = [];
       state.liftHistory = new Map();
       shareUi.open = false;
       shareUi.loaded = false;
@@ -8196,6 +8229,7 @@ function toggleSharePopover(force) {
       state.profile = null;
       state.planRow = null;
       state.logs = [];
+      state.allLogs = [];
       state.liftHistory = new Map();
       shareUi.open = false;
       shareUi.loaded = false;
@@ -8248,6 +8282,7 @@ function toggleSharePopover(force) {
         state.profile = null;
         state.planRow = null;
         state.logs = [];
+        state.allLogs = [];
         state.liftHistory = new Map();
         shareUi.open = false;
         shareUi.loaded = false;
@@ -8289,8 +8324,7 @@ function toggleSharePopover(force) {
     }
     if (state.planRow?.id) {
       maybeArmTrainingQuickTourForFirstPlan();
-      const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
-      state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+      await refreshTrainingLogs(state.planRow.id);
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
@@ -9837,8 +9871,7 @@ function toggleSharePopover(force) {
             state.profile = fallback.json?.profile || null;
             state.planRow = nextPlan;
             sanitizeBodybuildingPlanInPlace(state.planRow);
-            const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
-            state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+            await refreshTrainingLogs(state.planRow.id);
             setView('upsell');
             return;
           }
@@ -9846,6 +9879,7 @@ function toggleSharePopover(force) {
       }
       state.planRow = null;
       state.logs = [];
+      state.allLogs = [];
       const errObj = resp?.json && typeof resp.json === 'object' ? resp.json : {};
       const detail = (() => {
         if (errObj?.error === 'INVALID_INPUT') {
@@ -9869,6 +9903,7 @@ function toggleSharePopover(force) {
     state.planRow = resp.json?.plan || null;
     sanitizeBodybuildingPlanInPlace(state.planRow);
     state.logs = resp.json?.logs || [];
+    state.allLogs = Array.isArray(state.logs) ? state.logs.slice() : [];
     if (isAuthed && !state.planRow?.id) {
       const fallback = await fetchTrainingStateWithRetry({ tries: 3, delayMs: 1400 });
       if (fallback?.ok && fallback.json?.plan?.id) {
@@ -9877,10 +9912,12 @@ function toggleSharePopover(force) {
           state.profile = fallback.json?.profile || state.profile;
           state.planRow = nextPlan;
           sanitizeBodybuildingPlanInPlace(state.planRow);
-          const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(state.planRow.id)}`, { method: 'GET' });
-          state.logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+          await refreshTrainingLogs(state.planRow.id);
         }
       }
+    }
+    if (isAuthed && state.planRow?.id) {
+      await refreshTrainingLogs(state.planRow.id);
     }
     clearForceAutostart();
     try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
@@ -10076,6 +10113,99 @@ function toggleSharePopover(force) {
     return map;
   }
 
+  function workoutLogDateIso(row) {
+    const performed = row?.performed_at ? String(row.performed_at).slice(0, 10) : '';
+    if (performed) return performed;
+    const updated = row?.updated_at ? String(row.updated_at).slice(0, 10) : '';
+    return updated || '';
+  }
+
+  function buildLogsByDate(logs) {
+    const map = new Map();
+    for (const row of logs || []) {
+      const key = workoutLogDateIso(row);
+      if (!key) continue;
+      const bucket = map.get(key) || [];
+      bucket.push(row);
+      map.set(key, bucket);
+    }
+    return map;
+  }
+
+  function earliestLogDate(logs) {
+    let earliest = null;
+    for (const row of logs || []) {
+      const iso = workoutLogDateIso(row);
+      if (!iso) continue;
+      const parsed = parseISODateLocal(iso);
+      if (!parsed || Number.isNaN(parsed.getTime())) continue;
+      if (!earliest || parsed.getTime() < earliest.getTime()) earliest = parsed;
+    }
+    return earliest;
+  }
+
+  function summarizeHistoryEntry(entry) {
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    const workingSets = sets.filter((setRow) => {
+      const weight = Number(setRow?.weight);
+      const reps = Number(setRow?.reps);
+      return (Number.isFinite(weight) && weight > 0) || (Number.isFinite(reps) && reps > 0);
+    });
+    if (!workingSets.length) {
+      return {
+        summary: 'No logged working sets',
+        best: '',
+        sets: []
+      };
+    }
+
+    const renderSet = (setRow) => {
+      const weight = Number(setRow?.weight);
+      const reps = Number(setRow?.reps);
+      if (Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0) return `${weight} lb x ${reps}`;
+      if (Number.isFinite(reps) && reps > 0) return `${reps} reps`;
+      if (Number.isFinite(weight) && weight > 0) return `${weight} lb`;
+      return '';
+    };
+
+    const bestSet = workingSets.reduce((best, current) => {
+      const bestWeight = Number(best?.weight);
+      const currentWeight = Number(current?.weight);
+      const bestReps = Number(best?.reps);
+      const currentReps = Number(current?.reps);
+      if (!best) return current;
+      if ((Number.isFinite(currentWeight) ? currentWeight : -1) > (Number.isFinite(bestWeight) ? bestWeight : -1)) return current;
+      if ((Number.isFinite(currentWeight) ? currentWeight : -1) === (Number.isFinite(bestWeight) ? bestWeight : -1)
+        && (Number.isFinite(currentReps) ? currentReps : -1) > (Number.isFinite(bestReps) ? bestReps : -1)) return current;
+      return best;
+    }, null);
+
+    const bestText = renderSet(bestSet);
+    return {
+      summary: `${workingSets.length} working set${workingSets.length === 1 ? '' : 's'}`,
+      best: bestText ? `Best: ${bestText}` : '',
+      sets: workingSets.map((setRow, idx) => ({
+        index: idx + 1,
+        text: renderSet(setRow)
+      })).filter((row) => row.text)
+    };
+  }
+
+  async function refreshTrainingLogs(planId) {
+    const safePlanId = String(planId || '').trim();
+    if (!safePlanId) {
+      state.logs = [];
+      state.allLogs = [];
+      return { logs: [], allLogs: [] };
+    }
+    const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(safePlanId)}&includeAll=1`, { method: 'GET' });
+    const logs = logsResp.ok ? (logsResp.json?.logs || []) : [];
+    const allLogs = logsResp.ok ? (logsResp.json?.allLogs || logs) : state.allLogs;
+    state.logs = logs;
+    state.allLogs = Array.isArray(allLogs) ? allLogs : logs;
+    return { logs: state.logs, allLogs: state.allLogs };
+  }
+
   function slotIndexFromWeekDay(weekIndex, dayIndex, daysPerWeek) {
     const w = Number(weekIndex);
     const d = Number(dayIndex);
@@ -10183,8 +10313,7 @@ function toggleSharePopover(force) {
     }
     if (resp.json?.plan) state.planRow = resp.json.plan;
     if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
-    const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(built.payload.planId)}`, { method: 'GET' });
-    state.logs = logsResp.ok ? (logsResp.json?.logs || []) : state.logs;
+    await refreshTrainingLogs(built.payload.planId);
     clearWorkoutDraftStateForDay({
       weekIndex: built.payload.weekIndex,
       dayIndex: built.payload.dayIndex
@@ -10300,8 +10429,7 @@ function toggleSharePopover(force) {
     }
 
     if (resp.json?.plan) state.planRow = resp.json.plan;
-    const logsResp = await api(`/api/training/logs?planId=${encodeURIComponent(planId)}`, { method: 'GET' });
-    state.logs = logsResp.ok ? (logsResp.json?.logs || []) : state.logs;
+    await refreshTrainingLogs(planId);
     render(); */
   }
 
@@ -11241,7 +11369,11 @@ function toggleSharePopover(force) {
 
       const daysPerWeek = Number(plan?.meta?.daysPerWeek) || (Array.isArray(plan?.weeks?.[0]?.days) ? plan.weeks[0].days.length : 1);
 
-      const minDate = planStartDate(plan);
+      const planMinDate = planStartDate(plan);
+      const historyMinDate = earliestLogDate(state.allLogs);
+      const minDate = historyMinDate && historyMinDate.getTime() < planMinDate.getTime()
+        ? historyMinDate
+        : planMinDate;
       const maxDate = (() => {
         const d = new Date(today);
         d.setDate(d.getDate() + 30);
@@ -11275,6 +11407,10 @@ function toggleSharePopover(force) {
       const days = Array.isArray(week?.days) ? week.days : [];
 
       const activeWeekday = activeDate.getDay();
+      const activeDateIso = toISODateLocal(activeDate);
+      const allLogsByDate = buildLogsByDate(state.allLogs);
+      const historyLogsForActiveDate = allLogsByDate.get(activeDateIso) || [];
+      const isHistoryDate = dayStart(activeDate).getTime() < dayStart(planMinDate).getTime();
       const skipLogEntries = readTrainingSkipLog();
       const skipLogByDate = new Map(skipLogEntries.map((entry) => [String(entry?.skipDate || '').trim(), entry]));
       const sessionOrdinalByDate = new Map();
@@ -11304,7 +11440,7 @@ function toggleSharePopover(force) {
         const key = toISODateLocal(target);
         if (sessionOrdinalByDate.has(key)) return sessionOrdinalByDate.get(key);
         let count = 0;
-        for (let cursor = dayStart(minDate); cursor.getTime() <= target.getTime(); cursor = new Date(cursor.getTime() + dayMs)) {
+        for (let cursor = dayStart(planMinDate); cursor.getTime() <= target.getTime(); cursor = new Date(cursor.getTime() + dayMs)) {
           if (isScheduledWorkoutDate(cursor)) count += 1;
         }
         sessionOrdinalByDate.set(key, count);
@@ -11323,7 +11459,7 @@ function toggleSharePopover(force) {
           if (!skipIso || skipIso > key) continue;
           const skipDate = toStartForIso(skipIso);
           if (!skipDate) continue;
-          if (skipDate.getTime() < dayStart(minDate).getTime()) continue;
+          if (skipDate.getTime() < dayStart(planMinDate).getTime()) continue;
           count += 1;
         }
         skipCountByDate.set(cacheKey, count);
@@ -11376,7 +11512,7 @@ function toggleSharePopover(force) {
       const isToday = dayStart(activeDate).getTime() === todayStart.getTime();
       const dateBlockerDisabled = isDemoDateBlockerDisabled(state.auth.user);
       const timerActiveOnThisDay = timerLockedDateIso && timerLockedDateIso === toISODateLocal(activeDate);
-      const canStartWorkoutOnActiveDate = Boolean(isToday || dateBlockerDisabled || timerActiveOnThisDay);
+      const canStartWorkoutOnActiveDate = Boolean(!isHistoryDate && (isToday || dateBlockerDisabled || timerActiveOnThisDay));
       const activeDayPlan = activeDayIndex ? (days[activeDayIndex - 1] || null) : null;
       const activeDayFocus = String(activeDayPlan?.focus || '').trim() || (activeDayIndex ? `Day ${activeDayIndex}` : 'today');
       const findNextScheduledWorkoutDate = (fromDate) => {
@@ -12245,6 +12381,62 @@ function toggleSharePopover(force) {
         )
        );
     });
+
+    if (!dayDetail && isHistoryDate && historyLogsForActiveDate.length) {
+      const shiftDay = (delta) => {
+        const nextDate = new Date(activeDate);
+        nextDate.setDate(nextDate.getDate() + delta);
+        setActiveDate(nextDate);
+      };
+      const canGoPrev = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() - 1)) >= minDate;
+      const canGoNext = dayStart(new Date(activeDate.getFullYear(), activeDate.getMonth(), activeDate.getDate() + 1)) <= maxDate;
+      const todayBar = el('div', { class: 'workout-today-bar' },
+        el('div', { class: 'workout-today-title' }, 'Workout history'),
+        el('div', { class: 'workout-today-sub' }, formatDateDMY(activeDate)),
+        el('div', { class: 'workout-today-nav' },
+          el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
+          buildJumpToTodayLabel(formatDateDMY(activeDate)),
+          el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoNext ? null : 'true', onclick: () => shiftDay(1), 'aria-label': 'Next day' }, '›')
+        )
+      );
+      dayDetail = el('div', { class: 'day-card' },
+        todayBar,
+        el('div', { class: 'training-section-line' }),
+        ...historyLogsForActiveDate.map((row, idx) => {
+          const entries = Array.isArray(row?.entries) ? row.entries : [];
+          return el('div', { class: 'day-card', style: idx > 0 ? 'margin-top:0.8rem' : '' },
+            el('div', { class: 'day-head' },
+              el('div', null,
+                el('div', { class: 'day-title' }, `Saved workout • ${workoutLogDateIso(row) || formatDateDMY(activeDate)}`),
+                el('div', { class: 'training-muted' }, row?.notes ? String(row.notes) : 'Logged on a previous training plan')
+              ),
+              el('span', { class: 'training-badge good' }, String(row?.plan_id || '').trim() === String(state.planRow?.id || '').trim() ? 'Current plan' : 'Previous plan')
+            ),
+            el('div', { class: 'training-section-line' }),
+            ...(entries.length
+              ? entries.map((entry) => {
+                const summary = summarizeHistoryEntry(entry);
+                return el('div', { class: 'exercise-card history-exercise-card', style: 'margin-bottom:0.6rem' },
+                  el('div', { class: 'exercise-title history-exercise-title' }, String(entry?.exerciseName || entry?.displayName || entry?.name || 'Exercise')),
+                  el('div', { class: 'training-muted history-exercise-summary' }, summary.summary),
+                  summary.best ? el('div', { class: 'training-muted history-exercise-best' }, summary.best) : null,
+                  summary.sets.length
+                    ? el('div', { class: 'history-exercise-sets' },
+                      ...summary.sets.map((setRow) =>
+                        el('div', { class: 'history-exercise-set-row' },
+                          el('span', { class: 'history-exercise-set-index' }, `Set ${setRow.index}`),
+                          el('span', { class: 'history-exercise-set-value' }, setRow.text)
+                        )
+                      )
+                    )
+                    : null
+                );
+              })
+              : [el('div', { class: 'training-muted' }, 'Workout saved without exercise details.')])
+          );
+        })
+      );
+    }
 
     if (!dayDetail) {
       const shiftDay = (delta) => {
