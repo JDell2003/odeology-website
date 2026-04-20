@@ -3543,6 +3543,8 @@ async function ensureSchema() {
         image_url text NOT NULL DEFAULT ''
       );
     `);
+    await safeQuery(`ALTER TABLE app_training_user_workouts ADD COLUMN IF NOT EXISTS before_image_url text NOT NULL DEFAULT '';`);
+    await safeQuery(`ALTER TABLE app_training_user_workouts ADD COLUMN IF NOT EXISTS after_image_url text NOT NULL DEFAULT '';`);
     await safeQuery('CREATE UNIQUE INDEX IF NOT EXISTS uq_app_training_user_workouts_user_exercise_id ON app_training_user_workouts(user_id, exercise_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_user_workouts_user_created ON app_training_user_workouts(user_id, created_at DESC);');
 
@@ -3890,6 +3892,8 @@ function normalizeCustomWorkoutLevel(raw) {
 }
 
 function normalizeCustomWorkoutImageUrl(raw) {
+  const dataUrl = normalizeDataUrlImage(raw);
+  if (dataUrl) return dataUrl;
   const value = safeText(raw, 480) || '';
   if (!value) return '';
   if (!/^https?:\/\/\S+$/i.test(value)) return '';
@@ -3950,13 +3954,18 @@ function normalizeUserCustomWorkoutEntry(payload, { fixedExerciseId = null } = {
     subMuscleGroup: String(payload?.subMuscleGroup || '').trim().toLowerCase(),
     secondaryMuscles,
     instructions,
-    imageUrl: normalizeCustomWorkoutImageUrl(payload?.imageUrl)
+    imageUrl: normalizeCustomWorkoutImageUrl(payload?.imageUrl),
+    beforeImageUrl: normalizeCustomWorkoutImageUrl(payload?.beforeImageUrl || payload?.imageUrl),
+    afterImageUrl: normalizeCustomWorkoutImageUrl(payload?.afterImageUrl)
   };
   return { ok: true, entry };
 }
 
 function formatUserCustomWorkoutRow(row) {
   const imageUrl = safeText(row?.image_url, 480) || '';
+  const beforeImageUrl = safeText(row?.before_image_url, 480) || imageUrl;
+  const afterImageUrl = safeText(row?.after_image_url, 480) || '';
+  const images = [beforeImageUrl, afterImageUrl].filter(Boolean);
   return {
     id: String(row?.exercise_id || ''),
     name: String(row?.name || row?.exercise_id || 'Custom workout'),
@@ -3968,8 +3977,10 @@ function formatUserCustomWorkoutRow(row) {
     subMuscleGroup: String(row?.sub_muscle_group || ''),
     secondaryMuscles: Array.isArray(row?.secondary_muscles) ? row.secondary_muscles : [],
     instructions: Array.isArray(row?.instructions) ? row.instructions : [],
-    imageUrl,
-    images: imageUrl ? [imageUrl] : [],
+    imageUrl: beforeImageUrl || imageUrl,
+    beforeImageUrl,
+    afterImageUrl,
+    images,
     isCustom: true,
     createdAt: row?.created_at || null,
     updatedAt: row?.updated_at || null
@@ -3979,7 +3990,7 @@ function formatUserCustomWorkoutRow(row) {
 async function listUserCustomWorkouts(userId) {
   const result = await db.query(
     `
-      SELECT exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, created_at, updated_at
+      SELECT exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, before_image_url, after_image_url, created_at, updated_at
       FROM app_training_user_workouts
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -4009,10 +4020,10 @@ async function createUserCustomWorkout(userId, payload) {
     `
       INSERT INTO app_training_user_workouts (
         user_id, exercise_id, name, category, equipment, level,
-        primary_muscles, secondary_muscles, instructions, image_url
+        primary_muscles, secondary_muscles, instructions, image_url, before_image_url, after_image_url
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10)
-      RETURNING exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, created_at, updated_at;
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10, $11, $12)
+      RETURNING exercise_id, name, category, equipment, level, primary_muscles, secondary_muscles, instructions, image_url, before_image_url, after_image_url, created_at, updated_at;
     `,
     [
       userId,
@@ -4024,7 +4035,9 @@ async function createUserCustomWorkout(userId, payload) {
       JSON.stringify(normalized.entry.primaryMuscles),
       JSON.stringify(normalized.entry.secondaryMuscles),
       JSON.stringify(normalized.entry.instructions),
-      normalized.entry.imageUrl
+      normalized.entry.imageUrl,
+      normalized.entry.beforeImageUrl,
+      normalized.entry.afterImageUrl
     ]
   );
   return { ok: true, item: formatUserCustomWorkoutRow(inserted.rows?.[0] || {}) };
@@ -4447,6 +4460,63 @@ async function patchProjectedWeight({ userId, planId, weekIndex, dayIndex, exerc
   ex.projected = ex.projected && typeof ex.projected === 'object' ? ex.projected : {};
   ex.projected.value = next;
   ex.projected.unit = ex.projected.unit || 'lb';
+  plan.meta = { ...(plan.meta || {}), updatedAt: new Date().toISOString() };
+
+  const updated = await db.query(
+    `
+      UPDATE app_training_plans
+      SET updated_at = now(),
+          version = version + 1,
+          plan = $3::jsonb
+      WHERE id = $1 AND user_id = $2
+      RETURNING id, version, discipline, days_per_week, plan, updated_at;
+    `,
+    [planId, userId, JSON.stringify(plan)]
+  );
+  return updated.rows?.[0] || null;
+}
+
+async function patchExerciseOverride({
+  userId,
+  planId,
+  weekIndex,
+  dayIndex,
+  slotId,
+  exerciseId,
+  oldExerciseId,
+  nextExerciseId,
+  nextExerciseName
+}) {
+  const planRow = await db.query(
+    'SELECT id, version, plan FROM app_training_plans WHERE id = $1 AND user_id = $2 AND active = true LIMIT 1;',
+    [planId, userId]
+  );
+  const row = planRow.rows?.[0];
+  if (!row) return null;
+  const plan = row.plan && typeof row.plan === 'object' ? row.plan : JSON.parse(String(row.plan || '{}'));
+  const week = (plan.weeks || []).find((w) => Number(w.index) === Number(weekIndex));
+  if (!week) return null;
+  const day = (week.days || [])[Number(dayIndex) - 1];
+  if (!day) return null;
+  const targetSlotId = safeText(slotId, 120);
+  const targetExerciseId = safeText(exerciseId, 120);
+  const targetOldExerciseId = safeText(oldExerciseId, 120);
+  const replacementExerciseId = safeText(nextExerciseId, 120);
+  if (!replacementExerciseId) return null;
+  const ex = (day.exercises || []).find((entry) => {
+    if (targetSlotId && String(entry?.slotId || '') === targetSlotId) return true;
+    if (targetExerciseId && String(entry?.id || '') === targetExerciseId) return true;
+    if (targetOldExerciseId && String(entry?.exerciseId || '') === targetOldExerciseId) return true;
+    return false;
+  });
+  if (!ex) return null;
+
+  ex.exerciseId = replacementExerciseId;
+  const safeName = safeText(nextExerciseName, 180);
+  if (safeName) {
+    ex.name = safeName;
+    ex.displayName = safeName;
+  }
   plan.meta = { ...(plan.meta || {}), updatedAt: new Date().toISOString() };
 
   const updated = await db.query(
@@ -6416,12 +6486,35 @@ async function trainingRoutes(req, res, url) {
     const weekIndex = clampInt(payload?.weekIndex, 1, 52, null);
     const dayIndex = clampInt(payload?.dayIndex, 1, 7, null);
     const exerciseId = safeText(payload?.exerciseId, 120);
+    const slotId = safeText(payload?.slotId, 120);
+    const oldExerciseId = safeText(payload?.oldExerciseId, 120);
+    const nextExerciseId = safeText(payload?.newExerciseId, 120);
+    const nextExerciseName = safeText(payload?.newExerciseName, 180);
     const projected = Number(payload?.projected);
-    if (!planId || !weekIndex || !dayIndex || !exerciseId) return sendJson(res, 400, { error: 'Missing override params' });
-    if (!Number.isFinite(projected) || projected <= 0) return sendJson(res, 400, { error: 'Invalid projected value' });
+    if (!planId || !weekIndex || !dayIndex) return sendJson(res, 400, { error: 'Missing override params' });
 
     try {
-      const plan = await patchProjectedWeight({ userId: user.id, planId, weekIndex, dayIndex, exerciseId, nextProjected: projected });
+      let plan = null;
+      if (nextExerciseId) {
+        plan = await patchExerciseOverride({
+          userId: user.id,
+          planId,
+          weekIndex,
+          dayIndex,
+          slotId,
+          exerciseId,
+          oldExerciseId,
+          nextExerciseId,
+          nextExerciseName
+        });
+        if (!plan) {
+          return sendJson(res, 200, { ok: true, persisted: false, localOnly: true });
+        }
+      } else {
+        if (!exerciseId) return sendJson(res, 400, { error: 'Missing override params' });
+        if (!Number.isFinite(projected) || projected <= 0) return sendJson(res, 400, { error: 'Invalid projected value' });
+        plan = await patchProjectedWeight({ userId: user.id, planId, weekIndex, dayIndex, exerciseId, nextProjected: projected });
+      }
       if (!plan) return sendJson(res, 404, { error: 'Plan or exercise not found' });
       return sendJson(res, 200, { ok: true, plan });
     } catch (err) {

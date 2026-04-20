@@ -759,6 +759,9 @@
     workoutInputDrafts: new Map(),
     workoutSetCountDrafts: new Map(),
     workoutReadinessDrafts: new Map(),
+    customWorkoutDrafts: new Map(),
+    userCustomWorkouts: [],
+    userCustomWorkoutsLoadedFor: '',
     view: 'wizard', // loading | wizard | generating | upsell | plan
     planError: null,
     generating: {
@@ -1894,6 +1897,328 @@
     return `${week}:${day}`;
   }
 
+  function customWorkoutDateKey(dateLike) {
+    if (!dateLike) return '';
+    if (dateLike instanceof Date) return toISODateLocal(dateLike);
+    return String(dateLike || '').slice(0, 10);
+  }
+
+  function getCustomWorkoutDraftsForDate(dateLike) {
+    const key = customWorkoutDateKey(dateLike);
+    if (!key) return [];
+    const list = state.customWorkoutDrafts.get(key);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function setCustomWorkoutDraftsForDate(dateLike, exercises) {
+    const key = customWorkoutDateKey(dateLike);
+    if (!key) return [];
+    const next = Array.isArray(exercises) ? exercises.slice() : [];
+    if (next.length) state.customWorkoutDrafts.set(key, next);
+    else state.customWorkoutDrafts.delete(key);
+    return next;
+  }
+
+  function normalizeCustomWorkoutMuscleKey(raw) {
+    const token = String(raw || '').trim().toLowerCase();
+    if (!token) return '';
+    if (token.includes('chest') || token.includes('pect')) return 'chest';
+    if (token.includes('lat') || token.includes('back') || token.includes('trap') || token.includes('rhomboid')) return 'back';
+    if (token.includes('shoulder') || token.includes('delt')) return 'shoulders';
+    if (token.includes('bicep')) return 'biceps';
+    if (token.includes('tricep')) return 'triceps';
+    if (token.includes('quad')) return 'quads';
+    if (token.includes('ham')) return 'hamstrings';
+    if (token.includes('glute')) return 'glutes';
+    if (token.includes('calf')) return 'calves';
+    if (token.includes('ab') || token.includes('core') || token.includes('oblique')) return 'abs';
+    return token.replace(/[^a-z0-9]+/g, '_');
+  }
+
+  function buildCustomWorkoutExercise(item, { weekIndex = 1, dayIndex = 0, position = 1 } = {}) {
+    const entry = item && typeof item === 'object' ? item : {};
+    const primary = String(entry?.primaryMuscleGroup || (Array.isArray(entry?.primaryMuscles) ? entry.primaryMuscles[0] || '' : '')).trim();
+    const muscleKey = normalizeCustomWorkoutMuscleKey(primary);
+    const eqClass = equipmentClassFromName(entry);
+    const isIsolation = /(isolation|raise|curl|extension|pushdown|fly|reverse crunch|crunch|lateral)/i.test(String(entry?.name || ''));
+    const name = String(entry?.name || entry?.id || 'Custom exercise').trim();
+    const exerciseId = String(entry?.id || normalizeLiftHistoryKey(name) || `custom_${Date.now()}`).trim();
+    const images = Array.isArray(entry?.images) ? entry.images.filter(Boolean) : [];
+    const beforeImageUrl = String(entry?.beforeImageUrl || images[0] || entry?.imageUrl || '').trim();
+    const afterImageUrl = String(entry?.afterImageUrl || images[1] || '').trim();
+    return {
+      id: `custom:${weekIndex}:${dayIndex}:${Date.now()}:${position}`,
+      baseId: normalizeLiftHistoryKey(exerciseId) || normalizeLiftHistoryKey(name) || `custom_${position}`,
+      exerciseId,
+      displayName: name,
+      name,
+      slotId: `custom_slot:${weekIndex}:${dayIndex}:${position}:${Date.now()}`,
+      intentKey: 'custom_workout',
+      slotRole: 'custom',
+      muscleKeys: muscleKey ? [muscleKey] : [],
+      movementPattern: isIsolation ? 'isolation' : 'custom',
+      stimulusType: isIsolation ? 'isolation' : 'compound',
+      foundationFlag: false,
+      allowedEquipmentClass: ['any'],
+      equipmentClass: eqClass || 'other',
+      mediaPath: beforeImageUrl || '',
+      mediaPathAlt: afterImageUrl || '',
+      sets: isIsolation ? 2 : 3,
+      reps: isIsolation ? '10-15' : '8-12',
+      restSec: isIsolation ? 60 : 90,
+      rirTarget: null,
+      projected: null,
+      blockType: 'single',
+      supersetId: null,
+      swapCandidates: [],
+      coaching: null,
+      tags: ['custom'],
+      substitutions: [],
+      progression: { type: 'load', increment: isIsolation ? 5 : 10, repsTarget: isIsolation ? 12 : 10, technique: 'none', setsCap: isIsolation ? 4 : 5 }
+    };
+  }
+
+  function appendCustomWorkoutToDate({ dateLike, item, scheduledDay = null, weekIndex = 1, dayIndex = 0 }) {
+    const draftExercises = getCustomWorkoutDraftsForDate(dateLike);
+    const targetList = scheduledDay && Array.isArray(scheduledDay.exercises) ? scheduledDay.exercises : draftExercises.slice();
+    const nextExercise = buildCustomWorkoutExercise(item, {
+      weekIndex,
+      dayIndex,
+      position: targetList.length + 1
+    });
+    targetList.push(nextExercise);
+    if (!(scheduledDay && Array.isArray(scheduledDay.exercises))) {
+      setCustomWorkoutDraftsForDate(dateLike, targetList);
+    }
+    return nextExercise;
+  }
+
+  function removeCustomWorkoutExercise({ scheduledDay = null, dateLike = null, exerciseId = '', renderAfter = true } = {}) {
+    const targetId = String(exerciseId || '').trim();
+    if (!targetId) return false;
+    let removed = false;
+    if (scheduledDay && Array.isArray(scheduledDay.exercises)) {
+      const next = scheduledDay.exercises.filter((entry) => String(entry?.id || '').trim() !== targetId);
+      if (next.length !== scheduledDay.exercises.length) {
+        scheduledDay.exercises.splice(0, scheduledDay.exercises.length, ...next);
+        removed = true;
+      }
+    } else {
+      const current = getCustomWorkoutDraftsForDate(dateLike);
+      const next = current.filter((entry) => String(entry?.id || '').trim() !== targetId);
+      if (next.length !== current.length) {
+        setCustomWorkoutDraftsForDate(dateLike, next);
+        removed = true;
+      }
+    }
+    if (removed && renderAfter) render();
+    return removed;
+  }
+
+  function renderCustomWorkoutCta({ onclick, compact = false } = {}) {
+    return el('button', {
+      type: 'button',
+      class: `custom-workout-cta${compact ? ' is-compact' : ''}`,
+      onclick
+    },
+    el('span', { class: 'custom-workout-cta-plus', 'aria-hidden': 'true' }, '+'),
+    el('span', { class: 'custom-workout-cta-copy' },
+      el('span', { class: 'custom-workout-cta-title' }, 'Custom workout'),
+      el('span', { class: 'custom-workout-cta-sub' }, 'Add a movement or browse the workout database')
+    ));
+  }
+
+  async function loadUserCustomWorkouts({ force = false } = {}) {
+    const userId = String(state.auth.user?.id || '').trim();
+    if (!userId) {
+      state.userCustomWorkouts = [];
+      state.userCustomWorkoutsLoadedFor = '';
+      return [];
+    }
+    if (!force && state.userCustomWorkoutsLoadedFor === userId && Array.isArray(state.userCustomWorkouts)) {
+      return state.userCustomWorkouts;
+    }
+    const resp = await api('/api/training/custom-workouts', { method: 'GET' });
+    const items = resp.ok && Array.isArray(resp.json?.items) ? resp.json.items : [];
+    state.userCustomWorkouts = items;
+    state.userCustomWorkoutsLoadedFor = userId;
+    return items;
+  }
+
+  function customWorkoutModalCatalogItems() {
+    const accountItems = Array.isArray(state.userCustomWorkouts) ? state.userCustomWorkouts : [];
+    const merged = [...accountItems, ...exerciseCatalog];
+    const seen = new Set();
+    return merged.filter((item) => {
+      const id = String(item?.id || '').trim().toLowerCase();
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+
+  function openCreateCustomWorkoutModal({ onCreated } = {}) {
+    const primaryOptions = [
+      { value: 'chest', label: 'Chest' },
+      { value: 'back', label: 'Back' },
+      { value: 'shoulders', label: 'Shoulders' },
+      { value: 'biceps', label: 'Biceps' },
+      { value: 'triceps', label: 'Triceps' },
+      { value: 'quads', label: 'Quads' },
+      { value: 'hamstrings', label: 'Hamstrings' },
+      { value: 'glutes', label: 'Glutes' },
+      { value: 'calves', label: 'Calves' },
+      { value: 'abs', label: 'Core' }
+    ];
+    const categoryOptions = [
+      { value: 'free_weights', label: 'Free weights' },
+      { value: 'machines', label: 'Machines' },
+      { value: 'calisthenics', label: 'Calisthenics' },
+      { value: 'stretching', label: 'Stretching' }
+    ];
+    const levelOptions = [
+      { value: 'beginner', label: 'Beginner' },
+      { value: 'intermediate', label: 'Intermediate' },
+      { value: 'expert', label: 'Expert' }
+    ];
+
+    const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
+      el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close create workout' }),
+      el('div', { class: 'schedule-modal-card custom-workout-modal-card create-workout-modal-card' },
+        el('div', { class: 'schedule-modal-head custom-workout-modal-head' },
+          el('button', { type: 'button', class: 'btn btn-ghost custom-workout-create-trigger', onclick: () => overlay.remove() }, 'Back'),
+          el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close create workout' }, '×')
+        ),
+        el('div', { class: 'schedule-modal-body create-workout-modal-body' },
+          el('div', { class: 'schedule-modal-title' }, 'Create workout'),
+          el('div', { class: 'training-muted create-workout-intro' }, 'Saves to your account only. Shared friends can still see it inside workouts you send them.'),
+          el('div', { class: 'create-workout-form' },
+            el('input', { type: 'text', class: 'auth-input', name: 'name', placeholder: 'Workout name' }),
+            el('div', { class: 'create-workout-grid' },
+              el('select', { class: 'auth-input', name: 'primaryMuscle' },
+                primaryOptions.map((opt) => el('option', { value: opt.value }, opt.label))
+              ),
+              el('select', { class: 'auth-input', name: 'level' },
+                levelOptions.map((opt) => el('option', { value: opt.value }, opt.label))
+              )
+            ),
+            el('div', { class: 'create-workout-grid' },
+              el('input', { type: 'text', class: 'auth-input', name: 'subMuscleGroup', placeholder: 'Subgroup, e.g. Side_delts' }),
+              el('input', { type: 'text', class: 'auth-input', name: 'equipment', placeholder: 'Equipment, e.g. Dumbbell' })
+            ),
+            el('div', { class: 'create-workout-grid' },
+              el('select', { class: 'auth-input', name: 'category' },
+                categoryOptions.map((opt) => el('option', { value: opt.value }, opt.label))
+              ),
+              el('input', { type: 'text', class: 'auth-input', name: 'instructions', placeholder: 'Instructions or cues' })
+            ),
+            el('div', { class: 'create-workout-grid create-workout-image-grid' },
+              el('label', { class: 'auth-input create-workout-upload' },
+                el('input', { type: 'file', name: 'beforeImageFile', accept: 'image/*', class: 'create-workout-file-input' }),
+                el('span', { class: 'create-workout-upload-text', 'data-create-workout-upload-label': 'before' }, 'Before picture')
+              ),
+              el('label', { class: 'auth-input create-workout-upload' },
+                el('input', { type: 'file', name: 'afterImageFile', accept: 'image/*', class: 'create-workout-file-input' }),
+                el('span', { class: 'create-workout-upload-text', 'data-create-workout-upload-label': 'after' }, 'After picture')
+              )
+            ),
+            el('div', { class: 'create-workout-image-preview-grid hidden', 'data-create-workout-preview-grid': '1' },
+              el('div', { class: 'create-workout-image-preview', 'data-create-workout-preview-wrap': 'before' },
+                el('img', { class: 'create-workout-image-preview-img', alt: 'Before preview', 'data-create-workout-preview': 'before' }),
+                el('div', { class: 'create-workout-image-preview-label' }, 'Before')
+              ),
+              el('div', { class: 'create-workout-image-preview', 'data-create-workout-preview-wrap': 'after' },
+                el('img', { class: 'create-workout-image-preview-img', alt: 'After preview', 'data-create-workout-preview': 'after' }),
+                el('div', { class: 'create-workout-image-preview-label' }, 'After')
+              )
+            ),
+            el('div', { class: 'training-muted create-workout-status', 'data-create-workout-status': '1' }, ''),
+            el('div', { class: 'schedule-modal-actions' },
+              el('button', {
+                type: 'button',
+                class: 'btn btn-primary',
+                onclick: async () => {
+                  const host = overlay.querySelector('.create-workout-form');
+                  const status = overlay.querySelector('[data-create-workout-status]');
+                  if (!(host instanceof Element)) return;
+                  const name = String(host.querySelector('[name="name"]')?.value || '').trim();
+                  const primaryMuscle = String(host.querySelector('[name="primaryMuscle"]')?.value || '').trim();
+                  const subMuscleGroup = String(host.querySelector('[name="subMuscleGroup"]')?.value || '').trim();
+                  const equipment = String(host.querySelector('[name="equipment"]')?.value || '').trim();
+                  const category = String(host.querySelector('[name="category"]')?.value || '').trim();
+                  const level = String(host.querySelector('[name="level"]')?.value || '').trim();
+                  const instructionsText = String(host.querySelector('[name="instructions"]')?.value || '').trim();
+                  const beforeImageFile = host.querySelector('[name="beforeImageFile"]')?.files?.[0] || null;
+                  const afterImageFile = host.querySelector('[name="afterImageFile"]')?.files?.[0] || null;
+                  const beforeImageDataUrl = beforeImageFile ? await fileToSquareAvatarDataUrl(beforeImageFile, { size: 512, quality: 0.86 }) : '';
+                  const afterImageDataUrl = afterImageFile ? await fileToSquareAvatarDataUrl(afterImageFile, { size: 512, quality: 0.86 }) : '';
+                  if (status) status.textContent = '';
+                  const resp = await api('/api/training/custom-workouts', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      name,
+                      primaryMuscles: primaryMuscle ? [primaryMuscle] : [],
+                      primaryMuscleGroup: primaryMuscle,
+                      subMuscleGroup,
+                      equipment,
+                      category,
+                      level,
+                      instructions: instructionsText ? [instructionsText] : [],
+                      imageUrl: beforeImageDataUrl || '',
+                      beforeImageUrl: beforeImageDataUrl || '',
+                      afterImageUrl: afterImageDataUrl || ''
+                    })
+                  });
+                  if (!resp.ok || !resp.json?.item) {
+                    if (status) status.textContent = resp.json?.error || 'Could not create workout.';
+                    return;
+                  }
+                  await loadUserCustomWorkouts({ force: true });
+                  overlay.remove();
+                  onCreated?.(resp.json.item);
+                }
+              }, 'Save workout'),
+              el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Cancel')
+            )
+          )
+        )
+      )
+    );
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', () => overlay.remove());
+    const bindImagePreviewInput = (fieldName, labelKey) => {
+      overlay.querySelector(`[name="${fieldName}"]`)?.addEventListener('change', async (event) => {
+        const input = event.currentTarget;
+        const file = input?.files?.[0] || null;
+        const label = overlay.querySelector(`[data-create-workout-upload-label="${labelKey}"]`);
+        const previewGrid = overlay.querySelector('[data-create-workout-preview-grid]');
+        const previewWrap = overlay.querySelector(`[data-create-workout-preview-wrap="${labelKey}"]`);
+        const previewImg = overlay.querySelector(`[data-create-workout-preview="${labelKey}"]`);
+        if (label) label.textContent = file ? String(file.name || 'Picture selected') : `${labelKey === 'before' ? 'Before' : 'After'} picture`;
+        if (!file || !(previewWrap instanceof Element) || !(previewImg instanceof HTMLImageElement)) {
+          previewWrap?.classList?.add('hidden');
+          const anyVisible = Array.from(overlay.querySelectorAll('[data-create-workout-preview-wrap]')).some((node) => !node.classList.contains('hidden'));
+          if (previewGrid instanceof Element) previewGrid.classList.toggle('hidden', !anyVisible);
+          return;
+        }
+        const dataUrl = await fileToSquareAvatarDataUrl(file, { size: 320, quality: 0.82 });
+        if (!dataUrl) {
+          previewWrap.classList.add('hidden');
+          const anyVisible = Array.from(overlay.querySelectorAll('[data-create-workout-preview-wrap]')).some((node) => !node.classList.contains('hidden'));
+          if (previewGrid instanceof Element) previewGrid.classList.toggle('hidden', !anyVisible);
+          return;
+        }
+        previewImg.src = dataUrl;
+        previewWrap.classList.remove('hidden');
+        if (previewGrid instanceof Element) previewGrid.classList.remove('hidden');
+      });
+    };
+    bindImagePreviewInput('beforeImageFile', 'before');
+    bindImagePreviewInput('afterImageFile', 'after');
+    document.body.appendChild(overlay);
+    overlay.querySelector('[name="name"]')?.focus();
+  }
+
   function setWorkoutReadinessDraft({ weekIndex, dayIndex, value }) {
     const key = workoutDayKey({ weekIndex, dayIndex });
     if (!key) return;
@@ -1985,6 +2310,52 @@
       if (perf) return perf;
     }
     return normalizeLiftPerformance(entry?.actual);
+  }
+
+  function compareIsoDateStrings(a, b) {
+    const left = String(a || '').slice(0, 10);
+    const right = String(b || '').slice(0, 10);
+    if (!left || !right) return 0;
+    if (left < right) return -1;
+    if (left > right) return 1;
+    return 0;
+  }
+
+  function findLatestMatchingLogData({ logs, values = {}, beforeDate = null } = {}) {
+    const keys = resolveLiftHistoryLookupKeys(values);
+    if (!keys.length) return { entry: null, performance: null };
+    const keySet = new Set(keys);
+    const beforeIso = String(beforeDate || '').slice(0, 10);
+    let bestEntry = null;
+    let bestPerf = null;
+    let bestStamp = '';
+    for (const row of Array.isArray(logs) ? logs : []) {
+      const rowIso = workoutLogDateIso(row);
+      if (!rowIso) continue;
+      if (beforeIso && compareIsoDateStrings(rowIso, beforeIso) >= 0) continue;
+      const entries = Array.isArray(row?.entries) ? row.entries : [];
+      for (const rawEntry of entries) {
+        const aliases = resolveLiftHistoryLookupKeys({
+          baseId: rawEntry?.baseId,
+          exerciseId: rawEntry?.exerciseId || rawEntry?.id,
+          exerciseName: rawEntry?.exerciseName || rawEntry?.displayName || rawEntry?.name
+        });
+        if (!aliases.some((alias) => keySet.has(alias))) continue;
+        const perf = extractWorkoutEntryPerformance(rawEntry);
+        if (!perf) continue;
+        if (!bestStamp || rowIso > bestStamp) {
+          bestStamp = rowIso;
+          bestPerf = { ...perf, performedAt: rowIso };
+          bestEntry = {
+            sets: Array.isArray(rawEntry?.sets) ? rawEntry.sets : [],
+            actual: rawEntry?.actual && typeof rawEntry.actual === 'object' ? { ...rawEntry.actual } : null,
+            prescribed: rawEntry?.prescribed && typeof rawEntry.prescribed === 'object' ? { ...rawEntry.prescribed } : null,
+            performedAt: rowIso
+          };
+        }
+      }
+    }
+    return { entry: bestEntry, performance: bestPerf };
   }
 
   function buildLiftHistoryIndex(raw) {
@@ -2226,15 +2597,21 @@
       const exerciseKey = resolveWorkoutExerciseKey(ex);
       const lookupValues = {
         baseId: ex?.baseId,
-        exerciseId: ex?.id,
+        exerciseId: ex?.exerciseId || ex?.id,
         exerciseName: ex?.displayName || ex?.name
       };
       const previousEntry = pickLiftHistoryRecord(previousEntryMap, lookupValues);
       const historicalPerformance = pickLiftHistoryRecord(historicalPerfMap, lookupValues);
       const persistentLift = pickLiftHistoryRecord(state.liftHistory, lookupValues);
+      const crossPlanHistory = findLatestMatchingLogData({
+        logs: state.allLogs,
+        values: lookupValues,
+        beforeDate: performedAt
+      });
       const resolvedProjected = resolveProjectedForExercise(ex, planRef, {
         previousEntry,
         historicalPerformance,
+        crossPlanPerformance: crossPlanHistory.performance,
         persistentLift,
         currentPerformedAt: performedAt
       });
@@ -2293,7 +2670,7 @@
         }));
       const lastSet = [...sets].reverse().find((s) => Number.isFinite(s.weight) || Number.isFinite(s.reps)) || null;
       return {
-        exerciseId: ex.id,
+        exerciseId: ex.exerciseId || ex.id,
         baseId: ex.baseId,
         exerciseName: ex.displayName || ex.name || ex.baseId || ex.id || 'Exercise',
         prescribed: {
@@ -3609,7 +3986,7 @@
   function resolveTargetSeedForExercise(ex, options = {}) {
     const persistentLift = options.persistentLift || pickLiftHistoryRecord(state.liftHistory, {
       baseId: ex?.baseId,
-      exerciseId: ex?.id,
+      exerciseId: ex?.exerciseId || ex?.id,
       exerciseName: ex?.displayName || ex?.name
     });
     return pickBestTargetWeightCandidate([
@@ -3620,6 +3997,7 @@
         projectedWeight: resolvePreviousProjectedWeight({ previousEntry: options.previousEntry })
       }),
       buildTargetWeightPerformanceCandidate(options.historicalPerformance),
+      buildTargetWeightPerformanceCandidate(options.crossPlanPerformance),
       buildTargetWeightPerformanceCandidate(persistentLift?.last)
     ], {
       excludePerformedAt: options.currentPerformedAt
@@ -4956,7 +5334,8 @@ function toFreeExerciseDbRemotePath(src) {
   function getSwapOverride(planId, weekIndex, dayIndex, slotId) {
     if (!slotId) return null;
     try {
-      return localStorage.getItem(swapOverrideKey(planId, weekIndex, dayIndex, slotId));
+      return localStorage.getItem(swapOverrideKey(planId, weekIndex, dayIndex, slotId))
+        || localStorage.getItem(swapOverrideKey(null, weekIndex, dayIndex, slotId));
     } catch {
       return null;
     }
@@ -4966,6 +5345,7 @@ function toFreeExerciseDbRemotePath(src) {
     if (!slotId || !exerciseId) return;
     try {
       localStorage.setItem(swapOverrideKey(planId, weekIndex, dayIndex, slotId), String(exerciseId));
+      localStorage.setItem(swapOverrideKey(null, weekIndex, dayIndex, slotId), String(exerciseId));
     } catch {
       // ignore
     }
@@ -4978,7 +5358,8 @@ function toFreeExerciseDbRemotePath(src) {
   function getPermanentSwapOverride(planId, slotId) {
     if (!slotId) return null;
     try {
-      return localStorage.getItem(swapOverrideKeyPermanent(planId, slotId));
+      return localStorage.getItem(swapOverrideKeyPermanent(planId, slotId))
+        || localStorage.getItem(swapOverrideKeyPermanent(null, slotId));
     } catch {
       return null;
     }
@@ -4988,6 +5369,7 @@ function toFreeExerciseDbRemotePath(src) {
     if (!slotId || !exerciseId) return;
     try {
       localStorage.setItem(swapOverrideKeyPermanent(planId, slotId), String(exerciseId));
+      localStorage.setItem(swapOverrideKeyPermanent(null, slotId), String(exerciseId));
     } catch {
       // ignore
     }
@@ -6226,7 +6608,9 @@ function toFreeExerciseDbRemotePath(src) {
     const prevId = ex.exerciseId;
     ex.exerciseId = newExerciseId;
     const media = exerciseMediaFromId(newExerciseId);
-    if (media.displayName) ex.displayName = media.displayName;
+    const nextExerciseName = media.displayName || getExerciseNameById(newExerciseId) || newExerciseId;
+    ex.displayName = nextExerciseName;
+    ex.name = nextExerciseName;
     ex.mediaPath = media.mediaPath;
     ex.mediaPathAlt = media.mediaPathAlt;
     if (scope === 'permanent') {
@@ -6248,11 +6632,14 @@ function toFreeExerciseDbRemotePath(src) {
       api('/api/training/override', {
         method: 'POST',
         body: JSON.stringify({
+          planId: state.planRow?.id,
           weekIndex,
           dayIndex,
+          exerciseId: ex.id,
           slotId: ex.slotId,
           oldExerciseId: prevId,
           newExerciseId,
+          newExerciseName: nextExerciseName,
           scope
         })
       });
@@ -6367,6 +6754,26 @@ function toFreeExerciseDbRemotePath(src) {
   }
 
   function openCustomSwapModal({ ex, dayIndex, weekIndex, onDone }) {
+    const openCreateWorkoutFromPicker = () => {
+      if (!state.auth.user) {
+        openAuthModal('login');
+        return;
+      }
+      openCreateCustomWorkoutModal({
+        onCreated: (item) => {
+          if (!item?.id) return;
+          window.setTimeout(() => {
+            openSwapScopeModal({
+              ex,
+              dayIndex,
+              weekIndex,
+              newExerciseId: String(item.id),
+              onDone
+            });
+          }, 0);
+        }
+      });
+    };
     const customGroupMeta = {
       chest: { label: 'Chest', order: 1 },
       back: { label: 'Back', order: 2 },
@@ -6446,15 +6853,195 @@ function toFreeExerciseDbRemotePath(src) {
         }))
         .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label));
     };
+    const openCustomWorkoutDatabaseModal = async ({ title = 'Custom workout', createAction = null, onSelect }) => {
+      await loadUserCustomWorkouts();
+      const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
+        el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close custom workout picker' }),
+        el('div', { class: 'schedule-modal-card custom-workout-modal-card' },
+          el('div', { class: 'schedule-modal-head custom-workout-modal-head' },
+            el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close custom workout picker' }, '×')
+          ),
+          el('div', { class: 'schedule-modal-body' },
+            el('div', { class: 'schedule-modal-title', style: 'margin-bottom:0.85rem' }, title),
+            el('input', {
+              type: 'search',
+              class: 'auth-input custom-workout-search',
+              placeholder: 'Search workout database'
+            }),
+            el('div', { class: 'custom-workout-results' })
+          ),
+          el('div', { class: 'schedule-modal-actions custom-workout-modal-actions' },
+            el('button', {
+              type: 'button',
+              class: 'btn btn-ghost custom-workout-create-trigger',
+              onclick: () => {
+                overlay.remove();
+                createAction?.();
+              }
+            }, 'Create workout'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
+          )
+        )
+      );
+
+      const searchInput = overlay.querySelector('.custom-workout-search');
+      const resultsWrap = overlay.querySelector('.custom-workout-results');
+
+      const renderResults = () => {
+        if (!resultsWrap) return;
+        const query = String(searchInput?.value || '').trim().toLowerCase();
+        const filtered = customWorkoutModalCatalogItems()
+          .filter((item) => {
+            const name = String(item?.name || '').toLowerCase();
+            const id = String(item?.id || '').toLowerCase();
+            const primary = String(item?.primaryMuscleGroup || (Array.isArray(item?.primaryMuscles) ? item.primaryMuscles.join(' ') : '')).toLowerCase();
+            const subgroup = String(item?.subMuscleGroup || (Array.isArray(item?.subMuscleGroups) ? item.subMuscleGroups.join(' ') : '')).toLowerCase();
+            if (!query) return true;
+            return name.includes(query) || id.includes(query) || primary.includes(query) || subgroup.includes(query);
+          })
+          .slice(0, 80);
+
+        resultsWrap.innerHTML = '';
+        if (!filtered.length) {
+          resultsWrap.appendChild(el('div', { class: 'training-muted' }, 'No workouts found.'));
+          return;
+        }
+
+        buildGroupedItems(filtered).forEach((group) => {
+          resultsWrap.appendChild(el('div', { class: 'custom-workout-group' }, group.label));
+          group.subgroups.forEach((subgroup) => {
+            resultsWrap.appendChild(el('div', { class: 'custom-workout-subgroup' }, subgroup.label));
+            subgroup.items.forEach((item) => {
+              const label = String(item?.name || item?.id || 'Exercise');
+              const meta = [item?.isCustom ? 'Your DB' : null, item?.primaryMuscleGroup, item?.subMuscleGroup].filter(Boolean).join(' - ');
+              resultsWrap.appendChild(
+                el('button', {
+                  type: 'button',
+                  class: 'custom-workout-result',
+                  onclick: (event) => {
+                    event?.preventDefault?.();
+                    event?.stopPropagation?.();
+                    overlay.remove();
+                    onSelect?.(item);
+                  }
+                },
+                el('span', { class: 'custom-workout-result-name' }, label),
+                meta ? el('span', { class: 'custom-workout-result-meta' }, meta) : null)
+              );
+            });
+          });
+        });
+      };
+
+      searchInput?.addEventListener('input', renderResults);
+      overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', () => overlay.remove());
+      overlay.querySelector('.schedule-modal-close')?.addEventListener('click', () => overlay.remove());
+      document.body.appendChild(overlay);
+      renderResults();
+      searchInput?.focus();
+    };
+
+    openCustomWorkoutDatabaseModal({
+      title: 'Custom workout',
+      createAction: openCreateWorkoutFromPicker,
+      onSelect: (item) => {
+        window.setTimeout(() => {
+          openSwapScopeModal({
+            ex,
+            dayIndex,
+            weekIndex,
+            newExerciseId: String(item?.id || ''),
+            onDone
+          });
+        }, 0);
+      }
+    });
+  }
+
+  async function openAddCustomWorkoutModal({ scheduledDay = null, dateLike = null, weekIndex = 1, dayIndex = 0, onDone = null } = {}) {
+    await ensureExerciseCatalogLoaded();
+    await loadUserCustomWorkouts();
+    const customGroupMeta = {
+      chest: { label: 'Chest', order: 1 },
+      back: { label: 'Back', order: 2 },
+      shoulders: { label: 'Shoulders', order: 3 },
+      arms: { label: 'Arms', order: 4 },
+      legs: { label: 'Legs', order: 5 },
+      core: { label: 'Core', order: 6 },
+      full_body: { label: 'Full Body', order: 7 },
+      other: { label: 'Other', order: 8 }
+    };
+    const normalizeMuscleToken = (raw) => String(raw || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const formatMuscleLabel = (raw) => {
+      const token = normalizeMuscleToken(raw);
+      const map = {
+        abs: 'Abs',
+        back: 'Back',
+        biceps: 'Biceps',
+        calves: 'Calves',
+        chest: 'Chest',
+        forearms: 'Forearms',
+        glutes: 'Glutes',
+        hamstrings: 'Hamstrings',
+        lats: 'Lats',
+        lowerback: 'Lower Back',
+        obliques: 'Obliques',
+        quadriceps: 'Quads',
+        shoulders: 'Shoulders',
+        traps: 'Traps',
+        hipflexors: 'Hip Flexors',
+        serratus: 'Serratus'
+      };
+      return map[token] || String(raw || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+    };
+    const resolveGroupKey = (primaryMuscleRaw) => {
+      const token = normalizeMuscleToken(primaryMuscleRaw);
+      if (!token) return 'other';
+      if (token.includes('chest') || token.includes('pect')) return 'chest';
+      if (token.includes('lat') || token.includes('back') || token.includes('rhomboid') || token.includes('trap')) return 'back';
+      if (token.includes('shoulder') || token.includes('delt')) return 'shoulders';
+      if (token.includes('bicep') || token.includes('tricep') || token.includes('forearm') || token.includes('brach')) return 'arms';
+      if (token.includes('quad') || token.includes('hamstring') || token.includes('glute') || token.includes('calf') || token.includes('adductor') || token.includes('abductor') || token.includes('hipflexor') || token.includes('leg')) return 'legs';
+      if (token.includes('abdominal') || token.includes('oblique') || token.includes('core') || token.includes('serratus')) return 'core';
+      if (token.includes('fullbody') || token.includes('totalbody')) return 'full_body';
+      return 'other';
+    };
+    const buildGroupedItems = (items) => {
+      const groups = new Map();
+      for (const item of items) {
+        const primary = String(item?.primaryMuscleGroup || (Array.isArray(item?.primaryMuscles) ? item.primaryMuscles[0] || '' : '')).trim();
+        const subgroup = String(item?.subMuscleGroup || (Array.isArray(item?.subMuscleGroups) ? item.subMuscleGroups[0] || '' : primary)).trim();
+        const groupKey = resolveGroupKey(primary);
+        const groupMeta = customGroupMeta[groupKey] || customGroupMeta.other;
+        if (!groups.has(groupKey)) groups.set(groupKey, { key: groupKey, label: groupMeta.label, order: groupMeta.order, subgroups: new Map() });
+        const bucket = groups.get(groupKey);
+        const subgroupKey = normalizeMuscleToken(subgroup) || 'uncategorized';
+        if (!bucket.subgroups.has(subgroupKey)) {
+          bucket.subgroups.set(subgroupKey, { key: subgroupKey, label: formatMuscleLabel(subgroup || primary), items: [] });
+        }
+        bucket.subgroups.get(subgroupKey).items.push(item);
+      }
+      return Array.from(groups.values())
+        .map((group) => ({
+          ...group,
+          subgroups: Array.from(group.subgroups.values())
+            .map((sub) => ({
+              ...sub,
+              items: sub.items.slice().sort((a, b) => String(a?.name || a?.id || '').localeCompare(String(b?.name || b?.id || '')))
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+        }))
+        .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label));
+    };
 
     const overlay = el('div', { class: 'schedule-modal', role: 'dialog', 'aria-modal': 'true' },
       el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close custom workout picker' }),
       el('div', { class: 'schedule-modal-card custom-workout-modal-card' },
-        el('div', { class: 'schedule-modal-head' },
-          el('div', { class: 'schedule-modal-title' }, 'Custom workout'),
+        el('div', { class: 'schedule-modal-head custom-workout-modal-head' },
           el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close custom workout picker' }, '×')
         ),
         el('div', { class: 'schedule-modal-body' },
+          el('div', { class: 'schedule-modal-title', style: 'margin-bottom:0.85rem' }, 'Custom workout'),
           el('input', {
             type: 'search',
             class: 'auth-input custom-workout-search',
@@ -6462,7 +7049,24 @@ function toFreeExerciseDbRemotePath(src) {
           }),
           el('div', { class: 'custom-workout-results' })
         ),
-        el('div', { class: 'schedule-modal-actions' },
+        el('div', { class: 'schedule-modal-actions custom-workout-modal-actions' },
+          el('button', {
+            type: 'button',
+            class: 'btn btn-ghost custom-workout-create-trigger',
+            onclick: () => {
+              if (!state.auth.user) {
+                openAuthModal('login');
+                return;
+              }
+              openCreateCustomWorkoutModal({
+                onCreated: (item) => {
+                  if (!item) return;
+                  appendCustomWorkoutToDate({ dateLike, item, scheduledDay, weekIndex, dayIndex });
+                  onDone?.();
+                }
+              });
+            }
+          }, 'Create workout'),
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => overlay.remove() }, 'Close')
         )
       )
@@ -6470,11 +7074,10 @@ function toFreeExerciseDbRemotePath(src) {
 
     const searchInput = overlay.querySelector('.custom-workout-search');
     const resultsWrap = overlay.querySelector('.custom-workout-results');
-
     const renderResults = () => {
       if (!resultsWrap) return;
       const query = String(searchInput?.value || '').trim().toLowerCase();
-      const filtered = exerciseCatalog
+      const filtered = customWorkoutModalCatalogItems()
         .filter((item) => {
           const name = String(item?.name || '').toLowerCase();
           const id = String(item?.id || '').toLowerCase();
@@ -6486,7 +7089,6 @@ function toFreeExerciseDbRemotePath(src) {
         .slice(0, 80);
 
       resultsWrap.innerHTML = '';
-
       if (!filtered.length) {
         resultsWrap.appendChild(el('div', { class: 'training-muted' }, 'No workouts found.'));
         return;
@@ -6495,32 +7097,23 @@ function toFreeExerciseDbRemotePath(src) {
       buildGroupedItems(filtered).forEach((group) => {
         resultsWrap.appendChild(el('div', { class: 'custom-workout-group' }, group.label));
         group.subgroups.forEach((subgroup) => {
-          resultsWrap.appendChild(el('div', { class: 'custom-workout-subgroup' }, subgroup.label));
-          subgroup.items.forEach((item) => {
-            const label = String(item?.name || item?.id || 'Exercise');
-            const meta = [item?.primaryMuscleGroup, item?.subMuscleGroup].filter(Boolean).join(' - ');
-            resultsWrap.appendChild(
-              el('button', {
+            resultsWrap.appendChild(el('div', { class: 'custom-workout-subgroup' }, subgroup.label));
+            subgroup.items.forEach((item) => {
+              const label = String(item?.name || item?.id || 'Exercise');
+              const meta = [item?.isCustom ? 'Your DB' : null, item?.primaryMuscleGroup, item?.subMuscleGroup].filter(Boolean).join(' - ');
+              resultsWrap.appendChild(el('button', {
                 type: 'button',
                 class: 'custom-workout-result',
-                onclick: (event) => {
-                  event?.preventDefault?.();
-                  event?.stopPropagation?.();
-                  overlay.remove();
-                  window.setTimeout(() => {
-                    openSwapScopeModal({
-                      ex,
-                      dayIndex,
-                      weekIndex,
-                      newExerciseId: String(item?.id || ''),
-                      onDone
-                    });
-                  }, 0);
-                }
-              },
-              el('span', { class: 'custom-workout-result-name' }, label),
-              meta ? el('span', { class: 'custom-workout-result-meta' }, meta) : null)
-            );
+              onclick: (event) => {
+                event?.preventDefault?.();
+                event?.stopPropagation?.();
+                appendCustomWorkoutToDate({ dateLike, item, scheduledDay, weekIndex, dayIndex });
+                overlay.remove();
+                onDone?.();
+              }
+            },
+            el('span', { class: 'custom-workout-result-name' }, label),
+            meta ? el('span', { class: 'custom-workout-result-meta' }, meta) : null));
           });
         });
       });
@@ -11408,6 +12001,7 @@ function toggleSharePopover(force) {
 
       const activeWeekday = activeDate.getDay();
       const activeDateIso = toISODateLocal(activeDate);
+      const customDraftExercises = getCustomWorkoutDraftsForDate(activeDateIso);
       const allLogsByDate = buildLogsByDate(state.allLogs);
       const historyLogsForActiveDate = allLogsByDate.get(activeDateIso) || [];
       const isHistoryDate = dayStart(activeDate).getTime() < dayStart(planMinDate).getTime();
@@ -12012,16 +12606,22 @@ function toggleSharePopover(force) {
 
       const list = el('div', { class: 'exercise-list' });
       (day.exercises || []).forEach((ex, exIdx) => {
+        const isCustomWorkout = Array.isArray(ex?.tags) && ex.tags.includes('custom');
         const exerciseKey = resolveWorkoutExerciseKey(ex);
         const lookupValues = {
           baseId: ex?.baseId,
-          exerciseId: ex?.id,
+          exerciseId: ex?.exerciseId || ex?.id,
           exerciseName: ex?.displayName || ex?.name
         };
         const previousEntry = pickLiftHistoryRecord(previousEntryMap, lookupValues);
         const currentEntry = pickLiftHistoryRecord(currentEntryMap, lookupValues);
         const persistentLift = pickLiftHistoryRecord(state.liftHistory, lookupValues);
         const historicalPerformance = pickLiftHistoryRecord(historicalPerfMap, lookupValues);
+        const crossPlanHistory = findLatestMatchingLogData({
+          logs: state.allLogs,
+          values: lookupValues,
+          beforeDate: performedAtValue || activeDateIso
+        });
 
         const repsTarget = Number.isFinite(ex?.progression?.repsTarget) ? ex.progression.repsTarget : parseRepsTarget(ex.reps);
         const technique = ex?.progression?.technique && String(ex.progression.technique).trim().toLowerCase() !== 'none'
@@ -12205,12 +12805,14 @@ function toggleSharePopover(force) {
         const targetSeed = resolveTargetSeedForExercise(ex, {
           previousEntry,
           historicalPerformance,
+          crossPlanPerformance: crossPlanHistory.performance,
           persistentLift,
           currentPerformedAt: performedAtValue
         });
         const projected = fmtProjected(resolveProjectedForExercise(ex, plan, {
           previousEntry,
           historicalPerformance,
+          crossPlanPerformance: crossPlanHistory.performance,
           persistentLift,
           lastPerformance: targetSeed,
           currentPerformedAt: performedAtValue
@@ -12219,6 +12821,7 @@ function toggleSharePopover(force) {
           || extractWorkoutEntryPerformance(currentEntry)
           || persistentLift?.last
           || historicalPerformance
+          || crossPlanHistory.performance
           || null;
         const bestPerf = persistentLift?.best || null;
         const lastWeekCompact = (() => {
@@ -12270,7 +12873,24 @@ function toggleSharePopover(force) {
           el('div', { class: 'exercise-row has-media' },
             mediaBtn,
             el('div', { class: 'exercise-meta' },
-              el('div', { class: 'exercise-name' }, ex.displayName || ex.name),
+              el('div', { class: 'exercise-name-row' },
+                el('div', { class: 'exercise-name' }, ex.displayName || ex.name),
+                isCustomWorkout
+                  ? el('button', {
+                    type: 'button',
+                    class: 'custom-workout-delete-btn',
+                    title: 'Delete custom workout',
+                    'aria-label': 'Delete custom workout',
+                    onclick: () => {
+                      removeCustomWorkoutExercise({
+                        scheduledDay: day,
+                        dateLike: activeDateIso,
+                        exerciseId: ex.id
+                      });
+                    }
+                  }, 'Delete')
+                  : null
+              ),
               el('div', { class: 'exercise-prescription' }, setsRepsRest),
               ex.tempo ? el('div', { class: 'exercise-substitutions' }, `Tempo: ${String(ex.tempo)}`) : null,
               ex.coaching?.progress ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Progress: ${String(ex.coaching.progress)}`) : null,
@@ -12377,6 +12997,15 @@ function toggleSharePopover(force) {
           el('div', { class: 'workout-goal' }, goalLine),
           el('div', { class: 'training-section-line' }),
           list,
+          renderCustomWorkoutCta({
+            onclick: () => openAddCustomWorkoutModal({
+              scheduledDay: day,
+              dateLike: activeDateIso,
+              weekIndex: activeWeek,
+              dayIndex,
+              onDone: () => render()
+            })
+          }),
           el('div', { class: 'training-section-line' })
         )
        );
@@ -12467,7 +13096,25 @@ function toggleSharePopover(force) {
           el('span', { class: 'training-badge' }, 'Not scheduled')
         ),
         el('div', { class: 'training-section-line' }),
-        el('div', { class: 'training-card training-center' }, el('div', { class: 'training-muted' }, 'Workout not scheduled for this day.'))
+        el('div', { class: 'training-card training-center' }, el('div', { class: 'training-muted' }, 'Workout not scheduled for this day.')),
+        renderCustomWorkoutCta({
+          onclick: () => openAddCustomWorkoutModal({
+            dateLike: activeDateIso,
+            weekIndex: activeWeek,
+            dayIndex: 0,
+            onDone: () => render()
+          })
+        }),
+        customDraftExercises.length
+          ? el('div', { class: 'training-card custom-workout-draft-list' },
+            el('div', { class: 'day-title', style: 'margin-bottom:0.5rem' }, 'Custom workout'),
+            ...customDraftExercises.map((entry) =>
+              el('div', { class: 'custom-workout-draft-item' },
+                el('span', { class: 'custom-workout-draft-name' }, String(entry?.displayName || entry?.name || 'Exercise')),
+                el('span', { class: 'custom-workout-draft-meta' }, `${entry?.sets || 2} sets • ${entry?.reps || '8-12'} reps`)
+              )
+            ))
+          : null
       );
     }
     shell.appendChild(
