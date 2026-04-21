@@ -19854,10 +19854,10 @@ html[data-theme="light"] .ode-tour-btn.primary {
 }
 
 .training-page .exercise-name-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.65rem;
     min-width: 0;
 }
 
@@ -19873,6 +19873,7 @@ html[data-theme="light"] .ode-tour-btn.primary {
     white-space: nowrap;
     box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     flex: 0 0 auto;
+    align-self: start;
 }
 
 .training-page .swap-option-card {
@@ -21073,6 +21074,59 @@ html[data-theme="light"] .ode-tour-btn.primary {
         width: 100%;
         height: 150px;
         border-radius: 18px;
+    }
+
+    .training-page .exercise-row {
+        padding: 0.8rem;
+    }
+
+    .training-page .exercise-row.has-media {
+        gap: 0.72rem;
+        padding: 0.78rem;
+    }
+
+    .training-page .exercise-name-row {
+        gap: 0.5rem;
+    }
+
+    .training-page .exercise-name {
+        font-size: 0.98rem;
+        line-height: 1.2;
+        -webkit-line-clamp: 2;
+    }
+
+    .training-page .custom-workout-delete-btn {
+        padding: 0.22rem 0.48rem;
+        font-size: 0.68rem;
+        border-radius: 999px;
+        max-width: 100%;
+    }
+
+    .training-page .custom-workout-cta,
+    .training-page .custom-workout-cta.is-compact {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 0.65rem;
+        margin-top: 0.68rem;
+        padding: 0.72rem 0.78rem;
+        border-radius: 16px;
+    }
+
+    .training-page .custom-workout-cta-plus {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        font-size: 1.18rem;
+    }
+
+    .training-page .custom-workout-cta-title {
+        font-size: 0.92rem;
+        line-height: 1.08;
+    }
+
+    .training-page .custom-workout-cta-sub {
+        font-size: 0.76rem;
+        line-height: 1.18;
+        max-width: 22ch;
     }
 }
 
