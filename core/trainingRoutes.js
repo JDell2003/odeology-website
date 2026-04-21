@@ -5355,9 +5355,11 @@ async function trainingRoutes(req, res, url) {
     }
 
     if (pathname === '/api/training/state' && req.method === 'GET') {
-      const profile = await getProfile(user.id);
-      const plan = await getActivePlan(user.id);
-      const liftHistory = await listLiftHistory(user.id);
+      const [profile, plan, liftHistory] = await Promise.all([
+        getProfile(user.id),
+        getActivePlan(user.id),
+        listLiftHistory(user.id)
+      ]);
       try {
         const equipmentAccess = profile?.equipment_access && typeof profile.equipment_access === 'object' ? profile.equipment_access : null;
         const planObj = plan?.plan && typeof plan.plan === 'object' ? plan.plan : null;
@@ -5369,67 +5371,54 @@ async function trainingRoutes(req, res, url) {
                 strength: profile?.strength,
                 equipmentAccess
               }));
-              await db.query(
-                'UPDATE app_training_plans SET plan = $1::jsonb, updated_at = now() WHERE id = $2;',
-                [JSON.stringify(planObj), plan.id]
-              );
+              setImmediate(() => {
+                db.query(
+                  'UPDATE app_training_plans SET plan = $1::jsonb, updated_at = now() WHERE id = $2;',
+                  [JSON.stringify(planObj), plan.id]
+                ).catch(() => {});
+              });
             } catch {
               // ignore
             }
           }
-          // Kaggle media is local; we can enrich quickly without blocking the UX.
-          try {
-            const beforeMissing = countExercisesWithoutGif(planObj);
-            await enrichPlanWithExerciseMedia(planObj, { equipmentAccess, maxExercises: 140, timeBudgetMs: 350 });
-            const afterMissing = countExercisesWithoutGif(planObj);
-          if (afterMissing < beforeMissing) {
-            await db.query(
-              'UPDATE app_training_plans SET plan = $1::jsonb, updated_at = now() WHERE id = $2;',
-              [JSON.stringify(planObj), plan.id]
-            );
-          }
-        } catch {
-          // ignore
+          queuePlanMediaEnrichment({ planId: plan.id, planObj, equipmentAccess });
         }
-        // Finish whatever is left in the background.
-        queuePlanMediaEnrichment({ planId: plan.id, planObj, equipmentAccess });
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
 
-    // Hard validation: if a bodybuilding plan violates bans/caps, deactivate it
-    // so users are forced to rebuild with the latest rules.
-    if (plan?.plan && typeof plan.plan === 'object') {
-      const planObj = plan.plan;
-      const discipline = String(planObj?.meta?.discipline || plan?.discipline || '').toLowerCase();
-      if (discipline === 'bodybuilding') {
-        try {
-          assertBodybuildingPlanByEngine(planObj);
-        } catch {
+      // Hard validation: if a bodybuilding plan violates bans/caps, deactivate it
+      // so users are forced to rebuild with the latest rules.
+      if (plan?.plan && typeof plan.plan === 'object') {
+        const planObj = plan.plan;
+        const discipline = String(planObj?.meta?.discipline || plan?.discipline || '').toLowerCase();
+        if (discipline === 'bodybuilding') {
           try {
-            await db.query('UPDATE app_training_plans SET active = false, updated_at = now() WHERE id = $1;', [plan.id]);
+            assertBodybuildingPlanByEngine(planObj);
           } catch {
-            // ignore
+            try {
+              await db.query('UPDATE app_training_plans SET active = false, updated_at = now() WHERE id = $1;', [plan.id]);
+            } catch {
+              // ignore
+            }
+            return sendJson(res, 200, {
+              user,
+              profile,
+              plan: null,
+              error: 'Plan needs a rebuild.',
+              liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+            });
           }
-          return sendJson(res, 200, {
-            user,
-            profile,
-            plan: null,
-            error: 'Plan needs a rebuild.',
-            liftHistory: buildLiftHistoryPayloadMap(liftHistory)
-          });
         }
       }
-    }
 
-    return sendJson(res, 200, {
-      user,
-      profile,
-      plan,
-      liftHistory: buildLiftHistoryPayloadMap(liftHistory)
-    });
-  }
+      return sendJson(res, 200, {
+        user,
+        profile,
+        plan,
+        liftHistory: buildLiftHistoryPayloadMap(liftHistory)
+      });
+    }
 
   if (pathname === '/api/training/share' && req.method === 'POST') {
     logShareRoute('share.request.received', { method: req.method, pathname, fromUserId: user.id });

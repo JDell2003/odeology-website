@@ -8917,11 +8917,17 @@ function toggleSharePopover(force) {
     }
     if (state.planRow?.id) {
       maybeArmTrainingQuickTourForFirstPlan();
-      await refreshTrainingLogs(state.planRow.id);
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
+      state.logs = [];
+      state.allLogs = [];
       setView(dismissed ? 'plan' : 'upsell');
+      void refreshTrainingLogs(state.planRow.id)
+        .then(() => {
+          render();
+        })
+        .catch(() => {});
       if (!hadRenderablePlan) {
         window.setTimeout(() => {
           void maybeOpenTrainingEntryPaywall('training_plan_entry');
