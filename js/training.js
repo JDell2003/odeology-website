@@ -6,8 +6,10 @@
   const TRAINING_BUILDER_PREFILL_KEY = 'ode_training_builder_prefill_v1';
   const TRAINING_OPEN_WIZARD_ONLY_KEY = 'ode_training_open_wizard_only';
   const TRAINING_CONSTRUCTING_KEY = 'ode_training_constructing_v1';
+  const TRAINING_AUTO_RETRY_PAUSE_KEY = 'ode_training_autoretry_pause_until';
   const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
   const WORKOUT_TIMER_STORAGE_PREFIX = 'ode_training_timer_v1:';
+  const WORKOUT_DRAFT_STORAGE_PREFIX = 'ode_training_draft_v1:';
 
   function readLocalIntake() {
     try {
@@ -141,8 +143,10 @@
   }
 
   let trainingEntryPaywallKey = '';
+  const TRAINING_PAYWALL_ENABLED = false;
 
   async function openTrainingPaywall(reason = 'manual') {
+    if (!TRAINING_PAYWALL_ENABLED) return false;
     if (typeof window.__odeForceOpenAccessPrompt === 'function') {
       try {
         const forced = window.__odeForceOpenAccessPrompt({ reason });
@@ -226,21 +230,96 @@
     return last;
   }
 
-  async function pollForPlanReady({ maxMs = 60000, intervalMs = 2000 } = {}) {
+  async function pollForPlanReady({ maxMs = 60000, intervalMs = 2000, prevPlanId = null, requestStartedAt = 0 } = {}) {
     const startedAt = Date.now();
     while (Date.now() - startedAt < maxMs) {
       const resp = await fetchTrainingStateWithRetry({ tries: 1, delayMs: 0 });
       if (resp?.ok && resp.json?.plan?.id) {
-        state.profile = resp.json?.profile || state.profile;
-        state.planRow = resp.json?.plan || null;
-        await refreshTrainingLogs(state.planRow.id);
-        const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-        const dismissed = shouldSkipDemoUpsell() || localStorage.getItem(dismissedKey) === '1';
-        setView(dismissed ? 'plan' : 'upsell');
-        return true;
+        const nextPlan = resp.json?.plan || null;
+        const needsFreshPlan = String(prevPlanId || '').trim() || Number(requestStartedAt) > 0;
+        if (!needsFreshPlan || isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt)) {
+          state.profile = resp.json?.profile || state.profile;
+          state.planRow = nextPlan;
+          state.planError = null;
+          state.logs = [];
+          state.allLogs = [];
+          void refreshTrainingLogs(state.planRow.id).then(() => render()).catch(() => {});
+          const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
+          const dismissed = shouldSkipDemoUpsell() || localStorage.getItem(dismissedKey) === '1';
+          setView(dismissed ? 'plan' : 'upsell');
+          return true;
+        }
       }
       await delay(intervalMs);
     }
+    return false;
+  }
+
+  function readAutoRetryPauseUntil() {
+    try {
+      return Number(sessionStorage.getItem(TRAINING_AUTO_RETRY_PAUSE_KEY) || 0) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function isAutoRetryPaused() {
+    return readAutoRetryPauseUntil() > Date.now();
+  }
+
+  function pauseAutoRetry(ms = 15000) {
+    const until = Date.now() + Math.max(1000, Number(ms) || 15000);
+    try {
+      sessionStorage.setItem(TRAINING_AUTO_RETRY_PAUSE_KEY, String(until));
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearAutoRetryPause() {
+    try {
+      sessionStorage.removeItem(TRAINING_AUTO_RETRY_PAUSE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  function canOfferWorkoutGeneration() {
+    return Boolean(readLocalIntake());
+  }
+
+  function isWorkoutBuildPending() {
+    return Boolean(
+      state.view === 'generating'
+      || autoOnboardInFlight
+      || engineRetryInFlight
+      || shouldForceAutostart()
+      || shouldBootIntoConstructing()
+    );
+  }
+
+  function neutralizePlanLoadError(message) {
+    const text = String(message || '').trim();
+    if (!text) return '';
+    if (isWorkoutBuildPending()) return text;
+    if (!canOfferWorkoutGeneration()) return text;
+    if (/Failed to load training state|Workout build is taking longer than expected|No plan found/i.test(text)) {
+      return '';
+    }
+    return text;
+  }
+
+  async function recoverPendingPlan({ prevPlanId = null, requestStartedAt = 0, maxMs = 75000, intervalMs = 1500 } = {}) {
+    state.planError = null;
+    state.generating.minMs = 600;
+    state.generating.timeoutMs = Math.max(12_000, maxMs);
+    setView('generating');
+    const ready = await pollForPlanReady({ maxMs, intervalMs, prevPlanId, requestStartedAt });
+    if (ready) return true;
+    state.planError = readLocalIntake()
+      ? 'Workout build is taking longer than expected. Please try again.'
+      : 'Failed to load training state.';
+    setView('plan');
     return false;
   }
 
@@ -694,6 +773,7 @@
 
   async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
+    if (!force && isAutoRetryPaused()) return false;
     if (!force && shouldOpenWizardOnly()) return false;
     const intake = await loadSavedIntake();
     if (!intake) return false;
@@ -1734,9 +1814,87 @@
   let floatingWorkoutTimerResetTimer = 0;
 
   function workoutTimerStorageKey(userId = state.auth.user?.id) {
-    const id = String(userId || '').trim();
-    if (!id) return '';
+    const id = String(userId || '').trim() || 'guest';
     return `${WORKOUT_TIMER_STORAGE_PREFIX}${id}`;
+  }
+
+  function workoutDraftStorageKey({
+    userId = state.auth.user?.id,
+    planId = state.planRow?.id
+  } = {}) {
+    const plan = String(planId || '').trim();
+    if (!plan) return '';
+    const user = String(userId || '').trim() || 'guest';
+    return `${WORKOUT_DRAFT_STORAGE_PREFIX}${user}:${plan}`;
+  }
+
+  function persistWorkoutDraftState({
+    userId = state.auth.user?.id,
+    planId = state.planRow?.id
+  } = {}) {
+    const key = workoutDraftStorageKey({ userId, planId });
+    if (!key) return;
+    const hasDrafts = state.workoutInputDrafts.size
+      || state.workoutSetCountDrafts.size
+      || state.workoutReadinessDrafts.size;
+    if (!hasDrafts) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // ignore storage failures
+      }
+      return;
+    }
+    const payload = {
+      v: 1,
+      inputDrafts: Array.from(state.workoutInputDrafts.entries()),
+      setCountDrafts: Array.from(state.workoutSetCountDrafts.entries()),
+      readinessDrafts: Array.from(state.workoutReadinessDrafts.entries()),
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  function restoreWorkoutDraftState({
+    userId = state.auth.user?.id,
+    planId = state.planRow?.id
+  } = {}) {
+    state.workoutInputDrafts = new Map();
+    state.workoutSetCountDrafts = new Map();
+    state.workoutReadinessDrafts = new Map();
+
+    const key = workoutDraftStorageKey({ userId, planId });
+    if (!key) return false;
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (!parsed || typeof parsed !== 'object') return false;
+      if (Array.isArray(parsed.inputDrafts)) {
+        state.workoutInputDrafts = new Map(
+          parsed.inputDrafts.filter((entry) => Array.isArray(entry) && entry.length >= 2)
+            .map(([draftKey, value]) => [String(draftKey || ''), String(value ?? '')])
+        );
+      }
+      if (Array.isArray(parsed.setCountDrafts)) {
+        state.workoutSetCountDrafts = new Map(
+          parsed.setCountDrafts.filter((entry) => Array.isArray(entry) && entry.length >= 2)
+            .map(([draftKey, value]) => [String(draftKey || ''), Math.max(0, Math.min(12, Math.round(Number(value) || 0)))])
+        );
+      }
+      if (Array.isArray(parsed.readinessDrafts)) {
+        state.workoutReadinessDrafts = new Map(
+          parsed.readinessDrafts.filter((entry) => Array.isArray(entry) && entry.length >= 2)
+            .map(([draftKey, value]) => [String(draftKey || ''), String(value ?? '')])
+        );
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function clearPersistedWorkoutTimerState(userId = state.auth.user?.id) {
@@ -2219,10 +2377,11 @@
     overlay.querySelector('[name="name"]')?.focus();
   }
 
-  function setWorkoutReadinessDraft({ weekIndex, dayIndex, value }) {
+  function setWorkoutReadinessDraft({ weekIndex, dayIndex, value, persist = true }) {
     const key = workoutDayKey({ weekIndex, dayIndex });
     if (!key) return;
     state.workoutReadinessDrafts.set(key, String(value ?? ''));
+    if (persist) persistWorkoutDraftState();
   }
 
   function getWorkoutReadinessDraft({ weekIndex, dayIndex, fallback = '' }) {
@@ -2447,11 +2606,12 @@
     return `${week}:${day}:${id}:${slot}::${idx}::${fld}`;
   }
 
-  function setWorkoutInputDraftValue({ exId, exSlot, setIdx, field, value, weekIndex, dayIndex }) {
+  function setWorkoutInputDraftValue({ exId, exSlot, setIdx, field, value, weekIndex, dayIndex, persist = true }) {
     const key = workoutDraftKey({ exId, exSlot, setIdx, field, weekIndex, dayIndex });
     if (!key) return;
     const next = String(value ?? '');
     state.workoutInputDrafts.set(key, next);
+    if (persist) persistWorkoutDraftState();
   }
 
   function getWorkoutInputDraftValue({ exId, exSlot, setIdx, field, fallback = '', weekIndex, dayIndex }) {
@@ -2470,11 +2630,12 @@
     return `${week}:${day}:${id}:${slot}`;
   }
 
-  function setWorkoutSetCountDraft({ exId, exSlot, weekIndex, dayIndex, count }) {
+  function setWorkoutSetCountDraft({ exId, exSlot, weekIndex, dayIndex, count, persist = true }) {
     const key = workoutSetCountKey({ exId, exSlot, weekIndex, dayIndex });
     if (!key) return;
     const next = Math.max(0, Math.min(12, Math.round(Number(count) || 0)));
     state.workoutSetCountDrafts.set(key, next);
+    if (persist) persistWorkoutDraftState();
   }
 
   function getWorkoutSetCountDraft({ exId, exSlot, weekIndex, dayIndex, fallback = 0 }) {
@@ -2493,6 +2654,7 @@
     Array.from(state.workoutSetCountDrafts.keys()).forEach((key) => {
       if (String(key || '').startsWith(`${dayKey}:`)) state.workoutSetCountDrafts.delete(key);
     });
+    persistWorkoutDraftState();
   }
 
   function captureVisibleWorkoutInputDrafts() {
@@ -2511,7 +2673,8 @@
           field,
           value: target.value,
           weekIndex: target.dataset.weekIdx != null ? Number(target.dataset.weekIdx) : null,
-          dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null
+          dayIndex: target.dataset.dayIdx != null ? Number(target.dataset.dayIdx) : null,
+          persist: false
         });
       });
     }
@@ -2520,9 +2683,11 @@
       setWorkoutReadinessDraft({
         weekIndex: readiness.dataset.weekIdx != null ? Number(readiness.dataset.weekIdx) : null,
         dayIndex: readiness.dataset.dayIdx != null ? Number(readiness.dataset.dayIdx) : null,
-        value: readiness.value
+        value: readiness.value,
+        persist: false
       });
     }
+    persistWorkoutDraftState();
   }
 
   function upsertLocalWorkoutLog({
@@ -3566,10 +3731,12 @@
     const schedule = plan?.meta?.schedule && typeof plan.meta.schedule === 'object' ? plan.meta.schedule : null;
     const planPreferred = schedule?.preferredDays ?? plan?.meta?.preferredDays ?? null;
     const profilePreferred = state.profile?.strength?.preferredDays ?? null;
+    const intakePreferred = readLocalIntake()?.preferredDays ?? null;
     return normalizeWeekdayIndexList(
       planPreferred != null ? planPreferred
         : profilePreferred != null ? profilePreferred
-          : []
+          : intakePreferred != null ? intakePreferred
+            : []
     );
   }
 
@@ -8650,8 +8817,8 @@ function toggleSharePopover(force) {
     if (engineRetryInFlight) return;
     engineRetryInFlight = true;
     state.planError = null;
-    state.generating.minMs = 9_000;
-    state.generating.timeoutMs = 60_000;
+    state.generating.minMs = 600;
+    state.generating.timeoutMs = 12_000;
     setView('generating');
     Promise.resolve().then(async () => {
       try {
@@ -8659,7 +8826,7 @@ function toggleSharePopover(force) {
         if (force) clearForceAutostart();
         const autoOnboarded = await tryAutoOnboardFromIntake(force);
         if (autoOnboarded) return;
-        const ready = await pollForPlanReady({ maxMs: 60_000, intervalMs: 1500 });
+        const ready = await pollForPlanReady({ maxMs: 12_000, intervalMs: 900 });
         if (ready) return;
         state.planError = readLocalIntake()
           ? 'Workout build is taking longer than expected. Please try again.'
@@ -8676,8 +8843,8 @@ function toggleSharePopover(force) {
     if (next !== 'generating') clearConstructingBootFlag();
     const wizardOnlyRequested = next === 'wizard' && shouldOpenWizardOnly();
     if (DISABLE_WIZARD_FLOW && next === 'wizard' && !wizardOnlyRequested) {
-      const hasIntake = !!readLocalIntake();
-      if (hasIntake || shouldForceAutostart()) {
+      const shouldAutoResumeBuild = shouldForceAutostart() || shouldBootIntoConstructing();
+      if (shouldAutoResumeBuild) {
         keepOnEngineAndRetry({ forceAutostart: shouldForceAutostart() });
       } else {
         state.planError = state.planError || 'No saved setup found. Complete setup to generate a workout.';
@@ -8861,7 +9028,11 @@ function toggleSharePopover(force) {
       s = await api('/api/training/state', { method: 'GET', timeoutMs: 9000 });
     } catch {
       if (silent && hadRenderablePlan) return;
-      state.planError = 'Failed to load training state. Please refresh.';
+      if (forceAutostart || shouldBootIntoConstructing()) {
+        const recovered = await recoverPendingPlan({ maxMs: 75_000, intervalMs: 1500 });
+        if (recovered) return;
+      }
+      state.planError = neutralizePlanLoadError('Failed to load training state. Please refresh.');
       setView('plan');
       return;
     }
@@ -8892,7 +9063,11 @@ function toggleSharePopover(force) {
         setView('wizard');
         return;
       }
-      state.planError = s.json?.error || 'Failed to load training state.';
+      if (forceAutostart || shouldBootIntoConstructing()) {
+        const recovered = await recoverPendingPlan({ maxMs: 75_000, intervalMs: 1500 });
+        if (recovered) return;
+      }
+      state.planError = neutralizePlanLoadError(s.json?.error || 'Failed to load training state.');
       setView('plan');
       return;
     }
@@ -8908,15 +9083,22 @@ function toggleSharePopover(force) {
 
     state.profile = fetchedProfile;
     state.planRow = fetchedPlanRow;
-    if (hasRenderablePlanRow(state.planRow)) state.planError = null;
+    const hasFetchedRenderablePlan = hasRenderablePlanRow(state.planRow);
+    if (hasFetchedRenderablePlan) {
+      state.planError = null;
+      clearConstructingBootFlag();
+      clearAutoRetryPause();
+      if (forceAutostart) clearForceAutostart();
+    }
     const shouldAutoBuildDemoPlan = shouldBootDemoPlan(state.auth.user, state.planRow);
-    if (forceAutostart || shouldAutoBuildDemoPlan) {
+    if (!hasFetchedRenderablePlan && (forceAutostart || shouldAutoBuildDemoPlan)) {
       if (shouldAutoBuildDemoPlan) setView('generating');
       const autoOnboarded = await tryAutoOnboardFromIntake(true);
       if (autoOnboarded) return;
     }
     if (state.planRow?.id) {
       maybeArmTrainingQuickTourForFirstPlan();
+      restoreWorkoutDraftState({ userId: state.auth.user?.id, planId: state.planRow.id });
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
@@ -10379,6 +10561,7 @@ function toggleSharePopover(force) {
       discipline,
       experience,
       daysPerWeek,
+      preferredDays: normalizeWeekdayIndexList(state.wizard.preferredDays),
       phase: resolvedPhase,
       targetWeightLb: state.wizard.targetWeightLb,
       timePerSession: state.wizard.timePerSession,
@@ -10425,13 +10608,21 @@ function toggleSharePopover(force) {
     if (forceAutostart) clearForceAutostart();
     const prevPlanId = state.planRow?.id || null;
     const requestStartedAt = Date.now();
-    const isAuthed = Boolean(state.auth.user);
-    const minMs = isAuthed ? Math.max(2500, Number(state.generating?.minMs) || 9_000) : 1200;
+    let isAuthed = Boolean(state.auth.user);
+    if (!isAuthed) {
+      try {
+        const refreshed = await refreshShareAuthSnapshot();
+        isAuthed = Boolean(refreshed?.ok && refreshed?.user);
+      } catch {
+        isAuthed = Boolean(state.auth.user);
+      }
+    }
+    const minMs = isAuthed ? Math.max(350, Number(state.generating?.minMs) || 600) : 350;
     state.generating.minMs = minMs;
-    state.generating.timeoutMs = isAuthed ? 60_000 : 25_000;
+    state.generating.timeoutMs = isAuthed ? 12_000 : 8_000;
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
-    const totalTimeoutMs = isAuthed ? Math.max(minMs + 5_000, 60_000) : Math.max(minMs + 2_800, 25_000);
+    const totalTimeoutMs = isAuthed ? Math.max(minMs + 4_500, 12_000) : Math.max(minMs + 2_000, 8_000);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), totalTimeoutMs);
     let resp;
@@ -10463,17 +10654,15 @@ function toggleSharePopover(force) {
         return;
       }
       if (isAuthed) {
-        const fallback = await fetchTrainingStateWithRetry({ tries: 3, delayMs: 1400 });
-        if (fallback.ok && fallback.json?.plan?.id) {
-          const nextPlan = fallback.json?.plan || null;
-          if (isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt)) {
-            state.profile = fallback.json?.profile || null;
-            state.planRow = nextPlan;
-            sanitizeBodybuildingPlanInPlace(state.planRow);
-            await refreshTrainingLogs(state.planRow.id);
-            setView('upsell');
-            return;
-          }
+        const ready = await pollForPlanReady({
+          maxMs: 75_000,
+          intervalMs: 1500,
+          prevPlanId,
+          requestStartedAt
+        });
+        if (ready) {
+          sanitizeBodybuildingPlanInPlace(state.planRow);
+          return;
         }
       }
       state.planRow = null;
@@ -10492,14 +10681,17 @@ function toggleSharePopover(force) {
         }
         return errObj?.error || errObj?.reason || '';
       })();
-      state.planError = resp.status === 408
+      state.planError = neutralizePlanLoadError(resp.status === 408
         ? 'Plan build timed out. Please try again.'
-        : (detail || 'Failed to build plan.');
+        : (detail || 'Failed to build plan.'));
+      pauseAutoRetry();
       setView('plan');
       return;
     }
 
     state.planRow = resp.json?.plan || null;
+    state.planError = null;
+    clearAutoRetryPause();
     sanitizeBodybuildingPlanInPlace(state.planRow);
     state.logs = resp.json?.logs || [];
     state.allLogs = Array.isArray(state.logs) ? state.logs.slice() : [];
@@ -10511,12 +10703,14 @@ function toggleSharePopover(force) {
           state.profile = fallback.json?.profile || state.profile;
           state.planRow = nextPlan;
           sanitizeBodybuildingPlanInPlace(state.planRow);
-          await refreshTrainingLogs(state.planRow.id);
+          state.logs = [];
+          state.allLogs = [];
+          void refreshTrainingLogs(state.planRow.id).then(() => render()).catch(() => {});
         }
       }
     }
     if (isAuthed && state.planRow?.id) {
-      await refreshTrainingLogs(state.planRow.id);
+      void refreshTrainingLogs(state.planRow.id).then(() => render()).catch(() => {});
     }
     clearForceAutostart();
     try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
@@ -11040,9 +11234,15 @@ function toggleSharePopover(force) {
       state.planError = 'Invalid exercises/sets were removed from display. Regenerate plan for a clean rebuild.';
     }
     const plan = planRow?.plan;
+    if (plan && Array.isArray(plan.weeks) && /Workout build is taking longer than expected|Failed to load training state/i.test(String(state.planError || ''))) {
+      state.planError = null;
+    }
     if (!plan || !Array.isArray(plan.weeks)) {
-      const msg = state.planError || 'No plan found.';
+      if (isWorkoutBuildPending()) {
+        return renderGenerating();
+      }
       const hasIntake = !!readLocalIntake();
+      const msg = neutralizePlanLoadError(state.planError) || (hasIntake ? 'Ready to generate your workout.' : 'No plan found.');
       return el('div', { class: 'training-card training-center' },
         el('div', { class: 'training-muted' }, msg),
         hasIntake
