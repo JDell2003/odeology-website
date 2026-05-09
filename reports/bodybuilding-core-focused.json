@@ -1,0 +1,229 @@
+{
+  "reportPath": "D:\\Jasons Web\\reports\\bodybuilding-core-focused.json",
+  "generatedAt": "2026-05-08T12:08:07.323Z",
+  "settings": {
+    "runs": 1,
+    "timeoutMs": 60000,
+    "days": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "priorityCounts": [
+      1,
+      2,
+      3
+    ],
+    "expandedMode": true,
+    "rerunFailures": null,
+    "filterFailedInvariant": null,
+    "rerunTargetCount": 0,
+    "expectedFocusedTestCount": 0,
+    "actualFocusedTestCount": 0
+  },
+  "matrix": {
+    "uiPriorityOptions": [
+      {
+        "key": "chest",
+        "label": "Chest"
+      },
+      {
+        "key": "back",
+        "label": "Back"
+      },
+      {
+        "key": "shoulders",
+        "label": "Shoulders"
+      },
+      {
+        "key": "arms",
+        "label": "Arms"
+      },
+      {
+        "key": "legs",
+        "label": "Legs"
+      },
+      {
+        "key": "glutes",
+        "label": "Glutes"
+      },
+      {
+        "key": "abs",
+        "label": "Abs"
+      }
+    ],
+    "totalCombos": 0,
+    "focusedRerunTargets": []
+  },
+  "summary": {
+    "totalCombos": 0,
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 0,
+    "warnings": 0,
+    "passesWithWarnings": 0,
+    "cleanPasses": 0
+  },
+  "failures": [],
+  "unsupported": [],
+  "passesWithWarnings": [],
+  "cleanPasses": [],
+  "acceptableExceptions": [],
+  "validatorContractAudit": [],
+  "redundancyFamilySummary": [],
+  "databaseLabelAudit": [],
+  "canonicalMovementFamilyMapProposal": [],
+  "familyConsistencyCheck": [],
+  "finalVisibleCleanupSummary": {
+    "sameDayRedundancyBefore": 0,
+    "sameDayRedundancyAfter": 0,
+    "horizontal_row": {
+      "before": 0,
+      "after": 0
+    },
+    "squat_leg_press": {
+      "before": 0,
+      "after": 0
+    },
+    "shoulder_press": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "finalVisibleCleanupLog": [],
+  "finalVisibleCleanupDiagnostics": [],
+  "redundancyDetails": [],
+  "horizontalRowCleanupDiagnostic": [],
+  "squatLegPressCleanupDiagnostic": [],
+  "hingePosteriorChainDiagnostic": [],
+  "horizontalRowSafetySimulation": [],
+  "squatLegPressSafetySimulation": [],
+  "remainingRedundancyDiagnostic": [],
+  "topRepeatedHingePosteriorPatterns": [],
+  "topCleanupRules": [
+    {
+      "rule": "Compare raw-builder and final-visible redundancy before replacing accessories",
+      "rationale": "Late route repair still changes visible output for every combo"
+    },
+    {
+      "rule": "Log replacement-pool exhaustion for duplicate family cleanup",
+      "rationale": "Need proof when cleanup runs but no acceptable replacement exists"
+    }
+  ],
+  "unknownFailureDiagnostic": [],
+  "timeoutProfilingReport": {
+    "total": 0,
+    "largestPlanShapeSizes": {
+      "maxWeeksLength": 0,
+      "maxFirstWeekDayCount": 0,
+      "maxTotalDayCount": 0,
+      "maxTotalExerciseCount": 0
+    },
+    "byCurrentSection": [],
+    "byLastCompletedSection": [],
+    "byBranchEntered": [],
+    "rows": []
+  },
+  "workerExitDiagnostic": {
+    "total": 0,
+    "byRootCause": [],
+    "byLastHeartbeatStage": [],
+    "byLastRepairOrPolishFunction": [],
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "rows": []
+  },
+  "missingQuadPatternDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byOrigin": [],
+    "bySafeRepairCandidate": [],
+    "byRepairFailureReason": [],
+    "rows": []
+  },
+  "heavyDeadliftCountDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byGroupedCause": [],
+    "bySafeReplacementExists": [],
+    "rows": [],
+    "topRepeatedHeavyHingePatterns": []
+  },
+  "calvesDiagnostics": [],
+  "rootPatterns": [],
+  "combos": [],
+  "expandedMatrixReport": {
+    "expectedTotalTests": 315,
+    "actualTotalTests": 0,
+    "settings": {
+      "parsedDays": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "parsedPriorityCounts": [
+        1,
+        2,
+        3
+      ],
+      "uiPriorityButtons": [
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Legs",
+        "Glutes",
+        "Abs"
+      ]
+    },
+    "overall": {
+      "totalTests": 0,
+      "passed": 0,
+      "failed": 0,
+      "unsupported": 0,
+      "passesWithWarnings": 0,
+      "cleanPasses": 0
+    },
+    "bySuite": [],
+    "failuresByDayCount": [],
+    "failuresByPriorityCount": [],
+    "failuresByCombo": [],
+    "failuresByValidator": [],
+    "unknownFailuresByMessageAndFunction": [],
+    "sameDayRedundancyByDayCount": [
+      {
+        "dayCount": 2,
+        "count": 0
+      },
+      {
+        "dayCount": 3,
+        "count": 0
+      },
+      {
+        "dayCount": 4,
+        "count": 0
+      },
+      {
+        "dayCount": 5,
+        "count": 0
+      },
+      {
+        "dayCount": 6,
+        "count": 0
+      }
+    ],
+    "topWarningFamilies": [],
+    "unknownFailureDiagnostic": []
+  }
+}

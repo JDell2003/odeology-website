@@ -125,6 +125,23 @@ function sendJson(res, status, payload) {
   return true;
 }
 
+function sendMessageThreadsUnavailable(res) {
+  return sendJson(res, 200, {
+    ok: true,
+    threads: [],
+    unreadCount: 0,
+    unavailable: true
+  });
+}
+
+function sendFriendRequestsUnavailable(res) {
+  return sendJson(res, 200, {
+    ok: true,
+    requests: [],
+    unavailable: true
+  });
+}
+
 async function readJsonBody(req) {
   return await new Promise((resolve, reject) => {
     let body = '';
@@ -426,6 +443,31 @@ async function resolveUserFromSession(req) {
   };
 }
 
+async function safeResolveUserFromSession(req, { routeName = 'socialRoutes', fallback = 'service_unavailable' } = {}) {
+  try {
+    const user = await resolveUserFromSession(req);
+    return {
+      user,
+      sessionUnavailable: false,
+      error: null,
+      fallback: user ? null : 'unauthorized'
+    };
+  } catch (err) {
+    console.warn('auth.session_resolution_failed', {
+      routeName,
+      error: String(err?.message || 'Session resolution failed'),
+      code: String(err?.code || '').trim() || null,
+      fallback
+    });
+    return {
+      user: null,
+      sessionUnavailable: true,
+      error: err,
+      fallback
+    };
+  }
+}
+
 async function createMessageGroupForLeader(leaderUserId, groupName, memberIds) {
   const leaderId = String(leaderUserId || '').trim();
   const name = normalizeGroupName(groupName);
@@ -509,10 +551,24 @@ async function createMessageGroupForLeader(leaderUserId, groupName, memberIds) {
 
 async function socialRoutes(req, res, url) {
   if (!url.pathname.startsWith('/api/friends') && !url.pathname.startsWith('/api/messages')) return false;
-  if (!db.isConfigured()) return sendJson(res, 501, { ok: false, error: 'Database not configured' });
-  await ensureSchema();
+  const isMessageThreadsRoute = url.pathname === '/api/messages/threads' && req.method === 'GET';
+  const isFriendRequestsRoute = url.pathname === '/api/friends/requests' && req.method === 'GET';
+  if (!db.isConfigured()) {
+    if (isMessageThreadsRoute) return sendMessageThreadsUnavailable(res);
+    if (isFriendRequestsRoute) return sendFriendRequestsUnavailable(res);
+    return sendJson(res, 501, { ok: false, error: 'Database not configured' });
+  }
 
-  const user = await resolveUserFromSession(req);
+  const sessionState = await safeResolveUserFromSession(req, {
+    routeName: 'social.authenticated',
+    fallback: 'service_unavailable'
+  });
+  if (sessionState.sessionUnavailable) {
+    if (isMessageThreadsRoute) return sendMessageThreadsUnavailable(res);
+    if (isFriendRequestsRoute) return sendFriendRequestsUnavailable(res);
+    return sendJson(res, 503, { ok: false, error: 'Service unavailable' });
+  }
+  const user = sessionState.user;
   if (!user) return sendJson(res, 401, { ok: false, error: 'Not authenticated' });
 
   if (url.pathname === '/api/friends/list' && req.method === 'GET') {
@@ -820,39 +876,47 @@ async function socialRoutes(req, res, url) {
       const cached = getCache(friendRequestsCache, user.id);
       if (cached) return sendJson(res, 200, cached);
     }
-    const result = await db.query(
-      `
-        SELECT r.id,
-               r.created_at,
-               u.id AS from_user_id,
-               u.username,
-               u.display_name,
-               u.last_seen,
-               p.profile->'profile'->>'photoDataUrl' AS photo
-        FROM app_friend_requests r
-        JOIN app_users u ON u.id = r.from_user_id
-        LEFT JOIN app_user_profiles p ON p.user_id = u.id
-        WHERE r.to_user_id = $1 AND r.status = 'pending'
-        ORDER BY r.created_at DESC
-        LIMIT 200;
-      `,
-      [user.id]
-    );
-    const payload = {
-      ok: true,
-      requests: (result.rows || []).map((row) => ({
-        id: row.id,
-        createdAt: row.created_at,
-        fromUserId: row.from_user_id,
-        username: row.username,
-        displayName: row.display_name || row.username || 'Account',
-        photoDataUrl: row.photo || null,
-        lastSeen: row.last_seen || null,
-        isOnline: isLastSeenOnline(row.last_seen)
-      }))
-    };
-    if (!forceFresh) setCache(friendRequestsCache, user.id, payload);
-    return sendJson(res, 200, payload);
+    try {
+      const result = await db.query(
+        `
+          SELECT r.id,
+                 r.created_at,
+                 u.id AS from_user_id,
+                 u.username,
+                 u.display_name,
+                 u.last_seen,
+                 p.profile->'profile'->>'photoDataUrl' AS photo
+          FROM app_friend_requests r
+          JOIN app_users u ON u.id = r.from_user_id
+          LEFT JOIN app_user_profiles p ON p.user_id = u.id
+          WHERE r.to_user_id = $1 AND r.status = 'pending'
+          ORDER BY r.created_at DESC
+          LIMIT 200;
+        `,
+        [user.id]
+      );
+      const payload = {
+        ok: true,
+        requests: (result.rows || []).map((row) => ({
+          id: row.id,
+          createdAt: row.created_at,
+          fromUserId: row.from_user_id,
+          username: row.username,
+          displayName: row.display_name || row.username || 'Account',
+          photoDataUrl: row.photo || null,
+          lastSeen: row.last_seen || null,
+          isOnline: isLastSeenOnline(row.last_seen)
+        })),
+        unavailable: false
+      };
+      if (!forceFresh) setCache(friendRequestsCache, user.id, payload);
+      return sendJson(res, 200, payload);
+    } catch (err) {
+      if (err instanceof DbUnavailableError || isTransientPgError(err) || isTransientPgError(err?.cause)) {
+        return sendFriendRequestsUnavailable(res);
+      }
+      throw err;
+    }
   }
 
   if (url.pathname === '/api/friends/respond' && req.method === 'POST') {
@@ -924,35 +988,34 @@ async function socialRoutes(req, res, url) {
   }
 
   if (url.pathname === '/api/messages/threads' && req.method === 'GET') {
-    const result = await db.query(
-      `
-        SELECT t.id,
-               t.last_message_at,
-               t.last_message_text,
-               CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END AS friend_id,
-               u.username,
-               u.display_name,
-               p.profile->'profile'->>'photoDataUrl' AS photo,
-               COALESCE(unread.unread_count, 0)::int AS unread_count
-        FROM app_message_threads t
-        JOIN app_users u ON u.id = CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END
-        LEFT JOIN app_user_profiles p ON p.user_id = u.id
-        LEFT JOIN LATERAL (
-          SELECT COUNT(*)::int AS unread_count
-          FROM app_messages m
-          WHERE m.thread_id = t.id
-            AND m.receiver_id = $1
-            AND m.read_at IS NULL
-        ) unread ON true
-        WHERE t.user_a = $1 OR t.user_b = $1
-        ORDER BY t.last_message_at DESC NULLS LAST, t.created_at DESC
-        LIMIT 200;
-      `,
-      [user.id]
-    );
-    return sendJson(res, 200, {
-      ok: true,
-      threads: (result.rows || []).map((row) => ({
+    try {
+      const result = await db.query(
+        `
+          SELECT t.id,
+                 t.last_message_at,
+                 t.last_message_text,
+                 CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END AS friend_id,
+                 u.username,
+                 u.display_name,
+                 p.profile->'profile'->>'photoDataUrl' AS photo,
+                 COALESCE(unread.unread_count, 0)::int AS unread_count
+          FROM app_message_threads t
+          JOIN app_users u ON u.id = CASE WHEN t.user_a = $1 THEN t.user_b ELSE t.user_a END
+          LEFT JOIN app_user_profiles p ON p.user_id = u.id
+          LEFT JOIN LATERAL (
+            SELECT COUNT(*)::int AS unread_count
+            FROM app_messages m
+            WHERE m.thread_id = t.id
+              AND m.receiver_id = $1
+              AND m.read_at IS NULL
+          ) unread ON true
+          WHERE t.user_a = $1 OR t.user_b = $1
+          ORDER BY t.last_message_at DESC NULLS LAST, t.created_at DESC
+          LIMIT 200;
+        `,
+        [user.id]
+      );
+      const threads = (result.rows || []).map((row) => ({
         threadId: row.id,
         friendId: row.friend_id,
         username: row.username,
@@ -960,9 +1023,21 @@ async function socialRoutes(req, res, url) {
         photoDataUrl: row.photo || null,
         lastMessage: row.last_message_text || null,
         lastMessageAt: row.last_message_at,
-        unreadCount: Number(row.unread_count || 0)
-      }))
-    });
+        unreadCount: Math.max(0, Number(row.unread_count || 0))
+      }));
+      const unreadCount = threads.reduce((sum, row) => sum + Math.max(0, Number(row?.unreadCount || 0)), 0);
+      return sendJson(res, 200, {
+        ok: true,
+        threads,
+        unreadCount,
+        unavailable: false
+      });
+    } catch (err) {
+      if (err instanceof DbUnavailableError || isTransientPgError(err) || isTransientPgError(err?.cause)) {
+        return sendMessageThreadsUnavailable(res);
+      }
+      throw err;
+    }
   }
 
   if (url.pathname === '/api/messages/thread' && req.method === 'GET') {

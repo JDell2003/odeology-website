@@ -1,6 +1,8 @@
-(() => {
+﻿(() => {
   const root = document.getElementById('training-root');
   if (!root) return;
+  const trainingDebugCombo = window.TrainingDebugCombo || null;
+  const evaluateTrainingDebugCombo = trainingDebugCombo?.evaluateGlutesLegsCoreDebugCombo || null;
 
   const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
   const TRAINING_BUILDER_PREFILL_KEY = 'ode_training_builder_prefill_v1';
@@ -9,6 +11,7 @@
   const TRAINING_AUTO_RETRY_PAUSE_KEY = 'ode_training_autoretry_pause_until';
   const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
   const WORKOUT_TIMER_STORAGE_PREFIX = 'ode_training_timer_v1:';
+  const WORKOUT_REST_TIMER_STORAGE_PREFIX = 'ode_training_rest_timer_v1:';
   const WORKOUT_DRAFT_STORAGE_PREFIX = 'ode_training_draft_v1:';
 
   function readLocalIntake() {
@@ -230,14 +233,33 @@
     return last;
   }
 
-  async function pollForPlanReady({ maxMs = 60000, intervalMs = 2000, prevPlanId = null, requestStartedAt = 0 } = {}) {
+  async function pollForPlanReady({ maxMs = 60000, intervalMs = 2000, prevPlanId = null, requestStartedAt = 0, pollToken = null } = {}) {
     const startedAt = Date.now();
+    const comboDebug = Boolean(state.generating?.comboDebug);
     while (Date.now() - startedAt < maxMs) {
+      if (pollToken?.cancelled) return false;
+      if (comboDebug) {
+        logAbsGlutesLegsDebug('poll-loop', {
+          source: 'polling',
+          elapsedMs: Date.now() - startedAt,
+          maxMs,
+          intervalMs,
+          requestStartedAt
+        });
+      }
       const resp = await fetchTrainingStateWithRetry({ tries: 1, delayMs: 0 });
+      if (pollToken?.cancelled) return false;
       if (resp?.ok && resp.json?.plan?.id) {
         const nextPlan = resp.json?.plan || null;
         const needsFreshPlan = String(prevPlanId || '').trim() || Number(requestStartedAt) > 0;
         if (!needsFreshPlan || isFreshPlanAfterSubmit(nextPlan, prevPlanId, requestStartedAt)) {
+          if (comboDebug) {
+            logAbsGlutesLegsDebug('poll-ready', {
+              source: 'polling',
+              elapsedMs: Date.now() - startedAt,
+              planId: nextPlan?.id || null
+            });
+          }
           state.profile = resp.json?.profile || state.profile;
           state.planRow = nextPlan;
           state.planError = null;
@@ -250,7 +272,15 @@
           return true;
         }
       }
+      if (pollToken?.cancelled) return false;
       await delay(intervalMs);
+    }
+    if (comboDebug) {
+      logAbsGlutesLegsDebug('poll-timeout', {
+        source: 'polling',
+        elapsedMs: Date.now() - startedAt,
+        maxMs
+      });
     }
     return false;
   }
@@ -284,6 +314,126 @@
     }
   }
 
+  function clearWorkoutGenerationFlags({ clearWizardOnly = false } = {}) {
+    try { sessionStorage.removeItem('ode_training_force_autostart'); } catch {}
+    try { sessionStorage.removeItem(TRAINING_CONSTRUCTING_KEY); } catch {}
+    try { sessionStorage.removeItem('ode_training_nav_loading'); } catch {}
+    if (clearWizardOnly) {
+      try { sessionStorage.removeItem(TRAINING_OPEN_WIZARD_ONLY_KEY); } catch {}
+    }
+    forceAutostartConsumed = true;
+  }
+
+  function createGenerationPollToken() {
+    return {
+      requestId: Number(state.generating?.requestId || 0),
+      cancelled: false
+    };
+  }
+
+  function buildTrainingRequestKey(payload) {
+    try {
+      return JSON.stringify(payload || {});
+    } catch {
+      return '';
+    }
+  }
+
+  function markTrainingBuildCompleted({ requestId = null, requestKey = '', routeKind = '' } = {}) {
+    if (!state.generating) return;
+    state.generating.completedRequestId = Number.isFinite(Number(requestId)) ? Number(requestId) : null;
+    state.generating.completedRequestKey = String(requestKey || '');
+    state.generating.completedRouteKind = String(routeKind || '');
+    state.generating.completedAt = Date.now();
+  }
+
+  function hasRecentlyCompletedTrainingBuild(payload, { withinMs = 30000 } = {}) {
+    const completedAt = Number(state.generating?.completedAt || 0);
+    const completedKey = String(state.generating?.completedRequestKey || '');
+    const payloadKey = buildTrainingRequestKey(payload);
+    if (!completedAt || !completedKey || !payloadKey) return false;
+    if (completedKey !== payloadKey) return false;
+    return (Date.now() - completedAt) <= Math.max(1000, Number(withinMs) || 30000);
+  }
+
+  function logTrainingBuildLifecycle(eventName, {
+    endpoint = '',
+    elapsedMs = 0,
+    dayCount = null,
+    priorityGroups = [],
+    routeKind = '',
+    requestId = null,
+    configuredTimeoutMs = null
+  } = {}) {
+    try {
+      console.info(eventName, {
+        endpoint: String(endpoint || ''),
+        elapsedMs: Math.max(0, Number(elapsedMs || 0)),
+        dayCount: Number.isFinite(Number(dayCount)) ? Number(dayCount) : null,
+        priorityGroups: Array.isArray(priorityGroups) ? priorityGroups.slice() : [],
+        routeKind: String(routeKind || ''),
+        requestId: Number.isFinite(Number(requestId)) ? Number(requestId) : null,
+        configuredTimeoutMs: Number.isFinite(Number(configuredTimeoutMs)) ? Number(configuredTimeoutMs) : null
+      });
+    } catch {
+      // ignore console failures
+    }
+  }
+
+  function setGeneratingHandoffState({
+    active = false,
+    message = '',
+    meta = ''
+  } = {}) {
+    if (!state.generating) return;
+    state.generating.handoffActive = Boolean(active);
+    state.generating.handoffMessage = String(message || '').trim();
+    state.generating.handoffMeta = String(meta || '').trim();
+  }
+
+  function clearWorkoutGenerationState({ cancelRequest = true, clearFlags = true, clearWizardOnly = false } = {}) {
+    if (cancelRequest) {
+      const controller = state.generating?.controller;
+      if (controller && typeof controller.abort === 'function') {
+        try { controller.abort(); } catch {}
+      }
+    }
+    if (state.generating?.pollToken) state.generating.pollToken.cancelled = true;
+    if (state.generating) {
+      state.generating.controller = null;
+      if (state.generating?.pollToken) {
+        try {
+          console.info('training_build_frontend_recovery_poll_cancelled', {
+            requestId: Number.isFinite(Number(state.generating.requestId)) ? Number(state.generating.requestId) : null
+          });
+        } catch {
+          // ignore console failures
+        }
+      }
+      state.generating.pollToken = null;
+      state.generating.comboDebug = false;
+      state.generating.activeRequestKey = '';
+      state.generating.activeRouteKind = '';
+      state.generating.activeEndpoint = '';
+      state.generating.frontendRequestStartedAt = 0;
+      state.generating.handoffActive = false;
+      state.generating.handoffMessage = '';
+      state.generating.handoffMeta = '';
+    }
+    try {
+      console.info('training_build_frontend_generation_state_cleared', {
+        cancelRequest: Boolean(cancelRequest),
+        clearFlags: Boolean(clearFlags)
+      });
+    } catch {
+      // ignore console failures
+    }
+    autoOnboardInFlight = false;
+    engineRetryInFlight = false;
+    stopGeneratingTicker();
+    if (clearFlags) clearWorkoutGenerationFlags({ clearWizardOnly });
+  }
+
   function canOfferWorkoutGeneration() {
     return Boolean(readLocalIntake());
   }
@@ -303,21 +453,31 @@
     if (!text) return '';
     if (isWorkoutBuildPending()) return text;
     if (!canOfferWorkoutGeneration()) return text;
-    if (/Failed to load training state|Workout build is taking longer than expected|No plan found/i.test(text)) {
+    if (/Failed to load training state|Workout build is taking longer than expected|Workout build did not finish in time|training_build_frontend_abort_timeout|No plan found/i.test(text)) {
       return '';
     }
     return text;
   }
 
-  async function recoverPendingPlan({ prevPlanId = null, requestStartedAt = 0, maxMs = 75000, intervalMs = 1500 } = {}) {
+  async function recoverPendingPlan({ prevPlanId = null, requestStartedAt = 0, maxMs = 180000, intervalMs = 2000 } = {}) {
     state.planError = null;
     state.generating.minMs = 600;
     state.generating.timeoutMs = Math.max(12_000, maxMs);
+    setGeneratingHandoffState({
+      active: true,
+      message: 'Workout is still finishing. Checking for completed plan...',
+      meta: '95% - Checking for completed plan...'
+    });
     setView('generating');
-    const ready = await pollForPlanReady({ maxMs, intervalMs, prevPlanId, requestStartedAt });
+    const pollToken = createGenerationPollToken();
+    state.generating.pollToken = pollToken;
+    const ready = await pollForPlanReady({ maxMs, intervalMs, prevPlanId, requestStartedAt, pollToken });
+    if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
     if (ready) return true;
+    setGeneratingHandoffState({ active: false, message: '', meta: '' });
+    clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
     state.planError = readLocalIntake()
-      ? 'Workout build is taking longer than expected. Please try again.'
+      ? 'Workout build did not finish in time. No completed plan was detected.'
       : 'Failed to load training state.';
     setView('plan');
     return false;
@@ -643,6 +803,49 @@
     return out;
   }
 
+  function matchesAbsGlutesLegsDebugPayload(payload) {
+    if (!trainingDebugCombo?.matchesGlutesLegsCoreDebugCombo) return false;
+    return Boolean(trainingDebugCombo.matchesGlutesLegsCoreDebugCombo(payload, { rawClassic: true }));
+  }
+
+  function logDebugComboMatchEval(locationTag, evaluation) {
+    const evalObj = evaluation && typeof evaluation === 'object' ? evaluation : {};
+    try {
+      console.info('DEBUG_COMBO_MATCH_EVAL', {
+        location: locationTag,
+        matched: Boolean(evalObj.matched),
+        reasonIfFalse: String(evalObj.reasonIfFalse || ''),
+        rawPriorityGroups: Array.isArray(evalObj.rawPriorityGroups) ? evalObj.rawPriorityGroups : [],
+        normalizedPriorityGroups: Array.isArray(evalObj.normalizedPriorityGroups) ? evalObj.normalizedPriorityGroups : [],
+        discipline: evalObj.discipline || '',
+        trainingFeel: evalObj.trainingFeel || '',
+        daysPerWeek: Number(evalObj.daysPerWeek || 0) || 0,
+        sessionLengthMin: evalObj.sessionLengthMin || '',
+        locationValue: evalObj.location || '',
+        primaryGoal: evalObj.primaryGoal || '',
+        phase: evalObj.phase || '',
+        normalizedEquipmentAccess: Array.isArray(evalObj.normalizedEquipmentAccess) ? evalObj.normalizedEquipmentAccess : [],
+        painAreas: Array.isArray(evalObj.painAreas) ? evalObj.painAreas : [],
+        injuryMap: Array.isArray(evalObj.injuryMapKeys) ? evalObj.injuryMapKeys : [],
+        injuryNotes: evalObj.injuryNotes || ''
+      });
+    } catch {
+      // ignore console failures
+    }
+  }
+
+  function logAbsGlutesLegsDebug(event, payload = {}) {
+    try {
+      const debugLabel = String(trainingDebugCombo?.DEBUG_COMBO_LABEL || 'glutes-legs-core');
+      console.info(`[training-debug][${debugLabel}][frontend] ${event}`, {
+        at: new Date().toISOString(),
+        ...payload
+      });
+    } catch {
+      // ignore console failures
+    }
+  }
+
   function mapIntakeToOblueprintPayload(intake) {
     if (!intake || typeof intake !== 'object') return null;
 
@@ -781,12 +984,44 @@
     if (!forceStart && !isIntakeComplete(intake)) return false;
     const payload = mapIntakeToOblueprintPayload(intake);
     if (!payload) return false;
+    if (hasRenderablePlanRow(state.planRow) && hasRecentlyCompletedTrainingBuild(payload)) {
+      try {
+        console.info('training_build_duplicate_request_ignored', {
+          source: 'tryAutoOnboardFromIntake',
+          reason: 'recent_direct_success',
+          routeKind: String(state.generating?.completedRouteKind || ''),
+          requestId: Number.isFinite(Number(state.generating?.completedRequestId)) ? Number(state.generating.completedRequestId) : null
+        });
+      } catch {
+        // ignore console failures
+      }
+      return false;
+    }
     autoOnboardInFlight = true;
     try {
       await submitOnboarding(payload);
     } finally {
       autoOnboardInFlight = false;
     }
+    return true;
+  }
+
+  async function regeneratePlanWithSavedRules() {
+    if (!state?.auth?.user?.isOwner) return false;
+    const intake = await loadSavedIntake();
+    if (!intake) {
+      state.planError = 'No saved workout setup was found for regeneration.';
+      render();
+      return false;
+    }
+    const payload = mapIntakeToOblueprintPayload(intake);
+    if (!payload) {
+      state.planError = 'Your saved workout setup is incomplete. Reopen the workout setup to regenerate this plan.';
+      render();
+      return false;
+    }
+    state.planError = null;
+    await submitOnboarding(payload);
     return true;
   }
 
@@ -848,7 +1083,21 @@
       startedAt: 0,
       minMs: 9_000,
       timeoutMs: 60_000,
-      raf: 0
+      raf: 0,
+      requestId: 0,
+      completedRequestId: null,
+      completedRequestKey: '',
+      completedRouteKind: '',
+      completedAt: 0,
+      controller: null,
+      pollToken: null,
+      activeRequestKey: '',
+      activeRouteKind: '',
+      activeEndpoint: '',
+      frontendRequestStartedAt: 0,
+      handoffActive: false,
+      handoffMessage: '',
+      handoffMeta: ''
     },
     mealService: {
       optIn: false,
@@ -1796,6 +2045,16 @@
     events: [],
     context: {}
   };
+  const restTimer = {
+    running: false,
+    endsAt: 0,
+    durationMs: 0,
+    intervalId: 0,
+    context: {},
+    alertAt: 0
+  };
+  let workoutRestAlertAudioContext = null;
+  let workoutRestAlertAudioUnlocked = false;
 
   let shareCloseBound = false;
   let shareOutgoingSyncTimer = 0;
@@ -1816,6 +2075,11 @@
   function workoutTimerStorageKey(userId = state.auth.user?.id) {
     const id = String(userId || '').trim() || 'guest';
     return `${WORKOUT_TIMER_STORAGE_PREFIX}${id}`;
+  }
+
+  function workoutRestTimerStorageKey(userId = state.auth.user?.id) {
+    const id = String(userId || '').trim() || 'guest';
+    return `${WORKOUT_REST_TIMER_STORAGE_PREFIX}${id}`;
   }
 
   function workoutDraftStorageKey({
@@ -1907,6 +2171,16 @@
     }
   }
 
+  function clearPersistedWorkoutRestTimerState(userId = state.auth.user?.id) {
+    const key = workoutRestTimerStorageKey(userId);
+    if (!key) return;
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore storage failures
+    }
+  }
+
   function persistWorkoutTimerState(userId = state.auth.user?.id) {
     const key = workoutTimerStorageKey(userId);
     if (!key) return;
@@ -1936,8 +2210,50 @@
     }
   }
 
+  function persistWorkoutRestTimerState(userId = state.auth.user?.id) {
+    const key = workoutRestTimerStorageKey(userId);
+    if (!key) return;
+    if (!restTimer.running || !Number.isFinite(Number(restTimer.endsAt)) || Number(restTimer.endsAt) <= Date.now()) {
+      clearPersistedWorkoutRestTimerState(userId);
+      return;
+    }
+    const payload = {
+      v: 1,
+      running: true,
+      endsAt: Number(restTimer.endsAt) || 0,
+      durationMs: Math.max(0, Number(restTimer.durationMs) || 0),
+      alertAt: Math.max(0, Number(restTimer.alertAt) || 0),
+      context: {
+        planId: String(restTimer.context?.planId || '').trim() || null,
+        weekIndex: Number.isFinite(Number(restTimer.context?.weekIndex)) ? Number(restTimer.context.weekIndex) : null,
+        dayIndex: Number.isFinite(Number(restTimer.context?.dayIndex)) ? Number(restTimer.context.dayIndex) : null,
+        activeDate: restTimer.context?.activeDate ? String(restTimer.context.activeDate).slice(0, 10) : null,
+        exerciseName: String(restTimer.context?.exerciseName || '').trim() || null,
+        restSec: Number.isFinite(Number(restTimer.context?.restSec)) ? Number(restTimer.context.restSec) : null
+      },
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
   function readPersistedWorkoutTimerState(userId = state.auth.user?.id) {
     const key = workoutTimerStorageKey(userId);
+    if (!key) return null;
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readPersistedWorkoutRestTimerState(userId = state.auth.user?.id) {
+    const key = workoutRestTimerStorageKey(userId);
     if (!key) return null;
     try {
       const raw = localStorage.getItem(key);
@@ -1961,6 +2277,19 @@
     workoutTimer.context = {};
     resetFloatingWorkoutTimerClicks({ rerender: false });
     if (removePersisted) clearPersistedWorkoutTimerState(userId);
+  }
+
+  function resetWorkoutRestTimerState({ removePersisted = false, userId = state.auth.user?.id } = {}) {
+    if (restTimer.intervalId) {
+      clearInterval(restTimer.intervalId);
+      restTimer.intervalId = 0;
+    }
+    restTimer.running = false;
+    restTimer.endsAt = 0;
+    restTimer.durationMs = 0;
+    restTimer.context = {};
+    restTimer.alertAt = 0;
+    if (removePersisted) clearPersistedWorkoutRestTimerState(userId);
   }
 
   function restorePersistedWorkoutTimerState({ userId = state.auth.user?.id, planId = state.planRow?.id } = {}) {
@@ -2007,6 +2336,31 @@
         // ignore
       }
     }
+    return true;
+  }
+
+  function restorePersistedWorkoutRestTimerState({ userId = state.auth.user?.id, planId = state.planRow?.id } = {}) {
+    const stored = readPersistedWorkoutRestTimerState(userId);
+    if (!stored) return false;
+    const storedPlanId = String(stored?.context?.planId || '').trim();
+    const currentPlanId = String(planId || '').trim();
+    const endsAt = Number(stored?.endsAt || 0);
+    if (!storedPlanId || !currentPlanId || storedPlanId !== currentPlanId || !Number.isFinite(endsAt) || endsAt <= Date.now()) {
+      clearPersistedWorkoutRestTimerState(userId);
+      return false;
+    }
+    restTimer.running = true;
+    restTimer.endsAt = endsAt;
+    restTimer.durationMs = Math.max(0, Number(stored?.durationMs) || 0);
+    restTimer.alertAt = Math.max(0, Number(stored?.alertAt) || 0);
+    restTimer.context = {
+      planId: currentPlanId,
+      weekIndex: Number.isFinite(Number(stored?.context?.weekIndex)) ? Number(stored.context.weekIndex) : null,
+      dayIndex: Number.isFinite(Number(stored?.context?.dayIndex)) ? Number(stored.context.dayIndex) : null,
+      activeDate: stored?.context?.activeDate ? String(stored.context.activeDate).slice(0, 10) : null,
+      exerciseName: String(stored?.context?.exerciseName || '').trim() || null,
+      restSec: Number.isFinite(Number(stored?.context?.restSec)) ? Number(stored.context.restSec) : null
+    };
     return true;
   }
 
@@ -3058,9 +3412,28 @@
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
+  function formatRestCountdown(ms) {
+    const total = Math.max(0, Math.ceil(Math.max(0, Number(ms || 0)) / 1000));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
   function getWorkoutElapsedMs() {
     if (workoutTimer.running) return Date.now() - workoutTimer.startedAt;
     return workoutTimer.elapsedMs || 0;
+  }
+
+  function getWorkoutRestRemainingMs() {
+    if (!restTimer.running) return 0;
+    return Math.max(0, Number(restTimer.endsAt || 0) - Date.now());
+  }
+
+  function isRestTimerExerciseActive(exerciseName = '') {
+    if (!restTimer.running) return false;
+    const current = String(restTimer.context?.exerciseName || '').trim().toLowerCase();
+    const target = String(exerciseName || '').trim().toLowerCase();
+    return Boolean(current && target && current === target);
   }
 
   function updateWorkoutTimerDisplay() {
@@ -3081,6 +3454,192 @@
       return;
     }
     node.textContent = `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
+    scheduleFloatingWorkoutTimerSync();
+  }
+
+  function showWorkoutRestTimerDoneToast(exerciseName = '') {
+    const existing = document.getElementById('workout-rest-done-toast');
+    if (existing) existing.remove();
+    const label = String(exerciseName || '').trim();
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-rest-done-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '⏱'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, 'Rest finished'),
+        el('div', { class: 'workout-saved-sub' }, label ? `${label} is ready for the next set.` : 'Time for your next set.')
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 2200);
+    });
+  }
+
+  function showWorkoutRestTimerStartedToast(exerciseName = '', restSec = 0) {
+    const existing = document.getElementById('workout-rest-started-toast');
+    if (existing) existing.remove();
+    const label = String(exerciseName || '').trim();
+    const restText = fmtRest(restSec);
+    const toast = el('div', { class: 'workout-saved-toast', id: 'workout-rest-started-toast', role: 'status' },
+      el('div', { class: 'workout-saved-icon', 'aria-hidden': 'true' }, '⏳'),
+      el('div', { class: 'workout-saved-text' },
+        el('div', { class: 'workout-saved-title' }, 'Rest timer started'),
+        el('div', { class: 'workout-saved-sub' }, label ? `${label} • ${restText}` : `${restText} rest`)
+      )
+    );
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1100);
+    });
+  }
+
+  function ensureWorkoutRestAlertAudioContext() {
+    if (workoutRestAlertAudioContext) return workoutRestAlertAudioContext;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      workoutRestAlertAudioContext = new AudioCtx();
+      return workoutRestAlertAudioContext;
+    } catch {
+      return null;
+    }
+  }
+
+  function primeWorkoutRestAlertNotifications() {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'default') return;
+      Notification.requestPermission().catch(() => {});
+    } catch {
+      // ignore notification permission failures
+    }
+  }
+
+  function showWorkoutRestTimerSystemNotification(exerciseName = '') {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      const label = String(exerciseName || '').trim();
+      const notification = new Notification('Rest timer finished', {
+        body: label ? `${label} is ready for the next set.` : 'Time for your next set.',
+        tag: 'training-rest-timer-finished',
+        renotify: true,
+        requireInteraction: false,
+        silent: false
+      });
+      notification.onclick = () => {
+        try { window.focus(); } catch { /* ignore */ }
+        try { notification.close(); } catch { /* ignore */ }
+      };
+      window.setTimeout(() => {
+        try { notification.close(); } catch { /* ignore */ }
+      }, 12000);
+    } catch {
+      // ignore notification failures
+    }
+  }
+
+  function primeWorkoutRestAlertAudio() {
+    const ctx = ensureWorkoutRestAlertAudioContext();
+    if (!ctx) return;
+    primeWorkoutRestAlertNotifications();
+    try {
+      const markUnlocked = () => {
+        workoutRestAlertAudioUnlocked = ctx.state === 'running';
+      };
+      if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        Promise.resolve(ctx.resume()).then(() => {
+          markUnlocked();
+          if (!workoutRestAlertAudioUnlocked) return;
+          try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const at = ctx.currentTime + 0.01;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, at);
+            gain.gain.setValueAtTime(0.0001, at);
+            gain.gain.exponentialRampToValueAtTime(0.00015, at + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.03);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(at);
+            osc.stop(at + 0.04);
+          } catch {
+            // ignore audio prime failures
+          }
+        }).catch(() => {});
+        return;
+      }
+      markUnlocked();
+    } catch {
+      // ignore browser audio failures
+    }
+  }
+
+  function playWorkoutRestTimerAlert() {
+    try {
+      const ctx = ensureWorkoutRestAlertAudioContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        Promise.resolve(ctx.resume()).catch(() => {});
+      }
+      const startAt = ctx.currentTime + 0.02;
+      const sequence = [
+        { freq: 1046.5, duration: 0.16 },
+        { freq: 1318.51, duration: 0.18 },
+        { freq: 1567.98, duration: 0.24 },
+        { freq: 1318.51, duration: 0.18 }
+      ];
+      sequence.forEach((tone, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const toneStart = startAt + (idx * 0.2);
+        osc.type = idx % 2 === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(tone.freq, toneStart);
+        gain.gain.setValueAtTime(0.0001, toneStart);
+        gain.gain.exponentialRampToValueAtTime(0.26, toneStart + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, toneStart + tone.duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(toneStart);
+        osc.stop(toneStart + tone.duration + 0.03);
+      });
+      if (navigator?.vibrate) {
+        try { navigator.vibrate([120, 60, 180]); } catch { /* ignore */ }
+      }
+    } catch {
+      // ignore browser audio failures
+    }
+  }
+
+  function completeWorkoutRestTimer({ fireAlert = true } = {}) {
+    const exerciseName = String(restTimer.context?.exerciseName || '').trim();
+    resetWorkoutRestTimerState({ removePersisted: true });
+    updateWorkoutRestTimerDisplay();
+    if (fireAlert) {
+      playWorkoutRestTimerAlert();
+      if (document.hidden) showWorkoutRestTimerSystemNotification(exerciseName);
+      showWorkoutRestTimerDoneToast(exerciseName);
+    }
+  }
+
+  function updateWorkoutRestTimerDisplay() {
+    if (!restTimer.running) {
+      scheduleFloatingWorkoutTimerSync();
+      return;
+    }
+    const remainingMs = getWorkoutRestRemainingMs();
+    if (remainingMs <= 0) {
+      completeWorkoutRestTimer({ fireAlert: true });
+      return;
+    }
     scheduleFloatingWorkoutTimerSync();
   }
 
@@ -3117,6 +3676,7 @@
     node.setAttribute('aria-live', 'polite');
     node.innerHTML = `
       <span class="workout-floating-timer-time" data-workout-floating-time>Workout 0:00</span>
+      <span class="workout-floating-rest-time hidden" data-workout-floating-rest-time></span>
     `.trim();
     node.addEventListener('click', () => {
       if (!workoutTimer.running && !workoutTimer.paused) return;
@@ -3147,6 +3707,7 @@
   function syncFloatingWorkoutTimerDock() {
     const node = ensureFloatingWorkoutTimerDock();
     const timeNode = node.querySelector('[data-workout-floating-time]');
+    const restNode = node.querySelector('[data-workout-floating-rest-time]');
     const active = Boolean(workoutTimer.running || workoutTimer.paused);
     const anchor = document.querySelector('[data-workout-timer-anchor]');
     const anchorVisible = (() => {
@@ -3181,6 +3742,20 @@
         ? `Paused ${formatWorkoutElapsed(getWorkoutElapsedMs())}`
         : `Workout ${formatWorkoutElapsed(getWorkoutElapsedMs())}`;
     }
+    if (restNode) {
+      if (!restTimer.running) {
+        restNode.classList.add('hidden');
+        restNode.textContent = '';
+      } else {
+        const remainingMs = getWorkoutRestRemainingMs();
+        if (remainingMs <= 0) {
+          completeWorkoutRestTimer({ fireAlert: true });
+          return;
+        }
+        restNode.classList.remove('hidden');
+        restNode.textContent = `Rest ${formatRestCountdown(remainingMs)}`;
+      }
+    }
   }
 
   function scheduleFloatingWorkoutTimerSync() {
@@ -3207,6 +3782,44 @@
       updateWorkoutTimerDisplay();
     }, 1000);
     updateWorkoutTimerDisplay();
+  }
+
+  function ensureWorkoutRestTimerTick() {
+    if (!restTimer.running) return;
+    if (restTimer.intervalId) return;
+    restTimer.intervalId = window.setInterval(() => {
+      updateWorkoutRestTimerDisplay();
+    }, 250);
+    updateWorkoutRestTimerDisplay();
+  }
+
+  function startWorkoutRestTimer({ exerciseName = '', restSec = 0, weekIndex = null, dayIndex = null, activeDate = null } = {}) {
+    const seconds = Math.max(0, Math.round(Number(restSec) || 0));
+    if (seconds <= 0) return;
+    primeWorkoutRestAlertAudio();
+    const durationMs = seconds * 1000;
+    const planId = String(state.planRow?.id || '').trim() || null;
+    const activeDay = activeDate ? String(activeDate).slice(0, 10) : null;
+    if (restTimer.intervalId) {
+      clearInterval(restTimer.intervalId);
+      restTimer.intervalId = 0;
+    }
+    restTimer.running = true;
+    restTimer.endsAt = Date.now() + durationMs;
+    restTimer.durationMs = durationMs;
+    restTimer.alertAt = 0;
+    restTimer.context = {
+      planId,
+      weekIndex: Number.isFinite(Number(weekIndex)) ? Number(weekIndex) : null,
+      dayIndex: Number.isFinite(Number(dayIndex)) ? Number(dayIndex) : null,
+      activeDate: activeDay,
+      exerciseName: String(exerciseName || '').trim() || null,
+      restSec: seconds
+    };
+    persistWorkoutRestTimerState();
+    ensureWorkoutRestTimerTick();
+    updateWorkoutRestTimerDisplay();
+    showWorkoutRestTimerStartedToast(exerciseName, seconds);
   }
 
   function bindWorkoutInputTracking() {
@@ -3302,6 +3915,7 @@
 
   function startWorkoutTimer(contextInput = null) {
     if (workoutTimer.running) return;
+    primeWorkoutRestAlertAudio();
     const nextContext = contextInput && typeof contextInput === 'object'
       ? {
           planId: String(contextInput.planId || state.planRow?.id || '').trim() || null,
@@ -3467,6 +4081,7 @@
       });
     }
     resetWorkoutTimerState({ removePersisted: true });
+    resetWorkoutRestTimerState({ removePersisted: true });
     if (durationMs > 0) {
       await persistFinishedWorkoutTimer({
         context: timerContext,
@@ -3483,6 +4098,7 @@
       }
     }
     updateWorkoutTimerDisplay();
+    updateWorkoutRestTimerDisplay();
     render();
     if (showToast) showWorkoutSavedToast();
   }
@@ -3704,6 +4320,13 @@
     const weekdayOrder = new Map([[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [0, 6]]);
     chosen.sort((a, b) => (weekdayOrder.get(a) ?? 99) - (weekdayOrder.get(b) ?? 99));
     return chosen.slice(0, n);
+  }
+
+  function resolvePreferredDaysForSubmit(daysPerWeek, preferredDays, unavailableDays) {
+    const explicit = normalizeWeekdayIndexList(preferredDays);
+    const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
+    if (explicit.length === n) return explicit.slice(0, n);
+    return buildTrainingSchedule(daysPerWeek, unavailableDays, explicit);
   }
 
   function scheduleUnavailableDaysForDate(refDate = new Date()) {
@@ -8200,10 +8823,14 @@ function toFreeExerciseDbRemotePath(src) {
       }
       return { ok: resp.ok, status: resp.status, json };
     } catch (err) {
+      const aborted = String(err?.name || '').trim() === 'AbortError';
       return {
         ok: false,
-        status: 0,
-        json: null,
+        status: aborted ? 408 : 0,
+        json: aborted ? {
+          error: 'training_build_frontend_abort_timeout',
+          message: 'The plan build timed out in the browser before the server responded.'
+        } : null,
         error: err
       };
     } finally {
@@ -8679,6 +9306,7 @@ function toggleSharePopover(force) {
     const next = typeof force === 'boolean' ? force : !shareUi.open;
     shareUi.open = next;
     if (shareUi.open) {
+      shareUi.bootstrapRequested = true;
       // Always refresh from server so "Requested" clears after receiver accepts/declines.
       loadShareAccounts(shareUi.query || '');
     }
@@ -8794,17 +9422,24 @@ function toggleSharePopover(force) {
       const msg = document.getElementById('training-gen-msg');
       const meta = document.getElementById('training-gen-meta');
       const prog = document.getElementById('training-gen-progress');
+      const handoffActive = Boolean(state.generating?.handoffActive);
+      const handoffMessage = String(state.generating?.handoffMessage || '').trim();
+      const handoffMeta = String(state.generating?.handoffMeta || '').trim();
 
       if (bar) bar.style.width = `${pct}%`;
       if (prog) prog.setAttribute('aria-valuenow', String(pct));
       if (meta) {
-        meta.textContent = elapsed < minMs
-          ? `${pct}% - ${elapsedSec}s elapsed. Usually about ${estimateSec}s.`
-          : `${pct}% - Still building... ${elapsedSec}s elapsed.`;
+        meta.textContent = handoffActive
+          ? (handoffMeta || `Checking for completed plan... ${elapsedSec}s elapsed.`)
+          : (elapsed < minMs
+            ? `${pct}% - ${elapsedSec}s elapsed. Usually about ${estimateSec}s.`
+            : `${pct}% - Still building... ${elapsedSec}s elapsed.`);
       }
 
       const idx = Math.min(messages.length - 1, Math.floor(elapsed / 6500));
-      if (msg) msg.textContent = messages[idx] || messages[messages.length - 1] || 'Working...';
+      if (msg) msg.textContent = handoffActive
+        ? (handoffMessage || 'Workout is still finishing. Checking for completed plan...')
+        : (messages[idx] || messages[messages.length - 1] || 'Working...');
 
       state.generating.raf = requestAnimationFrame(tick);
     };
@@ -8821,18 +9456,22 @@ function toggleSharePopover(force) {
     state.generating.timeoutMs = 12_000;
     setView('generating');
     Promise.resolve().then(async () => {
+      const pollToken = createGenerationPollToken();
+      state.generating.pollToken = pollToken;
       try {
         const force = Boolean(forceAutostart || shouldForceAutostart());
         if (force) clearForceAutostart();
         const autoOnboarded = await tryAutoOnboardFromIntake(force);
         if (autoOnboarded) return;
-        const ready = await pollForPlanReady({ maxMs: 12_000, intervalMs: 900 });
+        const ready = await pollForPlanReady({ maxMs: 12_000, intervalMs: 900, pollToken });
         if (ready) return;
+        clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
         state.planError = readLocalIntake()
           ? 'Workout build is taking longer than expected. Please try again.'
           : 'No saved setup found. Complete setup, then tap Enter Engine.';
         setView('plan');
       } finally {
+        if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
         engineRetryInFlight = false;
       }
     });
@@ -8957,6 +9596,7 @@ function toggleSharePopover(force) {
       state.auth.user = null;
       shareEventsInFlight = false;
       resetWorkoutTimerState({ removePersisted: false });
+      resetWorkoutRestTimerState({ removePersisted: false });
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -8986,6 +9626,7 @@ function toggleSharePopover(force) {
       state.auth.user = null;
       shareEventsInFlight = false;
       resetWorkoutTimerState({ removePersisted: false });
+      resetWorkoutRestTimerState({ removePersisted: false });
       state.profile = null;
       state.planRow = null;
       state.logs = [];
@@ -9029,7 +9670,7 @@ function toggleSharePopover(force) {
     } catch {
       if (silent && hadRenderablePlan) return;
       if (forceAutostart || shouldBootIntoConstructing()) {
-        const recovered = await recoverPendingPlan({ maxMs: 75_000, intervalMs: 1500 });
+        const recovered = await recoverPendingPlan({ maxMs: 180_000, intervalMs: 2000 });
         if (recovered) return;
       }
       state.planError = neutralizePlanLoadError('Failed to load training state. Please refresh.');
@@ -9043,6 +9684,7 @@ function toggleSharePopover(force) {
         state.auth.user = null;
         shareEventsInFlight = false;
         resetWorkoutTimerState({ removePersisted: false });
+        resetWorkoutRestTimerState({ removePersisted: false });
         state.profile = null;
         state.planRow = null;
         state.logs = [];
@@ -9064,7 +9706,7 @@ function toggleSharePopover(force) {
         return;
       }
       if (forceAutostart || shouldBootIntoConstructing()) {
-        const recovered = await recoverPendingPlan({ maxMs: 75_000, intervalMs: 1500 });
+        const recovered = await recoverPendingPlan({ maxMs: 180_000, intervalMs: 2000 });
         if (recovered) return;
       }
       state.planError = neutralizePlanLoadError(s.json?.error || 'Failed to load training state.');
@@ -9091,6 +9733,9 @@ function toggleSharePopover(force) {
       if (forceAutostart) clearForceAutostart();
     }
     const shouldAutoBuildDemoPlan = shouldBootDemoPlan(state.auth.user, state.planRow);
+    if (hasRenderablePlanRow(state.planRow) && hasRecentlyCompletedTrainingBuild(mapIntakeToOblueprintPayload(await loadSavedIntake()), { withinMs: 30000 })) {
+      return;
+    }
     if (!hasFetchedRenderablePlan && (forceAutostart || shouldAutoBuildDemoPlan)) {
       if (shouldAutoBuildDemoPlan) setView('generating');
       const autoOnboarded = await tryAutoOnboardFromIntake(true);
@@ -9100,6 +9745,7 @@ function toggleSharePopover(force) {
       maybeArmTrainingQuickTourForFirstPlan();
       restoreWorkoutDraftState({ userId: state.auth.user?.id, planId: state.planRow.id });
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
+      restorePersistedWorkoutRestTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
       const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
       state.logs = [];
@@ -9117,9 +9763,13 @@ function toggleSharePopover(force) {
       }
       return;
     }
+    if (hasRenderablePlanRow(state.planRow) && Number(state.generating?.completedAt || 0) > 0) {
+      return;
+    }
     const autoOnboarded = await tryAutoOnboardFromIntake(forceAutostart || shouldBootDemoPlan(state.auth.user, state.planRow));
     if (autoOnboarded) return;
     resetWorkoutTimerState({ removePersisted: false });
+    resetWorkoutRestTimerState({ removePersisted: false });
     setView('wizard');
     applyPendingResumeStepIfPossible();
   }
@@ -10561,7 +11211,7 @@ function toggleSharePopover(force) {
       discipline,
       experience,
       daysPerWeek,
-      preferredDays: normalizeWeekdayIndexList(state.wizard.preferredDays),
+      preferredDays: resolvePreferredDaysForSubmit(daysPerWeek, state.wizard.preferredDays, state.wizard.unavailableDays),
       phase: resolvedPhase,
       targetWeightLb: state.wizard.targetWeightLb,
       timePerSession: state.wizard.timePerSession,
@@ -10587,6 +11237,52 @@ function toggleSharePopover(force) {
   }
 
   async function submitOnboarding(payload) {
+    const selectedDayCount = Number(payload?.daysPerWeek || 0) || null;
+    const selectedPriorityGroups = Array.isArray(payload?.priorityGroups)
+      ? payload.priorityGroups.map((value) => String(value || '')).filter(Boolean)
+      : (Array.isArray(payload?.emphasis)
+        ? payload.emphasis.map((value) => String(value || '')).filter(Boolean)
+        : []);
+    const requestKey = buildTrainingRequestKey(payload);
+    const existingRequestKey = String(state.generating?.activeRequestKey || '');
+    const duplicateBuildActive = Boolean(
+      existingRequestKey
+      && requestKey
+      && existingRequestKey === requestKey
+      && (
+        state.view === 'generating'
+        || state.generating?.controller
+        || state.generating?.pollToken
+        || state.generating?.handoffActive
+      )
+    );
+    if (duplicateBuildActive) {
+      const duplicateRequestId = Number(state.generating?.requestId || 0) || null;
+      const duplicateRouteKind = String(state.generating?.activeRouteKind || 'unknown_training_route');
+      const duplicateEndpoint = String(state.generating?.activeEndpoint || '').trim();
+      logTrainingBuildLifecycle('training_build_duplicate_request_ignored', {
+        endpoint: duplicateEndpoint,
+        elapsedMs: state.generating?.frontendRequestStartedAt
+          ? (Date.now() - Number(state.generating.frontendRequestStartedAt))
+          : 0,
+        dayCount: selectedDayCount,
+        priorityGroups: selectedPriorityGroups,
+        routeKind: duplicateRouteKind,
+        requestId: duplicateRequestId,
+        configuredTimeoutMs: Number(state.generating?.timeoutMs || 0) || null
+      });
+      setView('generating');
+      render();
+      return;
+    }
+
+    clearWorkoutGenerationState({ cancelRequest: true, clearFlags: false });
+    state.generating.requestId = Number(state.generating.requestId || 0) + 1;
+    const requestId = state.generating.requestId;
+    const comboEval = evaluateTrainingDebugCombo ? evaluateTrainingDebugCombo(payload, { rawClassic: true }) : { matched: false, reasonIfFalse: 'matcher_unavailable' };
+    logDebugComboMatchEval('frontend', comboEval);
+    const comboDebug = matchesAbsGlutesLegsDebugPayload(payload);
+    state.generating.comboDebug = comboDebug;
     const routeInfo = describeRoutingSelection(payload);
     try {
       console.info(
@@ -10619,15 +11315,51 @@ function toggleSharePopover(force) {
     }
     const minMs = isAuthed ? Math.max(350, Number(state.generating?.minMs) || 600) : 350;
     state.generating.minMs = minMs;
-    state.generating.timeoutMs = isAuthed ? 12_000 : 8_000;
+    state.generating.timeoutMs = 45_000;
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
-    const totalTimeoutMs = isAuthed ? Math.max(minMs + 4_500, 12_000) : Math.max(minMs + 2_000, 8_000);
+    const routeKind = isAuthed ? 'signed_in_onboarding' : 'signed_out_preview';
+    state.generating.activeRequestKey = requestKey;
+    state.generating.activeRouteKind = routeKind;
+    state.generating.activeEndpoint = endpoint;
+    state.generating.frontendRequestStartedAt = requestStartedAt;
+    const totalTimeoutMs = Math.max(minMs + 6_000, Number(state.generating.timeoutMs) || 20_000);
+    logTrainingBuildLifecycle('training_build_request_started', {
+      endpoint,
+      elapsedMs: 0,
+      dayCount: selectedDayCount,
+      priorityGroups: selectedPriorityGroups,
+      routeKind,
+      requestId,
+      configuredTimeoutMs: totalTimeoutMs
+    });
+    if (comboDebug) {
+      logAbsGlutesLegsDebug('submit-start', {
+        source: 'frontend state',
+        endpoint,
+        isAuthed,
+        requestId,
+        minMs,
+        totalTimeoutMs,
+        routeKind,
+        selectedDayCount,
+        priorityGroups: selectedPriorityGroups,
+        payload
+      });
+    }
     const controller = new AbortController();
+    state.generating.controller = controller;
     const timeoutId = setTimeout(() => controller.abort(), totalTimeoutMs);
     let resp;
     try {
-      const req = api(endpoint, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal })
+      const req = api(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+        headers: {
+          'X-Training-Request-Id': `training-${requestId}-${requestStartedAt}`
+        }
+      })
         .catch((err) => ({ ok: false, status: err?.name === 'AbortError' ? 408 : 0, json: null, error: err }));
       await minDelay;
       const remainingMs = Math.max(0, totalTimeoutMs - minMs);
@@ -10644,52 +11376,246 @@ function toggleSharePopover(force) {
     } finally {
       clearTimeout(timeoutId);
     }
+    try {
+      console.info('training_build_frontend_response_received', {
+        endpoint,
+        status: Number(resp?.status || 0) || 0,
+        ok: Boolean(resp?.ok),
+        hasJson: Boolean(resp && Object.prototype.hasOwnProperty.call(resp, 'json')),
+        elapsedMs: Date.now() - requestStartedAt,
+        routeKind,
+        requestId
+      });
+    } catch {
+      // ignore console failures
+    }
+    logTrainingBuildLifecycle('training_build_backend_response_received', {
+      endpoint,
+      elapsedMs: Date.now() - requestStartedAt,
+      dayCount: selectedDayCount,
+      priorityGroups: selectedPriorityGroups,
+      routeKind,
+      requestId,
+      configuredTimeoutMs: totalTimeoutMs
+    });
+
+    if (Number(state.generating.requestId || 0) !== requestId) return;
+    state.generating.controller = null;
 
     if (!resp.ok) {
-      if (!forceAutostart) clearForceAutostart();
+      const errObj = resp?.json && typeof resp.json === 'object' ? resp.json : {};
+      const isFrontendAbortTimeout = String(resp?.error?.name || '').trim() === 'AbortError'
+        || String(errObj?.error || '').trim() === 'training_build_frontend_abort_timeout'
+        || resp?.status === 408;
+      const isStructuredPlanBuildFailure = Boolean(
+        resp?.status === 400
+        && errObj
+        && typeof errObj === 'object'
+        && (errObj.error || errObj.message || errObj.reason)
+        && (errObj.functionName || errObj.stage || errObj.failedStage)
+      );
+      if (comboDebug) {
+        logAbsGlutesLegsDebug('submit-non-ok', {
+          source: 'frontend state',
+          endpoint,
+          isAuthed,
+          status: resp?.status || 0,
+          elapsedMs: Date.now() - requestStartedAt,
+          isFrontendAbortTimeout,
+          willPoll: Boolean(isAuthed && !isStructuredPlanBuildFailure)
+        });
+      }
+      if (isFrontendAbortTimeout) {
+        setGeneratingHandoffState({
+          active: true,
+          message: 'Workout is still finishing. Checking for completed plan...',
+          meta: `95% - Checking for completed plan... ${Math.max(0, Math.round((Date.now() - requestStartedAt) / 1000))}s elapsed.`
+        });
+        try {
+          console.error('training_build_frontend_abort_timeout', {
+            endpoint,
+            elapsedMs: Date.now() - requestStartedAt,
+            configuredTimeoutMs: totalTimeoutMs,
+            dayCount: selectedDayCount,
+            priorityGroups: selectedPriorityGroups,
+            routeKind
+          });
+        } catch {
+          // ignore console errors
+        }
+        logTrainingBuildLifecycle('training_build_frontend_abort_timeout', {
+          endpoint,
+          elapsedMs: Date.now() - requestStartedAt,
+          dayCount: selectedDayCount,
+          priorityGroups: selectedPriorityGroups,
+          routeKind,
+          requestId,
+          configuredTimeoutMs: totalTimeoutMs
+        });
+      }
       if (resp.status === 401) {
         state.auth.user = null;
         state.profile = null;
         setView('wizard');
         return;
       }
-      if (isAuthed) {
+      if (isAuthed && !isStructuredPlanBuildFailure) {
+        if (comboDebug) {
+          logAbsGlutesLegsDebug('polling-entered-after-non-ok', {
+            source: 'polling',
+            endpoint,
+            elapsedMs: Date.now() - requestStartedAt,
+            note: 'Authenticated polling can mask a fast backend failure.'
+          });
+        }
+        const pollToken = createGenerationPollToken();
+        state.generating.pollToken = pollToken;
         const ready = await pollForPlanReady({
-          maxMs: 75_000,
-          intervalMs: 1500,
+          maxMs: 180_000,
+          intervalMs: 2000,
           prevPlanId,
-          requestStartedAt
+          requestStartedAt,
+          pollToken
         });
+        if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
         if (ready) {
+          if (isFrontendAbortTimeout) {
+            logTrainingBuildLifecycle('training_build_saved_plan_detected_after_abort', {
+              endpoint,
+              elapsedMs: Date.now() - requestStartedAt,
+              dayCount: selectedDayCount,
+              priorityGroups: selectedPriorityGroups,
+              routeKind,
+              requestId,
+              configuredTimeoutMs: totalTimeoutMs
+            });
+          }
+          logTrainingBuildLifecycle('training_build_displayed_from_poll', {
+            endpoint,
+            elapsedMs: Date.now() - requestStartedAt,
+            dayCount: selectedDayCount,
+            priorityGroups: selectedPriorityGroups,
+            routeKind,
+            requestId,
+            configuredTimeoutMs: totalTimeoutMs
+          });
+          if (comboDebug) {
+            logAbsGlutesLegsDebug('polling-resolved-visible-state', {
+              source: 'polling',
+              elapsedMs: Date.now() - requestStartedAt,
+              resolvedTo: 'plan-ready'
+            });
+          }
+          setGeneratingHandoffState({ active: false, message: '', meta: '' });
+          clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
           sanitizeBodybuildingPlanInPlace(state.planRow);
           return;
         }
       }
+      setGeneratingHandoffState({ active: false, message: '', meta: '' });
+      clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
       state.planRow = null;
       state.logs = [];
       state.allLogs = [];
-      const errObj = resp?.json && typeof resp.json === 'object' ? resp.json : {};
+      if (!isFrontendAbortTimeout) {
+        try {
+          console.error('[training][plan-build-failed]', {
+            status: resp?.status || 0,
+            body: errObj
+          });
+        } catch {
+          // ignore console errors
+        }
+      }
       const detail = (() => {
-        if (errObj?.error === 'INVALID_INPUT') {
+        const lines = [];
+        const push = (label, value) => {
+          const text = String(value || '').trim();
+          if (!text) return;
+          lines.push(label ? `${label}: ${text}` : text);
+        };
+        if (errObj?.error) push('', errObj.error);
+        if (errObj?.slotId) push('slotId', errObj.slotId);
+        if (errObj?.day) push('day', errObj.day);
+        if (Number.isFinite(Number(errObj?.week))) push('week', errObj.week);
+        if (errObj?.exerciseName) push('exercise', errObj.exerciseName);
+        if (errObj?.functionName) push('function', errObj.functionName);
+        if (errObj?.message) push('message', errObj.message);
+        else if (errObj?.reason) push('message', errObj.reason);
+        if (!lines.length && errObj?.error === 'INVALID_INPUT') {
           const field = errObj.field ? ` (${errObj.field})` : '';
           const reason = errObj.reason ? `: ${errObj.reason}` : '';
-          return `INVALID_INPUT${field}${reason}`;
+          lines.push(`INVALID_INPUT${field}${reason}`);
         }
-        if (errObj?.error === 'NO_ELIGIBLE_EXERCISE') {
-          const slot = errObj.slotId ? ` (${errObj.slotId})` : '';
-          return `NO_ELIGIBLE_EXERCISE${slot}`;
-        }
-        return errObj?.error || errObj?.reason || '';
+        return lines.join('\n');
       })();
-      state.planError = neutralizePlanLoadError(resp.status === 408
-        ? 'Plan build timed out. Please try again.'
-        : (detail || 'Failed to build plan.'));
+      state.planError = neutralizePlanLoadError(isFrontendAbortTimeout
+        ? 'Workout build did not finish in time. No completed plan was detected.'
+        : resp.status === 408
+          ? 'Plan build timed out. Please try again.'
+        : (detail ? `Failed to build plan:\n${detail}` : 'Failed to build plan.'));
+      if (comboDebug) {
+        logAbsGlutesLegsDebug('visible-failure', {
+          source: 'frontend state',
+          elapsedMs: Date.now() - requestStartedAt,
+          status: resp?.status || 0,
+          isFrontendAbortTimeout,
+          detail,
+          errorBody: errObj
+        });
+      }
       pauseAutoRetry();
       setView('plan');
       return;
     }
 
+    try {
+      console.info('training_build_frontend_response_ok', {
+        endpoint,
+        elapsedMs: Date.now() - requestStartedAt,
+        routeKind,
+        requestId
+      });
+    } catch {
+      // ignore console failures
+    }
     state.planRow = resp.json?.plan || null;
+    try {
+      console.info('training_build_frontend_plan_payload_detected', {
+        endpoint,
+        routeKind,
+        requestId,
+        hasPlan: Boolean(resp?.json?.plan),
+        planId: resp?.json?.plan?.id || null,
+        preview: Boolean(resp?.json?.plan?.preview)
+      });
+    } catch {
+      // ignore console failures
+    }
+    if (comboDebug) {
+      logAbsGlutesLegsDebug('submit-succeeded', {
+        source: 'frontend state',
+        endpoint,
+        elapsedMs: Date.now() - requestStartedAt,
+        planId: state.planRow?.id || null,
+        preview: Boolean(state.planRow?.preview)
+      });
+    }
+    if (state.generating?.pollToken) {
+      state.generating.pollToken.cancelled = true;
+      try {
+        console.info('training_build_frontend_recovery_poll_cancelled', {
+          endpoint,
+          routeKind,
+          requestId,
+          reason: 'direct_response_success'
+        });
+      } catch {
+        // ignore console failures
+      }
+      state.generating.pollToken = null;
+    }
+    clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
     state.planError = null;
     clearAutoRetryPause();
     sanitizeBodybuildingPlanInPlace(state.planRow);
@@ -10724,7 +11650,30 @@ function toggleSharePopover(force) {
       if (shouldSkipDemoUpsell(state.auth.user)) localStorage.setItem(dismissedKey, '1');
       else localStorage.removeItem(dismissedKey);
     }
+    markTrainingBuildCompleted({ requestId, requestKey, routeKind });
+    try {
+      console.info('training_build_frontend_render_plan_start', {
+        endpoint,
+        routeKind,
+        requestId,
+        planId: state.planRow?.id || null,
+        targetView: state.planRow?.id ? (shouldSkipDemoUpsell(state.auth.user) ? 'plan' : 'upsell') : 'plan'
+      });
+    } catch {
+      // ignore console failures
+    }
     setView(state.planRow?.id ? (shouldSkipDemoUpsell(state.auth.user) ? 'plan' : 'upsell') : 'plan');
+    try {
+      console.info('training_build_frontend_render_plan_success', {
+        endpoint,
+        routeKind,
+        requestId,
+        planId: state.planRow?.id || null,
+        finalView: state.view
+      });
+    } catch {
+      // ignore console failures
+    }
   }
 
     function renderUpsell() {
@@ -11234,7 +12183,7 @@ function toggleSharePopover(force) {
       state.planError = 'Invalid exercises/sets were removed from display. Regenerate plan for a clean rebuild.';
     }
     const plan = planRow?.plan;
-    if (plan && Array.isArray(plan.weeks) && /Workout build is taking longer than expected|Failed to load training state/i.test(String(state.planError || ''))) {
+    if (plan && Array.isArray(plan.weeks) && /Workout build is taking longer than expected|Workout build did not finish in time|training_build_frontend_abort_timeout|Failed to load training state/i.test(String(state.planError || ''))) {
       state.planError = null;
     }
     if (!plan || !Array.isArray(plan.weeks)) {
@@ -11245,13 +12194,22 @@ function toggleSharePopover(force) {
       const msg = neutralizePlanLoadError(state.planError) || (hasIntake ? 'Ready to generate your workout.' : 'No plan found.');
       return el('div', { class: 'training-card training-center' },
         el('div', { class: 'training-muted' }, msg),
-        hasIntake
+        hasIntake || state.planError
           ? el('div', { class: 'training-actions', style: 'margin-top:0.75rem' },
-            el('button', {
-              type: 'button',
-              class: 'btn btn-primary',
-              onclick: () => keepOnEngineAndRetry({ forceAutostart: true })
-            }, 'Generate workout')
+            state.planError
+              ? el('button', {
+                type: 'button',
+                class: 'btn btn-ghost',
+                onclick: startOverAfterGenerationFailure
+              }, 'Start Over')
+              : null,
+            hasIntake
+              ? el('button', {
+                type: 'button',
+                class: 'btn btn-primary',
+                onclick: () => keepOnEngineAndRetry({ forceAutostart: true })
+              }, 'Generate workout')
+              : null
           )
           : null
       );
@@ -11260,6 +12218,7 @@ function toggleSharePopover(force) {
     applyPendingScheduleIfDue(new Date());
 
     const isPreview = !planRow?.id || planRow?.preview || plan?.meta?.preview;
+    const canRegenerateWithNewRules = Boolean(state.auth.user?.isOwner);
 
     function makeDefaultWizard() {
       return {
@@ -11458,6 +12417,18 @@ function toggleSharePopover(force) {
       openRestartSetup();
     }
 
+    function startOverAfterGenerationFailure() {
+      clearWorkoutGenerationState({ cancelRequest: true, clearFlags: true, clearWizardOnly: true });
+      clearAutoRetryPause();
+      state.planRow = null;
+      state.logs = [];
+      state.allLogs = [];
+      state.planError = null;
+      stashIntakeForRestart();
+      try { sessionStorage.removeItem('ode_training_intake_handoff'); } catch {}
+      window.location.href = 'training-coming-soon.html?restart=1';
+    }
+
     const logsMap = buildLogsMap(state.logs);
 
     const today = new Date();
@@ -11631,7 +12602,7 @@ function toggleSharePopover(force) {
       : null;
     const pendingLabel = pendingSchedule?.effectiveDate ? `Schedule change set for ${pendingSchedule.effectiveDate}.` : null;
 
-    const printPlanPdf = () => {
+    const printSimplePlanPdf = () => {
       const daysPerWeek = Number(plan?.meta?.daysPerWeek) || (Array.isArray(plan?.weeks?.[0]?.days) ? plan.weeks[0].days.length : 1);
       const week = plan.weeks.find((w) => Number(w.index) === activeWeek) || plan.weeks[0];
       const days = Array.isArray(week?.days) ? week.days : [];
@@ -11639,16 +12610,44 @@ function toggleSharePopover(force) {
 
       const discipline = String(plan.meta?.discipline || '').toUpperCase();
       const experience = String(plan.meta?.experience || '').toUpperCase();
+      const intake = readLocalIntake() || state.profile?.training_intake || null;
       const profileStrength = state.profile?.strength || {};
-      const bodyweight = Number(profileStrength?.bodyweight ?? plan?.baselines?.bodyweight ?? plan?.baselines?.trainingMax?.bodyweight);
-      const tm = plan?.baselines?.trainingMax || {};
-      const bbMoves = plan?.baselines?.bodybuilding?.movements || {};
+      const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
+      const bodyweight = Number(profileStrength?.bodyweight ?? intake?.weightLb ?? baselines?.bodyweight ?? baselines?.trainingMax?.bodyweight);
+      const tm = baselines?.trainingMax || {};
+      const bbMoves = baselines?.bodybuilding?.movements || {};
       const pressMove = String(bbMoves.press || state.wizard?.strength?.pressMovement || 'Bench Press');
       const pullMove = String(bbMoves.pull || state.wizard?.strength?.pullMovement || 'Weighted Pull-up');
       const legMove = String(bbMoves.leg || state.wizard?.strength?.legMovement || 'Back Squat');
-      const pressEst = Number(plan?.baselines?.press1rm);
-      const pullEst = Number(plan?.baselines?.pull1rm);
-      const legEst = Number(plan?.baselines?.leg1rm);
+      const pressEst = Number(baselines?.press1rm);
+      const pullEst = Number(baselines?.pull1rm);
+      const legEst = Number(baselines?.leg1rm);
+      const hingeEst = Number(baselines?.hinge1rm);
+
+      const listText = (value, fallback = '—') => {
+        if (Array.isArray(value)) {
+          const parts = value.map((item) => String(item || '').trim()).filter(Boolean);
+          return parts.length ? parts.join(', ') : fallback;
+        }
+        const text = String(value || '').trim();
+        return text || fallback;
+      };
+      const preferredDays = Array.isArray(intake?.preferredDays) && intake.preferredDays.length
+        ? intake.preferredDays
+        : (Array.isArray(plan?.meta?.schedule?.preferredDays) ? plan.meta.schedule.preferredDays : []);
+      const painAreas = Array.isArray(intake?.injuries) ? intake.injuries : [];
+      const painDetailText = (() => {
+        const detail = intake?.injuryDetails && typeof intake.injuryDetails === 'object' ? intake.injuryDetails : {};
+        const parts = painAreas.map((area) => {
+          const raw = detail?.[area] && typeof detail[area] === 'object' ? detail[area] : null;
+          const severity = Number(raw?.severity);
+          const recency = String(raw?.recency || '').trim();
+          if (Number.isFinite(severity) && recency) return `${area} (${severity}/10, ${recency})`;
+          if (Number.isFinite(severity)) return `${area} (${severity}/10)`;
+          return String(area || '').trim();
+        }).filter(Boolean);
+        return parts.length ? parts.join(', ') : 'None';
+      })();
 
       const stats = [];
       if (Number.isFinite(bodyweight) && bodyweight > 0) stats.push({ k: 'Current weight', v: `${bodyweight} lb` });
@@ -11720,6 +12719,7 @@ function toggleSharePopover(force) {
     .pdf-empty { font-size: 12px; color: #5a524c; font-style: italic; }
     @media print {
       body { margin: 12mm; }
+      .pdf-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .pdf-day { page-break-inside: avoid; }
     }
   </style>
@@ -11745,6 +12745,141 @@ function toggleSharePopover(force) {
       setTimeout(() => {
         try { win.print(); } catch { /* ignore */ }
       }, 250);
+    };
+
+    const printSimplePlanPdfV2 = () => {
+      const daysPerWeek = Number(plan?.meta?.daysPerWeek) || (Array.isArray(plan?.weeks?.[0]?.days) ? plan.weeks[0].days.length : 1);
+      const week = plan.weeks.find((w) => Number(w.index) === activeWeek) || plan.weeks[0];
+      const days = Array.isArray(week?.days) ? week.days : [];
+      const discipline = String(plan?.meta?.discipline || '').toUpperCase();
+      const experience = String(plan?.meta?.experience || '').toUpperCase();
+      const intake = readLocalIntake() || state.profile?.training_intake || null;
+      const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
+
+      const listText = (value, fallback = '—') => {
+        if (Array.isArray(value)) {
+          const parts = value.map((item) => String(item || '').trim()).filter(Boolean);
+          return parts.length ? parts.join(', ') : fallback;
+        }
+        const text = String(value || '').trim();
+        return text || fallback;
+      };
+      const preferredDays = Array.isArray(intake?.preferredDays) && intake.preferredDays.length
+        ? intake.preferredDays
+        : (Array.isArray(plan?.meta?.schedule?.preferredDays) ? plan.meta.schedule.preferredDays : []);
+      const painAreas = Array.isArray(intake?.injuries) ? intake.injuries : [];
+      const painDetailText = (() => {
+        const detail = intake?.injuryDetails && typeof intake.injuryDetails === 'object' ? intake.injuryDetails : {};
+        const parts = painAreas.map((area) => {
+          const raw = detail?.[area] && typeof detail[area] === 'object' ? detail[area] : null;
+          const severity = Number(raw?.severity);
+          const recency = String(raw?.recency || '').trim();
+          if (Number.isFinite(severity) && recency) return `${area} (${severity}/10, ${recency})`;
+          if (Number.isFinite(severity)) return `${area} (${severity}/10)`;
+          return String(area || '').trim();
+        }).filter(Boolean);
+        return parts.length ? parts.join(', ') : 'None';
+      })();
+
+      const summary = [
+        { k: 'Discipline', v: discipline || 'â€”' },
+        { k: 'Skill level', v: experience || 'â€”' },
+        { k: 'Days / week', v: String(daysPerWeek || 'â€”') },
+        { k: 'Preferred days', v: listText(preferredDays) },
+        { k: 'Session length', v: listText(intake?.sessionLength) },
+        { k: 'Location', v: listText(intake?.location) },
+        { k: 'Equipment', v: listText(intake?.equipment) },
+        { k: 'Training style', v: listText(intake?.loadStyle) },
+        { k: 'Priority groups', v: listText(intake?.focus) },
+        { k: 'Pain areas', v: painDetailText },
+        { k: 'Avoid moves', v: listText(intake?.avoidMoves, 'None') },
+        { k: 'Close to failure', v: listText(intake?.trainToFailure) },
+        { k: 'Sleep', v: Number.isFinite(Number(intake?.sleepHours)) ? `${Math.round(Number(intake.sleepHours))} hrs/night` : 'â€”' },
+        { k: 'Activity', v: listText(intake?.activityLevel) }
+      ];
+
+      const statsHtml = summary.map((row) =>
+        `<div class="pdf-stat"><span class="pdf-stat-k">${escapeHtml(row.k)}</span><span class="pdf-stat-v">${escapeHtml(row.v)}</span></div>`
+      ).join('');
+
+      const daySections = days.map((day, idx) => {
+        const dayIndex = idx + 1;
+        const weekday = scheduledWeekdayLabel(dayIndex, daysPerWeek, activeDate);
+        const label = weekday ? `${weekday} • Day ${dayIndex}` : `Day ${dayIndex}`;
+        const focus = day?.focus ? ` • ${escapeHtml(day.focus)}` : '';
+        const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+        const rows = exercises.map((ex) => {
+          const name = escapeHtml(ex?.displayName || ex?.name || 'Exercise');
+          const sets = Number(ex?.sets) || '';
+          const reps = escapeHtml(ex?.reps || '');
+          const rest = fmtRest(ex?.restSec || ex?.rest);
+          const meta = `${sets} x ${reps}${rest && rest !== '—' ? ` • Rest ${rest}` : ''}`;
+          return `<div class="pdf-ex-row"><span class="pdf-ex-name">${name}</span><span class="pdf-ex-meta">${escapeHtml(meta)}</span></div>`;
+        }).join('');
+        return `
+          <section class="pdf-day">
+            <div class="pdf-day-head">${label}${focus}</div>
+            ${rows || '<div class="pdf-empty">No exercises listed.</div>'}
+          </section>
+        `;
+      }).join('');
+
+      const title = `Training Plan • Week ${activeWeek}`;
+      const html = `
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: "Space Grotesk", Arial, sans-serif; margin: 24px; color: #171412; background: #fff; }
+    h1 { font-size: 20px; margin: 0 0 6px; }
+    .pdf-sub { color: #5a524c; font-size: 12px; margin-bottom: 14px; }
+    .pdf-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 8px; margin-bottom: 16px; }
+    .pdf-stat { display: grid; gap: 2px; padding: 7px 8px; border-radius: 9px; background: #f6f1ec; border: 1px solid #e7ded6; font-size: 10.5px; min-height: 42px; }
+    .pdf-stat-k { color: #5a524c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+    .pdf-stat-v { font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+    .pdf-day { border: 1px solid #e3d9cf; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; break-inside: avoid; }
+    .pdf-day-head { font-weight: 700; margin-bottom: 8px; }
+    .pdf-ex-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px dashed #e7ded6; font-size: 12.5px; }
+    .pdf-ex-row:first-of-type { border-top: 0; }
+    .pdf-ex-name { font-weight: 600; }
+    .pdf-ex-meta { color: #5a524c; text-align: right; white-space: nowrap; }
+    .pdf-empty { font-size: 12px; color: #5a524c; font-style: italic; }
+    @media print {
+      body { margin: 12mm; }
+      .pdf-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pdf-day { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="pdf-sub">${escapeHtml(discipline)} • ${daysPerWeek} days/week • ${escapeHtml(experience)}</div>
+  <div class="pdf-stats">${statsHtml}</div>
+  ${daySections}
+</body>
+</html>`;
+
+      const win = window.open('', '_blank');
+      if (!win) {
+        state.planError = 'Allow pop-ups to export the PDF.';
+        render();
+        return;
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        try { win.print(); } catch { /* ignore */ }
+      }, 250);
+    };
+
+    const printComplexPlanPdf = () => {
+      state.planError = 'Complex PDF is the next export pass. Use Simple PDF for now.';
+      render();
     };
 
     const openWorkoutEditorFromPlan = () => {
@@ -11957,7 +13092,7 @@ function toggleSharePopover(force) {
               }
             }
           }, 'Copy link'),
-          el('button', { type: 'button', class: 'btn btn-primary', onclick: printPlanPdf }, 'Open PDF'),
+          el('button', { type: 'button', class: 'btn btn-primary', onclick: printSimplePlanPdfV2 }, 'Open PDF'),
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: close }, 'Close')
         )
       ));
@@ -11967,18 +13102,6 @@ function toggleSharePopover(force) {
     };
 
     const canShare = !isPreview && Boolean(state.auth.user);
-    if (canShare && !shareUi.bootstrapRequested && !shareUi.loading) {
-      shareUi.bootstrapRequested = true;
-      if (!shareOutgoingSyncInFlight) {
-        shareOutgoingSyncInFlight = true;
-        // Initial share bootstrap should not reset in-progress workout input fields.
-        refreshShareOutgoingState({ rerender: false })
-          .catch(() => false)
-          .finally(() => {
-            shareOutgoingSyncInFlight = false;
-          });
-      }
-    }
     const connectedMembers = Array.isArray(shareUi.connectedMembers) ? shareUi.connectedMembers : [];
     const connectedVisible = connectedMembers.slice(0, 6);
     const connectedOverflow = Math.max(0, connectedMembers.length - connectedVisible.length);
@@ -12428,17 +13551,19 @@ function toggleSharePopover(force) {
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
       el('div', { class: 'plan-topbar-share-row', 'data-workout-timer-anchor': '1' },
-        canStartWorkoutOnActiveDate
-          ? el('button', {
-            type: 'button',
-            class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : workoutTimer.paused ? ' is-paused' : ''}`,
-            onclick: () => {
-              if (workoutTimer.running) confirmEndWorkout();
-              else startWorkoutTimer(pageWorkoutContext);
-            }
-          }, workoutTimer.running ? 'End workout' : workoutTimer.paused ? 'Resume workout' : 'Start workout')
-          : null,
-        canStartWorkoutOnActiveDate ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null,
+        el('div', { class: 'plan-topbar-timer-stack' },
+          canStartWorkoutOnActiveDate
+            ? el('button', {
+              type: 'button',
+              class: `btn btn-start-workout${workoutTimer.running ? ' is-live' : workoutTimer.paused ? ' is-paused' : ''}`,
+              onclick: () => {
+                if (workoutTimer.running) confirmEndWorkout();
+                else startWorkoutTimer(pageWorkoutContext);
+              }
+            }, workoutTimer.running ? 'End workout' : workoutTimer.paused ? 'Resume workout' : 'Start workout')
+            : null,
+          canStartWorkoutOnActiveDate ? el('div', { class: 'workout-timer-pill hidden', id: 'workout-timer-display' }, 'Workout 0:00') : null
+        ),
         el('button', {
           type: 'button',
           class: `btn btn-share-workout${canShare ? '' : ' is-disabled'}`,
@@ -12512,7 +13637,7 @@ function toggleSharePopover(force) {
           ? el('div', { class: 'share-workout-pdf-panel' },
             el('div', { class: 'share-workout-pdf-copy' }, 'Generate a workout PDF and share it with a QR code.'),
             el('div', { class: 'share-workout-pdf-actions' },
-              el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'Open PDF'),
+              el('button', { type: 'button', class: 'btn btn-ghost', onclick: printSimplePlanPdfV2 }, 'Open PDF'),
               el('button', { type: 'button', class: 'btn btn-share-workout', onclick: openWorkoutPdfQrModal }, 'Show QR')
             )
           )
@@ -12586,7 +13711,11 @@ function toggleSharePopover(force) {
         return el('div', { class: 'plan-topbar-actions' },
           el('div', { class: 'plan-topbar-actions-mainrow' },
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: resetTrainingPlanAndRestart }, 'Make New Workout'),
-            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printPlanPdf }, 'PDF'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printSimplePlanPdfV2 }, 'Simple PDF'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: printComplexPlanPdf }, 'Complex PDF'),
+            canRegenerateWithNewRules
+              ? el('button', { type: 'button', class: 'btn btn-primary', onclick: regeneratePlanWithSavedRules }, 'Regenerate With New Rules')
+              : null,
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: openWorkoutEditorFromPlan }, 'Modify Current Workout')
           ),
           el('div', { class: 'plan-topbar-actions-toggle-row' }, toggle),
@@ -12778,7 +13907,12 @@ function toggleSharePopover(force) {
 
       const todayTitle = getDayTitle(day);
       const todayBar = el('div', { class: 'workout-today-bar' },
-        el('div', { class: 'workout-today-title' }, todayTitle),
+        el('div', { class: 'workout-today-title-row' },
+          el('div', { class: 'workout-today-title' }, todayTitle),
+          isDeloadWeek
+            ? el('span', { class: 'projected-pill is-deload', title: 'This week is a deload week. Target weights are intentionally reduced.' }, 'Deload week')
+            : null
+        ),
         el('div', { class: 'workout-today-sub' }, `${dispCur.title} • Week ${activeWeek}`),
         el('div', { class: 'workout-today-nav' },
           el('button', { type: 'button', class: 'workout-nav-btn', disabled: canGoPrev ? null : 'true', onclick: () => shiftDay(-1), 'aria-label': 'Previous day' }, '‹'),
@@ -12833,6 +13967,10 @@ function toggleSharePopover(force) {
         const technique = ex?.progression?.technique && String(ex.progression.technique).trim().toLowerCase() !== 'none'
           ? String(ex.progression.technique).trim()
           : '';
+        const restTimerActiveForExercise = isRestTimerExerciseActive(ex.displayName || ex.name || 'Exercise');
+        const restButtonLabel = restTimerActiveForExercise
+          ? `Rest ${formatRestCountdown(getWorkoutRestRemainingMs())}`
+          : 'Start rest';
 
           const defaultSetCount = (() => {
             const raw = String(ex.sets ?? '').trim();
@@ -13111,10 +14249,7 @@ function toggleSharePopover(force) {
                 ? el('div', { class: 'exercise-substitutions' }, `Alt: ${subs.slice(0, 2).join(' • ')}`)
                 : null,
               el('div', { class: 'exercise-badges' },
-                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`),
-                isDeloadWeek
-                  ? el('span', { class: 'projected-pill is-deload', title: 'This week is a deload week. Target weights are intentionally reduced.' }, 'Deload week')
-                  : null
+                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`)
               ),
               el('div', { class: 'exercise-action-row' },
                 el('button', {
@@ -13126,7 +14261,24 @@ function toggleSharePopover(force) {
                   type: 'button',
                   class: 'btn btn-ghost btn-compact',
                   onclick: () => openPainModal({ ex, dayIndex, weekIndex: activeWeek })
-                }, 'Report pain')
+                }, 'Report pain'),
+                el('button', {
+                  type: 'button',
+                  class: 'btn btn-rest-timer btn-compact',
+                  onclick: () => {
+                    if (!workoutTimer.running) {
+                      showWorkoutInputGateToast();
+                      return;
+                    }
+                    startWorkoutRestTimer({
+                      exerciseName: ex.displayName || ex.name || 'Exercise',
+                      restSec: ex.restSec,
+                      weekIndex: activeWeek,
+                      dayIndex,
+                      activeDate: performedAtValue || activeDateIso
+                    });
+                  }
+                }, restButtonLabel)
               )
             ),
             el('div', { class: 'exercise-inputs' },
@@ -13188,7 +14340,7 @@ function toggleSharePopover(force) {
           })(),
           el('div', { class: 'day-head' },
             el('div', null,
-              el('div', { class: 'day-title' }, `${dispCur.title} — ${getDayTitle(day)}`),
+              el('div', { class: 'day-title' }, dispCur.title),
               el('div', { class: 'training-muted' }, `Week ${activeWeek} • Day ${dayIndex} • ${day.exercises?.length || 0} exercises`)
             ),
             el('div', { class: 'training-actions', style: 'gap:0.45rem' },
@@ -13603,7 +14755,9 @@ function toggleSharePopover(force) {
         renderApp();
         syncWorkoutInputLock();
         updateWorkoutTimerDisplay();
+        updateWorkoutRestTimerDisplay();
         ensureWorkoutTimerTick();
+        ensureWorkoutRestTimerTick();
         scheduleFloatingWorkoutTimerSync();
       } catch (err) {
         console.error('Training render failed:', err);
@@ -13750,6 +14904,7 @@ function toggleSharePopover(force) {
   });
   window.addEventListener('beforeunload', () => {
     persistWorkoutTimerState();
+    persistWorkoutRestTimerState();
     if (!shareOutgoingSyncTimer) return;
     window.clearInterval(shareOutgoingSyncTimer);
     shareOutgoingSyncTimer = 0;
@@ -13775,6 +14930,8 @@ function toggleSharePopover(force) {
     setView('wizard');
   });
 })();
+
+
 
 
 

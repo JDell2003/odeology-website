@@ -1,0 +1,697 @@
+{
+  "reportPath": "D:\\Jasons Web\\reports\\hinge-case-days2-abs.json",
+  "generatedAt": "2026-05-08T12:07:49.780Z",
+  "settings": {
+    "runs": 1,
+    "timeoutMs": 60000,
+    "days": [
+      2
+    ],
+    "priorityCounts": [
+      1
+    ],
+    "expandedMode": true,
+    "rerunFailures": null,
+    "filterFailedInvariant": null,
+    "rerunTargetCount": 0,
+    "expectedFocusedTestCount": null,
+    "actualFocusedTestCount": null
+  },
+  "matrix": {
+    "uiPriorityOptions": [
+      {
+        "key": "chest",
+        "label": "Chest"
+      },
+      {
+        "key": "back",
+        "label": "Back"
+      },
+      {
+        "key": "shoulders",
+        "label": "Shoulders"
+      },
+      {
+        "key": "arms",
+        "label": "Arms"
+      },
+      {
+        "key": "legs",
+        "label": "Legs"
+      },
+      {
+        "key": "glutes",
+        "label": "Glutes"
+      },
+      {
+        "key": "abs",
+        "label": "Abs"
+      }
+    ],
+    "totalCombos": 1,
+    "focusedRerunTargets": []
+  },
+  "summary": {
+    "totalCombos": 1,
+    "totalTests": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "warnings": 2,
+    "passesWithWarnings": 1,
+    "cleanPasses": 0
+  },
+  "failures": [],
+  "unsupported": [],
+  "passesWithWarnings": [
+    {
+      "combo": [
+        "Abs"
+      ],
+      "dayCount": 2,
+      "priorityCount": 1,
+      "normalizedPriorityGroups": [
+        "Core"
+      ],
+      "warningCount": 2,
+      "warningSummary": [
+        {
+          "warningType": "final_visible_plan_differs_from_raw_builder",
+          "count": 1
+        },
+        {
+          "warningType": "priority_volume_underfilled",
+          "count": 1
+        }
+      ],
+      "metrics": {
+        "directSets": {
+          "chest": 4,
+          "back": 7,
+          "shoulders": 4,
+          "arms": 4,
+          "biceps": 4,
+          "triceps": 0,
+          "glutes": 12,
+          "legs": 24,
+          "abs": 5
+        },
+        "rearDeltDays": 0,
+        "rearDeltSets": 0,
+        "bicepsDirectSets": 4,
+        "tricepsDirectSets": 0
+      }
+    }
+  ],
+  "cleanPasses": [],
+  "acceptableExceptions": [],
+  "validatorContractAudit": [],
+  "redundancyFamilySummary": [],
+  "databaseLabelAudit": [],
+  "canonicalMovementFamilyMapProposal": [],
+  "familyConsistencyCheck": [],
+  "finalVisibleCleanupSummary": {
+    "sameDayRedundancyBefore": 23,
+    "sameDayRedundancyAfter": 23,
+    "horizontal_row": {
+      "before": 7,
+      "after": 7
+    },
+    "squat_leg_press": {
+      "before": 4,
+      "after": 4
+    },
+    "shoulder_press": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "finalVisibleCleanupLog": [],
+  "finalVisibleCleanupDiagnostics": [
+    {
+      "combo": [
+        "Abs"
+      ],
+      "week": 4,
+      "day": null,
+      "dayType": "fullbodya",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Glute Bridge",
+        "Smith Machine Bench Press",
+        "Bent Over Low-Pulley Side Lateral",
+        "Machine Bicep Curl",
+        "Rope Crunch"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [
+        "Cable Row"
+      ],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Glute Bridge",
+        "Smith Machine Bench Press",
+        "Bent Over Low-Pulley Side Lateral",
+        "Machine Bicep Curl",
+        "Rope Crunch"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Chest-Supported Row",
+          "Cable Row",
+          "Barbell Glute Bridge",
+          "Smith Machine Bench Press",
+          "Bent Over Low-Pulley Side Lateral",
+          "Machine Bicep Curl",
+          "Rope Crunch"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Chest-Supported Row",
+          "Cable Row",
+          "Barbell Glute Bridge",
+          "Smith Machine Bench Press",
+          "Bent Over Low-Pulley Side Lateral",
+          "Machine Bicep Curl",
+          "Rope Crunch"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Glute Bridge",
+        "Smith Machine Bench Press",
+        "Bent Over Low-Pulley Side Lateral",
+        "Machine Bicep Curl",
+        "Rope Crunch"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 2,
+      "priorityCount": 1
+    },
+    {
+      "combo": [
+        "Abs"
+      ],
+      "week": 8,
+      "day": null,
+      "dayType": "fullbodya",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Hip Thrust",
+        "Leverage Incline Chest Press",
+        "One-Arm Incline Lateral Raise",
+        "Drag Curl",
+        "Cable Reverse Crunch"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [
+        "Cable Row"
+      ],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Hip Thrust",
+        "Leverage Incline Chest Press",
+        "One-Arm Incline Lateral Raise",
+        "Drag Curl",
+        "Cable Reverse Crunch"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Chest-Supported Row",
+          "Cable Row",
+          "Barbell Hip Thrust",
+          "Leverage Incline Chest Press",
+          "One-Arm Incline Lateral Raise",
+          "Drag Curl",
+          "Cable Reverse Crunch"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Chest-Supported Row",
+          "Cable Row",
+          "Barbell Hip Thrust",
+          "Leverage Incline Chest Press",
+          "One-Arm Incline Lateral Raise",
+          "Drag Curl",
+          "Cable Reverse Crunch"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Chest-Supported Row",
+        "Cable Row",
+        "Barbell Hip Thrust",
+        "Leverage Incline Chest Press",
+        "One-Arm Incline Lateral Raise",
+        "Drag Curl",
+        "Cable Reverse Crunch"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 2,
+      "priorityCount": 1
+    }
+  ],
+  "redundancyDetails": [],
+  "horizontalRowCleanupDiagnostic": [],
+  "squatLegPressCleanupDiagnostic": [],
+  "hingePosteriorChainDiagnostic": [],
+  "horizontalRowSafetySimulation": [],
+  "squatLegPressSafetySimulation": [],
+  "remainingRedundancyDiagnostic": [],
+  "topRepeatedHingePosteriorPatterns": [],
+  "topCleanupRules": [
+    {
+      "rule": "Compare raw-builder and final-visible redundancy before replacing accessories",
+      "rationale": "Late route repair still changes visible output for every combo"
+    },
+    {
+      "rule": "Log replacement-pool exhaustion for duplicate family cleanup",
+      "rationale": "Need proof when cleanup runs but no acceptable replacement exists"
+    }
+  ],
+  "unknownFailureDiagnostic": [],
+  "timeoutProfilingReport": {
+    "total": 0,
+    "largestPlanShapeSizes": {
+      "maxWeeksLength": 0,
+      "maxFirstWeekDayCount": 0,
+      "maxTotalDayCount": 0,
+      "maxTotalExerciseCount": 0
+    },
+    "byCurrentSection": [],
+    "byLastCompletedSection": [],
+    "byBranchEntered": [],
+    "rows": []
+  },
+  "workerExitDiagnostic": {
+    "total": 0,
+    "byRootCause": [],
+    "byLastHeartbeatStage": [],
+    "byLastRepairOrPolishFunction": [],
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "rows": []
+  },
+  "missingQuadPatternDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byOrigin": [],
+    "bySafeRepairCandidate": [],
+    "byRepairFailureReason": [],
+    "rows": []
+  },
+  "heavyDeadliftCountDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byGroupedCause": [],
+    "bySafeReplacementExists": [],
+    "rows": [],
+    "topRepeatedHeavyHingePatterns": []
+  },
+  "calvesDiagnostics": [],
+  "rootPatterns": [
+    {
+      "key": "late_route_repair_changes_visible_output",
+      "count": 1,
+      "combos": [
+        "Abs"
+      ],
+      "examples": [
+        {
+          "combo": [
+            "Abs"
+          ],
+          "warningType": "final_visible_plan_differs_from_raw_builder"
+        }
+      ]
+    },
+    {
+      "key": "priority_volume_underfilled",
+      "count": 1,
+      "combos": [
+        "Abs"
+      ],
+      "examples": [
+        {
+          "combo": [
+            "Abs"
+          ],
+          "warningType": "priority_volume_underfilled"
+        }
+      ]
+    }
+  ],
+  "combos": [
+    {
+      "combo": [
+        "Abs"
+      ],
+      "comboKeys": [
+        "abs"
+      ],
+      "dayCount": 2,
+      "priorityCount": 1,
+      "normalizedPriorityGroups": [
+        "Core"
+      ],
+      "runs": 1,
+      "status": "PASS",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": null,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": true,
+      "finalRouteValidationFailed": false,
+      "warningCount": 2,
+      "warnings": [
+        {
+          "type": "priority_volume_underfilled",
+          "severity": "warning",
+          "priority": "Abs",
+          "directSets": 5,
+          "target": 11
+        },
+        {
+          "type": "final_visible_plan_differs_from_raw_builder",
+          "severity": "info"
+        }
+      ],
+      "metrics": {
+        "directSets": {
+          "chest": 4,
+          "back": 7,
+          "shoulders": 4,
+          "arms": 4,
+          "biceps": 4,
+          "triceps": 0,
+          "glutes": 12,
+          "legs": 24,
+          "abs": 5
+        },
+        "rearDeltDays": 0,
+        "rearDeltSets": 0,
+        "bicepsDirectSets": 4,
+        "tricepsDirectSets": 0
+      },
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [
+        {
+          "combo": [
+            "Abs"
+          ],
+          "week": 4,
+          "day": null,
+          "dayType": "fullbodya",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Glute Bridge",
+            "Smith Machine Bench Press",
+            "Bent Over Low-Pulley Side Lateral",
+            "Machine Bicep Curl",
+            "Rope Crunch"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [
+            "Cable Row"
+          ],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Glute Bridge",
+            "Smith Machine Bench Press",
+            "Bent Over Low-Pulley Side Lateral",
+            "Machine Bicep Curl",
+            "Rope Crunch"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Chest-Supported Row",
+              "Cable Row",
+              "Barbell Glute Bridge",
+              "Smith Machine Bench Press",
+              "Bent Over Low-Pulley Side Lateral",
+              "Machine Bicep Curl",
+              "Rope Crunch"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Chest-Supported Row",
+              "Cable Row",
+              "Barbell Glute Bridge",
+              "Smith Machine Bench Press",
+              "Bent Over Low-Pulley Side Lateral",
+              "Machine Bicep Curl",
+              "Rope Crunch"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Glute Bridge",
+            "Smith Machine Bench Press",
+            "Bent Over Low-Pulley Side Lateral",
+            "Machine Bicep Curl",
+            "Rope Crunch"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Abs"
+          ],
+          "week": 8,
+          "day": null,
+          "dayType": "fullbodya",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Hip Thrust",
+            "Leverage Incline Chest Press",
+            "One-Arm Incline Lateral Raise",
+            "Drag Curl",
+            "Cable Reverse Crunch"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [
+            "Cable Row"
+          ],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Hip Thrust",
+            "Leverage Incline Chest Press",
+            "One-Arm Incline Lateral Raise",
+            "Drag Curl",
+            "Cable Reverse Crunch"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Chest-Supported Row",
+              "Cable Row",
+              "Barbell Hip Thrust",
+              "Leverage Incline Chest Press",
+              "One-Arm Incline Lateral Raise",
+              "Drag Curl",
+              "Cable Reverse Crunch"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Chest-Supported Row",
+              "Cable Row",
+              "Barbell Hip Thrust",
+              "Leverage Incline Chest Press",
+              "One-Arm Incline Lateral Raise",
+              "Drag Curl",
+              "Cable Reverse Crunch"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Chest-Supported Row",
+            "Cable Row",
+            "Barbell Hip Thrust",
+            "Leverage Incline Chest Press",
+            "One-Arm Incline Lateral Raise",
+            "Drag Curl",
+            "Cable Reverse Crunch"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        }
+      ],
+      "finalVisibleCleanupSummary": {
+        "sameDayRedundancyBefore": 23,
+        "sameDayRedundancyAfter": 23,
+        "horizontal_row": {
+          "before": 7,
+          "after": 7
+        },
+        "squat_leg_press": {
+          "before": 4,
+          "after": 4
+        },
+        "shoulder_press": {
+          "before": 0,
+          "after": 0
+        }
+      },
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "PASS",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": null,
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 669,
+          "finalReturnedPlanExists": true
+        }
+      ],
+      "acceptableExceptions": []
+    }
+  ],
+  "expandedMatrixReport": {
+    "expectedTotalTests": 7,
+    "actualTotalTests": 1,
+    "settings": {
+      "parsedDays": [
+        2
+      ],
+      "parsedPriorityCounts": [
+        1
+      ],
+      "uiPriorityButtons": [
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Legs",
+        "Glutes",
+        "Abs"
+      ]
+    },
+    "overall": {
+      "totalTests": 1,
+      "passed": 1,
+      "failed": 0,
+      "unsupported": 0,
+      "passesWithWarnings": 1,
+      "cleanPasses": 0
+    },
+    "bySuite": [
+      {
+        "dayCount": 2,
+        "priorityCount": 1,
+        "totalCombos": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "passesWithWarnings": 1,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 0,
+        "topWarningFamilies": [],
+        "failedCombos": [],
+        "validatorFailures": []
+      }
+    ],
+    "failuresByDayCount": [],
+    "failuresByPriorityCount": [],
+    "failuresByCombo": [],
+    "failuresByValidator": [],
+    "unknownFailuresByMessageAndFunction": [],
+    "sameDayRedundancyByDayCount": [
+      {
+        "dayCount": 2,
+        "count": 0
+      }
+    ],
+    "topWarningFamilies": [],
+    "unknownFailureDiagnostic": []
+  }
+}

@@ -725,8 +725,10 @@
     };
 
     const updateCounts = () => {
-      const friendCount = state.friendRequests.length;
-      const workoutCount = state.workoutInvites.length;
+      const friendRequests = Array.isArray(state.friendRequests) ? state.friendRequests : [];
+      const workoutInvites = Array.isArray(state.workoutInvites) ? state.workoutInvites : [];
+      const friendCount = friendRequests.length;
+      const workoutCount = workoutInvites.length;
       const total = friendCount + workoutCount;
       if (workoutTabCount) workoutTabCount.textContent = String(workoutCount);
       if (friendsTabCount) friendsTabCount.textContent = String(friendCount);

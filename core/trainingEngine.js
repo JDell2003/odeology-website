@@ -1012,6 +1012,41 @@ function chooseIncrementLb(exp, baseId, defaults, opts = {}) {
   return Number.isFinite(inc) && inc > 0 ? inc : (isLowerBaseId(baseId) ? 5 : 2.5);
 }
 
+function summarizeLoggedSetBlock(entry, { prescribedSets = 0, repMin = null, repMax = null } = {}) {
+  const rawSets = Array.isArray(entry?.sets) ? entry.sets : [];
+  const completed = rawSets
+    .map((set) => ({
+      weight: Number(set?.weight),
+      reps: Number(set?.reps)
+    }))
+    .filter((set) => Number.isFinite(set.reps) && set.reps > 0);
+  const considered = prescribedSets > 0 ? completed.slice(0, prescribedSets) : completed;
+  const reps = considered.map((set) => set.reps).filter((value) => Number.isFinite(value) && value > 0);
+  const weights = considered.map((set) => set.weight).filter((value) => Number.isFinite(value) && value > 0);
+  const minReps = reps.length ? Math.min(...reps) : null;
+  const maxReps = reps.length ? Math.max(...reps) : null;
+  const avgReps = reps.length ? Math.round((reps.reduce((sum, value) => sum + value, 0) / reps.length) * 10) / 10 : null;
+  return {
+    completedSets: considered.length,
+    prescribedSets: prescribedSets > 0 ? prescribedSets : considered.length,
+    allSetsCompleted: prescribedSets > 0 ? considered.length >= prescribedSets : considered.length > 0,
+    minReps,
+    maxReps,
+    avgReps,
+    topWeight: weights.length ? Math.max(...weights) : null,
+    minWeight: weights.length ? Math.min(...weights) : null,
+    allSetsAtTop: Number.isFinite(repMax) && repMax > 0
+      ? (prescribedSets > 0 && considered.length >= prescribedSets && Number(minReps || 0) >= repMax)
+      : false,
+    anyBelowMin: Number.isFinite(repMin) && repMin > 0
+      ? considered.some((set) => Number(set?.reps || 0) < repMin)
+      : false,
+    allWithinRange: Number.isFinite(repMin) && repMin > 0
+      ? (considered.length > 0 && considered.every((set) => Number(set?.reps || 0) >= repMin && (!Number.isFinite(repMax) || Number(set?.reps || 0) <= repMax)))
+      : considered.length > 0
+  };
+}
+
 function resolvePowerliftingFrequencies(daysPerWeek) {
   const d = clampInt(daysPerWeek, 2, 6, 4);
   if (d === 3) return { bench: 3, squat: 2, deadlift: 1 };
@@ -4790,7 +4825,13 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       actualRpe: Number.isFinite(actualRpe) ? actualRpe : null,
       targetW: Number.isFinite(targetW) ? targetW : null,
       repsTarget,
-      noteText
+      noteText,
+      prescribedSets: clampInt(entry?.prescribed?.sets, 1, 12, null),
+      sets: Array.isArray(entry?.sets) ? entry.sets.map((set) => ({
+        weight: Number.isFinite(Number(set?.weight)) ? Number(set.weight) : null,
+        reps: Number.isFinite(Number(set?.reps)) ? Number(set.reps) : null,
+        note: String(set?.note || '').trim() || null
+      })) : []
     });
   }
 
@@ -5004,12 +5045,23 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     const repTarget = Number.isFinite(st.repTarget)
       ? st.repTarget
       : (Number.isFinite(perf.repsTarget) ? perf.repsTarget : (repMax ?? null));
+    const loggedSetBlock = isBodybuilding
+      ? summarizeLoggedSetBlock({
+        sets: perf.sets
+      }, {
+        prescribedSets: perf.prescribedSets || Number(st.setsTarget) || null,
+        repMin,
+        repMax
+      })
+      : null;
 
     const repQualityOk = !isBadRepQuality(perf.noteText);
     const painFlag = /(pain|hurt|ache|injur|tendon|joint)/.test(perf.noteText || '');
     if (painFlag) poorRecoveryFlag = true;
 
-    const hasNumbers = Number.isFinite(actualW) && Number.isFinite(actualR) && Number.isFinite(targetW);
+    const hasNumbers = isBodybuilding
+      ? (Boolean(loggedSetBlock?.completedSets) && Number.isFinite(targetW))
+      : (Number.isFinite(actualW) && Number.isFinite(actualR) && Number.isFinite(targetW));
     if (!hasNumbers || !repQualityOk) {
       st.regressStreak = Math.min(6, Number(st.regressStreak || 0) + 1);
       st.successStreak = 0;
@@ -5022,10 +5074,22 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       continue;
     }
 
-    const exceeds = actualW > targetW && actualR >= repTarget;
-    const hits = actualW === targetW && actualR >= repTarget;
-    const slightMiss = actualW === targetW && actualR >= (repMin ?? 1) && (repTarget - actualR === 1 || repTarget - actualR === 2);
-    const significantMiss = actualW === targetW && (!repMin ? (repTarget - actualR >= 3) : (actualR < repMin || repTarget - actualR >= 3));
+    const bbAllSetsCompleted = Boolean(loggedSetBlock?.allSetsCompleted);
+    const bbAllSetsAtTop = Boolean(loggedSetBlock?.allSetsAtTop);
+    const bbInsideRange = Boolean(loggedSetBlock?.allWithinRange);
+    const bbMiss = Boolean(loggedSetBlock?.anyBelowMin) || !bbAllSetsCompleted;
+    const exceeds = isBodybuilding
+      ? false
+      : (actualW > targetW && actualR >= repTarget);
+    const hits = isBodybuilding
+      ? bbAllSetsAtTop
+      : (actualW === targetW && actualR >= repTarget);
+    const slightMiss = isBodybuilding
+      ? (bbInsideRange && !bbAllSetsAtTop)
+      : (actualW === targetW && actualR >= (repMin ?? 1) && (repTarget - actualR === 1 || repTarget - actualR === 2));
+    const significantMiss = isBodybuilding
+      ? bbMiss
+      : (actualW === targetW && (!repMin ? (repTarget - actualR >= 3) : (actualR < repMin || repTarget - actualR >= 3)));
 
     // No progression changes are applied during a deload week.
     if (isDeloadWeek) {
@@ -5081,11 +5145,17 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     }
 
     if (hits) {
-      st.lastSuccessWeight = actualW;
-      st.lastSuccessReps = actualR;
-      st.bestSuccessWeight = Number.isFinite(Number(st.bestSuccessWeight))
-        ? Math.max(Number(st.bestSuccessWeight), actualW)
+      const successWeight = isBodybuilding
+        ? (Number.isFinite(targetW) ? targetW : (Number.isFinite(loggedSetBlock?.topWeight) ? loggedSetBlock.topWeight : actualW))
         : actualW;
+      const successReps = isBodybuilding
+        ? (Number.isFinite(loggedSetBlock?.minReps) ? loggedSetBlock.minReps : actualR)
+        : actualR;
+      st.lastSuccessWeight = successWeight;
+      st.lastSuccessReps = successReps;
+      st.bestSuccessWeight = Number.isFinite(Number(st.bestSuccessWeight))
+        ? Math.max(Number(st.bestSuccessWeight), Number(successWeight || 0))
+        : successWeight;
       st.significantMissStreak = 0;
       st.failStreak = 0;
       st.regressStreak = 0;
@@ -5094,7 +5164,8 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       if (isBodybuilding) {
         st.successStreak = 0;
         st.sameWeightNonProgressStreak = 0;
-        st.workingWeight = roundTo((Number.isFinite(st.workingWeight) ? st.workingWeight : actualW) + inc, inc);
+        const successfulWeight = Number.isFinite(targetW) ? targetW : (Number.isFinite(loggedSetBlock?.topWeight) ? loggedSetBlock.topWeight : actualW);
+        st.workingWeight = roundTo((Number.isFinite(st.workingWeight) ? st.workingWeight : successfulWeight) + inc, inc);
         st.repTarget = repMid ?? repMin ?? repTarget;
         decisionsThisLog[baseId] = { type: 'load', message: `Hit target; adding ${inc} lb next session.` };
         continue;
@@ -5126,15 +5197,31 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.successStreak = 0;
       st.technique = 'none';
       st.workingWeight = Number.isFinite(st.workingWeight) ? st.workingWeight : targetW;
-      const nextReps = repMax != null ? Math.min(repMax, Math.max(repMin ?? 1, actualR + 1)) : (actualR + 1);
+      const nextReps = isBodybuilding
+        ? (repMax ?? repTarget)
+        : (repMax != null ? Math.min(repMax, Math.max(repMin ?? 1, actualR + 1)) : (actualR + 1));
       st.repTarget = nextReps;
       st.stallWeeks = Math.min(6, Number(st.stallWeeks || 0) + 1);
-      if (isBodybuilding && actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
+      const bodybuildingNoImprovement = isBodybuilding
+        && Number.isFinite(st.lastSuccessWeight)
+        && Number.isFinite(st.lastSuccessReps)
+        && Number(targetW || 0) <= Number(st.lastSuccessWeight || 0)
+        && Number(loggedSetBlock?.minReps || 0) <= Number(st.lastSuccessReps || 0);
+      if (bodybuildingNoImprovement) {
+        st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
+      } else if (isBodybuilding) {
+        st.sameWeightNonProgressStreak = 0;
+      } else if (actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
         st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
       } else {
         st.sameWeightNonProgressStreak = 0;
       }
-      decisionsThisLog[baseId] = { type: 'reps', message: 'Slight miss; keep load and push reps next time.' };
+      decisionsThisLog[baseId] = {
+        type: 'reps',
+        message: isBodybuilding
+          ? 'Reps stayed in range, but not every set owned the top of the range; hold load and keep building reps.'
+          : 'Slight miss; keep load and push reps next time.'
+      };
       continue;
     }
 
@@ -5147,7 +5234,16 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       st.technique = 'none';
       st.workingWeight = Number.isFinite(st.workingWeight) ? st.workingWeight : targetW;
       st.stallWeeks = Math.min(6, Number(st.stallWeeks || 0) + 1);
-      if (isBodybuilding && actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
+      const bodybuildingMissNoImprovement = isBodybuilding
+        && Number.isFinite(st.lastSuccessWeight)
+        && Number.isFinite(st.lastSuccessReps)
+        && Number(targetW || 0) <= Number(st.lastSuccessWeight || 0)
+        && Number(loggedSetBlock?.minReps || 0) <= Number(st.lastSuccessReps || 0);
+      if (bodybuildingMissNoImprovement) {
+        st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
+      } else if (isBodybuilding) {
+        st.sameWeightNonProgressStreak = 0;
+      } else if (actualW === targetW && Number.isFinite(st.lastSuccessWeight) && Number.isFinite(st.lastSuccessReps) && actualW <= st.lastSuccessWeight && actualR <= st.lastSuccessReps) {
         st.sameWeightNonProgressStreak = Math.min(6, Number(st.sameWeightNonProgressStreak || 0) + 1);
       } else {
         st.sameWeightNonProgressStreak = 0;
@@ -5156,7 +5252,9 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
       if (st.significantMissStreak >= 2) {
         st.repTarget = repMid ?? repTarget;
         if (isBodybuilding) {
-          decisionsThisLog[baseId] = { type: 'deload', message: 'Missed target twice; deload will start next week.' };
+          const nextWorkingWeight = Number.isFinite(st.workingWeight) ? roundTo(st.workingWeight * 0.95, inc) : st.workingWeight;
+          if (Number.isFinite(nextWorkingWeight) && nextWorkingWeight > 0) st.workingWeight = nextWorkingWeight;
+          decisionsThisLog[baseId] = { type: 'deload', message: 'Dropped below the rep floor repeatedly; reduce load slightly and deload next week.' };
         } else {
           const mult = 0.93; // 7% reset default inside 5-10%
           st.workingWeight = roundTo(st.workingWeight * mult, inc);
@@ -5165,7 +5263,12 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
         }
       } else {
         st.repTarget = repMid ?? repTarget;
-        decisionsThisLog[baseId] = { type: 'reps', message: 'Significant miss; keep load and retry with a mid-range rep target.' };
+        decisionsThisLog[baseId] = {
+          type: 'reps',
+          message: isBodybuilding
+            ? 'At least one prescribed set fell below the rep floor; hold or reduce load and rebuild from the middle of the range.'
+            : 'Significant miss; keep load and retry with a mid-range rep target.'
+        };
       }
       continue;
     }

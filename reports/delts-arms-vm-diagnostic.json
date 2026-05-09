@@ -1,0 +1,314 @@
+[
+  {
+    "dayCount": 5,
+    "priorityCount": 1,
+    "selectedPriorities": [
+      "Arms"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 105000,
+      "week": 1,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "High Cable Curls",
+          "role": "biceps_iso",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 1,
+        "triceps_iso": 0,
+        "delt": 2,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 0,
+      "replaceIndexForTriceps": 2
+    }
+  },
+  {
+    "dayCount": 5,
+    "priorityCount": 2,
+    "selectedPriorities": [
+      "Arms",
+      "Chest"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 105000,
+      "week": 1,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "High Cable Curls",
+          "role": "biceps_iso",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 1,
+        "triceps_iso": 0,
+        "delt": 2,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 0,
+      "replaceIndexForTriceps": 2
+    }
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 1,
+    "selectedPriorities": [
+      "Arms"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 106000,
+      "week": 1,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Reverse Flyes",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "High Cable Curls",
+          "role": "biceps_iso",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 1,
+        "triceps_iso": 0,
+        "delt": 2,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 0,
+      "replaceIndexForTriceps": 2
+    }
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 2,
+    "selectedPriorities": [
+      "Arms",
+      "Chest"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 106000,
+      "week": 1,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Reverse Flyes With External Rotation",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Machine Bicep Curl",
+          "role": "biceps_iso",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 1,
+        "triceps_iso": 0,
+        "delt": 2,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 0,
+      "replaceIndexForTriceps": 2
+    }
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 3,
+    "selectedPriorities": [
+      "Arms",
+      "Chest",
+      "Legs"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 106000,
+      "week": 5,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Dumbbell Shoulder Press",
+          "role": "delt",
+          "style": "Compound",
+          "pattern": "VerticalPush"
+        },
+        {
+          "name": "Reverse Flyes",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 0,
+        "delt": 3,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 2,
+      "replaceIndexForTriceps": 2
+    }
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 3,
+    "selectedPriorities": [
+      "Arms",
+      "Chest",
+      "Glutes"
+    ],
+    "match": {
+      "attempt": 1,
+      "planSeed": 106000,
+      "week": 5,
+      "day": null,
+      "dayType": "DeltsArms",
+      "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+      "beforeExercises": [
+        {
+          "name": "Dumbbell Shoulder Press",
+          "role": "delt",
+          "style": "Compound",
+          "pattern": "VerticalPush"
+        },
+        {
+          "name": "Reverse Flyes",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        },
+        {
+          "name": "Lateral Raise",
+          "role": "delt",
+          "style": "Isolation",
+          "pattern": "Isolation"
+        }
+      ],
+      "beforeCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 0,
+        "delt": 3,
+        "other": 0
+      },
+      "afterCounts": {
+        "biceps_iso": 0,
+        "triceps_iso": 1,
+        "delt": 2,
+        "other": 0
+      },
+      "candidateBiceps": "Barbell Curl",
+      "candidateTriceps": "Triceps Extension",
+      "replaceIndexForBiceps": 2,
+      "replaceIndexForTriceps": 2
+    }
+  }
+]

@@ -1,0 +1,6080 @@
+{
+  "reportPath": "D:\\Jasons Web\\reports\\_seed-legs_abs_exact_2.json",
+  "generatedAt": "2026-05-08T11:45:36.480Z",
+  "settings": {
+    "runs": 1,
+    "timeoutMs": 60000,
+    "days": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "priorityCounts": [
+      1,
+      2,
+      3
+    ],
+    "expandedMode": true,
+    "rerunFailures": null,
+    "filterFailedInvariant": "legs_abs_exact_2",
+    "rerunTargetCount": 7,
+    "expectedFocusedTestCount": 7,
+    "actualFocusedTestCount": 7
+  },
+  "matrix": {
+    "uiPriorityOptions": [
+      {
+        "key": "chest",
+        "label": "Chest"
+      },
+      {
+        "key": "back",
+        "label": "Back"
+      },
+      {
+        "key": "shoulders",
+        "label": "Shoulders"
+      },
+      {
+        "key": "arms",
+        "label": "Arms"
+      },
+      {
+        "key": "legs",
+        "label": "Legs"
+      },
+      {
+        "key": "glutes",
+        "label": "Glutes"
+      },
+      {
+        "key": "abs",
+        "label": "Abs"
+      }
+    ],
+    "totalCombos": 7,
+    "focusedRerunTargets": [
+      {
+        "dayCount": 3,
+        "priorityCount": 1,
+        "selectedPriorities": [
+          "Abs"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Legs"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Glutes"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Legs"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Glutes"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Legs"
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Glutes"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "totalCombos": 7,
+    "totalTests": 7,
+    "passed": 0,
+    "failed": 7,
+    "unsupported": 0,
+    "warnings": 0,
+    "passesWithWarnings": 0,
+    "cleanPasses": 0
+  },
+  "failures": [
+    {
+      "combo": [
+        "Abs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 1,
+      "selectedPriorities": [
+        "Abs"
+      ],
+      "normalizedPriorityGroups": [
+        "Core"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Seated Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Rope Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "selectedPriorities": [
+          "Abs"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Rope Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Rope Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 455,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Chest",
+        "Legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Chest",
+        "Legs"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Chest",
+        "Legs"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Quads"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 471,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Chest",
+        "Glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Chest",
+        "Glutes"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Chest",
+        "Glutes"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Hamstrings/Glutes"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 470,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Back",
+        "Legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Back",
+        "Legs"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Back",
+        "Legs"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Quads"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 477,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Back",
+        "Glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Back",
+        "Glutes"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Back",
+        "Glutes"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Hamstrings/Glutes"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 456,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Arms",
+        "Legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Arms",
+        "Legs"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Arms",
+        "Legs"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Narrow Stance Leg Press",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Elevated Back Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Single-Leg Leg Extension",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Quads"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 544,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Abs",
+        "Arms",
+        "Glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Abs",
+        "Arms",
+        "Glutes"
+      ],
+      "normalizedPriorityGroups": [
+        "Core",
+        "Arms",
+        "Glutes"
+      ],
+      "failedStage": null,
+      "functionName": null,
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "message": null,
+        "reason": null,
+        "functionName": null,
+        "stage": null,
+        "failedStage": null,
+        "validatorSection": "exercise selection",
+        "failedInvariant": "legs_abs_exact_2",
+        "classificationSource": "derived_selection",
+        "week": 1,
+        "dayIndex": null,
+        "day": "We",
+        "dayType": "Legs",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": [
+          {
+            "name": "Narrow Stance Leg Press",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Elevated Back Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Single-Leg Leg Extension",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Hamstrings/Glutes"
+        ],
+        "weekType": "base",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ],
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": 3,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "absSelected",
+          "addingCoreWouldBreakValidation",
+          "addingCoreWouldDuplicateFamilies",
+          "addingCoreWouldDuplicateNames",
+          "allowedEquipment",
+          "avoidTokens",
+          "candidateDiagnostics",
+          "coreMissingFromInitialBuild",
+          "coreMovementFamilySubroles",
+          "coreRemovedOrReplacedLater",
+          "day",
+          "dayCount",
+          "dayType",
+          "directCoreExerciseCount",
+          "directCoreExerciseCountBucket",
+          "directCoreExercises",
+          "directCoreSetCount",
+          "error",
+          "exactTwoAbsRequired",
+          "finalVisibleDayExercises",
+          "injuryMap",
+          "muscleTarget",
+          "pattern",
+          "priorityCount",
+          "requiredStyle",
+          "safeCoreInsertionOrReplacementExists",
+          "selectedPriorities",
+          "slotId",
+          "unsafeCoreCandidateExists",
+          "week",
+          "weekType"
+        ],
+        "rawErrorMessage": null,
+        "rawErrorObjectPreview": "{\"error\":\"NO_ELIGIBLE_EXERCISE\",\"day\":\"We\",\"dayType\":\"Legs\",\"week\":1,\"slotId\":\"legs_abs_exact_2\",\"pattern\":\"CoreStability\"}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 757,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    }
+  ],
+  "unsupported": [],
+  "passesWithWarnings": [],
+  "cleanPasses": [],
+  "acceptableExceptions": [],
+  "validatorContractAudit": [],
+  "redundancyFamilySummary": [],
+  "databaseLabelAudit": [],
+  "canonicalMovementFamilyMapProposal": [],
+  "familyConsistencyCheck": [],
+  "finalVisibleCleanupSummary": {
+    "sameDayRedundancyBefore": 0,
+    "sameDayRedundancyAfter": 0,
+    "horizontal_row": {
+      "before": 0,
+      "after": 0
+    },
+    "squat_leg_press": {
+      "before": 0,
+      "after": 0
+    },
+    "shoulder_press": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "finalVisibleCleanupLog": [],
+  "finalVisibleCleanupDiagnostics": [],
+  "redundancyDetails": [],
+  "horizontalRowCleanupDiagnostic": [],
+  "squatLegPressCleanupDiagnostic": [],
+  "hingePosteriorChainDiagnostic": [],
+  "horizontalRowSafetySimulation": [],
+  "squatLegPressSafetySimulation": [],
+  "remainingRedundancyDiagnostic": [],
+  "topRepeatedHingePosteriorPatterns": [],
+  "topCleanupRules": [
+    {
+      "rule": "Compare raw-builder and final-visible redundancy before replacing accessories",
+      "rationale": "Late route repair still changes visible output for every combo"
+    },
+    {
+      "rule": "Log replacement-pool exhaustion for duplicate family cleanup",
+      "rationale": "Need proof when cleanup runs but no acceptable replacement exists"
+    }
+  ],
+  "unknownFailureDiagnostic": [],
+  "timeoutProfilingReport": {
+    "total": 0,
+    "largestPlanShapeSizes": {
+      "maxWeeksLength": 0,
+      "maxFirstWeekDayCount": 0,
+      "maxTotalDayCount": 0,
+      "maxTotalExerciseCount": 0
+    },
+    "byCurrentSection": [],
+    "byLastCompletedSection": [],
+    "byBranchEntered": [],
+    "rows": []
+  },
+  "workerExitDiagnostic": {
+    "total": 0,
+    "byRootCause": [],
+    "byLastHeartbeatStage": [],
+    "byLastRepairOrPolishFunction": [],
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "rows": []
+  },
+  "missingQuadPatternDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byOrigin": [],
+    "bySafeRepairCandidate": [],
+    "byRepairFailureReason": [],
+    "rows": []
+  },
+  "heavyDeadliftCountDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byGroupedCause": [],
+    "bySafeReplacementExists": [],
+    "rows": [],
+    "topRepeatedHeavyHingePatterns": []
+  },
+  "calvesDiagnostics": [],
+  "rootPatterns": [
+    {
+      "key": "builder_or_route_failure_other",
+      "count": 7,
+      "combos": [
+        "Abs",
+        "Abs + Arms + Glutes",
+        "Abs + Arms + Legs",
+        "Abs + Back + Glutes",
+        "Abs + Back + Legs",
+        "Abs + Chest + Glutes",
+        "Abs + Chest + Legs"
+      ],
+      "examples": [
+        {
+          "combo": [
+            "Abs"
+          ],
+          "failedStage": null,
+          "functionName": null,
+          "message": null
+        },
+        {
+          "combo": [
+            "Abs",
+            "Chest",
+            "Legs"
+          ],
+          "failedStage": null,
+          "functionName": null,
+          "message": null
+        },
+        {
+          "combo": [
+            "Abs",
+            "Chest",
+            "Glutes"
+          ],
+          "failedStage": null,
+          "functionName": null,
+          "message": null
+        },
+        {
+          "combo": [
+            "Abs",
+            "Back",
+            "Legs"
+          ],
+          "failedStage": null,
+          "functionName": null,
+          "message": null
+        },
+        {
+          "combo": [
+            "Abs",
+            "Back",
+            "Glutes"
+          ],
+          "failedStage": null,
+          "functionName": null,
+          "message": null
+        }
+      ]
+    }
+  ],
+  "combos": [
+    {
+      "combo": [
+        "Abs"
+      ],
+      "comboKeys": [
+        "abs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 1,
+      "normalizedPriorityGroups": [
+        "Core"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs"
+        ],
+        "priorityCount": 1,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Seated Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Rope Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Rope Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Rope Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "upper_abs_crunch"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 455,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Chest",
+        "Legs"
+      ],
+      "comboKeys": [
+        "abs",
+        "chest",
+        "legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Chest",
+        "Legs"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Quads"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 471,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Chest",
+        "Glutes"
+      ],
+      "comboKeys": [
+        "abs",
+        "chest",
+        "glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Chest",
+        "Glutes"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Chest",
+          "Hamstrings/Glutes"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 470,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Back",
+        "Legs"
+      ],
+      "comboKeys": [
+        "abs",
+        "back",
+        "legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Back",
+        "Legs"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Quads"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 477,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Back",
+        "Glutes"
+      ],
+      "comboKeys": [
+        "abs",
+        "back",
+        "glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Back",
+        "Glutes"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Back",
+          "Hamstrings/Glutes"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Hack Squat",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Romanian Deadlift from Deficit",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Seated Leg Curl",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Smith Machine Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Dumbbell Rear Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Leg Extensions",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 456,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Arms",
+        "Legs"
+      ],
+      "comboKeys": [
+        "abs",
+        "arms",
+        "legs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Arms",
+        "Legs"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Quads"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Narrow Stance Leg Press",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Elevated Back Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Single-Leg Leg Extension",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 544,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Abs",
+        "Arms",
+        "Glutes"
+      ],
+      "comboKeys": [
+        "abs",
+        "arms",
+        "glutes"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Core",
+        "Arms",
+        "Glutes"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": {
+        "error": "NO_ELIGIBLE_EXERCISE",
+        "slotId": "legs_abs_exact_2",
+        "pattern": "CoreStability",
+        "requiredStyle": "Isolation",
+        "muscleTarget": "Core",
+        "allowedEquipment": [
+          "barbell",
+          "bodyweight",
+          "cable",
+          "dumbbell",
+          "machine"
+        ],
+        "avoidTokens": [
+          "anti-gravity press",
+          "axle",
+          "balance board",
+          "band",
+          "bands",
+          "behind neck",
+          "behind the neck",
+          "board press",
+          "bosu",
+          "calf raise on a dumbbell",
+          "chain",
+          "chains",
+          "competition",
+          "deadlift (single)",
+          "dynamic effort",
+          "farmers",
+          "floor",
+          "floor press",
+          "frankenstein squat",
+          "gironda",
+          "good morning",
+          "kneeling squat",
+          "landmine linear jammer",
+          "log",
+          "lying",
+          "mini band",
+          "neck press",
+          "one arm floor press",
+          "one arm lat pulldown",
+          "one leg barbell squat",
+          "one-arm floor press",
+          "one-arm lat pulldown",
+          "one-arm shoulder press",
+          "overhead squat",
+          "pause",
+          "paused",
+          "pistol squat",
+          "powerlifting",
+          "prone",
+          "rear delt row",
+          "resistance band",
+          "rocky",
+          "sandbag",
+          "side to side",
+          "single deadlift",
+          "single leg barbell squat",
+          "single-arm lat pulldown",
+          "single-arm shoulder press",
+          "speed box squat",
+          "speed squat",
+          "squat with plate movers",
+          "sternum chin",
+          "stone",
+          "supine",
+          "technique",
+          "tempo",
+          "with a twist",
+          "yoke"
+        ],
+        "injuryMap": {},
+        "selectedPriorities": [
+          "Abs",
+          "Arms",
+          "Hamstrings/Glutes"
+        ],
+        "priorityCount": 3,
+        "dayCount": 3,
+        "week": 1,
+        "weekType": "base",
+        "day": "We",
+        "dayType": "Legs",
+        "finalVisibleDayExercises": [
+          {
+            "name": "Narrow Stance Leg Press",
+            "pattern": "Squat",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Barbell Hip Thrust",
+            "pattern": "Hinge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Glute Ham Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Calf Raise",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Elevated Back Lunge",
+            "pattern": "Lunge",
+            "style": "Compound",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "One-Legged Cable Kickback",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          },
+          {
+            "name": "Single-Leg Leg Extension",
+            "pattern": "Isolation",
+            "style": "Isolation",
+            "primary": "Legs",
+            "directAb": false,
+            "coreFamily": "none",
+            "coreSubrole": null
+          }
+        ],
+        "directCoreExercises": [
+          {
+            "name": "Cable Reverse Crunch",
+            "pattern": "CoreFlexion",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "pattern": "CoreStability",
+            "style": "Isolation",
+            "primary": "Core",
+            "directAb": true,
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "directCoreExerciseCount": 2,
+        "directCoreExerciseCountBucket": "2",
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": [
+          {
+            "name": "Cable Reverse Crunch",
+            "coreFamily": "flexion",
+            "coreSubrole": "reverse_crunch_lower_abs"
+          },
+          {
+            "name": "Cable Pallof Hold",
+            "coreFamily": "stability",
+            "coreSubrole": "anti_rotation_stability"
+          }
+        ],
+        "absSelected": true,
+        "exactTwoAbsRequired": true,
+        "coreMissingFromInitialBuild": true,
+        "coreRemovedOrReplacedLater": false,
+        "safeCoreInsertionOrReplacementExists": false,
+        "unsafeCoreCandidateExists": true,
+        "addingCoreWouldBreakValidation": true,
+        "addingCoreWouldDuplicateNames": false,
+        "addingCoreWouldDuplicateFamilies": true,
+        "candidateDiagnostics": [
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreStability",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 1,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 157,
+              "patternMismatch": 0,
+              "styleMismatch": 0,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 1,
+              "weeklyCoreDiversityCap": 0,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Pallof Hold",
+                "pattern": "CoreStability",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "anti_rotation_stability"
+              }
+            ],
+            "sampleEligibleExercises": []
+          },
+          {
+            "slotId": "legs_abs_exact_2",
+            "pattern": "CoreRotation",
+            "styleRequired": "Isolation",
+            "muscleTarget": "Core",
+            "preDayCapCount": 3,
+            "eligibleCount": 0,
+            "blocked": {
+              "weekRepeat": 0,
+              "stapleMismatch": 145,
+              "patternMismatch": 6,
+              "styleMismatch": 4,
+              "muscleMismatch": 0,
+              "duplicateName": 0,
+              "duplicateFamily": 0,
+              "weeklyCoreDiversityCap": 3,
+              "otherDayCap": 0
+            },
+            "samplePreDayCapExercises": [
+              {
+                "name": "Cable Oblique Crunch",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "stability",
+                "coreSubrole": "rotation_oblique"
+              },
+              {
+                "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": null
+              },
+              {
+                "name": "Seated Barbell Twist",
+                "pattern": "CoreRotation",
+                "style": "Isolation",
+                "primary": "Core",
+                "directAb": true,
+                "coreFamily": "rotation",
+                "coreSubrole": "rotation_oblique"
+              }
+            ],
+            "sampleEligibleExercises": []
+          }
+        ]
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": {
+            "error": "NO_ELIGIBLE_EXERCISE",
+            "message": null,
+            "reason": null,
+            "functionName": null,
+            "failedStage": null
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 757,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    }
+  ],
+  "expandedMatrixReport": {
+    "expectedTotalTests": 7,
+    "actualTotalTests": 7,
+    "settings": {
+      "parsedDays": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "parsedPriorityCounts": [
+        1,
+        2,
+        3
+      ],
+      "uiPriorityButtons": [
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Legs",
+        "Glutes",
+        "Abs"
+      ]
+    },
+    "overall": {
+      "totalTests": 7,
+      "passed": 0,
+      "failed": 7,
+      "unsupported": 0,
+      "passesWithWarnings": 0,
+      "cleanPasses": 0
+    },
+    "bySuite": [
+      {
+        "dayCount": 3,
+        "priorityCount": 1,
+        "totalCombos": 1,
+        "passed": 0,
+        "failed": 1,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 1,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Abs"
+        ],
+        "validatorFailures": [
+          {
+            "key": "exercise selection / legs_abs_exact_2",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "totalCombos": 6,
+        "passed": 0,
+        "failed": 6,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 6,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Abs + Arms + Glutes",
+          "Abs + Arms + Legs",
+          "Abs + Back + Glutes",
+          "Abs + Back + Legs",
+          "Abs + Chest + Glutes",
+          "Abs + Chest + Legs"
+        ],
+        "validatorFailures": [
+          {
+            "key": "exercise selection / legs_abs_exact_2",
+            "count": 6
+          }
+        ]
+      }
+    ],
+    "failuresByDayCount": [
+      {
+        "key": 3,
+        "count": 7
+      }
+    ],
+    "failuresByPriorityCount": [
+      {
+        "key": 3,
+        "count": 6
+      },
+      {
+        "key": 1,
+        "count": 1
+      }
+    ],
+    "failuresByCombo": [
+      {
+        "key": "Abs",
+        "count": 1
+      },
+      {
+        "key": "Abs + Arms + Glutes",
+        "count": 1
+      },
+      {
+        "key": "Abs + Arms + Legs",
+        "count": 1
+      },
+      {
+        "key": "Abs + Back + Glutes",
+        "count": 1
+      },
+      {
+        "key": "Abs + Back + Legs",
+        "count": 1
+      },
+      {
+        "key": "Abs + Chest + Glutes",
+        "count": 1
+      },
+      {
+        "key": "Abs + Chest + Legs",
+        "count": 1
+      }
+    ],
+    "failuresByValidator": [
+      {
+        "key": "exercise selection / legs_abs_exact_2",
+        "count": 7
+      }
+    ],
+    "unknownFailuresByMessageAndFunction": [],
+    "sameDayRedundancyByDayCount": [
+      {
+        "dayCount": 2,
+        "count": 0
+      },
+      {
+        "dayCount": 3,
+        "count": 0
+      },
+      {
+        "dayCount": 4,
+        "count": 0
+      },
+      {
+        "dayCount": 5,
+        "count": 0
+      },
+      {
+        "dayCount": 6,
+        "count": 0
+      }
+    ],
+    "topWarningFamilies": [],
+    "unknownFailureDiagnostic": []
+  }
+}

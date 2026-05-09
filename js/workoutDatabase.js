@@ -515,6 +515,15 @@
     `;
   }
 
+  function buildCompactMuscleSummary(item) {
+    const primary = listPrimaryMuscles(item).map(formatMuscleLabel);
+    const secondary = Array.isArray(item?.secondaryMuscles)
+      ? item.secondaryMuscles.filter(Boolean).map(formatMuscleLabel)
+      : [];
+    const all = Array.from(new Set([...primary, ...secondary].filter(Boolean)));
+    return all.join(', ') || formatMuscleLabel(item?.targetRegion || '') || 'Uncategorized';
+  }
+
   function openPdfView() {
     const rows = filteredItems();
     if (!rows.length) {
@@ -584,6 +593,91 @@
       }
     }
     setStatus(`Opened PDF view (${rows.length} workouts).`);
+  }
+
+  function openSimplePdfView() {
+    const rows = filteredItems();
+    if (!rows.length) {
+      setStatus('No workouts to export.', true);
+      return;
+    }
+    const title = `Workout Database - Simple PDF - ${rows.length} exercises`;
+    const timestamp = new Date().toLocaleString();
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: landscape; margin: 10mm; }
+    body { font-family: Arial, sans-serif; margin: 0; color: #111; }
+    h1 { margin: 0 0 4px; font-size: 18px; }
+    .meta { color: #555; margin-bottom: 10px; font-size: 11px; }
+    .list {
+      column-count: 3;
+      column-gap: 18px;
+    }
+    .row {
+      break-inside: avoid;
+      font-size: 10px;
+      line-height: 1.25;
+      padding: 2px 0;
+      border-bottom: 1px solid #ececec;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .name { font-weight: 700; }
+    .muscle { color: #555; }
+    @media print {
+      body { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="meta">Generated: ${escapeHtml(timestamp)}</div>
+  <div class="list">
+    ${rows.map((it) => `
+      <div class="row">
+        <span class="name">${escapeHtml(String(it?.name || it?.id || 'Exercise'))}</span>
+        <span class="muscle"> - ${escapeHtml(buildCompactMuscleSummary(it))}</span>
+      </div>
+    `).join('')}
+  </div>
+</body>
+</html>`;
+
+    const popup = window.open('about:blank', '_blank');
+    if (!popup) {
+      setStatus('Popup blocked. Allow popups to open PDF view.', true);
+      return;
+    }
+    try {
+      popup.document.open();
+      popup.document.write(html);
+      popup.document.close();
+      popup.focus();
+      popup.onload = () => {
+        try {
+          popup.print();
+        } catch {
+          // User can still use browser Print manually.
+        }
+      };
+    } catch {
+      try {
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        popup.location.href = url;
+        window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch {
+        setStatus('Could not open simple PDF view. Please try again.', true);
+        return;
+      }
+    }
+    setStatus(`Opened simple PDF view (${rows.length} workouts).`);
   }
 
   function imageList(arr, exerciseName) {
@@ -844,6 +938,11 @@
     const pdfBtn = $('#workout-db-export-pdf');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', openPdfView);
+    }
+
+    const simplePdfBtn = $('#workout-db-export-simple-pdf');
+    if (simplePdfBtn) {
+      simplePdfBtn.addEventListener('click', openSimplePdfView);
     }
 
     const closeBtn = $('#workout-db-close-editor');

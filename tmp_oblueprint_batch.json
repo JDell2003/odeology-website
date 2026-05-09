@@ -1,0 +1,1033 @@
+﻿{
+  "enginePath": "D:\\Jasons Web\\generator\\trainingEngine.oblueprint.js",
+  "totalMs": 3571,
+  "okCount": 10,
+  "failCount": 0,
+  "results": [
+    {
+      "index": 0,
+      "label": "Lena Morales",
+      "elapsedMs": 322,
+      "ok": true,
+      "dayCount": 2,
+      "error": null,
+      "projection": {
+        "modeledAs": "below_standard",
+        "deloadWeeks": [
+          8,
+          16
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 73.5,
+          "squat": 76.5,
+          "deadlift": 85.8
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 60,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Goblet Squat",
+            "weight": 60,
+            "reps": 12
+          },
+          "hinge": {
+            "variation": "Dumbbell Romanian Deadlift",
+            "weight": 70,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 72.5,
+          "squat": 75,
+          "deadlift": 85
+        },
+        "majors": [
+          {
+            "exercise": "Chest-Supported Dumbbell Row",
+            "start": 30,
+            "week1": 30,
+            "week8": 27.5,
+            "week16": 27.5
+          },
+          {
+            "exercise": "Dumbbell Incline Row",
+            "start": 30,
+            "week1": 30,
+            "week8": 27.5,
+            "week16": 30
+          },
+          {
+            "exercise": "Inverted Row",
+            "start": 30,
+            "week1": null,
+            "week8": null,
+            "week16": null
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Donkey Calf Raises",
+            "start": 25,
+            "week1": null,
+            "week8": null,
+            "week16": null
+          },
+          {
+            "exercise": "Dumbbell Seated One-Leg Calf Raise",
+            "start": 25,
+            "week1": 25,
+            "week8": 22.5,
+            "week16": 25
+          },
+          {
+            "exercise": "Incline Dumbbell Bench With Palms Facing In",
+            "start": 10,
+            "week1": 10,
+            "week8": 10,
+            "week16": 12.5
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.23,
+        "blueprintDayConstructionMs": 1.44,
+        "candidatePoolBuildingMs": 202.86,
+        "buildWeeksMs": 177.84,
+        "finalPolishRepairMs": 3.42,
+        "safeBasePlannerMs": 196.03,
+        "replacementLogicMs": 29.58,
+        "narrowGoalCleanupMs": 7.87,
+        "qualityUpgradePassMs": 62.03
+      }
+    },
+    {
+      "index": 1,
+      "label": "Theo Bennett",
+      "elapsedMs": 348,
+      "ok": true,
+      "dayCount": 4,
+      "error": null,
+      "projection": {
+        "modeledAs": "below_standard",
+        "deloadWeeks": [
+          8,
+          16
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 140.9,
+          "squat": 177.6,
+          "deadlift": 189.9
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 115,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Back Squat",
+            "weight": 145,
+            "reps": 10
+          },
+          "hinge": {
+            "variation": "Romanian Deadlift",
+            "weight": 155,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 140,
+          "squat": 180,
+          "deadlift": 190
+        },
+        "majors": [
+          {
+            "exercise": "Barbell Glute Bridge",
+            "start": 145,
+            "week1": 145,
+            "week8": 130,
+            "week16": 130
+          },
+          {
+            "exercise": "Barbell Hip Thrust",
+            "start": 145,
+            "week1": 145,
+            "week8": 130,
+            "week16": 135
+          },
+          {
+            "exercise": "Barbell Shoulder Press",
+            "start": 62.5,
+            "week1": 62.5,
+            "week8": 57.5,
+            "week16": 60
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Barbell Seated Calf Raise",
+            "start": 65,
+            "week1": 65,
+            "week8": 55,
+            "week16": 60
+          },
+          {
+            "exercise": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+            "start": 10,
+            "week1": 10,
+            "week8": 10,
+            "week16": 10
+          },
+          {
+            "exercise": "Lateral Raise",
+            "start": 5,
+            "week1": 5,
+            "week8": 7.5,
+            "week16": 7.5
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.42,
+        "candidatePoolBuildingMs": 232.86,
+        "buildWeeksMs": 238.39,
+        "finalPolishRepairMs": 6.45,
+        "safeBasePlannerMs": 241.67,
+        "replacementLogicMs": 60.2,
+        "narrowGoalCleanupMs": 10.6,
+        "qualityUpgradePassMs": 100.18
+      }
+    },
+    {
+      "index": 2,
+      "label": "Serena Park",
+      "elapsedMs": 278,
+      "ok": true,
+      "dayCount": 3,
+      "error": null,
+      "projection": {
+        "modeledAs": "below_standard",
+        "deloadWeeks": [
+          6,
+          12,
+          16
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 98,
+          "squat": 110.3,
+          "deadlift": 122.5
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 80,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Dumbbell Bulgarian Split Squat",
+            "weight": 90,
+            "reps": 10
+          },
+          "hinge": {
+            "variation": "Dumbbell Romanian Deadlift",
+            "weight": 100,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 97.5,
+          "squat": 110,
+          "deadlift": 125
+        },
+        "majors": [
+          {
+            "exercise": "Bodyweight Squat",
+            "start": 80,
+            "week1": null,
+            "week8": null,
+            "week16": null
+          },
+          {
+            "exercise": "Chest-Supported Dumbbell Row",
+            "start": 30,
+            "week1": 30,
+            "week8": 30,
+            "week16": 27.5
+          },
+          {
+            "exercise": "Dumbbell Incline Row",
+            "start": 30,
+            "week1": 30,
+            "week8": 30,
+            "week16": 27.5
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Alternate Hammer Curl",
+            "start": 10,
+            "week1": 10,
+            "week8": 10,
+            "week16": 10
+          },
+          {
+            "exercise": "Bodyweight Walking Lunge",
+            "start": 25,
+            "week1": null,
+            "week8": null,
+            "week16": null
+          },
+          {
+            "exercise": "Cross Body Hammer Curl",
+            "start": 10,
+            "week1": 10,
+            "week8": 10,
+            "week16": 10
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.38,
+        "candidatePoolBuildingMs": 228.67,
+        "buildWeeksMs": 210.94,
+        "finalPolishRepairMs": 5.25,
+        "narrowGoalCleanupMs": 9.81,
+        "constrainedRebuildMs": 201.32,
+        "safeBasePlannerMs": 218.51,
+        "replacementLogicMs": 34.61,
+        "qualityUpgradePassMs": 54.72
+      }
+    },
+    {
+      "index": 3,
+      "label": "Darius Cole",
+      "elapsedMs": 239,
+      "ok": true,
+      "dayCount": 5,
+      "error": null,
+      "projection": {
+        "modeledAs": "above_standard",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 255,
+          "squat": 573.8,
+          "deadlift": 204
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 200,
+            "reps": 12
+          },
+          "lower": {
+            "variation": "Leg Press",
+            "weight": 450,
+            "reps": 15
+          },
+          "hinge": {
+            "variation": "Cable Pull-through",
+            "weight": 160,
+            "reps": 12
+          }
+        },
+        "derivedAnchors": {
+          "bench": 255,
+          "squat": 575,
+          "deadlift": 205
+        },
+        "majors": [
+          {
+            "exercise": "Alternating Cable Shoulder Press",
+            "start": 110,
+            "week1": 110,
+            "week8": 115,
+            "week16": 115
+          },
+          {
+            "exercise": "Cable Chest Press",
+            "start": 195,
+            "week1": 195,
+            "week8": 200,
+            "week16": 205
+          },
+          {
+            "exercise": "Cable Row",
+            "start": 100,
+            "week1": 100,
+            "week8": 105,
+            "week16": 110
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 110,
+            "week1": 110,
+            "week8": 115,
+            "week16": 120
+          },
+          {
+            "exercise": "Bent Over Low-Pulley Side Lateral",
+            "start": 20,
+            "week1": 20,
+            "week8": 20,
+            "week16": 25
+          },
+          {
+            "exercise": "Cable Bench Reverse Crunch",
+            "start": 95,
+            "week1": 95,
+            "week8": 95,
+            "week16": 100
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.41,
+        "candidatePoolBuildingMs": 156.66,
+        "buildWeeksMs": 146.18,
+        "finalPolishRepairMs": 10.88,
+        "narrowGoalCleanupMs": 9.74,
+        "constrainedRebuildMs": 137.53,
+        "safeBasePlannerMs": 154.89,
+        "replacementLogicMs": 45.83,
+        "qualityUpgradePassMs": 72.94
+      }
+    },
+    {
+      "index": 4,
+      "label": "Marcus Reed",
+      "elapsedMs": 378,
+      "ok": true,
+      "dayCount": 4,
+      "error": null,
+      "projection": {
+        "modeledAs": "on_track",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 217.4,
+          "squat": 416.5,
+          "deadlift": 276.1
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 185,
+            "reps": 8
+          },
+          "lower": {
+            "variation": "Hack Squat",
+            "weight": 340,
+            "reps": 10
+          },
+          "hinge": {
+            "variation": "Romanian Deadlift",
+            "weight": 235,
+            "reps": 8
+          }
+        },
+        "derivedAnchors": {
+          "bench": 217.5,
+          "squat": 415,
+          "deadlift": 275
+        },
+        "majors": [
+          {
+            "exercise": "Barbell Shoulder Press",
+            "start": 105,
+            "week1": 105,
+            "week8": 107.5,
+            "week16": 107.5
+          },
+          {
+            "exercise": "Cable Row",
+            "start": 105,
+            "week1": 105,
+            "week8": 110,
+            "week16": 110
+          },
+          {
+            "exercise": "Cable Shoulder Press",
+            "start": 95,
+            "week1": 95,
+            "week8": 100,
+            "week16": 100
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 80,
+            "week1": 80,
+            "week8": 80,
+            "week16": 85
+          },
+          {
+            "exercise": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+            "start": 12.5,
+            "week1": 12.5,
+            "week8": 12.5,
+            "week16": 15
+          },
+          {
+            "exercise": "Bent Over Low-Pulley Side Lateral",
+            "start": 20,
+            "week1": 20,
+            "week8": 20,
+            "week16": 25
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.26,
+        "candidatePoolBuildingMs": 303.86,
+        "buildWeeksMs": 258.58,
+        "finalPolishRepairMs": 9.21,
+        "safeBasePlannerMs": 263.36,
+        "replacementLogicMs": 82.3,
+        "narrowGoalCleanupMs": 1.72,
+        "qualityUpgradePassMs": 104.94
+      }
+    },
+    {
+      "index": 5,
+      "label": "Olivia Grant",
+      "elapsedMs": 450,
+      "ok": true,
+      "dayCount": 6,
+      "error": null,
+      "projection": {
+        "modeledAs": "on_track",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 159.3,
+          "squat": 459,
+          "deadlift": 385.9
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 130,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Hack Squat",
+            "weight": 360,
+            "reps": 12
+          },
+          "hinge": {
+            "variation": "Barbell Hip Thrust",
+            "weight": 315,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 160,
+          "squat": 460,
+          "deadlift": 385
+        },
+        "majors": [
+          {
+            "exercise": "Alternating Cable Shoulder Press",
+            "start": 75,
+            "week1": 75,
+            "week8": 80,
+            "week16": 85
+          },
+          {
+            "exercise": "Barbell Glute Bridge",
+            "start": 335,
+            "week1": 335,
+            "week8": 340,
+            "week16": 340
+          },
+          {
+            "exercise": "Barbell Hack Squat",
+            "start": 365,
+            "week1": 365,
+            "week8": 370,
+            "week16": 370
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 95,
+            "week1": 95,
+            "week8": 95,
+            "week16": 100
+          },
+          {
+            "exercise": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+            "start": 10,
+            "week1": 10,
+            "week8": 12.5,
+            "week16": 15
+          },
+          {
+            "exercise": "Bent Over Low-Pulley Side Lateral",
+            "start": 15,
+            "week1": 15,
+            "week8": 15,
+            "week16": 20
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.36,
+        "candidatePoolBuildingMs": 331.93,
+        "buildWeeksMs": 301.97,
+        "finalPolishRepairMs": 14.09,
+        "safeBasePlannerMs": 309.37,
+        "replacementLogicMs": 91.28,
+        "narrowGoalCleanupMs": 9.62,
+        "qualityUpgradePassMs": 126.11
+      }
+    },
+    {
+      "index": 6,
+      "label": "Noah Kim",
+      "elapsedMs": 273,
+      "ok": true,
+      "dayCount": 3,
+      "error": null,
+      "projection": {
+        "modeledAs": "on_track",
+        "deloadWeeks": [
+          8,
+          16
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 140.3,
+          "squat": 280.5,
+          "deadlift": 147
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 110,
+            "reps": 12
+          },
+          "lower": {
+            "variation": "Leg Press",
+            "weight": 220,
+            "reps": 12
+          },
+          "hinge": {
+            "variation": "Dumbbell Romanian Deadlift",
+            "weight": 120,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 140,
+          "squat": 280,
+          "deadlift": 145
+        },
+        "majors": [
+          {
+            "exercise": "Cable Chest Press",
+            "start": 100,
+            "week1": 100,
+            "week8": 90,
+            "week16": 95
+          },
+          {
+            "exercise": "Decline Smith Press",
+            "start": 100,
+            "week1": 100,
+            "week8": 90,
+            "week16": 95
+          },
+          {
+            "exercise": "Incline Cable Chest Press",
+            "start": 100,
+            "week1": 100,
+            "week8": 90,
+            "week16": 95
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 50,
+            "week1": 50,
+            "week8": 45,
+            "week16": 50
+          },
+          {
+            "exercise": "Cable Bench Reverse Crunch",
+            "start": 45,
+            "week1": 45,
+            "week8": 40,
+            "week16": 45
+          },
+          {
+            "exercise": "Cable Crossover",
+            "start": 30,
+            "week1": 30,
+            "week8": 25,
+            "week16": 30
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.33,
+        "candidatePoolBuildingMs": 208.63,
+        "buildWeeksMs": 185.66,
+        "finalPolishRepairMs": 5.73,
+        "safeBasePlannerMs": 188.73,
+        "replacementLogicMs": 55.03,
+        "narrowGoalCleanupMs": 41.62,
+        "qualityUpgradePassMs": 79.23
+      }
+    },
+    {
+      "index": 7,
+      "label": "Priya Shah",
+      "elapsedMs": 284,
+      "ok": true,
+      "dayCount": 4,
+      "error": null,
+      "projection": {
+        "modeledAs": "below_standard",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 186,
+          "squat": 217.4,
+          "deadlift": 240.9
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 155,
+            "reps": 9
+          },
+          "lower": {
+            "variation": "Front Squat",
+            "weight": 185,
+            "reps": 8
+          },
+          "hinge": {
+            "variation": "Romanian Deadlift",
+            "weight": 205,
+            "reps": 8
+          }
+        },
+        "derivedAnchors": {
+          "bench": 185,
+          "squat": 215,
+          "deadlift": 240
+        },
+        "majors": [
+          {
+            "exercise": "Back Squat",
+            "start": 160,
+            "week1": 160,
+            "week8": 165,
+            "week16": 170
+          },
+          {
+            "exercise": "Back Squat (Volume)",
+            "start": 160,
+            "week1": 160,
+            "week8": 165,
+            "week16": 170
+          },
+          {
+            "exercise": "Barbell Glute Bridge",
+            "start": 195,
+            "week1": 195,
+            "week8": 200,
+            "week16": 200
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Alternate Hammer Curl",
+            "start": 17.5,
+            "week1": 17.5,
+            "week8": 20,
+            "week16": 22.5
+          },
+          {
+            "exercise": "Alternate Incline Dumbbell Curl",
+            "start": 17.5,
+            "week1": 17.5,
+            "week8": 20,
+            "week16": 22.5
+          },
+          {
+            "exercise": "Barbell Seated Calf Raise",
+            "start": 85,
+            "week1": 85,
+            "week8": 90,
+            "week16": 95
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.27,
+        "candidatePoolBuildingMs": 213.84,
+        "buildWeeksMs": 213.67,
+        "finalPolishRepairMs": 8.65,
+        "safeBasePlannerMs": 217.91,
+        "replacementLogicMs": 28.48,
+        "narrowGoalCleanupMs": 6.9,
+        "qualityUpgradePassMs": 57.5
+      }
+    },
+    {
+      "index": 8,
+      "label": "Naomi Brooks",
+      "elapsedMs": 481,
+      "ok": true,
+      "dayCount": 5,
+      "error": null,
+      "projection": {
+        "modeledAs": "below_standard",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 110.3,
+          "squat": 318.8,
+          "deadlift": 202.1
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 90,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Leg Press",
+            "weight": 250,
+            "reps": 12
+          },
+          "hinge": {
+            "variation": "Smith Romanian Deadlift",
+            "weight": 165,
+            "reps": 10
+          }
+        },
+        "derivedAnchors": {
+          "bench": 110,
+          "squat": 320,
+          "deadlift": 200
+        },
+        "majors": [
+          {
+            "exercise": "Cable Row",
+            "start": 60,
+            "week1": 60,
+            "week8": 65,
+            "week16": 70
+          },
+          {
+            "exercise": "Close-Grip Front Lat Pulldown",
+            "start": 55,
+            "week1": 55,
+            "week8": 60,
+            "week16": 60
+          },
+          {
+            "exercise": "Dumbbell Incline Row",
+            "start": 32.5,
+            "week1": 32.5,
+            "week8": 35,
+            "week16": 35
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 55,
+            "week1": 55,
+            "week8": 55,
+            "week16": 60
+          },
+          {
+            "exercise": "Cable Bench Reverse Crunch",
+            "start": 50,
+            "week1": 50,
+            "week8": 50,
+            "week16": 55
+          },
+          {
+            "exercise": "Cable Crunch",
+            "start": 50,
+            "week1": 50,
+            "week8": 50,
+            "week16": 55
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.47,
+        "candidatePoolBuildingMs": 368.65,
+        "buildWeeksMs": 293.66,
+        "finalPolishRepairMs": 12.97,
+        "safeBasePlannerMs": 300.05,
+        "replacementLogicMs": 86.81,
+        "narrowGoalCleanupMs": 45.6,
+        "qualityUpgradePassMs": 168.48
+      }
+    },
+    {
+      "index": 9,
+      "label": "Hassan Malik",
+      "elapsedMs": 514,
+      "ok": true,
+      "dayCount": 6,
+      "error": null,
+      "projection": {
+        "modeledAs": "on_track",
+        "deloadWeeks": [
+          5,
+          10,
+          15
+        ],
+        "anchorSource": "working_weight_fallback",
+        "anchors": {
+          "bench": 281.8,
+          "squat": 612.5,
+          "deadlift": 264.4
+        },
+        "rawWorking": {
+          "bench": {
+            "variation": null,
+            "weight": 230,
+            "reps": 10
+          },
+          "lower": {
+            "variation": "Leg Press",
+            "weight": 500,
+            "reps": 10
+          },
+          "hinge": {
+            "variation": "Romanian Deadlift",
+            "weight": 225,
+            "reps": 8
+          }
+        },
+        "derivedAnchors": {
+          "bench": 282.5,
+          "squat": 615,
+          "deadlift": 265
+        },
+        "majors": [
+          {
+            "exercise": "Alternating Cable Shoulder Press",
+            "start": 125,
+            "week1": 125,
+            "week8": 130,
+            "week16": 130
+          },
+          {
+            "exercise": "Cable Row",
+            "start": 120,
+            "week1": 120,
+            "week8": 125,
+            "week16": 130
+          },
+          {
+            "exercise": "Cable Shoulder Press",
+            "start": 125,
+            "week1": 125,
+            "week8": 130,
+            "week16": 130
+          }
+        ],
+        "accessories": [
+          {
+            "exercise": "Ab Crunch Machine",
+            "start": 120,
+            "week1": 120,
+            "week8": 125,
+            "week16": 130
+          },
+          {
+            "exercise": "Barbell Seated Calf Raise",
+            "start": 250,
+            "week1": 250,
+            "week8": 250,
+            "week16": 255
+          },
+          {
+            "exercise": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+            "start": 15,
+            "week1": 15,
+            "week8": 15,
+            "week16": 17.5
+          }
+        ]
+      },
+      "timings": {
+        "splitSelectionMs": 0.01,
+        "blueprintDayConstructionMs": 0.55,
+        "candidatePoolBuildingMs": 379.01,
+        "buildWeeksMs": 352.08,
+        "finalPolishRepairMs": 13.89,
+        "safeBasePlannerMs": 358.96,
+        "replacementLogicMs": 98.07,
+        "narrowGoalCleanupMs": 10.8,
+        "qualityUpgradePassMs": 144.09
+      }
+    }
+  ],
+  "aggregateTimings": "candidatePoolBuildingMs=2626.97ms, safeBasePlannerMs=2449.48ms, buildWeeksMs=2378.97ms, qualityUpgradePassMs=970.22ms, replacementLogicMs=612.19ms, constrainedRebuildMs=338.85ms, narrowGoalCleanupMs=154.28ms, finalPolishRepairMs=90.54ms, blueprintDayConstructionMs=4.89ms, splitSelectionMs=0.32ms",
+  "slowest": {
+    "label": "Hassan Malik",
+    "elapsedMs": 514,
+    "timings": {
+      "splitSelectionMs": 0.01,
+      "blueprintDayConstructionMs": 0.55,
+      "candidatePoolBuildingMs": 379.01,
+      "buildWeeksMs": 352.08,
+      "finalPolishRepairMs": 13.89,
+      "safeBasePlannerMs": 358.96,
+      "replacementLogicMs": 98.07,
+      "narrowGoalCleanupMs": 10.8,
+      "qualityUpgradePassMs": 144.09
+    }
+  }
+}

@@ -1,0 +1,1567 @@
+{
+  "reportPath": "D:\\Jasons Web\\reports\\hinge-case-days3-abs-back-chest.json",
+  "generatedAt": "2026-05-08T12:07:11.666Z",
+  "settings": {
+    "runs": 1,
+    "timeoutMs": 60000,
+    "days": [
+      3
+    ],
+    "priorityCounts": [
+      3
+    ],
+    "expandedMode": true,
+    "rerunFailures": null,
+    "filterFailedInvariant": null,
+    "rerunTargetCount": 0,
+    "expectedFocusedTestCount": null,
+    "actualFocusedTestCount": null
+  },
+  "matrix": {
+    "uiPriorityOptions": [
+      {
+        "key": "chest",
+        "label": "Chest"
+      },
+      {
+        "key": "back",
+        "label": "Back"
+      },
+      {
+        "key": "shoulders",
+        "label": "Shoulders"
+      },
+      {
+        "key": "arms",
+        "label": "Arms"
+      },
+      {
+        "key": "legs",
+        "label": "Legs"
+      },
+      {
+        "key": "glutes",
+        "label": "Glutes"
+      },
+      {
+        "key": "abs",
+        "label": "Abs"
+      }
+    ],
+    "totalCombos": 1,
+    "focusedRerunTargets": []
+  },
+  "summary": {
+    "totalCombos": 1,
+    "totalTests": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "warnings": 1,
+    "passesWithWarnings": 1,
+    "cleanPasses": 0
+  },
+  "failures": [],
+  "unsupported": [],
+  "passesWithWarnings": [
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Chest",
+        "Back",
+        "Core"
+      ],
+      "warningCount": 1,
+      "warningSummary": [
+        {
+          "warningType": "final_visible_plan_differs_from_raw_builder",
+          "count": 1
+        }
+      ],
+      "metrics": {
+        "directSets": {
+          "chest": 16,
+          "back": 15,
+          "shoulders": 7,
+          "arms": 9,
+          "biceps": 5,
+          "triceps": 4,
+          "glutes": 0,
+          "legs": 2,
+          "abs": 6
+        },
+        "rearDeltDays": 1,
+        "rearDeltSets": 3,
+        "bicepsDirectSets": 5,
+        "tricepsDirectSets": 4
+      }
+    }
+  ],
+  "cleanPasses": [],
+  "acceptableExceptions": [],
+  "validatorContractAudit": [],
+  "redundancyFamilySummary": [],
+  "databaseLabelAudit": [],
+  "canonicalMovementFamilyMapProposal": [],
+  "familyConsistencyCheck": [],
+  "finalVisibleCleanupSummary": {
+    "sameDayRedundancyBefore": 8,
+    "sameDayRedundancyAfter": 8,
+    "horizontal_row": {
+      "before": 24,
+      "after": 24
+    },
+    "squat_leg_press": {
+      "before": 0,
+      "after": 0
+    },
+    "shoulder_press": {
+      "before": 8,
+      "after": 8
+    }
+  },
+  "finalVisibleCleanupLog": [],
+  "finalVisibleCleanupDiagnostics": [
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 1,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Full Range-Of-Motion Lat Pulldown",
+        "Leverage High Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Leverage High Row",
+        "Chest-Supported Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Full Range-Of-Motion Lat Pulldown",
+        "Leverage High Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Full Range-Of-Motion Lat Pulldown",
+          "Leverage High Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Full Range-Of-Motion Lat Pulldown",
+          "Leverage High Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Full Range-Of-Motion Lat Pulldown",
+        "Leverage High Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 2,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Lat Pulldown",
+        "Leverage High Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Leverage High Row",
+        "Dumbbell Incline Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Lat Pulldown",
+        "Leverage High Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Lat Pulldown",
+          "Leverage High Row",
+          "Dumbbell Incline Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Lat Pulldown",
+          "Leverage High Row",
+          "Dumbbell Incline Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Lat Pulldown",
+        "Leverage High Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 3,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "V-Bar Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Seated Barbell Twist"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row",
+        "Leverage High Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "V-Bar Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Seated Barbell Twist"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "V-Bar Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "Seated Close-Grip Concentration Barbell Curl",
+          "Seated Barbell Twist"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "V-Bar Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "Seated Close-Grip Concentration Barbell Curl",
+          "Seated Barbell Twist"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "V-Bar Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Seated Barbell Twist"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 4,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "V-Bar Pulldown",
+        "Cable Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Drag Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Cable Row",
+        "Chest-Supported Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "V-Bar Pulldown",
+        "Cable Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Drag Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "V-Bar Pulldown",
+          "Cable Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Drag Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "V-Bar Pulldown",
+          "Cable Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Drag Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "V-Bar Pulldown",
+        "Cable Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Drag Curl",
+        "Cable Oblique Crunch"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 5,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Dumbbell Incline Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Dumbbell Incline Row",
+        "Chest-Supported Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Dumbbell Incline Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Dumbbell Incline Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Dumbbell Incline Row",
+          "Chest-Supported Row",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Kneeling Cable Crunch With Alternating Oblique Twists"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Wide-Grip Lat Pulldown",
+        "Dumbbell Incline Row",
+        "Chest-Supported Row",
+        "Rear Delt Fly",
+        "Barbell Curl",
+        "Kneeling Cable Crunch With Alternating Oblique Twists"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 6,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Overhead Cable Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row",
+        "Leverage High Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Overhead Cable Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "Overhead Cable Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "Overhead Cable Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "Overhead Cable Curl",
+        "Cable Oblique Crunch"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 7,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row",
+        "Dumbbell Incline Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Cable Oblique Crunch"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Dumbbell Incline Row",
+          "Rear Delt Fly",
+          "Seated Close-Grip Concentration Barbell Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Dumbbell Incline Row",
+          "Rear Delt Fly",
+          "Seated Close-Grip Concentration Barbell Curl",
+          "Cable Oblique Crunch"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Dumbbell Incline Row",
+        "Rear Delt Fly",
+        "Seated Close-Grip Concentration Barbell Curl",
+        "Cable Oblique Crunch"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    },
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "week": 8,
+      "day": null,
+      "dayType": "pull",
+      "family": "horizontal_row",
+      "cleanupPhase": "true_final_visible",
+      "exerciseNamesBeforeCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "High Cable Curls",
+        "Seated Barbell Twist"
+      ],
+      "familyCountBeforeCleanup": 2,
+      "cleanupTriggered": false,
+      "triggerThresholdUsed": 3,
+      "warningThresholdUsed": 2,
+      "thresholdMismatch": true,
+      "exercisesChosenToKeep": [
+        "Chest-Supported Row",
+        "Leverage High Row"
+      ],
+      "exercisesChosenToReplaceOrRemove": [],
+      "replacementCandidatesAttempted": [],
+      "replacementSelected": [],
+      "skipReason": "cleanup_threshold_not_met",
+      "exerciseNamesAfterCleanup": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "High Cable Curls",
+        "Seated Barbell Twist"
+      ],
+      "familyCountAfterCleanup": 2,
+      "beforeCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "High Cable Curls",
+          "Seated Barbell Twist"
+        ],
+        "familyCount": 2
+      },
+      "afterCleanupSnapshot": {
+        "exerciseNames": [
+          "Wide-Grip Lat Pulldown",
+          "Chest-Supported Row",
+          "Leverage High Row",
+          "Rear Delt Fly",
+          "High Cable Curls",
+          "Seated Barbell Twist"
+        ],
+        "familyCount": 2
+      },
+      "finalReturnedVisibleDay": [
+        "Wide-Grip Lat Pulldown",
+        "Chest-Supported Row",
+        "Leverage High Row",
+        "Rear Delt Fly",
+        "High Cable Curls",
+        "Seated Barbell Twist"
+      ],
+      "finalReturnedVisibleFamilyCount": 2,
+      "cleanupOverwrittenLater": false,
+      "dayCount": 3,
+      "priorityCount": 3
+    }
+  ],
+  "redundancyDetails": [],
+  "horizontalRowCleanupDiagnostic": [],
+  "squatLegPressCleanupDiagnostic": [],
+  "hingePosteriorChainDiagnostic": [],
+  "horizontalRowSafetySimulation": [],
+  "squatLegPressSafetySimulation": [],
+  "remainingRedundancyDiagnostic": [],
+  "topRepeatedHingePosteriorPatterns": [],
+  "topCleanupRules": [
+    {
+      "rule": "Compare raw-builder and final-visible redundancy before replacing accessories",
+      "rationale": "Late route repair still changes visible output for every combo"
+    },
+    {
+      "rule": "Log replacement-pool exhaustion for duplicate family cleanup",
+      "rationale": "Need proof when cleanup runs but no acceptable replacement exists"
+    }
+  ],
+  "unknownFailureDiagnostic": [],
+  "timeoutProfilingReport": {
+    "total": 0,
+    "largestPlanShapeSizes": {
+      "maxWeeksLength": 0,
+      "maxFirstWeekDayCount": 0,
+      "maxTotalDayCount": 0,
+      "maxTotalExerciseCount": 0
+    },
+    "byCurrentSection": [],
+    "byLastCompletedSection": [],
+    "byBranchEntered": [],
+    "rows": []
+  },
+  "workerExitDiagnostic": {
+    "total": 0,
+    "byRootCause": [],
+    "byLastHeartbeatStage": [],
+    "byLastRepairOrPolishFunction": [],
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "rows": []
+  },
+  "missingQuadPatternDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byOrigin": [],
+    "bySafeRepairCandidate": [],
+    "byRepairFailureReason": [],
+    "rows": []
+  },
+  "heavyDeadliftCountDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byGroupedCause": [],
+    "bySafeReplacementExists": [],
+    "rows": [],
+    "topRepeatedHeavyHingePatterns": []
+  },
+  "calvesDiagnostics": [],
+  "rootPatterns": [
+    {
+      "key": "late_route_repair_changes_visible_output",
+      "count": 1,
+      "combos": [
+        "Chest + Back + Abs"
+      ],
+      "examples": [
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "warningType": "final_visible_plan_differs_from_raw_builder"
+        }
+      ]
+    }
+  ],
+  "combos": [
+    {
+      "combo": [
+        "Chest",
+        "Back",
+        "Abs"
+      ],
+      "comboKeys": [
+        "chest",
+        "back",
+        "abs"
+      ],
+      "dayCount": 3,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Chest",
+        "Back",
+        "Core"
+      ],
+      "runs": 1,
+      "status": "PASS",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": null,
+      "functionName": null,
+      "error": null,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": true,
+      "finalRouteValidationFailed": false,
+      "warningCount": 1,
+      "warnings": [
+        {
+          "type": "final_visible_plan_differs_from_raw_builder",
+          "severity": "info"
+        }
+      ],
+      "metrics": {
+        "directSets": {
+          "chest": 16,
+          "back": 15,
+          "shoulders": 7,
+          "arms": 9,
+          "biceps": 5,
+          "triceps": 4,
+          "glutes": 0,
+          "legs": 2,
+          "abs": 6
+        },
+        "rearDeltDays": 1,
+        "rearDeltSets": 3,
+        "bicepsDirectSets": 5,
+        "tricepsDirectSets": 4
+      },
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 1,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Full Range-Of-Motion Lat Pulldown",
+            "Leverage High Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Leverage High Row",
+            "Chest-Supported Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Full Range-Of-Motion Lat Pulldown",
+            "Leverage High Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Full Range-Of-Motion Lat Pulldown",
+              "Leverage High Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Full Range-Of-Motion Lat Pulldown",
+              "Leverage High Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Full Range-Of-Motion Lat Pulldown",
+            "Leverage High Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 2,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Lat Pulldown",
+            "Leverage High Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Leverage High Row",
+            "Dumbbell Incline Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Lat Pulldown",
+            "Leverage High Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Lat Pulldown",
+              "Leverage High Row",
+              "Dumbbell Incline Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Lat Pulldown",
+              "Leverage High Row",
+              "Dumbbell Incline Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Lat Pulldown",
+            "Leverage High Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 3,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "V-Bar Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Seated Barbell Twist"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row",
+            "Leverage High Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "V-Bar Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Seated Barbell Twist"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "V-Bar Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "Seated Close-Grip Concentration Barbell Curl",
+              "Seated Barbell Twist"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "V-Bar Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "Seated Close-Grip Concentration Barbell Curl",
+              "Seated Barbell Twist"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "V-Bar Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Seated Barbell Twist"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 4,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "V-Bar Pulldown",
+            "Cable Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Drag Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Cable Row",
+            "Chest-Supported Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "V-Bar Pulldown",
+            "Cable Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Drag Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "V-Bar Pulldown",
+              "Cable Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Drag Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "V-Bar Pulldown",
+              "Cable Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Drag Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "V-Bar Pulldown",
+            "Cable Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Drag Curl",
+            "Cable Oblique Crunch"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 5,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Dumbbell Incline Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Dumbbell Incline Row",
+            "Chest-Supported Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Dumbbell Incline Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Dumbbell Incline Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Dumbbell Incline Row",
+              "Chest-Supported Row",
+              "Rear Delt Fly",
+              "Barbell Curl",
+              "Kneeling Cable Crunch With Alternating Oblique Twists"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Wide-Grip Lat Pulldown",
+            "Dumbbell Incline Row",
+            "Chest-Supported Row",
+            "Rear Delt Fly",
+            "Barbell Curl",
+            "Kneeling Cable Crunch With Alternating Oblique Twists"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 6,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Overhead Cable Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row",
+            "Leverage High Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Overhead Cable Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "Overhead Cable Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "Overhead Cable Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "Overhead Cable Curl",
+            "Cable Oblique Crunch"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 7,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row",
+            "Dumbbell Incline Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Cable Oblique Crunch"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Dumbbell Incline Row",
+              "Rear Delt Fly",
+              "Seated Close-Grip Concentration Barbell Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Dumbbell Incline Row",
+              "Rear Delt Fly",
+              "Seated Close-Grip Concentration Barbell Curl",
+              "Cable Oblique Crunch"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Dumbbell Incline Row",
+            "Rear Delt Fly",
+            "Seated Close-Grip Concentration Barbell Curl",
+            "Cable Oblique Crunch"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        },
+        {
+          "combo": [
+            "Chest",
+            "Back",
+            "Abs"
+          ],
+          "week": 8,
+          "day": null,
+          "dayType": "pull",
+          "family": "horizontal_row",
+          "cleanupPhase": "true_final_visible",
+          "exerciseNamesBeforeCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "High Cable Curls",
+            "Seated Barbell Twist"
+          ],
+          "familyCountBeforeCleanup": 2,
+          "cleanupTriggered": false,
+          "triggerThresholdUsed": 3,
+          "warningThresholdUsed": 2,
+          "thresholdMismatch": true,
+          "exercisesChosenToKeep": [
+            "Chest-Supported Row",
+            "Leverage High Row"
+          ],
+          "exercisesChosenToReplaceOrRemove": [],
+          "replacementCandidatesAttempted": [],
+          "replacementSelected": [],
+          "skipReason": "cleanup_threshold_not_met",
+          "exerciseNamesAfterCleanup": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "High Cable Curls",
+            "Seated Barbell Twist"
+          ],
+          "familyCountAfterCleanup": 2,
+          "beforeCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "High Cable Curls",
+              "Seated Barbell Twist"
+            ],
+            "familyCount": 2
+          },
+          "afterCleanupSnapshot": {
+            "exerciseNames": [
+              "Wide-Grip Lat Pulldown",
+              "Chest-Supported Row",
+              "Leverage High Row",
+              "Rear Delt Fly",
+              "High Cable Curls",
+              "Seated Barbell Twist"
+            ],
+            "familyCount": 2
+          },
+          "finalReturnedVisibleDay": [
+            "Wide-Grip Lat Pulldown",
+            "Chest-Supported Row",
+            "Leverage High Row",
+            "Rear Delt Fly",
+            "High Cable Curls",
+            "Seated Barbell Twist"
+          ],
+          "finalReturnedVisibleFamilyCount": 2,
+          "cleanupOverwrittenLater": false
+        }
+      ],
+      "finalVisibleCleanupSummary": {
+        "sameDayRedundancyBefore": 8,
+        "sameDayRedundancyAfter": 8,
+        "horizontal_row": {
+          "before": 24,
+          "after": 24
+        },
+        "squat_leg_press": {
+          "before": 0,
+          "after": 0
+        },
+        "shoulder_press": {
+          "before": 8,
+          "after": 8
+        }
+      },
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "PASS",
+          "timedOut": false,
+          "failedStage": null,
+          "functionName": null,
+          "error": null,
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 941,
+          "finalReturnedPlanExists": true
+        }
+      ],
+      "acceptableExceptions": []
+    }
+  ],
+  "expandedMatrixReport": {
+    "expectedTotalTests": 35,
+    "actualTotalTests": 1,
+    "settings": {
+      "parsedDays": [
+        3
+      ],
+      "parsedPriorityCounts": [
+        3
+      ],
+      "uiPriorityButtons": [
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Legs",
+        "Glutes",
+        "Abs"
+      ]
+    },
+    "overall": {
+      "totalTests": 1,
+      "passed": 1,
+      "failed": 0,
+      "unsupported": 0,
+      "passesWithWarnings": 1,
+      "cleanPasses": 0
+    },
+    "bySuite": [
+      {
+        "dayCount": 3,
+        "priorityCount": 3,
+        "totalCombos": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "passesWithWarnings": 1,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 0,
+        "topWarningFamilies": [],
+        "failedCombos": [],
+        "validatorFailures": []
+      }
+    ],
+    "failuresByDayCount": [],
+    "failuresByPriorityCount": [],
+    "failuresByCombo": [],
+    "failuresByValidator": [],
+    "unknownFailuresByMessageAndFunction": [],
+    "sameDayRedundancyByDayCount": [
+      {
+        "dayCount": 3,
+        "count": 0
+      }
+    ],
+    "topWarningFamilies": [],
+    "unknownFailureDiagnostic": []
+  }
+}

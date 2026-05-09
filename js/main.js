@@ -13062,9 +13062,11 @@ function initAuthUi() {
             const json = await resp.json().catch(() => ({}));
             if (!resp.ok || !json?.ok) return { total: 0, ok: false };
             const threads = Array.isArray(json?.threads) ? json.threads : [];
-            const total = threads.reduce((sum, row) => (
-                sum + Math.max(0, Number(row?.unreadCount || 0))
-            ), 0);
+            const total = Number.isFinite(Number(json?.unreadCount))
+                ? Math.max(0, Number(json.unreadCount))
+                : threads.reduce((sum, row) => (
+                    sum + Math.max(0, Number(row?.unreadCount || 0))
+                ), 0);
             return { total, ok: true };
         } catch {
             return { total: 0, ok: false };
@@ -14378,7 +14380,8 @@ function initAuthUi() {
                     threadsLoading = false;
                     return;
                 }
-                renderThreads(data.threads || []);
+                const threads = Array.isArray(data?.threads) ? data.threads : [];
+                renderThreads(threads);
             } catch {
                 renderThreads([]);
             }
@@ -14616,8 +14619,11 @@ function initAuthUi() {
                     requestsLoading = false;
                     return;
                 }
-                latestWorkoutInvites = Array.isArray(data.invites) ? data.invites : [];
-                renderRequests(data.invites || [], data.invites?.length ? 'Pending invites' : 'No invites yet.');
+                const invites = Array.isArray(data?.invites)
+                    ? data.invites
+                    : (Array.isArray(data?.requests) ? data.requests : []);
+                latestWorkoutInvites = invites;
+                renderRequests(invites, invites.length ? 'Pending invites' : 'No invites yet.');
             } catch {
                 latestWorkoutInvites = [];
                 renderRequests([], 'Could not load invites.');
@@ -15374,9 +15380,11 @@ function initFriendsPage() {
         const rows = Array.isArray(resp.json?.threads) ? resp.json.threads : [];
         mergeThreadSummaries(rows);
         if (typeof window.__odeSetMessageUnreadCount === 'function') {
-            const unreadTotal = rows.reduce((sum, row) => (
-                sum + Math.max(0, Number(row?.unreadCount || 0))
-            ), 0);
+            const unreadTotal = Number.isFinite(Number(resp.json?.unreadCount))
+                ? Math.max(0, Number(resp.json.unreadCount))
+                : rows.reduce((sum, row) => (
+                    sum + Math.max(0, Number(row?.unreadCount || 0))
+                ), 0);
             window.__odeSetMessageUnreadCount(unreadTotal);
         }
     }
@@ -15419,7 +15427,9 @@ function initFriendsPage() {
             renderWorkoutInvites([], resp.status === 401 ? 'Sign in to view workout invites.' : 'Could not load workout invites.');
             return;
         }
-        const invites = Array.isArray(resp.json?.invites) ? resp.json.invites : [];
+        const invites = Array.isArray(resp.json?.invites)
+            ? resp.json.invites
+            : (Array.isArray(resp.json?.requests) ? resp.json.requests : []);
         state.workoutInvites = invites;
         state.pendingWorkoutInvites = invites.length;
         updateRequestBadge();
@@ -16593,13 +16603,24 @@ function initAccessGate() {
         state.moreOptionsView = false;
         markPromptSeen();
     };
+    const PAYWALL_ENABLED = false;
     const shouldAllowAccessPrompt = (access = state.payload?.access || null) => {
+        if (!PAYWALL_ENABLED) return false;
         const ownerFreeTraining = Boolean(state.user?.isOwner) || Boolean(access?.freeTrainingEnabled) || String(access?.accessSource || '') === 'free_training';
         if (!state.user || ownerFreeTraining || !access?.ok) return false;
         if (!access?.hasAccess) return true;
         return Boolean(access?.trialActive && access?.accessSource === 'trial');
     };
     const openAccessPrompt = async ({ reason = 'manual', refreshData = true, forceOpen = false } = {}) => {
+        if (!PAYWALL_ENABLED) {
+            state.promptOpen = false;
+            state.forcePreview = false;
+            state.inviteView = false;
+            state.moreOptionsView = false;
+            state.paymentView = false;
+            render();
+            return false;
+        }
         const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
         if (liveUser) state.user = liveUser;
         if (!state.user) return false;
@@ -16642,6 +16663,7 @@ function initAccessGate() {
         return true;
     };
     const forceOpenAccessPrompt = ({ reason = 'manual' } = {}) => {
+        if (!PAYWALL_ENABLED) return false;
         const liveUser = window.__odeCurrentUser || readAuthUserHint() || state.user || null;
         if (liveUser) state.user = liveUser;
         if (!state.user) return false;

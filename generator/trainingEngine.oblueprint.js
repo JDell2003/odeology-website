@@ -1,5 +1,16 @@
 const fs = require('fs');
 const path = require('path');
+const {
+  getPriorityMuscleTargets,
+  normalizeMuscleLabel,
+  normalizeMuscleLabels,
+  normalizeEquipmentLabel
+} = require('../core/exerciseLabelNormalization');
+const {
+  DEBUG_COMBO_LABEL,
+  evaluateGlutesLegsCoreDebugCombo,
+  matchesGlutesLegsCoreDebugCombo
+} = require('../js/training-debug-combo');
 
 const STYLE_ENUM = new Set(['Compound', 'Isolation', 'Mobility', 'Skill', 'Cardio', 'Power', 'Plyo']);
 const PATTERN_ENUM = new Set([
@@ -23,7 +34,7 @@ const PATTERN_ENUM = new Set([
 const WEEKDAY_DEFAULT_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const HOME_DEFAULTS = ['bodyweight', 'dumbbell'];
 const GYM_DEFAULTS = ['bodyweight', 'barbell', 'dumbbell', 'machine', 'cable'];
-const MUSCLE_KEYS = ['Chest', 'Back', 'Legs', 'Glutes', 'Shoulders', 'Arms', 'Core', 'Calves', 'Forearms', 'Neck'];
+const MUSCLE_KEYS = ['Chest', 'Back', 'Quads', 'Hamstrings/Glutes', 'Shoulders', 'Arms', 'Abs', 'Calves', 'Forearms', 'Neck', 'Legs', 'Glutes', 'Core'];
 const LARGE_MUSCLES = new Set(['Chest', 'Back', 'Legs', 'Glutes']);
 const SMALL_MUSCLES = new Set(['Shoulders', 'Arms', 'Core', 'Abs', 'Calves', 'Forearms', 'Neck']);
 const BODYBUILDING_MAX_SETS_PER_EXERCISE = 4;
@@ -35,6 +46,25 @@ const PRIORITY_SET_BONUS = {
   Arms: 4,
   Core: 3,
   Calves: 3
+};
+const DIRECT_TARGET_KEYS = ['Chest', 'Back', 'Shoulders', 'Quads', 'Hamstrings', 'Glutes', 'Biceps', 'Triceps', 'Calves', 'Abs'];
+const DIRECT_TARGET_RANGES = {
+  Chest: { normal: [8, 10], priority: [12, 16], size: 'large' },
+  Back: { normal: [10, 12], priority: [14, 18], size: 'large' },
+  Shoulders: { normal: [8, 10], priority: [14, 18], size: 'small' },
+  Quads: { normal: [8, 10], priority: [12, 16], size: 'large' },
+  Hamstrings: { normal: [8, 10], priority: [12, 16], size: 'large' },
+  Glutes: { normal: [8, 10], priority: [12, 16], size: 'large' },
+  Biceps: { normal: [4, 6], priority: [8, 12], size: 'small' },
+  Triceps: { normal: [4, 6], priority: [8, 12], size: 'small' },
+  Calves: { normal: [4, 6], priority: [8, 12], size: 'small' },
+  Abs: { normal: [4, 6], priority: [8, 12], size: 'small' }
+};
+const PRIORITY_ORDER_MULTIPLIER = { 1: 1.35, 2: 1.2, 3: 1.1 };
+const PRIORITY_ORDER_BAND_OFFSET = { 1: 1, 2: 0, 3: -1 };
+const DIRECT_TARGET_CAPS = {
+  large: { normal: 18, priority: 20 },
+  small: { normal: 12, priority: 14 }
 };
 const ALWAYS_AVOID_TOKENS = [
   'chain', 'chains',
@@ -252,6 +282,17 @@ const OBLUEPRINT_PROFILE_TIMING = process.env.OBLUEPRINT_PROFILE_TIMING === '1';
 const MAX_CONSTRAINED_REBUILD_ATTEMPTS = 2;
 const MAX_REPLACEMENT_ATTEMPTS_PER_DAY = 24;
 const MAX_FINAL_POLISH_PASSES = 2;
+const LOWER_BODY_LOOP_GUARD_LIMITS = {
+  priorityRepair: 24,
+  lowerDayConstruction: 24,
+  wideSessionFill: 18,
+  glutePriority: 10,
+  lowerCoachCleanup: 10,
+  assembledLower: 10,
+  hipCluster: 10,
+  lowerFatigue: 10,
+  routeRepair: 10
+};
 
 function plannerNowMs() {
   return Number(process.hrtime.bigint()) / 1e6;
@@ -260,6 +301,7 @@ function plannerNowMs() {
 function createPlannerRuntime(opts = {}) {
   return {
     profileTiming: Boolean(opts?.profileTiming || OBLUEPRINT_PROFILE_TIMING),
+    heartbeat: typeof opts?.heartbeat === 'function' ? opts.heartbeat : null,
     timings: Object.create(null),
     counters: Object.create(null),
     caches: {
@@ -269,7 +311,25 @@ function createPlannerRuntime(opts = {}) {
     },
     state: {
       constrainedRebuildAttempts: 0,
-      replacementAttemptsByDay: new Map()
+      replacementAttemptsByDay: new Map(),
+      lowerBodyLoopCounts: new Map(),
+      comboStageStarts: new Map(),
+      comboStartedAt: plannerNowMs(),
+      builderBudgetStartedAt: plannerNowMs(),
+      lowerBodyDegradeApplied: false,
+      lowerBodyDegradeReason: '',
+      selectedSplit: [],
+      currentStage: '',
+      lastAttemptedRepair: '',
+      missingRequirement: '',
+      lastBuilderStage: '',
+      lastRepairOrPolishFunction: '',
+      lastKnownWeek: null,
+      lastKnownDay: '',
+      lastKnownDayType: '',
+      weeklyTargets: null,
+      calfTargetSets: null,
+      calfExposureByWeek: []
     }
   };
 }
@@ -301,6 +361,72 @@ function snapshotPlannerRuntime(user) {
     timings,
     counters: { ...runtime.counters }
   };
+}
+
+function shouldTrackCalvesComboDiagnostics(user) {
+  return hasPriorityGroup(user, 'Calves');
+}
+
+function buildCalvesExposureSnapshot(weeks, user) {
+  const safeWeeks = Array.isArray(weeks) ? weeks : [];
+  return safeWeeks.map((week, weekIndex) => {
+    const days = (Array.isArray(week?.days) ? week.days : []).map((day, dayIndex) => {
+      const exposures = (Array.isArray(day?.exercises) ? day.exercises : [])
+        .filter((exercise) => {
+          const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+          return Boolean(truth?.directCalf);
+        })
+        .map((exercise) => ({
+          name: String(exercise?.name || '').trim() || null,
+          sets: Math.max(0, Number(exercise?.sets || 0))
+        }));
+      return {
+        dayIndex,
+        day: String(day?.day || '').trim() || null,
+        dayType: String(day?.dayType || '').trim() || null,
+        calfExerciseCount: exposures.length,
+        calfExercises: exposures
+      };
+    }).filter((day) => day.calfExerciseCount > 0);
+    return {
+      weekIndex: Number(week?.weekIndex ?? weekIndex),
+      calfDays: days.length,
+      calfSets: days.reduce((sum, day) => sum + day.calfExercises.reduce((inner, exercise) => inner + Number(exercise?.sets || 0), 0), 0),
+      days
+    };
+  });
+}
+
+function emitPlannerDiagnosticHeartbeat(user, stage, payload = {}) {
+  const runtime = user?._plannerRuntime || null;
+  const state = runtime?.state || null;
+  if (state) {
+    state.lastBuilderStage = String(stage || state.lastBuilderStage || '').trim();
+    if (payload?.lastRepairOrPolishFunction) state.lastRepairOrPolishFunction = String(payload.lastRepairOrPolishFunction || '').trim();
+    if (Number.isFinite(Number(payload?.lastKnownWeek))) state.lastKnownWeek = Number(payload.lastKnownWeek);
+    if (payload?.lastKnownDay) state.lastKnownDay = String(payload.lastKnownDay || '').trim();
+    if (payload?.lastKnownDayType) state.lastKnownDayType = String(payload.lastKnownDayType || '').trim();
+    if (Array.isArray(payload?.selectedSplit)) state.selectedSplit = payload.selectedSplit;
+    if (payload?.weeklyTargets && typeof payload.weeklyTargets === 'object') state.weeklyTargets = payload.weeklyTargets;
+    if (Number.isFinite(Number(payload?.calfTargetSets))) state.calfTargetSets = Number(payload.calfTargetSets);
+    if (Array.isArray(payload?.calfExposureByWeek)) state.calfExposureByWeek = payload.calfExposureByWeek;
+  }
+  const heartbeat = runtime?.heartbeat;
+  if (typeof heartbeat !== 'function') return;
+  heartbeat(String(stage || '').trim() || 'builder', {
+    ...payload,
+    failedCombo: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+    priorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+    lastBuilderStage: state?.lastBuilderStage || String(stage || '').trim() || 'builder',
+    lastRepairOrPolishFunction: state?.lastRepairOrPolishFunction || payload?.lastRepairOrPolishFunction || '',
+    lastKnownWeek: Number.isFinite(Number(state?.lastKnownWeek)) ? Number(state.lastKnownWeek) : payload?.lastKnownWeek,
+    lastKnownDay: state?.lastKnownDay || payload?.lastKnownDay || '',
+    lastKnownDayType: state?.lastKnownDayType || payload?.lastKnownDayType || '',
+    selectedSplit: Array.isArray(state?.selectedSplit) ? state.selectedSplit.slice() : [],
+    weeklyTargets: state?.weeklyTargets || payload?.weeklyTargets || null,
+    calfTargetSets: Number.isFinite(Number(state?.calfTargetSets)) ? Number(state.calfTargetSets) : payload?.calfTargetSets,
+    calfExposureByWeek: Array.isArray(state?.calfExposureByWeek) ? state.calfExposureByWeek : (Array.isArray(payload?.calfExposureByWeek) ? payload.calfExposureByWeek : [])
+  });
 }
 
 function dayExerciseSignature(day) {
@@ -339,15 +465,243 @@ function invalidInput(field, reason) {
   return { error: 'INVALID_INPUT', field, reason };
 }
 
-function structuredNoEligible(slot, user) {
+function coreSubroleForExercise(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  const name = normalizeName(exercise?.name);
+  if (truth?.coreFamily === 'flexion') {
+    if (/(cable reverse crunch|reverse crunch)/.test(name)) return 'reverse_crunch_lower_abs';
+    if (/(3\/4 sit-up|3\/4 sit up|decline sit-up|decline sit up|sit-up|sit up)/.test(name)) return 'situp_variation';
+    if (/(ab crunch machine|rope crunch|cable crunch|standing rope crunch|cable seated crunch|\bcrunch\b)/.test(name)) return 'upper_abs_crunch';
+    return 'other_core_flexion';
+  }
+  if (truth?.coreFamily === 'rotation' || truth?.coreFamily === 'stability') {
+    if (/(pallof hold|pallof press)/.test(name)) return 'anti_rotation_stability';
+    if (/(seated barbell twist|cable oblique crunch|russian twist)/.test(name)) return 'rotation_oblique';
+  }
+  return '';
+}
+
+function snapshotCoreDiagnosticExercise(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  return {
+    name: String(exercise?.displayName || exercise?.name || '').trim(),
+    pattern: String(exercise?.pattern || '').trim() || null,
+    style: String(exercise?.style || '').trim() || null,
+    primary: String(exercise?.primary || '').trim() || null,
+    directAb: Boolean(truth?.directAb),
+    coreFamily: String(truth?.coreFamily || 'none'),
+    coreSubrole: coreSubroleForExercise(exercise, user) || null
+  };
+}
+
+function bucketCountLabel(count) {
+  const n = Number(count || 0);
+  if (n <= 0) return '0';
+  if (n === 1) return '1';
+  if (n === 2) return '2';
+  return '3+';
+}
+
+function countDirectCoreExercises(list, user = null) {
+  return (Array.isArray(list) ? list : []).filter((exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    return Boolean(truth?.directAb);
+  }).length;
+}
+
+function requiredCorePresenceForSlot(slot, dayType = '', currentDayExercises = []) {
+  const slotId = String(slot?.id || '');
+  const normalizedDayType = String(dayType || '');
+  if (/_abs_exact_2$/i.test(slotId)) return 2;
+  if (slotId.includes('_core_priority')) {
+    if (['FullBodyB', 'Legs', 'UpperFocus', 'Upper', 'Lower', 'Push'].includes(normalizedDayType)) return 2;
+    return Math.max(1, countDirectCoreExercises(currentDayExercises));
+  }
+  return 1;
+}
+
+function isCoreSlotAlreadySatisfied(slot, dayType = '', currentDayExercises = [], user = null) {
+  if (String(slot?.muscleTarget || '') !== 'Core') return false;
+  const currentCount = countDirectCoreExercises(currentDayExercises, user);
+  return currentCount >= requiredCorePresenceForSlot(slot, dayType, currentDayExercises);
+}
+
+function buildSlotEligibilityDiagnostic(slot, exercises, user, weekPicked, dayState = null, dayType = '', weekState = null) {
+  const sourceExercises = getBaseEligibleExercises(exercises, user, dayType);
+  const blocked = {
+    weekRepeat: 0,
+    stapleMismatch: 0,
+    patternMismatch: 0,
+    styleMismatch: 0,
+    muscleMismatch: 0,
+    duplicateName: 0,
+    duplicateFamily: 0,
+    weeklyCoreDiversityCap: 0,
+    otherDayCap: 0
+  };
+  const preDayCap = [];
+  const eligible = [];
+  for (const ex of sourceExercises) {
+    const corePattern = ['CoreFlexion', 'CoreStability', 'CoreRotation'].includes(String(ex?.pattern || ''));
+    const lowerPriorityRepeat = ['Legs', 'Glutes'].includes(String(slot?.muscleTarget || ''))
+      && (hasPriorityGroup(user, 'Quads') || hasPriorityGroup(user, 'Hamstrings/Glutes'))
+      && ['Squat', 'Hinge', 'Lunge', 'Isolation'].includes(String(ex?.pattern || ''));
+    const lowFreqSmallPriorityRepeat = Number(user?.daysPerWeek || 0) <= 3
+      && (
+        (hasPriorityGroup(user, 'Calves') && String(slot?.muscleTarget || '') === 'Calves')
+        || (hasPriorityGroup(user, 'Abs') && String(slot?.muscleTarget || '') === 'Core')
+      );
+    if (weekPicked.has(ex.name) && !user?.profile?.allowWeeklyRepeat && !corePattern && !lowerPriorityRepeat && !lowFreqSmallPriorityRepeat) {
+      blocked.weekRepeat += 1;
+      continue;
+    }
+    if (!isBodybuildingStapleForSlot(ex, slot, user, dayType)) {
+      blocked.stapleMismatch += 1;
+      continue;
+    }
+    if (ex.pattern !== slot.pattern) {
+      blocked.patternMismatch += 1;
+      continue;
+    }
+    if (slot.styleRequired && ex.style !== slot.styleRequired) {
+      blocked.styleMismatch += 1;
+      continue;
+    }
+    if (!slotMatchesExerciseMuscles(slot, ex, user)) {
+      blocked.muscleMismatch += 1;
+      continue;
+    }
+    if (!slot.styleRequired && ['Mobility', 'Cardio'].includes(ex.style) && !['Mobility', 'Cardio'].includes(slot.pattern)) {
+      blocked.otherDayCap += 1;
+      continue;
+    }
+    preDayCap.push(ex);
+    if (dayState?.names?.has(ex.name)) {
+      blocked.duplicateName += 1;
+      continue;
+    }
+    const family = slotExerciseFamily(ex);
+    if (dayState && family === 'lunge' && dayState.families.has('lunge')) {
+      blocked.otherDayCap += 1;
+      continue;
+    }
+    if (dayState && String(slot.styleRequired || '') === 'Isolation') {
+      const fam = family;
+      if (fam) {
+        if (dayState.families.has(fam)) {
+          blocked.duplicateFamily += 1;
+          continue;
+        }
+        if (fam.startsWith('core_') && weekState && user?.profile?.coreDiversityNeed >= 3) {
+          const seen = weekState.coreFamilies || new Map();
+          const count = Number(seen.get(fam) || 0);
+          if (count >= 2) {
+            blocked.weeklyCoreDiversityCap += 1;
+            continue;
+          }
+        }
+        if (fam === 'rear_delt' && weekState) {
+          if (!weekState.priorityGroups?.has('Shoulders') && !['Pull', 'DeltsArms'].includes(String(dayType || ''))) {
+            blocked.otherDayCap += 1;
+            continue;
+          }
+          const maxRearDeltDays = weekState.priorityGroups?.has('Shoulders') ? 3 : 2;
+          const dayKey = String(dayState.dayKey || '');
+          const alreadyOnDay = weekState.rearDeltDays.has(dayKey);
+          if (!alreadyOnDay && weekState.rearDeltDays.size >= maxRearDeltDays) {
+            blocked.otherDayCap += 1;
+            continue;
+          }
+        }
+        if (fam === 'neck' && weekState && Number(weekState.neckDays || 0) >= 3 && !weekState.neckDayKeys?.has(dayState.dayKey)) {
+          blocked.otherDayCap += 1;
+          continue;
+        }
+        if (fam === 'forearm' && weekState && Number(weekState.forearmDays || 0) >= 3 && !weekState.forearmDayKeys?.has(dayState.dayKey)) {
+          blocked.otherDayCap += 1;
+          continue;
+        }
+      }
+    }
+    if (dayState && slot.pattern === 'HorizontalPush' && String(ex?.style || '') === 'Compound') {
+      const n = normalizeName(ex?.name);
+      if (/\bbench press\b/.test(n) && Number(dayState.counts.bench_press || 0) >= 1) {
+        blocked.otherDayCap += 1;
+        continue;
+      }
+    }
+    if (weekState && slot.pattern === 'Hinge' && String(ex?.style || '') === 'Compound') {
+      if (isHeavyDeadliftPatternName(ex?.name) && Number(weekState.heavyDeadliftCount || 0) >= 1) {
+        blocked.otherDayCap += 1;
+        continue;
+      }
+    }
+    eligible.push(ex);
+  }
+  return {
+    slotId: String(slot?.id || ''),
+    pattern: String(slot?.pattern || ''),
+    styleRequired: String(slot?.styleRequired || '') || null,
+    muscleTarget: String(slot?.muscleTarget || '') || null,
+    preDayCapCount: preDayCap.length,
+    eligibleCount: eligible.length,
+    blocked,
+    samplePreDayCapExercises: preDayCap.slice(0, 5).map((exercise) => snapshotCoreDiagnosticExercise(exercise, user)),
+    sampleEligibleExercises: eligible.slice(0, 5).map((exercise) => snapshotCoreDiagnosticExercise(exercise, user))
+  };
+}
+
+function structuredNoEligible(slot, user, context = {}) {
+  const absSelected = hasPriorityGroup(user, 'Abs');
+  const currentDayExercises = Array.isArray(context?.currentDayExercises) ? context.currentDayExercises : [];
+  const directCoreExercises = currentDayExercises
+    .filter((exercise) => Boolean((exercise?.canonicalTruth || buildExerciseTruth(exercise, user))?.directAb))
+    .map((exercise) => snapshotCoreDiagnosticExercise(exercise, user));
   return {
     error: 'NO_ELIGIBLE_EXERCISE',
     slotId: slot.id,
     pattern: slot.pattern,
+    reason: String(slot?.muscleTarget || '') === 'Core' ? 'no_safe_core_candidate' : null,
     requiredStyle: slot.styleRequired || null,
+    muscleTarget: slot.muscleTarget || null,
     allowedEquipment: [...user.allowedEquipment],
     avoidTokens: [...user.avoidNameContainsTokens],
-    injuryMap: user.injuryMap
+    injuryMap: user.injuryMap,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+    priorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : 0,
+    dayCount: Number(user?.daysPerWeek || 0) || null,
+    week: Number.isFinite(Number(context?.week)) ? Number(context.week) : null,
+    weekType: String(context?.weekType || '') || null,
+    day: String(context?.day || '') || null,
+    dayType: String(context?.dayType || '') || null,
+    finalVisibleDayExercises: currentDayExercises.map((exercise) => snapshotCoreDiagnosticExercise(exercise, user)),
+    directCoreExercises,
+    directCoreExerciseCount: directCoreExercises.length,
+    directCoreExerciseCountBucket: bucketCountLabel(directCoreExercises.length),
+    directCoreSetCount: null,
+    coreMovementFamilySubroles: directCoreExercises.map((exercise) => ({
+      name: exercise.name,
+      coreFamily: exercise.coreFamily,
+      coreSubrole: exercise.coreSubrole
+    })),
+    absSelected,
+    exactTwoAbsRequired: /_abs_exact_2$/i.test(String(slot?.id || '')),
+    coreMissingFromInitialBuild: true,
+    coreRemovedOrReplacedLater: false,
+    safeCoreInsertionOrReplacementExists: false,
+    unsafeCoreCandidateExists: Array.isArray(context?.candidateDiagnostics)
+      ? context.candidateDiagnostics.some((entry) => Number(entry?.preDayCapCount || 0) > 0)
+      : false,
+    addingCoreWouldBreakValidation: Array.isArray(context?.candidateDiagnostics)
+      ? context.candidateDiagnostics.some((entry) => Number(entry?.preDayCapCount || 0) > 0 && Number(entry?.eligibleCount || 0) < 1)
+      : false,
+    addingCoreWouldDuplicateNames: Array.isArray(context?.candidateDiagnostics)
+      ? context.candidateDiagnostics.some((entry) => Number(entry?.blocked?.duplicateName || 0) > 0)
+      : false,
+    addingCoreWouldDuplicateFamilies: Array.isArray(context?.candidateDiagnostics)
+      ? context.candidateDiagnostics.some((entry) => Number(entry?.blocked?.duplicateFamily || 0) > 0)
+      : false,
+    candidateDiagnostics: Array.isArray(context?.candidateDiagnostics) ? context.candidateDiagnostics : []
   };
 }
 
@@ -362,41 +716,362 @@ function loadExercisesRaw() {
 
 function normalizeEquipmentTags(list) {
   const map = {
-    dumbbells: 'dumbbell',
-    machines: 'machine',
     'smith machine': 'machine',
     smith: 'machine',
     'pull-up bar': 'pullup_bar',
     'pullup bar': 'pullup_bar',
     'body weight': 'bodyweight',
     bands: 'bands',
-    barbell: 'barbell',
     cables: 'cable',
-    kettlebells: 'kettlebell',
     'medicine ball': 'medicineball',
     'stability ball': 'stabilityball',
     sled: 'sled',
-    'body only': 'bodyweight',
-    dumbbell: 'dumbbell',
-    machine: 'machine',
-    cable: 'cable',
-    kettlebell: 'kettlebell',
     medicineball: 'medicineball',
     stabilityball: 'stabilityball',
-    bodyweight: 'bodyweight',
     pullup_bar: 'pullup_bar'
   };
   const out = new Set();
   (Array.isArray(list) ? list : []).forEach((entry) => {
-    const raw = String(entry || '').trim().toLowerCase();
+    const raw = String(entry || '').trim();
     if (!raw) return;
-    const token = map[raw] || raw.replace(/\s+/g, '_');
+    const normalized = normalizeEquipmentLabel(raw);
+    const token = ({
+      bodyweight: 'bodyweight',
+      dumbbell: 'dumbbell',
+      barbell: 'barbell',
+      cable: 'cable',
+      machine: 'machine',
+      kettlebell: 'kettlebell',
+      other: 'other'
+    }[normalized]) || map[String(raw || '').trim().toLowerCase()] || String(raw || '').trim().toLowerCase().replace(/\s+/g, '_');
     if ([
       'barbell', 'dumbbell', 'cable', 'machine', 'bands', 'bodyweight', 'pullup_bar',
-      'kettlebell', 'medicineball', 'stabilityball', 'sled'
+      'kettlebell', 'medicineball', 'stabilityball', 'sled', 'other'
     ].includes(token)) out.add(token);
   });
   return [...out].sort();
+}
+
+function normalizeSlotPrimaryAllowed(slot) {
+  return normalizeMuscleLabels(Array.isArray(slot?.primaryAllowed) ? slot.primaryAllowed : []);
+}
+
+function normalizeExercisePrimaryMuscles(ex) {
+  return normalizeMuscleLabels([
+    ex?.primary,
+    ...(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [])
+  ]);
+}
+
+function normalizeDbMuscleTarget(value) {
+  const key = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!key) return '';
+  if (key === 'chest') return 'chest';
+  if (key === 'shoulders' || key === 'shoulder' || key === 'lateral' || key === 'rear') return 'shoulders';
+  if (key === 'biceps' || key.startsWith('biceps ')) return 'biceps';
+  if (key === 'triceps' || key.startsWith('triceps ')) return 'triceps';
+  if (key === 'quads' || key === 'quadriceps') return 'quadriceps';
+  if (key === 'hamstrings' || key.startsWith('hamstrings ')) return 'hamstrings';
+  if (key === 'glutes') return 'glutes';
+  if (key === 'calves' || key.startsWith('calves ')) return 'calves';
+  if (key === 'abdominals' || key === 'abs lower' || key === 'abs upper' || key === 'lowerabs' || key === 'tva' || key === 'core') return 'abdominals';
+  if (key === 'obliques') return 'obliques';
+  if (key === 'lats' || key.startsWith('lats ')) return 'lats';
+  if (key === 'middle back' || key === 'mid back' || key === 'upperback' || key === 'upper back') return 'middle back';
+  if (key === 'lower back' || key === 'lowerback') return 'lower back';
+  if (key === 'traps' || key === 'trapezius') return 'traps';
+  return key;
+}
+
+function normalizeDbMuscleTargets(values) {
+  return Array.from(new Set((Array.isArray(values) ? values : [values])
+    .map((value) => normalizeDbMuscleTarget(value))
+    .filter(Boolean)));
+}
+
+function deriveDirectMuscleTargets(rawPrimary, rawSub) {
+  const primary = normalizeDbMuscleTarget(rawPrimary);
+  const sub = String(rawSub || '').trim();
+  const out = [];
+  const push = (...values) => {
+    values.forEach((value) => {
+      const normalized = normalizeDbMuscleTarget(value);
+      if (normalized && !out.includes(normalized)) out.push(normalized);
+    });
+  };
+
+  if (primary === 'arms') {
+    if (/^biceps/i.test(sub)) push('biceps');
+    else if (/^triceps/i.test(sub)) push('triceps');
+  } else if (primary === 'legs') {
+    if (/^quads?$/i.test(sub)) push('quadriceps');
+    else if (/^hamstrings/i.test(sub)) push('hamstrings');
+    else if (/^glutes$/i.test(sub)) push('glutes');
+    else if (/^calves/i.test(sub)) push('calves');
+  } else if (primary === 'core') {
+    if (/^obliques$/i.test(sub)) push('obliques');
+    else if (/^(abs|tva)/i.test(sub)) push('abdominals');
+  } else if (primary === 'back') {
+    if (/^lats/i.test(sub)) push('lats');
+    else if (/^upperback$/i.test(sub)) push('middle back', 'traps');
+    else if (/^lowerback$/i.test(sub)) push('lower back');
+  }
+
+  if (!out.length) push(primary);
+  return out;
+}
+
+function priorityGroupToDirectTargets(group) {
+  switch (String(group || '')) {
+    case 'Chest': return ['Chest'];
+    case 'Back': return ['Back'];
+    case 'Shoulders': return ['Shoulders'];
+    case 'Arms': return ['Biceps', 'Triceps'];
+    case 'Quads':
+    case 'Legs':
+      return ['Quads'];
+    case 'Hamstrings/Glutes':
+    case 'Glutes':
+      return ['Hamstrings', 'Glutes'];
+    case 'Calves': return ['Calves'];
+    case 'Abs':
+    case 'Core':
+      return ['Abs'];
+    default: return [];
+  }
+}
+
+function canonicalPriorityGroup(value) {
+  const key = String(value || '').trim().toLowerCase();
+  if (!key) return '';
+  if (key === 'chest') return 'Chest';
+  if (key === 'back') return 'Back';
+  if (key === 'shoulders' || key === 'shoulder') return 'Shoulders';
+  if (key === 'arms') return 'Arms';
+  if (key === 'quads' || key === 'quadriceps' || key === 'legs') return 'Quads';
+  if (key === 'hamstrings/glutes' || key === 'hamstrings & glutes' || key === 'hamstrings and glutes' || key === 'glutes') return 'Hamstrings/Glutes';
+  if (key === 'abs' || key === 'core') return 'Abs';
+  if (key === 'calves' || key === 'calf') return 'Calves';
+  if (key === 'forearms') return 'Forearms';
+  if (key === 'neck') return 'Neck';
+  return '';
+}
+
+function getPriorityGroupStructuralAliases(group) {
+  switch (canonicalPriorityGroup(group) || String(group || '')) {
+    case 'Chest': return ['Chest'];
+    case 'Back': return ['Back'];
+    case 'Shoulders': return ['Shoulders'];
+    case 'Arms': return ['Arms'];
+    case 'Quads': return ['Quads', 'Legs'];
+    case 'Hamstrings/Glutes': return ['Hamstrings/Glutes', 'Glutes', 'Legs'];
+    case 'Abs': return ['Abs', 'Core'];
+    case 'Calves': return ['Calves'];
+    case 'Forearms': return ['Forearms'];
+    case 'Neck': return ['Neck'];
+    case 'Legs': return ['Quads', 'Hamstrings/Glutes', 'Legs'];
+    case 'Glutes': return ['Hamstrings/Glutes', 'Glutes', 'Legs'];
+    case 'Core': return ['Abs', 'Core'];
+    default: return [String(group || '')].filter(Boolean);
+  }
+}
+
+function priorityGroupsOverlap(a, b) {
+  const left = new Set(getPriorityGroupStructuralAliases(a));
+  return getPriorityGroupStructuralAliases(b).some((alias) => left.has(alias));
+}
+
+function hasPriorityGroup(userOrList, target) {
+  const priorities = Array.isArray(userOrList) ? userOrList : (Array.isArray(userOrList?.priorityGroups) ? userOrList.priorityGroups : []);
+  return priorities.some((entry) => priorityGroupsOverlap(entry, target));
+}
+
+function directTargetSize(key) {
+  return DIRECT_TARGET_RANGES[key]?.size === 'large' ? 'large' : 'small';
+}
+
+function directTargetCap(key, isPriority = false) {
+  const size = directTargetSize(key);
+  return Number(DIRECT_TARGET_CAPS[size]?.[isPriority ? 'priority' : 'normal'] || (size === 'large' ? 20 : 14));
+}
+
+function isSmallPriorityDirectTarget(key) {
+  return ['Abs', 'Calves', 'Biceps', 'Triceps'].includes(String(key || ''));
+}
+
+function getDirectPriorityRankMap(user) {
+  const rankMap = {};
+  const ranking = Array.isArray(user?.profile?.priorityRanking) ? user.profile.priorityRanking : (Array.isArray(user?.priorityGroups) ? user.priorityGroups : []);
+  ranking.slice(0, 3).forEach((group, index) => {
+    const rank = index + 1;
+    priorityGroupToDirectTargets(group).forEach((target) => {
+      if (!rankMap[target]) rankMap[target] = rank;
+    });
+  });
+  return rankMap;
+}
+
+function getPriorityDirectTargets(user) {
+  const set = new Set();
+  (Array.isArray(user?.priorityGroups) ? user.priorityGroups : []).forEach((group) => {
+    priorityGroupToDirectTargets(group).forEach((target) => set.add(target));
+  });
+  return set;
+}
+
+function chooseTargetInRange(rangeMin, rangeMax, user, key, isPriority = false) {
+  const profile = user?.profile || deriveUserProfile(user);
+  let score = 0.5;
+  const dayCount = Number(user?.daysPerWeek || 0);
+  if (dayCount >= 6) score += 0.18;
+  else if (dayCount >= 5) score += 0.12;
+  else if (dayCount <= 3) score -= 0.12;
+  if (profile.sessionBandwidth === 'wide') score += 0.1;
+  else if (profile.sessionBandwidth === 'tight') score -= 0.12;
+  if (profile.recovery === 'good') score += 0.08;
+  else score -= 0.04;
+  if (user?.experience === '5y+') score += 0.08;
+  else if (user?.experience === '2-5y') score += 0.04;
+  else if (user?.experience === '<6m') score -= 0.08;
+  if (String(user?.phase || '') === 'deficit') score -= 0.08;
+  else if (String(user?.phase || '') === 'recomp') score -= 0.04;
+  if (user?.activityLevel === 'Very active' && ['Quads', 'Hamstrings', 'Glutes'].includes(String(key || ''))) score -= 0.05;
+  if (isPriority) score += 0.04;
+  score = Math.max(0, Math.min(1, score));
+  return Math.round(rangeMin + ((rangeMax - rangeMin) * score));
+}
+
+function resolveDirectFrequencyTarget(key, targetSets, isPriority, user) {
+  const dayCount = Number(user?.daysPerWeek || 0);
+  if (isPriority) {
+    if (isSmallPriorityDirectTarget(key)) {
+      if (targetSets >= 12 && dayCount >= 5) return Math.min(4, dayCount);
+      if (targetSets >= 8) return Math.min(3, dayCount);
+      return Math.min(2, dayCount);
+    }
+    if (targetSets >= 16 && dayCount >= 5) return Math.min(3, dayCount);
+    return Math.min(2, dayCount);
+  }
+  if (targetSets >= 10 && dayCount >= 4) return 2;
+  return 1;
+}
+
+function getExerciseDirectTargetKeys(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  const direct = Array.isArray(exercise?.directMuscleTargets) ? exercise.directMuscleTargets : getExerciseDirectMuscleTargets(exercise);
+  const out = new Set();
+  if (direct.includes('chest') || truth.pressRole === 'chest_press' || truth.pressRole === 'mixed') out.add('Chest');
+  if (direct.some((value) => ['lats', 'middle back', 'lower back', 'traps'].includes(value)) || truth.pullRole === 'back_builder') out.add('Back');
+  if (direct.includes('shoulders') || truth.directDeltSubtype !== 'none' || truth.pressRole === 'shoulder_press') out.add('Shoulders');
+  if (direct.includes('quadriceps')) out.add('Quads');
+  if (direct.includes('hamstrings')) out.add('Hamstrings');
+  if (direct.includes('glutes')) out.add('Glutes');
+  if (direct.includes('biceps') || truth.directArmType === 'biceps') out.add('Biceps');
+  if (direct.includes('triceps') || truth.directArmType === 'triceps') out.add('Triceps');
+  if (direct.includes('calves') || truth.directCalf) out.add('Calves');
+  if (direct.includes('abdominals') || direct.includes('obliques') || truth.directAb || truth.coreFamily !== 'none') out.add('Abs');
+  return [...out];
+}
+
+function getSlotMuscleTargets(slot) {
+  const explicit = [];
+  const subPreferred = Array.isArray(slot?.subPreferred) ? slot.subPreferred : [];
+  subPreferred.forEach((value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return;
+    if (raw === 'Quads') explicit.push('quadriceps');
+    else if (raw === 'Hamstrings-Curl' || raw === 'Hamstrings-Hinge') explicit.push('hamstrings');
+    else if (raw === 'Glutes') explicit.push('glutes');
+    else if (raw === 'Calves' || raw === 'Calves-Gastrocnemius' || raw === 'Calves-Soleus') explicit.push('calves');
+    else if (raw === 'Abs-Lower' || raw === 'Abs-Upper' || raw === 'TVA') explicit.push('abdominals');
+    else if (raw === 'Obliques') explicit.push('obliques');
+    else if (raw === 'Biceps-Long' || raw === 'Biceps-Short') explicit.push('biceps');
+    else if (raw === 'Triceps-Long' || raw === 'Triceps-Lateral' || raw === 'Triceps-Press' || raw === 'Triceps-Overhead' || raw === 'Triceps-Pushdown') explicit.push('triceps');
+    else if (raw === 'Lats-Width' || raw === 'Lats-Thickness') explicit.push('lats');
+    else if (raw === 'UpperBack') explicit.push('middle back', 'traps');
+  });
+  if (explicit.length) return Array.from(new Set(explicit));
+
+  const broad = [];
+  (Array.isArray(slot?.primaryAllowed) ? slot.primaryAllowed : []).forEach((value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return;
+    if (raw === 'Chest') broad.push(...getPriorityMuscleTargets('Chest'));
+    else if (raw === 'Back') broad.push(...getPriorityMuscleTargets('Back'));
+    else if (raw === 'Shoulders') broad.push(...getPriorityMuscleTargets('Shoulders'));
+    else if (raw === 'Arms') broad.push(...getPriorityMuscleTargets('Arms'));
+    else if (raw === 'Calves') broad.push(...getPriorityMuscleTargets('Calves'));
+    else if (raw === 'Core') broad.push(...getPriorityMuscleTargets('Abs'));
+    else if (raw === 'Glutes') broad.push(...getPriorityMuscleTargets('Hamstrings/Glutes'));
+    else if (raw === 'Legs') broad.push('quadriceps', 'hamstrings', 'glutes');
+  });
+  return Array.from(new Set(broad));
+}
+
+function getExerciseMuscleTargets(ex) {
+  if (Array.isArray(ex?.dbMuscleTargets) && ex.dbMuscleTargets.length) return ex.dbMuscleTargets;
+  return normalizeDbMuscleTargets([
+    ex?.rawPrimary || ex?.primary,
+    ...(Array.isArray(ex?.rawSecondaryMuscles) ? ex.rawSecondaryMuscles : []),
+    ...(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [])
+  ]);
+}
+
+function getExerciseDirectMuscleTargets(ex) {
+  if (Array.isArray(ex?.directMuscleTargets) && ex.directMuscleTargets.length) return ex.directMuscleTargets;
+  return normalizeDbMuscleTargets([ex?.rawPrimary || ex?.primary]);
+}
+
+function getExerciseSupportMuscleTargets(ex) {
+  if (Array.isArray(ex?.supportMuscleTargets) && ex.supportMuscleTargets.length) return ex.supportMuscleTargets;
+  return normalizeDbMuscleTargets([
+    ex?.rawPrimary || ex?.primary,
+    ...(Array.isArray(ex?.rawSecondaryMuscles) ? ex.rawSecondaryMuscles : []),
+    ...(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [])
+  ]);
+}
+
+function slotMatchesExerciseDirectMuscle(slot, ex) {
+  const exactTargets = getSlotMuscleTargets(slot);
+  if (exactTargets.length) {
+    const exerciseTargets = getExerciseDirectMuscleTargets(ex);
+    return exerciseTargets.some((muscle) => exactTargets.includes(muscle));
+  }
+  const allowed = normalizeSlotPrimaryAllowed(slot);
+  if (!allowed.length) return true;
+  const exerciseMuscles = normalizeMuscleLabels([ex?.primary]);
+  return exerciseMuscles.some((muscle) => allowed.includes(muscle));
+}
+
+function slotMatchesExerciseSupportMuscle(slot, ex) {
+  const exactTargets = getSlotMuscleTargets(slot);
+  if (exactTargets.length) {
+    const exerciseTargets = getExerciseSupportMuscleTargets(ex);
+    return exerciseTargets.some((muscle) => exactTargets.includes(muscle));
+  }
+  const allowed = normalizeSlotPrimaryAllowed(slot);
+  if (!allowed.length) return true;
+  const exerciseMuscles = normalizeExercisePrimaryMuscles(ex);
+  return exerciseMuscles.some((muscle) => allowed.includes(muscle));
+}
+
+function slotRequiresDirectMuscleMatch(slot, user = null) {
+  const isIsolation = String(slot?.styleRequired || '') === 'Isolation';
+  const slotId = String(slot?.id || '');
+  const isPrioritySlot = slotId.includes('_priority');
+  const isRequiredPrioritySlot = Boolean(user && !slot?.optional && hasPriorityGroup(user, String(slot?.muscleTarget || '')));
+  return isIsolation || isPrioritySlot || isRequiredPrioritySlot;
+}
+
+function slotMatchesExerciseMuscles(slot, ex, user = null) {
+  return slotRequiresDirectMuscleMatch(slot, user)
+    ? slotMatchesExerciseDirectMuscle(slot, ex)
+    : slotMatchesExerciseSupportMuscle(slot, ex);
 }
 
 function normalizeName(raw) {
@@ -457,6 +1132,9 @@ function slotExerciseFamily(ex) {
   if (/(reverse curl|hammer curl|wrist curl|wrist roller|plate pinch|pronation|supination|finger curl|hand squeeze)/.test(n)) return 'forearm';
   if (/(neck resistance|neck flexion|neck extension|neck lateral|head harness)/.test(n)) return 'neck';
   if (/\bcurl\b/.test(n)) return 'curl';
+  if (isHeavyTricepsPressName(n)) return 'triceps_press';
+  if (isOverheadTricepsExtensionName(n)) return 'triceps_overhead';
+  if (isPushdownTricepsName(n)) return 'triceps_pushdown';
   if (/(triceps|extension|pushdown|skull crusher)/.test(n)) return 'triceps_extension';
   if (/(calf raise)/.test(n)) return 'calves';
   if (/(reverse crunch|leg raise|hanging knee|hanging leg|tuck crunch|hip raise|leg pull in)/.test(n)) return 'core_reverse';
@@ -508,10 +1186,37 @@ function isDirectBicepsName(name) {
     && !/(leg curl|hamstring curl|wrist curl|reverse wrist|palms-down|palms-up)/.test(n);
 }
 
+function isHeavyTricepsPressName(name) {
+  const n = normalizeName(name);
+  return /\b(close[-\s]*grip (barbell )?bench press|close[-\s]*grip bench press|smith machine close[-\s]*grip bench press|jm press|dip machine|dips? - triceps version|weighted bench dip|seated triceps press)\b/.test(n);
+}
+
+function isPushdownTricepsName(name) {
+  const n = normalizeName(name);
+  return /\b(triceps pushdown|triceps pressdown|reverse grip triceps pushdown|pushdown|pressdown)\b/.test(n);
+}
+
+function isOverheadTricepsExtensionName(name) {
+  const n = normalizeName(name);
+  return /\b(overhead triceps|cable rope overhead triceps extension|cable one arm tricep extension|cable one arm triceps extension|dumbbell one arm tricep extension|dumbbell one arm triceps extension|one arm tricep extension|one arm triceps extension|rope overhead triceps extension|overhead.*tricep|overhead.*triceps)\b/.test(n);
+}
+
+function tricepsMovementFamily(name) {
+  const n = normalizeName(name);
+  if (isHeavyTricepsPressName(n)) return 'press';
+  if (isOverheadTricepsExtensionName(n)) return 'overhead';
+  if (isPushdownTricepsName(n)) return 'pushdown';
+  if (isDirectTricepsName(n)) return 'extension';
+  return 'none';
+}
+
 function isDirectTricepsName(name) {
   const n = normalizeName(name);
   return (
-    /(triceps|pushdown|pressdown|skull crusher|kickback|overhead triceps|triceps extension|rope extension|lying extension)/.test(n)
+    isHeavyTricepsPressName(n)
+    || isPushdownTricepsName(n)
+    || isOverheadTricepsExtensionName(n)
+    || /(triceps|skull ?crusher|skull crusher|kickback|triceps extension|rope extension|lying extension|tate press|machine triceps extension)/.test(n)
     || (/\bextension\b/.test(n) && /(triceps|rope|cable|dumbbell|ez-bar|barbell|overhead|lying)/.test(n))
   ) && !/(wrist|neck|leg extension|hip extension|back extension|shoulder extension)/.test(n);
 }
@@ -520,6 +1225,29 @@ function canonicalExerciseIdFor(ex) {
   const explicit = String(ex?.id || '').trim();
   if (explicit) return explicit;
   return normalizeName(ex?.name).replace(/\s+/g, '-');
+}
+
+function exerciseDayIdentityKey(ex) {
+  return normalizeName(ex?.canonicalTruth?.canonicalName || ex?.canonicalName || ex?.name || '');
+}
+
+function sameDayExerciseExists(day, candidate, exclude = null) {
+  const key = exerciseDayIdentityKey(candidate);
+  if (!key) return false;
+  return (Array.isArray(day?.exercises) ? day.exercises : []).some((exercise) => exercise !== exclude && exerciseDayIdentityKey(exercise) === key);
+}
+
+function tricepsFamiliesOnDay(day, exclude = null) {
+  const families = new Set();
+  for (const exercise of Array.isArray(day?.exercises) ? day.exercises : []) {
+    if (exercise === exclude) continue;
+    const truth = exercise?.canonicalTruth || null;
+    const directArmType = String(truth?.directArmType || exercise?.directArmType || '').toLowerCase();
+    if (directArmType !== 'triceps' && !isDirectTricepsName(exercise?.name)) continue;
+    const family = tricepsMovementFamily(exercise?.name);
+    if (family && family !== 'none') families.add(family);
+  }
+  return families;
 }
 
 function inferMovementFamily(ex) {
@@ -723,8 +1451,7 @@ function buildExerciseTruth(ex, user = null) {
 }
 
 function shouldTrackPriorityDebug(user) {
-  const priorities = new Set(Array.isArray(user?.priorityGroups) ? user.priorityGroups : []);
-  return Number(user?.daysPerWeek || 0) <= 3 && (priorities.has('Calves') || priorities.has('Core'));
+  return Number(user?.daysPerWeek || 0) <= 3 && (hasPriorityGroup(user, 'Calves') || hasPriorityGroup(user, 'Abs'));
 }
 
 function ensurePriorityDebugTrace(user) {
@@ -734,7 +1461,7 @@ function ensurePriorityDebugTrace(user) {
     const priorities = new Set(Array.isArray(user?.priorityGroups) ? user.priorityGroups : []);
     user.debugTrace.lowFrequencyPriorityTrace = {
       calf: {
-        priorityDetected: priorities.has('Calves'),
+        priorityDetected: hasPriorityGroup([...priorities], 'Calves'),
         reservedSlots: [],
         eligiblePools: [],
         initialSelections: [],
@@ -744,7 +1471,7 @@ function ensurePriorityDebugTrace(user) {
         removedAtStep: null
       },
       abs: {
-        priorityDetected: priorities.has('Core'),
+        priorityDetected: hasPriorityGroup([...priorities], 'Abs'),
         reservedSlots: [],
         eligiblePools: [],
         initialSelections: [],
@@ -764,6 +1491,319 @@ function recordPriorityDebug(user, bucket, key, value) {
   const target = trace[bucket];
   if (Array.isArray(target[key])) target[key].push(value);
   else target[key] = value;
+}
+
+function shouldTrackAbsGlutesLegsComboDebug(user) {
+  return matchesGlutesLegsCoreDebugCombo({
+    discipline: user?.discipline,
+    daysPerWeek: user?.daysPerWeek,
+    phase: user?.phase,
+    sessionLengthMin: user?.sessionLengthMin,
+    location: user?.location,
+    priorityGroups: user?.priorityGroups,
+    allowedEquipment: user?.allowedEquipment,
+    injuryMap: user?.injuryMap,
+    injuryNotes: user?.injuryNotes
+  }, { builderNormalized: true });
+}
+
+function logAbsGlutesLegsComboDebug(user, event, payload = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  const elapsedMs = runtime?.state?.comboStartedAt ? Math.round(plannerNowMs() - runtime.state.comboStartedAt) : undefined;
+  try {
+    console.info(`[training-debug][${DEBUG_COMBO_LABEL}][builder] ${event}`, {
+      at: new Date().toISOString(),
+      ...(elapsedMs !== undefined ? { elapsedMs } : {}),
+      ...payload
+    });
+  } catch {
+    // ignore logging failures
+  }
+}
+
+function logDebugComboMatchEval(locationTag, evaluation) {
+  const evalObj = evaluation && typeof evaluation === 'object' ? evaluation : {};
+  try {
+    console.info('DEBUG_COMBO_MATCH_EVAL', {
+      location: locationTag,
+      matched: Boolean(evalObj.matched),
+      reasonIfFalse: String(evalObj.reasonIfFalse || ''),
+      rawPriorityGroups: Array.isArray(evalObj.rawPriorityGroups) ? evalObj.rawPriorityGroups : [],
+      normalizedPriorityGroups: Array.isArray(evalObj.normalizedPriorityGroups) ? evalObj.normalizedPriorityGroups : [],
+      discipline: evalObj.discipline || '',
+      trainingFeel: evalObj.trainingFeel || '',
+      daysPerWeek: Number(evalObj.daysPerWeek || 0) || 0,
+      sessionLengthMin: evalObj.sessionLengthMin || '',
+      locationValue: evalObj.location || '',
+      primaryGoal: evalObj.primaryGoal || '',
+      phase: evalObj.phase || '',
+      normalizedEquipmentAccess: Array.isArray(evalObj.normalizedEquipmentAccess) ? evalObj.normalizedEquipmentAccess : [],
+      painAreas: Array.isArray(evalObj.painAreas) ? evalObj.painAreas : [],
+      injuryMap: Array.isArray(evalObj.injuryMapKeys) ? evalObj.injuryMapKeys : [],
+      injuryNotes: evalObj.injuryNotes || ''
+    });
+  } catch {
+    // ignore logging failures
+  }
+}
+
+function getLowerBodyRepairLoopLimit(user, stage) {
+  return Number(LOWER_BODY_LOOP_GUARD_LIMITS[String(stage || '')] || 12);
+}
+
+function buildLowerBodyGuardKey(stage, meta = {}) {
+  const stageKey = String(stage || meta?.stage || 'lower-body repair').trim() || 'lower-body repair';
+  const weekKey = Number.isFinite(Number(meta?.week)) ? Number(meta.week) : 'na';
+  const dayKey = String(meta?.day || 'na').trim() || 'na';
+  const dayTypeKey = String(meta?.dayType || 'na').trim() || 'na';
+  return `${stageKey}|week:${weekKey}|day:${dayKey}|dayType:${dayTypeKey}`;
+}
+
+function getLowerBodyGuardState(user, stage, meta = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user) || !isNarrowPosteriorCoreUser(user)) return null;
+  const runtime = user?._plannerRuntime || null;
+  if (!runtime?.state?.lowerBodyLoopCounts) return null;
+  const guardKey = buildLowerBodyGuardKey(stage, meta);
+  const maxAttempts = getLowerBodyRepairLoopLimit(user, stage);
+  const existing = runtime.state.lowerBodyLoopCounts.get(guardKey);
+  if (existing && typeof existing === 'object') {
+    existing.maxAttempts = maxAttempts;
+    existing.guardKey = guardKey;
+    return existing;
+  }
+  const created = {
+    attempt: 0,
+    maxAttempts,
+    lastAttemptedRepair: '',
+    lastRepairSucceeded: false,
+    lastStructuralResult: null,
+    guardKey
+  };
+  runtime.state.lowerBodyLoopCounts.set(guardKey, created);
+  return created;
+}
+
+function resetLowerBodyRepairLoopGuard(user, stage, meta = {}, successMeta = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user) || !isNarrowPosteriorCoreUser(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  if (!runtime?.state?.lowerBodyLoopCounts) return;
+  const guardKey = buildLowerBodyGuardKey(stage, meta);
+  runtime.state.lowerBodyLoopCounts.set(guardKey, {
+    attempt: 0,
+    maxAttempts: getLowerBodyRepairLoopLimit(user, stage),
+    lastAttemptedRepair: String(successMeta?.lastAttemptedRepair || meta?.lastAttemptedRepair || ''),
+    lastRepairSucceeded: true,
+    lastStructuralResult: successMeta?.currentStructuralResult || meta?.currentStructuralResult || null,
+    guardKey
+  });
+}
+
+function resolveCurrentLowerDayStructuralResult(day) {
+  if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return null;
+  return buildLowerCoachCleanupStructuralResult(day);
+}
+
+function buildLowerBodyRepairLoopLimitError(user, meta = {}) {
+  const runtime = user?._plannerRuntime || null;
+  return {
+    error: 'LOWER_BODY_REPAIR_LOOP_LIMIT',
+    message: String(meta?.message || 'Lower-body repair exceeded max iterations.'),
+    functionName: String(meta?.functionName || 'lowerBodyRepairLoopGuard'),
+    stage: String(meta?.stage || 'lower-body repair'),
+    failedStage: String(meta?.failedStage || meta?.stage || 'lower-body repair'),
+    priorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+    selectedSplit: Array.isArray(meta?.selectedSplit)
+      ? meta.selectedSplit
+      : (Array.isArray(runtime?.state?.selectedSplit) ? runtime.state.selectedSplit.slice() : []),
+    day: meta?.day ? String(meta.day) : undefined,
+    dayType: meta?.dayType ? String(meta.dayType) : undefined,
+    week: Number.isFinite(Number(meta?.week)) ? Number(meta.week) : undefined,
+    lastAttemptedRepair: meta?.lastAttemptedRepair ? String(meta.lastAttemptedRepair) : undefined,
+    missingRequirement: meta?.missingRequirement ? String(meta.missingRequirement) : undefined,
+    attempt: Number.isFinite(Number(meta?.attempt)) ? Number(meta.attempt) : undefined,
+    maxAttempts: Number.isFinite(Number(meta?.maxAttempts)) ? Number(meta.maxAttempts) : undefined,
+    reason: meta?.reason ? String(meta.reason) : undefined,
+    lastRepairSucceeded: typeof meta?.lastRepairSucceeded === 'boolean' ? meta.lastRepairSucceeded : undefined,
+    currentStructuralResult: meta?.currentStructuralResult || undefined,
+    guardKey: meta?.guardKey ? String(meta.guardKey) : undefined
+  };
+}
+
+function ensureLowerBodyBuilderBudget(user, stage, meta = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user) || !isNarrowPosteriorCoreUser(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  const startedAt = Number(runtime?.state?.builderBudgetStartedAt || 0);
+  if (!Number.isFinite(startedAt) || startedAt <= 0) return;
+  if (runtime?.state) {
+    runtime.state.currentStage = String(stage || runtime.state.currentStage || 'builder');
+    runtime.state.lastAttemptedRepair = String(meta?.lastAttemptedRepair || runtime.state.lastAttemptedRepair || '');
+    runtime.state.missingRequirement = String(meta?.missingRequirement || runtime.state.missingRequirement || '');
+  }
+  const elapsedMs = Math.round(plannerNowMs() - startedAt);
+  if (elapsedMs <= 8000) return;
+  throw buildLowerBodyRepairLoopLimitError(user, {
+    ...meta,
+    message: 'Lower-body repair exceeded internal builder budget.',
+    functionName: String(meta?.functionName || 'buildOblueprintPlan'),
+    stage: runtime?.state?.currentStage || String(stage || 'builder'),
+    failedStage: runtime?.state?.currentStage || String(stage || 'builder'),
+    lastAttemptedRepair: runtime?.state?.lastAttemptedRepair || meta?.lastAttemptedRepair,
+    missingRequirement: runtime?.state?.missingRequirement || meta?.missingRequirement
+  });
+}
+
+function bumpLowerBodyRepairLoopGuard(user, stage, meta = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user) || !isNarrowPosteriorCoreUser(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  const key = String(stage || 'lower-body repair');
+  const state = getLowerBodyGuardState(user, key, meta);
+  if (!runtime?.state || !state) return;
+  runtime.state.currentStage = key;
+  runtime.state.lastAttemptedRepair = String(meta?.lastAttemptedRepair || runtime.state.lastAttemptedRepair || '');
+  runtime.state.missingRequirement = String(meta?.missingRequirement || runtime.state.missingRequirement || '');
+  ensureLowerBodyBuilderBudget(user, key, meta);
+  const structuralResult = meta?.currentStructuralResult || null;
+  state.attempt = Number(state.attempt || 0) + 1;
+  state.maxAttempts = getLowerBodyRepairLoopLimit(user, key);
+  state.lastAttemptedRepair = String(meta?.lastAttemptedRepair || state.lastAttemptedRepair || '');
+  if (typeof meta?.lastRepairSucceeded === 'boolean') state.lastRepairSucceeded = meta.lastRepairSucceeded;
+  if (structuralResult) state.lastStructuralResult = structuralResult;
+  const nextCount = state.attempt;
+  const maxAttempts = state.maxAttempts;
+  if (nextCount > maxAttempts) {
+    if (structuralResult?.ok) {
+      state.lastRepairSucceeded = true;
+      return {
+        exceeded: true,
+        suppressed: true,
+        guardKey: state.guardKey,
+        state: { ...state }
+      };
+    }
+    throw buildLowerBodyRepairLoopLimitError(user, {
+      ...meta,
+      stage: key,
+      failedStage: key,
+      attempt: nextCount,
+      maxAttempts,
+      lastRepairSucceeded: state.lastRepairSucceeded,
+      currentStructuralResult: structuralResult || state.lastStructuralResult || undefined,
+      guardKey: state.guardKey
+    });
+  }
+  return {
+    exceeded: false,
+    suppressed: false,
+    guardKey: state.guardKey,
+    state: { ...state }
+  };
+}
+
+function markLowerBodyGracefulDegrade(user, reason = '') {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user) || !isNarrowPosteriorCoreUser(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  if (!runtime?.state) return;
+  if (runtime.state.lowerBodyDegradeApplied) return;
+  runtime.state.lowerBodyDegradeApplied = true;
+  runtime.state.lowerBodyDegradeReason = String(reason || '').trim();
+  logAbsGlutesLegsComboDebug(user, 'lower-body-degrade-applied', {
+    stage: 'lower-body graceful degradation',
+    reason: runtime.state.lowerBodyDegradeReason || 'Preserved valid lower-day structure before ideal volume.'
+  });
+}
+
+function isLowerBodyGracefulDegradeApplied(user) {
+  return Boolean(user?._plannerRuntime?.state?.lowerBodyDegradeApplied);
+}
+
+function logComboStageEnter(user, stage, payload = {}) {
+  const runtime = user?._plannerRuntime || null;
+  if (runtime?.state?.comboStageStarts) runtime.state.comboStageStarts.set(String(stage || ''), plannerNowMs());
+  if (runtime?.state) {
+    runtime.state.currentStage = String(stage || '');
+    if (payload?.lastRepairOrPolishFunction) runtime.state.lastRepairOrPolishFunction = String(payload.lastRepairOrPolishFunction || '');
+  }
+  ensureLowerBodyBuilderBudget(user, stage, payload);
+  const plannerSelectedPriorities = Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [];
+  const plannerDaysPerWeek = Number.isFinite(Number(user?.daysPerWeek))
+    ? Number(user.daysPerWeek)
+    : (Number.isFinite(Number(user?.days)) ? Number(user.days) : undefined);
+  const plannerWeeksLength = Array.isArray(payload?.plan?.weeks)
+    ? payload.plan.weeks.length
+    : (Array.isArray(payload?.weeks) ? payload.weeks.length : undefined);
+  const assertStageMeta = {
+    functionName: 'logComboStageEnter',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    requestedDayCount: plannerDaysPerWeek,
+    requestedPriorityCount: plannerSelectedPriorities.length || undefined,
+    selectedPriorities: plannerSelectedPriorities,
+    planExists: Boolean(payload?.plan || payload?.weeks || user?.workout_plan),
+    weeksLength: Number.isFinite(Number(plannerWeeksLength)) ? Number(plannerWeeksLength) : undefined,
+    callBoundary: 'worker_final_validation_stage_enter'
+  };
+  const stageMap = {
+    'split selection': 'split selected',
+    'blueprint construction': 'week build started',
+    'lower day construction': 'lower day repair started',
+    'priority repair': 'priority repair started',
+    'final validation': 'assert_validation_started_callsite_B'
+  };
+  const heartbeatStage = stageMap[String(stage || '')];
+  if (heartbeatStage) emitPlannerDiagnosticHeartbeat(
+    user,
+    heartbeatStage,
+    String(stage || '') === 'final validation' ? assertStageMeta : payload
+  );
+  if (String(stage || '') === 'final validation') {
+    emitPlannerDiagnosticHeartbeat(user, 'after_assert_validation_started_callsite_B', assertStageMeta);
+  }
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return;
+  logAbsGlutesLegsComboDebug(user, 'stage-enter', {
+    stage,
+    ...payload
+  });
+}
+
+function logComboStageExit(user, stage, payload = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return;
+  const runtime = user?._plannerRuntime || null;
+  ensureLowerBodyBuilderBudget(user, stage, payload);
+  const startedAt = runtime?.state?.comboStageStarts?.get(String(stage || ''));
+  const durationMs = Number.isFinite(Number(startedAt)) ? Math.round(plannerNowMs() - startedAt) : undefined;
+  logAbsGlutesLegsComboDebug(user, 'stage-exit', {
+    stage,
+    ...(durationMs !== undefined ? { durationMs } : {}),
+    ...payload
+  });
+}
+
+function attachAbsGlutesLegsDebugMeta(err, user, meta = {}) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return err;
+  const src = err && typeof err === 'object' ? err : { message: String(err || 'Unknown error') };
+  const out = {
+    ...src,
+    stage: src.stage || meta.stage || undefined,
+    failedStage: src.failedStage || meta.failedStage || meta.stage || undefined,
+    slotId: src.slotId || meta.slotId || undefined,
+    day: src.day || meta.day || undefined,
+    dayType: src.dayType || meta.dayType || undefined,
+    week: Number.isFinite(Number(src.week)) ? Number(src.week) : (Number.isFinite(Number(meta.week)) ? Number(meta.week) : undefined),
+    muscleTarget: src.muscleTarget || meta.muscleTarget || undefined
+  };
+  logAbsGlutesLegsComboDebug(user, 'stage-failure', {
+    stage: out.stage || null,
+    failedStage: out.failedStage || null,
+    slotId: out.slotId || null,
+    day: out.day || null,
+    dayType: out.dayType || null,
+    week: out.week ?? null,
+    muscleTarget: out.muscleTarget || null,
+    error: out.error || null,
+    reason: out.reason || out.message || null
+  });
+  return out;
 }
 
 function buildExerciseOutput(chosen, user, slot, sets, rr, extra = {}) {
@@ -850,10 +1890,17 @@ function isBodybuildingStapleForSlot(ex, slot, user, dayType) {
     }
     if (slot?.muscleTarget === 'Arms') {
       const nn = normalizeName(name);
-      const wantsBiceps = Array.isArray(slot?.subPreferred) && slot.subPreferred.some((s) => /biceps/i.test(String(s || '')));
-      const wantsTriceps = Array.isArray(slot?.subPreferred) && slot.subPreferred.some((s) => /triceps/i.test(String(s || '')));
+      const prefs = Array.isArray(slot?.subPreferred) ? slot.subPreferred.map((s) => String(s || '').toLowerCase()) : [];
+      const wantsBiceps = prefs.some((s) => s.includes('biceps'));
+      const wantsTriceps = prefs.some((s) => s.includes('triceps'));
+      const wantsTricepsPress = prefs.includes('triceps-press');
+      const wantsTricepsOverhead = prefs.includes('triceps-overhead');
+      const wantsTricepsPushdown = prefs.includes('triceps-pushdown');
       const bicepsMatch = isDirectBicepsName(nn);
       const tricepsMatch = isDirectTricepsName(nn);
+      if (wantsTricepsPress) return isHeavyTricepsPressName(nn);
+      if (wantsTricepsOverhead) return isOverheadTricepsExtensionName(nn);
+      if (wantsTricepsPushdown) return isPushdownTricepsName(nn);
       if (wantsBiceps && !wantsTriceps) return bicepsMatch;
       if (wantsTriceps && !wantsBiceps) return tricepsMatch;
       return bicepsMatch || tricepsMatch;
@@ -892,6 +1939,12 @@ function isBodybuildingStapleForSlot(ex, slot, user, dayType) {
   if (dayType === 'Push' && pattern === 'HorizontalPush') return matchesStaplePatternRule(name, 'HorizontalPush');
   if (dayType === 'Pull' && (pattern === 'VerticalPull' || pattern === 'HorizontalPull')) return matchesStaplePatternRule(name, pattern);
   if (dayType === 'Legs' && (pattern === 'Squat' || pattern === 'Hinge')) return matchesStaplePatternRule(name, pattern);
+  if (styleRequired === 'Compound' && slot?.muscleTarget === 'Arms') {
+    const nn = normalizeName(name);
+    const prefs = Array.isArray(slot?.subPreferred) ? slot.subPreferred.map((s) => String(s || '').toLowerCase()) : [];
+    if (prefs.includes('triceps-press')) return isHeavyTricepsPressName(nn);
+    return isHeavyTricepsPressName(nn) || isDirectTricepsName(nn);
+  }
   return true;
 }
 
@@ -906,18 +1959,40 @@ function preprocessExercises(exercises) {
     if (!STYLE_ENUM.has(style)) return { error: 'INVALID_EXERCISE_RECORD', name, badField: 'style' };
     const pattern = String(ex?.pattern || '').trim();
     if (!PATTERN_ENUM.has(pattern)) return { error: 'INVALID_EXERCISE_RECORD', name, badField: 'pattern' };
+    const rawPrimary = String(ex?.primary || '').trim();
+    const rawSub = String(ex?.sub || '').trim();
+    const rawSecondaryMuscles = Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles.slice() : [];
+    const normalizedPrimary = normalizeMuscleLabel(String(ex?.primary || '').trim() === 'Abs' ? 'Core' : ex?.primary);
+    const normalizedSecondary = normalizeMuscleLabels(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : []);
+    const dbMuscleTargets = normalizeDbMuscleTargets([rawPrimary, ...rawSecondaryMuscles]);
+    const directMuscleTargets = deriveDirectMuscleTargets(rawPrimary, rawSub);
+    const supportMuscleTargets = normalizeDbMuscleTargets([rawPrimary, ...rawSecondaryMuscles]);
     out.push({
       ...ex,
       name,
-      primary: String(ex?.primary || '').trim() === 'Abs' ? 'Core' : ex?.primary,
+      rawPrimary,
+      rawSub,
+      rawSecondaryMuscles,
+      dbMuscleTargets,
+      directMuscleTargets,
+      supportMuscleTargets,
+      primary: normalizedPrimary,
       nameLower: name.toLowerCase(),
       equipmentNorm: normalizeEquipmentTags(ex?.equipment || []),
       requiredEquipment: inferRequiredEquipment(ex),
       isCalisthenicsLike: isCalisthenicsLikeExercise(ex),
+      secondaryMuscles: normalizedSecondary,
       canonicalTruth: buildExerciseTruth({
         ...ex,
         name,
-        primary: String(ex?.primary || '').trim() === 'Abs' ? 'Core' : ex?.primary,
+        rawPrimary,
+        rawSub,
+        rawSecondaryMuscles,
+        dbMuscleTargets,
+        directMuscleTargets,
+        supportMuscleTargets,
+        primary: normalizedPrimary,
+        secondaryMuscles: normalizedSecondary,
         requiredEquipment: inferRequiredEquipment(ex)
       })
     });
@@ -962,6 +2037,24 @@ function toWeekday(value) {
   return map[v] || null;
 }
 
+function derivePreferredDays(daysPerWeek, preferredDaysRaw, unavailableDaysRaw) {
+  const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
+  const preferred = (Array.isArray(preferredDaysRaw) ? preferredDaysRaw : []).map(toWeekday).filter(Boolean);
+  if (preferred.length === n) return preferred.slice(0, n);
+  const blocked = new Set((Array.isArray(unavailableDaysRaw) ? unavailableDaysRaw : []).map(toWeekday).filter(Boolean));
+  const available = WEEKDAY_DEFAULT_ORDER.filter((day) => !blocked.has(day));
+  if (!n) return [];
+  if (available.length < n) return preferred.slice(0, n);
+  const chosen = [];
+  preferred.forEach((day) => {
+    if (chosen.length < n && !blocked.has(day) && !chosen.includes(day)) chosen.push(day);
+  });
+  available.forEach((day) => {
+    if (chosen.length < n && !chosen.includes(day)) chosen.push(day);
+  });
+  return chosen.slice(0, n);
+}
+
 function normalizeAvoidTokens(movementsToAvoid) {
   const out = new Set(ALWAYS_AVOID_TOKENS);
   (Array.isArray(movementsToAvoid) ? movementsToAvoid : []).forEach((v) => {
@@ -973,24 +2066,8 @@ function normalizeAvoidTokens(movementsToAvoid) {
 
 function normalizePriorityGroups(raw) {
   const out = [];
-  const aliases = {
-    chest: 'Chest',
-    back: 'Back',
-    legs: 'Legs',
-    glutes: 'Glutes',
-    shoulders: 'Shoulders',
-    shoulder: 'Shoulders',
-    arms: 'Arms',
-    abs: 'Core',
-    core: 'Core',
-    calves: 'Calves',
-    calf: 'Calves',
-    forearms: 'Forearms',
-    neck: 'Neck'
-  };
   (Array.isArray(raw) ? raw : []).forEach((entry) => {
-    const key = String(entry || '').trim().toLowerCase();
-    const mapped = aliases[key] || null;
+    const mapped = canonicalPriorityGroup(entry);
     if (!mapped || !MUSCLE_KEYS.includes(mapped)) return;
     if (out.includes(mapped)) return;
     out.push(mapped);
@@ -1078,9 +2155,9 @@ function deriveUserProfile(user) {
     acc[muscle] = idx + 1;
     return acc;
   }, {});
-  const upperPriorityCount = priorities.filter((group) => ['Chest', 'Back', 'Shoulders', 'Arms'].includes(group)).length;
-  const lowerPriorityCount = priorities.filter((group) => ['Legs', 'Glutes', 'Calves'].includes(group)).length;
-  const corePriority = priorities.includes('Core');
+  const upperPriorityCount = priorities.filter((group) => ['Chest', 'Back', 'Shoulders', 'Arms'].some((target) => priorityGroupsOverlap(group, target))).length;
+  const lowerPriorityCount = priorities.filter((group) => ['Quads', 'Hamstrings/Glutes', 'Calves'].some((target) => priorityGroupsOverlap(group, target))).length;
+  const corePriority = hasPriorityGroup(priorities, 'Abs');
   const allowed = Array.isArray(user?.allowedEquipment) ? user.allowedEquipment : [];
   const nonBodyweightTools = allowed.filter((eq) => eq !== 'bodyweight');
   const minimalEquipment = nonBodyweightTools.length <= 1;
@@ -1107,15 +2184,15 @@ function deriveUserProfile(user) {
       ? 'medium'
       : 'general';
   const movementTolerance = maxInjury >= 7 ? 'restricted' : maxInjury >= 5 ? 'guarded' : 'normal';
-  const forearmPriorityFlag = priorities.includes('Arms') && (complexity !== 'low' || Number(user?.daysPerWeek || 0) >= 4);
+  const forearmPriorityFlag = hasPriorityGroup(priorities, 'Arms') && (complexity !== 'low' || Number(user?.daysPerWeek || 0) >= 4);
   const neckEligibleFlag = complexity !== 'low'
     && Number(user?.daysPerWeek || 0) >= 4
     && maxInjury < 7
     && Number(user?.injuryMap?.spine || 0) < 5
     && Number(user?.injuryMap?.shoulder || 0) < 7
     && !user?.injuryNoteFlags?.cervicalContraindication;
-  const aestheticTrunkPriority = priorities.includes('Core') || (user?.focus === 'Aesthetic' && ['deficit', 'recomp'].includes(String(user?.phase || '')));
-  const coreDiversityNeed = priorities.includes('Core')
+  const aestheticTrunkPriority = hasPriorityGroup(priorities, 'Abs') || (user?.focus === 'Aesthetic' && ['deficit', 'recomp'].includes(String(user?.phase || '')));
+  const coreDiversityNeed = hasPriorityGroup(priorities, 'Abs')
     ? (complexity === 'high' ? 4 : complexity === 'medium' ? 3 : 2)
     : (aestheticTrunkPriority && complexity !== 'low' && sessionBandwidth !== 'tight' ? 2 : 1);
   const priorityVolumeAggressiveness = specializationLevel === 'high' && recovery === 'good'
@@ -1217,7 +2294,7 @@ function normalizeUserInput(input) {
   const injuryNotes = normalizePainNotes(painProfiles);
   const injuryNoteFlags = deriveInjuryNoteFlags(injuryNotes);
 
-  const preferredDays = src.preferredDays.map(toWeekday).filter(Boolean);
+  const preferredDays = derivePreferredDays(daysPerWeek, src.preferredDays, src.unavailableDays);
   const phase = src.primaryGoal === 'Build size' ? 'surplus' : src.primaryGoal === 'Cut fat' ? 'deficit' : 'recomp';
 
   const rawPlanSeed = Number(src.planSeed);
@@ -1248,65 +2325,110 @@ function normalizeUserInput(input) {
 }
 
 function computeWeeklyTargets(user) {
-  const cfg = EXP_CFG[user.experience];
   const profile = user?.profile || deriveUserProfile(user);
   const stressMult = STRESS_MULT[user.stress] || 1;
-  const sleepMult = user.sleepHours < 5 ? 0.8 : user.sleepHours < 6 ? 0.9 : 1.0;
-  const prioritySet = new Set(profile.priorityRanking || []);
-  const sessionMult = profile.sessionBandwidth === 'tight' ? 0.82 : profile.sessionBandwidth === 'wide' ? 1.08 : 0.96;
-  const recoveryMult = profile.recovery === 'good' ? 1 : 0.92;
-  const frequencyMult = Number(user.daysPerWeek || 0) >= 5 ? 1.05 : Number(user.daysPerWeek || 0) <= 2 ? 0.92 : 1;
-  const priorityAddByRank = { 1: 8, 2: 6, 3: 4 };
   const targets = {};
   const frequencyTargets = {};
-  for (const muscle of MUSCLE_KEYS) {
-    if (muscle === 'Forearms') {
-      let n = 0;
-      if (profile.forearmPriorityFlag) {
-        n = profile.smallAccessoryRecovery === 'high' ? 8 : profile.smallAccessoryRecovery === 'medium' ? 6 : 4;
-        if (profile.priorityVolumeAggressiveness === 'high') n += 2;
-      } else if (profile.armSpecializationSubtype !== 'none' && profile.minimalEquipmentAccessoryMode) {
-        n = 2;
-      }
-      targets[muscle] = n;
-      frequencyTargets[muscle] = n >= 8 ? 3 : n >= 4 ? 2 : n > 0 ? 1 : 0;
-      continue;
-    }
-    if (muscle === 'Neck') {
-      let n = 0;
-      if (profile.neckEligibleFlag) {
-        n = profile.complexity === 'high' ? 6 : 4;
-      }
-      targets[muscle] = n;
-      frequencyTargets[muscle] = n >= 6 ? 3 : n >= 4 ? 2 : n > 0 ? 1 : 0;
-      continue;
-    }
-    if (muscle === 'Calves') {
-      let n = prioritySet.has('Calves') ? (profile.sessionBandwidth === 'tight' ? 6 : 8) : 2;
-      if (prioritySet.has('Calves') && Number(user?.daysPerWeek || 0) <= 3) n += 2;
-      targets[muscle] = n;
-      frequencyTargets[muscle] = n >= 8 ? Math.min(3, Number(user?.daysPerWeek || 0)) : n >= 4 ? 2 : 1;
-      continue;
-    }
-    const base = LARGE_MUSCLES.has(muscle) ? cfg.large : cfg.small;
-    let n = Math.round(base * stressMult * sleepMult * sessionMult * recoveryMult * frequencyMult);
-    if (user.activityLevel === 'Very active' && (muscle === 'Legs' || muscle === 'Glutes')) n = Math.round(n * 0.9);
-    if (prioritySet.has(muscle)) {
-      const rank = Number(profile.priorityRankMap?.[muscle] || 1);
-      n += cfg.add + Number(PRIORITY_SET_BONUS[muscle] || 0) + Number(priorityAddByRank[rank] || 0);
+  const directPrioritySet = getPriorityDirectTargets(user);
+  const directRankMap = getDirectPriorityRankMap(user);
+  const posteriorPriority = hasPriorityGroup(user, 'Hamstrings/Glutes');
+  const posteriorRank = Math.min(
+    Number(directRankMap.Hamstrings || 99),
+    Number(directRankMap.Glutes || 99)
+  );
+  let posteriorSplitTarget = null;
+  if (posteriorPriority) {
+    const [posteriorMin, posteriorMax] = DIRECT_TARGET_RANGES.Hamstrings.priority;
+    let combined = chooseTargetInRange(posteriorMin, posteriorMax, user, 'Hamstrings', true);
+    combined = Math.round(combined * Number(PRIORITY_ORDER_MULTIPLIER[posteriorRank] || 1));
+    posteriorSplitTarget = Math.max(1, Math.round(combined / 2));
+  }
+  DIRECT_TARGET_KEYS.forEach((key) => {
+    const cfg = DIRECT_TARGET_RANGES[key];
+    const isPosteriorKey = key === 'Hamstrings' || key === 'Glutes';
+    const isPriority = isPosteriorKey ? posteriorPriority : directPrioritySet.has(key);
+    let rangeMin;
+    let rangeMax;
+    let n;
+    if (isPosteriorKey && posteriorSplitTarget != null) {
+      rangeMin = Math.max(1, Math.round(cfg.priority[0] / 2));
+      rangeMax = Math.max(rangeMin, Math.round(cfg.priority[1] / 2));
+      n = posteriorSplitTarget;
     } else {
-      n = Math.round(n * cfg.maintenance);
-      if (profile.priorityBias === 'upper' && ['Legs', 'Glutes'].includes(muscle)) n = Math.round(n * 0.8);
-      if (profile.priorityBias === 'lower' && ['Chest', 'Back', 'Shoulders', 'Arms'].includes(muscle)) n = Math.round(n * 0.82);
+      const [normalMin, normalMax] = cfg.normal;
+      rangeMin = isPriority ? cfg.priority[0] : normalMin;
+      rangeMax = isPriority ? cfg.priority[1] : normalMax;
+      n = chooseTargetInRange(normalMin, normalMax, user, key, false);
+      if (isPriority) {
+        const rank = Number(directRankMap[key] || 1);
+        const scaled = Math.round(n * Number(PRIORITY_ORDER_MULTIPLIER[rank] || 1));
+        const bandTarget = chooseTargetInRange(cfg.priority[0], cfg.priority[1], user, key, true) + Number(PRIORITY_ORDER_BAND_OFFSET[rank] || 0);
+        n = Math.max(scaled, bandTarget);
+      }
     }
-    const minClamp = muscle === 'Core' ? 2 : LARGE_MUSCLES.has(muscle) ? 6 : 4;
-    const maxClamp = LARGE_MUSCLES.has(muscle) ? cfg.maxLarge : cfg.maxSmall;
-    if (user.phase === 'deficit') n = Math.max(minClamp, n - 1);
-    if (user.phase === 'recomp') n = Math.max(minClamp, Math.round(n * 0.97));
-    if (muscle === 'Core' && profile.coreDiversityNeed >= 3) n += 2;
-    targets[muscle] = Math.max(minClamp, Math.min(maxClamp, n));
-    const directSetTarget = targets[muscle];
-    frequencyTargets[muscle] = directSetTarget >= 18 ? 3 : directSetTarget >= 10 ? 2 : 1;
+    const cap = directTargetCap(key, isPriority);
+    targets[key] = Math.max(rangeMin, Math.min(Math.min(cap, rangeMax), n));
+    frequencyTargets[key] = resolveDirectFrequencyTarget(key, targets[key], isPriority, user);
+  });
+  targets.Arms = Number(targets.Biceps || 0) + Number(targets.Triceps || 0);
+  targets.Legs = Number(targets.Quads || 0) + Number(targets.Hamstrings || 0) + Number(targets.Glutes || 0);
+  targets['Hamstrings/Glutes'] = Number(targets.Hamstrings || 0) + Number(targets.Glutes || 0);
+  targets.Abs = Number(targets.Abs || 0);
+  targets.Core = Number(targets.Abs || 0);
+  frequencyTargets.Arms = Math.max(Number(frequencyTargets.Biceps || 0), Number(frequencyTargets.Triceps || 0));
+  frequencyTargets.Legs = Math.max(Number(frequencyTargets.Quads || 0), Number(frequencyTargets.Hamstrings || 0), Number(frequencyTargets.Glutes || 0));
+  frequencyTargets['Hamstrings/Glutes'] = Math.max(Number(frequencyTargets.Hamstrings || 0), Number(frequencyTargets.Glutes || 0));
+  frequencyTargets.Abs = Number(frequencyTargets.Abs || 0);
+  frequencyTargets.Core = Number(frequencyTargets.Abs || 0);
+  if (profile.forearmPriorityFlag) {
+    targets.Forearms = profile.smallAccessoryRecovery === 'high' ? 6 : 4;
+    frequencyTargets.Forearms = Number(user?.daysPerWeek || 0) >= 5 ? 3 : 2;
+  } else {
+    targets.Forearms = 0;
+    frequencyTargets.Forearms = 0;
+  }
+  targets.Neck = profile.neckEligibleFlag && hasPriorityGroup(user, 'Neck') ? (profile.complexity === 'high' ? 6 : 4) : 0;
+  frequencyTargets.Neck = targets.Neck >= 6 ? 3 : targets.Neck >= 4 ? 2 : 0;
+  logAbsGlutesLegsComboDebug(user, 'weekly-targets', {
+    normalizedPriorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+    legsInterpretation: getPriorityGroupStructuralAliases('Legs'),
+    targetWeeklySets: {
+      Abs: Number(targets.Abs || 0),
+      Core: Number(targets.Core || 0),
+      Glutes: Number(targets.Glutes || 0),
+      Quads: Number(targets.Quads || 0),
+      Hamstrings: Number(targets.Hamstrings || 0),
+      Calves: Number(targets.Calves || 0)
+    },
+    targetWeeklyFrequency: {
+      Abs: Number(frequencyTargets.Abs || 0),
+      Core: Number(frequencyTargets.Core || 0),
+      Glutes: Number(frequencyTargets.Glutes || 0),
+      Quads: Number(frequencyTargets.Quads || 0),
+      Hamstrings: Number(frequencyTargets.Hamstrings || 0),
+      Calves: Number(frequencyTargets.Calves || 0)
+    }
+  });
+  if (shouldTrackCalvesComboDiagnostics(user)) {
+    emitPlannerDiagnosticHeartbeat(user, 'weekly targets computed', {
+      weeklyTargets: {
+        targetWeeklySets: {
+          Calves: Number(targets.Calves || 0),
+          Quads: Number(targets.Quads || 0),
+          Hamstrings: Number(targets.Hamstrings || 0),
+          Glutes: Number(targets.Glutes || 0),
+          Abs: Number(targets.Abs || 0)
+        },
+        targetWeeklyFrequency: {
+          Calves: Number(frequencyTargets.Calves || 0),
+          Quads: Number(frequencyTargets.Quads || 0),
+          Hamstrings: Number(frequencyTargets.Hamstrings || 0),
+          Glutes: Number(frequencyTargets.Glutes || 0),
+          Abs: Number(frequencyTargets.Abs || 0)
+        }
+      },
+      calfTargetSets: Number(targets.Calves || 0)
+    });
   }
   return { targets, frequencyTargets, stressMultiplier: stressMult };
 }
@@ -1333,8 +2455,7 @@ function scaleTargets(baseTargets, weekType, blockLength, weekIndex) {
 function buildSplit(user, forceUpperLower = false) {
   const d = user.daysPerWeek;
   const profile = user?.profile || deriveUserProfile(user);
-  const priorities = new Set(user?.priorityGroups || []);
-  const lowFreqSmallMuscleBias = d <= 3 && priorities.has('Core') && priorities.has('Calves');
+  const lowFreqSmallMuscleBias = d <= 3 && hasPriorityGroup(user, 'Abs') && hasPriorityGroup(user, 'Calves');
   let split = [];
   if (isNarrowBackArmsUser(user)) {
     if (d === 2) split = ['Pull', 'UpperFocus'];
@@ -1425,10 +2546,120 @@ function makeSlot(id, pattern, styleRequired, muscleTarget, opts = {}) {
   };
 }
 
+function priorityRankForGroup(user, group) {
+  const ranking = Array.isArray(user?.profile?.priorityRanking) ? user.profile.priorityRanking : (Array.isArray(user?.priorityGroups) ? user.priorityGroups : []);
+  const idx = ranking.findIndex((entry) => priorityGroupsOverlap(entry, group));
+  return idx >= 0 ? idx + 1 : 99;
+}
+
+function countBlueprintSlots(slots, predicate) {
+  return (Array.isArray(slots) ? slots : []).filter((slot) => predicate(slot)).length;
+}
+
+function appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorityOptional, hasDedicatedCoreAccess, hasUpperLimbConstraint) {
+  const priorities = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
+  const day = String(dayType || '');
+  const dayCount = Number(user?.daysPerWeek || 0);
+  const shoulderRank = priorityRankForGroup(user, 'Shoulders');
+  const armRank = priorityRankForGroup(user, 'Arms');
+  const absRank = priorityRankForGroup(user, 'Abs');
+
+  if (hasPriorityGroup(priorities, 'Shoulders') && ['Push', 'Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
+    if (['Push', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
+      addPrioritySlot(`${day.toLowerCase()}_shoulder_lat_exact`, 'Isolation', 'Isolation', 'Shoulders', {
+        primaryAllowed: ['Shoulders'],
+        subPreferred: ['Lateral'],
+        optional: priorityOptional('Shoulders', true) || hasUpperLimbConstraint
+      });
+    }
+    if (['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
+      addPrioritySlot(`${day.toLowerCase()}_shoulder_rear_exact`, 'Isolation', 'Isolation', 'Shoulders', {
+        primaryAllowed: ['Shoulders'],
+        subPreferred: ['Rear'],
+        optional: priorityOptional('Shoulders', true) || hasUpperLimbConstraint
+      });
+    }
+  }
+
+  if (hasPriorityGroup(priorities, 'Arms')) {
+    if (['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
+      addPrioritySlot(`${day.toLowerCase()}_biceps_exact`, 'Isolation', 'Isolation', 'Arms', {
+        primaryAllowed: ['Arms'],
+        subPreferred: ['Biceps-Long', 'Biceps-Short'],
+        optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
+      });
+    }
+    if (day === 'Push') {
+      addPrioritySlot(`${day.toLowerCase()}_triceps_pushdown_exact`, 'Isolation', 'Isolation', 'Arms', {
+        primaryAllowed: ['Arms'],
+        subPreferred: ['Triceps-Pushdown', 'Triceps-Lateral', 'Triceps-Long'],
+        optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
+      });
+    }
+    if (['Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
+      const tricepsPref = day === 'UpperFocus'
+        ? ['Triceps-Overhead', 'Triceps-Long', 'Triceps-Pushdown']
+        : ['Triceps-Pushdown', 'Triceps-Overhead', 'Triceps-Lateral'];
+      addPrioritySlot(`${day.toLowerCase()}_triceps_exact`, 'Isolation', 'Isolation', 'Arms', {
+        primaryAllowed: ['Arms'],
+        subPreferred: tricepsPref,
+        optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
+      });
+    }
+  }
+
+  if (hasPriorityGroup(priorities, 'Abs') && hasDedicatedCoreAccess && ['Push', 'Pull', 'Legs', 'Upper', 'UpperFocus', 'DeltsArms', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(day)) {
+    const existingCore = countBlueprintSlots(slots, (slot) => String(slot?.muscleTarget || '') === 'Core');
+    if (['FullBodyB', 'Legs', 'UpperFocus'].includes(day) && existingCore >= 2) return;
+    const preferRotation = ['Pull', 'Upper', 'DeltsArms'].includes(day);
+    const preferStability = ['Legs', 'Lower', 'LowerFocus', 'FullBodyB'].includes(day);
+    const pattern = preferRotation ? 'CoreRotation' : preferStability ? 'CoreStability' : 'CoreFlexion';
+    const subPreferred = pattern === 'CoreRotation'
+      ? ['Obliques', 'TVA']
+      : pattern === 'CoreStability'
+        ? ['TVA', 'LowerAbs']
+        : ['Abs-Lower', 'Abs-Upper'];
+    addPrioritySlot(`${day.toLowerCase()}_abs_exact_${existingCore}`, pattern, 'Isolation', 'Core', {
+      primaryAllowed: ['Core'],
+      subPreferred,
+      optional: priorityOptional('Core', true)
+    });
+  }
+
+  if (hasPriorityGroup(priorities, 'Quads') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(day)) {
+    addPrioritySlot(`${day.toLowerCase()}_quads_exact`, 'Isolation', 'Isolation', 'Legs', {
+      primaryAllowed: ['Legs'],
+      subPreferred: ['Quads'],
+      optional: priorityOptional('Legs', true)
+    });
+  }
+
+  if (hasPriorityGroup(priorities, 'Hamstrings/Glutes') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(day)) {
+    addPrioritySlot(`${day.toLowerCase()}_hamstrings_exact`, 'Isolation', 'Isolation', 'Legs', {
+      primaryAllowed: ['Legs'],
+      subPreferred: ['Hamstrings-Curl'],
+      optional: priorityOptional('Glutes', true)
+    });
+    addPrioritySlot(`${day.toLowerCase()}_glutes_exact`, 'Isolation', 'Isolation', 'Glutes', {
+      primaryAllowed: ['Glutes', 'Legs'],
+      subPreferred: ['Glutes'],
+      optional: priorityOptional('Glutes', true)
+    });
+  }
+
+  if (hasPriorityGroup(priorities, 'Calves') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB', 'UpperFocus'].includes(day)) {
+    addPrioritySlot(`${day.toLowerCase()}_calves_exact`, 'Isolation', 'Isolation', 'Calves', {
+      primaryAllowed: ['Legs'],
+      subPreferred: ['Calves', 'Calves-Gastrocnemius', 'Calves-Soleus'],
+      optional: priorityOptional('Calves', true)
+    });
+  }
+}
+
 function buildDayBlueprint(dayType, user, weekType, opts = {}) {
   const slots = [];
   const constrainedRebuild = Boolean(opts?.constrainedRebuild);
-  const prioritySet = new Set(user.priorityGroups || []);
+  const prioritySet = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
   const isLowFrequencyPriorityPlan = Number(user?.daysPerWeek || 0) <= 3;
   const hasUpperLimbConstraint = Math.max(
     Number(user?.injuryMap?.shoulder || 0),
@@ -1440,25 +2671,25 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
     slots.push(makeSlot('fba_hp', 'HorizontalPush', 'Compound', 'Chest', { primaryAllowed: ['Chest'] }));
     slots.push(makeSlot('fba_hpull', 'HorizontalPull', 'Compound', 'Back', { primaryAllowed: ['Back'] }));
     slots.push(makeSlot('fba_squat', 'Squat', 'Compound', 'Legs', { primaryAllowed: ['Legs'], subPreferred: ['Quads'] }));
-    slots.push(makeSlot('fba_shoulders', 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: ['Lateral'], optional: !(isLowFrequencyPriorityPlan && prioritySet.has('Shoulders')) || hasUpperLimbConstraint }));
-    slots.push(makeSlot('fba_arms', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], optional: !(isLowFrequencyPriorityPlan && prioritySet.has('Arms')) || hasUpperLimbConstraint }));
-    slots.push(makeSlot('fba_core', 'CoreFlexion', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: !(isLowFrequencyPriorityPlan && prioritySet.has('Core')) || !hasDedicatedCoreAccess }));
+    slots.push(makeSlot('fba_shoulders', 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: ['Lateral'], optional: !(isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Shoulders')) || hasUpperLimbConstraint }));
+    slots.push(makeSlot('fba_arms', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], optional: !(isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Arms')) || hasUpperLimbConstraint }));
+    slots.push(makeSlot('fba_core', 'CoreFlexion', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: !(isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Abs')) || !hasDedicatedCoreAccess }));
   } else if (dayType === 'FullBodyB') {
     slots.push(makeSlot('fbb_vpull', 'VerticalPull', 'Compound', 'Back', { primaryAllowed: ['Back'] }));
     slots.push(makeSlot('fbb_hinge', 'Hinge', 'Compound', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'], subPreferred: ['Hamstrings-Hinge', 'Glutes'] }));
     slots.push(makeSlot('fbb_press', 'HorizontalPush', 'Compound', 'Chest', { primaryAllowed: ['Chest'] }));
     slots.push(makeSlot('fbb_leg_iso', 'Isolation', 'Isolation', 'Legs', { primaryAllowed: ['Legs', 'Glutes'], optional: true }));
-    slots.push(makeSlot('fbb_calf', 'Isolation', 'Isolation', 'Calves', { primaryAllowed: ['Legs'], subPreferred: ['Calves'], optional: !(isLowFrequencyPriorityPlan && prioritySet.has('Calves')) }));
-    slots.push(makeSlot('fbb_core', 'CoreStability', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: !(isLowFrequencyPriorityPlan && prioritySet.has('Core')) || !hasDedicatedCoreAccess }));
+    slots.push(makeSlot('fbb_calf', 'Isolation', 'Isolation', 'Calves', { primaryAllowed: ['Legs'], subPreferred: ['Calves'], optional: !(isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Calves')) }));
+    slots.push(makeSlot('fbb_core', 'CoreStability', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: !(isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Abs')) || !hasDedicatedCoreAccess }));
   } else if (dayType === 'UpperFocus') {
     slots.push(makeSlot('uf_hp', 'HorizontalPush', 'Compound', 'Chest', { primaryAllowed: ['Chest'] }));
     slots.push(makeSlot('uf_hpull', 'HorizontalPull', 'Compound', 'Back', { primaryAllowed: ['Back'] }));
     slots.push(makeSlot('uf_vpull', 'VerticalPull', 'Compound', 'Back', { primaryAllowed: ['Back'], optional: true }));
     slots.push(makeSlot('uf_ch_iso', 'Isolation', 'Isolation', 'Chest', { primaryAllowed: ['Chest'], optional: true }));
-    slots.push(makeSlot('uf_sh_iso', 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: ['Lateral'], optional: (!(prioritySet.has('Shoulders') || prioritySet.has('Chest') || isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
-    slots.push(makeSlot('uf_bi_iso', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Biceps-Long', 'Biceps-Short'], optional: (!(prioritySet.has('Arms') && isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
-    slots.push(makeSlot('uf_tri_iso', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Triceps-Long', 'Triceps-Lateral'], optional: (!(prioritySet.has('Arms') && isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
-    slots.push(makeSlot('uf_core', 'CoreFlexion', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: (!(prioritySet.has('Core') && isLowFrequencyPriorityPlan)) || !hasDedicatedCoreAccess }));
+    slots.push(makeSlot('uf_sh_iso', 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: ['Lateral'], optional: (!(hasPriorityGroup(prioritySet, 'Shoulders') || hasPriorityGroup(prioritySet, 'Chest') || isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
+    slots.push(makeSlot('uf_bi_iso', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Biceps-Long', 'Biceps-Short'], optional: (!(hasPriorityGroup(prioritySet, 'Arms') && isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
+    slots.push(makeSlot('uf_tri_iso', 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Triceps-Long', 'Triceps-Lateral'], optional: (!(hasPriorityGroup(prioritySet, 'Arms') && isLowFrequencyPriorityPlan)) || hasUpperLimbConstraint }));
+    slots.push(makeSlot('uf_core', 'CoreFlexion', 'Isolation', 'Core', { primaryAllowed: ['Core'], optional: (!(hasPriorityGroup(prioritySet, 'Abs') && isLowFrequencyPriorityPlan)) || !hasDedicatedCoreAccess }));
   } else if (dayType === 'LowerFocus') {
     slots.push(makeSlot('lf_squat', 'Squat', 'Compound', 'Legs', { primaryAllowed: ['Legs'], subPreferred: ['Quads'] }));
     slots.push(makeSlot('lf_hinge', 'Hinge', 'Compound', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'], subPreferred: ['Hamstrings-Hinge', 'Glutes'] }));
@@ -1515,7 +2746,7 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
     }
   }
   if (
-    (user.priorityGroups || []).includes('Glutes')
+    hasPriorityGroup(user, 'Hamstrings/Glutes')
     && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(dayType)
     && !slots.some((s) => s.id.includes('glute'))
   ) {
@@ -1530,26 +2761,27 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
     if (hasUpperLimbConstraint && ['Arms', 'Shoulders'].includes(String(muscleTarget || ''))) return true;
     if (!hasDedicatedCoreAccess && String(muscleTarget || '') === 'Core') return true;
     if (!isLowFrequencyPriorityPlan) return baseOptional;
-    if (['Arms', 'Shoulders', 'Core', 'Calves'].includes(String(muscleTarget || '')) && prioritySet.has(muscleTarget)) return false;
+    if (String(muscleTarget || '') === 'Core' && hasPriorityGroup(prioritySet, 'Abs')) return false;
+    if (['Arms', 'Shoulders', 'Calves'].includes(String(muscleTarget || '')) && hasPriorityGroup(prioritySet, muscleTarget)) return false;
     return baseOptional;
   };
-  if (prioritySet.has('Chest') && (dayType === 'Push' || dayType === 'Upper')) {
+  if (hasPriorityGroup(prioritySet, 'Chest') && (dayType === 'Push' || dayType === 'Upper')) {
     addPrioritySlot(`${dayType.toLowerCase()}_chest_priority`, 'Isolation', 'Isolation', 'Chest', { primaryAllowed: ['Chest'], optional: true });
   }
-  if (prioritySet.has('Chest') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
+  if (hasPriorityGroup(prioritySet, 'Chest') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
     addPrioritySlot(`${dayType.toLowerCase()}_chest_priority`, 'Isolation', 'Isolation', 'Chest', {
       primaryAllowed: ['Chest'],
       optional: hasUpperLimbConstraint || dayType === 'FullBodyB'
     });
   }
-  if (prioritySet.has('Shoulders') && (dayType === 'Push' || dayType === 'Pull' || dayType === 'Upper' || dayType === 'DeltsArms')) {
+  if (hasPriorityGroup(prioritySet, 'Shoulders') && (dayType === 'Push' || dayType === 'Pull' || dayType === 'Upper' || dayType === 'DeltsArms')) {
     const shoulderPref = dayType === 'Pull' ? ['Rear'] : ['Lateral', 'Rear'];
     addPrioritySlot(`${dayType.toLowerCase()}_shoulder_priority`, 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: shoulderPref, optional: priorityOptional('Shoulders', true) });
   }
-  if (prioritySet.has('Shoulders') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
+  if (hasPriorityGroup(prioritySet, 'Shoulders') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
     addPrioritySlot(`${dayType.toLowerCase()}_shoulder_priority`, 'Isolation', 'Isolation', 'Shoulders', { primaryAllowed: ['Shoulders'], subPreferred: ['Lateral', 'Rear'], optional: hasUpperLimbConstraint });
   }
-  if (prioritySet.has('Arms') && (dayType === 'Push' || dayType === 'Pull' || dayType === 'Upper')) {
+  if (hasPriorityGroup(prioritySet, 'Arms') && (dayType === 'Push' || dayType === 'Pull' || dayType === 'Upper')) {
     if (dayType === 'Push') {
       addPrioritySlot(`${dayType.toLowerCase()}_tri_priority`, 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Triceps-Long', 'Triceps-Lateral'], optional: priorityOptional('Arms', true) });
     } else if (dayType === 'Pull') {
@@ -1559,17 +2791,17 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
       addPrioritySlot(`${dayType.toLowerCase()}_arms_priority_tri`, 'Isolation', 'Isolation', 'Arms', { primaryAllowed: ['Arms'], subPreferred: ['Triceps-Long', 'Triceps-Lateral'], optional: priorityOptional('Arms', true) });
     }
   }
-  if (prioritySet.has('Arms') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
+  if (hasPriorityGroup(prioritySet, 'Arms') && isLowFrequencyPriorityPlan && ['FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
     addPrioritySlot(`${dayType.toLowerCase()}_arms_priority`, 'Isolation', 'Isolation', 'Arms', {
       primaryAllowed: ['Arms'],
       subPreferred: dayType === 'FullBodyB' ? ['Biceps-Long', 'Biceps-Short'] : ['Triceps-Long', 'Biceps-Long', 'Triceps-Lateral'],
       optional: hasUpperLimbConstraint
     });
   }
-  if (prioritySet.has('Back') && (dayType === 'Pull' || dayType === 'Upper')) {
+  if (hasPriorityGroup(prioritySet, 'Back') && (dayType === 'Pull' || dayType === 'Upper')) {
     addPrioritySlot(`${dayType.toLowerCase()}_back_priority`, dayType === 'Pull' ? 'HorizontalPull' : 'VerticalPull', 'Compound', 'Back', { primaryAllowed: ['Back'], optional: true });
   }
-  if (prioritySet.has('Core') && !slots.some((s) => s.id.includes('core_priority'))) {
+  if (hasPriorityGroup(prioritySet, 'Abs') && !slots.some((s) => s.id.includes('core_priority'))) {
     const existingCorePatterns = new Set(slots.filter((s) => s.muscleTarget === 'Core').map((s) => s.pattern));
     const preferredCorePatterns = ['Pull', 'Upper', 'DeltsArms'].includes(dayType)
       ? ['CoreRotation', 'CoreFlexion', 'CoreStability']
@@ -1598,21 +2830,22 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
       ) || !hasDedicatedCoreAccess
     });
   }
-  if (prioritySet.has('Legs') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(dayType)) {
-    addPrioritySlot(`${dayType.toLowerCase()}_legs_priority`, 'Isolation', 'Isolation', 'Legs', { primaryAllowed: ['Legs'], subPreferred: ['Quads', 'Hamstrings-Curl'], optional: true });
+  if (hasPriorityGroup(prioritySet, 'Quads') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(dayType)) {
+    addPrioritySlot(`${dayType.toLowerCase()}_legs_priority`, 'Isolation', 'Isolation', 'Legs', { primaryAllowed: ['Legs'], subPreferred: ['Quads'], optional: true });
   }
-  if (prioritySet.has('Calves') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
+  if (hasPriorityGroup(prioritySet, 'Calves') && ['Legs', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB', 'UpperFocus'].includes(dayType)) {
     addPrioritySlot(`${dayType.toLowerCase()}_calves_priority`, 'Isolation', 'Isolation', 'Calves', {
       primaryAllowed: ['Legs'],
       subPreferred: ['Calves', 'Calves-Gastrocnemius', 'Calves-Soleus'],
       optional: Number(user?.daysPerWeek || 0) > 3 ? !['Legs', 'Lower', 'LowerFocus'].includes(dayType) : false
     });
   }
+  appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorityOptional, hasDedicatedCoreAccess, hasUpperLimbConstraint);
   if (user?.profile?.forearmPriorityFlag && ['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(dayType)) {
     const forearmSub = dayType === 'Pull' ? ['Brachioradialis', 'Extensors', 'Grip'] : ['Flexors', 'Extensors', 'Grip'];
     addPrioritySlot(`${dayType.toLowerCase()}_forearm_priority`, 'Isolation', 'Isolation', 'Forearms', { primaryAllowed: ['Forearms', 'Arms'], subPreferred: forearmSub, optional: true });
   }
-  if (user?.profile?.neckEligibleFlag && ['Upper', 'UpperFocus', 'Pull', 'DeltsArms'].includes(dayType)) {
+  if (hasPriorityGroup(prioritySet, 'Neck') && user?.profile?.neckEligibleFlag && ['Upper', 'UpperFocus', 'Pull', 'DeltsArms'].includes(dayType)) {
     const neckSub = dayType === 'Pull' ? ['Extensors', 'LateralFlexors'] : dayType === 'DeltsArms' ? ['LateralFlexors'] : ['Flexors', 'Extensors'];
     addPrioritySlot(`${dayType.toLowerCase()}_neck_priority`, 'Isolation', 'Isolation', 'Neck', {
       primaryAllowed: ['Neck'],
@@ -1620,7 +2853,7 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
       optional: !(user?.profile?.complexity === 'high' && user?.profile?.sessionBandwidth !== 'tight')
     });
   }
-  if (user?.profile?.priorityBias === 'upper' && !prioritySet.has('Legs') && !prioritySet.has('Glutes')) {
+  if (user?.profile?.priorityBias === 'upper' && !hasPriorityGroup(prioritySet, 'Quads') && !hasPriorityGroup(prioritySet, 'Hamstrings/Glutes')) {
     if (dayType === 'Legs') {
       slots.forEach((slot) => {
         if (['legs_iso', 'legs_calf', 'legs_lunge_opt', 'legs_core_opt'].includes(slot.id)) slot.optional = true;
@@ -1653,7 +2886,7 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
         required = true;
         preservedCompounds += 1;
       }
-      if (prioritySet.has(slot.muscleTarget) && !requiredPriorityMuscles.has(slot.muscleTarget)) {
+      if (hasPriorityGroup(prioritySet, slot.muscleTarget) && !requiredPriorityMuscles.has(slot.muscleTarget)) {
         const blockedByConstraint = (hasUpperLimbConstraint && ['Arms', 'Shoulders'].includes(String(slot.muscleTarget || '')))
           || (!hasDedicatedCoreAccess && String(slot.muscleTarget || '') === 'Core');
         if (!blockedByConstraint) {
@@ -1661,8 +2894,8 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
           requiredPriorityMuscles.add(slot.muscleTarget);
         }
       }
-      if (isLowFrequencyPriorityPlan && prioritySet.has('Calves') && slot.muscleTarget === 'Calves') required = true;
-      if (isLowFrequencyPriorityPlan && prioritySet.has('Core') && slot.muscleTarget === 'Core' && hasDedicatedCoreAccess) required = true;
+      if (isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Calves') && slot.muscleTarget === 'Calves') required = true;
+      if (isLowFrequencyPriorityPlan && hasPriorityGroup(prioritySet, 'Abs') && slot.muscleTarget === 'Core' && hasDedicatedCoreAccess) required = true;
       if (slot.muscleTarget === 'Neck' || slot.muscleTarget === 'Forearms') required = false;
       slot.optional = !required;
     }
@@ -1863,10 +3096,14 @@ function scoreExercise(ex, slot, user, dayType = '') {
     const hasFW = requiredEquipment.includes('barbell') || requiredEquipment.includes('dumbbell') || ex.equipmentNorm.includes('barbell') || ex.equipmentNorm.includes('dumbbell');
     if (hasFW) score += 14;
   }
-  if (slot.primaryAllowed && slot.primaryAllowed.includes(ex.primary)) score += 30;
+  if (slotMatchesExerciseSupportMuscle(slot, ex)) score += 30;
   if (slot.subPreferred && slot.subPreferred.includes(ex.sub)) score += 20;
   if (slot.subFallback && slot.subFallback.includes(ex.sub)) score += 10;
-  if (slot.muscleTarget && Array.isArray(ex.secondaryMuscles) && ex.secondaryMuscles.includes(slot.muscleTarget)) score += 8;
+  if (slot.muscleTarget) {
+    const slotTargets = getSlotMuscleTargets(slot);
+    const exerciseTargets = getExerciseSupportMuscleTargets(ex);
+    if (slotTargets.some((target) => exerciseTargets.includes(target))) score += 8;
+  }
   if (isBodybuildingStapleForSlot(ex, slot, user, dayType)) score += 18;
   else if (user.discipline === 'bodybuilding' || user.discipline === 'powerbuilding') score -= 28;
   if (user?.profile?.minimalEquipment && ex.isCalisthenicsLike) score += 10;
@@ -1926,27 +3163,25 @@ function isHeavyDeadliftPatternName(name) {
 function filterEligible(slot, exercises, user, weekPicked, dayState = null, dayType = '', weekState = null) {
   return withPlannerTiming(user, 'candidatePoolBuildingMs', () => {
     const sourceExercises = getBaseEligibleExercises(exercises, user, dayType);
+    const currentDayExercises = Array.isArray(dayState?.currentExercises) ? dayState.currentExercises : [];
+    const relaxWeeklyCoreDiversityCap = String(slot?.muscleTarget || '') === 'Core'
+      && hasPriorityGroup(user, 'Abs')
+      && countDirectCoreExercises(currentDayExercises, user) < requiredCorePresenceForSlot(slot, dayType, currentDayExercises);
     return sourceExercises.filter((ex) => {
       const corePattern = ['CoreFlexion', 'CoreStability', 'CoreRotation'].includes(String(ex?.pattern || ''));
       const lowerPriorityRepeat = ['Legs', 'Glutes'].includes(String(slot?.muscleTarget || ''))
-        && (user?.priorityGroups || []).some((group) => group === 'Legs' || group === 'Glutes')
+        && (hasPriorityGroup(user, 'Quads') || hasPriorityGroup(user, 'Hamstrings/Glutes'))
         && ['Squat', 'Hinge', 'Lunge', 'Isolation'].includes(String(ex?.pattern || ''));
       const lowFreqSmallPriorityRepeat = Number(user?.daysPerWeek || 0) <= 3
         && (
-          ((user?.priorityGroups || []).includes('Calves') && String(slot?.muscleTarget || '') === 'Calves')
-          || ((user?.priorityGroups || []).includes('Core') && String(slot?.muscleTarget || '') === 'Core')
+          (hasPriorityGroup(user, 'Calves') && String(slot?.muscleTarget || '') === 'Calves')
+          || (hasPriorityGroup(user, 'Abs') && String(slot?.muscleTarget || '') === 'Core')
         );
       if (weekPicked.has(ex.name) && !user?.profile?.allowWeeklyRepeat && !corePattern && !lowerPriorityRepeat && !lowFreqSmallPriorityRepeat) return false;
       if (!isBodybuildingStapleForSlot(ex, slot, user, dayType)) return false;
       if (ex.pattern !== slot.pattern) return false;
       if (slot.styleRequired && ex.style !== slot.styleRequired) return false;
-      if (Array.isArray(slot.primaryAllowed) && slot.primaryAllowed.length) {
-        const primary = String(ex?.primary || '');
-        const secondary = Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [];
-        const primaryMatch = slot.primaryAllowed.includes(primary);
-        const secondaryMatch = secondary.some((muscle) => slot.primaryAllowed.includes(String(muscle || '')));
-        if (!primaryMatch && !secondaryMatch) return false;
-      }
+      if (!slotMatchesExerciseMuscles(slot, ex, user)) return false;
       if (!slot.styleRequired && ['Mobility', 'Cardio'].includes(ex.style) && !['Mobility', 'Cardio'].includes(slot.pattern)) return false;
       if (dayState?.names?.has(ex.name)) return false;
       const family = slotExerciseFamily(ex);
@@ -1960,7 +3195,7 @@ function filterEligible(slot, exercises, user, weekPicked, dayState = null, dayT
           if (fam.startsWith('core_') && weekState && user?.profile?.coreDiversityNeed >= 3) {
             const seen = weekState.coreFamilies || new Map();
             const count = Number(seen.get(fam) || 0);
-            if (count >= 2) return false;
+            if (count >= 2 && !relaxWeeklyCoreDiversityCap) return false;
           }
           if (fam === 'chest_fly' && Number(dayState.counts.chest_fly || 0) >= 1) return false;
           if (fam === 'rear_delt' && Number(dayState.counts.rear_delt || 0) >= 1) return false;
@@ -1985,7 +3220,7 @@ function filterEligible(slot, exercises, user, weekPicked, dayState = null, dayT
   });
 }
 
-function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null) {
+function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null, fillContext = {}) {
   const pickCandidate = (list, slot) => {
     const pool = list.slice(0, Math.min(6, list.length));
     if (!pool.length) return null;
@@ -2000,7 +3235,7 @@ function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null) 
 
   const picked = [];
   const dayKey = `${String(dayBlueprint?.dayType || '')}:${String(dayBlueprint?.day || '')}`;
-  const dayState = { families: new Set(), names: new Set(), counts: { chest_fly: 0, rear_delt: 0, bench_press: 0 }, dayKey };
+  const dayState = { families: new Set(), names: new Set(), counts: { chest_fly: 0, rear_delt: 0, bench_press: 0 }, dayKey, currentExercises: picked };
   const buildFallbackSlots = (slot) => {
     const out = [{ ...slot }];
     const baseOpts = {
@@ -2058,6 +3293,7 @@ function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null) 
     return out;
   };
   for (const slot of dayBlueprint.slots) {
+    if (isCoreSlotAlreadySatisfied(slot, dayBlueprint?.dayType || '', picked, user)) continue;
     let eligible = [];
     let effectiveSlot = slot;
     for (const candidateSlot of buildFallbackSlots(slot)) {
@@ -2083,7 +3319,23 @@ function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null) 
     }
     if (!eligible.length) {
       if (slot.optional) continue;
-      return structuredNoEligible(slot, user);
+      const candidateDiagnostics = buildFallbackSlots(slot).map((candidateSlot) => buildSlotEligibilityDiagnostic(
+        candidateSlot,
+        exercises,
+        user,
+        weekPicked,
+        dayState,
+        dayBlueprint?.dayType || '',
+        weekState
+      ));
+      return structuredNoEligible(slot, user, {
+        week: fillContext?.week,
+        weekType: fillContext?.weekType,
+        day: dayBlueprint?.day,
+        dayType: dayBlueprint?.dayType,
+        currentDayExercises: picked,
+        candidateDiagnostics
+      });
     }
     eligible = eligible
       .map((ex) => ({ ex, score: scoreExercise(ex, effectiveSlot, user, dayBlueprint?.dayType || '') }))
@@ -2091,7 +3343,7 @@ function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null) 
     const chosen = pickCandidate(eligible, slot) || eligible[0].ex;
     weekPicked.add(chosen.name);
     const displayName = normalizeBodybuildingDisplayName(chosen.name, user);
-    dayState.names.add(chosen.name);
+    dayState.names.add(exerciseDayIdentityKey(chosen));
     const fam = slotExerciseFamily(chosen);
     if (fam) {
       if (fam === 'lunge' || String(slot.styleRequired || '') === 'Isolation') {
@@ -2189,11 +3441,62 @@ function progressionRuleForExercise(ex, user) {
   return 'If all sets hit top reps with target RIR, add load next session; if missed twice, reduce load 5% and rebuild reps.';
 }
 
+function priorityBudgetTargetForExercise(ex, user) {
+  const directTargets = getExerciseDirectTargetKeys(ex, user);
+  const directSet = new Set(directTargets);
+  if (hasPriorityGroup(user, 'Shoulders') && directSet.has('Shoulders')) return 'Shoulders';
+  if (hasPriorityGroup(user, 'Arms')) {
+    if (directSet.has('Biceps')) return 'Biceps';
+    if (directSet.has('Triceps')) return 'Triceps';
+  }
+  if (hasPriorityGroup(user, 'Abs') && directSet.has('Abs')) return 'Abs';
+  if (hasPriorityGroup(user, 'Quads') && directSet.has('Quads')) return 'Quads';
+  if (hasPriorityGroup(user, 'Hamstrings/Glutes')) {
+    if (directSet.has('Hamstrings')) return 'Hamstrings';
+    if (directSet.has('Glutes')) return 'Glutes';
+  }
+  if (hasPriorityGroup(user, 'Calves') && directSet.has('Calves')) return 'Calves';
+  return String(ex?.muscleTarget || ex?.primary || 'Core');
+}
+
+function neckAllowedForUser(user) {
+  return hasPriorityGroup(user, 'Neck');
+}
+
+function isNeckExercise(exercise, user = null) {
+  const name = normalizeName(exercise?.name);
+  const primary = String(exercise?.primaryMuscle || exercise?.primary || '').trim();
+  const target = String(exercise?.muscleTarget || '').trim();
+  if (primary === 'Neck' || target === 'Neck') return true;
+  if (/\bneck\b/.test(name)) return true;
+  const truth = exercise?.canonicalTruth || (user ? buildExerciseTruth(exercise, user) : null);
+  if (String(truth?.primaryMuscle || '') === 'Neck') return true;
+  if (String(truth?.subMuscle || '').toLowerCase().includes('neck')) return true;
+  return false;
+}
+
+function exercisePriorityOrderRank(ex, user) {
+  if (!user) return Number.isFinite(Number(ex?.priorityOrderRank)) ? Number(ex.priorityOrderRank) : 99;
+  const groups = [];
+  if (exerciseDirectlyServesPriority(ex, 'Shoulders', user)) groups.push('Shoulders');
+  if (exerciseDirectlyServesPriority(ex, 'Arms', user)) groups.push('Arms');
+  if (exerciseDirectlyServesPriority(ex, 'Abs', user) || exerciseDirectlyServesPriority(ex, 'Core', user)) groups.push('Abs');
+  if (exerciseDirectlyServesPriority(ex, 'Quads', user)) groups.push('Quads');
+  if (exerciseDirectlyServesPriority(ex, 'Hamstrings/Glutes', user) || exerciseDirectlyServesPriority(ex, 'Glutes', user)) groups.push('Hamstrings/Glutes');
+  if (exerciseDirectlyServesPriority(ex, 'Calves', user)) groups.push('Calves');
+  if (exerciseDirectlyServesPriority(ex, 'Chest', user)) groups.push('Chest');
+  if (exerciseDirectlyServesPriority(ex, 'Back', user)) groups.push('Back');
+  const ranked = groups
+    .map((group) => priorityRankForGroup(user, group))
+    .filter((rank) => Number.isFinite(rank) && rank < 99);
+  return ranked.length ? Math.min(...ranked) : 99;
+}
+
 function allocateSetsReps(days, weekType, targets, user) {
   const dayIdxByMuscle = {};
   days.forEach((day, idx) => {
     day.exercises.forEach((ex) => {
-      const m = ex.muscleTarget || ex.primary || 'Core';
+      const m = priorityBudgetTargetForExercise(ex, user);
       dayIdxByMuscle[m] = dayIdxByMuscle[m] || [];
       if (!dayIdxByMuscle[m].includes(idx)) dayIdxByMuscle[m].push(idx);
     });
@@ -2212,7 +3515,7 @@ function allocateSetsReps(days, weekType, targets, user) {
   const outDays = days.map((day, idx) => {
     const byMuscle = {};
     day.exercises.forEach((ex) => {
-      const m = ex.muscleTarget || ex.primary || 'Core';
+      const m = priorityBudgetTargetForExercise(ex, user);
       byMuscle[m] = byMuscle[m] || [];
       byMuscle[m].push(ex);
     });
@@ -2221,10 +3524,14 @@ function allocateSetsReps(days, weekType, targets, user) {
       const key = `${idx}:${muscle}`;
       let budget = Math.max(exList.length * 2, setsBudgetByDayMuscle[key] || (exList.length * 2));
       if (user?.profile?.sessionBandwidth === 'tight') budget = Math.min(budget, exList.length * 3);
-      const ordered = exList.slice().sort((a, b) => (a.style === 'Compound' ? -1 : 1) - (b.style === 'Compound' ? -1 : 1));
+      const ordered = exList.slice().sort((a, b) => {
+        const rankDiff = exercisePriorityOrderRank(a, user) - exercisePriorityOrderRank(b, user);
+        if (rankDiff) return rankDiff;
+        return (a.style === 'Compound' ? -1 : 1) - (b.style === 'Compound' ? -1 : 1);
+      });
       ordered.forEach((ex, exIdx) => {
         const remaining = ordered.length - exIdx;
-        const isPriorityMuscle = Boolean(user?.profile?.priorityRankMap?.[muscle]);
+        const isPriorityMuscle = exercisePriorityOrderRank(ex, user) < 99 || Boolean(user?.profile?.priorityRankMap?.[muscle]);
         const minForThis = ex.style === 'Compound' && isPriorityMuscle ? 3 : 2;
         const sets = Math.min(
           BODYBUILDING_MAX_SETS_PER_EXERCISE,
@@ -2237,6 +3544,7 @@ function allocateSetsReps(days, weekType, targets, user) {
           muscleTarget: muscle,
           optional: ex.optional
         }, sets, rr, {
+          priorityOrderRank: exercisePriorityOrderRank(ex, user),
           weekType,
           pattern: ex.pattern,
           primary: ex.primary,
@@ -2271,13 +3579,13 @@ function applySessionCapTrimming(day, sessionCap, priorityGroups, profile = null
   const isPriority = (ex) => {
     const primary = String(ex?.primary || ex?.muscleTarget || '');
     const sub = String(ex?.sub || '');
-    if (priorityGroups.includes(ex?.muscleTarget) || priorityGroups.includes(primary)) return true;
-    if (priorityGroups.includes('Calves') && (Boolean(ex?.directCalf) || /calves/i.test(sub))) return true;
-    if (priorityGroups.includes('Core') && Boolean(ex?.directAb)) return true;
-    if (priorityGroups.includes('Arms') && ['biceps', 'triceps'].includes(String(ex?.directArmType || ''))) return true;
-    if (priorityGroups.includes('Shoulders') && (Boolean(ex?.shoulderPressPattern) || Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern))) return true;
+    if (hasPriorityGroup(priorityGroups, ex?.muscleTarget) || hasPriorityGroup(priorityGroups, primary)) return true;
+    if (hasPriorityGroup(priorityGroups, 'Calves') && (Boolean(ex?.directCalf) || /calves/i.test(sub))) return true;
+    if (hasPriorityGroup(priorityGroups, 'Abs') && Boolean(ex?.directAb)) return true;
+    if (hasPriorityGroup(priorityGroups, 'Arms') && ['biceps', 'triceps'].includes(String(ex?.directArmType || ''))) return true;
+    if (hasPriorityGroup(priorityGroups, 'Shoulders') && (Boolean(ex?.shoulderPressPattern) || Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern))) return true;
     if (primary === 'Forearms' && profile?.forearmPriorityFlag) return true;
-    if (primary === 'Neck' && profile?.neckEligibleFlag) return true;
+    if (isNeckExercise(ex, user) && profile?.neckEligibleFlag && neckAllowedForUser({ priorityGroups })) return true;
     return false;
   };
   const removeFirst = (predicate, stage) => {
@@ -2334,7 +3642,7 @@ function applySessionCapTrimming(day, sessionCap, priorityGroups, profile = null
   return { ...day, exercises: list };
 }
 
-function organizeDayExerciseOrder(dayType, exercises) {
+function organizeDayExerciseOrder(dayType, exercises, user = null) {
   const src = Array.isArray(exercises) ? exercises.slice() : [];
   if (src.length <= 1) return src;
   const remaining = src.slice();
@@ -2361,11 +3669,11 @@ function organizeDayExerciseOrder(dayType, exercises) {
     return m === 'Forearms' || /(wrist curl|reverse wrist|reverse curl|hammer curl|pronation|supination|wrist roller|plate pinch|hand squeeze)/.test(n);
   };
   const isNeck = (ex) => {
-    const n = normalizeName(ex?.name);
-    const m = String(ex?.muscleTarget || ex?.primary || '');
-    return m === 'Neck' || /(neck flexion|neck extension|neck lateral|neck resistance|head harness)/.test(n);
+    return isNeckExercise(ex, user);
   };
   const isCompound = (ex) => String(ex?.style || '') === 'Compound';
+  const isDirectPriorityAccessory = (ex) => !isCompound(ex) && exercisePriorityOrderRank(ex, user) < 99;
+  const priorityRank = (ex) => exercisePriorityOrderRank(ex, user);
   const takeFirst = (predicate) => {
     const idx = remaining.findIndex(predicate);
     if (idx >= 0) ordered.push(...remaining.splice(idx, 1));
@@ -2387,6 +3695,9 @@ function organizeDayExerciseOrder(dayType, exercises) {
     return false;
   };
   takeFirst(isMainCandidate);
+  [1, 2, 3].forEach((rank) => {
+    moveAll((ex) => isDirectPriorityAccessory(ex) && priorityRank(ex) === rank && !isForearms(ex) && !isNeck(ex));
+  });
   moveAll((ex) => isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
   moveAll((ex) => !isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
   moveAll((ex) => isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
@@ -2413,8 +3724,11 @@ function buildFallbackSlotFromExercise(ex) {
 
 function findReplacementExerciseForPlan(exercise, user, allExercises, dayType, usedNames) {
   const slot = buildFallbackSlotFromExercise(exercise);
+  const currentKey = exerciseDayIdentityKey(exercise);
   const eligible = filterEligible(slot, allExercises, user, usedNames, null, dayType, null)
-    .filter((candidate) => String(candidate?.name || '') !== String(exercise?.name || ''));
+    .filter((candidate) => exerciseDayIdentityKey(candidate) !== currentKey)
+    .filter((candidate) => !usedNames?.has(exerciseDayIdentityKey(candidate)))
+    .filter((candidate) => neckAllowedForUser(user) || !isNeckExercise(candidate, user));
   if (!eligible.length) return null;
   const scored = eligible
     .map((ex) => ({ ex, score: scoreExercise(ex, slot, user, dayType) }))
@@ -2430,18 +3744,1539 @@ function findReplacementExerciseForPlan(exercise, user, allExercises, dayType, u
   };
 }
 
+function buildExactPriorityRepairSlot(dayType, target, variant = '') {
+  const dayKey = String(dayType || 'day').toLowerCase();
+  if (target === 'Shoulders') {
+    return {
+      id: `${dayKey}_repair_shoulders_${variant || 'lat'}`,
+      pattern: 'Isolation',
+      styleRequired: 'Isolation',
+      muscleTarget: 'Shoulders',
+      primaryAllowed: ['Shoulders'],
+      subPreferred: variant === 'rear' ? ['Rear'] : ['Lateral'],
+      subFallback: null,
+      optional: false
+    };
+  }
+  if (target === 'Biceps') {
+    return {
+      id: `${dayKey}_repair_biceps`,
+      pattern: 'Isolation',
+      styleRequired: 'Isolation',
+      muscleTarget: 'Arms',
+      primaryAllowed: ['Arms'],
+      subPreferred: ['Biceps-Long', 'Biceps-Short'],
+      subFallback: null,
+      optional: false
+    };
+  }
+  if (target === 'Triceps') {
+    const prefs = variant === 'overhead'
+      ? ['Triceps-Overhead', 'Triceps-Long']
+      : variant === 'pushdown'
+        ? ['Triceps-Pushdown', 'Triceps-Lateral']
+        : ['Triceps-Pushdown', 'Triceps-Overhead', 'Triceps-Lateral'];
+    return {
+      id: `${dayKey}_repair_triceps_${variant || 'mixed'}`,
+      pattern: 'Isolation',
+      styleRequired: 'Isolation',
+      muscleTarget: 'Arms',
+      primaryAllowed: ['Arms'],
+      subPreferred: prefs,
+      subFallback: null,
+      optional: false
+    };
+  }
+  if (target === 'Abs') {
+    const pattern = variant === 'rotation' ? 'CoreRotation' : variant === 'stability' ? 'CoreStability' : 'CoreFlexion';
+    const subPreferred = pattern === 'CoreRotation'
+      ? ['Obliques', 'TVA']
+      : pattern === 'CoreStability'
+        ? ['TVA', 'LowerAbs']
+        : ['Abs-Lower', 'Abs-Upper'];
+    return {
+      id: `${dayKey}_repair_abs_${variant || 'flexion'}`,
+      pattern,
+      styleRequired: 'Isolation',
+      muscleTarget: 'Core',
+      primaryAllowed: ['Core'],
+      subPreferred,
+      subFallback: null,
+      optional: false
+    };
+  }
+  return null;
+}
+
+function currentWeekDirectSets(days) {
+  return summarizeDirectSetsByMuscle([{ days: Array.isArray(days) ? days : [] }]);
+}
+
+function isDirectCoreExercise(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  return Boolean(truth?.directAb);
+}
+
+function directCoreSetsForExercise(exercise, user = null) {
+  if (!isDirectCoreExercise(exercise, user)) return 0;
+  return Math.max(0, Number(exercise?.sets || 0) || 0);
+}
+
+function buildWeekDirectCoreSnapshot(week, user = null) {
+  const days = Array.isArray(week?.days) ? week.days : [];
+  const entries = [];
+  let totalSets = 0;
+  let exposures = 0;
+  days.forEach((day, dayIndex) => {
+    const dayEntries = [];
+    (Array.isArray(day?.exercises) ? day.exercises : []).forEach((exercise, exerciseIndex) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      if (!truth?.directAb) return;
+      const sets = Math.max(0, Number(exercise?.sets || 0) || 0);
+      if (!sets) return;
+      const pattern = String(exercise?.pattern || '').trim();
+      const name = normalizeName(exercise?.name);
+      const isAntiRotation = /pallof|anti[\s-]*rotation/.test(name);
+      const familyRank = isAntiRotation
+        ? 3
+        : pattern === 'CoreRotation'
+          ? 2
+          : pattern === 'CoreStability'
+            ? 1
+            : 0;
+      dayEntries.push({
+        dayIndex,
+        exerciseIndex,
+        sets,
+        pattern,
+        name,
+        day: day?.day,
+        dayType: day?.dayType,
+        familyRank,
+        isAntiRotation
+      });
+      totalSets += sets;
+    });
+    if (dayEntries.length) exposures += 1;
+    entries.push(...dayEntries);
+  });
+  return { totalSets, exposures, entries };
+}
+
+function buildCoreVolumeReplacementSpecs(dayType) {
+  const type = String(dayType || '');
+  const lowerDay = ['Lower', 'LowerFocus', 'Legs'].includes(type);
+  const fullBodyDay = ['FullBodyA', 'FullBodyB'].includes(type);
+  const upperDay = ['Push', 'Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(type) || fullBodyDay;
+  const specs = [];
+  if (lowerDay || fullBodyDay) {
+    specs.push({
+      key: 'calves',
+      slot: {
+        id: `${String(type || 'day').toLowerCase()}_core_cleanup_calf`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Calves',
+        primaryAllowed: ['Legs'],
+        subPreferred: ['Calves', 'Calves-Gastrocnemius', 'Calves-Soleus'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate, user) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return Boolean(truth?.directCalf);
+      }
+    });
+    specs.push({
+      key: 'hamstring_curl',
+      slot: {
+        id: `${String(type || 'day').toLowerCase()}_core_cleanup_hamcurl`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Legs',
+        primaryAllowed: ['Legs'],
+        subPreferred: ['Hamstrings-Curl'],
+        subFallback: ['Hamstrings'],
+        optional: false
+      },
+      predicate: (candidate, user) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        const name = normalizeName(candidate?.name);
+        return truth?.primaryMuscle === 'Legs' && /(leg curl|hamstring curl|glute ham raise)/.test(name);
+      }
+    });
+    specs.push({
+      key: 'glute_accessory',
+      slot: {
+        id: `${String(type || 'day').toLowerCase()}_core_cleanup_glute`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Glutes',
+        primaryAllowed: ['Glutes', 'Legs'],
+        subPreferred: ['Glutes'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate, user) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return isRealPosteriorChainBuilder(candidate, user) && !truth?.hingeLoadingHigh;
+      }
+    });
+  }
+  if (upperDay) {
+    specs.push({
+      key: 'maintenance_pull',
+      slot: {
+        id: `${String(type || 'day').toLowerCase()}_core_cleanup_pull`,
+        pattern: 'Compound',
+        styleRequired: 'Compound',
+        muscleTarget: 'Back',
+        primaryAllowed: ['Back'],
+        subPreferred: ['Lats', 'UpperBack'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate, user) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth?.primaryMuscle === 'Back' && String(candidate?.style || '') === 'Compound';
+      }
+    });
+    specs.push({
+      key: 'maintenance_press',
+      slot: {
+        id: `${String(type || 'day').toLowerCase()}_core_cleanup_press`,
+        pattern: 'Compound',
+        styleRequired: 'Compound',
+        muscleTarget: 'Chest',
+        primaryAllowed: ['Chest', 'Shoulders'],
+        subPreferred: ['Chest'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate, user) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return (truth?.primaryMuscle === 'Chest' || truth?.primaryMuscle === 'Shoulders') && String(candidate?.style || '') === 'Compound';
+      }
+    });
+  }
+  return specs;
+}
+
+function canTrimCoreWithoutBreakingStructure(day) {
+  const structure = resolveCurrentLowerDayStructuralResult(day);
+  return !structure || Boolean(structure.ok);
+}
+
+function trimExcessWeeklyDirectCoreVolume(week, user, exercises) {
+  if (!(hasPriorityGroup(user, 'Abs') || hasPriorityGroup(user, 'Core'))) return week;
+  const nextWeek = {
+    ...week,
+    days: Array.isArray(week?.days)
+      ? week.days.map((day) => ({
+        ...day,
+        exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : []
+      }))
+      : []
+  };
+  let snapshot = buildWeekDirectCoreSnapshot(nextWeek, user);
+  let trimAttempts = 0;
+  let replacementAttempts = 0;
+  let removalAttempts = 0;
+  let noProgressCount = 0;
+  let totalIterations = 0;
+  const MAX_CORE_CLEANUP_ITERATIONS = 200;
+  const MAX_CORE_CLEANUP_NO_PROGRESS = 25;
+  const buildCoreCleanupMeta = (extra = {}) => ({
+    functionName: 'trimExcessWeeklyDirectCoreVolume',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    weeksLength: 1,
+    totalDayCount: Array.isArray(nextWeek?.days) ? nextWeek.days.length : 0,
+    totalExerciseCount: Array.isArray(nextWeek?.days)
+      ? nextWeek.days.reduce((sum, day) => sum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)
+      : 0,
+    weekIndex: Number.isFinite(Number(nextWeek?.weekIndex)) ? Number(nextWeek.weekIndex) : undefined,
+    coreSetCountBefore: snapshot.totalSets,
+    coreSetCountAfter: snapshot.totalSets,
+    coreExerciseCount: Array.isArray(snapshot?.entries) ? snapshot.entries.length : 0,
+    trimAttempts,
+    replacementAttempts,
+    removalAttempts,
+    noProgressCount,
+    totalIterations,
+    ...extra
+  });
+  emitPlannerDiagnosticHeartbeat(user, 'entered_cleanup_excess_core_volume', buildCoreCleanupMeta({
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_entered'
+  }));
+  logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-entry', {
+    week: nextWeek?.weekIndex || null,
+    directCoreSets: snapshot.totalSets,
+    directCoreExposures: snapshot.exposures
+  });
+  if (snapshot.totalSets <= 14) {
+    logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-exit', {
+      week: nextWeek?.weekIndex || null,
+      directCoreSets: snapshot.totalSets,
+      directCoreExposures: snapshot.exposures,
+      trimmed: false
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'cleanup_excess_core_volume_completed', buildCoreCleanupMeta({
+      callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_completed_early'
+    }));
+    return nextWeek;
+  }
+  const sortedEntries = () => buildWeekDirectCoreSnapshot(nextWeek, user).entries
+    .sort((a, b) => a.familyRank - b.familyRank || b.sets - a.sets || a.dayIndex - b.dayIndex || b.exerciseIndex - a.exerciseIndex);
+  emitPlannerDiagnosticHeartbeat(user, 'before_week_loop', buildCoreCleanupMeta({
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_week_loop'
+  }));
+  while (snapshot.totalSets > 14) {
+    totalIterations += 1;
+    if (totalIterations === 1) {
+      emitPlannerDiagnosticHeartbeat(user, 'week_loop_started', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_week_loop_started'
+      }));
+    }
+    if (totalIterations > MAX_CORE_CLEANUP_ITERATIONS || noProgressCount >= MAX_CORE_CLEANUP_NO_PROGRESS) {
+      emitPlannerDiagnosticHeartbeat(user, 'cleanup_excess_core_volume_degraded', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_no_progress_guard',
+        guardReason: totalIterations > MAX_CORE_CLEANUP_ITERATIONS ? 'max_iterations' : 'no_progress'
+      }));
+      break;
+    }
+    let changed = false;
+    emitPlannerDiagnosticHeartbeat(user, 'before_core_counting', buildCoreCleanupMeta({
+      callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_core_counting'
+    }));
+    const candidates = sortedEntries();
+    emitPlannerDiagnosticHeartbeat(user, 'after_core_counting', buildCoreCleanupMeta({
+      callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_core_counting',
+      coreExerciseCount: candidates.length
+    }));
+    emitPlannerDiagnosticHeartbeat(user, 'before_day_loop', buildCoreCleanupMeta({
+      callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_day_loop'
+    }));
+    for (const entry of candidates) {
+      emitPlannerDiagnosticHeartbeat(user, 'day_loop_started', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_day_loop_started',
+        dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+        coreExerciseCount: candidates.length
+      }));
+      const day = nextWeek.days[entry.dayIndex];
+      if (!day) continue;
+      const current = day.exercises?.[entry.exerciseIndex];
+      if (!current || !isDirectCoreExercise(current, user)) continue;
+      const currentDayCoreCount = (day.exercises || []).filter((exercise) => isDirectCoreExercise(exercise, user)).length;
+      const wouldDropExposure = currentDayCoreCount === 1 && snapshot.exposures <= 2;
+      const replacementSpecs = buildCoreVolumeReplacementSpecs(day?.dayType || '');
+      emitPlannerDiagnosticHeartbeat(user, 'before_trim_candidate_selection', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_trim_candidate_selection',
+        dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+        coreExerciseCount: currentDayCoreCount
+      }));
+      emitPlannerDiagnosticHeartbeat(user, 'after_trim_candidate_selection', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_trim_candidate_selection',
+        dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+        trimCandidateCount: replacementSpecs.length
+      }));
+      for (const spec of replacementSpecs) {
+        trimAttempts += 1;
+        replacementAttempts += 1;
+        emitPlannerDiagnosticHeartbeat(user, 'before_replacement_attempt', buildCoreCleanupMeta({
+          callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_replacement_attempt',
+          dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+          replacementKey: spec.key
+        }));
+        const replacement = buildQualityReplacement(day, current, spec.slot, user, exercises, String(week?.weekType || 'base'), (candidate) => spec.predicate(candidate, user));
+        if (!replacement) {
+          emitPlannerDiagnosticHeartbeat(user, 'after_replacement_attempt', buildCoreCleanupMeta({
+            callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_replacement_attempt',
+            dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+            replacementKey: spec.key,
+            replacementFound: false
+          }));
+          continue;
+        }
+        const trialWeek = {
+          ...nextWeek,
+          days: nextWeek.days.map((candidateDay, candidateIndex) => candidateIndex !== entry.dayIndex
+            ? candidateDay
+            : {
+              ...candidateDay,
+              exercises: (candidateDay.exercises || []).map((exercise, exerciseIndex) => exerciseIndex === entry.exerciseIndex ? replacement : exercise)
+            })
+        };
+        trialWeek.days[entry.dayIndex].exercises = organizeDayExerciseOrder(trialWeek.days[entry.dayIndex].dayType || '', trialWeek.days[entry.dayIndex].exercises || [], user);
+        const trialSnapshot = buildWeekDirectCoreSnapshot(trialWeek, user);
+        if (trialSnapshot.exposures < 2 || !canTrimCoreWithoutBreakingStructure(trialWeek.days[entry.dayIndex])) {
+          emitPlannerDiagnosticHeartbeat(user, 'after_replacement_attempt', buildCoreCleanupMeta({
+            callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_replacement_attempt',
+            dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+            replacementKey: spec.key,
+            replacementFound: true,
+            coreSetCountAfter: trialSnapshot.totalSets
+          }));
+          continue;
+        }
+        const previousSets = snapshot.totalSets;
+        nextWeek.days = trialWeek.days;
+        snapshot = trialSnapshot;
+        noProgressCount = snapshot.totalSets < previousSets ? 0 : (noProgressCount + 1);
+        logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-trim', {
+          week: nextWeek?.weekIndex || null,
+          day: day?.day || null,
+          dayType: day?.dayType || null,
+          action: 'replace',
+          replacementKey: spec.key,
+          removedExercise: current?.name || null,
+          directCoreSets: snapshot.totalSets,
+          directCoreExposures: snapshot.exposures
+        });
+        emitPlannerDiagnosticHeartbeat(user, 'after_replacement_attempt', buildCoreCleanupMeta({
+          callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_replacement_attempt',
+          dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+          replacementKey: spec.key,
+          replacementFound: true,
+          coreSetCountAfter: snapshot.totalSets
+        }));
+        changed = true;
+        break;
+      }
+      if (changed) break;
+      if (wouldDropExposure) continue;
+      trimAttempts += 1;
+      removalAttempts += 1;
+      emitPlannerDiagnosticHeartbeat(user, 'before_removal_attempt', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_before_removal_attempt',
+        dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined
+      }));
+      const trialWeek = {
+        ...nextWeek,
+        days: nextWeek.days.map((candidateDay, candidateIndex) => candidateIndex !== entry.dayIndex
+          ? candidateDay
+          : {
+            ...candidateDay,
+            exercises: (candidateDay.exercises || []).filter((_, exerciseIndex) => exerciseIndex !== entry.exerciseIndex)
+          })
+      };
+      trialWeek.days[entry.dayIndex].exercises = organizeDayExerciseOrder(trialWeek.days[entry.dayIndex].dayType || '', trialWeek.days[entry.dayIndex].exercises || [], user);
+      const trialSnapshot = buildWeekDirectCoreSnapshot(trialWeek, user);
+      if (trialSnapshot.exposures < 2 || !canTrimCoreWithoutBreakingStructure(trialWeek.days[entry.dayIndex])) {
+        emitPlannerDiagnosticHeartbeat(user, 'after_removal_attempt', buildCoreCleanupMeta({
+          callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_removal_attempt',
+          dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+          coreSetCountAfter: trialSnapshot.totalSets
+        }));
+        continue;
+      }
+      const previousSets = snapshot.totalSets;
+      nextWeek.days = trialWeek.days;
+      snapshot = trialSnapshot;
+      noProgressCount = snapshot.totalSets < previousSets ? 0 : (noProgressCount + 1);
+      logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-trim', {
+        week: nextWeek?.weekIndex || null,
+        day: day?.day || null,
+        dayType: day?.dayType || null,
+        action: 'remove',
+        removedExercise: current?.name || null,
+        directCoreSets: snapshot.totalSets,
+        directCoreExposures: snapshot.exposures
+      });
+      emitPlannerDiagnosticHeartbeat(user, 'after_removal_attempt', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_removal_attempt',
+        dayIndex: Number.isFinite(Number(entry?.dayIndex)) ? Number(entry.dayIndex) : undefined,
+        coreSetCountAfter: snapshot.totalSets
+      }));
+      changed = true;
+      break;
+    }
+    if (changed) {
+      emitPlannerDiagnosticHeartbeat(user, 'after_day_processed', buildCoreCleanupMeta({
+        callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_day_processed',
+        coreSetCountAfter: snapshot.totalSets
+      }));
+      continue;
+    }
+    noProgressCount += 1;
+    logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-skip', {
+      week: nextWeek?.weekIndex || null,
+      directCoreSets: snapshot.totalSets,
+      directCoreExposures: snapshot.exposures,
+      reason: 'no_safe_non_core_replacement_or_removal'
+    });
+    break;
+  }
+  emitPlannerDiagnosticHeartbeat(user, 'after_week_processed', buildCoreCleanupMeta({
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_after_week_processed',
+    coreSetCountAfter: snapshot.totalSets
+  }));
+  logAbsGlutesLegsComboDebug(user, 'core-volume-cleanup-exit', {
+    week: nextWeek?.weekIndex || null,
+    directCoreSets: snapshot.totalSets,
+    directCoreExposures: snapshot.exposures,
+    trimmed: true
+  });
+  return nextWeek;
+}
+
+function cleanupExcessCoreVolumeInSuccessfulPlan(weeks, user, exercises) {
+  emitPlannerDiagnosticHeartbeat(user, 'entered_exact_cleanup_excess_core_volume_function', {
+    functionName: 'cleanupExcessCoreVolumeInSuccessfulPlan',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+    totalDayCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0) : 0,
+    totalExerciseCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0) : 0,
+    requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_exact_entry'
+  });
+  if (String(process.env.OBLUEPRINT_BYPASS_CORE_CLEANUP_FOR_TIMEOUT_DIAG || '').trim() === '1') {
+    emitPlannerDiagnosticHeartbeat(user, 'core_cleanup_bypassed_for_timeout_diag', {
+      functionName: 'cleanupExcessCoreVolumeInSuccessfulPlan',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+      totalDayCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0) : 0,
+      totalExerciseCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0) : 0,
+      requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_bypassed'
+    });
+    return weeks;
+  }
+  if (!Array.isArray(weeks) || !weeks.length) return weeks;
+  if (!(hasPriorityGroup(user, 'Abs') || hasPriorityGroup(user, 'Core'))) return weeks;
+  emitPlannerDiagnosticHeartbeat(user, 'entered_cleanup_excess_core_volume', {
+    functionName: 'cleanupExcessCoreVolumeInSuccessfulPlan',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: weeks.length,
+    totalDayCount: weeks.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0),
+    totalExerciseCount: weeks.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0),
+    requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_entered'
+  });
+  const result = weeks.map((week) => trimExcessWeeklyDirectCoreVolume(week, user, exercises));
+  emitPlannerDiagnosticHeartbeat(user, 'cleanup_excess_core_volume_completed', {
+    functionName: 'cleanupExcessCoreVolumeInSuccessfulPlan',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: result.length,
+    totalDayCount: result.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0),
+    totalExerciseCount: result.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0),
+    requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    callBoundary: 'cleanupExcessCoreVolumeInSuccessfulPlan_completed'
+  });
+  return result;
+}
+
+function isBackToBackLowerHeavyDayType(dayType) {
+  return ['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(dayType || ''));
+}
+
+function buildBackToBackLowerCleanupStructuralResult(day) {
+  const base = buildLowerCoachCleanupStructuralResult(day);
+  if (String(day?.dayType || '') !== 'FullBodyB') return base;
+  if (!base.ok && !['missing_hinge_pattern', 'missing_quad_pattern'].includes(String(base.missingRequirement || ''))) return base;
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const families = exercises.map((exercise) => projectionFamilyForExercise(exercise)).filter(Boolean);
+  const hasHinge = families.some((family) => family === 'hip_thrust' || family === 'hinge_pattern');
+  const hasQuad = families.some((family) => ['squat_pattern', 'leg_press', 'leg_extension', 'single_leg'].includes(family));
+  if (!hasHinge) {
+    return {
+      ok: false,
+      missingRequirement: 'missing_hinge_pattern',
+      reason: 'Lower-heavy full-body day must include one hinge pattern.',
+      duplicates: Array.isArray(base?.duplicates) ? base.duplicates : []
+    };
+  }
+  if (!hasQuad) {
+    return {
+      ok: false,
+      missingRequirement: 'missing_quad_pattern',
+      reason: 'Lower-heavy full-body day must include at least one quad pattern.',
+      duplicates: Array.isArray(base?.duplicates) ? base.duplicates : []
+    };
+  }
+  return {
+    ok: true,
+    missingRequirement: '',
+    reason: '',
+    duplicates: Array.isArray(base?.duplicates) ? base.duplicates : []
+  };
+}
+
+function countDirectCoreExposureOnDay(day, user = null) {
+  return (Array.isArray(day?.exercises) ? day.exercises : []).filter((exercise) => isDirectCoreExercise(exercise, user)).length;
+}
+
+function backToBackLowerFamilies(day) {
+  return (Array.isArray(day?.exercises) ? day.exercises : []).map((exercise, index) => ({
+    index,
+    exercise,
+    family: projectionFamilyForExercise(exercise)
+  })).filter((entry) => ['hip_thrust', 'hinge_pattern', 'squat_pattern', 'leg_press', 'leg_extension', 'ham_curl'].includes(entry.family));
+}
+
+function findBackToBackLowerCleanupIndex(day, family) {
+  const entries = backToBackLowerFamilies(day).filter((entry) => entry.family === family);
+  return entries[entries.length - 1]?.index ?? -1;
+}
+
+function buildBackToBackLowerReplacementSpecs(dayType, repeatedFamily) {
+  const dayKey = String(dayType || 'day').toLowerCase();
+  if (repeatedFamily === 'hip_thrust') {
+    return [
+      {
+        key: 'controlled_hinge',
+        slot: {
+          id: `${dayKey}_btb_hinge`,
+          pattern: 'Compound',
+          styleRequired: 'Compound',
+          muscleTarget: 'Glutes',
+          primaryAllowed: ['Glutes', 'Legs'],
+          subPreferred: ['Hamstrings', 'Glutes'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => {
+          const name = normalizeName(candidate?.name);
+          const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+          return (projectionFamilyForExercise(candidate, user) === 'hinge_pattern')
+            && /(romanian deadlift|\brdl\b|stiff[-\s]*leg|pull through|pull-through|back extension|hyperextension)/.test(name)
+            && (truth.progressionFriendly || truth.controlledHingeAllowed);
+        }
+      },
+      {
+        key: 'hamstring_curl',
+        slot: {
+          id: `${dayKey}_btb_hamcurl`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Legs',
+          primaryAllowed: ['Legs'],
+          subPreferred: ['Hamstrings-Curl'],
+          subFallback: ['Hamstrings'],
+          optional: false
+        },
+        predicate: (candidate, user) => /(leg curl|hamstring curl|glute ham raise)/.test(normalizeName(candidate?.name))
+          && projectionFamilyForExercise(candidate, user) === 'ham_curl'
+      }
+    ];
+  }
+  if (repeatedFamily === 'leg_extension') {
+    return [
+      {
+        key: 'hamstring_curl',
+        slot: {
+          id: `${dayKey}_btb_legext_hamcurl`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Legs',
+          primaryAllowed: ['Legs'],
+          subPreferred: ['Hamstrings-Curl'],
+          subFallback: ['Hamstrings'],
+          optional: false
+        },
+        predicate: (candidate, user) => /(leg curl|hamstring curl|glute ham raise)/.test(normalizeName(candidate?.name))
+          && projectionFamilyForExercise(candidate, user) === 'ham_curl'
+      },
+      {
+        key: 'calves',
+        slot: {
+          id: `${dayKey}_btb_legext_calf`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Calves',
+          primaryAllowed: ['Legs'],
+          subPreferred: ['Calves', 'Calves-Gastrocnemius', 'Calves-Soleus'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => projectionFamilyForExercise(candidate, user) === 'calves'
+      },
+      {
+        key: 'glute_accessory',
+        slot: {
+          id: `${dayKey}_btb_legext_glute`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Glutes',
+          primaryAllowed: ['Glutes', 'Legs'],
+          subPreferred: ['Glutes'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => isRealPosteriorChainBuilder(candidate, user) && !/(hip thrust|glute bridge)/.test(normalizeName(candidate?.name))
+      }
+    ];
+  }
+  if (repeatedFamily === 'ham_curl') {
+    return [
+      {
+        key: 'calves',
+        slot: {
+          id: `${dayKey}_btb_hamcurl_calf`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Calves',
+          primaryAllowed: ['Legs'],
+          subPreferred: ['Calves', 'Calves-Gastrocnemius', 'Calves-Soleus'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => projectionFamilyForExercise(candidate, user) === 'calves'
+      },
+      {
+        key: 'glute_accessory',
+        slot: {
+          id: `${dayKey}_btb_hamcurl_glute`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Glutes',
+          primaryAllowed: ['Glutes', 'Legs'],
+          subPreferred: ['Glutes'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => isRealPosteriorChainBuilder(candidate, user) && !/(hip thrust|glute bridge)/.test(normalizeName(candidate?.name))
+      }
+    ];
+  }
+  if (repeatedFamily === 'squat_pattern' || repeatedFamily === 'leg_press') {
+    return [
+      {
+        key: 'hamstring_curl',
+        slot: {
+          id: `${dayKey}_btb_squat_hamcurl`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Legs',
+          primaryAllowed: ['Legs'],
+          subPreferred: ['Hamstrings-Curl'],
+          subFallback: ['Hamstrings'],
+          optional: false
+        },
+        predicate: (candidate, user) => /(leg curl|hamstring curl|glute ham raise)/.test(normalizeName(candidate?.name))
+          && projectionFamilyForExercise(candidate, user) === 'ham_curl'
+      },
+      {
+        key: 'glute_accessory',
+        slot: {
+          id: `${dayKey}_btb_squat_glute`,
+          pattern: 'Isolation',
+          styleRequired: 'Isolation',
+          muscleTarget: 'Glutes',
+          primaryAllowed: ['Glutes', 'Legs'],
+          subPreferred: ['Glutes'],
+          subFallback: null,
+          optional: false
+        },
+        predicate: (candidate, user) => isRealPosteriorChainBuilder(candidate, user) && !/(hip thrust|glute bridge)/.test(normalizeName(candidate?.name))
+      }
+    ];
+  }
+  return [];
+}
+
+function buildBackToBackDaySnapshot(day, user = null, fallbackDay = '') {
+  const src = day && typeof day === 'object' ? day : {};
+  const exercises = Array.isArray(src?.exercises) ? src.exercises : [];
+  return {
+    day: String(src?.day || fallbackDay || '').trim() || null,
+    dayType: String(src?.dayType || '').trim() || null,
+    directCoreExposureCount: exercises.filter((exercise) => isDirectCoreExercise(exercise, user)).length,
+    structure: buildBackToBackLowerCleanupStructuralResult(src),
+    exercises: exercises.map((exercise, index) => ({
+      index,
+      name: String(exercise?.name || '').trim() || null,
+      family: projectionFamilyForExercise(exercise, user) || '',
+      directCore: isDirectCoreExercise(exercise, user)
+    }))
+  };
+}
+
+function buildBackToBackCleanupWeekSnapshot(week, user = null, options = {}) {
+  const src = week && typeof week === 'object' ? week : {};
+  const days = Array.isArray(src?.days) ? src.days : [];
+  const schedule = Array.isArray(options?.schedule) ? options.schedule : [];
+  const hydrateDay = (day, index) => ({
+    ...(day || {}),
+    day: String(day?.day || schedule[index]?.day || '').trim() || day?.day,
+    dayType: String(day?.dayType || schedule[index]?.dayType || '').trim() || day?.dayType
+  });
+  const hydratedDays = days.map((day, index) => hydrateDay(day, index));
+  const wednesdayLower = hydratedDays.find((day) => /^we(d)?$/i.test(String(day?.day || '')) || (String(day?.dayType || '') === 'Lower' && !hydratedDays.some((candidate) => /^we(d)?$/i.test(String(candidate?.day || '')))));
+  const thursdayFullBodyB = hydratedDays.find((day) => /^th(u)?$/i.test(String(day?.day || '')) || (String(day?.dayType || '') === 'FullBodyB' && !hydratedDays.some((candidate) => /^th(u)?$/i.test(String(candidate?.day || '')))));
+  return {
+    week: Number.isFinite(Number(src?.weekIndex)) ? Number(src.weekIndex) : null,
+    backToBackCleanupTouchedFinalPlan: Boolean(options?.touched),
+    wednesdayLower: wednesdayLower ? buildBackToBackDaySnapshot(wednesdayLower, user, 'We') : null,
+    thursdayFullBodyB: thursdayFullBodyB ? buildBackToBackDaySnapshot(thursdayFullBodyB, user, 'Th') : null,
+    thursdayCoreExposureCount: thursdayFullBodyB ? countDirectCoreExposureOnDay(thursdayFullBodyB, user) : 0
+  };
+}
+
+function buildShoulderPressCleanupDaySnapshot(day, user = null, options = {}) {
+  const src = day && typeof day === 'object' ? day : {};
+  const fallbackDay = String(options?.fallbackDay || '').trim();
+  const exercises = Array.isArray(src?.exercises) ? src.exercises : [];
+  return {
+    day: String(src?.day || fallbackDay || '').trim() || null,
+    dayType: String(src?.dayType || '').trim() || null,
+    shoulderPressCount: exercises.filter((exercise) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return Boolean(truth?.shoulderPressPattern);
+    }).length,
+    exercises: exercises.map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return {
+        index,
+        name: String(exercise?.name || '').trim() || null,
+        shoulderPressPattern: Boolean(truth?.shoulderPressPattern),
+        lateralDeltPattern: Boolean(truth?.lateralDeltPattern),
+        rearDeltPattern: Boolean(truth?.rearDeltPattern)
+      };
+    })
+  };
+}
+
+function cleanupBackToBackLowerDayRedundancyInWeek(week, user, exercises) {
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return week;
+  const nextWeek = {
+    ...week,
+    days: Array.isArray(week?.days)
+      ? week.days.map((day) => ({
+        ...day,
+        exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : []
+      }))
+      : []
+  };
+  let touched = false;
+  logAbsGlutesLegsComboDebug(user, 'before_back_to_back_cleanup_week_snapshot', buildBackToBackCleanupWeekSnapshot(nextWeek, user, {
+    touched
+  }));
+  for (let dayIndex = 1; dayIndex < nextWeek.days.length; dayIndex += 1) {
+    const firstDay = nextWeek.days[dayIndex - 1];
+    const secondDay = nextWeek.days[dayIndex];
+    if (!isBackToBackLowerHeavyDayType(firstDay?.dayType) || !isBackToBackLowerHeavyDayType(secondDay?.dayType)) continue;
+    const firstFamilies = new Set(backToBackLowerFamilies(firstDay).map((entry) => entry.family));
+    const repeatedFamilies = ['leg_extension', 'hip_thrust', 'ham_curl', 'leg_press', 'squat_pattern']
+      .filter((family) => firstFamilies.has(family) && backToBackLowerFamilies(secondDay).some((entry) => entry.family === family));
+    logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_entry', {
+      week: nextWeek?.weekIndex || null,
+      firstDay: firstDay?.day || null,
+      firstDayType: firstDay?.dayType || null,
+      secondDay: secondDay?.day || null,
+      secondDayType: secondDay?.dayType || null,
+      repeatedFamilies
+    });
+    if (!repeatedFamilies.length) {
+      logAbsGlutesLegsComboDebug(user, 'repeatedFamilies detected', {
+        week: nextWeek?.weekIndex || null,
+        firstDay: firstDay?.day || null,
+        secondDay: secondDay?.day || null,
+        repeatedFamilies
+      });
+      logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_skip', {
+        week: nextWeek?.weekIndex || null,
+        firstDay: firstDay?.day || null,
+        secondDay: secondDay?.day || null,
+        reason: 'no_repeated_family'
+      });
+      continue;
+    }
+    let changed = false;
+    let lastRejectionReason = 'no_replacement_found';
+    for (const repeatedFamily of repeatedFamilies) {
+      const replaceIdx = findBackToBackLowerCleanupIndex(secondDay, repeatedFamily);
+      if (replaceIdx < 0) {
+        lastRejectionReason = 'no_replacement_found';
+        continue;
+      }
+      const current = secondDay.exercises?.[replaceIdx];
+      if (!current) {
+        lastRejectionReason = 'no_replacement_found';
+        continue;
+      }
+      const selectedFamily = projectionFamilyForExercise(current, user);
+      const replacementSpecs = buildBackToBackLowerReplacementSpecs(secondDay?.dayType || '', repeatedFamily);
+      logAbsGlutesLegsComboDebug(user, 'repeatedFamilies detected', {
+        week: nextWeek?.weekIndex || null,
+        firstDay: firstDay?.day || null,
+        secondDay: secondDay?.day || null,
+        repeatedFamilies
+      });
+      logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_target', {
+        week: nextWeek?.weekIndex || null,
+        firstDay: firstDay?.day || null,
+        secondDay: secondDay?.day || null,
+        repeatedFamily,
+        selectedExerciseIndex: replaceIdx,
+        selectedExerciseName: current?.name || null,
+        selectedExerciseFamily: selectedFamily || '',
+        replacementSpecs: replacementSpecs.map((spec) => spec.key)
+      });
+      if ((repeatedFamily === 'squat_pattern' || repeatedFamily === 'leg_press')
+        && backToBackLowerFamilies(secondDay).filter((entry) => ['squat_pattern', 'leg_press', 'leg_extension', 'single_leg'].includes(entry.family)).length <= 1) {
+        lastRejectionReason = 'would_remove_only_quad_pattern';
+        continue;
+      }
+      for (const spec of replacementSpecs) {
+        const replacement = buildQualityReplacement(secondDay, current, spec.slot, user, exercises, String(week?.weekType || 'base'), (candidate) => spec.predicate(candidate, user));
+        const replacementFamily = replacement ? projectionFamilyForExercise(replacement, user) : '';
+        if (!replacement) {
+          lastRejectionReason = 'no_replacement_found';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: null,
+            rejectionReason: lastRejectionReason
+          });
+          continue;
+        }
+        if (normalizeName(replacement?.name) === normalizeName(current?.name)) {
+          lastRejectionReason = 'replacement_same_family';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: {
+              name: replacement?.name || null,
+              family: replacementFamily || ''
+            },
+            rejectionReason: lastRejectionReason
+          });
+          continue;
+        }
+        if (replacementFamily && replacementFamily === repeatedFamily) {
+          lastRejectionReason = 'replacement_same_family';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: {
+              name: replacement?.name || null,
+              family: replacementFamily || ''
+            },
+            rejectionReason: lastRejectionReason
+          });
+          continue;
+        }
+        const trialDay = {
+          ...secondDay,
+          exercises: (secondDay.exercises || []).map((exercise, exerciseIndex) => exerciseIndex === replaceIdx ? replacement : exercise)
+        };
+        if ((trialDay.exercises || []).some((exercise, exerciseIndex) => exerciseIndex !== replaceIdx && normalizeName(exercise?.name) === normalizeName(replacement?.name))) {
+          lastRejectionReason = 'duplicate_name';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: {
+              name: replacement?.name || null,
+              family: replacementFamily || ''
+            },
+            rejectionReason: lastRejectionReason
+          });
+          continue;
+        }
+        trialDay.exercises = organizeDayExerciseOrder(trialDay.dayType || '', trialDay.exercises || [], user);
+        const structure = buildBackToBackLowerCleanupStructuralResult(trialDay);
+        if (!structure.ok) {
+          lastRejectionReason = 'structural_validator_failed';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: {
+              name: replacement?.name || null,
+              family: replacementFamily || ''
+            },
+            rejectionReason: lastRejectionReason,
+            structuralResult: structure
+          });
+          continue;
+        }
+        if (hasPriorityGroup(user, 'Abs') && countDirectCoreExposureOnDay(secondDay, user) > 0 && countDirectCoreExposureOnDay(trialDay, user) < 1) {
+          lastRejectionReason = 'would_remove_core_exposure';
+          logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+            week: nextWeek?.weekIndex || null,
+            firstDay: firstDay?.day || null,
+            secondDay: secondDay?.day || null,
+            repeatedFamily,
+            selectedExerciseIndex: replaceIdx,
+            selectedExerciseName: current?.name || null,
+            selectedExerciseFamily: selectedFamily || '',
+            replacementSpec: spec.key,
+            buildQualityReplacementResult: {
+              name: replacement?.name || null,
+              family: replacementFamily || ''
+            },
+            rejectionReason: lastRejectionReason
+          });
+          continue;
+        }
+        logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_replacement_attempt', {
+          week: nextWeek?.weekIndex || null,
+          firstDay: firstDay?.day || null,
+          secondDay: secondDay?.day || null,
+          repeatedFamily,
+          selectedExerciseIndex: replaceIdx,
+          selectedExerciseName: current?.name || null,
+          selectedExerciseFamily: selectedFamily || '',
+          replacementSpec: spec.key,
+          buildQualityReplacementResult: {
+            name: replacement?.name || null,
+            family: replacementFamily || ''
+          },
+          rejectionReason: ''
+        });
+        nextWeek.days[dayIndex] = trialDay;
+        logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_swap', {
+          week: nextWeek?.weekIndex || null,
+          firstDay: firstDay?.day || null,
+          secondDay: secondDay?.day || null,
+          repeatedFamily,
+          removedExercise: current?.name || null,
+          replacementExercise: replacement?.name || null,
+          replacementFamily: projectionFamilyForExercise(replacement, user)
+        });
+        changed = true;
+        touched = true;
+        break;
+      }
+      if (changed) break;
+    }
+    if (!changed) {
+      logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_skip', {
+        week: nextWeek?.weekIndex || null,
+        firstDay: firstDay?.day || null,
+        secondDay: secondDay?.day || null,
+        repeatedFamilies,
+        reason: lastRejectionReason || 'no_replacement_found'
+      });
+    }
+  }
+  nextWeek.__backToBackCleanupTouchedFinalPlan = touched;
+  logAbsGlutesLegsComboDebug(user, 'after_back_to_back_cleanup_week_snapshot', buildBackToBackCleanupWeekSnapshot(nextWeek, user, {
+    touched
+  }));
+  logAbsGlutesLegsComboDebug(user, 'back_to_back_lower_cleanup_exit', {
+    week: nextWeek?.weekIndex || null,
+    backToBackCleanupTouchedFinalPlan: touched
+  });
+  return nextWeek;
+}
+
+function cleanupBackToBackLowerDayRedundancyInSuccessfulPlan(weeks, user, exercises) {
+  if (!Array.isArray(weeks) || !weeks.length) return weeks;
+  if (!shouldTrackAbsGlutesLegsComboDebug(user)) return weeks;
+  return weeks.map((week) => cleanupBackToBackLowerDayRedundancyInWeek(week, user, exercises));
+}
+
+function armPriorityRepairTarget(user, targets, key) {
+  const configured = Number(targets?.[key] || 8);
+  const favorable = hasPriorityGroup(user, 'Arms')
+    && Number(user?.daysPerWeek || 0) >= 5
+    && String(user?.profile?.sessionBandwidth || '') !== 'tight'
+    && Math.max(
+      Number(user?.injuryMap?.shoulder || 0),
+      Number(user?.injuryMap?.elbow || 0),
+      Number(user?.injuryMap?.wrist || 0)
+    ) < 6;
+  return favorable ? Math.min(12, Math.max(configured, 10)) : configured;
+}
+
+function chooseNeckReplacementSpec(day, days, user, targets) {
+  const directSets = currentWeekDirectSets(days);
+  const dayType = String(day?.dayType || '');
+  const canUseBiceps = ['Pull', 'UpperFocus', 'DeltsArms', 'Upper'].includes(dayType);
+  const canUseTriceps = ['Push', 'UpperFocus', 'DeltsArms', 'Upper'].includes(dayType);
+  const canUseShoulders = ['Push', 'Pull', 'UpperFocus', 'DeltsArms', 'Upper'].includes(dayType);
+  const canUseAbs = ['Push', 'Pull', 'Legs', 'UpperFocus', 'DeltsArms', 'Upper', 'Lower', 'LowerFocus', 'FullBodyA', 'FullBodyB'].includes(dayType);
+
+  const bicepsTarget = armPriorityRepairTarget(user, targets, 'Biceps');
+  const tricepsTarget = armPriorityRepairTarget(user, targets, 'Triceps');
+  const bicepsSets = Number(directSets?.Biceps || 0);
+  const tricepsSets = Number(directSets?.Triceps || 0);
+  const shouldersSets = Number(directSets?.Shoulders || 0);
+  const absSets = Number(directSets?.Abs || 0);
+
+  if (hasPriorityGroup(user, 'Arms') && canUseBiceps && bicepsSets < bicepsTarget) {
+    return {
+      slot: buildExactPriorityRepairSlot(dayType, 'Biceps'),
+      predicate: (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'biceps'
+    };
+  }
+  if (hasPriorityGroup(user, 'Arms') && canUseTriceps && tricepsSets < tricepsTarget) {
+    const family = tricepsSets < 8 ? 'pushdown' : 'overhead';
+    return {
+      slot: buildExactPriorityRepairSlot(dayType, 'Triceps', family),
+      predicate: (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'triceps'
+    };
+  }
+  if (hasPriorityGroup(user, 'Shoulders') && canUseShoulders && shouldersSets < Number(targets?.Shoulders || 0)) {
+    return {
+      slot: buildExactPriorityRepairSlot(dayType, 'Shoulders', 'lateral'),
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.lateralDeltPattern || truth.rearDeltPattern;
+      }
+    };
+  }
+  if (hasPriorityGroup(user, 'Abs') && canUseAbs && absSets < Number(targets?.Abs || 0)) {
+    const existingFamilies = new Set((day?.exercises || []).map((ex) => String(ex?.coreFamily || 'none')).filter((family) => family !== 'none'));
+    const variant = !existingFamilies.has('rotation') ? 'rotation' : !existingFamilies.has('stability') ? 'stability' : 'flexion';
+    return {
+      slot: buildExactPriorityRepairSlot(dayType, 'Abs', variant),
+      predicate: (candidate) => Boolean(buildExerciseTruth(candidate, user).directAb)
+    };
+  }
+  return null;
+}
+
+function findPriorityRepairReplacementIndex(day, user) {
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const ranked = exercises
+    .map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      if (isNeckExercise(exercise, user)) return { index, score: 100 };
+      let score = 0;
+      if (String(exercise?.style || '') === 'Isolation') score += 40;
+      if (exercise?.optional) score += 16;
+      if (!exercisePriorityOrderRank(exercise, user) || exercisePriorityOrderRank(exercise, user) < 99) score -= 30;
+      if (truth.directAb && !hasPriorityGroup(user, 'Abs')) score += 8;
+      if (truth.directCalf && !hasPriorityGroup(user, 'Calves')) score += 8;
+      if (String(exercise?.style || '') === 'Compound' && truth.progressionFriendly) score -= 16;
+      score += index;
+      return { index, score };
+    })
+    .sort((a, b) => b.score - a.score || b.index - a.index);
+  return ranked[0]?.index ?? -1;
+}
+
+function insertOrReplacePriorityExercise(day, user, exercises, weekType, slot, predicate = null) {
+  if (!slot) return false;
+  const nextDay = day;
+  if ((nextDay?.exercises || []).length < Number(user?.sessionCap || 99)) {
+    const replacement = buildQualityReplacement(nextDay, { sets: 2, style: slot.styleRequired, slotId: slot.id, primary: slot.muscleTarget, muscleTarget: slot.muscleTarget }, slot, user, exercises, weekType, predicate);
+    if (replacement) {
+      nextDay.exercises.push(replacement);
+      nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises, user);
+      return true;
+    }
+  }
+  const replaceIdx = findPriorityRepairReplacementIndex(nextDay, user);
+  if (replaceIdx < 0) return false;
+  const current = nextDay.exercises[replaceIdx];
+  const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, predicate);
+  if (!replacement) return false;
+  nextDay.exercises.splice(replaceIdx, 1, replacement);
+  nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises, user);
+  return true;
+}
+
+function repairVisiblePriorityStructure(weeks, user, exercises, targets = {}) {
+  if (!Array.isArray(weeks) || !weeks.length) return weeks;
+  const nextWeeks = weeks.map((week) => ({
+    ...week,
+    days: (week?.days || []).map((day) => ({
+      ...day,
+      exercises: (day?.exercises || []).slice()
+    }))
+  }));
+  const shoulderDays = ['DeltsArms', 'UpperFocus', 'Pull', 'Push', 'Upper'];
+  const bicepsDays = ['Pull', 'UpperFocus', 'DeltsArms', 'Upper'];
+  const tricepsDays = ['Push', 'UpperFocus', 'DeltsArms', 'Upper'];
+  const absDays = ['Push', 'Pull', 'Legs', 'UpperFocus', 'DeltsArms', 'Upper'];
+
+  nextWeeks.forEach((week) => {
+    const days = week?.days || [];
+    days.forEach((day) => {
+      for (let index = (day?.exercises || []).length - 1; index >= 0; index -= 1) {
+        const current = day.exercises[index];
+        if (neckAllowedForUser(user) || !isNeckExercise(current, user)) continue;
+        const spec = chooseNeckReplacementSpec(day, days, user, targets);
+        if (spec?.slot) {
+          const replacement = buildQualityReplacement(day, current, spec.slot, user, exercises, String(week?.weekType || 'base'), spec.predicate);
+          if (replacement && !isNeckExercise(replacement, user)) {
+            day.exercises.splice(index, 1, replacement);
+            continue;
+          }
+        }
+        day.exercises.splice(index, 1);
+      }
+      day.exercises = organizeDayExerciseOrder(day.dayType || '', day.exercises || [], user);
+    });
+    const countBy = (predicate) => days.reduce((sum, day) => sum + (day.exercises || []).filter(predicate).length, 0);
+    const familySet = () => new Set(days.flatMap((day) => (day.exercises || []).map((ex) => String(ex?.coreFamily || 'none')).filter((family) => family !== 'none')));
+
+    if (hasPriorityGroup(user, 'Shoulders')) {
+      let totalShoulders = countBy((ex) => exerciseDirectlyServesPriority(ex, 'Shoulders', user));
+      let lateralRear = countBy((ex) => Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern));
+      for (const [variant, needed] of [['lateral', 1], ['rear', 1]]) {
+        while ((variant === 'lateral'
+          ? countBy((ex) => Boolean(ex?.lateralDeltPattern))
+          : countBy((ex) => Boolean(ex?.rearDeltPattern))) < needed) {
+          const day = days.find((entry) => shoulderDays.includes(String(entry?.dayType || '')));
+          if (!day) break;
+          const slot = buildExactPriorityRepairSlot(day.dayType, 'Shoulders', variant);
+          const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), slot, (candidate) => {
+            const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+            return variant === 'lateral' ? truth.lateralDeltPattern : truth.rearDeltPattern;
+          });
+          if (!ok) break;
+        }
+      }
+      totalShoulders = countBy((ex) => exerciseDirectlyServesPriority(ex, 'Shoulders', user));
+      lateralRear = countBy((ex) => Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern));
+      while (Number(user?.daysPerWeek || 0) >= 5 && totalShoulders < 3) {
+        const day = days.find((entry) => shoulderDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const slot = buildExactPriorityRepairSlot(day.dayType, 'Shoulders', lateralRear < 2 ? 'rear' : 'lateral');
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), slot, (candidate) => {
+          const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+          return truth.lateralDeltPattern || truth.rearDeltPattern;
+        });
+        if (!ok) break;
+        totalShoulders = countBy((ex) => exerciseDirectlyServesPriority(ex, 'Shoulders', user));
+        lateralRear = countBy((ex) => Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern));
+      }
+    }
+
+    if (hasPriorityGroup(user, 'Arms')) {
+      while (countBy((ex) => String(ex?.directArmType || '') === 'biceps') < 2) {
+        const day = days.find((entry) => bicepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Biceps'), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'biceps');
+        if (!ok) break;
+      }
+      while (countBy((ex) => String(ex?.directArmType || '') === 'triceps') < 2) {
+        const family = countBy((ex) => tricepsMovementFamily(ex?.name) === 'pushdown') < 1 ? 'pushdown' : 'overhead';
+        const day = days.find((entry) => tricepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Triceps', family), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'triceps');
+        if (!ok) break;
+      }
+      const desiredBicepsSets = armPriorityRepairTarget(user, targets, 'Biceps');
+      const desiredTricepsSets = armPriorityRepairTarget(user, targets, 'Triceps');
+      while (Number(currentWeekDirectSets(days)?.Biceps || 0) < 8) {
+        const day = days.find((entry) => bicepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Biceps'), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'biceps');
+        if (!ok) break;
+      }
+      while (Number(currentWeekDirectSets(days)?.Triceps || 0) < 8) {
+        const day = days.find((entry) => tricepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Triceps', 'pushdown'), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'triceps');
+        if (!ok) break;
+      }
+      while (Number(currentWeekDirectSets(days)?.Biceps || 0) < desiredBicepsSets && Number(currentWeekDirectSets(days)?.Biceps || 0) < 12) {
+        const day = days.find((entry) => bicepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Biceps'), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'biceps');
+        if (!ok) break;
+      }
+      while (Number(currentWeekDirectSets(days)?.Triceps || 0) < desiredTricepsSets && Number(currentWeekDirectSets(days)?.Triceps || 0) < 12) {
+        const day = days.find((entry) => tricepsDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const family = countBy((ex) => tricepsMovementFamily(ex?.name) === 'pushdown') < 1 ? 'pushdown' : 'overhead';
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Triceps', family), (candidate) => String(candidate?.canonicalTruth?.directArmType || buildExerciseTruth(candidate, user).directArmType) === 'triceps');
+        if (!ok) break;
+      }
+    }
+
+    if (hasPriorityGroup(user, 'Abs')) {
+      while (countBy((ex) => Boolean(ex?.directAb)) < 3 && Number(user?.daysPerWeek || 0) >= 5 && Number(currentWeekDirectSets(days)?.Abs || 0) < 12) {
+        bumpLowerBodyRepairLoopGuard(user, 'priorityRepair', {
+          functionName: 'repairVisiblePriorityStructure',
+          week: week?.weekIndex,
+          lastAttemptedRepair: 'add-core-priority-exposure',
+          missingRequirement: 'core exposure'
+        });
+        const currentFamilies = familySet();
+        const variant = !currentFamilies.has('flexion') ? 'flexion' : !currentFamilies.has('rotation') ? 'rotation' : 'stability';
+        const day = days.find((entry) => absDays.includes(String(entry?.dayType || '')));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Abs', variant), (candidate) => Boolean(buildExerciseTruth(candidate, user).directAb));
+        if (!ok) break;
+        if (isNarrowPosteriorCoreUser(user) && countBy((ex) => Boolean(ex?.directAb)) >= 2) {
+          markLowerBodyGracefulDegrade(user, 'Met minimum lower-body core presence without chasing full ideal core volume.');
+          break;
+        }
+      }
+      while (familySet().size < Math.min(3, Number(user?.daysPerWeek || 0) >= 5 ? 3 : 2)) {
+        bumpLowerBodyRepairLoopGuard(user, 'priorityRepair', {
+          functionName: 'repairVisiblePriorityStructure',
+          week: week?.weekIndex,
+          lastAttemptedRepair: 'diversify-core-family',
+          missingRequirement: 'core family diversity'
+        });
+        const currentFamilies = familySet();
+        const variant = !currentFamilies.has('rotation') ? 'rotation' : !currentFamilies.has('stability') ? 'stability' : 'flexion';
+        const day = days.find((entry) => absDays.includes(String(entry?.dayType || '')) && !(entry.exercises || []).some((ex) => String(ex?.coreFamily || '') === variant));
+        if (!day) break;
+        const ok = insertOrReplacePriorityExercise(day, user, exercises, String(week?.weekType || 'base'), buildExactPriorityRepairSlot(day.dayType, 'Abs', variant), (candidate) => Boolean(buildExerciseTruth(candidate, user).directAb));
+        if (!ok) break;
+        if (isNarrowPosteriorCoreUser(user) && familySet().size >= 2) {
+          markLowerBodyGracefulDegrade(user, 'Accepted minimum core variety after lower-body structure requirements were met.');
+          break;
+        }
+      }
+    }
+
+    week.days = days.map((day) => ({
+      ...day,
+      exercises: organizeDayExerciseOrder(day.dayType || '', day.exercises || [], user)
+    }));
+  });
+  return nextWeeks;
+}
+
+function sameMuscleReplacementPredicate(current, day, user, preferDifferentTricepsFamily = false) {
+  const currentTruth = current?.canonicalTruth || buildExerciseTruth(current, user);
+  const existingTricepsFamilies = tricepsFamiliesOnDay(day, current);
+  return (candidate) => {
+    if (sameDayExerciseExists(day, candidate, current)) return false;
+    const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+    if (currentTruth.directArmType === 'biceps') return String(truth?.directArmType || '') === 'biceps';
+    if (currentTruth.directArmType === 'triceps') {
+      if (String(truth?.directArmType || '') !== 'triceps') return false;
+      if (!preferDifferentTricepsFamily) return true;
+      const family = tricepsMovementFamily(candidate?.name);
+      return family === 'none' || !existingTricepsFamilies.has(family);
+    }
+    if (currentTruth.directAb) return Boolean(truth?.directAb);
+    if (currentTruth.directCalf) return Boolean(truth?.directCalf);
+    if (currentTruth.lateralDeltPattern || currentTruth.rearDeltPattern || currentTruth.shoulderPressPattern) {
+      return Boolean(truth?.lateralDeltPattern || truth?.rearDeltPattern || truth?.shoulderPressPattern);
+    }
+    const currentTargets = new Set(getExerciseDirectTargetKeys(current, user));
+    const candidateTargets = new Set(getExerciseDirectTargetKeys(candidate, user));
+    return [...currentTargets].some((target) => candidateTargets.has(target))
+      || String(candidate?.muscleTarget || candidate?.primary || '') === String(current?.muscleTarget || current?.primary || '');
+  };
+}
+
+function dedupeAndDiversifyDay(day, user, exercises) {
+  const nextDay = {
+    ...day,
+    exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : []
+  };
+  const weekType = 'base';
+  const seen = new Set();
+  for (let index = 0; index < nextDay.exercises.length; index += 1) {
+    const current = nextDay.exercises[index];
+    const key = exerciseDayIdentityKey(current);
+    if (!key || !seen.has(key)) {
+      seen.add(key);
+      continue;
+    }
+    const slot = buildFallbackSlotFromExercise(current);
+    let replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, sameMuscleReplacementPredicate(current, nextDay, user));
+    if (!replacement) replacement = findReplacementExerciseForPlan(current, user, exercises, nextDay.dayType || '', seen);
+    if (replacement && !sameDayExerciseExists(nextDay, replacement, current)) {
+      nextDay.exercises.splice(index, 1, replacement);
+      seen.add(exerciseDayIdentityKey(replacement));
+      continue;
+    }
+    nextDay.exercises.splice(index, 1);
+    index -= 1;
+  }
+
+  const seenTriFamilies = new Set();
+  for (let index = 0; index < nextDay.exercises.length; index += 1) {
+    const current = nextDay.exercises[index];
+    const truth = current?.canonicalTruth || buildExerciseTruth(current, user);
+    if (String(truth?.directArmType || '') !== 'triceps') continue;
+    const family = tricepsMovementFamily(current?.name);
+    if (!family || family === 'none' || !seenTriFamilies.has(family)) {
+      if (family && family !== 'none') seenTriFamilies.add(family);
+      continue;
+    }
+    const slot = buildFallbackSlotFromExercise(current);
+    const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, sameMuscleReplacementPredicate(current, nextDay, user, true));
+    if (replacement && !sameDayExerciseExists(nextDay, replacement, current)) {
+      nextDay.exercises.splice(index, 1, replacement);
+      const replacementFamily = tricepsMovementFamily(replacement?.name);
+      if (replacementFamily && replacementFamily !== 'none') seenTriFamilies.add(replacementFamily);
+    }
+  }
+  nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises, user);
+  return nextDay;
+}
+
+function dayDuplicateKeys(day) {
+  const seen = new Set();
+  const duplicates = [];
+  for (const exercise of Array.isArray(day?.exercises) ? day.exercises : []) {
+    const key = exerciseDayIdentityKey(exercise);
+    if (!key) continue;
+    if (seen.has(key)) duplicates.push(key);
+    else seen.add(key);
+  }
+  return duplicates;
+}
+
+function enforceFinalVisibleDedupeInvariant(weeks, user, exercises) {
+  if (!Array.isArray(weeks)) return weeks;
+  const nextWeeks = weeks.map((week) => ({
+    ...week,
+    days: (week?.days || []).map((day) => ({
+      ...day,
+      exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : []
+    }))
+  }));
+  for (let weekIndex = 0; weekIndex < nextWeeks.length; weekIndex += 1) {
+    const week = nextWeeks[weekIndex];
+    for (let dayIndex = 0; dayIndex < (week?.days || []).length; dayIndex += 1) {
+      let nextDay = week.days[dayIndex];
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        nextDay = dedupeAndDiversifyDay(nextDay, user, exercises);
+        const duplicates = dayDuplicateKeys(nextDay);
+        if (!duplicates.length) break;
+        for (let exIdx = 0; exIdx < nextDay.exercises.length; exIdx += 1) {
+          const current = nextDay.exercises[exIdx];
+          const key = exerciseDayIdentityKey(current);
+          if (!key) continue;
+          const firstIdx = nextDay.exercises.findIndex((exercise) => exerciseDayIdentityKey(exercise) === key);
+          if (firstIdx === exIdx) continue;
+          const preferDifferentTricepsFamily = String(current?.canonicalTruth?.directArmType || buildExerciseTruth(current, user).directArmType) === 'triceps';
+          const slot = buildFallbackSlotFromExercise(current);
+          const replacement = buildQualityReplacement(
+            nextDay,
+            current,
+            slot,
+            user,
+            exercises,
+            'base',
+            sameMuscleReplacementPredicate(current, nextDay, user, preferDifferentTricepsFamily)
+          );
+          if (replacement && !sameDayExerciseExists(nextDay, replacement, current)) {
+            nextDay.exercises.splice(exIdx, 1, replacement);
+          } else {
+            nextDay.exercises.splice(exIdx, 1);
+            exIdx -= 1;
+          }
+        }
+      }
+      const finalDuplicates = dayDuplicateKeys(nextDay);
+      if (finalDuplicates.length) {
+        finalDuplicates.forEach((duplicateKey) => {
+          const duplicateExercise = (nextDay.exercises || []).find((exercise) => exerciseDayIdentityKey(exercise) === duplicateKey);
+          console.warn('FINAL_DEDUPE_FAILED', {
+            week: Number(week?.weekIndex || weekIndex + 1),
+            day: String(nextDay?.dayType || ''),
+            dayIndex,
+            duplicateExerciseName: String(duplicateExercise?.canonicalName || duplicateExercise?.name || duplicateKey)
+          });
+        });
+      }
+      week.days[dayIndex] = {
+        ...nextDay,
+        exercises: organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises || [], user)
+      };
+    }
+  }
+  return nextWeeks;
+}
+
 function repairAndValidatePlan(weeks, user, exercises) {
   return withPlannerTiming(user, 'finalPolishRepairMs', () => {
+    logComboStageEnter(user, 'final validation');
+    const finalValidationMeta = {
+      functionName: 'repairAndValidatePlan',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      planExists: Array.isArray(weeks),
+      weeksLength: Array.isArray(weeks) ? weeks.length : undefined,
+      callBoundary: 'repairAndValidatePlan_after_logComboStageEnter'
+    };
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_validation_logcombo_enter', finalValidationMeta);
+    emitPlannerDiagnosticHeartbeat(user, 'before_final_validation_plan_shape_check', finalValidationMeta);
+    const weeksArray = Array.isArray(weeks) ? weeks : [];
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_validation_plan_shape_check', {
+      ...finalValidationMeta,
+      planExists: true,
+      weeksLength: weeksArray.length,
+      callBoundary: 'repairAndValidatePlan_after_plan_shape_check'
+    });
     const isInvalidForFinal = (candidate, dayType) => isHardBannedExercise(candidate)
+      || (!neckAllowedForUser(user) && isNeckExercise(candidate, user))
       || ((user.discipline === 'bodybuilding' || user.discipline === 'powerbuilding') && candidate.isCalisthenicsLike && !user?.profile?.bodyweightDominant)
       || !isExerciseCompatibleWithEquipment(candidate, user)
       || evaluateJoint(candidate, user).reject
       || violatesDayTypeQuality(candidate, dayType || '');
+    emitPlannerDiagnosticHeartbeat(user, 'before_final_validation_normalization', {
+      ...finalValidationMeta,
+      planExists: true,
+      weeksLength: weeksArray.length,
+      callBoundary: 'repairAndValidatePlan_before_normalization'
+    });
     const sanitized = [];
     let filteredCount = 0;
-    for (const week of Array.isArray(weeks) ? weeks : []) {
+    let firstDayProcessed = false;
+    for (const week of weeksArray) {
+      emitPlannerDiagnosticHeartbeat(user, 'before_week_normalization_loop', {
+        ...finalValidationMeta,
+        planExists: true,
+        weeksLength: weeksArray.length,
+        callBoundary: 'repairAndValidatePlan_before_week_loop',
+        week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined
+      });
       const nextDays = [];
       for (const day of Array.isArray(week?.days) ? week.days : []) {
+        emitPlannerDiagnosticHeartbeat(user, 'entered_day_normalization_loop', {
+          ...finalValidationMeta,
+          planExists: true,
+          weeksLength: weeksArray.length,
+          callBoundary: 'repairAndValidatePlan_day_loop',
+          week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+          dayType: String(day?.dayType || '').trim() || undefined,
+          dayExerciseCount: Array.isArray(day?.exercises) ? day.exercises.length : 0
+        });
         const nextExercises = [];
         const usedNames = new Set();
         for (const ex of Array.isArray(day?.exercises) ? day.exercises : []) {
@@ -2452,48 +5287,131 @@ function repairAndValidatePlan(weeks, user, exercises) {
             candidate = findReplacementExerciseForPlan(candidate, user, exercises, day?.dayType || '', usedNames);
           }
           if (!candidate) continue;
-          usedNames.add(candidate.name);
+          usedNames.add(exerciseDayIdentityKey(candidate));
           nextExercises.push({
             ...candidate,
             sets: Math.max(1, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(candidate.sets) || 1))
           });
         }
+        emitPlannerDiagnosticHeartbeat(user, 'before_apply_session_cap_trimming', {
+          ...finalValidationMeta,
+          callBoundary: 'repairAndValidatePlan_before_apply_session_cap_trimming',
+          week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+          dayType: String(day?.dayType || '').trim() || undefined,
+          dayExerciseCount: nextExercises.length
+        });
         const trimmed = applySessionCapTrimming({ ...day, exercises: nextExercises }, user.sessionCap, user.priorityGroups || [], user.profile, user);
+        emitPlannerDiagnosticHeartbeat(user, 'after_apply_session_cap_trimming', {
+          ...finalValidationMeta,
+          callBoundary: 'repairAndValidatePlan_after_apply_session_cap_trimming',
+          week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+          dayType: String(trimmed?.dayType || day?.dayType || '').trim() || undefined,
+          dayExerciseCount: Array.isArray(trimmed?.exercises) ? trimmed.exercises.length : 0
+        });
+        emitPlannerDiagnosticHeartbeat(user, 'before_dedupe_and_diversify_day', {
+          ...finalValidationMeta,
+          callBoundary: 'repairAndValidatePlan_before_dedupe_and_diversify_day',
+          week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+          dayType: String(trimmed?.dayType || day?.dayType || '').trim() || undefined,
+          dayExerciseCount: Array.isArray(trimmed?.exercises) ? trimmed.exercises.length : 0
+        });
+        const deduped = dedupeAndDiversifyDay(trimmed, user, exercises);
+        emitPlannerDiagnosticHeartbeat(user, 'after_dedupe_and_diversify_day', {
+          ...finalValidationMeta,
+          callBoundary: 'repairAndValidatePlan_after_dedupe_and_diversify_day',
+          week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+          dayType: String(deduped?.dayType || trimmed?.dayType || '').trim() || undefined,
+          dayExerciseCount: Array.isArray(deduped?.exercises) ? deduped.exercises.length : 0
+        });
         const finalExercises = [];
         const finalNames = new Set();
-        for (const ex of Array.isArray(trimmed.exercises) ? trimmed.exercises : []) {
+        for (const ex of Array.isArray(deduped.exercises) ? deduped.exercises : []) {
           let candidate = ex;
-          if (isInvalidForFinal(candidate, trimmed.dayType || '')) {
+          if (isInvalidForFinal(candidate, deduped.dayType || '')) {
             filteredCount += 1;
-            candidate = findReplacementExerciseForPlan(candidate, user, exercises, trimmed.dayType || '', finalNames);
+            candidate = findReplacementExerciseForPlan(candidate, user, exercises, deduped.dayType || '', finalNames);
           }
-          if (!candidate || isInvalidForFinal(candidate, trimmed.dayType || '') || finalNames.has(candidate.name)) continue;
-          finalNames.add(candidate.name);
+          const candidateKey = exerciseDayIdentityKey(candidate);
+          if (!candidate || isInvalidForFinal(candidate, deduped.dayType || '') || finalNames.has(candidateKey)) continue;
+          finalNames.add(candidateKey);
           finalExercises.push(candidate);
         }
         if (!Array.isArray(finalExercises) || !finalExercises.length) {
-          return {
+          return attachAbsGlutesLegsDebugMeta({
             error: 'NO_ELIGIBLE_EXERCISE',
             slotId: `week_${week?.weekIndex || '?'}_day_${day?.dayType || '?'}`,
             reason: 'No safe exercises remained after repair.'
-          };
+          }, user, {
+            stage: 'final validation',
+            failedStage: 'final validation',
+            week: week?.weekIndex,
+            day: day?.day,
+            dayType: day?.dayType
+          });
         }
         nextDays.push({
-          ...trimmed,
-          exercises: organizeDayExerciseOrder(trimmed.dayType, finalExercises)
+          ...deduped,
+          exercises: organizeDayExerciseOrder(deduped.dayType, finalExercises, user)
         });
+        if (!firstDayProcessed) {
+          firstDayProcessed = true;
+          emitPlannerDiagnosticHeartbeat(user, 'after_first_day_processed', {
+            ...finalValidationMeta,
+            callBoundary: 'repairAndValidatePlan_after_first_day_processed',
+            week: Number.isFinite(Number(week?.weekIndex)) ? Number(week.weekIndex) : undefined,
+            dayType: String(deduped?.dayType || '').trim() || undefined,
+            dayExerciseCount: finalExercises.length
+          });
+        }
       }
       if (nextDays.length !== Number(user?.daysPerWeek || 0)) {
-        return {
+        return attachAbsGlutesLegsDebugMeta({
           error: 'PLAN_VALIDATION_FAILED',
           field: 'daysPerWeek',
           reason: `Expected ${user?.daysPerWeek} training days, got ${nextDays.length}.`
-        };
+        }, user, {
+          stage: 'final validation',
+          failedStage: 'final validation'
+        });
       }
       sanitized.push({ ...week, days: nextDays });
     }
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_validation_normalization', {
+      ...finalValidationMeta,
+      planExists: true,
+      weeksLength: sanitized.length,
+      callBoundary: 'repairAndValidatePlan_after_normalization'
+    });
+    logComboStageExit(user, 'final validation', {
+      weeks: sanitized.length,
+      filteredCount
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'before_generator_final_return', {
+      ...finalValidationMeta,
+      planExists: true,
+      weeksLength: sanitized.length,
+      callBoundary: 'repairAndValidatePlan_before_return'
+    });
     return { weeks: sanitized, filteredCount };
   });
+}
+
+function buildCleanupChainHeartbeatMeta(user, weeks, callBoundary, functionName) {
+  const weekList = Array.isArray(weeks) ? weeks : [];
+  const dayList = weekList.flatMap((week) => Array.isArray(week?.days) ? week.days : []);
+  const exerciseList = dayList.flatMap((day) => Array.isArray(day?.exercises) ? day.exercises : []);
+  return {
+    functionName,
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: weekList.length,
+    totalDayCount: dayList.length,
+    totalExerciseCount: exerciseList.length,
+    requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    callBoundary
+  };
 }
 
 function weekPattern(blockLength) {
@@ -2508,7 +5426,26 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
     for (let i = 0; i < blockLength; i += 1) {
       const weekType = types[i];
       const targetsForWeek = scaleTargets(targets, weekType, blockLength, i + 1);
+      logComboStageEnter(user, 'blueprint construction', {
+        week: i + 1,
+        weekType
+      });
       const blueprint = withPlannerTiming(user, 'blueprintDayConstructionMs', () => buildWeekBlueprint(user.discipline, schedule, user, weekType, opts));
+      logComboStageExit(user, 'blueprint construction', {
+        week: i + 1,
+        weekType,
+        selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : []
+      });
+      logComboStageEnter(user, 'lower day construction', {
+        week: i + 1,
+        weekType,
+        lowerDayCount: Array.isArray(blueprint) ? blueprint.filter((day) => ['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))).length : 0
+      });
+      logComboStageExit(user, 'lower day construction', {
+        week: i + 1,
+        weekType,
+        lowerDayCount: Array.isArray(blueprint) ? blueprint.filter((day) => ['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))).length : 0
+      });
       const weekPicked = new Set();
       const weekState = {
         rearDeltDays: new Set(),
@@ -2522,8 +5459,29 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
       };
       const filledDays = [];
       for (const dayBp of blueprint) {
-        const filled = fillSlots(dayBp, exercises, user, weekPicked, weekState);
-        if (filled.error) return filled;
+        logComboStageEnter(user, 'slot filling', {
+          week: i + 1,
+          day: dayBp.day,
+          dayType: dayBp.dayType
+        });
+        const filled = fillSlots(dayBp, exercises, user, weekPicked, weekState, {
+          week: i + 1,
+          weekType
+        });
+        if (filled.error) return attachAbsGlutesLegsDebugMeta(filled, user, {
+          stage: 'slot filling',
+          failedStage: 'slot filling',
+          week: i + 1,
+          day: dayBp.day,
+          dayType: dayBp.dayType,
+          muscleTarget: filled?.muscleTarget
+        });
+        logComboStageExit(user, 'slot filling', {
+          week: i + 1,
+          day: dayBp.day,
+          dayType: dayBp.dayType,
+          exerciseCount: Array.isArray(filled?.exercises) ? filled.exercises.length : 0
+        });
         filledDays.push({ dayType: dayBp.dayType, day: dayBp.day, exercises: filled.exercises });
       }
       let prescribed = allocateSetsReps(filledDays, weekType, targetsForWeek, user);
@@ -2550,7 +5508,7 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
       }));
       prescribed = prescribed.map((d) => ({
         ...d,
-        exercises: organizeDayExerciseOrder(d.dayType, d.exercises || [])
+        exercises: organizeDayExerciseOrder(d.dayType, d.exercises || [], user)
       }));
       weeks.push({ weekIndex: i + 1, weekType, days: prescribed });
     }
@@ -3898,7 +6856,7 @@ function extractInternalPlanState(schedule, weeks, safeResult = {}, notes = [], 
 function buildCurrentDayState(day) {
   const state = { families: new Set(), names: new Set(), counts: { chest_fly: 0, rear_delt: 0, bench_press: 0 }, dayKey: String(day?.dayType || '') };
   for (const ex of Array.isArray(day?.exercises) ? day.exercises : []) {
-    state.names.add(String(ex?.name || ''));
+    state.names.add(exerciseDayIdentityKey(ex));
     const fam = slotExerciseFamily(ex);
     if (fam) {
       state.families.add(fam);
@@ -3912,9 +6870,8 @@ function buildCurrentDayState(day) {
 function reinforceLowFrequencyPriorityAccessories(weeks, user, exercises) {
   if (!Array.isArray(weeks) || !weeks.length) return weeks;
   if (Number(user?.daysPerWeek || 0) > 3) return weeks;
-  const priorities = new Set(user?.priorityGroups || []);
-  const needCalves = priorities.has('Calves');
-  const needCore = priorities.has('Core');
+  const needCalves = hasPriorityGroup(user, 'Calves');
+  const needCore = hasPriorityGroup(user, 'Abs');
   if (!needCalves && !needCore) return weeks;
   const targetCalfDays = Math.min(2, Number(user?.daysPerWeek || 0));
   const targetCoreDays = needCore ? Math.min(2, Number(user?.daysPerWeek || 0)) : 0;
@@ -3990,10 +6947,24 @@ function reinforceLowFrequencyPriorityAccessories(weeks, user, exercises) {
 }
 
 function reinforceShoulderPriorityVisibility(weeks, user, exercises) {
+  emitPlannerDiagnosticHeartbeat(user, 'entered_reinforce_shoulder_priority_visibility', {
+    functionName: 'reinforceShoulderPriorityVisibility',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+    totalDayCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0) : 0,
+    totalExerciseCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0) : 0,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    loopIterationCount: 0,
+    replacementAttempts: 0,
+    noProgressCount: 0
+  });
   if (!Array.isArray(weeks) || !weeks.length) return weeks;
   if (!(user?.priorityGroups || []).includes('Shoulders')) return weeks;
   if (Number(user?.daysPerWeek || 0) < 4) return weeks;
   if (Number(user?.injuryMap?.shoulder || 0) >= 6) return weeks;
+  const MAX_VISIBILITY_ATTEMPTS = 24;
   const isDirectShoulder = (ex) => {
     const name = normalizeName(ex?.name);
     const primary = String(ex?.primary || ex?.muscleTarget || '');
@@ -4001,14 +6972,37 @@ function reinforceShoulderPriorityVisibility(weeks, user, exercises) {
   };
   const isShoulderPress = (ex) => /(shoulder press|overhead press|military press)/.test(normalizeName(ex?.name));
   const isLateralOrRear = (ex) => /(lateral raise|rear delt|reverse fly|face pull|reverse pec deck)/.test(normalizeName(ex?.name));
-  return weeks.map((week) => {
+  return weeks.map((week, weekIndex) => {
     const days = (week?.days || []).map((day) => ({ ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] }));
-    const shoulderDays = days.filter((day) => day.exercises.some(isDirectShoulder));
+    let loopIterationCount = 0;
+    let replacementAttempts = 0;
+    let noProgressCount = 0;
+    const initialShoulderDays = days.filter((day) => day.exercises.some(isDirectShoulder)).length;
     let hasPress = days.some((day) => day.exercises.some(isShoulderPress));
     let hasLateralRear = days.some((day) => day.exercises.some(isLateralOrRear));
     const candidateDayOrder = ['Push', 'Pull', 'UpperFocus', 'Upper', 'DeltsArms', 'FullBodyA', 'FullBodyB'];
 
     const addShoulderExercise = (day, wantPress = false) => {
+      loopIterationCount += 1;
+      replacementAttempts += 1;
+      if (replacementAttempts > MAX_VISIBILITY_ATTEMPTS) {
+        noProgressCount += 1;
+        emitPlannerDiagnosticHeartbeat(user, 'visibility_reinforcement_degraded', {
+          functionName: 'reinforceShoulderPriorityVisibility',
+          fileName: 'generator/trainingEngine.oblueprint.js',
+          elapsedMs: plannerNowMs(),
+          weekIndex,
+          weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+          totalDayCount: days.length,
+          totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+          requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+          selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+          loopIterationCount,
+          replacementAttempts,
+          noProgressCount
+        });
+        return false;
+      }
       const slot = wantPress
         ? {
             id: `${String(day?.dayType || 'day').toLowerCase()}_elite_shoulder_press`,
@@ -4036,6 +7030,7 @@ function reinforceShoulderPriorityVisibility(weeks, user, exercises) {
         .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
       const chosen = eligible[0]?.candidate;
       if (!chosen) return false;
+      const beforeSignature = JSON.stringify(days.map((entry) => (entry?.exercises || []).map((exercise) => String(exercise?.name || ''))));
       const rr = repsRestByExercise(chosen, String(week?.weekType || 'base'), user, slot.id);
       const item = buildExerciseOutput(chosen, user, { ...slot, optional: false }, wantPress ? 3 : 2, rr, { weekType: String(week?.weekType || 'base') });
       const replaceIdx = day.exercises.findIndex((ex) => {
@@ -4046,6 +7041,8 @@ function reinforceShoulderPriorityVisibility(weeks, user, exercises) {
       else if ((day.exercises || []).length < Number(user?.sessionCap || 6)) day.exercises.push(item);
       else return false;
       day.exercises = organizeDayExerciseOrder(day.dayType, day.exercises);
+      const afterSignature = JSON.stringify(days.map((entry) => (entry?.exercises || []).map((exercise) => String(exercise?.name || ''))));
+      if (beforeSignature === afterSignature) noProgressCount += 1;
       return true;
     };
 
@@ -4076,65 +7073,249 @@ function reinforceShoulderPriorityVisibility(weeks, user, exercises) {
         }
       }
     }
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_shoulder_priority_visibility', {
+      functionName: 'reinforceShoulderPriorityVisibility',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      weekIndex,
+      weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+      totalDayCount: days.length,
+      totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      loopIterationCount,
+      replacementAttempts,
+      noProgressCount,
+      beforeShoulderDayCount: initialShoulderDays,
+      afterShoulderDayCount: days.filter((day) => day.exercises.some(isDirectShoulder)).length
+    });
     return { ...week, days };
   });
 }
 
 function reinforceArmPriorityVisibility(weeks, user, exercises) {
+  emitPlannerDiagnosticHeartbeat(user, 'entered_reinforce_arm_priority_visibility', {
+    functionName: 'reinforceArmPriorityVisibility',
+    fileName: 'generator/trainingEngine.oblueprint.js',
+    elapsedMs: plannerNowMs(),
+    weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+    totalDayCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + (Array.isArray(week?.days) ? week.days.length : 0), 0) : 0,
+    totalExerciseCount: Array.isArray(weeks) ? weeks.reduce((sum, week) => sum + ((Array.isArray(week?.days) ? week.days : []).reduce((daySum, day) => daySum + (Array.isArray(day?.exercises) ? day.exercises.length : 0), 0)), 0) : 0,
+    requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+    selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+    loopIterationCount: 0,
+    replacementAttempts: 0,
+    noProgressCount: 0
+  });
   if (!Array.isArray(weeks) || !weeks.length) return weeks;
   if (!(user?.priorityGroups || []).includes('Arms')) return weeks;
-  if (Number(user?.daysPerWeek || 0) < 4) return weeks;
+  const MAX_VISIBILITY_ATTEMPTS = 64;
+  const MAX_NO_PROGRESS = 16;
   const isDirectBiceps = (ex) => isDirectBicepsName(ex?.name);
   const isDirectTriceps = (ex) => isDirectTricepsName(ex?.name);
-  return weeks.map((week) => {
-    const days = (week?.days || []).map((day) => ({ ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] }));
-    let bicepsDays = days.filter((day) => day.exercises.some(isDirectBiceps)).length;
-    let tricepsDays = days.filter((day) => day.exercises.some(isDirectTriceps)).length;
-    const addArmExercise = (day, target) => {
-      const slot = {
-        id: `${String(day?.dayType || 'day').toLowerCase()}_elite_${target}_arm`,
+  const tricepsFamilyOf = (ex) => tricepsMovementFamily(ex?.name);
+  const summarizeArmWork = (days) => {
+    const summary = {
+      bicepsSets: 0,
+      tricepsSets: 0,
+      bicepsExercises: [],
+      tricepsExercises: [],
+      tricepsFamilies: new Set()
+    };
+    (Array.isArray(days) ? days : []).forEach((day, dayIdx) => {
+      (day?.exercises || []).forEach((exercise, exIdx) => {
+        const sets = Math.max(0, Number(exercise?.sets || 0));
+        if (isDirectBiceps(exercise)) {
+          summary.bicepsSets += sets;
+          summary.bicepsExercises.push({ day, dayIdx, exIdx, exercise });
+        }
+        if (isDirectTriceps(exercise)) {
+          summary.tricepsSets += sets;
+          summary.tricepsExercises.push({ day, dayIdx, exIdx, exercise });
+          const family = tricepsFamilyOf(exercise);
+          if (family !== 'none') summary.tricepsFamilies.add(family);
+        }
+      });
+    });
+    return summary;
+  };
+  const preferredDayOrderByFamily = {
+    press: ['Push', 'Upper', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB', 'Pull'],
+    overhead: ['UpperFocus', 'Upper', 'DeltsArms', 'Push', 'FullBodyA', 'FullBodyB', 'Pull'],
+    pushdown: ['Push', 'Upper', 'Pull', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB'],
+    extension: ['Push', 'Upper', 'Pull', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB']
+  };
+  const buildArmSlot = (dayType, target, family) => {
+    if (target === 'triceps' && family === 'press') {
+      return {
+        id: `${String(dayType || 'day').toLowerCase()}_elite_triceps_press`,
+        pattern: 'HorizontalPush',
+        styleRequired: 'Compound',
+        muscleTarget: 'Arms',
+        primaryAllowed: ['Arms', 'Chest'],
+        subPreferred: ['Triceps-Press'],
+        subFallback: null,
+        optional: false
+      };
+    }
+    if (target === 'triceps' && family === 'overhead') {
+      return {
+        id: `${String(dayType || 'day').toLowerCase()}_elite_triceps_overhead`,
         pattern: 'Isolation',
         styleRequired: 'Isolation',
         muscleTarget: 'Arms',
         primaryAllowed: ['Arms'],
-        subPreferred: target === 'biceps' ? ['Biceps-Long', 'Biceps-Short'] : ['Triceps-Long', 'Triceps-Lateral'],
-        subFallback: null,
+        subPreferred: ['Triceps-Overhead', 'Triceps-Long'],
+        subFallback: ['Triceps-Lateral'],
         optional: false
       };
-      const dayState = buildCurrentDayState(day);
-      const eligible = filterEligible(slot, exercises, user, new Set(), dayState, day?.dayType || '', null)
-        .filter((candidate) => target === 'biceps' ? isDirectBiceps(candidate) : isDirectTriceps(candidate))
-        .map((candidate) => ({ candidate, score: scoreExercise(candidate, slot, user, day?.dayType || '') }))
-        .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
-      const chosen = eligible[0]?.candidate;
-      if (!chosen) return false;
-      const rr = repsRestByExercise(chosen, String(week?.weekType || 'base'), user, slot.id);
-      const item = buildExerciseOutput(chosen, user, { ...slot, optional: false }, 2, rr, { weekType: String(week?.weekType || 'base') });
+    }
+    if (target === 'triceps' && family === 'pushdown') {
+      return {
+        id: `${String(dayType || 'day').toLowerCase()}_elite_triceps_pushdown`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Arms',
+        primaryAllowed: ['Arms'],
+        subPreferred: ['Triceps-Pushdown', 'Triceps-Lateral'],
+        subFallback: ['Triceps-Long'],
+        optional: false
+      };
+    }
+    return {
+      id: `${String(dayType || 'day').toLowerCase()}_elite_${target}_arm`,
+      pattern: 'Isolation',
+      styleRequired: 'Isolation',
+      muscleTarget: 'Arms',
+      primaryAllowed: ['Arms'],
+      subPreferred: target === 'biceps'
+        ? ['Biceps-Long', 'Biceps-Short']
+        : ['Triceps-Long', 'Triceps-Lateral'],
+      subFallback: null,
+      optional: false
+    };
+  };
+  return weeks.map((week, weekIndex) => {
+    const days = (week?.days || []).map((day) => ({ ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] }));
+    const weekType = String(week?.weekType || 'base');
+    let loopIterationCount = 0;
+    let replacementAttempts = 0;
+    let noProgressCount = 0;
+    const currentSignature = () => JSON.stringify(days.map((day) => (day?.exercises || []).map((exercise) => `${String(exercise?.name || '')}:${Number(exercise?.sets || 0)}`)));
+    let armSummary = summarizeArmWork(days);
+    let bicepsDays = days.filter((day) => day.exercises.some(isDirectBiceps)).length;
+    let tricepsDays = days.filter((day) => day.exercises.some(isDirectTriceps)).length;
+    const chooseReplaceIndex = (day, target, family = null) => {
+      if (target === 'triceps') {
+        if (family) {
+          const existingTriceps = (day?.exercises || [])
+            .map((exercise, index) => ({ exercise, index }))
+            .filter(({ exercise }) => isDirectTriceps(exercise) && tricepsFamilyOf(exercise) !== family);
+          if (existingTriceps.length) return existingTriceps.at(-1)?.index ?? -1;
+        }
+        const directBicepsIndexes = (day?.exercises || [])
+          .map((exercise, index) => ({ exercise, index }))
+          .filter(({ exercise }) => isDirectBiceps(exercise));
+        if (directBicepsIndexes.length > 1) return directBicepsIndexes.at(-1)?.index ?? -1;
+      }
       const replaceIdx = day.exercises.findIndex((ex) => {
         const primary = String(ex?.primary || ex?.muscleTarget || '');
         return primary === 'Core' || (String(ex?.style || '') === 'Isolation' && !['Arms', 'Shoulders'].includes(primary));
       });
-      if (replaceIdx >= 0) {
-        day.exercises.splice(replaceIdx, 1, item);
-      } else {
-        const compoundReplaceIdx = day.exercises.findIndex((ex) => {
-          const primary = String(ex?.primary || ex?.muscleTarget || '');
-          return String(ex?.style || '') === 'Compound'
-            && !['Arms', 'Shoulders', 'Legs', 'Glutes'].includes(primary)
-            && !(user?.priorityGroups || []).includes(primary);
-        });
-        if (compoundReplaceIdx >= 0) day.exercises.splice(compoundReplaceIdx, 1, item);
-        else if ((day.exercises || []).length < Number(user?.sessionCap || 6)) day.exercises.push(item);
-        else return false;
+      if (replaceIdx >= 0) return replaceIdx;
+      const compoundReplaceIdx = day.exercises.findIndex((ex) => {
+        const primary = String(ex?.primary || ex?.muscleTarget || '');
+        return String(ex?.style || '') === 'Compound'
+          && !['Arms', 'Shoulders', 'Legs', 'Glutes'].includes(primary)
+          && !(user?.priorityGroups || []).includes(primary);
+      });
+      if (compoundReplaceIdx >= 0) return compoundReplaceIdx;
+      if (target === 'triceps' && family) {
+        const fallbackBiIdx = day.exercises.findIndex((ex) => isDirectBiceps(ex));
+        if (fallbackBiIdx >= 0) return fallbackBiIdx;
       }
+      return -1;
+    };
+    const addArmExercise = (day, target, family = null) => {
+      loopIterationCount += 1;
+      replacementAttempts += 1;
+      if (replacementAttempts > MAX_VISIBILITY_ATTEMPTS || noProgressCount > MAX_NO_PROGRESS) {
+        emitPlannerDiagnosticHeartbeat(user, 'visibility_reinforcement_degraded', {
+          functionName: 'reinforceArmPriorityVisibility',
+          fileName: 'generator/trainingEngine.oblueprint.js',
+          elapsedMs: plannerNowMs(),
+          weekIndex,
+          weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+          totalDayCount: days.length,
+          totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+          requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+          selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+          loopIterationCount,
+          replacementAttempts,
+          noProgressCount
+        });
+        return false;
+      }
+      const slot = buildArmSlot(day?.dayType || '', target, family);
+      const dayState = buildCurrentDayState(day);
+      const beforeSignature = currentSignature();
+      const baseEligible = target === 'triceps' && family === 'press'
+        ? getBaseEligibleExercises(exercises, user, day?.dayType || '')
+        : filterEligible(slot, exercises, user, new Set(), dayState, day?.dayType || '', null);
+      const eligible = baseEligible
+        .filter((candidate) => {
+          if (target === 'biceps') return isDirectBiceps(candidate);
+          if (!isDirectTriceps(candidate)) return false;
+          if (!family) return true;
+          return tricepsMovementFamily(candidate?.name) === family;
+        })
+        .filter((candidate) => {
+          if (target === 'triceps' && family === 'press') return String(candidate?.style || '') === 'Compound';
+          return true;
+        })
+        .filter((candidate) => !sameDayExerciseExists(day, candidate))
+        .map((candidate) => ({ candidate, score: scoreExercise(candidate, slot, user, day?.dayType || '') }))
+        .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
+      const chosen = eligible[0]?.candidate;
+      if (!chosen) return false;
+      const rr = repsRestByExercise(chosen, weekType, user, slot.id);
+      const baseSets = target === 'triceps'
+        ? family === 'press'
+          ? 4
+          : family === 'overhead' || family === 'pushdown'
+            ? 3
+            : 3
+        : 3;
+      const item = buildExerciseOutput(chosen, user, { ...slot, optional: false }, baseSets, rr, { weekType });
+      const replaceIdx = chooseReplaceIndex(day, target, family);
+      if (replaceIdx >= 0) day.exercises.splice(replaceIdx, 1, item);
+      else if ((day.exercises || []).length < Number(user?.sessionCap || 6)) day.exercises.push(item);
+      else return false;
       day.exercises = organizeDayExerciseOrder(day.dayType, day.exercises);
+      if (beforeSignature === currentSignature()) noProgressCount += 1;
+      else noProgressCount = 0;
       return true;
+    };
+    const ensureTricepsFamily = (family) => {
+      armSummary = summarizeArmWork(days);
+      if (armSummary.tricepsExercises.some(({ exercise }) => tricepsFamilyOf(exercise) === family)) return true;
+      const order = preferredDayOrderByFamily[family] || preferredDayOrderByFamily.extension;
+      for (const type of order) {
+        const day = days.find((entry) => String(entry?.dayType || '') === type);
+        if (!day) continue;
+        if (family !== 'press' && day.exercises.some((exercise) => tricepsFamilyOf(exercise) === family)) return true;
+        if (addArmExercise(day, 'triceps', family)) {
+          armSummary = summarizeArmWork(days);
+          return true;
+        }
+      }
+      return false;
     };
     const order = ['Push', 'Pull', 'UpperFocus', 'Upper', 'DeltsArms', 'FullBodyA', 'FullBodyB'];
     if (tricepsDays < 1) {
       for (const type of order) {
         const day = days.find((entry) => String(entry?.dayType || '') === type && !entry.exercises.some(isDirectTriceps));
-        if (day && addArmExercise(day, 'triceps')) { tricepsDays += 1; break; }
+        if (day && addArmExercise(day, 'triceps', 'pushdown')) { tricepsDays += 1; break; }
       }
     }
     if (bicepsDays < 1) {
@@ -4152,6 +7333,183 @@ function reinforceArmPriorityVisibility(weeks, user, exercises) {
         }
       }
     }
+    ensureTricepsFamily('press');
+    ensureTricepsFamily('overhead');
+    ensureTricepsFamily('pushdown');
+
+    armSummary = summarizeArmWork(days);
+    const minTricepsExercises = Number(user?.daysPerWeek || 0) >= 5 ? 3 : 2;
+    while (armSummary.tricepsExercises.length < minTricepsExercises) {
+      const beforeSignature = currentSignature();
+      let added = false;
+      for (const family of ['pushdown', 'overhead', 'extension']) {
+        for (const type of preferredDayOrderByFamily[family] || order) {
+          const day = days.find((entry) => String(entry?.dayType || '') === type);
+          if (day && addArmExercise(day, 'triceps', family)) {
+            added = true;
+            break;
+          }
+        }
+        if (added) break;
+      }
+      armSummary = summarizeArmWork(days);
+      loopIterationCount += 1;
+      if (beforeSignature === currentSignature()) noProgressCount += 1;
+      else noProgressCount = 0;
+      if (!added) break;
+      if (loopIterationCount > MAX_VISIBILITY_ATTEMPTS || noProgressCount > MAX_NO_PROGRESS) {
+        emitPlannerDiagnosticHeartbeat(user, 'visibility_reinforcement_degraded', {
+          functionName: 'reinforceArmPriorityVisibility',
+          fileName: 'generator/trainingEngine.oblueprint.js',
+          elapsedMs: plannerNowMs(),
+          weekIndex,
+          weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+          totalDayCount: days.length,
+          totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+          requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+          selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+          loopIterationCount,
+          replacementAttempts,
+          noProgressCount
+        });
+        break;
+      }
+    }
+
+    const applyArmSetBalancing = () => {
+      armSummary = summarizeArmWork(days);
+      const familyPriority = { press: 0, overhead: 1, pushdown: 2, extension: 3, none: 4 };
+      const tricepsEntries = armSummary.tricepsExercises.slice().sort((a, b) => (
+        (familyPriority[tricepsFamilyOf(a.exercise)] ?? 9) - (familyPriority[tricepsFamilyOf(b.exercise)] ?? 9)
+      ));
+      tricepsEntries.forEach(({ exercise }) => {
+        const family = tricepsFamilyOf(exercise);
+        const minSets = family === 'press' ? 4 : family === 'overhead' || family === 'pushdown' ? 3 : 2;
+        exercise.sets = Math.max(minSets, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || minSets)));
+      });
+      let refreshed = summarizeArmWork(days);
+      const bicepsEntries = refreshed.bicepsExercises.slice();
+      const desiredTricepsSets = refreshed.bicepsSets >= 8
+        ? Math.max(refreshed.bicepsSets, Math.min(12, refreshed.bicepsSets + 2))
+        : refreshed.bicepsSets;
+      bicepsEntries.forEach(({ exercise }) => {
+        const maxSets = 3;
+        exercise.sets = Math.max(3, Math.min(maxSets, Number(exercise?.sets || 3)));
+      });
+      refreshed = summarizeArmWork(days);
+      const triOrdered = refreshed.tricepsExercises.slice().sort((a, b) => (
+        (familyPriority[tricepsFamilyOf(a.exercise)] ?? 9) - (familyPriority[tricepsFamilyOf(b.exercise)] ?? 9)
+      ));
+      for (const { exercise } of triOrdered) {
+        if (refreshed.tricepsSets >= desiredTricepsSets) break;
+        const nextSets = Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || 0) + 1);
+        if (nextSets > Number(exercise?.sets || 0)) {
+          exercise.sets = nextSets;
+          refreshed = summarizeArmWork(days);
+        }
+      }
+      while (refreshed.tricepsSets < refreshed.bicepsSets || (refreshed.bicepsSets >= 8 && refreshed.tricepsSets < desiredTricepsSets)) {
+        const beforeSignature = currentSignature();
+        loopIterationCount += 1;
+        const extraBiceps = refreshed.bicepsExercises.slice().sort((a, b) => b.exIdx - a.exIdx);
+        const replaced = extraBiceps.some(({ day }) => addArmExercise(day, 'triceps', refreshed.tricepsFamilies.has('pushdown') ? (refreshed.tricepsFamilies.has('overhead') ? 'extension' : 'overhead') : 'pushdown'));
+        refreshed = summarizeArmWork(days);
+        if (beforeSignature === currentSignature()) noProgressCount += 1;
+        else noProgressCount = 0;
+        if (!replaced) break;
+        if (loopIterationCount > MAX_VISIBILITY_ATTEMPTS || noProgressCount > MAX_NO_PROGRESS) {
+          emitPlannerDiagnosticHeartbeat(user, 'visibility_reinforcement_degraded', {
+            functionName: 'reinforceArmPriorityVisibility',
+            fileName: 'generator/trainingEngine.oblueprint.js',
+            elapsedMs: plannerNowMs(),
+            weekIndex,
+            weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+            totalDayCount: days.length,
+            totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+            requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+            selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+            loopIterationCount,
+            replacementAttempts,
+            noProgressCount
+          });
+          break;
+        }
+        const tricepsOrdered = refreshed.tricepsExercises.slice().sort((a, b) => (
+          (familyPriority[tricepsFamilyOf(a.exercise)] ?? 9) - (familyPriority[tricepsFamilyOf(b.exercise)] ?? 9)
+        ));
+        for (const { exercise } of tricepsOrdered) {
+          if (refreshed.tricepsSets >= refreshed.bicepsSets && (!(refreshed.bicepsSets >= 8) || refreshed.tricepsSets >= desiredTricepsSets)) break;
+          const nextSets = Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || 0) + 1);
+          if (nextSets > Number(exercise?.sets || 0)) {
+            exercise.sets = nextSets;
+            refreshed = summarizeArmWork(days);
+          }
+        }
+        if (!extraBiceps.length) break;
+      }
+      let finalSummary = summarizeArmWork(days);
+      if (finalSummary.bicepsSets > finalSummary.tricepsSets) {
+        for (const { exercise } of finalSummary.bicepsExercises.slice().sort((a, b) => b.exIdx - a.exIdx)) {
+          if (finalSummary.bicepsSets <= finalSummary.tricepsSets) break;
+          const nextSets = Math.max(2, Number(exercise?.sets || 2) - 1);
+          if (nextSets < Number(exercise?.sets || 2)) {
+            exercise.sets = nextSets;
+            finalSummary = summarizeArmWork(days);
+          }
+        }
+      }
+    };
+    applyArmSetBalancing();
+    const trimExtraDirectArmWork = () => {
+      let refreshed = summarizeArmWork(days);
+      const maxBicepsExercises = 2;
+      const maxTricepsExercises = 3;
+      const removableBiceps = refreshed.bicepsExercises.slice().sort((a, b) => b.exIdx - a.exIdx);
+      for (const { day, exIdx } of removableBiceps) {
+        refreshed = summarizeArmWork(days);
+        if (refreshed.bicepsExercises.length <= maxBicepsExercises) break;
+        if ((day?.exercises || []).length <= 2) continue;
+        day.exercises.splice(exIdx, 1);
+        day.exercises = organizeDayExerciseOrder(day.dayType, day.exercises);
+      }
+      refreshed = summarizeArmWork(days);
+      const keepTriKeys = new Set();
+      ['press', 'overhead', 'pushdown'].forEach((family) => {
+        const kept = refreshed.tricepsExercises.find(({ exercise }) => tricepsFamilyOf(exercise) === family);
+        if (kept) keepTriKeys.add(`${kept.dayIdx}:${kept.exIdx}`);
+      });
+      const removableTriceps = refreshed.tricepsExercises
+        .slice()
+        .filter(({ exercise, dayIdx, exIdx }) => {
+          const key = `${dayIdx}:${exIdx}`;
+          if (keepTriKeys.has(key)) return false;
+          return true;
+        })
+        .sort((a, b) => b.exIdx - a.exIdx);
+      for (const { day, exIdx } of removableTriceps) {
+        refreshed = summarizeArmWork(days);
+        if (refreshed.tricepsExercises.length <= maxTricepsExercises) break;
+        if ((day?.exercises || []).length <= 2) continue;
+        day.exercises.splice(exIdx, 1);
+        day.exercises = organizeDayExerciseOrder(day.dayType, day.exercises);
+      }
+    };
+    trimExtraDirectArmWork();
+    applyArmSetBalancing();
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_arm_priority_visibility', {
+      functionName: 'reinforceArmPriorityVisibility',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      weekIndex,
+      weeksLength: Array.isArray(weeks) ? weeks.length : 0,
+      totalDayCount: days.length,
+      totalExerciseCount: days.reduce((sum, entry) => sum + (Array.isArray(entry?.exercises) ? entry.exercises.length : 0), 0),
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      loopIterationCount,
+      replacementAttempts,
+      noProgressCount
+    });
     return { ...week, days };
   });
 }
@@ -4162,8 +7520,10 @@ function flattenPlanExercises(weeks) {
 
 function summarizeDirectSetsByMuscle(weeks) {
   return flattenPlanExercises(weeks).reduce((acc, ex) => {
-    const muscle = String(ex?.primary || 'Core');
-    acc[muscle] = Number(acc[muscle] || 0) + Number(ex?.sets || 0);
+    const directTargets = getExerciseDirectTargetKeys(ex);
+    directTargets.forEach((muscle) => {
+      acc[muscle] = Number(acc[muscle] || 0) + Number(ex?.sets || 0);
+    });
     return acc;
   }, {});
 }
@@ -4182,11 +7542,32 @@ function countDaysMatchingExercisePredicate(weeks, predicate) {
   return days.filter((day) => (day?.exercises || []).some((exercise) => predicate(exercise, day))).length;
 }
 
+function getPriorityGroupTargetKeys(group) {
+  const mapped = priorityGroupToDirectTargets(group);
+  if (mapped.length) return mapped;
+  if (DIRECT_TARGET_KEYS.includes(String(group || ''))) return [String(group)];
+  return [];
+}
+
+function getPriorityGroupDirectSetCount(directSets, group) {
+  return getPriorityGroupTargetKeys(group).reduce((sum, key) => sum + Number(directSets?.[key] || 0), 0);
+}
+
+function getPriorityGroupFrequencyTarget(frequencyTargets, group) {
+  return getPriorityGroupTargetKeys(group).reduce((max, key) => Math.max(max, Number(frequencyTargets?.[key] || 0)), 0);
+}
+
+function getPriorityGroupWeeklyTarget(targets, group) {
+  return getPriorityGroupTargetKeys(group).reduce((sum, key) => sum + Number(targets?.[key] || 0), 0);
+}
+
 function buildCeilingQaReport(plan, user) {
   const exercises = flattenPlanExercises(plan?.weeks);
   const weekDays = plan?.weeks?.[0]?.days || [];
   const priorityGroups = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
   const directSets = summarizeDirectSetsByMuscle(plan?.weeks);
+  const weeklyTargets = plan?.meta?.weeklyTargets || {};
+  const frequencyTargets = plan?.meta?.frequencyTargets || {};
   const scores = {
     priorityDominance: 10,
     overloadQuality: 10,
@@ -4201,7 +7582,7 @@ function buildCeilingQaReport(plan, user) {
   const unsupportedBackBuilders = exercises.filter((exercise) => String(exercise?.pullRole || '') === 'back_builder' && String(exercise?.supportType || '') === 'unsupported').length;
   const lowOverloadPriorityExercises = exercises.filter((exercise) => {
     const primary = String(exercise?.primary || exercise?.muscleTarget || '');
-    return priorityGroups.includes(primary) && String(exercise?.overloadFriendliness || '') === 'low';
+    return hasPriorityGroup(priorityGroups, primary) && String(exercise?.overloadFriendliness || '') === 'low';
   }).length;
   const highFatigueLowerExercises = exercises.filter((exercise) => {
     const primary = String(exercise?.primary || exercise?.muscleTarget || '');
@@ -4226,38 +7607,40 @@ function buildCeilingQaReport(plan, user) {
     return pressCount > 2;
   }).length;
   const constrainedEquipment = Boolean(user?.profile?.minimalEquipmentAccessoryMode || user?.profile?.bodyweightDominant);
-  const backPriority = priorityGroups.includes('Back');
+  const backPriority = hasPriorityGroup(priorityGroups, 'Back');
   const directPriorityDays = {};
   priorityGroups.forEach((priority) => {
     directPriorityDays[priority] = countDaysMatchingExercisePredicate(plan?.weeks, (exercise) => exerciseDirectlyServesPriority(exercise, priority, user));
   });
 
   for (const priority of priorityGroups) {
-    const directSetsForPriority = Number(directSets[priority] || 0);
+    const directSetsForPriority = getPriorityGroupDirectSetCount(directSets, priority);
     const exposureDays = Number(directPriorityDays[priority] || 0);
-    if (priority === 'Core') {
-      const targetFamilies = priorityGroups.includes('Calves') || Number(user?.daysPerWeek || 0) >= 4 ? 2 : 1;
+    const targetSetsForPriority = getPriorityGroupWeeklyTarget(weeklyTargets, priority);
+    const targetFrequencyForPriority = getPriorityGroupFrequencyTarget(frequencyTargets, priority);
+    if (priorityGroupsOverlap(priority, 'Abs')) {
+      const targetFamilies = hasPriorityGroup(priorityGroups, 'Calves') || Number(user?.daysPerWeek || 0) >= 4 ? 2 : 1;
       const familyCount = countDistinctCoreFamiliesFromPlan(plan?.weeks);
       if (familyCount < targetFamilies) {
         scores.priorityDominance -= 1.5;
         scores.identityClarity -= 1.0;
         notes.push('Core emphasis is present but still not varied enough to dominate the week.');
       }
-      if (exposureDays < Math.min(2, Number(user?.daysPerWeek || 0))) {
+      if (exposureDays < Math.max(1, targetFrequencyForPriority)) {
         scores.priorityDominance -= 1.0;
         notes.push('Core is not showing up often enough to clearly dominate the week.');
       }
       continue;
     }
-    if (priority === 'Calves') {
-      const targetDays = Number(user?.daysPerWeek || 0) <= 3 ? Math.min(2, Number(user?.daysPerWeek || 0)) : 2;
+    if (priorityGroupsOverlap(priority, 'Calves')) {
+      const targetDays = Math.max(1, targetFrequencyForPriority);
       if (exposureDays < targetDays) {
         scores.priorityDominance -= 1.0;
         notes.push('Calf work is present, but not frequent enough to feel like a true specialization focus.');
       }
       continue;
     }
-    if (priority === 'Glutes') {
+    if (priorityGroupsOverlap(priority, 'Hamstrings/Glutes')) {
       const glutePrimaryCount = exercises.filter((exercise) => isRealPosteriorChainBuilder(exercise, user)).length;
       if (glutePrimaryCount < Math.max(2, Number(user?.daysPerWeek || 0) >= 4 ? 3 : 2)) {
         scores.priorityDominance -= 1.5;
@@ -4266,11 +7649,11 @@ function buildCeilingQaReport(plan, user) {
       }
       continue;
     }
-    if (directSetsForPriority < 6 && ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'].includes(priority)) {
+    if (targetSetsForPriority > 0 && directSetsForPriority < Math.max(6, Math.floor(targetSetsForPriority * 0.75))) {
       scores.priorityDominance -= 1.0;
       notes.push(`${priority} does not get enough direct high-value work to fully dominate the week.`);
     }
-    if (Number(user?.daysPerWeek || 0) >= 4 && exposureDays < 2 && ['Back', 'Shoulders', 'Arms'].includes(priority)) {
+    if (targetFrequencyForPriority > 0 && exposureDays < targetFrequencyForPriority) {
       scores.identityClarity -= 1.0;
       notes.push(`${priority} is present, but not repeated clearly enough across the week.`);
     }
@@ -4346,6 +7729,8 @@ function buildEliteQaReport(plan, user) {
   const days = (plan?.weeks?.[0]?.days || []).length;
   const directSets = summarizeDirectSetsByMuscle(plan?.weeks);
   const priorityGroups = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
+  const weeklyTargets = plan?.meta?.weeklyTargets || {};
+  const frequencyTargets = plan?.meta?.frequencyTargets || {};
   const notes = [];
   const scores = {
     validity: 10,
@@ -4392,30 +7777,32 @@ function buildEliteQaReport(plan, user) {
     notes.push('A tight-session day still carries too much density.');
   }
   for (const group of priorityGroups) {
-    if (group === 'Calves') {
+    if (priorityGroupsOverlap(group, 'Calves')) {
       const calfDays = (plan?.weeks?.[0]?.days || []).filter((day) => (day?.exercises || []).some((ex) => Boolean(ex?.directCalf))).length;
-      const calfTargetDays = Number(user?.daysPerWeek || 0) <= 3 ? Math.min(2, Number(user?.daysPerWeek || 0)) : 2;
+      const calfTargetDays = Math.max(1, getPriorityGroupFrequencyTarget(frequencyTargets, group));
       if (calfDays < calfTargetDays) {
         scores.emphasis -= 4;
         notes.push('Calf emphasis is not visible enough.');
       }
-    } else if (group === 'Core') {
-      const coreVarietyTarget = Number(user?.daysPerWeek || 0) >= 4 ? 2 : (priorityGroups.includes('Calves') ? 2 : 1);
+    } else if (priorityGroupsOverlap(group, 'Abs')) {
+      const coreVarietyTarget = Number(user?.daysPerWeek || 0) >= 4 ? 2 : (hasPriorityGroup(priorityGroups, 'Calves') ? 2 : 1);
       if (countDistinctCoreFamiliesFromPlan(plan?.weeks) < coreVarietyTarget) {
         scores.emphasis -= 3;
         notes.push('Ab emphasis lacks enough direct core variety.');
       }
-    } else if ((directSets[group] || 0) < 6 && ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Glutes'].includes(group)) {
+    } else if (getPriorityGroupWeeklyTarget(weeklyTargets, group) > 0 && getPriorityGroupDirectSetCount(directSets, group) < Math.max(6, Math.floor(getPriorityGroupWeeklyTarget(weeklyTargets, group) * 0.75))) {
       scores.emphasis -= 3;
       notes.push(`${group} emphasis is not getting enough direct work.`);
     }
   }
-  if (priorityGroups.includes('Shoulders')) {
+  if (hasPriorityGroup(priorityGroups, 'Shoulders')) {
     const shoulderDays = (plan?.weeks?.[0]?.days || []).filter((day) => (day?.exercises || []).some((ex) => {
       return String(ex?.primary || ex?.muscleTarget || '') === 'Shoulders' || Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern) || Boolean(ex?.shoulderPressPattern);
     })).length;
     const hasPress = exercises.some((ex) => Boolean(ex?.shoulderPressPattern));
     const hasLateralRear = exercises.some((ex) => Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern));
+    const lateralRearCount = exercises.filter((ex) => Boolean(ex?.lateralDeltPattern) || Boolean(ex?.rearDeltPattern)).length;
+    const shoulderPressCount = exercises.filter((ex) => Boolean(ex?.shoulderPressPattern)).length;
     if (Number(user?.daysPerWeek || 0) >= 4 && shoulderDays < 2) {
       scores.emphasis -= 4;
       notes.push('Shoulder emphasis is not clearly repeated across the week.');
@@ -4424,20 +7811,38 @@ function buildEliteQaReport(plan, user) {
       scores.emphasis -= 3;
       notes.push('Shoulder emphasis is missing either a press pattern or clear lateral/rear delt work.');
     }
+    if (lateralRearCount < 2 || shoulderPressCount > lateralRearCount + 1) {
+      scores.emphasis -= 3;
+      notes.push('Shoulder emphasis still leans too much on pressing instead of lateral/rear delt identity.');
+    }
   }
-  if (priorityGroups.includes('Arms')) {
+  if (hasPriorityGroup(priorityGroups, 'Arms')) {
     const hasBiceps = exercises.some((ex) => String(ex?.directArmType || '') === 'biceps');
     const hasTriceps = exercises.some((ex) => String(ex?.directArmType || '') === 'triceps');
     const armDays = (plan?.weeks?.[0]?.days || []).filter((day) => (day?.exercises || []).some((ex) => {
       return ['biceps', 'triceps'].includes(String(ex?.directArmType || ''));
     })).length;
+    const bicepsSets = exercises.reduce((sum, ex) => sum + (String(ex?.directArmType || '') === 'biceps' ? Number(ex?.sets || 0) : 0), 0);
+    const tricepsSets = exercises.reduce((sum, ex) => sum + (String(ex?.directArmType || '') === 'triceps' ? Number(ex?.sets || 0) : 0), 0);
+    const tricepsFamilies = new Set(exercises
+      .filter((ex) => String(ex?.directArmType || '') === 'triceps')
+      .map((ex) => tricepsMovementFamily(ex?.name))
+      .filter((family) => family !== 'none'));
     if (!hasBiceps || !hasTriceps) {
       scores.emphasis -= 4;
       notes.push('Arm emphasis is missing either direct biceps work or direct triceps work.');
     }
-    if (Number(user?.daysPerWeek || 0) >= 4 && armDays < 2) {
+    if (armDays < Math.max(Number(frequencyTargets?.Biceps || 0), Number(frequencyTargets?.Triceps || 0), 2)) {
       scores.emphasis -= 3;
       notes.push('Arm emphasis is not clearly repeated across the week.');
+    }
+    if (tricepsSets < bicepsSets) {
+      scores.emphasis -= 4;
+      notes.push('Arm emphasis still over-allocates biceps compared with direct triceps volume.');
+    }
+    if (!tricepsFamilies.has('press') || !tricepsFamilies.has('overhead') || !tricepsFamilies.has('pushdown')) {
+      scores.emphasis -= 3;
+      notes.push('Arm emphasis is missing one of the needed triceps families: press, overhead extension, or pushdown.');
     }
   }
   if (!Array.isArray(plan?.meta?.progressionModel?.overloadPriority) || !plan?.meta?.progressionModel?.overloadPriority?.length) {
@@ -4466,6 +7871,83 @@ function buildEliteQaReport(plan, user) {
   };
 }
 
+function buildShoulderPriorityWeeklyRepairSnapshot(weeks, user) {
+  const safeWeeks = Array.isArray(weeks) ? weeks : [];
+  const normalizedPriorityGroups = Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [];
+  const shoulderExposureDays = [];
+  let shoulderPressDayCount = 0;
+  let lateralDeltSlots = 0;
+  let rearDeltSlots = 0;
+  safeWeeks.forEach((week, weekIndex) => {
+    (Array.isArray(week?.days) ? week.days : []).forEach((day, dayIndex) => {
+      const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+      const shoulderExercises = exercises.filter((exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        return Boolean(
+          truth?.shoulderPressPattern
+          || truth?.lateralDeltPattern
+          || truth?.rearDeltPattern
+          || String(exercise?.primary || exercise?.muscleTarget || '') === 'Shoulders'
+        );
+      });
+      if (!shoulderExercises.length) return;
+      const hasShoulderPress = shoulderExercises.some((exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        return Boolean(truth?.shoulderPressPattern);
+      });
+      if (hasShoulderPress) shoulderPressDayCount += 1;
+      shoulderExercises.forEach((exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        if (truth?.lateralDeltPattern) lateralDeltSlots += 1;
+        if (truth?.rearDeltPattern) rearDeltSlots += 1;
+      });
+      shoulderExposureDays.push({
+        weekIndex: Number(week?.weekIndex ?? weekIndex),
+        dayIndex,
+        day: String(day?.day || '').trim() || null,
+        dayType: String(day?.dayType || '').trim() || null,
+        shoulderPressDay: hasShoulderPress,
+        shoulderExerciseNames: shoulderExercises.map((exercise) => String(exercise?.name || '').trim()).filter(Boolean)
+      });
+    });
+  });
+  return {
+    shoulder_priority_selected: hasPriorityGroup(normalizedPriorityGroups, 'Shoulders'),
+    priorityGroups: normalizedPriorityGroups,
+    shoulderExposureDayCount: shoulderExposureDays.length,
+    shoulderPressDayCount,
+    lateralDeltSlots,
+    rearDeltSlots,
+    shoulderExposureDays
+  };
+}
+
+function applyWeeklyShoulderPriorityRepairGuard(weeks, user) {
+  const snapshot = buildShoulderPriorityWeeklyRepairSnapshot(weeks, user);
+  try {
+    console.info('[training-debug][shoulder-priority][builder] shoulder_priority_weekly_check', snapshot);
+  } catch {
+    // ignore logging failures
+  }
+  if (!snapshot.shoulder_priority_selected) {
+    try {
+      console.info('[training-debug][shoulder-priority][builder] shoulder_priority_weekly_repair_skip', {
+        shoulder_priority_selected: false,
+        priorityGroups: snapshot.priorityGroups,
+        shoulderExposureDayCount: snapshot.shoulderExposureDayCount,
+        shoulderPressDayCount: snapshot.shoulderPressDayCount,
+        lateralDeltSlots: snapshot.lateralDeltSlots,
+        rearDeltSlots: snapshot.rearDeltSlots,
+        reason: 'shoulders_not_selected'
+      });
+    } catch {
+      // ignore logging failures
+    }
+    return weeks;
+  }
+  return weeks;
+}
+
 function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, frequencyTargets, stressMultiplier, notes = []) {
   return withPlannerTiming(user, 'finalRenderingOutputMs', () => {
     const progressionProjection = buildBodybuildingProgressionProjection(user, safeWeeks);
@@ -4476,8 +7958,10 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
       adaptiveProjectionState
     };
     delete projectionMeta.projectionByExerciseWeek;
-    const outputWeeks = weeksWithProjection.map((week) => ({
-      ...week,
+    const outputWeeks = weeksWithProjection.map((week) => {
+      const { __backToBackCleanupTouchedFinalPlan, ...weekRest } = week || {};
+      return {
+      ...weekRest,
       days: (week.days || []).map((day) => ({
         dayType: day.dayType,
         exercises: (day.exercises || []).map(({ muscleTarget, slotId, optional, requiredEquipment, isCalisthenicsLike, nameLower, canonicalTruth, ...rest }) => ({
@@ -4487,7 +7971,8 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
           subMuscle: rest?.subMuscle || canonicalTruth?.subMuscle || rest?.sub
         }))
       }))
-    }));
+    };
+    });
     const flattenedExercises = flattenPlanExercises(outputWeeks);
     const forcedCompromises = [];
     if (user?.injuryNoteFlags?.avoidStraightBar || user?.injuryNoteFlags?.avoidWristExtension) {
@@ -4525,6 +8010,10 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         daysPerWeek: user.daysPerWeek,
         sessionCap: user.sessionCap,
         allowedEquipment: user.allowedEquipment,
+        preferredDays: Array.isArray(user.preferredDays) ? user.preferredDays.slice() : [],
+        schedule: {
+          preferredDays: Array.isArray(user.preferredDays) ? user.preferredDays.slice() : []
+        },
         priorityGroups: user.priorityGroups || [],
         weeklyTargets: targets,
         frequencyTargets,
@@ -4568,6 +8057,33 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
     if (runtimeProfile) plan.meta.runtimeProfile = runtimeProfile;
     plan.meta.eliteQa = buildEliteQaReport(plan, user);
     plan.meta.ceilingQa = buildCeilingQaReport(plan, user);
+    if (shouldTrackAbsGlutesLegsComboDebug(user)) {
+      (outputWeeks || []).forEach((week, weekIndex) => {
+        logAbsGlutesLegsComboDebug(user, 'final_returned_week_snapshot', buildBackToBackCleanupWeekSnapshot(week, user, {
+          touched: Boolean(weeksWithProjection?.[weekIndex]?.__backToBackCleanupTouchedFinalPlan),
+          schedule
+        }));
+      });
+    }
+    if (hasPriorityGroup(user, 'Shoulders')) {
+      (weeksWithProjection || []).forEach((week) => {
+        (week?.days || []).forEach((day, dayIndex) => {
+          const exerciseList = Array.isArray(day?.exercises) ? day.exercises : [];
+          const hasShoulderPress = exerciseList.some((exercise) => {
+            const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+            return Boolean(truth?.shoulderPressPattern);
+          });
+          if (!hasShoulderPress) return;
+          try {
+            console.info('[training-debug][shoulder-priority][builder] final_returned_day_snapshot', buildShoulderPressCleanupDaySnapshot(day, user, {
+              fallbackDay: schedule?.[dayIndex]?.day || ''
+            }));
+          } catch {
+            // ignore logging failures
+          }
+        });
+      });
+    }
     return plan;
   });
 }
@@ -4590,15 +8106,116 @@ function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets
     const weeksResult = buildWeeks(user.timeline === '4 weeks' ? 4 : 8, schedule, user, exercises, targets, { constrainedRebuild: true });
     if (weeksResult.error) return weeksResult;
     const safeResult = repairAndValidatePlan(weeksResult.weeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_generator_final_return', {
+      functionName: 'buildFinalConstrainedRebuild',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      planExists: Boolean(safeResult && !safeResult.error),
+      weeksLength: Array.isArray(safeResult?.weeks) ? safeResult.weeks.length : undefined,
+      callBoundary: 'buildFinalConstrainedRebuild_after_repairAndValidatePlan'
+    });
     if (safeResult.error) return safeResult;
+    emitPlannerDiagnosticHeartbeat(user, 'before_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      safeResult.weeks,
+      'buildFinalConstrainedRebuild_before_reinforce_low_frequency_priority_accessories',
+      'buildFinalConstrainedRebuild'
+    ));
     const polishedWeeks = (safeResult.weeks || []).map((week) => ({
       ...week,
-      days: (week?.days || []).map((day) => applyFinalNarrowPriorityDayPolish(day, user, exercises, String(week?.weekType || 'base')))
+      days: (week?.days || []).map((day) => applyFinalNarrowPriorityDayPolish(day, user, exercises, String(week?.weekType || 'base'), {
+        weekIndex: week?.weekIndex
+      }))
     }));
+    const reinforcedWeeks = reinforceLowFrequencyPriorityAccessories(polishedWeeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'buildFinalConstrainedRebuild_after_reinforce_low_frequency_priority_accessories',
+      'buildFinalConstrainedRebuild'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'buildFinalConstrainedRebuild_before_cleanup_excess_core_volume',
+      'buildFinalConstrainedRebuild'
+    ));
+    const coreCleanupInputWeeks = reinforcedWeeks;
+    emitPlannerDiagnosticHeartbeat(user, 'before_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanupInputWeeks,
+        'buildFinalConstrainedRebuild_before_core_cleanup_direct_call',
+        'buildFinalConstrainedRebuild'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    const coreCleanedWeeks = cleanupExcessCoreVolumeInSuccessfulPlan(coreCleanupInputWeeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanedWeeks,
+        'buildFinalConstrainedRebuild_after_core_cleanup_direct_call',
+        'buildFinalConstrainedRebuild'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'buildFinalConstrainedRebuild_after_cleanup_excess_core_volume',
+      'buildFinalConstrainedRebuild'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'buildFinalConstrainedRebuild_before_cleanup_back_to_back_lower_redundancy',
+      'buildFinalConstrainedRebuild'
+    ));
+    const finalWeeks = cleanupBackToBackLowerDayRedundancyInSuccessfulPlan(
+      coreCleanedWeeks,
+      user,
+      exercises
+    );
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'buildFinalConstrainedRebuild_after_cleanup_back_to_back_lower_redundancy',
+      'buildFinalConstrainedRebuild'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'buildFinalConstrainedRebuild_before_final_weeks_assignment',
+      'buildFinalConstrainedRebuild'
+    ));
+    const guardedFinalWeeks = applyWeeklyShoulderPriorityRepairGuard(finalWeeks, user);
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      guardedFinalWeeks,
+      'buildFinalConstrainedRebuild_after_final_weeks_assignment',
+      'buildFinalConstrainedRebuild'
+    ));
+    if (shouldTrackCalvesComboDiagnostics(user)) {
+      emitPlannerDiagnosticHeartbeat(user, 'constrained rebuild completed', {
+        calfExposureByWeek: buildCalvesExposureSnapshot(guardedFinalWeeks, user)
+      });
+    }
+    emitPlannerDiagnosticHeartbeat(user, 'before_return_successful_plan', buildCleanupChainHeartbeatMeta(
+      user,
+      guardedFinalWeeks,
+      'buildFinalConstrainedRebuild_before_return_successful_plan',
+      'buildFinalConstrainedRebuild'
+    ));
     return extractInternalPlanState(
       schedule,
-      reinforceLowFrequencyPriorityAccessories(polishedWeeks, user, exercises),
-      { ...safeResult, weeks: polishedWeeks },
+      guardedFinalWeeks,
+      { ...safeResult, weeks: guardedFinalWeeks },
       [reason || 'Used final constrained rebuild mode to preserve validity and constraints.'],
       {
         constrainedRebuild: true,
@@ -4610,27 +8227,166 @@ function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets
 
 function buildSafeBasePlanner(user, exercises, targets, frequencyTargets, stressMultiplier) {
   return withPlannerTiming(user, 'safeBasePlannerMs', () => {
+    logComboStageEnter(user, 'split selection');
     let schedule = withPlannerTiming(user, 'splitSelectionMs', () => buildSplit(user, user.daysPerWeek >= 5 && user.sessionLengthMin === '30'));
+    if (user?._plannerRuntime?.state) {
+      user._plannerRuntime.state.selectedSplit = Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [];
+    }
+    if (shouldTrackCalvesComboDiagnostics(user)) {
+      emitPlannerDiagnosticHeartbeat(user, 'split selected', {
+        selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : []
+      });
+    }
+    logAbsGlutesLegsComboDebug(user, 'selected-split', {
+      stage: 'split selection',
+      selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : []
+    });
+    logComboStageExit(user, 'split selection', {
+      selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : []
+    });
     let weeksResult = buildWeeks(user.timeline === '4 weeks' ? 4 : 8, schedule, user, exercises, targets);
     if (weeksResult.error && user.daysPerWeek >= 5 && user.sessionLengthMin === '30') {
+      logComboStageEnter(user, 'split selection', { fallbackUpperLower: true });
       schedule = withPlannerTiming(user, 'splitSelectionMs', () => buildSplit(user, true));
+      if (user?._plannerRuntime?.state) {
+        user._plannerRuntime.state.selectedSplit = Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [];
+      }
+      if (shouldTrackCalvesComboDiagnostics(user)) {
+        emitPlannerDiagnosticHeartbeat(user, 'split selected', {
+          selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : []
+        });
+      }
+      logAbsGlutesLegsComboDebug(user, 'selected-split', {
+        stage: 'split selection',
+        selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [],
+        fallbackUpperLower: true
+      });
+      logComboStageExit(user, 'split selection', {
+        selectedSplit: Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [],
+        fallbackUpperLower: true
+      });
       weeksResult = buildWeeks(user.timeline === '4 weeks' ? 4 : 8, schedule, user, exercises, targets);
     }
     if (weeksResult.error) {
       const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after main build exhaustion.');
       if (!rebuilt.error) return rebuilt;
-      return weeksResult;
+      return attachAbsGlutesLegsDebugMeta(weeksResult, user, {
+        stage: 'blueprint construction',
+        failedStage: weeksResult?.failedStage || weeksResult?.stage || 'blueprint construction'
+      });
     }
     const safeResult = repairAndValidatePlan(weeksResult.weeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_generator_final_return', {
+      functionName: 'buildSafeBasePlanner',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      planExists: Boolean(safeResult && !safeResult.error),
+      weeksLength: Array.isArray(safeResult?.weeks) ? safeResult.weeks.length : undefined,
+      callBoundary: 'buildSafeBasePlanner_after_repairAndValidatePlan'
+    });
     if (safeResult.error) {
       const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after sanitize/repair exhaustion.');
       if (!rebuilt.error) return rebuilt;
-      return safeResult;
+      return attachAbsGlutesLegsDebugMeta(safeResult, user, {
+        stage: 'final validation',
+        failedStage: safeResult?.failedStage || safeResult?.stage || 'final validation'
+      });
     }
+    emitPlannerDiagnosticHeartbeat(user, 'before_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      safeResult.weeks,
+      'buildSafeBasePlanner_before_reinforce_low_frequency_priority_accessories',
+      'buildSafeBasePlanner'
+    ));
+    const reinforcedWeeks = reinforceLowFrequencyPriorityAccessories(safeResult.weeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'buildSafeBasePlanner_after_reinforce_low_frequency_priority_accessories',
+      'buildSafeBasePlanner'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'buildSafeBasePlanner_before_cleanup_excess_core_volume',
+      'buildSafeBasePlanner'
+    ));
+    const coreCleanupInputWeeks = reinforcedWeeks;
+    emitPlannerDiagnosticHeartbeat(user, 'before_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanupInputWeeks,
+        'buildSafeBasePlanner_before_core_cleanup_direct_call',
+        'buildSafeBasePlanner'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    const coreCleanedWeeks = cleanupExcessCoreVolumeInSuccessfulPlan(coreCleanupInputWeeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanedWeeks,
+        'buildSafeBasePlanner_after_core_cleanup_direct_call',
+        'buildSafeBasePlanner'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'buildSafeBasePlanner_after_cleanup_excess_core_volume',
+      'buildSafeBasePlanner'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'buildSafeBasePlanner_before_cleanup_back_to_back_lower_redundancy',
+      'buildSafeBasePlanner'
+    ));
+    const finalWeeks = cleanupBackToBackLowerDayRedundancyInSuccessfulPlan(
+      coreCleanedWeeks,
+      user,
+      exercises
+    );
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'buildSafeBasePlanner_after_cleanup_back_to_back_lower_redundancy',
+      'buildSafeBasePlanner'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'buildSafeBasePlanner_before_final_weeks_assignment',
+      'buildSafeBasePlanner'
+    ));
+    const guardedFinalWeeks = applyWeeklyShoulderPriorityRepairGuard(finalWeeks, user);
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      guardedFinalWeeks,
+      'buildSafeBasePlanner_after_final_weeks_assignment',
+      'buildSafeBasePlanner'
+    ));
+    if (shouldTrackCalvesComboDiagnostics(user)) {
+      emitPlannerDiagnosticHeartbeat(user, 'safe base planner completed', {
+        calfExposureByWeek: buildCalvesExposureSnapshot(guardedFinalWeeks, user)
+      });
+    }
+    emitPlannerDiagnosticHeartbeat(user, 'before_return_successful_plan', buildCleanupChainHeartbeatMeta(
+      user,
+      guardedFinalWeeks,
+      'buildSafeBasePlanner_before_return_successful_plan',
+      'buildSafeBasePlanner'
+    ));
     return extractInternalPlanState(
       schedule,
-      reinforceLowFrequencyPriorityAccessories(safeResult.weeks, user, exercises),
-      safeResult,
+      guardedFinalWeeks,
+      { ...safeResult, weeks: guardedFinalWeeks },
       [],
       { constrainedRebuild: false }
     );
@@ -4740,6 +8496,7 @@ function qualityReplacementPreference(candidate, currentExercise, slot, user, da
   const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
   const currentTruth = currentExercise?.canonicalTruth || buildExerciseTruth(currentExercise, user);
   const name = normalizeName(candidate?.name);
+  const slotId = String(slot?.id || '');
   let bonus = 0;
   if (truth.progressionFriendly) bonus += 10;
   if (/(supported|chest supported|seated|machine|cable|leverage|smith machine)/.test(name)) bonus += 6;
@@ -4751,6 +8508,13 @@ function qualityReplacementPreference(candidate, currentExercise, slot, user, da
   if (['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(dayType || '')) && !truth.hingeLoadingHigh && truth.progressionFriendly) bonus += 6;
   if (slot?.muscleTarget === 'Chest' && isChestPressPatternName(candidate?.name) && !/\b(one arm|single arm)\b/.test(name)) bonus += 8;
   if (slot?.muscleTarget === 'Arms' && truth.directArmType === 'triceps' && !isCoachSideEyeAccessory(candidate, user)) bonus += 8;
+  if ((slot?.muscleTarget === 'Biceps' || /repair_biceps/i.test(slotId)) && truth.directArmType === 'biceps') {
+    bonus += 10;
+    if (/(high cable curl|cable curl|overhead cable curl)/.test(name)) bonus += 8;
+    if (/(incline dumbbell curl|incline curl)/.test(name)) bonus += 8;
+    if (/\bhammer curl\b/.test(name)) bonus += 6;
+    if (/\bpreacher\b/.test(name)) bonus += 6;
+  }
   if (slot?.muscleTarget === 'Core' && truth.directAb) bonus += 8;
   if (slot?.muscleTarget === 'Core' && truth.coreFamily !== currentTruth.coreFamily) bonus += 10;
   if (slot?.muscleTarget === 'Glutes') bonus += gluteStrengthRank(truth.glutePrimaryStrength) * 8;
@@ -4779,7 +8543,7 @@ function getGoalIdentityPriorityMuscles(user) {
   if (priorities.length <= 2) return priorities;
   if (hasExactPriorities(user, ['Chest', 'Shoulders', 'Arms'])) return ['Chest', 'Shoulders', 'Arms'];
   if (hasExactPriorities(user, ['Back', 'Shoulders', 'Arms'])) return ['Back', 'Shoulders', 'Arms'];
-  if (hasExactPriorities(user, ['Legs', 'Glutes', 'Calves'])) return ['Legs', 'Glutes', 'Calves'];
+  if (hasExactPriorities(user, ['Quads', 'Hamstrings/Glutes', 'Calves'])) return ['Quads', 'Hamstrings/Glutes', 'Calves'];
   return [];
 }
 
@@ -4789,12 +8553,12 @@ function isNarrowPriorityUser(user) {
 
 function isUpperNarrowPriorityUser(user) {
   const priorities = getGoalIdentityPriorityMuscles(user);
-  return priorities.length > 0 && priorities.every((muscle) => ['Chest', 'Back', 'Shoulders', 'Arms', 'Core'].includes(String(muscle || '')));
+  return priorities.length > 0 && priorities.every((muscle) => ['Chest', 'Back', 'Shoulders', 'Arms', 'Abs'].includes(String(muscle || '')));
 }
 
 function isLowerNarrowPriorityUser(user) {
   const priorities = getGoalIdentityPriorityMuscles(user);
-  return priorities.length > 0 && priorities.every((muscle) => ['Legs', 'Glutes', 'Calves', 'Core'].includes(String(muscle || '')));
+  return priorities.length > 0 && priorities.every((muscle) => ['Quads', 'Hamstrings/Glutes', 'Calves', 'Abs'].includes(String(muscle || '')));
 }
 
 function getGoalIdentityPrioritiesForDay(dayType, user) {
@@ -4806,9 +8570,9 @@ function getNarrowPriorityComboOrder(user, dayType = '') {
   const type = String(dayType || '');
   if (isNarrowBackArmsUser(user) && ['Pull', 'Upper', 'UpperFocus', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Back', 'Arms'];
   if (isNarrowShouldersArmsUser(user) && ['Push', 'Upper', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Shoulders', 'Arms'];
-  if (isNarrowChestCoreUser(user) && ['Push', 'Upper', 'UpperFocus', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Chest', 'Core'];
-  if (isNarrowPosteriorCoreUser(user) && ['Lower', 'LowerFocus', 'Legs', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Glutes', 'Core'];
-  if (isNarrowCoreCalvesUser(user) && ['FullBodyA', 'FullBodyB', 'Upper', 'UpperFocus', 'Lower', 'LowerFocus', 'Legs'].includes(type)) return ['Core', 'Calves'];
+  if (isNarrowChestCoreUser(user) && ['Push', 'Upper', 'UpperFocus', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Chest', 'Abs'];
+  if (isNarrowPosteriorCoreUser(user) && ['Lower', 'LowerFocus', 'Legs', 'FullBodyA', 'FullBodyB'].includes(type)) return ['Hamstrings/Glutes', 'Abs'];
+  if (isNarrowCoreCalvesUser(user) && ['FullBodyA', 'FullBodyB', 'Upper', 'UpperFocus', 'Lower', 'LowerFocus', 'Legs'].includes(type)) return ['Abs', 'Calves'];
   return [];
 }
 
@@ -4825,7 +8589,7 @@ function isBackShouldersArmsUser(user) {
 }
 
 function isNarrowChestCoreUser(user) {
-  return hasExactPriorities(user, ['Chest', 'Core']);
+  return hasExactPriorities(user, ['Chest', 'Abs']);
 }
 
 function isChestShouldersArmsUser(user) {
@@ -4833,17 +8597,17 @@ function isChestShouldersArmsUser(user) {
 }
 
 function isNarrowCoreCalvesUser(user) {
-  return hasExactPriorities(user, ['Core', 'Calves']);
+  return hasExactPriorities(user, ['Abs', 'Calves']);
 }
 
 function isNarrowPosteriorCoreUser(user) {
-  return hasExactPriorities(user, ['Glutes', 'Core'])
-    || hasExactPriorities(user, ['Legs', 'Glutes', 'Core']);
+  return hasExactPriorities(user, ['Hamstrings/Glutes', 'Abs'])
+    || hasExactPriorities(user, ['Quads', 'Hamstrings/Glutes', 'Abs']);
 }
 
 function isGluteDominantPriorityUser(user) {
-  return hasExactPriorities(user, ['Legs', 'Glutes'])
-    || hasExactPriorities(user, ['Legs', 'Glutes', 'Calves'])
+  return hasExactPriorities(user, ['Quads', 'Hamstrings/Glutes'])
+    || hasExactPriorities(user, ['Quads', 'Hamstrings/Glutes', 'Calves'])
     || isNarrowPosteriorCoreUser(user);
 }
 
@@ -4913,6 +8677,8 @@ function buildQualityReplacement(day, exercise, slot, user, exercises, weekType,
       ...day,
       exercises: (day?.exercises || []).filter((entry) => entry !== exercise)
     };
+    const existingKeys = new Set((dayWithoutCurrent?.exercises || []).map((entry) => exerciseDayIdentityKey(entry)).filter(Boolean));
+    const existingTricepsFamilies = tricepsFamiliesOnDay(dayWithoutCurrent);
     const dayState = buildCurrentDayState(dayWithoutCurrent);
     const dayStateSignature = dayExerciseSignature(dayWithoutCurrent);
     const slotVariants = [{ ...slot }];
@@ -4988,15 +8754,43 @@ function buildQualityReplacement(day, exercise, slot, user, exercises, weekType,
           recordPlannerCount(user, 'qualityReplacementPoolHits');
         }
         return basePool
-          .filter((candidate) => String(candidate?.name || '') !== String(exercise?.canonicalName || exercise?.name || ''))
+          .filter((candidate) => exerciseDayIdentityKey(candidate) !== exerciseDayIdentityKey(exercise))
+          .filter((candidate) => !existingKeys.has(exerciseDayIdentityKey(candidate)))
+          .filter((candidate) => neckAllowedForUser(user) || !isNeckExercise(candidate, user))
           .map((candidate) => ({
             candidate,
             slot: candidateSlot,
             score: scoreExercise(candidate, candidateSlot, user, day?.dayType || '') + qualityReplacementPreference(candidate, exercise, candidateSlot, user, day?.dayType || '')
+              + (() => {
+                let bonus = 0;
+                const currentReq = new Set(Array.isArray(exercise?.requiredEquipment) ? exercise.requiredEquipment : Array.isArray(exercise?.canonicalTruth?.requiredEquipment) ? exercise.canonicalTruth.requiredEquipment : []);
+                const candidateReq = new Set(Array.isArray(candidate?.requiredEquipment) ? candidate.requiredEquipment : Array.isArray(candidate?.canonicalTruth?.requiredEquipment) ? candidate.canonicalTruth.requiredEquipment : []);
+                const overlap = [...candidateReq].filter((token) => currentReq.has(token)).length;
+                if (overlap > 0) bonus += overlap * 4;
+                const candidateTruth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+                const tricepsRepair = String(candidateTruth?.directArmType || '') === 'triceps'
+                  && (String(candidateSlot?.muscleTarget || '') === 'Triceps' || String(slot?.muscleTarget || '') === 'Triceps' || /triceps/i.test(String(candidateSlot?.id || slot?.id || '')));
+                if (tricepsRepair) {
+                  const family = tricepsMovementFamily(candidate?.name);
+                  if (family !== 'none') bonus += existingTricepsFamilies.has(family) ? -8 : 12;
+                }
+                return bonus;
+              })()
           }));
       })
       .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
     if (typeof predicate === 'function') eligible = eligible.filter(({ candidate }) => predicate(candidate));
+    const tricepsVarietyContext = String(slot?.muscleTarget || '') === 'Triceps'
+      || /triceps/i.test(String(slot?.id || ''));
+    if (tricepsVarietyContext) {
+      const tricepsVarietyEligible = eligible.filter(({ candidate }) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        if (String(truth?.directArmType || '') !== 'triceps') return false;
+        const family = tricepsMovementFamily(candidate?.name);
+        return family !== 'none' && !existingTricepsFamilies.has(family);
+      });
+      if (tricepsVarietyEligible.length) eligible = tricepsVarietyEligible;
+    }
     const selected = eligible[0] || null;
     const replacement = selected?.candidate || null;
     if (!replacement) return null;
@@ -5010,40 +8804,19 @@ function buildQualityReplacement(day, exercise, slot, user, exercises, weekType,
 }
 
 function exerciseDirectlyServesPriority(exercise, muscle, user) {
-  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
-  const name = normalizeName(exercise?.name);
-  switch (String(muscle || '')) {
-    case 'Chest':
-      return truth.primaryMuscle === 'Chest'
-        || truth.pressRole === 'chest_press'
-        || truth.pressRole === 'mixed'
-        || /(fly|crossover|pec deck)/.test(name);
-    case 'Back':
-      return truth.primaryMuscle === 'Back'
-        || truth.pullRole === 'back_builder';
-    case 'Shoulders':
-      return truth.primaryMuscle === 'Shoulders'
-        || truth.pressRole === 'shoulder_press'
-        || truth.directDeltSubtype !== 'none';
-    case 'Arms':
-      return truth.primaryMuscle === 'Arms'
-        || truth.directArmSubtype !== 'none'
-        || isDirectBicepsName(name)
-        || isDirectTricepsName(name);
-    case 'Core':
-      return truth.coreFamily !== 'none' || truth.directAb;
-    case 'Legs':
-      return truth.primaryMuscle === 'Legs'
-        || ['squat', 'lunge'].includes(String(truth.movementFamily || ''))
-        || /(leg extension|leg curl|hamstring curl|glute ham)/.test(name);
-    case 'Glutes':
-      return truth.primaryMuscle === 'Glutes'
-        || gluteStrengthRank(truth.glutePrimaryStrength) >= 2;
-    case 'Calves':
-      return truth.directCalf;
-    default:
-      return false;
-  }
+  const directTargets = new Set(getExerciseDirectTargetKeys(exercise, user));
+  const wanted = new Set(priorityGroupToDirectTargets(muscle));
+  if (String(muscle || '') === 'Back' && wanted.size === 0) wanted.add('Back');
+  if (String(muscle || '') === 'Shoulders' && wanted.size === 0) wanted.add('Shoulders');
+  if (String(muscle || '') === 'Chest' && wanted.size === 0) wanted.add('Chest');
+  if (String(muscle || '') === 'Calves' && wanted.size === 0) wanted.add('Calves');
+  if (String(muscle || '') === 'Abs' && wanted.size === 0) wanted.add('Abs');
+  if (String(muscle || '') === 'Biceps' && wanted.size === 0) wanted.add('Biceps');
+  if (String(muscle || '') === 'Triceps' && wanted.size === 0) wanted.add('Triceps');
+  if (String(muscle || '') === 'Quads' && wanted.size === 0) wanted.add('Quads');
+  if (String(muscle || '') === 'Hamstrings' && wanted.size === 0) wanted.add('Hamstrings');
+  if (String(muscle || '') === 'Glutes' && wanted.size === 0) wanted.add('Glutes');
+  return [...wanted].some((target) => directTargets.has(target));
 }
 
 function isPriorityRelevantToDay(dayType, muscle) {
@@ -5056,8 +8829,8 @@ function isPriorityRelevantToDay(dayType, muscle) {
     if (type === 'DeltsArms' && (muscle === 'Chest' || muscle === 'Back')) return false;
     return upperDays.has(type);
   }
-  if (['Legs', 'Glutes', 'Calves'].includes(muscle)) return lowerDays.has(type);
-  if (muscle === 'Core') return true;
+  if (['Quads', 'Hamstrings/Glutes', 'Calves', 'Legs', 'Glutes'].includes(muscle)) return lowerDays.has(type);
+  if (muscle === 'Abs' || muscle === 'Core') return true;
   return false;
 }
 
@@ -5134,6 +8907,7 @@ function buildPriorityIdentitySlot(dayType, muscle) {
         subFallback: null,
         optional: false
       };
+    case 'Abs':
     case 'Core':
       return {
         id: `${dayKey}_priority_identity_core`,
@@ -5145,6 +8919,7 @@ function buildPriorityIdentitySlot(dayType, muscle) {
         subFallback: null,
         optional: false
       };
+    case 'Quads':
     case 'Legs':
       return {
         id: `${dayKey}_priority_identity_legs`,
@@ -5152,10 +8927,11 @@ function buildPriorityIdentitySlot(dayType, muscle) {
         styleRequired: 'Isolation',
         muscleTarget: 'Legs',
         primaryAllowed: ['Legs'],
-        subPreferred: ['Quads', 'Hamstrings-Curl'],
+        subPreferred: ['Quads'],
         subFallback: null,
         optional: false
       };
+    case 'Hamstrings/Glutes':
     case 'Glutes':
       if (['Lower', 'LowerFocus', 'Legs', 'FullBodyA', 'FullBodyB'].includes(String(dayType || ''))) {
         return {
@@ -5284,11 +9060,22 @@ function ensureComboPresenceOnDay(day, user, exercises, weekType) {
   return nextDay;
 }
 
-function ensurePosteriorCoreLowerDayShape(day, user, exercises, weekType) {
+function ensurePosteriorCoreLowerDayShape(day, user, exercises, weekType, opts = {}) {
   if (!isPosteriorCoreRelevantLowerDay(day?.dayType || '', user)) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
   const ensureShapePiece = (slotMuscle, predicate) => {
     if ((nextDay.exercises || []).some((exercise) => predicate(exercise))) return true;
+    const structuralResult = resolveCurrentLowerDayStructuralResult(nextDay);
+    const guardOutcome = bumpLowerBodyRepairLoopGuard(user, 'lowerDayConstruction', {
+      functionName: 'ensurePosteriorCoreLowerDayShape',
+      week: opts?.weekIndex,
+      day: nextDay?.day,
+      dayType: nextDay?.dayType,
+      lastAttemptedRepair: `ensure-${slotMuscle}`,
+      missingRequirement: slotMuscle,
+      currentStructuralResult: structuralResult
+    });
+    if (guardOutcome?.suppressed) return true;
     let replaceIdx = findPriorityIdentityReplacementIndex(nextDay, slotMuscle, user);
     if (replaceIdx < 0) replaceIdx = findComboBalanceReplacementIndex(nextDay, slotMuscle, user);
     if (replaceIdx >= 0) {
@@ -5299,6 +9086,18 @@ function ensurePosteriorCoreLowerDayShape(day, user, exercises, weekType) {
         if (replacement) {
           nextDay.exercises.splice(replaceIdx, 1, replacement);
           nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+          const repairedStructure = resolveCurrentLowerDayStructuralResult(nextDay);
+          if (repairedStructure?.ok) {
+            resetLowerBodyRepairLoopGuard(user, 'lowerDayConstruction', {
+              week: opts?.weekIndex,
+              day: nextDay?.day,
+              dayType: nextDay?.dayType,
+              lastAttemptedRepair: `ensure-${slotMuscle}`
+            }, {
+              lastAttemptedRepair: `ensure-${slotMuscle}`,
+              currentStructuralResult: repairedStructure
+            });
+          }
           return true;
         }
       }
@@ -5308,6 +9107,18 @@ function ensurePosteriorCoreLowerDayShape(day, user, exercises, weekType) {
     if (!added) return false;
     nextDay.exercises.push(added);
     nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+    const repairedStructure = resolveCurrentLowerDayStructuralResult(nextDay);
+    if (repairedStructure?.ok) {
+      resetLowerBodyRepairLoopGuard(user, 'lowerDayConstruction', {
+        week: opts?.weekIndex,
+        day: nextDay?.day,
+        dayType: nextDay?.dayType,
+        lastAttemptedRepair: `ensure-${slotMuscle}`
+      }, {
+        lastAttemptedRepair: `ensure-${slotMuscle}`,
+        currentStructuralResult: repairedStructure
+      });
+    }
     return true;
   };
 
@@ -5326,26 +9137,38 @@ function minimumWideSessionFillCount(dayType, user) {
   return 0;
 }
 
-function enforceWideSessionPriorityFill(day, user, exercises, weekType) {
+function enforceWideSessionPriorityFill(day, user, exercises, weekType, opts = {}) {
   const minimumFill = minimumWideSessionFillCount(day?.dayType || '', user);
   if (!minimumFill) return day;
   const comboOrder = getNarrowPriorityComboOrder(user, day?.dayType || '');
   if (comboOrder.length !== 2) return day;
-  const nextDay = ensurePosteriorCoreLowerDayShape(ensureComboPresenceOnDay(day, user, exercises, weekType), user, exercises, weekType);
+  const nextDay = ensurePosteriorCoreLowerDayShape(ensureComboPresenceOnDay(day, user, exercises, weekType), user, exercises, weekType, opts);
+  if (nextDay?.error) return nextDay;
+  const minimumTarget = Math.min(Number(user?.sessionCap || 0), minimumFill);
   while ((nextDay.exercises || []).length < Math.min(Number(user?.sessionCap || 0), minimumFill)) {
+    bumpLowerBodyRepairLoopGuard(user, 'wideSessionFill', {
+      functionName: 'enforceWideSessionPriorityFill',
+      day: nextDay?.day,
+      dayType: nextDay?.dayType,
+      lastAttemptedRepair: 'add-priority-fill',
+      missingRequirement: 'wide-session lower-body fill'
+    });
     let targetMuscle = comboOrder[0];
     let predicate = (exercise) => exerciseSatisfiesDayPriorityIdentity(exercise, targetMuscle, user, nextDay?.dayType || '');
     if (isPosteriorCoreRelevantLowerDay(nextDay?.dayType || '', user)) {
       const posteriorCount = countExercisesByPredicate(nextDay, (exercise) => isRealPosteriorChainBuilder(exercise, user));
       const secondaryLowerCount = countExercisesByPredicate(nextDay, (exercise) => isMeaningfulLowerPriorityExercise(exercise, user));
       const coreCount = countExercisesByPredicate(nextDay, (exercise) => exerciseDirectlyServesPriority(exercise, 'Core', user));
-      if (posteriorCount < 2) {
+      const minimumPosterior = isLowerBodyGracefulDegradeApplied(user) ? 1 : 1;
+      const minimumLegs = isLowerBodyGracefulDegradeApplied(user) ? 1 : 1;
+      const minimumCore = isLowerBodyGracefulDegradeApplied(user) ? 1 : 1;
+      if (posteriorCount < minimumPosterior) {
         targetMuscle = 'Glutes';
         predicate = (exercise) => isRealPosteriorChainBuilder(exercise, user);
-      } else if (secondaryLowerCount < 2) {
+      } else if (secondaryLowerCount < minimumLegs) {
         targetMuscle = 'Legs';
         predicate = (exercise) => isMeaningfulLowerPriorityExercise(exercise, user);
-      } else if (coreCount < 2) {
+      } else if (coreCount < minimumCore) {
         targetMuscle = 'Core';
         predicate = (exercise) => exerciseDirectlyServesPriority(exercise, 'Core', user);
       } else {
@@ -5355,6 +9178,10 @@ function enforceWideSessionPriorityFill(day, user, exercises, weekType) {
         ].sort((a, b) => a.count - b.count || a.muscle.localeCompare(b.muscle));
         targetMuscle = counts[0]?.muscle || 'Glutes';
         predicate = counts[0]?.predicate || predicate;
+        if (isPosteriorCoreRelevantLowerDay(nextDay?.dayType || '', user) && (nextDay.exercises || []).length >= minimumTarget) {
+          markLowerBodyGracefulDegrade(user, 'Preserved valid lower-day structure and stopped before ideal lower-body volume chase.');
+          break;
+        }
       }
     } else {
       const counts = comboOrder
@@ -5551,21 +9378,21 @@ function enforceFinalPressJobHardGuardDay(day, user, exercises, weekType) {
   return nextDay;
 }
 
-function applyFinalNarrowPriorityDayPolish(day, user, exercises, weekType) {
+function applyFinalNarrowPriorityDayPolish(day, user, exercises, weekType, opts = {}) {
   return withPlannerTiming(user, 'narrowGoalCleanupMs', () => {
     let nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
     let priorSignature = '';
     for (let passIndex = 0; passIndex < MAX_FINAL_POLISH_PASSES; passIndex += 1) {
       const beforeSignature = dayExerciseSignature(nextDay);
       nextDay = ensureComboPresenceOnDay(nextDay, user, exercises, weekType);
-      nextDay = ensurePosteriorCoreLowerDayShape(nextDay, user, exercises, weekType);
+      nextDay = ensurePosteriorCoreLowerDayShape(nextDay, user, exercises, weekType, opts);
       nextDay = polishNarrowPrioritySessionOrder(nextDay, user);
       nextDay = enforceNarrowPriorityOffGoalCap(nextDay, user);
       if (passIndex === 0) {
         nextDay = ensureComboPresenceOnDay(nextDay, user, exercises, weekType);
-        nextDay = ensurePosteriorCoreLowerDayShape(nextDay, user, exercises, weekType);
+        nextDay = ensurePosteriorCoreLowerDayShape(nextDay, user, exercises, weekType, opts);
       }
-      nextDay = enforceWideSessionPriorityFill(nextDay, user, exercises, weekType);
+      nextDay = enforceWideSessionPriorityFill(nextDay, user, exercises, weekType, opts);
       nextDay = finalizePressJobTradeoff(nextDay, user, exercises, weekType);
       nextDay = enforceFinalPressJobHardGuardDay(nextDay, user, exercises, weekType);
       const afterSignature = dayExerciseSignature(nextDay);
@@ -5610,8 +9437,8 @@ function findPriorityIdentityReplacementIndex(day, targetMuscle, user) {
       if (!servesAnyPriority) score += 40;
       if (String(exercise?.style || '') === 'Isolation') score += 24;
       if (exercise?.optional) score += 8;
-      if (truth.directAb && !priorities.includes('Core')) score += 4;
-      if (truth.directCalf && !priorities.includes('Calves')) score += 4;
+      if (truth.directAb && !hasPriorityGroup(priorities, 'Abs')) score += 4;
+      if (truth.directCalf && !hasPriorityGroup(priorities, 'Calves')) score += 4;
       if (truth.primaryMuscle === 'Chest' && String(day?.dayType || '') === 'Pull') score += 18;
       if (truth.primaryMuscle === 'Back' && String(day?.dayType || '') === 'Push') score += 18;
       if (String(exercise?.style || '') === 'Compound' && index === 0) score -= 12;
@@ -5697,6 +9524,396 @@ function buildShoulderIsoReplacementSlot(dayType) {
     subFallback: null,
     optional: false
   };
+}
+
+function buildShoulderPressDuplicateReplacementSpecs(dayType, user) {
+  const dayKey = String(dayType || 'day').toLowerCase();
+  return [
+    {
+      key: 'lateral_raise',
+      slot: {
+        id: `${dayKey}_quality_shoulder_lateral`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Shoulders',
+        primaryAllowed: ['Shoulders'],
+        subPreferred: ['Lateral'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.lateralDeltPattern;
+      }
+    },
+    {
+      key: 'rear_delt',
+      slot: {
+        id: `${dayKey}_quality_shoulder_rear`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Shoulders',
+        primaryAllowed: ['Shoulders'],
+        subPreferred: ['Rear'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.rearDeltPattern;
+      }
+    },
+    {
+      key: 'shoulder_iso',
+      slot: buildShoulderIsoReplacementSlot(dayType),
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.lateralDeltPattern || truth.rearDeltPattern;
+      }
+    }
+  ];
+}
+
+function buildShoulderFallbackDayState(day) {
+  const state = buildCurrentDayState(day);
+  state.families = new Set([...state.families].filter((family) => !['lateral_raise', 'rear_delt'].includes(String(family || ''))));
+  state.counts = {
+    ...state.counts,
+    lateral_raise: 0,
+    rear_delt: 0
+  };
+  return state;
+}
+
+function shoulderReplacementEquipmentOverlapBonus(candidate, current) {
+  const currentReq = new Set(Array.isArray(current?.requiredEquipment)
+    ? current.requiredEquipment
+    : Array.isArray(current?.canonicalTruth?.requiredEquipment)
+      ? current.canonicalTruth.requiredEquipment
+      : []);
+  const candidateReq = new Set(Array.isArray(candidate?.requiredEquipment)
+    ? candidate.requiredEquipment
+    : Array.isArray(candidate?.canonicalTruth?.requiredEquipment)
+      ? candidate.canonicalTruth.requiredEquipment
+      : []);
+  const overlap = [...candidateReq].filter((token) => currentReq.has(token)).length;
+  return overlap > 0 ? overlap * 6 : 0;
+}
+
+function buildFallbackShoulderIsolationReplacement(day, exercise, spec, user, exercises, weekType) {
+  const dayWithoutCurrent = {
+    ...day,
+    exercises: (Array.isArray(day?.exercises) ? day.exercises : []).filter((entry) => entry !== exercise)
+  };
+  const existingKeys = new Set((dayWithoutCurrent.exercises || []).map((entry) => exerciseDayIdentityKey(entry)).filter(Boolean));
+  const dayState = buildShoulderFallbackDayState(dayWithoutCurrent);
+  let eligible = filterEligible(spec.slot, exercises, user, new Set(), dayState, day?.dayType || '', null)
+    .filter((candidate) => exerciseDayIdentityKey(candidate) !== exerciseDayIdentityKey(exercise))
+    .filter((candidate) => !existingKeys.has(exerciseDayIdentityKey(candidate)))
+    .filter((candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      return !truth.shoulderPressPattern
+        && (truth.lateralDeltPattern || truth.rearDeltPattern)
+        && !isCoachSideEyeAccessory(candidate, user)
+        && exerciseDirectlyServesPriority(candidate, 'Shoulders', user);
+    });
+  if (typeof spec?.predicate === 'function') eligible = eligible.filter((candidate) => spec.predicate(candidate));
+  const ranked = eligible
+    .map((candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      let bonus = shoulderReplacementEquipmentOverlapBonus(candidate, exercise);
+      if (spec?.key === 'lateral_raise' && truth.lateralDeltPattern) bonus += 18;
+      if (spec?.key === 'rear_delt' && truth.rearDeltPattern) bonus += 18;
+      if (spec?.key === 'shoulder_iso' && (truth.lateralDeltPattern || truth.rearDeltPattern)) bonus += 10;
+      return {
+        candidate,
+        score: scoreExercise(candidate, spec.slot, user, day?.dayType || '')
+          + qualityReplacementPreference(candidate, exercise, spec.slot, user, day?.dayType || '')
+          + bonus
+      };
+    })
+    .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
+  const selected = ranked[0]?.candidate || null;
+  if (!selected) {
+    return {
+      replacement: null,
+      candidateCount: ranked.length,
+      topCandidateNames: ranked.slice(0, 5).map(({ candidate }) => String(candidate?.name || '')).filter(Boolean),
+      rejectionReason: ranked.length ? 'no_safe_ranked_candidate' : 'empty_candidate_pool'
+    };
+  }
+  const rr = repsRestByExercise(selected, String(weekType || 'base'), user, spec.slot.id);
+  const sets = spec.slot.styleRequired === 'Isolation'
+    ? Math.min(3, Math.max(2, Number(exercise?.sets || 2)))
+    : Math.max(2, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || 3)));
+  return {
+    replacement: buildExerciseOutput(selected, user, { ...spec.slot, optional: false }, sets, rr, { weekType: String(weekType || 'base') }),
+    candidateCount: ranked.length,
+    topCandidateNames: ranked.slice(0, 5).map(({ candidate }) => String(candidate?.name || '')).filter(Boolean),
+    rejectionReason: ''
+  };
+}
+
+function shoulderLateralEquipmentBucket(exercise) {
+  const required = Array.isArray(exercise?.requiredEquipment) && exercise.requiredEquipment.length
+    ? exercise.requiredEquipment
+    : inferRequiredEquipment(exercise);
+  const normalized = normalizeEquipmentTags(required || []);
+  if (normalized.includes('cable')) return 'cable';
+  if (normalized.includes('dumbbell')) return 'dumbbell';
+  if (normalized.includes('machine')) return 'machine';
+  if (normalized.includes('bodyweight')) return 'bodyweight';
+  return 'other';
+}
+
+function shoulderLateralKeepScore(exercise, user) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  const name = normalizeName(exercise?.name);
+  let score = 0;
+  if (truth.progressionFriendly) score += 10;
+  if (shoulderLateralEquipmentBucket(exercise) === 'cable') score += 6;
+  if (shoulderLateralEquipmentBucket(exercise) === 'machine') score += 4;
+  if (/(seated|supported|bench)/.test(name)) score += 3;
+  score += Math.max(0, Number(exercise?.sets || 0));
+  return score;
+}
+
+function pickPreferredLateralRaiseKeepIndexes(lateralEntries, user) {
+  const entries = Array.isArray(lateralEntries) ? lateralEntries.slice() : [];
+  if (entries.length <= 2) return new Set(entries.map((entry) => entry.index));
+  const ranked = entries
+    .map((entry) => ({
+      ...entry,
+      bucket: shoulderLateralEquipmentBucket(entry.exercise),
+      keepScore: shoulderLateralKeepScore(entry.exercise, user)
+    }))
+    .sort((a, b) => (b.keepScore - a.keepScore) || a.index - b.index || String(a.exercise?.name || '').localeCompare(String(b.exercise?.name || '')));
+  const keep = new Set();
+  const bestCable = ranked.find((entry) => entry.bucket === 'cable');
+  const bestNonCable = ranked.find((entry) => entry.bucket !== 'cable');
+  if (bestCable) keep.add(bestCable.index);
+  if (bestNonCable && keep.size < 2) keep.add(bestNonCable.index);
+  for (const entry of ranked) {
+    if (keep.size >= 2) break;
+    keep.add(entry.index);
+  }
+  return keep;
+}
+
+function buildShoulderLateralReplacementSpecs(day, user) {
+  const specs = [];
+  const rearDeltCount = countExercisesByPredicate(day, (exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    return truth.rearDeltPattern;
+  });
+  if (rearDeltCount < 1) {
+    specs.push({
+      key: 'rear_delt',
+      slot: buildExactPriorityRepairSlot(day?.dayType || '', 'Shoulders', 'rear'),
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.rearDeltPattern && !truth.lateralDeltPattern;
+      }
+    });
+  }
+  if (hasPriorityGroup(user, 'Arms')) {
+    specs.push({
+      key: 'arms_iso',
+      slot: buildPriorityIdentitySlot(day?.dayType || '', 'Arms'),
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.directArmType !== 'none' && !truth.lateralDeltPattern && !truth.rearDeltPattern && !truth.shoulderPressPattern && !isCoachSideEyeAccessory(candidate, user);
+      }
+    });
+  }
+  if (hasPriorityGroup(user, 'Chest')) {
+    specs.push({
+      key: 'chest_accessory',
+      slot: {
+        id: `${String(day?.dayType || 'day').toLowerCase()}_quality_chest_accessory`,
+        pattern: 'Isolation',
+        styleRequired: 'Isolation',
+        muscleTarget: 'Chest',
+        primaryAllowed: ['Chest'],
+        subPreferred: ['Chest'],
+        subFallback: null,
+        optional: false
+      },
+      predicate: (candidate) => {
+        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+        return truth.primaryMuscle === 'Chest' && !isChestPressPatternName(candidate?.name);
+      }
+    });
+  }
+  specs.push({
+    key: 'back_maintenance',
+    slot: {
+      id: `${String(day?.dayType || 'day').toLowerCase()}_quality_back_maintenance`,
+      pattern: 'HorizontalPull',
+      styleRequired: 'Compound',
+      muscleTarget: 'Back',
+      primaryAllowed: ['Back'],
+      subPreferred: ['UpperBack', 'Lats-Thickness'],
+      subFallback: null,
+      optional: false
+    },
+    predicate: (candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      return truth.pullRole === 'back_builder'
+        && ['chest_supported', 'machine_supported', 'cable_supported', 'seated_stable'].includes(String(truth.supportType || ''))
+        && !truth.lateralDeltPattern
+        && !truth.rearDeltPattern;
+    }
+  });
+  return specs.filter((spec) => spec?.slot);
+}
+
+function shoulderLateralFallbackNameBonus(categoryKey, candidateName = '') {
+  const name = normalizeName(candidateName);
+  if (!name) return 0;
+  if (categoryKey === 'rear_delt') {
+    if (/(cable rear delt fly|reverse flyes with external rotation|reverse machine flyes|reverse flyes|seated bent[-\s]*over rear delt raise|bent over dumbbell rear delt raise|face pull|rear[-\s]*delt rows?)/.test(name)) return 28;
+    if (/(rear delt|reverse fly|reverse pec deck)/.test(name)) return 18;
+  }
+  if (categoryKey === 'arms_iso') {
+    if (/(triceps pushdown|cable one arm tricep extension|seated triceps press|triceps extension|standing one[-\s]*arm cable curl|machine preacher curl|zottman curl|alternate incline dumbbell curl)/.test(name)) return 24;
+    if (/(curl|triceps|pushdown|extension|preacher)/.test(name)) return 12;
+  }
+  if (categoryKey === 'chest_accessory') {
+    if (/(single[-\s]*arm cable crossover|cable crossover|cable chest press|flat bench cable flyes|butterfly)/.test(name)) return 24;
+    if (/(fly|crossover|butterfly)/.test(name)) return 12;
+  }
+  if (categoryKey === 'back_maintenance') {
+    if (/(cable row|chest-supported row|leverage high row|v-bar pulldown|lat pulldown)/.test(name)) return 24;
+    if (/(row|pulldown)/.test(name)) return 10;
+  }
+  return 0;
+}
+
+function buildBroadLateralReductionFallback(day, exercise, spec, user, exercises, weekType) {
+  const dayWithoutCurrent = {
+    ...day,
+    exercises: (Array.isArray(day?.exercises) ? day.exercises : []).filter((entry) => entry !== exercise)
+  };
+  const existingKeys = new Set((dayWithoutCurrent.exercises || []).map((entry) => exerciseDayIdentityKey(entry)).filter(Boolean));
+  const sourceExercises = getBaseEligibleExercises(exercises, user, day?.dayType || '');
+  const ranked = sourceExercises
+    .filter((candidate) => exerciseDayIdentityKey(candidate) !== exerciseDayIdentityKey(exercise))
+    .filter((candidate) => !existingKeys.has(exerciseDayIdentityKey(candidate)))
+    .filter((candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      if (truth.lateralDeltPattern || truth.shoulderPressPattern) return false;
+      if (isCoachSideEyeAccessory(candidate, user)) return false;
+      return typeof spec?.predicate === 'function' ? spec.predicate(candidate) : true;
+    })
+    .map((candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      let score = scoreExercise(candidate, spec.slot, user, day?.dayType || '')
+        + qualityReplacementPreference(candidate, exercise, spec.slot, user, day?.dayType || '')
+        + shoulderReplacementEquipmentOverlapBonus(candidate, exercise)
+        + shoulderLateralFallbackNameBonus(spec?.key, candidate?.name);
+      if (spec?.key === 'rear_delt' && truth.rearDeltPattern) score += 16;
+      if (spec?.key === 'arms_iso' && truth.directArmType !== 'none') score += 14;
+      if (spec?.key === 'chest_accessory' && String(truth?.primaryMuscle || '') === 'Chest' && !isChestPressPatternName(candidate?.name)) score += 14;
+      if (spec?.key === 'back_maintenance' && truth.pullRole === 'back_builder') score += 14;
+      return { candidate, score };
+    })
+    .sort((a, b) => (b.score - a.score) || a.candidate.name.localeCompare(b.candidate.name));
+  const selected = ranked[0]?.candidate || null;
+  if (!selected) return null;
+  const rr = repsRestByExercise(selected, String(weekType || 'base'), user, spec.slot.id);
+  const sets = spec.slot.styleRequired === 'Isolation'
+    ? Math.min(3, Math.max(2, Number(exercise?.sets || 2)))
+    : Math.max(2, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || 3)));
+  return buildExerciseOutput(selected, user, { ...spec.slot, optional: false }, sets, rr, { weekType: String(weekType || 'base') });
+}
+
+function polishLateralRaiseRedundancy(day, user, exercises, weekType) {
+  if (!hasPriorityGroup(user, 'Shoulders')) return day;
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const hadShoulderPress = countExercisesByPredicate(nextDay, (exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    return truth.shoulderPressPattern;
+  }) > 0;
+  const hadRearDelt = countExercisesByPredicate(nextDay, (exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    return truth.rearDeltPattern;
+  }) > 0;
+  const lateralEntries = nextDay.exercises
+    .map((exercise, index) => ({ exercise, index }))
+    .filter(({ exercise }) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return truth.lateralDeltPattern;
+    });
+  if (lateralEntries.length <= 2) return nextDay;
+  const keepIndexes = pickPreferredLateralRaiseKeepIndexes(lateralEntries, user);
+  const extraIndexes = lateralEntries
+    .map((entry) => entry.index)
+    .filter((index) => !keepIndexes.has(index))
+    .sort((a, b) => b - a);
+  for (const idx of extraIndexes) {
+    const current = nextDay.exercises[idx];
+    if (!current) continue;
+    const remainingLateralCount = countExercisesByPredicate(nextDay, (exercise) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return truth.lateralDeltPattern;
+    });
+    if (remainingLateralCount <= 1) break;
+    let replaced = false;
+    for (const spec of buildShoulderLateralReplacementSpecs(nextDay, user)) {
+      let replacement = buildQualityReplacement(nextDay, current, spec.slot, user, exercises, weekType, spec.predicate);
+      if (!replacement) {
+        replacement = buildBroadLateralReductionFallback(nextDay, current, spec, user, exercises, weekType);
+      }
+      if (!replacement) continue;
+      const trialDay = {
+        ...nextDay,
+        exercises: nextDay.exercises.map((exercise, exerciseIndex) => exerciseIndex === idx ? replacement : exercise)
+      };
+      const trialNames = new Set();
+      let hasDuplicate = false;
+      (trialDay.exercises || []).forEach((exercise) => {
+        const key = exerciseDayIdentityKey(exercise);
+        if (!key) return;
+        if (trialNames.has(key)) hasDuplicate = true;
+        trialNames.add(key);
+      });
+      const trialShoulderPressCount = countExercisesByPredicate(trialDay, (exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        return truth.shoulderPressPattern;
+      });
+      const trialRearDeltCount = countExercisesByPredicate(trialDay, (exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        return truth.rearDeltPattern;
+      });
+      if (hasDuplicate) continue;
+      if (hadShoulderPress && trialShoulderPressCount < 1) continue;
+      if (hadRearDelt && trialRearDeltCount < 1) continue;
+      nextDay.exercises.splice(idx, 1, replacement);
+      replaced = true;
+      break;
+    }
+    if (replaced) continue;
+    const lateralAfterRemoval = remainingLateralCount - 1;
+    const exercisesAfterRemoval = (nextDay.exercises || []).length - 1;
+    const shoulderPressAfterRemoval = countExercisesByPredicate(nextDay, (exercise) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return truth.shoulderPressPattern;
+    });
+    const rearDeltAfterRemoval = countExercisesByPredicate(nextDay, (exercise) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      return truth.rearDeltPattern;
+    });
+    if (lateralAfterRemoval >= 1
+      && exercisesAfterRemoval >= 5
+      && (!hadShoulderPress || shoulderPressAfterRemoval >= 1)
+      && (!hadRearDelt || rearDeltAfterRemoval >= 1)
+    ) {
+      nextDay.exercises.splice(idx, 1);
+    }
+  }
+  nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises, user);
+  return nextDay;
 }
 
 function buildNarrowIdentityReplacementSlot(day, user) {
@@ -6011,7 +10228,9 @@ function polishNarrowPriorityWeekIdentity(week, user, exercises, weekType) {
     }
   }
   nextWeek.days = nextWeek.days.map((day) => {
-    return applyFinalNarrowPriorityDayPolish(day, user, exercises, weekType);
+    return applyFinalNarrowPriorityDayPolish(day, user, exercises, weekType, {
+      weekIndex: week?.weekIndex
+    });
   });
   return nextWeek;
 }
@@ -6100,8 +10319,8 @@ function findGlutePriorityReplacementIndex(day, user) {
     .map((exercise, index) => {
       const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
       if (isRealPosteriorChainBuilder(exercise, user)) return null;
-      if (exerciseDirectlyServesPriority(exercise, 'Core', user) && priorities.includes('Core')) return null;
-      if (exerciseDirectlyServesPriority(exercise, 'Calves', user) && priorities.includes('Calves')) return null;
+      if (exerciseDirectlyServesPriority(exercise, 'Core', user) && hasPriorityGroup(priorities, 'Abs')) return null;
+      if (exerciseDirectlyServesPriority(exercise, 'Calves', user) && hasPriorityGroup(priorities, 'Calves')) return null;
       if (String(exercise?.style || '') === 'Compound' && compoundCount <= compoundFloor) return null;
       let score = 0;
       if (isAssembledLowerAccessory(exercise)) score += 28;
@@ -6121,11 +10340,20 @@ function polishGlutePriorityExpression(day, user, exercises, weekType) {
   if (!isGluteDominantPriorityUser(user)) return day;
   if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
-  const targetGluteCount = ['LowerFocus', 'Legs'].includes(String(day?.dayType || '')) ? 2 : 1;
+  const targetGluteCount = isLowerBodyGracefulDegradeApplied(user)
+    ? 1
+    : (['LowerFocus', 'Legs'].includes(String(day?.dayType || '')) ? 2 : 1);
   let gluteCount = nextDay.exercises.filter((exercise) => {
     return isRealPosteriorChainBuilder(exercise, user);
   }).length;
   while (gluteCount < targetGluteCount) {
+    bumpLowerBodyRepairLoopGuard(user, 'glutePriority', {
+      functionName: 'polishGlutePriorityExpression',
+      day: nextDay?.day,
+      dayType: nextDay?.dayType,
+      lastAttemptedRepair: 'replace-with-glute-builder',
+      missingRequirement: 'glute posterior-chain bias'
+    });
     const replaceIdx = findGlutePriorityReplacementIndex(nextDay, user);
     if (replaceIdx < 0) break;
     const current = nextDay.exercises[replaceIdx];
@@ -6242,62 +10470,181 @@ function polishUpperPressRedundancy(day, user, exercises, weekType) {
 }
 
 function polishDuplicateShoulderPresses(day, user, exercises, weekType) {
+  if (!hasPriorityGroup(user, 'Shoulders')) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
   const pressIndexes = [];
   nextDay.exercises.forEach((exercise, index) => {
     const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
     if (truth.shoulderPressPattern) pressIndexes.push(index);
   });
-  if (pressIndexes.length <= 1) return nextDay;
+  try {
+    console.info('[training-debug][shoulder-priority][builder] before_shoulder_press_cleanup_day_snapshot', buildShoulderPressCleanupDaySnapshot(nextDay, user));
+    console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_cleanup_entry', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      shoulderPressCount: pressIndexes.length
+    });
+    console.info('[training-debug][shoulder-priority][builder] detected_shoulder_press_names', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      names: pressIndexes.map((index) => String(nextDay.exercises?.[index]?.name || '')).filter(Boolean)
+    });
+  } catch {
+    // ignore logging failures
+  }
+  if (pressIndexes.length <= 1) {
+    try {
+      console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_skip', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        reason: 'no_duplicate_presses'
+      });
+      console.info('[training-debug][shoulder-priority][builder] after_shoulder_press_cleanup_day_snapshot', buildShoulderPressCleanupDaySnapshot(nextDay, user));
+    } catch {
+      // ignore logging failures
+    }
+    return nextDay;
+  }
   for (let i = 1; i < pressIndexes.length; i += 1) {
     const idx = pressIndexes[i];
     const current = nextDay.exercises[idx];
-    const shoulderSlot = {
-      id: `${String(nextDay?.dayType || 'day').toLowerCase()}_quality_shoulder_iso`,
-      pattern: 'Isolation',
-      styleRequired: 'Isolation',
-      muscleTarget: 'Shoulders',
-      primaryAllowed: ['Shoulders'],
-      subPreferred: ['Lateral', 'Rear'],
-      subFallback: null,
-      optional: false
-    };
-    let replacement = buildQualityReplacement(
-      nextDay,
-      current,
-      shoulderSlot,
-      user,
-      exercises,
-      weekType,
-      (candidate) => {
-        const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
-        return truth.lateralDeltPattern || truth.rearDeltPattern;
+    const currentTruth = current?.canonicalTruth || buildExerciseTruth(current, user);
+    if (!currentTruth?.shoulderPressPattern) {
+      try {
+        console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_skip', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          exerciseIndex: idx,
+          exerciseName: current?.name || null,
+          reason: 'second_press_not_classified'
+        });
+      } catch {
+        // ignore logging failures
       }
-    );
-    if (!replacement && (String(nextDay?.dayType || '') === 'DeltsArms' || isNarrowShouldersArmsUser(user) || (user?.priorityGroups || []).includes('Arms'))) {
-      const armSlot = buildPriorityIdentitySlot(nextDay?.dayType || '', 'Arms');
-      replacement = buildQualityReplacement(
+      continue;
+    }
+    try {
+      console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_detected', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        exerciseIndex: idx,
+        exerciseName: current?.name || null
+      });
+    } catch {
+      // ignore logging failures
+    }
+    const replacementSpecs = [
+      ...buildShoulderPressDuplicateReplacementSpecs(nextDay?.dayType || '', user)
+    ];
+    let replacement = null;
+    let replacementKey = '';
+    for (const spec of replacementSpecs) {
+      const candidate = buildQualityReplacement(
         nextDay,
         current,
-        armSlot,
+        spec.slot,
         user,
         exercises,
         weekType,
-        (candidate) => exerciseDirectlyServesPriority(candidate, 'Arms', user) && !isCoachSideEyeAccessory(candidate, user)
+        spec.predicate
       );
+      try {
+        const candidateTruth = candidate?.canonicalTruth || (candidate ? buildExerciseTruth(candidate, user) : null);
+        console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_replacement_attempt', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          exerciseIndex: idx,
+          exerciseName: current?.name || null,
+          replacementKey: spec.key,
+          replacementName: candidate?.name || null,
+          replacementShoulderPressPattern: Boolean(candidateTruth?.shoulderPressPattern),
+          replacementLateralDeltPattern: Boolean(candidateTruth?.lateralDeltPattern),
+          replacementRearDeltPattern: Boolean(candidateTruth?.rearDeltPattern)
+        });
+      } catch {
+        // ignore logging failures
+      }
+      if (candidate) {
+        replacement = candidate;
+        replacementKey = spec.key;
+        break;
+      }
+    }
+    if (!replacement) {
+      for (const spec of replacementSpecs) {
+        const fallback = buildFallbackShoulderIsolationReplacement(
+          nextDay,
+          current,
+          spec,
+          user,
+          exercises,
+          weekType
+        );
+        try {
+          console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_fallback_pool', {
+            day: nextDay?.day || null,
+            dayType: nextDay?.dayType || null,
+            exerciseIndex: idx,
+            exerciseName: current?.name || null,
+            replacementKey: spec.key,
+            candidateCount: Number(fallback?.candidateCount || 0),
+            topCandidateNames: Array.isArray(fallback?.topCandidateNames) ? fallback.topCandidateNames : [],
+            replacementName: fallback?.replacement?.name || null,
+            rejectionReason: fallback?.rejectionReason || ''
+          });
+        } catch {
+          // ignore logging failures
+        }
+        if (fallback?.replacement) {
+          replacement = fallback.replacement;
+          replacementKey = `${spec.key}_fallback`;
+          break;
+        }
+      }
     }
     if (replacement) {
       nextDay.exercises.splice(idx, 1, replacement);
+      try {
+        console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_swap', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          exerciseIndex: idx,
+          removedExercise: current?.name || null,
+          replacementExercise: replacement?.name || null,
+          replacementKey
+        });
+      } catch {
+        // ignore logging failures
+      }
       continue;
     }
-    const directShoulderCount = countExercisesByPredicate(nextDay, (exercise) => {
-      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
-      return truth.lateralDeltPattern || truth.rearDeltPattern || truth.shoulderPressPattern;
-    });
-    const directArmCount = countExercisesByPredicate(nextDay, (exercise) => exerciseDirectlyServesPriority(exercise, 'Arms', user) && !isCoachSideEyeAccessory(exercise, user));
-    if (directShoulderCount >= 2 && directArmCount >= 1 && nextDay.exercises.length > 4) nextDay.exercises.splice(idx, 1);
+    try {
+      console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_skip', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        exerciseIndex: idx,
+        exerciseName: current?.name || null,
+        reason: 'no_safe_shoulder_isolation_replacement'
+      });
+    } catch {
+      // ignore logging failures
+    }
   }
   nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+  try {
+    console.info('[training-debug][shoulder-priority][builder] shoulder_press_duplicate_exit', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      shoulderPressCount: nextDay.exercises.filter((exercise) => {
+        const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+        return truth.shoulderPressPattern;
+      }).length,
+      exercises: nextDay.exercises.map((exercise) => String(exercise?.name || ''))
+    });
+    console.info('[training-debug][shoulder-priority][builder] after_shoulder_press_cleanup_day_snapshot', buildShoulderPressCleanupDaySnapshot(nextDay, user));
+  } catch {
+    // ignore logging failures
+  }
   return nextDay;
 }
 
@@ -6441,6 +10788,319 @@ function isCoachCleanupLowerCandidate(exercise) {
   return false;
 }
 
+function buildLowerCoachCleanupStructuralResult(day) {
+  const dayTypeRaw = String(day?.dayType || '');
+  const dayType = dayTypeRaw.toLowerCase();
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const names = [];
+  const duplicates = [];
+  let hasInvalidExercise = false;
+  let hasHinge = false;
+  let hasQuadPattern = false;
+  for (const exercise of exercises) {
+    const normalized = normalizeName(exercise?.name);
+    if (!normalized) {
+      hasInvalidExercise = true;
+      continue;
+    }
+    if (names.includes(normalized)) duplicates.push(String(exercise?.name || normalized));
+    else names.push(normalized);
+    if (/(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|good morning|back extension|hyperextension)/.test(normalized) && !/(axle|log|yoke|stone|sandbag|single)/.test(normalized)) {
+      hasHinge = true;
+    }
+    if ((/(hack squat|leg press|front squat|barbell full squat|back squat|smith squat|squat)/.test(normalized)
+      && !/(kneeling|overhead|frankenstein|chair|plie|side split|one leg|single leg|sissy|box squat|speed|split squat|lunge|step up)/.test(normalized))
+      || isLowerCoachCleanupLegExtensionPatternName(normalized)
+      || /(lunge|split squat|step up)/.test(normalized)) {
+      hasQuadPattern = true;
+    }
+  }
+  if (hasInvalidExercise) {
+    return {
+      ok: false,
+      missingRequirement: 'invalid_lower_day_exercise_object',
+      reason: 'Lower day contains an invalid or unnamed exercise.',
+      duplicates
+    };
+  }
+  if (duplicates.length) {
+    return {
+      ok: false,
+      missingRequirement: 'duplicate_exercise_names',
+      reason: 'Lower day contains duplicate exercise names.',
+      duplicates
+    };
+  }
+  if ((dayType === 'lower' || dayType === 'lowerfocus') && !hasHinge) {
+    return {
+      ok: false,
+      missingRequirement: 'missing_hinge_pattern',
+      reason: 'Lower day must include one hinge pattern.',
+      duplicates
+    };
+  }
+  if ((dayType === 'lower' || dayType === 'lowerfocus') && !hasQuadPattern) {
+    return {
+      ok: false,
+      missingRequirement: 'missing_quad_pattern',
+      reason: 'Lower day must include at least one quad pattern.',
+      duplicates
+    };
+  }
+  return {
+    ok: true,
+    missingRequirement: '',
+    reason: '',
+    duplicates
+  };
+}
+
+function lowerCoachCleanupFamilyLabel(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  const normalized = normalizeName(exercise?.name);
+  if (!normalized) return 'invalid';
+  if (countLowerCoachCleanupQuadPatterns([exercise], user) > 0) return 'squat_leg_press';
+  if (isLowerCoachCleanupHingeCandidate(exercise, user)) return 'hinge_posterior_chain';
+  if (truth.directCalf) return 'calves';
+  if (truth.directAb) return 'core';
+  if (/(leg curl|hamstring curl|glute ham raise)/.test(normalized)) return 'hamstring_curl';
+  if (String(truth?.directArmType || '') === 'biceps') return 'biceps_iso';
+  if (String(truth?.directArmType || '') === 'triceps') return 'triceps_iso';
+  if (String(truth?.directShoulderHead || '') === 'rear') return 'rear_delt_iso';
+  return String(truth?.primaryMuscle || truth?.movementPattern || 'other') || 'other';
+}
+
+function buildLowerCoachCleanupExerciseSnapshot(exercises, user = null) {
+  return (Array.isArray(exercises) ? exercises : []).map((exercise) => ({
+    name: String(exercise?.name || '').trim(),
+    family: lowerCoachCleanupFamilyLabel(exercise, user)
+  }));
+}
+
+function diagnoseLowerCoachCleanupQuadRepair(day, user, exercises, weekType) {
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const cleanupIndexes = nextDay.exercises.reduce((acc, exercise, index) => {
+    if (isCoachCleanupLowerCandidate(exercise)) acc.push(index);
+    return acc;
+  }, []);
+  const slot = buildPriorityIdentitySlot(nextDay?.dayType || '', 'Legs');
+  if (!slot) {
+    return {
+      safeQuadReplacementAvailable: false,
+      attempted: [],
+      failureReason: 'missing_legs_slot'
+    };
+  }
+  const attempted = [];
+  for (let i = cleanupIndexes.length - 1; i >= 0; i -= 1) {
+    const idx = cleanupIndexes[i];
+    const current = nextDay.exercises[idx];
+    const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      return exerciseDirectlyServesPriority(candidate, 'Legs', user) && truth.progressionFriendly && !isCoachCleanupLowerCandidate(candidate);
+    });
+    if (!replacement) {
+      attempted.push({
+        replacedExercise: String(current?.name || '').trim(),
+        replacement: null,
+        repairedOk: false,
+        reason: 'no_candidate'
+      });
+      continue;
+    }
+    const trialDay = {
+      ...nextDay,
+      exercises: nextDay.exercises.map((exercise, exerciseIndex) => (exerciseIndex === idx ? replacement : exercise))
+    };
+    trialDay.exercises = organizeDayExerciseOrder(trialDay.dayType || '', trialDay.exercises);
+    const structure = buildLowerCoachCleanupStructuralResult(trialDay);
+    attempted.push({
+      replacedExercise: String(current?.name || '').trim(),
+      replacement: String(replacement?.name || '').trim(),
+      repairedOk: Boolean(structure.ok),
+      reason: structure.ok ? 'safe_quad_repair_found' : String(structure.missingRequirement || 'invalid_lower_day_structure')
+    });
+    if (structure.ok) {
+      return {
+        safeQuadReplacementAvailable: true,
+        attempted,
+        failureReason: 'safe_quad_repair_found'
+      };
+    }
+  }
+  return {
+    safeQuadReplacementAvailable: false,
+    attempted,
+    failureReason: attempted.length ? 'repair_candidates_rejected' : 'no_cleanup_candidates'
+  };
+}
+
+function buildLowerCoachCleanupStructuralError(user, day, result, meta = {}) {
+  const structure = result && typeof result === 'object' ? result : {};
+  return {
+    error: 'PLAN_BUILD_FAILED',
+    message: String(structure.reason || 'Lower day failed structural validation.'),
+    reason: String(structure.reason || 'Lower day failed structural validation.'),
+    functionName: 'polishLowerCoachCleanup',
+    stage: 'lowerCoachCleanup',
+    failedStage: 'lowerCoachCleanup',
+    week: Number(meta?.weekIndex || 0) || undefined,
+    day: String(day?.day || '').trim() || undefined,
+    dayType: String(day?.dayType || '').trim() || undefined,
+    missingRequirement: String(structure.missingRequirement || 'invalid_lower_day_structure'),
+    duplicates: Array.isArray(structure.duplicates) ? structure.duplicates.slice() : undefined,
+    priorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : undefined,
+    exerciseNames: Array.isArray(meta?.finalExerciseNames) ? meta.finalExerciseNames.slice() : undefined,
+    lowerExerciseFamilies: Array.isArray(meta?.finalExerciseFamilies) ? meta.finalExerciseFamilies.slice() : undefined,
+    quadPatternExistedBeforeCleanup: typeof meta?.quadPatternExistedBeforeCleanup === 'boolean' ? meta.quadPatternExistedBeforeCleanup : undefined,
+    initialQuadPatternCount: Number.isFinite(Number(meta?.initialQuadPatternCount)) ? Number(meta.initialQuadPatternCount) : undefined,
+    finalQuadPatternCount: Number.isFinite(Number(meta?.finalQuadPatternCount)) ? Number(meta.finalQuadPatternCount) : undefined,
+    cleanupRemovedOnlyQuadPattern: typeof meta?.cleanupRemovedOnlyQuadPattern === 'boolean' ? meta.cleanupRemovedOnlyQuadPattern : undefined,
+    cleanupTouchedDay: typeof meta?.cleanupTouchedDay === 'boolean' ? meta.cleanupTouchedDay : undefined,
+    cleanupTouchedPasses: Array.isArray(meta?.cleanupTouchedPasses) ? meta.cleanupTouchedPasses.slice() : undefined,
+    cleanupActionLog: Array.isArray(meta?.cleanupActionLog) ? meta.cleanupActionLog.slice() : undefined,
+    initialExerciseNames: Array.isArray(meta?.initialExerciseNames) ? meta.initialExerciseNames.slice() : undefined,
+    initialExerciseFamilies: Array.isArray(meta?.initialExerciseFamilies) ? meta.initialExerciseFamilies.slice() : undefined,
+    missingQuadPatternOrigin: meta?.missingQuadPatternOrigin ? String(meta.missingQuadPatternOrigin) : undefined,
+    safeQuadReplacementAvailable: typeof meta?.safeQuadReplacementAvailable === 'boolean' ? meta.safeQuadReplacementAvailable : undefined,
+    quadRepairAttempted: Array.isArray(meta?.quadRepairAttempted) ? meta.quadRepairAttempted.slice() : undefined,
+    quadRepairFailureReason: meta?.quadRepairFailureReason ? String(meta.quadRepairFailureReason) : undefined
+  };
+}
+
+function buildLowerFatigueStructuralError(user, day, result) {
+  const structure = result && typeof result === 'object' ? result : {};
+  return {
+    error: 'PLAN_BUILD_FAILED',
+    message: String(structure.reason || 'Lower day failed structural validation.'),
+    reason: String(structure.reason || 'Lower day failed structural validation.'),
+    functionName: 'polishLowerFatigueStacking',
+    stage: 'lowerFatigue',
+    failedStage: 'lowerFatigue',
+    day: String(day?.day || '').trim() || undefined,
+    dayType: String(day?.dayType || '').trim() || undefined,
+    missingRequirement: String(structure.missingRequirement || 'invalid_lower_day_structure'),
+    duplicates: Array.isArray(structure.duplicates) ? structure.duplicates.slice() : undefined,
+    priorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : undefined
+  };
+}
+
+function isLowerCoachCleanupHingeCandidate(exercise, user = null) {
+  const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+  const name = normalizeName(exercise?.name);
+  if (!name) return false;
+  if (/(axle|log|yoke|stone|sandbag|single)/.test(name)) return false;
+  if (/(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|good morning|pull through|pull-through|back extension|hyperextension)/.test(name)) return true;
+  return String(truth?.movementPattern || '') === 'hinge_pattern';
+}
+
+function isLowerCoachCleanupLegExtensionPatternName(normalizedName) {
+  const name = normalizeName(normalizedName);
+  if (!name) return false;
+  return /(?:^|[\s-])(single leg|single-leg|machine|cable)?[\s-]*leg extension(?:s)?(?:$|[\s-])/.test(` ${name} `);
+}
+
+function countLowerCoachCleanupQuadPatterns(exercises, user = null) {
+  return (Array.isArray(exercises) ? exercises : []).filter((exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    const normalized = normalizeName(exercise?.name);
+    if (!normalized) return false;
+    if (truth.primaryMuscle === 'Legs' && ['squat', 'lunge'].includes(String(truth.movementFamily || ''))) return true;
+    return ((/(hack squat|leg press|front squat|barbell full squat|back squat|smith squat|squat)/.test(normalized)
+      && !/(kneeling|overhead|frankenstein|chair|plie|side split|one leg|single leg|sissy|box squat|speed|split squat|lunge|step up)/.test(normalized))
+      || isLowerCoachCleanupLegExtensionPatternName(normalized)
+      || /(lunge|split squat|step up)/.test(normalized));
+  }).length;
+}
+
+function findLowerCoachCleanupHingeReplacementIndex(day, user, { absPriority = false } = {}) {
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const quadCount = countLowerCoachCleanupQuadPatterns(exercises, user);
+  const ranked = exercises
+    .map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      const name = normalizeName(exercise?.name);
+      if (!name || isLowerCoachCleanupHingeCandidate(exercise, user)) return null;
+      let score = -1000;
+      const isQuadPattern = ((truth.primaryMuscle === 'Legs' && ['squat', 'lunge'].includes(String(truth.movementFamily || '')))
+        || isLowerCoachCleanupLegExtensionPatternName(name)
+        || /(leg press|hack squat|split squat|lunge|step[\s-]*up|squat)/.test(name));
+      if (isQuadPattern && quadCount <= 1) return null;
+      if (isCoachCleanupLowerCandidate(exercise)) score = 50;
+      else if (truth.directCalf) score = 40;
+      else if (truth.directAb) score = absPriority ? -100 : 8;
+      else if (String(exercise?.style || '') === 'Isolation' && !exerciseDirectlyServesPriority(exercise, 'Legs', user)) score = 30;
+      else if (String(exercise?.style || '') === 'Isolation') score = 18;
+      else if (!exerciseDirectlyServesPriority(exercise, 'Legs', user) && !isRealPosteriorChainBuilder(exercise, user)) score = 14;
+      if (isRealPosteriorChainBuilder(exercise, user) && !/(glute ham raise|seated leg curl|lying leg curl|leg curl|hamstring curl)/.test(name)) score = -100;
+      if (score <= -100) return null;
+      return { index, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || b.index - a.index);
+  return ranked[0]?.index ?? -1;
+}
+
+function attemptLowerCoachCleanupHingeRepair(day, user, exercises, weekType) {
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const priorities = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
+  const absPriority = priorities.includes('Abs') || priorities.includes('Core');
+  const slotOrder = (priorities.includes('Glutes') || priorities.includes('Hamstrings/Glutes'))
+    ? ['Glutes', 'Legs']
+    : ['Legs', 'Glutes'];
+  const rejectionReasons = [];
+  let availableHingeCandidatesCount = 0;
+
+  for (const muscle of slotOrder) {
+    const slot = buildPriorityIdentitySlot(nextDay?.dayType || '', muscle);
+    if (!slot) {
+      rejectionReasons.push(`missing_slot_${String(muscle || '').toLowerCase()}`);
+      continue;
+    }
+    const replaceIdx = findLowerCoachCleanupHingeReplacementIndex(nextDay, user, { absPriority });
+    const current = replaceIdx >= 0
+      ? nextDay.exercises[replaceIdx]
+      : { sets: 2, style: slot.styleRequired, slotId: slot.id, primary: slot.muscleTarget, muscleTarget: slot.muscleTarget };
+    const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+      const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+      if (!isLowerCoachCleanupHingeCandidate(candidate, user)) return false;
+      if (muscle === 'Glutes') return isRealPosteriorChainBuilder(candidate, user) && (truth.progressionFriendly || truth.controlledHingeAllowed);
+      return (truth.primaryMuscle === 'Legs' || isRealPosteriorChainBuilder(candidate, user)) && (truth.progressionFriendly || truth.controlledHingeAllowed);
+    });
+    if (!replacement) {
+      rejectionReasons.push(`no_hinge_candidate_for_${String(muscle || '').toLowerCase()}`);
+      continue;
+    }
+    availableHingeCandidatesCount += 1;
+    if (replaceIdx >= 0) {
+      nextDay.exercises.splice(replaceIdx, 1, replacement);
+    } else if ((nextDay.exercises || []).length < Number(user?.sessionCap || 0)) {
+      nextDay.exercises.push(replacement);
+    } else {
+      rejectionReasons.push(`session_cap_blocked_${String(muscle || '').toLowerCase()}`);
+      continue;
+    }
+    nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+    const repairedStructure = buildLowerCoachCleanupStructuralResult(nextDay);
+    if (repairedStructure.ok) {
+      return {
+        repaired: true,
+        day: nextDay,
+        availableHingeCandidatesCount,
+        rejectionReasons
+      };
+    }
+    rejectionReasons.push(repairedStructure.missingRequirement || `invalid_repair_${String(muscle || '').toLowerCase()}`);
+  }
+
+  return {
+    repaired: false,
+    day,
+    availableHingeCandidatesCount,
+    rejectionReasons
+  };
+}
+
 function polishCoachSideEyeArmAccessories(day, user, exercises, weekType) {
   if (!['Push', 'Pull', 'Upper', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
@@ -6470,9 +11130,23 @@ function polishCoachSideEyeArmAccessories(day, user, exercises, weekType) {
   return nextDay;
 }
 
-function polishLowerCoachCleanup(day, user, exercises, weekType) {
+function polishLowerCoachCleanup(day, user, exercises, weekType, opts = {}) {
   if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const initialExerciseNames = nextDay.exercises.map((exercise) => String(exercise?.name || '').trim());
+  const initialExerciseFamilies = buildLowerCoachCleanupExerciseSnapshot(nextDay.exercises, user);
+  const initialQuadPatternCount = countLowerCoachCleanupQuadPatterns(nextDay.exercises, user);
+  const cleanupActionLog = [];
+  let bestValidDay = null;
+  const rememberBestValidDay = (candidateDay) => {
+    const structure = buildLowerCoachCleanupStructuralResult(candidateDay);
+    if (!structure.ok) return structure;
+    bestValidDay = {
+      ...candidateDay,
+      exercises: Array.isArray(candidateDay?.exercises) ? candidateDay.exercises.slice() : []
+    };
+    return structure;
+  };
   const cleanupIndexes = nextDay.exercises.reduce((acc, exercise, index) => {
     if (isCoachCleanupLowerCandidate(exercise)) acc.push(index);
     return acc;
@@ -6486,6 +11160,7 @@ function polishLowerCoachCleanup(day, user, exercises, weekType) {
   const slotOrder = isGluteDominantPriorityUser(user)
     ? ['Glutes', 'Legs', 'Core', 'Calves']
     : ['Legs', 'Glutes', 'Core', 'Calves'];
+  rememberBestValidDay(nextDay);
   for (let i = cleanupIndexes.length - 1; i >= 0; i -= 1) {
     const idx = cleanupIndexes[i];
     const current = nextDay.exercises[idx];
@@ -6505,12 +11180,258 @@ function polishLowerCoachCleanup(day, user, exercises, weekType) {
       if (replacement) break;
     }
     if (replacement) {
+      bumpLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
+        functionName: 'polishLowerCoachCleanup',
+        week: opts?.weekIndex,
+        day: nextDay?.day,
+        dayType: nextDay?.dayType,
+        lastAttemptedRepair: 'cleanup-lower-accessory',
+        missingRequirement: 'degraded_lower_day_cleanup'
+      });
       nextDay.exercises.splice(idx, 1, replacement);
+      nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+      const replacedStructure = rememberBestValidDay(nextDay);
+      cleanupActionLog.push({
+        action: 'replace_cleanup_candidate',
+        replacedExercise: String(current?.name || '').trim(),
+        replacementExercise: String(replacement?.name || '').trim(),
+        structureOk: Boolean(replacedStructure.ok),
+        resultingMissingRequirement: replacedStructure.ok ? '' : String(replacedStructure.missingRequirement || '')
+      });
+      if (!replacedStructure.ok && bestValidDay) {
+        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-degraded', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          skippedCleanup: true,
+          lastAttemptedRepair: 'cleanup-lower-accessory',
+          missingRequirement: replacedStructure.missingRequirement || 'invalid_lower_day_structure',
+          action: 'restore_last_structurally_valid_day_after_invalid_replacement'
+        });
+        return bestValidDay;
+      }
+      if (!replacedStructure.ok && replacedStructure.missingRequirement === 'missing_hinge_pattern') {
+        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null
+        });
+        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null
+        });
+        const hingeRepair = attemptLowerCoachCleanupHingeRepair(nextDay, user, exercises, weekType);
+        if (hingeRepair.repaired) {
+          const repairedStructure = rememberBestValidDay(hingeRepair.day);
+          logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+            day: nextDay?.day || null,
+            dayType: nextDay?.dayType || null,
+            availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+            rejectionReasons: hingeRepair.rejectionReasons
+          });
+          if (repairedStructure.ok) {
+            resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
+              week: opts?.weekIndex,
+              day: nextDay?.day,
+              dayType: nextDay?.dayType,
+              lastAttemptedRepair: 'hinge-repair'
+            }, {
+              lastAttemptedRepair: 'hinge-repair',
+              currentStructuralResult: repairedStructure
+            });
+            return hingeRepair.day;
+          }
+        }
+        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+          rejectionReasons: hingeRepair.rejectionReasons
+        });
+        if (bestValidDay) return bestValidDay;
+      }
       continue;
     }
-    if (nextDay.exercises.length > 4) nextDay.exercises.splice(idx, 1);
+    const removedDay = {
+      ...nextDay,
+      exercises: nextDay.exercises.filter((_, exerciseIndex) => exerciseIndex !== idx)
+    };
+    removedDay.exercises = organizeDayExerciseOrder(removedDay.dayType || '', removedDay.exercises);
+    const removedStructure = buildLowerCoachCleanupStructuralResult(removedDay);
+    cleanupActionLog.push({
+      action: 'remove_cleanup_candidate',
+      removedExercise: String(current?.name || '').trim(),
+      structureOk: Boolean(removedStructure.ok),
+      resultingMissingRequirement: removedStructure.ok ? '' : String(removedStructure.missingRequirement || '')
+    });
+    if (removedDay.exercises.length >= 4 && removedStructure.ok) {
+      rememberBestValidDay(removedDay);
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-degraded', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        skippedCleanup: true,
+        lastAttemptedRepair: 'cleanup-lower-accessory',
+        missingRequirement: 'degraded_lower_day_cleanup',
+        action: 'remove_cleanup_candidate_keep_structural_day'
+      });
+      return removedDay;
+    }
+    const currentStructure = buildLowerCoachCleanupStructuralResult(nextDay);
+    if (currentStructure.missingRequirement === 'missing_hinge_pattern') {
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null
+      });
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null
+      });
+      const hingeRepair = attemptLowerCoachCleanupHingeRepair(nextDay, user, exercises, weekType);
+      if (hingeRepair.repaired) {
+        const repairedStructure = rememberBestValidDay(hingeRepair.day);
+        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+          rejectionReasons: hingeRepair.rejectionReasons
+        });
+        if (repairedStructure.ok) {
+          resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
+            week: opts?.weekIndex,
+            day: nextDay?.day,
+            dayType: nextDay?.dayType,
+            lastAttemptedRepair: 'hinge-repair'
+          }, {
+            lastAttemptedRepair: 'hinge-repair',
+            currentStructuralResult: repairedStructure
+          });
+          return hingeRepair.day;
+        }
+      }
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+        rejectionReasons: hingeRepair.rejectionReasons
+      });
+      if (bestValidDay) return bestValidDay;
+    }
+    if (currentStructure.ok) {
+      rememberBestValidDay(nextDay);
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-degraded', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        skippedCleanup: true,
+        lastAttemptedRepair: 'cleanup-lower-accessory',
+        missingRequirement: 'degraded_lower_day_cleanup',
+        action: 'keep_best_current_day'
+      });
+      return nextDay;
+    }
+    if (bestValidDay) {
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-degraded', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        skippedCleanup: true,
+        lastAttemptedRepair: 'cleanup-lower-accessory',
+        missingRequirement: currentStructure.missingRequirement || 'invalid_lower_day_structure',
+        action: 'restore_last_structurally_valid_day_after_cleanup_stall'
+      });
+      return bestValidDay;
+    }
+    const finalQuadPatternCount = countLowerCoachCleanupQuadPatterns(nextDay.exercises, user);
+    const quadRepair = diagnoseLowerCoachCleanupQuadRepair(nextDay, user, exercises, weekType);
+    throw buildLowerCoachCleanupStructuralError(user, nextDay, currentStructure, {
+      weekIndex: opts?.weekIndex,
+      finalExerciseNames: nextDay.exercises.map((exercise) => String(exercise?.name || '').trim()),
+      finalExerciseFamilies: buildLowerCoachCleanupExerciseSnapshot(nextDay.exercises, user),
+      quadPatternExistedBeforeCleanup: initialQuadPatternCount > 0,
+      initialQuadPatternCount,
+      finalQuadPatternCount,
+      cleanupRemovedOnlyQuadPattern: initialQuadPatternCount > 0 && finalQuadPatternCount < 1,
+      cleanupTouchedDay: cleanupActionLog.length > 0,
+      cleanupTouchedPasses: ['polishLowerCoachCleanup'],
+      cleanupActionLog,
+      initialExerciseNames,
+      initialExerciseFamilies,
+      missingQuadPatternOrigin: initialQuadPatternCount > 0 && finalQuadPatternCount < 1 ? 'removed_later' : 'missing_from_initial_build',
+      safeQuadReplacementAvailable: quadRepair.safeQuadReplacementAvailable,
+      quadRepairAttempted: quadRepair.attempted,
+      quadRepairFailureReason: quadRepair.failureReason
+    });
   }
   nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+  const finalStructure = buildLowerCoachCleanupStructuralResult(nextDay);
+  if (!finalStructure.ok && finalStructure.missingRequirement === 'missing_hinge_pattern') {
+    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null
+    });
+    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null
+    });
+    const hingeRepair = attemptLowerCoachCleanupHingeRepair(nextDay, user, exercises, weekType);
+    if (hingeRepair.repaired) {
+      const repairedStructure = rememberBestValidDay(hingeRepair.day);
+      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+        rejectionReasons: hingeRepair.rejectionReasons
+      });
+      if (repairedStructure.ok) {
+        resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
+          week: opts?.weekIndex,
+          day: nextDay?.day,
+          dayType: nextDay?.dayType,
+          lastAttemptedRepair: 'hinge-repair'
+        }, {
+          lastAttemptedRepair: 'hinge-repair',
+          currentStructuralResult: repairedStructure
+        });
+        return hingeRepair.day;
+      }
+    }
+    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
+      rejectionReasons: hingeRepair.rejectionReasons
+    });
+    if (bestValidDay) return bestValidDay;
+  }
+  if (!finalStructure.ok && bestValidDay) {
+    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-degraded', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      skippedCleanup: true,
+      lastAttemptedRepair: 'cleanup-lower-accessory',
+      missingRequirement: finalStructure.missingRequirement || 'invalid_lower_day_structure',
+      action: 'restore_last_structurally_valid_day_after_final_cleanup_validation'
+    });
+    return bestValidDay;
+  }
+  if (!finalStructure.ok) {
+    const finalQuadPatternCount = countLowerCoachCleanupQuadPatterns(nextDay.exercises, user);
+    const quadRepair = diagnoseLowerCoachCleanupQuadRepair(nextDay, user, exercises, weekType);
+    throw buildLowerCoachCleanupStructuralError(user, nextDay, finalStructure, {
+      weekIndex: opts?.weekIndex,
+      finalExerciseNames: nextDay.exercises.map((exercise) => String(exercise?.name || '').trim()),
+      finalExerciseFamilies: buildLowerCoachCleanupExerciseSnapshot(nextDay.exercises, user),
+      quadPatternExistedBeforeCleanup: initialQuadPatternCount > 0,
+      initialQuadPatternCount,
+      finalQuadPatternCount,
+      cleanupRemovedOnlyQuadPattern: initialQuadPatternCount > 0 && finalQuadPatternCount < 1,
+      cleanupTouchedDay: cleanupActionLog.length > 0,
+      cleanupTouchedPasses: ['polishLowerCoachCleanup'],
+      cleanupActionLog,
+      initialExerciseNames,
+      initialExerciseFamilies,
+      missingQuadPatternOrigin: initialQuadPatternCount > 0 && finalQuadPatternCount < 1 ? 'removed_later' : 'missing_from_initial_build',
+      safeQuadReplacementAvailable: quadRepair.safeQuadReplacementAvailable,
+      quadRepairAttempted: quadRepair.attempted,
+      quadRepairFailureReason: quadRepair.failureReason
+    });
+  }
   return nextDay;
 }
 
@@ -6560,6 +11481,13 @@ function polishAssembledLowerDay(day, user, exercises, weekType) {
     }
   ];
   for (let i = assembledIndexes.length - 1; i >= 1; i -= 1) {
+    bumpLowerBodyRepairLoopGuard(user, 'assembledLower', {
+      functionName: 'polishAssembledLowerDay',
+      day: nextDay?.day,
+      dayType: nextDay?.dayType,
+      lastAttemptedRepair: 'replace-assembled-lower-accessory',
+      missingRequirement: 'stable lower-day exercise mix'
+    });
     const idx = assembledIndexes[i];
     const current = nextDay.exercises[idx];
     let replacement = null;
@@ -6623,6 +11551,13 @@ function polishShortSessionHipDominantClustering(day, user, exercises, weekType)
     optional: false
   });
   for (let i = hipIndexes.length - 1; i >= 2; i -= 1) {
+    bumpLowerBodyRepairLoopGuard(user, 'hipCluster', {
+      functionName: 'polishShortSessionHipDominantClustering',
+      day: nextDay?.day,
+      dayType: nextDay?.dayType,
+      lastAttemptedRepair: 'reduce-hip-dominant-cluster',
+      missingRequirement: 'balanced lower-day movement clustering'
+    });
     const idx = hipIndexes[i];
     const current = nextDay.exercises[idx];
     let replacement = null;
@@ -6641,9 +11576,29 @@ function polishShortSessionHipDominantClustering(day, user, exercises, weekType)
   return nextDay;
 }
 
-function polishLowerFatigueStacking(day, user, exercises, weekType) {
+function polishLowerFatigueStacking(day, user, exercises, weekType, opts = {}) {
   if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  let bestValidDay = null;
+  const logLowerFatigueStructuralResult = (structure) => {
+    const src = structure && typeof structure === 'object' ? structure : {};
+    logAbsGlutesLegsComboDebug(user, 'lower-fatigue-structural-result', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      ok: Boolean(src.ok),
+      missingRequirement: src.missingRequirement || '',
+      reason: src.reason || ''
+    });
+  };
+  const rememberBestValidDay = (candidateDay) => {
+    const structure = buildLowerCoachCleanupStructuralResult(candidateDay);
+    if (!structure.ok) return structure;
+    bestValidDay = {
+      ...candidateDay,
+      exercises: Array.isArray(candidateDay?.exercises) ? candidateDay.exercises.slice() : []
+    };
+    return structure;
+  };
   const posteriorIndexes = nextDay.exercises.reduce((acc, exercise, index) => {
     if (isPosteriorChainFatigueExercise(exercise)) acc.push(index);
     return acc;
@@ -6652,6 +11607,12 @@ function polishLowerFatigueStacking(day, user, exercises, weekType) {
     if (/(hip thrust|glute bridge)/.test(normalizeName(exercise?.name))) acc.push(index);
     return acc;
   }, []);
+  logAbsGlutesLegsComboDebug(user, 'lower-fatigue-entry', {
+    day: nextDay?.day || null,
+    dayType: nextDay?.dayType || null,
+    posteriorCount: posteriorIndexes.length,
+    hipBridgeCount: hipBridgeIndexes.length
+  });
   if (posteriorIndexes.length <= 2 && hipBridgeIndexes.length <= 1) return nextDay;
   const indexesToReplace = [];
   if (hipBridgeIndexes.length > 1) indexesToReplace.push(...hipBridgeIndexes.slice(1));
@@ -6662,6 +11623,7 @@ function polishLowerFatigueStacking(day, user, exercises, weekType) {
     buildPriorityIdentitySlot(nextDay?.dayType || '', 'Core'),
     buildPriorityIdentitySlot(nextDay?.dayType || '', 'Glutes')
   ].filter(Boolean);
+  rememberBestValidDay(nextDay);
   for (const idx of indexesToReplace.sort((a, b) => b - a)) {
     const current = nextDay.exercises[idx];
     let replacement = null;
@@ -6676,9 +11638,112 @@ function polishLowerFatigueStacking(day, user, exercises, weekType) {
       });
       if (replacement) break;
     }
-    if (replacement) nextDay.exercises.splice(idx, 1, replacement);
+    if (!replacement) {
+      const currentStructure = buildLowerCoachCleanupStructuralResult(nextDay);
+      logLowerFatigueStructuralResult(currentStructure);
+      if (currentStructure.ok) {
+        rememberBestValidDay(nextDay);
+        logAbsGlutesLegsComboDebug(user, 'lower-fatigue-degraded', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          skippedCleanup: true,
+          lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+          missingRequirement: 'degraded_lower_day_fatigue_cleanup',
+          action: 'keep_best_current_day'
+        });
+        return nextDay;
+      }
+      if (bestValidDay) {
+        logAbsGlutesLegsComboDebug(user, 'lower-fatigue-degraded', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          skippedCleanup: true,
+          lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+          missingRequirement: currentStructure.missingRequirement || 'invalid_lower_day_structure',
+          action: 'restore_last_structurally_valid_day_after_fatigue_stall'
+        });
+        return bestValidDay;
+      }
+      logAbsGlutesLegsComboDebug(user, 'lower-fatigue-structural-failure', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        missingRequirement: currentStructure.missingRequirement || 'invalid_lower_day_structure',
+        reason: currentStructure.reason || 'Lower day failed structural validation.'
+      });
+      throw buildLowerFatigueStructuralError(user, nextDay, currentStructure);
+    }
+    try {
+      bumpLowerBodyRepairLoopGuard(user, 'lowerFatigue', {
+        functionName: 'polishLowerFatigueStacking',
+        week: opts?.weekIndex,
+        day: nextDay?.day,
+        dayType: nextDay?.dayType,
+        lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+        missingRequirement: 'degraded_lower_day_fatigue_cleanup'
+      });
+    } catch (err) {
+      if (String(err?.error || '') !== 'LOWER_BODY_REPAIR_LOOP_LIMIT') throw err;
+      const structuralResult = buildLowerCoachCleanupStructuralResult(nextDay);
+      logLowerFatigueStructuralResult(structuralResult);
+      if (structuralResult.ok) {
+        const fallbackDay = bestValidDay || nextDay;
+        logAbsGlutesLegsComboDebug(user, 'lower-fatigue-degraded', {
+          day: nextDay?.day || null,
+          dayType: nextDay?.dayType || null,
+          skippedCleanup: true,
+          lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+          missingRequirement: 'degraded_lower_day_fatigue_cleanup',
+          action: bestValidDay ? 'restore_last_structurally_valid_day_after_fatigue_stall' : 'keep_best_current_day'
+        });
+        return fallbackDay;
+      }
+      logAbsGlutesLegsComboDebug(user, 'lower-fatigue-structural-failure', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        missingRequirement: structuralResult.missingRequirement || 'invalid_lower_day_structure',
+        reason: structuralResult.reason || 'Lower day failed structural validation.'
+      });
+      throw buildLowerFatigueStructuralError(user, nextDay, structuralResult);
+    }
+    nextDay.exercises.splice(idx, 1, replacement);
+    nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+    const replacedStructure = rememberBestValidDay(nextDay);
+    logLowerFatigueStructuralResult(replacedStructure);
+    if (!replacedStructure.ok && bestValidDay) {
+      logAbsGlutesLegsComboDebug(user, 'lower-fatigue-degraded', {
+        day: nextDay?.day || null,
+        dayType: nextDay?.dayType || null,
+        skippedCleanup: true,
+        lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+        missingRequirement: replacedStructure.missingRequirement || 'invalid_lower_day_structure',
+        action: 'restore_last_structurally_valid_day_after_invalid_replacement'
+      });
+      return bestValidDay;
+    }
   }
   nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+  const finalStructure = buildLowerCoachCleanupStructuralResult(nextDay);
+  logLowerFatigueStructuralResult(finalStructure);
+  if (!finalStructure.ok && bestValidDay) {
+    logAbsGlutesLegsComboDebug(user, 'lower-fatigue-degraded', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      skippedCleanup: true,
+      lastAttemptedRepair: 'reduce-posterior-fatigue-stack',
+      missingRequirement: finalStructure.missingRequirement || 'invalid_lower_day_structure',
+      action: 'restore_last_structurally_valid_day_after_final_fatigue_validation'
+    });
+    return bestValidDay;
+  }
+  if (!finalStructure.ok) {
+    logAbsGlutesLegsComboDebug(user, 'lower-fatigue-structural-failure', {
+      day: nextDay?.day || null,
+      dayType: nextDay?.dayType || null,
+      missingRequirement: finalStructure.missingRequirement || 'invalid_lower_day_structure',
+      reason: finalStructure.reason || 'Lower day failed structural validation.'
+    });
+    throw buildLowerFatigueStructuralError(user, nextDay, finalStructure);
+  }
   return nextDay;
 }
 
@@ -6758,8 +11823,14 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           exercises,
           String(week?.weekType || 'base')
         );
-        const polishedUpperPresses = polishUpperPressRedundancy(
+        const polishedLateralRedundancy = polishLateralRaiseRedundancy(
           polishedShoulders,
+          user,
+          exercises,
+          String(week?.weekType || 'base')
+        );
+        const polishedUpperPresses = polishUpperPressRedundancy(
+          polishedLateralRedundancy,
           user,
           exercises,
           String(week?.weekType || 'base')
@@ -6816,7 +11887,8 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           polishedArmAccessories,
           user,
           exercises,
-          String(week?.weekType || 'base')
+          String(week?.weekType || 'base'),
+          { weekIndex: week?.weekIndex }
         );
         const polishedAssembledLower = polishAssembledLowerDay(
           polishedLowerCleanup,
@@ -6828,7 +11900,8 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           polishedAssembledLower,
           user,
           exercises,
-          String(week?.weekType || 'base')
+          String(week?.weekType || 'base'),
+          { weekIndex: week?.weekIndex }
         );
         const polishedDay = polishShortSessionHipDominantClustering(
           polishedLowerFatigue,
@@ -6855,19 +11928,160 @@ function upgradePlanQualityPass(baseState, user, exercises) {
       );
     });
     const repaired = repairAndValidatePlan(upgradedWeeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_generator_final_return', {
+      functionName: 'upgradeBlueprintStateToOutputPlan',
+      fileName: 'generator/trainingEngine.oblueprint.js',
+      elapsedMs: plannerNowMs(),
+      requestedDayCount: Number.isFinite(Number(user?.daysPerWeek)) ? Number(user.daysPerWeek) : undefined,
+      requestedPriorityCount: Array.isArray(user?.priorityGroups) ? user.priorityGroups.length : undefined,
+      selectedPriorities: Array.isArray(user?.priorityGroups) ? user.priorityGroups.map((value) => String(value || '')) : [],
+      planExists: Boolean(repaired && !repaired.error),
+      weeksLength: Array.isArray(repaired?.weeks) ? repaired.weeks.length : undefined,
+      callBoundary: 'upgradeBlueprintStateToOutputPlan_after_repairAndValidatePlan'
+    });
     if (repaired.error) return baseState;
-    const finalWeeks = reinforceArmPriorityVisibility(
-      reinforceShoulderPriorityVisibility(
-        reinforceLowFrequencyPriorityAccessories(repaired.weeks, user, exercises),
+    emitPlannerDiagnosticHeartbeat(user, 'before_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      repaired.weeks,
+      'upgradeBlueprintStateToOutputPlan_before_reinforce_low_frequency_priority_accessories',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    const reinforcedWeeks = reinforceLowFrequencyPriorityAccessories(repaired.weeks, user, exercises)
+      .map((week) => ({
+        ...week,
+        days: (week?.days || []).map((day) => applyFinalNarrowPriorityDayPolish(day, user, exercises, String(week?.weekType || 'base'), {
+          weekIndex: week?.weekIndex
+        }))
+      }));
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_low_frequency_priority_accessories', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'upgradeBlueprintStateToOutputPlan_after_reinforce_low_frequency_priority_accessories',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      reinforcedWeeks,
+      'upgradeBlueprintStateToOutputPlan_before_cleanup_excess_core_volume',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_reinforce_shoulder_priority_visibility', {
+      ...buildCleanupChainHeartbeatMeta(
         user,
-        exercises
+        reinforcedWeeks,
+        'upgradeBlueprintStateToOutputPlan_before_reinforce_shoulder_priority_visibility',
+        'upgradeBlueprintStateToOutputPlan'
       ),
+      loopIterationCount: 0,
+      replacementAttempts: 0,
+      noProgressCount: 0
+    });
+    const shoulderVisibleWeeks = reinforceShoulderPriorityVisibility(
+      reinforcedWeeks,
       user,
       exercises
-    ).map((week) => ({
-      ...week,
-      days: (week?.days || []).map((day) => applyFinalNarrowPriorityDayPolish(day, user, exercises, String(week?.weekType || 'base')))
-    }));
+    );
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_shoulder_priority_visibility', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        shoulderVisibleWeeks,
+        'upgradeBlueprintStateToOutputPlan_after_reinforce_shoulder_priority_visibility',
+        'upgradeBlueprintStateToOutputPlan'
+      ),
+      loopIterationCount: 0,
+      replacementAttempts: 0,
+      noProgressCount: 0
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'before_reinforce_arm_priority_visibility', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        shoulderVisibleWeeks,
+        'upgradeBlueprintStateToOutputPlan_before_reinforce_arm_priority_visibility',
+        'upgradeBlueprintStateToOutputPlan'
+      ),
+      loopIterationCount: 0,
+      replacementAttempts: 0,
+      noProgressCount: 0
+    });
+    const armVisibleWeeks = reinforceArmPriorityVisibility(
+      shoulderVisibleWeeks,
+      user,
+      exercises
+    );
+    emitPlannerDiagnosticHeartbeat(user, 'after_reinforce_arm_priority_visibility', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        armVisibleWeeks,
+        'upgradeBlueprintStateToOutputPlan_after_reinforce_arm_priority_visibility',
+        'upgradeBlueprintStateToOutputPlan'
+      ),
+      loopIterationCount: 0,
+      replacementAttempts: 0,
+      noProgressCount: 0
+    });
+    const coreCleanupInputWeeks = armVisibleWeeks;
+    emitPlannerDiagnosticHeartbeat(user, 'before_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanupInputWeeks,
+        'upgradeBlueprintStateToOutputPlan_before_core_cleanup_direct_call',
+        'upgradeBlueprintStateToOutputPlan'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    const coreCleanedWeeks = cleanupExcessCoreVolumeInSuccessfulPlan(coreCleanupInputWeeks, user, exercises);
+    emitPlannerDiagnosticHeartbeat(user, 'after_core_cleanup_direct_call', {
+      ...buildCleanupChainHeartbeatMeta(
+        user,
+        coreCleanedWeeks,
+        'upgradeBlueprintStateToOutputPlan_after_core_cleanup_direct_call',
+        'upgradeBlueprintStateToOutputPlan'
+      ),
+      cleanupFunctionType: typeof cleanupExcessCoreVolumeInSuccessfulPlan,
+      cleanupFunctionName: String(cleanupExcessCoreVolumeInSuccessfulPlan?.name || '')
+    });
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_excess_core_volume', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'upgradeBlueprintStateToOutputPlan_after_cleanup_excess_core_volume',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      coreCleanedWeeks,
+      'upgradeBlueprintStateToOutputPlan_before_cleanup_back_to_back_lower_redundancy',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    const finalWeeks = cleanupBackToBackLowerDayRedundancyInSuccessfulPlan(
+      coreCleanedWeeks,
+      user,
+      exercises
+    );
+    emitPlannerDiagnosticHeartbeat(user, 'after_cleanup_back_to_back_lower_redundancy', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'upgradeBlueprintStateToOutputPlan_after_cleanup_back_to_back_lower_redundancy',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'upgradeBlueprintStateToOutputPlan_before_final_weeks_assignment',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'after_final_weeks_assignment', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'upgradeBlueprintStateToOutputPlan_after_final_weeks_assignment',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
+    emitPlannerDiagnosticHeartbeat(user, 'before_return_successful_plan', buildCleanupChainHeartbeatMeta(
+      user,
+      finalWeeks,
+      'upgradeBlueprintStateToOutputPlan_before_return_successful_plan',
+      'upgradeBlueprintStateToOutputPlan'
+    ));
     return extractInternalPlanState(
       baseState.schedule,
       finalWeeks,
@@ -6917,28 +12131,97 @@ function buildOblueprintPlan(input, opts = {}) {
   const user = normalizeUserInput(input);
   if (user.error) return user;
   user._plannerRuntime = createPlannerRuntime(opts);
+  try {
+    logDebugComboMatchEval('builder', evaluateGlutesLegsCoreDebugCombo({
+      discipline: user?.discipline,
+      daysPerWeek: user?.daysPerWeek,
+      phase: user?.phase,
+      sessionLengthMin: user?.sessionLengthMin,
+      location: user?.location,
+      priorityGroups: user?.priorityGroups,
+      allowedEquipment: user?.allowedEquipment,
+      injuryMap: user?.injuryMap,
+      injuryNotes: user?.injuryNotes
+    }, { builderNormalized: true }));
+    logAbsGlutesLegsComboDebug(user, 'normalized-user', {
+      normalizedPriorityGroups: Array.isArray(user?.priorityGroups) ? user.priorityGroups.slice() : [],
+      legsInterpretation: {
+        structuralAliases: getPriorityGroupStructuralAliases('Legs'),
+        directTargets: priorityGroupToDirectTargets('Legs')
+      },
+      allowedEquipment: Array.isArray(user?.allowedEquipment) ? user.allowedEquipment.slice() : [],
+      sessionLengthMin: user?.sessionLengthMin || null,
+      phase: user?.phase || null
+    });
 
-  const { targets, frequencyTargets, stressMultiplier } = computeWeeklyTargets(user);
-  const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier);
-  if (safeBase?.error) return safeBase;
-  const qualityUpgraded = upgradePlanQualityPass(safeBase, user, PREPROCESSED_CACHE);
-  if (qualityUpgraded?.error) return qualityUpgraded;
-  const plan = attachAdaptiveCoachingLayer(qualityUpgraded, user, targets, frequencyTargets, stressMultiplier);
-  if (plan?.error) return plan;
-  applyEliteGradingLayer(plan, user);
-  if (!['elite', 'good'].includes(plan?.meta?.eliteQa?.tier)) {
-    const rebuiltState = buildFinalConstrainedRebuild(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after elite QA downgrade.');
-    if (!rebuiltState?.error) {
-      const rebuiltPlan = attachAdaptiveCoachingLayer(rebuiltState, user, targets, frequencyTargets, stressMultiplier);
-      applyEliteGradingLayer(rebuiltPlan, user);
-      const currentScore = Number(plan?.meta?.eliteQa?.score || 0);
-      const rebuiltScore = Number(rebuiltPlan?.meta?.eliteQa?.score || 0);
-      const currentCeilingScore = Number(plan?.meta?.ceilingQa?.score || 0);
-      const rebuiltCeilingScore = Number(rebuiltPlan?.meta?.ceilingQa?.score || 0);
-      if (rebuiltScore >= currentScore || rebuiltCeilingScore >= currentCeilingScore || ['elite', 'good'].includes(rebuiltPlan?.meta?.eliteQa?.tier)) return rebuiltPlan;
+    const { targets, frequencyTargets, stressMultiplier } = computeWeeklyTargets(user);
+    const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier);
+    if (safeBase?.error) return attachAbsGlutesLegsDebugMeta(safeBase, user, {
+      stage: safeBase?.stage || safeBase?.failedStage || 'builder',
+      failedStage: safeBase?.failedStage || safeBase?.stage || 'builder'
+    });
+    const qualityUpgraded = upgradePlanQualityPass(safeBase, user, PREPROCESSED_CACHE);
+    if (qualityUpgraded?.error) return attachAbsGlutesLegsDebugMeta(qualityUpgraded, user, {
+      stage: qualityUpgraded?.stage || qualityUpgraded?.failedStage || 'builder',
+      failedStage: qualityUpgraded?.failedStage || qualityUpgraded?.stage || 'builder'
+    });
+    logComboStageEnter(user, 'priority repair');
+    const priorityRepairedWeeks = repairVisiblePriorityStructure(qualityUpgraded.weeks, user, PREPROCESSED_CACHE, targets);
+    logComboStageExit(user, 'priority repair');
+    logComboStageEnter(user, 'final dedupe');
+    const dedupedWeeks = enforceFinalVisibleDedupeInvariant(
+      priorityRepairedWeeks,
+      user,
+      PREPROCESSED_CACHE
+    );
+    logComboStageExit(user, 'final dedupe');
+    logComboStageEnter(user, 'route repair');
+    const repairedState = {
+      ...qualityUpgraded,
+      weeks: dedupedWeeks
+    };
+    logComboStageExit(user, 'route repair');
+    const plan = attachAdaptiveCoachingLayer(repairedState, user, targets, frequencyTargets, stressMultiplier);
+    if (plan?.error) return attachAbsGlutesLegsDebugMeta(plan, user, {
+      stage: plan?.stage || plan?.failedStage || 'route repair',
+      failedStage: plan?.failedStage || plan?.stage || 'route repair'
+    });
+    if (opts?.fastBuild) {
+      plan.meta = plan.meta && typeof plan.meta === 'object' ? plan.meta : {};
+      plan.meta.plannerStages = plan.meta.plannerStages && typeof plan.meta.plannerStages === 'object'
+        ? plan.meta.plannerStages
+        : {};
+      plan.meta.plannerStages.eliteGradingLayer = false;
+      plan.meta.fastBuild = true;
+      return plan;
     }
+    applyEliteGradingLayer(plan, user);
+    if (!['elite', 'good'].includes(plan?.meta?.eliteQa?.tier)) {
+      const rebuiltState = buildFinalConstrainedRebuild(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after elite QA downgrade.');
+      if (!rebuiltState?.error) {
+        const rebuiltPlan = attachAdaptiveCoachingLayer({
+          ...rebuiltState,
+          weeks: enforceFinalVisibleDedupeInvariant(
+            repairVisiblePriorityStructure(rebuiltState.weeks, user, PREPROCESSED_CACHE, targets),
+            user,
+            PREPROCESSED_CACHE
+          )
+        }, user, targets, frequencyTargets, stressMultiplier);
+        applyEliteGradingLayer(rebuiltPlan, user);
+        const currentScore = Number(plan?.meta?.eliteQa?.score || 0);
+        const rebuiltScore = Number(rebuiltPlan?.meta?.eliteQa?.score || 0);
+        const currentCeilingScore = Number(plan?.meta?.ceilingQa?.score || 0);
+        const rebuiltCeilingScore = Number(rebuiltPlan?.meta?.ceilingQa?.score || 0);
+        if (rebuiltScore >= currentScore || rebuiltCeilingScore >= currentCeilingScore || ['elite', 'good'].includes(rebuiltPlan?.meta?.eliteQa?.tier)) return rebuiltPlan;
+      }
+    }
+    return plan;
+  } catch (err) {
+    return attachAbsGlutesLegsDebugMeta(err, user, {
+      stage: err?.stage || err?.failedStage || 'builder',
+      failedStage: err?.failedStage || err?.stage || 'builder'
+    });
   }
-  return plan;
 }
 
 module.exports = {

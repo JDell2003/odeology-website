@@ -1,0 +1,104 @@
+[
+  {
+    "dayCount": 5,
+    "priorityCount": 1,
+    "selectedPriorities": [
+      "Arms"
+    ],
+    "failedWeek": 1,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  },
+  {
+    "dayCount": 5,
+    "priorityCount": 2,
+    "selectedPriorities": [
+      "Arms",
+      "Chest"
+    ],
+    "failedWeek": 1,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 1,
+    "selectedPriorities": [
+      "Arms"
+    ],
+    "failedWeek": 1,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 2,
+    "selectedPriorities": [
+      "Arms",
+      "Chest"
+    ],
+    "failedWeek": 5,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 3,
+    "selectedPriorities": [
+      "Arms",
+      "Chest",
+      "Legs"
+    ],
+    "failedWeek": 3,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  },
+  {
+    "dayCount": 6,
+    "priorityCount": 3,
+    "selectedPriorities": [
+      "Arms",
+      "Chest",
+      "Glutes"
+    ],
+    "failedWeek": 3,
+    "finalRoleCounts": {
+      "biceps_iso": 0,
+      "triceps_iso": 1,
+      "delt": 2,
+      "other": 0
+    },
+    "preRecordsForWeek": [],
+    "allRepairResults": []
+  }
+]

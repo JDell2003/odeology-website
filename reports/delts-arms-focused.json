@@ -1,0 +1,1957 @@
+{
+  "reportPath": "D:\\Jasons Web\\reports\\delts-arms-focused.json",
+  "generatedAt": "2026-05-08T17:02:53.858Z",
+  "settings": {
+    "runs": 1,
+    "timeoutMs": 60000,
+    "days": [
+      5,
+      6
+    ],
+    "priorityCounts": [
+      1,
+      2,
+      3
+    ],
+    "expandedMode": true,
+    "rerunFailures": null,
+    "filterFailedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+    "rerunTargetCount": 6,
+    "expectedFocusedTestCount": 6,
+    "actualFocusedTestCount": 6
+  },
+  "matrix": {
+    "uiPriorityOptions": [
+      {
+        "key": "chest",
+        "label": "Chest"
+      },
+      {
+        "key": "back",
+        "label": "Back"
+      },
+      {
+        "key": "shoulders",
+        "label": "Shoulders"
+      },
+      {
+        "key": "arms",
+        "label": "Arms"
+      },
+      {
+        "key": "legs",
+        "label": "Legs"
+      },
+      {
+        "key": "glutes",
+        "label": "Glutes"
+      },
+      {
+        "key": "abs",
+        "label": "Abs"
+      }
+    ],
+    "totalCombos": 6,
+    "focusedRerunTargets": [
+      {
+        "dayCount": 5,
+        "priorityCount": 1,
+        "selectedPriorities": [
+          "Arms"
+        ]
+      },
+      {
+        "dayCount": 5,
+        "priorityCount": 2,
+        "selectedPriorities": [
+          "Arms",
+          "Chest"
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 1,
+        "selectedPriorities": [
+          "Arms"
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 2,
+        "selectedPriorities": [
+          "Arms",
+          "Chest"
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Arms",
+          "Chest",
+          "Legs"
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 3,
+        "selectedPriorities": [
+          "Arms",
+          "Chest",
+          "Glutes"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "totalCombos": 6,
+    "totalTests": 6,
+    "passed": 0,
+    "failed": 6,
+    "unsupported": 0,
+    "warnings": 0,
+    "passesWithWarnings": 0,
+    "cleanPasses": 0
+  },
+  "failures": [
+    {
+      "combo": [
+        "Arms"
+      ],
+      "dayCount": 5,
+      "priorityCount": 1,
+      "selectedPriorities": [
+        "Arms"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 1,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":1}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2016,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest"
+      ],
+      "dayCount": 5,
+      "priorityCount": 2,
+      "selectedPriorities": [
+        "Arms",
+        "Chest"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 1,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":1}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 1936,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Arms"
+      ],
+      "dayCount": 6,
+      "priorityCount": 1,
+      "selectedPriorities": [
+        "Arms"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 1,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":1}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2025,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest"
+      ],
+      "dayCount": 6,
+      "priorityCount": 2,
+      "selectedPriorities": [
+        "Arms",
+        "Chest"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 5,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":5}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2122,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest",
+        "Legs"
+      ],
+      "dayCount": 6,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Arms",
+        "Chest",
+        "Legs"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest",
+        "Legs"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 3,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":3}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2411,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest",
+        "Glutes"
+      ],
+      "dayCount": 6,
+      "priorityCount": 3,
+      "selectedPriorities": [
+        "Arms",
+        "Chest",
+        "Glutes"
+      ],
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest",
+        "Glutes"
+      ],
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "timedOut": false,
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "validatorSection": "routeRepairDeltsArmsRoleInvariant",
+        "failedInvariant": "delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "classificationSource": "derived_plan_build_failed",
+        "week": 3,
+        "dayIndex": null,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "exerciseIndex": null,
+        "exerciseName": null,
+        "exerciseNames": null,
+        "exerciseKeys": null,
+        "rawExercisePreview": null,
+        "rawDayPreview": null,
+        "finalVisibleDayExercises": null,
+        "selectedPriorities": null,
+        "weekType": null,
+        "requiredStyle": null,
+        "muscleTarget": null,
+        "directCoreExercises": null,
+        "directCoreExerciseCount": null,
+        "directCoreExerciseCountBucket": null,
+        "directCoreSetCount": null,
+        "coreMovementFamilySubroles": null,
+        "absSelected": null,
+        "exactTwoAbsRequired": null,
+        "coreMissingFromInitialBuild": null,
+        "coreRemovedOrReplacedLater": null,
+        "safeCoreInsertionOrReplacementExists": null,
+        "unsafeCoreCandidateExists": null,
+        "addingCoreWouldBreakValidation": null,
+        "addingCoreWouldDuplicateNames": null,
+        "addingCoreWouldDuplicateFamilies": null,
+        "candidateDiagnostics": null,
+        "lowerExerciseFamilies": null,
+        "quadPatternExistedBeforeCleanup": null,
+        "initialQuadPatternCount": null,
+        "finalQuadPatternCount": null,
+        "cleanupRemovedOnlyQuadPattern": null,
+        "cleanupTouchedDay": null,
+        "cleanupTouchedPasses": null,
+        "cleanupActionLog": null,
+        "initialExerciseNames": null,
+        "initialExerciseFamilies": null,
+        "missingQuadPatternOrigin": null,
+        "safeQuadReplacementAvailable": null,
+        "quadRepairAttempted": null,
+        "quadRepairFailureReason": null,
+        "weekExerciseList": null,
+        "failedDayExercises": null,
+        "hingeDeadliftExercisesInWeek": null,
+        "heavyDeadliftExercisesInWeek": null,
+        "countedHeavyDeadliftExerciseNames": null,
+        "heavyDeadliftByDay": null,
+        "legsSelected": null,
+        "glutesSelected": null,
+        "sameDayHeavyHingeCount": null,
+        "weeklyHeavyHingeExposureDays": null,
+        "repeatedHeavyHingeRole": null,
+        "sameDayHeavyHingeStacking": null,
+        "weeklyHeavyHingeStacking": null,
+        "heavyDeadliftFalsePositiveCount": null,
+        "falsePositiveClassification": null,
+        "safeHeavyHingeReplacementExists": null,
+        "safeHeavyHingeReplacementCandidate": null,
+        "removingOrReplacingWouldBreakLowerDayStructure": null,
+        "heavyDeadliftIssueKind": null,
+        "hardFailReason": null,
+        "softenedToWarning": null,
+        "calfDirectSets": null,
+        "calfExposureDays": null,
+        "workerExitCode": null,
+        "workerMessageType": null,
+        "workerMessageReceived": null,
+        "timeoutMs": null,
+        "elapsedMs": null,
+        "didTimeoutFire": null,
+        "terminateCalled": null,
+        "terminateReason": null,
+        "workerExitedBeforeTimeout": null,
+        "workerExitedAfterTimeout": null,
+        "firstHeartbeatStage": null,
+        "heartbeatStageHistory": [],
+        "lastHeartbeatStage": null,
+        "lastBuilderStage": null,
+        "lastRepairOrPolishFunction": null,
+        "planShapeType": null,
+        "isOblueprintPlanShape": null,
+        "weeksLength": null,
+        "firstWeekDayCount": null,
+        "totalDayCount": null,
+        "totalExerciseCount": null,
+        "dayTypesPresent": null,
+        "dayCount": null,
+        "branchEntered": null,
+        "workerExitAfterMessage": null,
+        "processExitCalled": null,
+        "processExitCode": null,
+        "processExitStackPreview": null,
+        "uncaughtExceptionMessage": null,
+        "uncaughtExceptionStackPreview": null,
+        "unhandledRejectionMessage": null,
+        "unhandledRejectionStackPreview": null,
+        "assertCallStarted": null,
+        "assertCallReturnedSuccess": null,
+        "assertCallThrew": null,
+        "assertCallFinally": null,
+        "lastSectionStarted": null,
+        "lastSectionCompleted": null,
+        "currentRunningSection": null,
+        "currentRunningSectionElapsedMs": null,
+        "sectionDurationsMs": null,
+        "stackPreview": null,
+        "rawErrorKeys": [
+          "day",
+          "dayType",
+          "error",
+          "failedStage",
+          "functionName",
+          "message",
+          "reason",
+          "roleCounts",
+          "stage",
+          "week"
+        ],
+        "rawErrorMessage": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "rawErrorObjectPreview": "{\"error\":\"PLAN_BUILD_FAILED\",\"message\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"reason\":\"Delts+Arms day must include exactly one biceps iso and one triceps iso.\",\"functionName\":\"routeRepairDeltsArmsRoleInvariant\",\"stage\":\"routeRepairDeltsArmsRoleInvariant\",\"failedStage\":\"routeRepairDeltsArmsRoleInvariant\",\"day\":\"DeltsArms\",\"dayType\":\"DeltsArms\",\"week\":3}"
+      },
+      "runs": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2333,
+          "finalReturnedPlanExists": false
+        }
+      ]
+    }
+  ],
+  "unsupported": [],
+  "passesWithWarnings": [],
+  "cleanPasses": [],
+  "acceptableExceptions": [],
+  "validatorContractAudit": [],
+  "redundancyFamilySummary": [],
+  "databaseLabelAudit": [],
+  "canonicalMovementFamilyMapProposal": [],
+  "familyConsistencyCheck": [],
+  "finalVisibleCleanupSummary": {
+    "sameDayRedundancyBefore": 0,
+    "sameDayRedundancyAfter": 0,
+    "horizontal_row": {
+      "before": 0,
+      "after": 0
+    },
+    "squat_leg_press": {
+      "before": 0,
+      "after": 0
+    },
+    "shoulder_press": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "finalVisibleCleanupLog": [],
+  "finalVisibleCleanupDiagnostics": [],
+  "redundancyDetails": [],
+  "horizontalRowCleanupDiagnostic": [],
+  "squatLegPressCleanupDiagnostic": [],
+  "hingePosteriorChainDiagnostic": [],
+  "horizontalRowSafetySimulation": [],
+  "squatLegPressSafetySimulation": [],
+  "remainingRedundancyDiagnostic": [],
+  "topRepeatedHingePosteriorPatterns": [],
+  "topCleanupRules": [
+    {
+      "rule": "Compare raw-builder and final-visible redundancy before replacing accessories",
+      "rationale": "Late route repair still changes visible output for every combo"
+    },
+    {
+      "rule": "Log replacement-pool exhaustion for duplicate family cleanup",
+      "rationale": "Need proof when cleanup runs but no acceptable replacement exists"
+    }
+  ],
+  "unknownFailureDiagnostic": [],
+  "timeoutProfilingReport": {
+    "total": 0,
+    "largestPlanShapeSizes": {
+      "maxWeeksLength": 0,
+      "maxFirstWeekDayCount": 0,
+      "maxTotalDayCount": 0,
+      "maxTotalExerciseCount": 0
+    },
+    "byCurrentSection": [],
+    "byLastCompletedSection": [],
+    "byBranchEntered": [],
+    "rows": []
+  },
+  "workerExitDiagnostic": {
+    "total": 0,
+    "byRootCause": [],
+    "byLastHeartbeatStage": [],
+    "byLastRepairOrPolishFunction": [],
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "rows": []
+  },
+  "missingQuadPatternDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byOrigin": [],
+    "bySafeRepairCandidate": [],
+    "byRepairFailureReason": [],
+    "rows": []
+  },
+  "heavyDeadliftCountDiagnostic": {
+    "total": 0,
+    "byDayCount": [],
+    "byPriorityCount": [],
+    "byDayType": [],
+    "bySelectedPriorities": [],
+    "byGroupedCause": [],
+    "bySafeReplacementExists": [],
+    "rows": [],
+    "topRepeatedHeavyHingePatterns": []
+  },
+  "calvesDiagnostics": [],
+  "rootPatterns": [
+    {
+      "key": "delts_arms_role_repair",
+      "count": 6,
+      "combos": [
+        "Arms",
+        "Arms + Chest",
+        "Arms + Chest + Glutes",
+        "Arms + Chest + Legs"
+      ],
+      "examples": [
+        {
+          "combo": [
+            "Arms"
+          ],
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso."
+        },
+        {
+          "combo": [
+            "Arms",
+            "Chest"
+          ],
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso."
+        },
+        {
+          "combo": [
+            "Arms"
+          ],
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso."
+        },
+        {
+          "combo": [
+            "Arms",
+            "Chest"
+          ],
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso."
+        },
+        {
+          "combo": [
+            "Arms",
+            "Chest",
+            "Legs"
+          ],
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso."
+        }
+      ]
+    }
+  ],
+  "combos": [
+    {
+      "combo": [
+        "Arms"
+      ],
+      "comboKeys": [
+        "arms"
+      ],
+      "dayCount": 5,
+      "priorityCount": 1,
+      "normalizedPriorityGroups": [
+        "Arms"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 1,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2016,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest"
+      ],
+      "comboKeys": [
+        "arms",
+        "chest"
+      ],
+      "dayCount": 5,
+      "priorityCount": 2,
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 1,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 1936,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Arms"
+      ],
+      "comboKeys": [
+        "arms"
+      ],
+      "dayCount": 6,
+      "priorityCount": 1,
+      "normalizedPriorityGroups": [
+        "Arms"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 1,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2025,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest"
+      ],
+      "comboKeys": [
+        "arms",
+        "chest"
+      ],
+      "dayCount": 6,
+      "priorityCount": 2,
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 5,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2122,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest",
+        "Legs"
+      ],
+      "comboKeys": [
+        "arms",
+        "chest",
+        "legs"
+      ],
+      "dayCount": 6,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest",
+        "Legs"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 3,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2411,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    },
+    {
+      "combo": [
+        "Arms",
+        "Chest",
+        "Glutes"
+      ],
+      "comboKeys": [
+        "arms",
+        "chest",
+        "glutes"
+      ],
+      "dayCount": 6,
+      "priorityCount": 3,
+      "normalizedPriorityGroups": [
+        "Arms",
+        "Chest",
+        "Glutes"
+      ],
+      "runs": 1,
+      "status": "FAIL",
+      "unsupported": false,
+      "timedOut": false,
+      "failedStage": "routeRepairDeltsArmsRoleInvariant",
+      "functionName": "routeRepairDeltsArmsRoleInvariant",
+      "error": {
+        "error": "PLAN_BUILD_FAILED",
+        "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+        "functionName": "routeRepairDeltsArmsRoleInvariant",
+        "stage": "routeRepairDeltsArmsRoleInvariant",
+        "failedStage": "routeRepairDeltsArmsRoleInvariant",
+        "week": 3,
+        "day": "DeltsArms",
+        "dayType": "DeltsArms",
+        "roleCounts": {
+          "biceps_iso": 0,
+          "triceps_iso": 1,
+          "delt": 2,
+          "other": 0
+        }
+      },
+      "builderReturnedPlanButRouteValidationFailed": false,
+      "finalReturnedPlanExists": false,
+      "finalRouteValidationFailed": false,
+      "warningCount": 0,
+      "warnings": [],
+      "metrics": {},
+      "redundancyDetails": [],
+      "databaseLabelAudit": [],
+      "canonicalMovementFamilyMapProposal": [],
+      "familyConsistencyCheck": [],
+      "squatLegPressSafetySimulation": [],
+      "finalVisibleCleanupLog": [],
+      "finalVisibleCleanupDiagnostics": [],
+      "finalVisibleCleanupSummary": null,
+      "runResults": [
+        {
+          "runIndex": 0,
+          "status": "FAIL",
+          "timedOut": false,
+          "failedStage": "routeRepairDeltsArmsRoleInvariant",
+          "functionName": "routeRepairDeltsArmsRoleInvariant",
+          "error": {
+            "error": "PLAN_BUILD_FAILED",
+            "message": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "reason": "Delts+Arms day must include exactly one biceps iso and one triceps iso.",
+            "functionName": "routeRepairDeltsArmsRoleInvariant",
+            "failedStage": "routeRepairDeltsArmsRoleInvariant"
+          },
+          "rawElapsedMs": 0,
+          "finalElapsedMs": 2333,
+          "finalReturnedPlanExists": false
+        }
+      ],
+      "acceptableExceptions": []
+    }
+  ],
+  "expandedMatrixReport": {
+    "expectedTotalTests": 6,
+    "actualTotalTests": 6,
+    "settings": {
+      "parsedDays": [
+        5,
+        6
+      ],
+      "parsedPriorityCounts": [
+        1,
+        2,
+        3
+      ],
+      "uiPriorityButtons": [
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Legs",
+        "Glutes",
+        "Abs"
+      ]
+    },
+    "overall": {
+      "totalTests": 6,
+      "passed": 0,
+      "failed": 6,
+      "unsupported": 0,
+      "passesWithWarnings": 0,
+      "cleanPasses": 0
+    },
+    "bySuite": [
+      {
+        "dayCount": 5,
+        "priorityCount": 1,
+        "totalCombos": 1,
+        "passed": 0,
+        "failed": 1,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 1,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Arms"
+        ],
+        "validatorFailures": [
+          {
+            "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "dayCount": 5,
+        "priorityCount": 2,
+        "totalCombos": 1,
+        "passed": 0,
+        "failed": 1,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 1,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Arms + Chest"
+        ],
+        "validatorFailures": [
+          {
+            "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 1,
+        "totalCombos": 1,
+        "passed": 0,
+        "failed": 1,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 1,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Arms"
+        ],
+        "validatorFailures": [
+          {
+            "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 2,
+        "totalCombos": 1,
+        "passed": 0,
+        "failed": 1,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 1,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Arms + Chest"
+        ],
+        "validatorFailures": [
+          {
+            "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "dayCount": 6,
+        "priorityCount": 3,
+        "totalCombos": 2,
+        "passed": 0,
+        "failed": 2,
+        "unsupported": 0,
+        "passesWithWarnings": 0,
+        "cleanPasses": 0,
+        "sameDayRedundancy": 0,
+        "hardFailures": 2,
+        "topWarningFamilies": [],
+        "failedCombos": [
+          "Arms + Chest + Glutes",
+          "Arms + Chest + Legs"
+        ],
+        "validatorFailures": [
+          {
+            "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+            "count": 2
+          }
+        ]
+      }
+    ],
+    "failuresByDayCount": [
+      {
+        "key": 6,
+        "count": 4
+      },
+      {
+        "key": 5,
+        "count": 2
+      }
+    ],
+    "failuresByPriorityCount": [
+      {
+        "key": 1,
+        "count": 2
+      },
+      {
+        "key": 2,
+        "count": 2
+      },
+      {
+        "key": 3,
+        "count": 2
+      }
+    ],
+    "failuresByCombo": [
+      {
+        "key": "Arms",
+        "count": 2
+      },
+      {
+        "key": "Arms + Chest",
+        "count": 2
+      },
+      {
+        "key": "Arms + Chest + Glutes",
+        "count": 1
+      },
+      {
+        "key": "Arms + Chest + Legs",
+        "count": 1
+      }
+    ],
+    "failuresByValidator": [
+      {
+        "key": "routeRepairDeltsArmsRoleInvariant / delts_arms_day_must_include_exactly_one_biceps_iso_and_one_triceps_iso",
+        "count": 6
+      }
+    ],
+    "unknownFailuresByMessageAndFunction": [],
+    "sameDayRedundancyByDayCount": [
+      {
+        "dayCount": 5,
+        "count": 0
+      },
+      {
+        "dayCount": 6,
+        "count": 0
+      }
+    ],
+    "topWarningFamilies": [],
+    "unknownFailureDiagnostic": []
+  }
+}

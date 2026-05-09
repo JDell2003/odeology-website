@@ -71,6 +71,14 @@ function sendNoContent(res, extraHeaders = {}) {
   return true;
 }
 
+function sendTrackUnavailable(res, extraHeaders = {}) {
+  return sendJson(res, 200, {
+    ok: true,
+    tracked: false,
+    unavailable: true
+  }, extraHeaders);
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
 }
@@ -566,7 +574,7 @@ module.exports = async function trackRoutes(req, res, url) {
   );
 
   if (!db.isConfigured()) {
-    if (isNonCriticalTrackRoute) return sendNoContent(res);
+    if (isNonCriticalTrackRoute) return sendTrackUnavailable(res);
     return sendJson(res, 501, { error: 'Database not configured' });
   }
 
@@ -574,7 +582,7 @@ module.exports = async function trackRoutes(req, res, url) {
     ensureSchema({ fastFail: true }).catch((err) => {
       if (isTransientPgError(err)) logTransientTrackError(err, 'trackRoutes:backgroundEnsureSchema');
     });
-    return sendNoContent(res);
+    return sendTrackUnavailable(res);
   }
 
   try {
@@ -582,7 +590,7 @@ module.exports = async function trackRoutes(req, res, url) {
   } catch (err) {
     if (isTransientPgError(err) && isNonCriticalTrackRoute) {
       logTransientTrackError(err, 'trackRoutes:ensureSchema');
-      return sendNoContent(res);
+      return sendTrackUnavailable(res);
     }
     console.error('[track-schema]', err?.message || err);
     return sendJson(res, 500, { error: 'Tracking unavailable' });
@@ -599,7 +607,7 @@ module.exports = async function trackRoutes(req, res, url) {
   } catch (err) {
     if (isTransientPgError(err) && isNonCriticalTrackRoute) {
       logTransientTrackError(err, 'trackRoutes:identityLookup');
-      return sendNoContent(res);
+      return sendTrackUnavailable(res);
     }
     console.error('[track-identity]', err?.message || err);
     return sendJson(res, 500, { error: 'Tracking unavailable' });
@@ -693,7 +701,7 @@ module.exports = async function trackRoutes(req, res, url) {
     } catch (err) {
       if (isTransientPgError(err)) {
         logTransientTrackError(err, 'trackRoutes:event');
-        return sendNoContent(res, setCookie ? { 'Set-Cookie': setCookie } : {});
+        return sendTrackUnavailable(res, setCookie ? { 'Set-Cookie': setCookie } : {});
       }
       return sendJson(res, 400, { error: err.message }, setCookie ? { 'Set-Cookie': setCookie } : {});
     }

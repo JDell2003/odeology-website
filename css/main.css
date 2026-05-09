@@ -6437,6 +6437,7 @@ body.friends-page .friends-item.friends-item-click {
     background: rgba(255, 110, 110, 0.08);
     color: var(--ink);
     font-weight: 600;
+    white-space: pre-wrap;
 }
 
 .auth-tabs {
@@ -18555,6 +18556,15 @@ html[data-theme="light"] .ode-tour-btn.primary {
     gap: 0.55rem;
 }
 
+.training-page .plan-topbar-timer-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    min-width: 0;
+    flex: 1 1 0;
+}
+
 .share-workout-members {
     margin-top: 0.42rem;
     display: flex;
@@ -18673,14 +18683,15 @@ html[data-theme="light"] .ode-tour-btn.primary {
     right: 18px;
     top: calc(var(--navbar-height, 72px) + 48px);
     z-index: 1200;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.42rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.12rem;
     min-height: 29px;
     min-width: 0;
     max-width: min(calc(100vw - 28px), 240px);
-    padding: 0.3rem 0.68rem;
-    border-radius: 999px;
+    padding: 0.36rem 0.78rem 0.42rem;
+    border-radius: 18px;
     border: 1px solid transparent;
     background:
         linear-gradient(180deg, rgba(7, 11, 17, 0.84), rgba(10, 14, 22, 0.78)) padding-box,
@@ -18697,7 +18708,6 @@ html[data-theme="light"] .ode-tour-btn.primary {
     pointer-events: none;
     transition: opacity 0.18s ease, transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.18s ease, background 0.18s ease;
     overflow: hidden;
-    white-space: nowrap;
 }
 
 .training-page .workout-floating-timer.hidden {
@@ -18732,6 +18742,18 @@ html[data-theme="light"] .ode-tour-btn.primary {
     letter-spacing: -0.01em;
     color: #e8f7ff;
     text-shadow: 0 0 14px rgba(113, 221, 241, 0.18);
+    white-space: nowrap;
+}
+
+.training-page .workout-floating-rest-time {
+    position: relative;
+    z-index: 1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    color: #f6cf89;
+    white-space: nowrap;
 }
 
 .training-page .workout-floating-timer::before {
@@ -19204,6 +19226,11 @@ html[data-theme="light"] .ode-tour-btn.primary {
         width: 100%;
         flex-wrap: wrap;
         justify-content: flex-start;
+    }
+
+    .training-page .plan-topbar-timer-stack {
+        width: 100%;
+        flex: 1 1 100%;
     }
 
     .share-workout-members {
@@ -20253,6 +20280,36 @@ html[data-theme="light"] .ode-tour-btn.primary {
     flex-wrap: wrap;
     margin-top: 0.45rem;
 }
+
+.training-page .btn-rest-timer {
+    padding: 0.38rem 0.72rem;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    font-weight: 800;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, #d48b2f 54%, var(--training-border));
+    background: linear-gradient(135deg, color-mix(in srgb, #f1b24a 82%, #fff4d4), color-mix(in srgb, #e38a22 78%, #fff0cf));
+    color: #2e1a04;
+    box-shadow: 0 10px 22px rgba(211, 126, 22, 0.18);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.training-page .btn-rest-timer:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(211, 126, 22, 0.24);
+    filter: saturate(1.05);
+}
+
+.training-page .btn-rest-timer:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 12px rgba(211, 126, 22, 0.2);
+}
+
+.training-page .btn-rest-timer:focus-visible {
+    outline: 2px solid color-mix(in srgb, #f1b24a 72%, white);
+    outline-offset: 2px;
+}
+
 
 .training-page .plan-topbar > div:first-child {
     padding: 0 !important;
@@ -21508,6 +21565,13 @@ html[data-theme="light"] .ode-tour-btn.primary {
 .training-page .workout-today-title {
     font-weight: 950;
     letter-spacing: -0.02em;
+}
+
+.training-page .workout-today-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
 }
 
 .training-page .workout-today-sub {
