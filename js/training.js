@@ -13,6 +13,54 @@
   const WORKOUT_TIMER_STORAGE_PREFIX = 'ode_training_timer_v1:';
   const WORKOUT_REST_TIMER_STORAGE_PREFIX = 'ode_training_rest_timer_v1:';
   const WORKOUT_DRAFT_STORAGE_PREFIX = 'ode_training_draft_v1:';
+  const TRAINING_PLAN_NAV_STORAGE_PREFIX = 'ode_training_plan_nav_v1:';
+  const LEGACY_TRAINING_WEEK_KEY = 'ode_training_week';
+  const LEGACY_TRAINING_ACTIVE_DATE_KEY = 'ode_training_active_date';
+
+  function trainingPlanNavStorageKey(suffix, planId = state?.planRow?.id) {
+    const plan = String(planId || '').trim();
+    if (!plan) return '';
+    return `${TRAINING_PLAN_NAV_STORAGE_PREFIX}${plan}:${suffix}`;
+  }
+
+  function readTrainingPlanNavValue(suffix, { planId = state?.planRow?.id, legacyKey = '' } = {}) {
+    try {
+      const scopedKey = trainingPlanNavStorageKey(suffix, planId);
+      if (scopedKey) {
+        const scopedValue = sessionStorage.getItem(scopedKey);
+        if (scopedValue != null && scopedValue !== '') return scopedValue;
+      }
+      if (legacyKey) {
+        const legacyValue = sessionStorage.getItem(legacyKey);
+        if (legacyValue != null && legacyValue !== '') return legacyValue;
+      }
+    } catch {
+      // ignore
+    }
+    return '';
+  }
+
+  function writeTrainingPlanNavValue(suffix, value, { planId = state?.planRow?.id } = {}) {
+    try {
+      const scopedKey = trainingPlanNavStorageKey(suffix, planId);
+      if (!scopedKey) return false;
+      sessionStorage.setItem(scopedKey, String(value ?? ''));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function hasInProgressWorkoutSession() {
+    if (workoutTimer.running || workoutTimer.paused) return true;
+    if (workoutAutosaveInFlight) return true;
+    if (workoutAutosaveQueued) return true;
+    if (workoutAutosaveContext) return true;
+    if (state.workoutInputDrafts.size > 0) return true;
+    if (state.workoutSetCountDrafts.size > 0) return true;
+    if (state.workoutReadinessDrafts.size > 0) return true;
+    return false;
+  }
 
   function readLocalIntake() {
     try {
@@ -2329,13 +2377,7 @@
       dayIndex: Number.isFinite(Number(stored?.context?.dayIndex)) ? Number(stored.context.dayIndex) : null,
       activeDate
     };
-    if (activeDate) {
-      try {
-        sessionStorage.setItem('ode_training_active_date', activeDate);
-      } catch {
-        // ignore
-      }
-    }
+    if (activeDate) writeTrainingPlanNavValue('active_date', activeDate, { planId: currentPlanId });
     return true;
   }
 
@@ -4055,6 +4097,7 @@
     const timerContext = workoutTimer.context && typeof workoutTimer.context === 'object'
       ? { ...workoutTimer.context }
       : {};
+    const timerPlanId = String(timerContext?.planId || state.planRow?.id || '').trim();
     const timerDayIso = String(timerContext?.activeDate || '').trim();
     if (durationMs > 0) {
       logTrainingEvent('workout_duration', {
@@ -4091,11 +4134,7 @@
       });
     }
     if (timerDayIso) {
-      try {
-        sessionStorage.setItem('ode_training_active_date', timerDayIso);
-      } catch {
-        // ignore
-      }
+      writeTrainingPlanNavValue('active_date', timerDayIso, { planId: timerPlanId });
     }
     updateWorkoutTimerDisplay();
     updateWorkoutRestTimerDisplay();
@@ -9715,8 +9754,16 @@ function toggleSharePopover(force) {
     }
     const fetchedProfile = s.json?.profile || null;
     const fetchedPlanRow = s.json?.plan || null;
+    const previousPlanId = String(previousPlanRow?.id || '').trim();
+    const fetchedPlanId = String(fetchedPlanRow?.id || '').trim();
     rememberLiftHistory(s.json?.liftHistory, { replace: true });
     if (silent && hadRenderablePlan && !hasRenderablePlanRow(fetchedPlanRow)) {
+      state.profile = fetchedProfile || state.profile;
+      state.planRow = previousPlanRow;
+      state.logs = previousLogs;
+      return;
+    }
+    if (silent && hadRenderablePlan && previousPlanId && fetchedPlanId && previousPlanId !== fetchedPlanId && hasInProgressWorkoutSession()) {
       state.profile = fetchedProfile || state.profile;
       state.planRow = previousPlanRow;
       state.logs = previousLogs;
@@ -12433,7 +12480,10 @@ function toggleSharePopover(force) {
 
     const today = new Date();
     const defaultWeek = weekIndexForDate(today, plan);
-    let activeWeek = Number(sessionStorage.getItem('ode_training_week'));
+    let activeWeek = Number(readTrainingPlanNavValue('week', {
+      planId: state.planRow?.id,
+      legacyKey: LEGACY_TRAINING_WEEK_KEY
+    }));
     if (!Number.isFinite(activeWeek) || activeWeek <= 0) activeWeek = defaultWeek;
     activeWeek = Math.max(1, Math.min(plan.weeks.length, activeWeek));
 
@@ -13310,7 +13360,10 @@ function toggleSharePopover(force) {
         return t;
       };
 
-      const storedDateIso = sessionStorage.getItem('ode_training_active_date');
+      const storedDateIso = readTrainingPlanNavValue('active_date', {
+        planId: state.planRow?.id,
+        legacyKey: LEGACY_TRAINING_ACTIVE_DATE_KEY
+      });
       let activeDate = parseISODateLocal(storedDateIso);
       if (!activeDate || Number.isNaN(activeDate.getTime())) {
         activeDate = today;
@@ -13413,9 +13466,9 @@ function toggleSharePopover(force) {
         if (dayIndex) weekdayToDayIndex.set(weekday, dayIndex);
       });
 
-      sessionStorage.setItem('ode_training_week', String(activeWeek));
-      sessionStorage.setItem(`ode_training_day_${activeWeek}`, `wd:${activeWeekday}`);
-      sessionStorage.setItem('ode_training_active_date', toISODateLocal(activeDate));
+      writeTrainingPlanNavValue('week', String(activeWeek), { planId: state.planRow?.id });
+      writeTrainingPlanNavValue(`day_${activeWeek}`, `wd:${activeWeekday}`, { planId: state.planRow?.id });
+      writeTrainingPlanNavValue('active_date', toISODateLocal(activeDate), { planId: state.planRow?.id });
 
       const activeDayIndex = dayIndexForDate(activeDate);
       const activeDay = activeDayIndex || -1;
@@ -13759,10 +13812,10 @@ function toggleSharePopover(force) {
         }
         const nextWeekIndex = weekIndexForDate(clamped, plan);
         const nextWeekday = clamped.getDay();
-        sessionStorage.setItem('ode_training_week', String(nextWeekIndex));
-        sessionStorage.setItem(`ode_training_day_${nextWeekIndex}`, `wd:${nextWeekday}`);
-        sessionStorage.setItem('ode_training_week_expanded', String(nextWeekIndex));
-        sessionStorage.setItem('ode_training_active_date', toISODateLocal(clamped));
+        writeTrainingPlanNavValue('week', String(nextWeekIndex), { planId: state.planRow?.id });
+        writeTrainingPlanNavValue(`day_${nextWeekIndex}`, `wd:${nextWeekday}`, { planId: state.planRow?.id });
+        writeTrainingPlanNavValue('week_expanded', String(nextWeekIndex), { planId: state.planRow?.id });
+        writeTrainingPlanNavValue('active_date', toISODateLocal(clamped), { planId: state.planRow?.id });
         render();
       };
 

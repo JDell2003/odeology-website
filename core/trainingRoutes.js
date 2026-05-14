@@ -8701,6 +8701,24 @@ async function ensureSchema() {
     `);
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_plans_user_id ON app_training_plans(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_training_plans_active ON app_training_plans(user_id, active);');
+    await safeQuery(`
+      WITH ranked AS (
+        SELECT id,
+               row_number() OVER (
+                 PARTITION BY user_id
+                 ORDER BY updated_at DESC, created_at DESC, id DESC
+               ) AS rn
+        FROM app_training_plans
+        WHERE active = true
+      )
+      UPDATE app_training_plans AS p
+      SET active = false,
+          updated_at = now()
+      FROM ranked
+      WHERE p.id = ranked.id
+        AND ranked.rn > 1;
+    `);
+    await safeQuery("CREATE UNIQUE INDEX IF NOT EXISTS uq_app_training_plans_one_active_per_user ON app_training_plans(user_id) WHERE active = true;");
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_share_invites (
@@ -8920,12 +8938,32 @@ async function safeResolveUserFromSession(req, { routeName = 'trainingRoutes', f
 }
 
 async function getActivePlan(userId) {
+  await db.query(
+    `
+      WITH ranked AS (
+        SELECT id,
+               row_number() OVER (
+                 ORDER BY updated_at DESC, created_at DESC, id DESC
+               ) AS rn
+        FROM app_training_plans
+        WHERE user_id = $1
+          AND active = true
+      )
+      UPDATE app_training_plans AS p
+      SET active = false,
+          updated_at = now()
+      FROM ranked
+      WHERE p.id = ranked.id
+        AND ranked.rn > 1;
+    `,
+    [userId]
+  );
   const result = await db.query(
     `
       SELECT id, version, discipline, days_per_week, plan, created_at, updated_at
       FROM app_training_plans
       WHERE user_id = $1 AND active = true
-      ORDER BY created_at DESC
+      ORDER BY updated_at DESC, created_at DESC, id DESC
       LIMIT 1;
     `,
     [userId]
