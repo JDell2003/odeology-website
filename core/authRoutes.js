@@ -69,6 +69,13 @@ function normalizePhone(raw) {
   return value;
 }
 
+function normalizeManagerCode(raw) {
+  const value = String(raw || '').trim().toUpperCase();
+  if (!value) return '';
+  if (value === 'MAX-ODE') return 'ODEOLOGY';
+  return value;
+}
+
 function csvToSet(raw) {
   const out = new Set();
   String(raw || '')
@@ -2296,7 +2303,8 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
       if (!linkedIds.length) {
         return {
           clientRoster: roster,
-          warnings: []
+          warnings: [],
+          actions: []
         };
       }
 
@@ -2371,14 +2379,103 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
         }];
       });
 
+      const actions = [];
+      const pushAction = (item = {}) => {
+        const action = item && typeof item === 'object' ? item : null;
+        if (!action?.title) return;
+        actions.push({
+          type: action.type || 'update',
+          tone: action.tone || 'neutral',
+          title: action.title,
+          detail: action.detail || '',
+          occurredAt: action.occurredAt || new Date().toISOString(),
+          linkedUserId: action.linkedUserId || null,
+          clientName: action.clientName || 'Client',
+          actionLabel: action.actionLabel || '',
+          actionKind: action.actionKind || '',
+          requestId: action.requestId || null
+        });
+      };
+
+      roster.forEach((client) => {
+        const userId = String(client.linkedUserId || '').trim();
+        const health = userId ? healthByUserId.get(userId) : null;
+        if (!health) return;
+        const checkinData = health.checkin_data && typeof health.checkin_data === 'object'
+          ? health.checkin_data
+          : {};
+        const meals = Array.isArray(checkinData.meals) ? checkinData.meals : [];
+        const calories = Number(checkinData?.macros?.calories);
+        const waterOz = Number(checkinData?.waterOz);
+        const mealsOnPlan = String(checkinData?.mealsOnPlan || '').trim().toLowerCase();
+
+        if (health.worked_out_today) {
+          pushAction({
+            type: 'workout',
+            tone: 'positive',
+            title: `${client.name} worked out today`,
+            detail: 'Workout logged for today.',
+            occurredAt: health.checkin_day || client.joinedAt || new Date().toISOString(),
+            linkedUserId: client.linkedUserId,
+            clientName: client.name
+          });
+        } else {
+          pushAction({
+            type: 'workout',
+            tone: 'needs-action',
+            title: `Approve ${client.name}'s workout follow-up`,
+            detail: `${client.name} has not logged a workout today yet.`,
+            occurredAt: health.checkin_day || client.joinedAt || new Date().toISOString(),
+            linkedUserId: client.linkedUserId,
+            clientName: client.name,
+            actionLabel: 'Check client account',
+            actionKind: 'view-client'
+          });
+        }
+
+        if (!health.checkin_day) {
+          pushAction({
+            type: 'checkin',
+            tone: 'needs-action',
+            title: `Review ${client.name}'s check-in`,
+            detail: 'No daily check-in has been submitted today.',
+            occurredAt: client.joinedAt || new Date().toISOString(),
+            linkedUserId: client.linkedUserId,
+            clientName: client.name,
+            actionLabel: 'Check client account',
+            actionKind: 'view-client'
+          });
+        } else if (meals.length || (Number.isFinite(calories) && calories > 0) || (Number.isFinite(waterOz) && waterOz > 0)) {
+          pushAction({
+            type: 'checkin',
+            tone: 'neutral',
+            title: `${client.name} updated today's check-in`,
+            detail: mealsOnPlan === 'no'
+              ? 'Meals were marked off plan.'
+              : 'Daily check-in activity was logged.',
+            occurredAt: health.checkin_day,
+            linkedUserId: client.linkedUserId,
+            clientName: client.name,
+            actionLabel: 'Check client account',
+            actionKind: 'view-client'
+          });
+        }
+      });
+
+      const pendingWorkoutApprovals = await listPendingTrainerWorkoutApprovals(uid);
+
       return {
         clientRoster: roster,
-        warnings
+        warnings,
+        actions,
+        pendingWorkoutApprovals
       };
     } catch {
       return {
         clientRoster: [],
-        warnings: []
+        warnings: [],
+        actions: [],
+        pendingWorkoutApprovals: []
       };
     }
   })();
@@ -2452,7 +2549,9 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
       revenueCents: Number(row.package_price_cents || 0)
     })),
     clientRoster: Array.isArray(clientActivity.clientRoster) ? clientActivity.clientRoster : [],
-    warnings: Array.isArray(clientActivity.warnings) ? clientActivity.warnings : []
+    warnings: Array.isArray(clientActivity.warnings) ? clientActivity.warnings : [],
+    actions: Array.isArray(clientActivity.actions) ? clientActivity.actions : [],
+    pendingWorkoutApprovals: Array.isArray(clientActivity.pendingWorkoutApprovals) ? clientActivity.pendingWorkoutApprovals : []
   };
 }
 
@@ -2540,6 +2639,9 @@ function normalizeTrainerMeta(payload = {}) {
     reviewDecisionAt: cleanShortText(payload.reviewDecisionAt, 80),
     reviewDecisionSeenAt: cleanShortText(payload.reviewDecisionSeenAt, 80),
     reviewNeedsResubmission: cleanBooleanDefault(payload.reviewNeedsResubmission, false),
+    managerCode: normalizeManagerCode(payload.managerCode),
+    workspaceId: cleanShortText(payload.workspaceId, 80),
+    locationId: cleanShortText(payload.locationId, 80),
     coachBadgeType,
     coachCustomTags,
     topSectionLabel: cleanShortText(payload.topSectionLabel, 140),
@@ -2601,6 +2703,9 @@ function applyTrainerMetaToProfile(baseProfile, metaRaw = {}) {
     reviewDecisionAt: String(meta.reviewDecisionAt || '').trim(),
     reviewDecisionSeenAt: String(meta.reviewDecisionSeenAt || '').trim(),
     reviewNeedsResubmission: meta.reviewNeedsResubmission === true,
+    managerCode: normalizeManagerCode(meta.managerCode || baseProfile.managerCode || ''),
+    workspaceId: String(meta.workspaceId || baseProfile.workspaceId || '').trim(),
+    locationId: String(meta.locationId || baseProfile.locationId || '').trim(),
     reviewNotice,
     coachBadgeType: Array.isArray(meta.coachBadgeType) ? meta.coachBadgeType : [],
     coachCustomTags: Array.isArray(meta.coachCustomTags) ? meta.coachCustomTags : [],
@@ -3665,6 +3770,25 @@ async function upsertTrainerProfile(userLike, payload = {}) {
   const uid = String(userLike?.id || '').trim();
   if (!uid) return null;
   const normalized = normalizeTrainerOnboardingPayload(payload, userLike);
+  const currentResult = await db.query(
+    `
+      SELECT meta
+      FROM app_trainer_profiles
+      WHERE user_id = $1
+      LIMIT 1;
+    `,
+    [uid]
+  );
+  const currentMeta = cleanObject(currentResult.rows?.[0]?.meta || {});
+  if (!normalized.meta.managerCode) {
+    normalized.meta.managerCode = normalizeManagerCode(currentMeta.managerCode || '');
+  }
+  if (!normalized.meta.workspaceId) {
+    normalized.meta.workspaceId = cleanShortText(currentMeta.workspaceId, 80);
+  }
+  if (!normalized.meta.locationId) {
+    normalized.meta.locationId = cleanShortText(currentMeta.locationId, 80);
+  }
   const result = await db.query(
     `
       INSERT INTO app_trainer_profiles (
@@ -3911,6 +4035,865 @@ async function listTrainerClients(userId) {
   }));
 }
 
+async function listPendingTrainerWorkoutApprovals(trainerUserId) {
+  const uid = String(trainerUserId || '').trim();
+  if (!uid) return [];
+  const result = await db.query(
+    `
+      WITH linked_clients AS (
+        SELECT DISTINCT linked_user_id
+        FROM app_trainer_clients
+        WHERE trainer_user_id = $1
+          AND status <> 'removed'
+          AND linked_user_id IS NOT NULL
+        UNION
+        SELECT DISTINCT linked_user_id
+        FROM app_trainer_invites
+        WHERE trainer_user_id = $1
+          AND invite_type = 'coaching_invite'
+          AND linked_user_id IS NOT NULL
+      )
+      SELECT
+        tw.id AS workout_id,
+        tw.user_id AS client_user_id,
+        tw.plan_id,
+        tw.performed_at,
+        tw.updated_at,
+        tw.week_index,
+        tw.day_index,
+        tw.readiness,
+        tw.duration_ms,
+        tw.entries,
+        tw.notes,
+        u.display_name,
+        u.email
+      FROM app_training_workouts tw
+      JOIN linked_clients lc ON lc.linked_user_id = tw.user_id
+      JOIN app_users u ON u.id = tw.user_id
+      LEFT JOIN app_trainer_workout_reviews wr
+        ON wr.workout_id = tw.id
+       AND wr.trainer_user_id = $1
+      WHERE wr.workout_id IS NULL
+      ORDER BY COALESCE(tw.performed_at::timestamp, tw.updated_at) DESC
+      LIMIT 30;
+    `,
+    [uid]
+  );
+  return (result.rows || []).map((row) => ({
+    workoutId: row.workout_id,
+    clientUserId: row.client_user_id,
+    clientName: cleanShortText(row.display_name || row.email || 'Client', 120),
+    clientEmail: row.email || '',
+    planId: row.plan_id || null,
+    performedAt: row.performed_at || null,
+    updatedAt: row.updated_at || null,
+    weekIndex: Number(row.week_index || 0),
+    dayIndex: Number(row.day_index || 0),
+    readiness: Number.isFinite(Number(row.readiness)) ? Number(row.readiness) : null,
+    durationMs: Number.isFinite(Number(row.duration_ms)) ? Number(row.duration_ms) : null,
+    entries: Array.isArray(row.entries) ? row.entries : [],
+    notes: row.notes || ''
+  }));
+}
+
+async function approveTrainerWorkoutReview(actor, workoutIdRaw) {
+  const trainerUserId = String(actor?.id || '').trim();
+  const workoutId = String(workoutIdRaw || '').trim();
+  if (!trainerUserId || !/^[0-9a-f-]{36}$/i.test(workoutId)) throw new Error('Valid workout id required.');
+  const result = await db.query(
+    `
+      WITH linked_clients AS (
+        SELECT DISTINCT linked_user_id
+        FROM app_trainer_clients
+        WHERE trainer_user_id = $1
+          AND status <> 'removed'
+          AND linked_user_id IS NOT NULL
+        UNION
+        SELECT DISTINCT linked_user_id
+        FROM app_trainer_invites
+        WHERE trainer_user_id = $1
+          AND invite_type = 'coaching_invite'
+          AND linked_user_id IS NOT NULL
+      ),
+      target AS (
+        SELECT tw.id AS workout_id, tw.user_id AS client_user_id
+        FROM app_training_workouts tw
+        JOIN linked_clients lc ON lc.linked_user_id = tw.user_id
+        WHERE tw.id = $2::uuid
+        LIMIT 1
+      )
+      INSERT INTO app_trainer_workout_reviews (
+        trainer_user_id,
+        client_user_id,
+        workout_id,
+        status,
+        reviewed_at,
+        updated_at
+      )
+      SELECT
+        $1,
+        target.client_user_id,
+        target.workout_id,
+        'approved',
+        now(),
+        now()
+      FROM target
+      ON CONFLICT (workout_id) DO UPDATE SET
+        trainer_user_id = EXCLUDED.trainer_user_id,
+        client_user_id = EXCLUDED.client_user_id,
+        status = 'approved',
+        reviewed_at = now(),
+        updated_at = now()
+      RETURNING workout_id, client_user_id, status, reviewed_at;
+    `,
+    [trainerUserId, workoutId]
+  );
+  const row = result.rows?.[0];
+  if (!row?.workout_id) throw new Error('Workout not found for this trainer.');
+  return {
+    workoutId: row.workout_id,
+    clientUserId: row.client_user_id,
+    status: row.status || 'approved',
+    reviewedAt: row.reviewed_at || null
+  };
+}
+
+function mapTrainerTrainingRequestRow(row) {
+  if (!row) return null;
+  const payload = row.request_payload && typeof row.request_payload === 'object' ? row.request_payload : {};
+  return {
+    id: row.id,
+    trainerUserId: row.trainer_user_id || null,
+    applicantUserId: row.applicant_user_id || null,
+    applicantName: row.applicant_name || 'Applicant',
+    applicantEmail: row.applicant_email || null,
+    applicantPhone: row.applicant_phone || null,
+    status: row.status || 'pending',
+    decisionReason: row.decision_reason || '',
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    decidedAt: row.decided_at || null,
+    requestPayload: payload
+  };
+}
+
+function mapTrainerManagerReviewRow(row) {
+  if (!row) return null;
+  const trainer = row.trainer_snapshot && typeof row.trainer_snapshot === 'object'
+    ? cleanObject(row.trainer_snapshot)
+    : {};
+  return {
+    id: row.id,
+    trainerUserId: row.trainer_user_id || null,
+    managerCode: normalizeManagerCode(row.manager_code || ''),
+    managerName: row.manager_name || '',
+    managerTitle: row.manager_title || '',
+    managerCompanyName: row.manager_company_name || '',
+    status: row.status || 'pending',
+    reviewedByUserId: row.reviewed_by_user_id || null,
+    decidedAt: row.decided_at || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    trainer
+  };
+}
+
+async function listTrainerManagerReviewRequestsByTrainer(trainerUserId) {
+  const uid = String(trainerUserId || '').trim();
+  if (!uid) return [];
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_manager_reviews
+      WHERE trainer_user_id = $1
+      ORDER BY
+        CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+        created_at DESC;
+    `,
+    [uid]
+  );
+  return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+}
+
+async function listTrainerManagerReviewRequestsByManager(managerCodeRaw) {
+  const managerCode = normalizeManagerCode(managerCodeRaw);
+  if (!managerCode) return [];
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_manager_reviews
+      WHERE UPPER(manager_code) = $1
+      ORDER BY
+        CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+        created_at DESC;
+    `,
+    [managerCode]
+  );
+  return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+}
+
+async function listTrainerManagerDirectory() {
+  const result = await db.query(
+    `
+      SELECT u.id,
+             u.username,
+             u.email,
+             u.display_name,
+             COALESCE(tp.meta->>'managerCode', '') AS manager_code,
+             COALESCE(tp.meta->>'workspaceId', '') AS workspace_id,
+             COALESCE(tp.meta->>'locationId', '') AS location_id,
+             COALESCE(tp.meta->>'displayName', tp.full_name, u.display_name, u.username, 'Manager') AS manager_name,
+             COALESCE(tp.meta->>'city', '') AS city,
+             COALESCE(tp.meta->>'state', '') AS state
+      FROM app_users u
+      LEFT JOIN app_trainer_profiles tp ON tp.user_id = u.id
+      WHERE COALESCE(u.admin_notes, '') ILIKE '%manager%'
+        AND COALESCE(tp.meta->>'managerCode', '') <> ''
+      ORDER BY COALESCE(tp.meta->>'displayName', tp.full_name, u.display_name, u.username, 'Manager') ASC,
+               u.created_at DESC;
+    `
+  );
+  const seen = new Set();
+  return (result.rows || []).map((row) => {
+    const managerCode = normalizeManagerCode(row.manager_code || '');
+    if (!managerCode || seen.has(managerCode)) return null;
+    seen.add(managerCode);
+    return {
+      id: row.id,
+      username: row.username || '',
+      email: row.email || '',
+      managerCode,
+      managerName: row.manager_name || row.display_name || row.username || 'Manager',
+      companyName: row.manager_name || row.display_name || row.username || '',
+      workspaceId: row.workspace_id || '',
+      locationId: row.location_id || '',
+      city: row.city || '',
+      state: row.state || ''
+    };
+  }).filter(Boolean);
+}
+
+async function createTrainerManagerReviewRequest(actor, payload = {}) {
+  const trainerUserId = String(actor?.id || '').trim();
+  if (!trainerUserId) throw new Error('Sign in to send a manager review request.');
+
+  const managerCode = normalizeManagerCode(cleanShortText(payload?.managerCode, 80));
+  const managerName = cleanShortText(payload?.managerName, 120);
+  const managerTitle = cleanShortText(payload?.managerTitle, 120);
+  const managerCompanyName = cleanShortText(payload?.managerCompanyName, 160);
+  if (!managerCode) throw new Error('Manager code is required.');
+
+  const trainerPayload = cleanObject(payload?.trainer || {});
+  const trainerSnapshot = {
+    fullName: cleanShortText(trainerPayload.fullName || actor?.displayName || actor?.username || '', 120),
+    email: normalizeEmail(trainerPayload.email || actor?.email || '') || '',
+    phone: normalizePhone(trainerPayload.phone || '') || '',
+    trainerType: cleanShortText(trainerPayload.trainerType, 80),
+    workspaceId: cleanShortText(trainerPayload.workspaceId, 80),
+    locationId: cleanShortText(trainerPayload.locationId, 80),
+    city: cleanShortText(trainerPayload.city, 80),
+    state: cleanShortText(trainerPayload.state, 80),
+    coachingStyle: cleanShortText(trainerPayload.coachingStyle, 120),
+    specialties: uniqueStringArray(Array.isArray(trainerPayload.specialties) ? trainerPayload.specialties : [], {
+      maxItems: 20,
+      maxLen: 80
+    }),
+    summary: cleanLongText(trainerPayload.summary, 1200)
+  };
+  if (!trainerSnapshot.fullName) throw new Error('Trainer name is required.');
+
+  const currentResult = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_manager_reviews
+      WHERE trainer_user_id = $1
+        AND UPPER(manager_code) = $2
+        AND status = 'pending'
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `,
+    [trainerUserId, managerCode]
+  );
+  const current = currentResult.rows?.[0] || null;
+  if (current) {
+    const updated = await db.query(
+      `
+        UPDATE app_trainer_manager_reviews
+        SET manager_name = $3,
+            manager_title = $4,
+            manager_company_name = $5,
+            trainer_snapshot = $6::jsonb,
+            updated_at = now()
+        WHERE id = $1
+          AND trainer_user_id = $2
+        RETURNING *;
+      `,
+      [current.id, trainerUserId, managerName, managerTitle, managerCompanyName, JSON.stringify(trainerSnapshot)]
+    );
+    return mapTrainerManagerReviewRow(updated.rows?.[0] || null);
+  }
+
+  const inserted = await db.query(
+    `
+      INSERT INTO app_trainer_manager_reviews (
+        trainer_user_id,
+        manager_code,
+        manager_name,
+        manager_title,
+        manager_company_name,
+        status,
+        trainer_snapshot,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6::jsonb, now(), now())
+      RETURNING *;
+    `,
+    [trainerUserId, managerCode, managerName, managerTitle, managerCompanyName, JSON.stringify(trainerSnapshot)]
+  );
+  return mapTrainerManagerReviewRow(inserted.rows?.[0] || null);
+}
+
+async function createManagerTrainerReviewRequest(actor, payload = {}) {
+  const trainerUserId = String(payload?.trainerUserId || '').trim();
+  if (!trainerUserId) throw new Error('Trainer user id is required.');
+
+  const actorManagerCode = normalizeManagerCode(actor?.manager?.managerCode || actor?.managerCode || '');
+  const requestedManagerCode = normalizeManagerCode(cleanShortText(payload?.managerCode, 80));
+  const managerCode = actor?.isOwner ? (requestedManagerCode || actorManagerCode) : (actorManagerCode || requestedManagerCode);
+  if (!managerCode) throw new Error('Manager code is required.');
+  if (!actor?.isOwner && requestedManagerCode && actorManagerCode && requestedManagerCode !== actorManagerCode) {
+    throw new Error('Manager code mismatch.');
+  }
+
+  const managerName = cleanShortText(
+    payload?.managerName || actor?.displayName || actor?.username || actor?.manager?.displayName || '',
+    120
+  );
+  const managerTitle = cleanShortText(payload?.managerTitle || 'Manager', 120);
+  const managerCompanyName = cleanShortText(payload?.managerCompanyName, 160);
+  const trainerPayload = cleanObject(payload?.trainer || {});
+  const trainerSnapshot = {
+    fullName: cleanShortText(trainerPayload.fullName || trainerPayload.displayName || trainerPayload.username || 'Trainer', 120),
+    email: normalizeEmail(trainerPayload.email || '') || '',
+    phone: normalizePhone(trainerPayload.phone || '') || '',
+    trainerType: cleanShortText(trainerPayload.trainerType, 80),
+    workspaceId: cleanShortText(trainerPayload.workspaceId, 80),
+    locationId: cleanShortText(trainerPayload.locationId, 80),
+    city: cleanShortText(trainerPayload.city, 80),
+    state: cleanShortText(trainerPayload.state, 80),
+    coachingStyle: cleanShortText(trainerPayload.coachingStyle, 120),
+    specialties: uniqueStringArray(Array.isArray(trainerPayload.specialties) ? trainerPayload.specialties : [], {
+      maxItems: 20,
+      maxLen: 80
+    }),
+    summary: cleanLongText(trainerPayload.summary, 1200)
+  };
+
+  const currentResult = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_manager_reviews
+      WHERE trainer_user_id = $1
+        AND UPPER(manager_code) = $2
+        AND status = 'pending'
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `,
+    [trainerUserId, managerCode]
+  );
+  const current = currentResult.rows?.[0] || null;
+  if (current) {
+    const updated = await db.query(
+      `
+        UPDATE app_trainer_manager_reviews
+        SET manager_name = $3,
+            manager_title = $4,
+            manager_company_name = $5,
+            trainer_snapshot = $6::jsonb,
+            updated_at = now()
+        WHERE id = $1
+          AND trainer_user_id = $2
+        RETURNING *;
+      `,
+      [current.id, trainerUserId, managerName, managerTitle, managerCompanyName, JSON.stringify(trainerSnapshot)]
+    );
+    return mapTrainerManagerReviewRow(updated.rows?.[0] || null);
+  }
+
+  const inserted = await db.query(
+    `
+      INSERT INTO app_trainer_manager_reviews (
+        trainer_user_id,
+        manager_code,
+        manager_name,
+        manager_title,
+        manager_company_name,
+        status,
+        trainer_snapshot,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6::jsonb, now(), now())
+      RETURNING *;
+    `,
+    [trainerUserId, managerCode, managerName, managerTitle, managerCompanyName, JSON.stringify(trainerSnapshot)]
+  );
+  return mapTrainerManagerReviewRow(inserted.rows?.[0] || null);
+}
+
+async function syncTrainerManagerAssignmentOnApproval(request = {}) {
+  const trainerUserId = String(request?.trainerUserId || '').trim();
+  if (!trainerUserId) return null;
+  await syncUserAdminFlag(trainerUserId, 'trainer', true);
+  const current = await db.query(
+    `
+      SELECT meta
+      FROM app_trainer_profiles
+      WHERE user_id = $1
+      LIMIT 1;
+    `,
+    [trainerUserId]
+  );
+  const row = current.rows?.[0] || null;
+  const trainer = request?.trainer && typeof request.trainer === 'object' ? request.trainer : {};
+  const nextMeta = cleanObject(row?.meta || {});
+  nextMeta.managerCode = normalizeManagerCode(request?.managerCode || nextMeta.managerCode || '');
+  if (trainer.workspaceId) nextMeta.workspaceId = cleanShortText(trainer.workspaceId, 80);
+  if (trainer.locationId) nextMeta.locationId = cleanShortText(trainer.locationId, 80);
+  const fullName = cleanShortText(trainer.fullName, 120);
+  const contactEmail = normalizeEmail(trainer.email || '') || '';
+  await db.query(
+    `
+      INSERT INTO app_trainer_profiles (
+        user_id,
+        full_name,
+        contact_email,
+        meta,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4::jsonb, now())
+      ON CONFLICT (user_id) DO UPDATE SET
+        full_name = CASE
+          WHEN COALESCE(app_trainer_profiles.full_name, '') = '' AND EXCLUDED.full_name <> ''
+          THEN EXCLUDED.full_name
+          ELSE app_trainer_profiles.full_name
+        END,
+        contact_email = CASE
+          WHEN COALESCE(app_trainer_profiles.contact_email, '') = '' AND EXCLUDED.contact_email <> ''
+          THEN EXCLUDED.contact_email
+          ELSE app_trainer_profiles.contact_email
+        END,
+        meta = EXCLUDED.meta,
+        updated_at = now();
+    `,
+    [trainerUserId, fullName, contactEmail, JSON.stringify(nextMeta)]
+  );
+  return nextMeta;
+}
+
+async function applyTrainerManagerReviewDecision(actor, requestIdRaw, decisionRaw) {
+  const actorUserId = String(actor?.id || '').trim();
+  const requestId = cleanShortText(requestIdRaw, 80);
+  const decision = String(decisionRaw || '').trim().toLowerCase();
+  if (!actorUserId || !requestId) throw new Error('Manager review request id is required.');
+  if (decision !== 'approved' && decision !== 'denied') throw new Error('Invalid manager review decision.');
+
+  const currentResult = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_manager_reviews
+      WHERE id = $1
+      LIMIT 1;
+    `,
+    [requestId]
+  );
+  const current = currentResult.rows?.[0] || null;
+  if (!current) throw new Error('Manager review request not found.');
+
+  const currentManagerCode = normalizeManagerCode(current.manager_code || '');
+  const actorManagerCode = normalizeManagerCode(actor?.manager?.managerCode || actor?.managerCode || '');
+  if (!actor?.isOwner && (!actorManagerCode || actorManagerCode !== currentManagerCode)) {
+    throw new Error('This manager review request does not belong to your account.');
+  }
+  if (String(current.status || '').trim().toLowerCase() !== 'pending') {
+    throw new Error('This manager review request has already been decided.');
+  }
+
+  const updated = await db.query(
+    `
+      UPDATE app_trainer_manager_reviews
+      SET status = $2,
+          reviewed_by_user_id = $3,
+          decided_at = now(),
+          updated_at = now()
+      WHERE id = $1
+      RETURNING *;
+    `,
+    [requestId, decision, actorUserId]
+  );
+  const request = mapTrainerManagerReviewRow(updated.rows?.[0] || null);
+  if (decision === 'approved' && request) {
+    await syncTrainerManagerAssignmentOnApproval(request);
+  }
+  return request;
+}
+
+async function detachTrainerFromManager(actor, trainerUserIdRaw) {
+  const trainerUserId = String(trainerUserIdRaw || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(trainerUserId)) throw new Error('Valid trainer user id is required.');
+
+  const currentResult = await db.query(
+    `
+      SELECT u.id,
+             COALESCE(tp.meta, '{}'::jsonb) AS meta
+      FROM app_users u
+      LEFT JOIN app_trainer_profiles tp ON tp.user_id = u.id
+      WHERE u.id = $1
+      LIMIT 1;
+    `,
+    [trainerUserId]
+  );
+  const current = currentResult.rows?.[0] || null;
+  if (!current?.id) throw new Error('Trainer account not found.');
+
+  const currentMeta = cleanObject(current.meta || {});
+  const currentManagerCode = normalizeManagerCode(currentMeta.managerCode || '');
+  const actorManagerCode = normalizeManagerCode(actor?.manager?.managerCode || actor?.managerCode || '');
+  const scopedManagerCode = currentManagerCode || actorManagerCode;
+
+  if (!actor?.isOwner) {
+    if (!actorManagerCode) throw new Error('Manager code is required.');
+    if (!scopedManagerCode || scopedManagerCode !== actorManagerCode) {
+      throw new Error('That trainer is not attached to your manager account.');
+    }
+  }
+
+  const nextMeta = { ...currentMeta };
+  nextMeta.managerCode = '';
+  nextMeta.workspaceId = '';
+  nextMeta.locationId = '';
+
+  const updated = await db.query(
+    `
+      UPDATE app_trainer_profiles
+      SET meta = $2::jsonb,
+          updated_at = now()
+      WHERE user_id = $1
+      RETURNING user_id;
+    `,
+    [trainerUserId, JSON.stringify(nextMeta)]
+  );
+
+  if (!updated.rows?.[0]?.user_id) {
+    await db.query(
+      `
+        INSERT INTO app_trainer_profiles (
+          user_id,
+          meta,
+          updated_at
+        )
+        VALUES ($1, $2::jsonb, now())
+        ON CONFLICT (user_id) DO UPDATE SET
+          meta = EXCLUDED.meta,
+          updated_at = now();
+      `,
+      [trainerUserId, JSON.stringify(nextMeta)]
+    );
+  }
+
+  if (scopedManagerCode) {
+    await db.query(
+      `
+        DELETE FROM app_trainer_manager_reviews
+        WHERE trainer_user_id = $1
+          AND UPPER(manager_code) = $2;
+      `,
+      [trainerUserId, scopedManagerCode]
+    );
+  }
+
+  return {
+    trainerUserId,
+    managerCode: scopedManagerCode
+  };
+}
+
+async function detachTrainerSelfFromManager(actor) {
+  const trainerUserId = String(actor?.id || '').trim();
+  if (!trainerUserId) throw new Error('Sign in to update your manager.');
+
+  const currentResult = await db.query(
+    `
+      SELECT COALESCE(meta, '{}'::jsonb) AS meta
+      FROM app_trainer_profiles
+      WHERE user_id = $1
+      LIMIT 1;
+    `,
+    [trainerUserId]
+  );
+  const currentMeta = cleanObject(currentResult.rows?.[0]?.meta || {});
+  const currentManagerCode = normalizeManagerCode(currentMeta.managerCode || '');
+
+  const nextMeta = { ...currentMeta };
+  nextMeta.managerCode = '';
+  nextMeta.workspaceId = '';
+  nextMeta.locationId = '';
+
+  await db.query(
+    `
+      UPDATE app_trainer_profiles
+      SET meta = $2::jsonb,
+          updated_at = now()
+      WHERE user_id = $1;
+    `,
+    [trainerUserId, JSON.stringify(nextMeta)]
+  );
+
+  if (currentManagerCode) {
+    await db.query(
+      `
+        DELETE FROM app_trainer_manager_reviews
+        WHERE trainer_user_id = $1
+          AND UPPER(manager_code) = $2;
+      `,
+      [trainerUserId, currentManagerCode]
+    );
+  }
+
+  return {
+    trainerUserId,
+    previousManagerCode: currentManagerCode,
+    managerCode: ''
+  };
+}
+
+async function resetTrainerOnboardingState(actor) {
+  const trainerUserId = String(actor?.id || '').trim();
+  if (!trainerUserId) throw new Error('Sign in to reset onboarding.');
+
+  const currentResult = await db.query(
+    `
+      SELECT COALESCE(meta, '{}'::jsonb) AS meta
+      FROM app_trainer_profiles
+      WHERE user_id = $1
+      LIMIT 1;
+    `,
+    [trainerUserId]
+  );
+  const currentMeta = cleanObject(currentResult.rows?.[0]?.meta || {});
+  const nextMeta = { ...currentMeta };
+  nextMeta.managerCode = '';
+  nextMeta.workspaceId = '';
+  nextMeta.locationId = '';
+  nextMeta.reviewStatus = '';
+  nextMeta.reviewSubmittedAt = '';
+  nextMeta.reviewDecisionStatus = '';
+  nextMeta.reviewDecisionReason = '';
+  nextMeta.reviewDecisionAt = '';
+  nextMeta.reviewDecisionSeenAt = '';
+  nextMeta.reviewNeedsResubmission = false;
+
+  await db.query(
+    `
+      INSERT INTO app_trainer_profiles (
+        user_id,
+        meta,
+        onboarding_completed_at,
+        updated_at
+      )
+      VALUES ($1, $2::jsonb, NULL, now())
+      ON CONFLICT (user_id) DO UPDATE SET
+        meta = EXCLUDED.meta,
+        onboarding_completed_at = NULL,
+        updated_at = now();
+    `,
+    [trainerUserId, JSON.stringify(nextMeta)]
+  );
+
+  await db.query(
+    `
+      DELETE FROM app_trainer_manager_reviews
+      WHERE trainer_user_id = $1;
+    `,
+    [trainerUserId]
+  );
+
+  await syncUserAdminFlag(trainerUserId, 'trainer', false);
+
+  return {
+    trainerUserId,
+    managerCode: '',
+    onboardingCompletedAt: null
+  };
+}
+
+async function createTrainerTrainingRequest(actor, payload = {}) {
+  const applicantUserId = String(actor?.id || '').trim();
+  const trainerUserId = cleanShortText(payload?.trainerUserId, 80);
+  if (!applicantUserId) throw new Error('Sign in to apply to a trainer.');
+  if (!trainerUserId) throw new Error('Trainer id is required.');
+  if (trainerUserId === applicantUserId) throw new Error('You cannot submit a trainer request to yourself.');
+
+  const applicantName = cleanShortText(
+    payload?.applicantName || actor?.displayName || actor?.username || '',
+    120
+  );
+  const applicantEmail = normalizeEmail(payload?.applicantEmail || actor?.email || '') || '';
+  const applicantPhone = normalizePhone(payload?.applicantPhone || actor?.phone || '') || null;
+  if (!applicantName) throw new Error('Applicant name is required.');
+
+  const requestPayload = {
+    hasMembership: cleanShortText(payload?.hasMembership, 10),
+    age: cleanShortText(payload?.age, 20),
+    sex: cleanShortText(payload?.sex, 40),
+    height: cleanShortText(payload?.height, 40),
+    weight: cleanShortText(payload?.weight, 40),
+    goal: cleanShortText(payload?.goal, 120),
+    phase: cleanShortText(payload?.phase, 120),
+    experience: cleanShortText(payload?.experience, 40),
+    daysPerWeek: cleanShortText(payload?.daysPerWeek, 10),
+    timePerSession: cleanShortText(payload?.timePerSession, 40),
+    equipment: Array.isArray(payload?.equipment) ? payload.equipment.map((item) => cleanShortText(item, 80)).filter(Boolean).slice(0, 12) : [],
+    injuries: Array.isArray(payload?.injuries) ? payload.injuries.map((item) => cleanShortText(item, 80)).filter(Boolean).slice(0, 12) : [],
+    injurySeverity: cleanShortText(payload?.injurySeverity, 10),
+    injuryNotes: cleanLongText(payload?.injuryNotes, 400),
+    priorityMuscles: Array.isArray(payload?.priorityMuscles) ? payload.priorityMuscles.map((item) => cleanShortText(item, 80)).filter(Boolean).slice(0, 6) : [],
+    workspaceId: cleanShortText(payload?.workspaceId, 80),
+    locationId: cleanShortText(payload?.locationId, 80)
+  };
+
+  const result = await db.query(
+    `
+      INSERT INTO app_trainer_training_requests (
+        trainer_user_id,
+        applicant_user_id,
+        applicant_name,
+        applicant_email,
+        applicant_phone,
+        status,
+        request_payload,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6::jsonb, now(), now())
+      ON CONFLICT (trainer_user_id, applicant_user_id) WHERE status = 'pending'
+      DO UPDATE SET
+        applicant_name = EXCLUDED.applicant_name,
+        applicant_email = EXCLUDED.applicant_email,
+        applicant_phone = EXCLUDED.applicant_phone,
+        request_payload = EXCLUDED.request_payload,
+        updated_at = now()
+      RETURNING *;
+    `,
+    [trainerUserId, applicantUserId, applicantName, applicantEmail, applicantPhone, JSON.stringify(requestPayload)]
+  );
+  return mapTrainerTrainingRequestRow(result.rows?.[0]);
+}
+
+async function listTrainerTrainingRequests(trainerUserId) {
+  const uid = String(trainerUserId || '').trim();
+  if (!uid) return [];
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_training_requests
+      WHERE trainer_user_id = $1
+      ORDER BY
+        CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+        created_at DESC;
+    `,
+    [uid]
+  );
+  return (result.rows || []).map(mapTrainerTrainingRequestRow).filter(Boolean);
+}
+
+async function applyTrainerTrainingRequestDecision(actor, requestIdRaw, decisionRaw, reasonRaw = '') {
+  const trainerUserId = String(actor?.id || '').trim();
+  const requestId = cleanShortText(requestIdRaw, 80);
+  const decision = String(decisionRaw || '').trim().toLowerCase();
+  const reason = cleanLongText(reasonRaw, 400);
+  if (!trainerUserId || !requestId) throw new Error('Training request id is required.');
+  if (decision !== 'approved' && decision !== 'denied') throw new Error('Invalid training request decision.');
+
+  const currentResult = await db.query(
+    `
+      SELECT *
+      FROM app_trainer_training_requests
+      WHERE id = $1
+        AND trainer_user_id = $2
+      LIMIT 1;
+    `,
+    [requestId, trainerUserId]
+  );
+  const current = currentResult.rows?.[0];
+  if (!current) throw new Error('Training request not found.');
+  if (String(current.status || '').trim().toLowerCase() !== 'pending') {
+    throw new Error('This training request has already been decided.');
+  }
+
+  await db.query('BEGIN');
+  try {
+    const updated = await db.query(
+      `
+        UPDATE app_trainer_training_requests
+        SET status = $3,
+            decision_reason = $4,
+            decided_at = now(),
+            updated_at = now()
+        WHERE id = $1
+          AND trainer_user_id = $2
+        RETURNING *;
+      `,
+      [requestId, trainerUserId, decision, reason]
+    );
+    const nextRow = updated.rows?.[0];
+    if (!nextRow) throw new Error('Could not update training request.');
+
+    if (decision === 'approved') {
+      const displayName = cleanShortText(nextRow.applicant_name, 120) || 'Client';
+      const email = normalizeEmail(nextRow.applicant_email || '') || null;
+      const phone = normalizePhone(nextRow.applicant_phone || '') || null;
+      const payload = nextRow.request_payload && typeof nextRow.request_payload === 'object' ? nextRow.request_payload : {};
+      const notes = cleanLongText([
+        payload.goal ? `Goal: ${payload.goal}` : '',
+        payload.phase ? `Phase: ${payload.phase}` : '',
+        payload.hasMembership ? `Membership: ${payload.hasMembership}` : '',
+        payload.experience ? `Experience: ${payload.experience}` : '',
+        Array.isArray(payload.priorityMuscles) && payload.priorityMuscles.length ? `Priorities: ${payload.priorityMuscles.join(', ')}` : '',
+        Array.isArray(payload.equipment) && payload.equipment.length ? `Equipment: ${payload.equipment.join(', ')}` : '',
+        Array.isArray(payload.injuries) && payload.injuries.length ? `Injuries: ${payload.injuries.join(', ')}` : '',
+        payload.injuryNotes ? `Notes: ${payload.injuryNotes}` : ''
+      ].filter(Boolean).join('\n'), 400);
+
+      await db.query(
+        `
+          INSERT INTO app_trainer_clients (
+            trainer_user_id,
+            linked_user_id,
+            display_name,
+            email,
+            phone,
+            notes,
+            status,
+            source,
+            updated_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, 'active', 'training_request', now())
+          ON CONFLICT DO NOTHING;
+        `,
+        [trainerUserId, nextRow.applicant_user_id || null, displayName, email, phone, notes]
+      );
+    }
+
+    await db.query('COMMIT');
+    return mapTrainerTrainingRequestRow(nextRow);
+  } catch (err) {
+    try { await db.query('ROLLBACK'); } catch {}
+    throw err;
+  }
+}
+
 async function getTrainerBillingSummary(req, userLike) {
   const uid = String(userLike?.id || '').trim();
   if (!uid) return null;
@@ -4033,6 +5016,7 @@ async function getTrainerDashboard(req, userLike) {
   if (!uid) return null;
   const profile = await getTrainerProfile(uid);
   const clients = await listTrainerClients(uid);
+  const trainingRequests = await listTrainerTrainingRequests(uid);
   const billing = await getTrainerBillingSummary(req, userLike);
   const growth = await getTrainerGrowthSnapshot(req, userLike, profile);
   const trainerActive = notesHasFlag(userLike?.admin_notes || '', 'trainer') || Boolean(profile) || isOwnerUser(userLike);
@@ -4114,7 +5098,8 @@ async function getTrainerDashboard(req, userLike) {
       referredUsers: [],
       coachingClients: [],
       clientRoster: [],
-      warnings: []
+      warnings: [],
+      trainingRequests: []
     },
     billing: billing || {
       referral: { code: '', link: '' },
@@ -4135,7 +5120,8 @@ async function getTrainerDashboard(req, userLike) {
         }
       },
       payoutPerPaidCents: TRAINER_PAYOUT_CENTS_PER_SUBSCRIPTION
-    }
+    },
+    trainingRequests
   };
 }
 
@@ -4268,6 +5254,7 @@ function buildAuthUserFromRow(row) {
   const isTech = isTechUser(row);
   const owner = isOwnerUser(row);
   const isTrainer = notesHasFlag(adminNotes, 'trainer') || owner;
+  const isManager = notesHasFlag(adminNotes, 'manager');
   return {
     id: row.id,
     username: row.username || null,
@@ -4279,7 +5266,9 @@ function buildAuthUserFromRow(row) {
     isDemo,
     demo: isDemo ? { active: true } : { active: false },
     isTrainer,
-    trainer: { active: isTrainer }
+    trainer: { active: isTrainer },
+    isManager,
+    manager: { active: isManager }
   };
 }
 
@@ -4306,6 +5295,32 @@ async function buildAuthUserFromRowAsync(row) {
   const user = buildAuthUserFromRow(row);
   if (!user?.id || !db.isConfigured()) return user;
   try {
+    const managerResult = await db.query(
+      `
+        SELECT onboarding_completed_at,
+               COALESCE(meta->>'managerCode', '') AS manager_code,
+               COALESCE(meta->>'workspaceId', '') AS workspace_id,
+               COALESCE(meta->>'locationId', '') AS location_id
+        FROM app_trainer_profiles
+        WHERE user_id = $1
+        LIMIT 1;
+      `,
+      [user.id]
+    );
+    const managerRow = managerResult.rows?.[0] || {};
+    user.manager = {
+      ...(user.manager || {}),
+      active: Boolean(user.isManager),
+      managerCode: managerRow.manager_code || '',
+      workspaceId: managerRow.workspace_id || '',
+      locationId: managerRow.location_id || ''
+    };
+    user.trainer = {
+      ...(user.trainer || {}),
+      active: Boolean(user.isTrainer),
+      onboarded: Boolean(managerRow.onboarding_completed_at),
+      onboardingCompletedAt: managerRow.onboarding_completed_at || null
+    };
     const trainerState = await getTrainerReviewState(user.id);
     user.trainer = {
       ...(user.trainer || {}),
@@ -5024,6 +6039,20 @@ async function requireTrainerActor(req, res) {
   return actor;
 }
 
+async function requireManagerActor(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) {
+    sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    return null;
+  }
+  if (actor.isOwner) return actor;
+  if (!actor?.isManager && !actor?.manager?.active) {
+    sendJson(res, 403, { ok: false, error: 'MANAGER_REQUIRED' });
+    return null;
+  }
+  return actor;
+}
+
 async function handleTrainerDashboard(req, res) {
   const actor = await getUserFromRequest(req);
   if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
@@ -5139,6 +6168,271 @@ async function handleTrainerReviewDeny(req, res) {
     return sendJson(res, 200, { ok: true, trainer });
   } catch (err) {
     return sendJson(res, 400, { ok: false, error: err?.message || 'Could not deny trainer.' });
+  }
+}
+
+function mapWorkspaceRequestRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    requestKind: row.request_kind || 'workspace',
+    requestedByUserId: row.requested_by_user_id || null,
+    fullName: row.full_name || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    gymName: row.gym_name || '',
+    parentWorkspaceId: row.parent_workspace_id || '',
+    locationName: row.location_name || '',
+    workspaceType: row.workspace_type || '',
+    website: row.website || '',
+    city: row.city || '',
+    state: row.state || '',
+    address: row.address || '',
+    logoUrl: row.logo_url || '',
+    notes: row.notes || '',
+    status: row.status || 'review',
+    reviewReason: row.review_reason || '',
+    reviewedByUserId: row.reviewed_by_user_id || null,
+    submittedAt: row.submitted_at || row.created_at || null,
+    reviewedAt: row.reviewed_at || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null
+  };
+}
+
+function normalizeWorkspaceRequestPayload(payload = {}, actor = null) {
+  const requestKindRaw = cleanShortText(payload.requestKind || payload.kind || '', 40).toLowerCase();
+  const requestKind = requestKindRaw === 'location' ? 'location' : 'workspace';
+  const fullName = cleanShortText(payload.fullName || actor?.displayName || actor?.display_name || '', 120);
+  const email = normalizeEmail(payload.email || actor?.email || '') || '';
+  const phone = normalizePhone(payload.phone || actor?.phone || '') || '';
+  const gymName = cleanShortText(payload.gymName || payload.workspaceName || payload.companyName, 160);
+  const parentWorkspaceId = cleanShortText(payload.parentWorkspaceId || payload.parentWorkspaceID || '', 160);
+  const locationName = cleanShortText(payload.locationName || payload.location || '', 160);
+  const workspaceType = cleanShortText(payload.workspaceType || '', 80);
+  const website = cleanUrl(payload.website || payload.siteUrl || '', 2048);
+  const city = cleanShortText(payload.city || payload.locationCity || '', 120);
+  const state = cleanShortText(payload.state || payload.locationState || '', 80);
+  const address = cleanLongText(payload.address || '', 240);
+  const logoUrl = cleanUrl(payload.logoUrl || payload.logo_url || '', 4096);
+  const notes = cleanLongText(payload.notes || payload.locationNotes || '', 1200);
+  if (!gymName) throw new Error(requestKind === 'location' ? 'Gym/company name is required.' : 'Gym/company name is required.');
+  if (!city) throw new Error('City is required.');
+  if (!state) throw new Error('State is required.');
+  if (!fullName) throw new Error('Your name is required.');
+  if (!email) throw new Error('A valid email is required.');
+  if (requestKind === 'location' && !parentWorkspaceId) throw new Error('Parent workspace is required.');
+  if (requestKind === 'location' && !locationName) throw new Error('Location name is required.');
+  return {
+    requestKind,
+    requestedByUserId: actor?.id || null,
+    fullName,
+    email,
+    phone,
+    gymName,
+    parentWorkspaceId,
+    locationName,
+    workspaceType,
+    website,
+    city,
+    state,
+    address,
+    logoUrl,
+    notes
+  };
+}
+
+async function handleWorkspaceRequestCreate(req, res) {
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const actor = await getUserFromRequest(req);
+  try {
+    const normalized = normalizeWorkspaceRequestPayload(payload, actor);
+    const result = await db.query(
+      `
+        INSERT INTO app_workspace_requests (
+          request_kind,
+          requested_by_user_id,
+          full_name,
+          email,
+          phone,
+          gym_name,
+          parent_workspace_id,
+          location_name,
+          workspace_type,
+          website,
+          city,
+          state,
+          address,
+          logo_url,
+          notes,
+          status,
+          submitted_at,
+          created_at,
+          updated_at
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'review',now(),now(),now())
+        RETURNING *;
+      `,
+      [
+        normalized.requestKind,
+        normalized.requestedByUserId,
+        normalized.fullName,
+        normalized.email,
+        normalized.phone || null,
+        normalized.gymName,
+        normalized.parentWorkspaceId || '',
+        normalized.locationName || '',
+        normalized.workspaceType || '',
+        normalized.website || '',
+        normalized.city,
+        normalized.state,
+        normalized.address || '',
+        normalized.logoUrl || '',
+        normalized.notes || ''
+      ]
+    );
+    return sendJson(res, 200, { ok: true, request: mapWorkspaceRequestRow(result.rows?.[0]) });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not submit request.' });
+  }
+}
+
+async function handleWorkspaceRequestMine(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 200, { ok: true, request: null });
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_workspace_requests
+      WHERE requested_by_user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `,
+    [actor.id]
+  );
+  return sendJson(res, 200, { ok: true, request: mapWorkspaceRequestRow(result.rows?.[0]) });
+}
+
+async function handleWorkspaceRequestPublicList(req, res) {
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_workspace_requests
+      WHERE status = 'approved'
+      ORDER BY gym_name ASC, created_at DESC;
+    `
+  );
+  const rows = result.rows || [];
+  const workspaces = rows.filter((row) => String(row.request_kind || 'workspace') !== 'location').map((row) => ({
+    id: `req-${row.id}`,
+    name: row.gym_name || 'Requested gym',
+    logoSrc: row.logo_url || '',
+    logoText: row.gym_name || 'RG',
+    type: row.workspace_type || 'Gym/company',
+    city: row.city || '',
+    state: row.state || '',
+    locations: [
+      {
+        id: `req-loc-${row.id}`,
+        name: row.address ? cleanShortText(row.address, 120) : 'Main location',
+        city: row.city || '',
+        state: row.state || ''
+      }
+    ]
+  }));
+  const locationRequests = rows
+    .filter((row) => String(row.request_kind || '') === 'location')
+    .map((row) => ({
+      id: `req-loc-${row.id}`,
+      requestId: row.id,
+      parentWorkspaceId: row.parent_workspace_id || '',
+      workspaceName: row.gym_name || '',
+      workspaceType: row.workspace_type || '',
+      name: row.location_name || 'Requested location',
+      city: row.city || '',
+      state: row.state || '',
+      address: row.address || ''
+    }));
+  return sendJson(res, 200, { ok: true, workspaces, locationRequests });
+}
+
+async function handleOwnerWorkspaceRequestsList(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const result = await db.query(
+    `
+      SELECT *
+      FROM app_workspace_requests
+      ORDER BY
+        CASE status WHEN 'review' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+        created_at DESC;
+    `
+  );
+  const requests = (result.rows || []).map(mapWorkspaceRequestRow);
+  const pendingCount = requests.filter((item) => String(item?.status || '') === 'review').length;
+  return sendJson(res, 200, { ok: true, pendingCount, requests });
+}
+
+async function applyWorkspaceRequestDecision(requestIdRaw, decisionRaw, actor, reason = '') {
+  const requestId = cleanShortText(requestIdRaw, 80);
+  const decision = cleanShortText(decisionRaw, 20).toLowerCase();
+  if (!requestId) throw new Error('Request id required.');
+  if (decision !== 'approved' && decision !== 'denied') throw new Error('Invalid review decision.');
+  const result = await db.query(
+    `
+      UPDATE app_workspace_requests
+      SET status = $2,
+          review_reason = $3,
+          reviewed_by_user_id = $4,
+          reviewed_at = now(),
+          updated_at = now()
+      WHERE id = $1
+        AND status = 'review'
+      RETURNING *;
+    `,
+    [requestId, decision, decision === 'denied' ? cleanLongText(reason, 800) : '', actor?.id || null]
+  );
+  const row = result.rows?.[0];
+  if (!row) throw new Error('Request not found or already reviewed.');
+  return mapWorkspaceRequestRow(row);
+}
+
+async function handleOwnerWorkspaceRequestApprove(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyWorkspaceRequestDecision(payload?.requestId, 'approved', actor);
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not approve gym request.' });
+  }
+}
+
+async function handleOwnerWorkspaceRequestDeny(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyWorkspaceRequestDecision(payload?.requestId, 'denied', actor, payload?.reason || '');
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not deny gym request.' });
   }
 }
 
@@ -5405,6 +6699,231 @@ async function handleTrainerClientCreate(req, res) {
     return sendJson(res, 200, { ok: true, client, clients });
   } catch (err) {
     return sendJson(res, 400, { ok: false, error: err?.message || 'Could not add client.' });
+  }
+}
+
+async function handleTrainerTrainingRequestCreate(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await createTrainerTrainingRequest(actor, payload);
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not submit training request.' });
+  }
+}
+
+async function handleTrainerOnboardingReset(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  try {
+    const result = await resetTrainerOnboardingState(actor);
+    return sendJson(res, 200, { ok: true, trainer: result });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not reset trainer onboarding.' });
+  }
+}
+
+async function handleTrainerManagerReviewRequestCreate(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await createTrainerManagerReviewRequest(actor, payload);
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not submit manager review request.' });
+  }
+}
+
+async function handleTrainerManagerReviewRequestList(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  const requests = await listTrainerManagerReviewRequestsByTrainer(actor.id);
+  return sendJson(res, 200, { ok: true, requests });
+}
+
+async function handleTrainerManagerDirectory(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  const managers = await listTrainerManagerDirectory();
+  return sendJson(res, 200, { ok: true, count: managers.length, managers });
+}
+
+async function handleManagerReviewRequestList(req, res, url) {
+  const actor = await requireManagerActor(req, res);
+  if (!actor) return true;
+  const requestedCode = normalizeManagerCode(String(url.searchParams.get('managerCode') || '').trim());
+  const actorCode = normalizeManagerCode(actor?.manager?.managerCode || actor?.managerCode || '');
+  const managerCode = requestedCode || actorCode;
+  if (!managerCode) {
+    return sendJson(res, 400, { ok: false, error: 'Manager code is required.' });
+  }
+  if (!actor.isOwner && actorCode !== managerCode) {
+    return sendJson(res, 403, { ok: false, error: 'MANAGER_CODE_MISMATCH' });
+  }
+  const requests = await listTrainerManagerReviewRequestsByManager(managerCode);
+  const pendingCount = requests.filter((item) => String(item?.status || '').trim().toLowerCase() === 'pending').length;
+  return sendJson(res, 200, { ok: true, managerCode, pendingCount, requests });
+}
+
+async function handleManagerReviewRequestSend(req, res) {
+  const actor = await requireManagerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const rawRequests = Array.isArray(payload?.requests) ? payload.requests : [];
+    if (!rawRequests.length) {
+      return sendJson(res, 400, { ok: false, error: 'Select at least one trainer.' });
+    }
+    const requests = [];
+    for (const item of rawRequests) {
+      const request = await createManagerTrainerReviewRequest(actor, {
+        managerCode: payload?.managerCode,
+        managerName: payload?.managerName,
+        managerTitle: payload?.managerTitle,
+        managerCompanyName: payload?.managerCompanyName,
+        trainerUserId: item?.trainerUserId,
+        trainer: item?.trainer
+      });
+      if (request) requests.push(request);
+    }
+    return sendJson(res, 200, { ok: true, requests, count: requests.length });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not send trainer requests.' });
+  }
+}
+
+async function handleManagerReviewRequestApprove(req, res) {
+  const actor = await requireManagerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyTrainerManagerReviewDecision(actor, payload?.requestId, 'approved');
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not approve manager review request.' });
+  }
+}
+
+async function handleManagerReviewRequestDeny(req, res) {
+  const actor = await requireManagerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyTrainerManagerReviewDecision(actor, payload?.requestId, 'denied');
+    return sendJson(res, 200, { ok: true, request });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not deny manager review request.' });
+  }
+}
+
+async function handleManagerTrainerDetach(req, res) {
+  const actor = await requireManagerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const result = await detachTrainerFromManager(actor, payload?.trainerUserId);
+    return sendJson(res, 200, { ok: true, detached: result });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not detach trainer.' });
+  }
+}
+
+async function handleTrainerManagerDetachSelf(req, res) {
+  const actor = await getUserFromRequest(req);
+  if (!actor) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  try {
+    const result = await detachTrainerSelfFromManager(actor);
+    return sendJson(res, 200, { ok: true, detached: result });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not switch managers right now.' });
+  }
+}
+
+async function handleTrainerTrainingRequestApprove(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyTrainerTrainingRequestDecision(actor, payload?.requestId, 'approved');
+    const trainingRequests = await listTrainerTrainingRequests(actor.id);
+    const clients = await listTrainerClients(actor.id);
+    return sendJson(res, 200, { ok: true, request, trainingRequests, clients });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not approve training request.' });
+  }
+}
+
+async function handleTrainerTrainingRequestDeny(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const request = await applyTrainerTrainingRequestDecision(actor, payload?.requestId, 'denied', payload?.reason || '');
+    const trainingRequests = await listTrainerTrainingRequests(actor.id);
+    return sendJson(res, 200, { ok: true, request, trainingRequests });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not deny training request.' });
+  }
+}
+
+async function handleTrainerWorkoutReviewApprove(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const review = await approveTrainerWorkoutReview(actor, payload?.workoutId);
+    const pendingWorkoutApprovals = await listPendingTrainerWorkoutApprovals(actor.id);
+    return sendJson(res, 200, { ok: true, review, pendingWorkoutApprovals });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not approve workout.' });
   }
 }
 
@@ -5747,6 +7266,7 @@ async function handleOwnerAccountsList(req, res, url) {
                u.username,
                u.email,
                u.display_name,
+               u.admin_notes,
                u.created_at,
                u.last_seen,
                u.last_login,
@@ -5755,6 +7275,22 @@ async function handleOwnerAccountsList(req, res, url) {
                tp.discipline,
                tp.days_per_week,
                tp.updated_at AS training_updated_at,
+               trainer_profile.user_id IS NOT NULL AS is_trainer_account,
+               trainer_profile.onboarding_completed_at AS trainer_onboarding_completed_at,
+               COALESCE(trainer_profile.meta->>'displayName', trainer_profile.full_name, u.display_name, u.username, 'Account') AS trainer_display_name,
+               COALESCE(trainer_profile.contact_email, u.email, '') AS trainer_contact_email,
+               COALESCE(trainer_profile.meta->>'city', '') AS trainer_city,
+               COALESCE(trainer_profile.meta->>'state', '') AS trainer_state,
+               COALESCE(trainer_profile.meta->>'coachingFormat', '') AS trainer_coaching_format,
+               trainer_profile.updated_at AS trainer_profile_updated_at,
+               COALESCE(trainer_clients.assigned_client_count, 0)::int AS assigned_client_count,
+               COALESCE(client_links.has_trainer_assignment, false) AS has_trainer_assignment,
+               COALESCE(trainer_profile.meta->>'managerCode', '') AS manager_code,
+               COALESCE(trainer_profile.meta->>'workspaceId', '') AS workspace_id,
+               COALESCE(trainer_profile.meta->>'locationId', '') AS location_id,
+               (
+                 COALESCE(u.admin_notes, '') ILIKE '%manager%'
+               ) AS is_manager_account,
                plan.id AS active_plan_id,
                plan.updated_at AS active_plan_updated_at,
                (
@@ -5772,6 +7308,26 @@ async function handleOwnerAccountsList(req, res, url) {
         FROM app_users u
         LEFT JOIN app_user_profiles p ON p.user_id = u.id
         LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+        LEFT JOIN app_trainer_profiles trainer_profile ON trainer_profile.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS assigned_client_count
+          FROM app_trainer_clients tc
+          WHERE tc.trainer_user_id = u.id
+            AND tc.status <> 'removed'
+        ) AS trainer_clients ON true
+        LEFT JOIN LATERAL (
+          SELECT EXISTS (
+            SELECT 1
+            FROM app_trainer_clients tc
+            WHERE tc.linked_user_id = u.id
+              AND tc.status <> 'removed'
+            UNION
+            SELECT 1
+            FROM app_trainer_invites ti
+            WHERE ti.linked_user_id = u.id
+              AND ti.invite_type = 'coaching_invite'
+          ) AS has_trainer_assignment
+        ) AS client_links ON true
         LEFT JOIN LATERAL (
           SELECT id, updated_at
           FROM app_training_plans t
@@ -5795,6 +7351,7 @@ async function handleOwnerAccountsList(req, res, url) {
                u.username,
                u.email,
                u.display_name,
+               u.admin_notes,
                u.created_at,
                u.last_seen,
                u.last_login,
@@ -5803,6 +7360,20 @@ async function handleOwnerAccountsList(req, res, url) {
                NULL::text AS discipline,
                NULL::int AS days_per_week,
                NULL::timestamptz AS training_updated_at,
+               NULL::boolean AS is_trainer_account,
+               NULL::timestamptz AS trainer_onboarding_completed_at,
+               COALESCE(u.display_name, u.username, 'Account') AS trainer_display_name,
+               COALESCE(u.email, '') AS trainer_contact_email,
+               ''::text AS trainer_city,
+               ''::text AS trainer_state,
+               ''::text AS trainer_coaching_format,
+               NULL::timestamptz AS trainer_profile_updated_at,
+               0::int AS assigned_client_count,
+               false AS has_trainer_assignment,
+               ''::text AS manager_code,
+               ''::text AS workspace_id,
+               ''::text AS location_id,
+               false AS is_manager_account,
                NULL::uuid AS active_plan_id,
                NULL::timestamptz AS active_plan_updated_at,
                (
@@ -5832,6 +7403,7 @@ async function handleOwnerAccountsList(req, res, url) {
     username: row.username || null,
     email: row.email || null,
     displayName: row.display_name || row.username || 'Account',
+    adminNotes: row.admin_notes || '',
     photoDataUrl: row.photo || null,
     createdAt: row.created_at || null,
     lastSeen: row.last_seen || null,
@@ -5841,6 +7413,21 @@ async function handleOwnerAccountsList(req, res, url) {
     discipline: row.discipline || null,
     daysPerWeek: Number.isFinite(Number(row.days_per_week)) ? Number(row.days_per_week) : null,
     trainingUpdatedAt: row.training_updated_at || null,
+    isTrainer: row.is_trainer_account === true || notesHasFlag(row.admin_notes || '', 'trainer'),
+    trainerOnboardingCompletedAt: row.trainer_onboarding_completed_at || null,
+    trainerOnboardingComplete: Boolean(row.trainer_onboarding_completed_at),
+    trainerDisplayName: row.trainer_display_name || row.display_name || row.username || 'Account',
+    trainerContactEmail: row.trainer_contact_email || row.email || null,
+    trainerCity: row.trainer_city || '',
+    trainerState: row.trainer_state || '',
+    trainerCoachingFormat: row.trainer_coaching_format || '',
+    trainerProfileUpdatedAt: row.trainer_profile_updated_at || null,
+    assignedClientCount: Math.max(0, Number(row.assigned_client_count || 0)),
+    hasTrainerAssignment: row.has_trainer_assignment === true,
+    managerCode: row.manager_code || '',
+    workspaceId: row.workspace_id || '',
+    locationId: row.location_id || '',
+    isManager: row.is_manager_account === true,
     hasActivePlan: Boolean(row.active_plan_id),
     activePlanUpdatedAt: row.active_plan_updated_at || null,
     ownerMessageCount: Number(row.owner_message_count || 0),
@@ -5848,6 +7435,49 @@ async function handleOwnerAccountsList(req, res, url) {
   }));
 
   return sendJson(res, 200, { ok: true, count: accounts.length, accounts });
+}
+
+async function handleOwnerTrainerClients(req, res, url) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  const trainerUserId = String(url.searchParams.get('trainerUserId') || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(trainerUserId)) {
+    return sendJson(res, 400, { ok: false, error: 'Valid trainer user id is required.' });
+  }
+
+  const trainerRow = await db.query(
+    `
+      SELECT u.id,
+             u.username,
+             u.email,
+             u.display_name,
+             tp.discipline
+      FROM app_users u
+      LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+      LEFT JOIN app_trainer_profiles trp ON trp.user_id = u.id
+      WHERE u.id = $1
+      LIMIT 1;
+    `,
+    [trainerUserId]
+  );
+  const trainer = trainerRow.rows?.[0];
+  if (!trainer) {
+    return sendJson(res, 404, { ok: false, error: 'Trainer account not found.' });
+  }
+
+  const clients = await listTrainerClients(trainerUserId);
+  return sendJson(res, 200, {
+    ok: true,
+    trainer: {
+      id: trainer.id,
+      username: trainer.username || null,
+      email: trainer.email || null,
+      displayName: trainer.display_name || trainer.username || 'Trainer',
+      discipline: trainer.discipline || null
+    },
+    clients
+  });
 }
 
 async function getUserFromSessionToken(token) {
@@ -5877,16 +7507,25 @@ async function getOwnerImpersonationContext(req, activeUser) {
   const backupToken = String(cookies[OWNER_BACKUP_COOKIE_NAME] || '').trim();
   if (!backupToken) return null;
 
-  const ownerUser = await getUserFromSessionToken(backupToken);
-  if (!ownerUser?.isOwner) return null;
-  if (String(ownerUser.id) === String(user.id)) return null;
+  const backupUser = await getUserFromSessionToken(backupToken);
+  const backupIsTrainer = Boolean(backupUser?.isTrainer || backupUser?.trainer?.active || await getTrainerProfile(backupUser?.id));
+  if (!backupUser?.isOwner && !backupIsTrainer) return null;
+  if (String(backupUser.id) === String(user.id)) return null;
+  const actorType = backupUser?.isOwner ? 'owner' : 'trainer';
+  const actorLabel = actorType === 'owner' ? 'Owner' : 'Trainer';
 
   return {
     active: true,
+    actorType,
+    actor: {
+      id: backupUser.id,
+      username: backupUser.username || null,
+      displayName: backupUser.displayName || backupUser.username || actorLabel
+    },
     owner: {
-      id: ownerUser.id,
-      username: ownerUser.username || null,
-      displayName: ownerUser.displayName || ownerUser.username || 'Owner'
+      id: backupUser.id,
+      username: backupUser.username || null,
+      displayName: backupUser.displayName || backupUser.username || actorLabel
     },
     viewing: {
       id: user.id,
@@ -5916,6 +7555,55 @@ async function handleOwnerImpersonateStart(req, res, url, targetUserId) {
   const cookieHeaders = [
     setCookieHeader(targetToken, req),
     setNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, ownerToken, req)
+  ].filter(Boolean);
+
+  res.writeHead(302, {
+    Location: returnTo,
+    'Set-Cookie': cookieHeaders
+  });
+  res.end();
+  return true;
+}
+
+async function handleTrainerImpersonateStart(req, res, url, targetUserId) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+  if (userId === actor.id) return sendJson(res, 400, { ok: false, error: 'Choose a different account to view' });
+
+  const target = await db.query(
+    `
+      SELECT 1
+      FROM (
+        SELECT linked_user_id
+        FROM app_trainer_clients
+        WHERE trainer_user_id = $1
+          AND status <> 'removed'
+        UNION
+        SELECT linked_user_id
+        FROM app_trainer_invites
+        WHERE trainer_user_id = $1
+          AND invite_type = 'coaching_invite'
+          AND linked_user_id IS NOT NULL
+      ) linked
+      WHERE linked_user_id = $2::uuid
+      LIMIT 1;
+    `,
+    [actor.id, userId]
+  );
+  if (!target.rows?.[0]) return sendJson(res, 403, { ok: false, error: 'That client is not attached to this trainer account' });
+
+  const cookies = parseCookies(req.headers.cookie);
+  const trainerToken = String(cookies[COOKIE_NAME] || '').trim();
+  if (!trainerToken) return sendJson(res, 401, { ok: false, error: 'No active trainer session' });
+
+  const targetToken = await createSession(userId, { updateLogin: false });
+  const returnTo = safeReturnTo(url.searchParams.get('returnTo') || '/account.html');
+  const cookieHeaders = [
+    setCookieHeader(targetToken, req),
+    setNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, trainerToken, req)
   ].filter(Boolean);
 
   res.writeHead(302, {
@@ -6024,11 +7712,12 @@ async function handleOwnerImpersonateExit(req, res, url) {
   }
 
   const backupUser = await getUserFromSessionToken(backupToken);
-  if (!backupUser || !backupUser.isOwner) {
+  const backupIsTrainer = Boolean(backupUser?.isTrainer || backupUser?.trainer?.active || await getTrainerProfile(backupUser?.id));
+  if (!backupUser || (!backupUser.isOwner && !backupIsTrainer)) {
     return sendJson(
       res,
       403,
-      { ok: false, error: 'Owner backup session is invalid' },
+      { ok: false, error: 'Backup session is invalid' },
       { 'Set-Cookie': clearNamedCookieHeader(OWNER_BACKUP_COOKIE_NAME, req) }
     );
   }
@@ -6516,6 +8205,92 @@ async function ensureSchema(options = {}) {
     'CREATE INDEX IF NOT EXISTS idx_app_trainer_clients_trainer_user_id ON app_trainer_clients(trainer_user_id);',
     'CREATE INDEX IF NOT EXISTS idx_app_trainer_clients_linked_user_id ON app_trainer_clients(linked_user_id);',
     `
+    CREATE TABLE IF NOT EXISTS app_trainer_training_requests (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      trainer_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      applicant_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      applicant_name text NOT NULL DEFAULT '',
+      applicant_email text NOT NULL DEFAULT '',
+      applicant_phone text,
+      status text NOT NULL DEFAULT 'pending',
+      decision_reason text NOT NULL DEFAULT '',
+      request_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+      decided_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_training_requests_trainer_user_id ON app_trainer_training_requests(trainer_user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_training_requests_applicant_user_id ON app_trainer_training_requests(applicant_user_id);',
+    'CREATE UNIQUE INDEX IF NOT EXISTS uq_app_trainer_training_requests_pending ON app_trainer_training_requests(trainer_user_id, applicant_user_id) WHERE status = \'pending\';',
+    `
+    CREATE TABLE IF NOT EXISTS app_trainer_manager_reviews (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      trainer_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      manager_code text NOT NULL DEFAULT '',
+      manager_name text NOT NULL DEFAULT '',
+      manager_title text NOT NULL DEFAULT '',
+      manager_company_name text NOT NULL DEFAULT '',
+      status text NOT NULL DEFAULT 'pending',
+      trainer_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+      reviewed_by_user_id uuid REFERENCES app_users(id) ON DELETE SET NULL,
+      decided_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_manager_reviews_trainer_user_id ON app_trainer_manager_reviews(trainer_user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_manager_reviews_manager_code ON app_trainer_manager_reviews(UPPER(manager_code));',
+    'CREATE UNIQUE INDEX IF NOT EXISTS uq_app_trainer_manager_reviews_pending ON app_trainer_manager_reviews(trainer_user_id, UPPER(manager_code)) WHERE status = \'pending\';',
+    `
+    CREATE TABLE IF NOT EXISTS app_trainer_workout_reviews (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      trainer_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      client_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      workout_id uuid NOT NULL UNIQUE,
+      status text NOT NULL DEFAULT 'approved',
+      reviewed_at timestamptz NOT NULL DEFAULT now(),
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      meta jsonb NOT NULL DEFAULT '{}'::jsonb
+    );
+  `,
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_workout_reviews_trainer_user_id ON app_trainer_workout_reviews(trainer_user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_workout_reviews_client_user_id ON app_trainer_workout_reviews(client_user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_app_trainer_workout_reviews_workout_id ON app_trainer_workout_reviews(workout_id);',
+    `
+    CREATE TABLE IF NOT EXISTS app_workspace_requests (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      request_kind text NOT NULL DEFAULT 'workspace',
+      requested_by_user_id uuid REFERENCES app_users(id) ON DELETE SET NULL,
+      full_name text NOT NULL DEFAULT '',
+      email text NOT NULL DEFAULT '',
+      phone text,
+      gym_name text NOT NULL DEFAULT '',
+      parent_workspace_id text NOT NULL DEFAULT '',
+      location_name text NOT NULL DEFAULT '',
+      workspace_type text NOT NULL DEFAULT '',
+      website text NOT NULL DEFAULT '',
+      city text NOT NULL DEFAULT '',
+      state text NOT NULL DEFAULT '',
+      address text NOT NULL DEFAULT '',
+      logo_url text NOT NULL DEFAULT '',
+      notes text NOT NULL DEFAULT '',
+      status text NOT NULL DEFAULT 'review',
+      review_reason text NOT NULL DEFAULT '',
+      reviewed_by_user_id uuid REFERENCES app_users(id) ON DELETE SET NULL,
+      submitted_at timestamptz NOT NULL DEFAULT now(),
+      reviewed_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `,
+    "ALTER TABLE app_workspace_requests ADD COLUMN IF NOT EXISTS request_kind text NOT NULL DEFAULT 'workspace';",
+    "ALTER TABLE app_workspace_requests ADD COLUMN IF NOT EXISTS parent_workspace_id text NOT NULL DEFAULT '';",
+    "ALTER TABLE app_workspace_requests ADD COLUMN IF NOT EXISTS location_name text NOT NULL DEFAULT '';",
+    'CREATE INDEX IF NOT EXISTS idx_app_workspace_requests_status ON app_workspace_requests(status);',
+    'CREATE INDEX IF NOT EXISTS idx_app_workspace_requests_requested_by ON app_workspace_requests(requested_by_user_id);',
+    `
     CREATE TABLE IF NOT EXISTS app_referral_codes (
       user_id uuid PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
       code text NOT NULL UNIQUE,
@@ -6863,7 +8638,8 @@ async function handleLocalSignup(req, res) {
   if (!username || username.length < 3) return sendJson(res, 400, { error: 'Username must be at least 3 characters' });
   if (!/^[a-z0-9_]+$/.test(username)) return sendJson(res, 400, { error: 'Username can only use letters, numbers, underscores' });
   if (!email) return sendJson(res, 400, { error: 'Enter a valid email address' });
-  if (phoneRaw && !phone) return sendJson(res, 400, { error: 'Enter a valid phone number (or leave it blank)' });
+  if (!phoneRaw) return sendJson(res, 400, { error: 'Enter a phone number' });
+  if (!phone) return sendJson(res, 400, { error: 'Enter a valid phone number' });
   if (!displayName || displayName.length < 2) return sendJson(res, 400, { error: 'Display name must be at least 2 characters' });
   if (!password || password.length < 8) return sendJson(res, 400, { error: 'Password must be at least 8 characters' });
 
@@ -7199,6 +8975,7 @@ module.exports = async function authRoutes(req, res, url) {
     const ownerAccountMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})$/);
     const ownerAccountPasswordMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})\/password$/);
     const ownerImpersonateMatch = url.pathname.match(/^\/api\/auth\/owner\/impersonate\/([0-9a-fA-F-]{36})$/);
+    const trainerImpersonateMatch = url.pathname.match(/^\/api\/auth\/trainer\/impersonate\/([0-9a-fA-F-]{36})$/);
     const trainerClientMatch = url.pathname.match(/^\/api\/auth\/trainer\/clients\/([0-9a-fA-F-]{36})$/);
 
     if (url.pathname === '/api/auth/google/ready' && req.method === 'GET') {
@@ -7302,6 +9079,10 @@ module.exports = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/trainer/dashboard' && req.method === 'GET') {
       return await handleTrainerDashboard(req, res);
+    }
+
+    if (trainerImpersonateMatch && req.method === 'GET') {
+      return await handleTrainerImpersonateStart(req, res, url, trainerImpersonateMatch[1]);
     }
 
     if (url.pathname === '/api/auth/trainers' && req.method === 'GET') {
@@ -7408,6 +9189,74 @@ module.exports = async function authRoutes(req, res, url) {
       return await handleTrainerClientCreate(req, res);
     }
 
+    if (url.pathname === '/api/auth/trainer/training-request' && req.method === 'POST') {
+      return await handleTrainerTrainingRequestCreate(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/manager-review-request' && req.method === 'POST') {
+      return await handleTrainerManagerReviewRequestCreate(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/manager-review-requests' && req.method === 'GET') {
+      return await handleTrainerManagerReviewRequestList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/manager-directory' && req.method === 'GET') {
+      return await handleTrainerManagerDirectory(req, res);
+    }
+
+    if (url.pathname === '/api/auth/manager/review-requests' && req.method === 'GET') {
+      return await handleManagerReviewRequestList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/manager/review-requests/send' && req.method === 'POST') {
+      return await handleManagerReviewRequestSend(req, res);
+    }
+
+    if (url.pathname === '/api/auth/manager/review-requests/approve' && req.method === 'POST') {
+      return await handleManagerReviewRequestApprove(req, res);
+    }
+
+    if (url.pathname === '/api/auth/manager/review-requests/deny' && req.method === 'POST') {
+      return await handleManagerReviewRequestDeny(req, res);
+    }
+
+    if (url.pathname === '/api/auth/manager/trainer-detach' && req.method === 'POST') {
+      return await handleManagerTrainerDetach(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/manager-detach' && req.method === 'POST') {
+      return await handleTrainerManagerDetachSelf(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/onboarding/reset' && req.method === 'POST') {
+      return await handleTrainerOnboardingReset(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/training-request/approve' && req.method === 'POST') {
+      return await handleTrainerTrainingRequestApprove(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/training-request/deny' && req.method === 'POST') {
+      return await handleTrainerTrainingRequestDeny(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/workout-review/approve' && req.method === 'POST') {
+      return await handleTrainerWorkoutReviewApprove(req, res);
+    }
+
+    if (url.pathname === '/api/auth/workspace-request' && req.method === 'POST') {
+      return await handleWorkspaceRequestCreate(req, res);
+    }
+
+    if (url.pathname === '/api/auth/workspace-request/mine' && req.method === 'GET') {
+      return await handleWorkspaceRequestMine(req, res);
+    }
+
+    if (url.pathname === '/api/auth/workspace-requests/public' && req.method === 'GET') {
+      return await handleWorkspaceRequestPublicList(req, res);
+    }
+
     if (trainerClientMatch && req.method === 'DELETE') {
       return await handleTrainerClientDelete(req, res, trainerClientMatch[1]);
     }
@@ -7420,12 +9269,28 @@ module.exports = async function authRoutes(req, res, url) {
       return await handleOwnerAccountsList(req, res, url);
     }
 
+    if (url.pathname === '/api/auth/owner/trainer-clients' && req.method === 'GET') {
+      return await handleOwnerTrainerClients(req, res, url);
+    }
+
     if (url.pathname === '/api/auth/owner/demo-account' && req.method === 'POST') {
       return await handleOwnerCreateDemoAccount(req, res, url);
     }
 
     if (url.pathname === '/api/auth/owner/demo-account/start' && req.method === 'GET') {
       return await handleOwnerCreateDemoAccount(req, res, url, { redirect: true });
+    }
+
+    if (url.pathname === '/api/auth/owner/workspace-requests' && req.method === 'GET') {
+      return await handleOwnerWorkspaceRequestsList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/workspace-request/approve' && req.method === 'POST') {
+      return await handleOwnerWorkspaceRequestApprove(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/workspace-request/deny' && req.method === 'POST') {
+      return await handleOwnerWorkspaceRequestDeny(req, res);
     }
 
     if (ownerAccountMatch && req.method === 'GET') {
