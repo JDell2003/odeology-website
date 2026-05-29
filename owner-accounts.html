@@ -40,11 +40,61 @@
       color: #666;
       font-size: 13px;
     }
+    .owner-accounts-subnav,
+    .owner-accounts-filterbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .owner-accounts-subnav {
+      margin-top: 6px;
+    }
+    .owner-accounts-filterbar {
+      margin-top: 10px;
+    }
+    .owner-accounts-toggle {
+      min-height: 40px;
+      padding: 0.72rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .owner-accounts-toggle.active {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      border-color: rgba(15, 36, 53, 0.18);
+      color: #f7fbff;
+      box-shadow: 0 14px 28px rgba(10, 31, 47, 0.12);
+    }
+    .owner-accounts-toggle span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: rgba(10, 31, 47, 0.08);
+      font-size: 0.72rem;
+    }
+    .owner-accounts-toggle.active span {
+      background: rgba(255, 255, 255, 0.16);
+    }
 
     .owner-accounts-list {
       display: grid;
       gap: 8px;
       margin-top: 10px;
+    }
+    .owner-accounts-section[hidden] {
+      display: none;
     }
 
     .owner-account-item {
@@ -116,6 +166,103 @@
 
     .owner-accounts-status.ok {
       color: #1f6c2f;
+    }
+    .owner-shortcut-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .owner-shortcut-badge {
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 999px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #d62828;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 10px 18px rgba(214, 40, 40, 0.2);
+    }
+    .owner-shortcut-badge.is-visible {
+      display: inline-flex;
+    }
+    .owner-review-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .owner-review-item {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+    }
+    .owner-review-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+    .owner-review-name {
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .owner-review-meta {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .owner-review-notes {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .owner-accounts-modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.42);
+      z-index: 120;
+    }
+    .owner-accounts-modal[hidden] {
+      display: none !important;
+    }
+    .owner-accounts-modal-card {
+      width: min(760px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+      display: grid;
+      gap: 12px;
+    }
+    .owner-accounts-modal-list {
+      display: grid;
+      gap: 10px;
+    }
+    .owner-accounts-modal-item {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
     }
 
     @media (max-width: 980px) {
@@ -191,19 +338,37 @@
     <header class="owner-accounts-head">
       <div>
         <h1 style="margin:0;">Owner Accounts</h1>
-        <div class="owner-accounts-muted">Click any account to open their normal Overview view.</div>
+        <div class="owner-accounts-muted">Switch between accounts and gyms, then filter down to the exact bucket you want.</div>
+        <div class="owner-accounts-subnav" role="tablist" aria-label="Owner account views">
+          <button type="button" class="owner-accounts-toggle active" data-owner-view="accounts" aria-pressed="true">Accounts</button>
+          <button type="button" class="owner-accounts-toggle" data-owner-view="gyms" aria-pressed="false">Gyms</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn btn-ghost" href="owner-messaging.html">Outreach</a>
-        <a class="btn btn-ghost" href="owner-doors.html">Doors</a>
+        <a class="btn btn-ghost owner-shortcut-btn" href="owner-messaging.html" data-owner-shortcut="outreach">
+          <span>Outreach</span>
+          <span class="owner-shortcut-badge" data-owner-badge-scope="outreach" aria-label="Unseen outreach items"></span>
+        </a>
+        <a class="btn btn-ghost owner-shortcut-btn" href="owner-doors.html" data-owner-shortcut="doors">
+          <span>Doors</span>
+          <span class="owner-shortcut-badge" data-owner-badge-scope="doors" aria-label="Unseen door pages"></span>
+        </a>
         <a class="btn btn-ghost" href="/api/auth/owner/impersonation/exit?returnTo=/owner-accounts.html">Return to Owner Session</a>
       </div>
     </header>
 
-    <section class="owner-accounts-card">
+    <section class="owner-accounts-card owner-accounts-section" data-owner-section="accounts">
       <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
         <input id="owner-accounts-search" class="auth-input" placeholder="Search by username, display name, email" style="max-width:360px;">
         <div class="owner-accounts-muted" id="owner-accounts-count"></div>
+      </div>
+      <div class="owner-accounts-filterbar" role="tablist" aria-label="Account filters">
+        <button type="button" class="owner-accounts-toggle active" data-account-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="trainer" aria-pressed="false">Trainers</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="regular" aria-pressed="false">Regular Clients</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="with-trainer" aria-pressed="false">Clients With Trainers</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="without-trainer" aria-pressed="false">Clients / WO Trainers</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="manager" aria-pressed="false">Managers</button>
       </div>
       <div class="owner-accounts-status" id="owner-accounts-status"></div>
       <div id="owner-accounts-list" class="owner-accounts-list"></div>
@@ -215,7 +380,37 @@
         <button class="btn btn-primary" type="button" id="owner-create-demo-btn">Demo</button>
       </div>
     </section>
+
+    <section class="owner-accounts-card owner-accounts-section" data-owner-section="gyms" hidden>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <div style="font-weight:700;">Gym Requests</div>
+        <div class="owner-accounts-muted" id="owner-workspace-requests-count"></div>
+      </div>
+      <div class="owner-accounts-filterbar" role="tablist" aria-label="Gym filters">
+        <button type="button" class="owner-accounts-toggle active" data-gym-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="owner-accounts-toggle" data-gym-filter="gym" aria-pressed="false">Gyms</button>
+        <button type="button" class="owner-accounts-toggle" data-gym-filter="location" aria-pressed="false">Locations</button>
+        <button type="button" class="owner-accounts-toggle" data-gym-filter="review" aria-pressed="false">In Review</button>
+        <button type="button" class="owner-accounts-toggle" data-gym-filter="approved" aria-pressed="false">Approved</button>
+        <button type="button" class="owner-accounts-toggle" data-gym-filter="denied" aria-pressed="false">Denied</button>
+      </div>
+      <div class="owner-accounts-status" id="owner-workspace-requests-status"></div>
+      <div id="owner-workspace-requests-list" class="owner-review-list"></div>
+    </section>
   </main>
+
+  <div class="owner-accounts-modal" id="owner-manager-trainers-modal" hidden>
+    <div class="owner-accounts-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:800;font-size:18px;" id="owner-manager-trainers-title">Managed Trainers</div>
+          <div class="owner-accounts-muted" id="owner-manager-trainers-subtitle"></div>
+        </div>
+        <button class="btn btn-ghost" type="button" id="owner-manager-trainers-close">Close</button>
+      </div>
+      <div id="owner-manager-trainers-list" class="owner-accounts-modal-list"></div>
+    </div>
+  </div>
 
   <script src="js/main.js?v=2026-04-10-owner-workout-test-1"></script>
   <script src="js/ownerAccounts.js?v=2026-03-23-owner-demo-1"></script>

@@ -7,15 +7,47 @@
   <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-3"></script>
   <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
   <style>
-    body.trainer-dashboard-page {
-      overflow: auto !important;
+  body.trainer-dashboard-page {
+    overflow: auto !important;
+  }
+
+  body.trainer-dashboard-page #control-panel {
+    display: flex !important;
+  }
+
+  @media (min-width: 701px) {
+    body.trainer-dashboard-page.control-open {
+      padding-left: var(--control-width) !important;
     }
+
+    body.trainer-dashboard-page.control-collapsed {
+      padding-left: var(--control-collapsed-width) !important;
+    }
+
+    body.trainer-dashboard-page:not(.control-open):not(.control-collapsed) .trainer-dashboard-main {
+      width: min(1180px, calc(100vw - var(--control-width) - 36px)) !important;
+      margin-left: calc(var(--control-width) + 18px) !important;
+      margin-right: 18px !important;
+    }
+
+    body.trainer-dashboard-page.control-open .trainer-dashboard-main {
+      width: min(1180px, calc(100vw - var(--control-width) - 36px)) !important;
+      margin-left: 18px !important;
+      margin-right: 18px !important;
+    }
+
+    body.trainer-dashboard-page.control-collapsed .trainer-dashboard-main {
+      width: min(1180px, calc(100vw - var(--control-collapsed-width) - 36px)) !important;
+      margin-left: 18px !important;
+      margin-right: 18px !important;
+    }
+  }
     body.trainer-dashboard-choice-open {
       overflow: hidden !important;
     }
     .trainer-dashboard-main {
       max-width: 1180px;
-      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      margin: calc(var(--navbar-height, 72px) - 36px) auto 40px;
       padding: 0 18px 22px;
       display: grid;
       gap: 18px;
@@ -763,6 +795,69 @@
       color: #112c41;
       letter-spacing: -0.02em;
     }
+    .account-trainer-clients-shell {
+      display: grid;
+      gap: 18px;
+    }
+    .account-trainer-clients-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .account-trainer-pill {
+      min-height: 40px;
+      padding: 0.72rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .account-trainer-pill span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: rgba(10, 31, 47, 0.08);
+      font-size: 0.72rem;
+    }
+    .account-trainer-pill.active {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      border-color: rgba(15, 36, 53, 0.18);
+      color: #f7fbff;
+      box-shadow: 0 14px 28px rgba(10, 31, 47, 0.12);
+    }
+    .account-trainer-pill.active span {
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .account-trainer-pill.has-alert {
+      border-color: rgba(174, 43, 43, 0.44);
+      background: linear-gradient(135deg, rgba(255, 236, 236, 0.96), rgba(255, 245, 240, 0.94));
+      color: #7c1818;
+      box-shadow: 0 10px 22px rgba(174, 43, 43, 0.12);
+    }
+    .account-trainer-pill.has-alert span {
+      background: rgba(174, 43, 43, 0.12);
+      color: #8d2020;
+    }
+    .account-trainer-pill.has-alert.active {
+      background: linear-gradient(135deg, rgba(131, 24, 24, 0.96), rgba(171, 52, 52, 0.92));
+      border-color: rgba(131, 24, 24, 0.75);
+      color: #fff7f7;
+      box-shadow: 0 16px 30px rgba(131, 24, 24, 0.22);
+    }
+    .account-trainer-pill.has-alert.active span {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff7f7;
+    }
     .account-trainer-muted {
       color: rgba(13, 34, 50, 0.68);
       font-size: 0.83rem;
@@ -880,6 +975,62 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .account-trainer-roster-card-clickable.is-linked {
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+    .account-trainer-roster-card-clickable.is-linked:hover {
+      transform: translateY(-1px);
+      border-color: rgba(15, 36, 53, 0.18);
+      box-shadow: 0 14px 28px rgba(10, 31, 47, 0.08);
+    }
+    .account-trainer-inline-action {
+      color: #1b4f72;
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+    .account-trainer-action-feed {
+      display: grid;
+      gap: 10px;
+    }
+    .account-trainer-action-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(247, 250, 255, 0.96);
+    }
+    .account-trainer-action-card.tone-needs-action {
+      border-color: rgba(211, 140, 17, 0.28);
+      background: linear-gradient(180deg, rgba(255, 249, 238, 0.98), rgba(255, 245, 228, 0.94));
+    }
+    .account-trainer-action-card.tone-positive {
+      border-color: rgba(28, 123, 70, 0.2);
+      background: linear-gradient(180deg, rgba(243, 252, 246, 0.98), rgba(235, 248, 240, 0.94));
+    }
+    .account-trainer-action-head,
+    .account-trainer-action-foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .account-trainer-action-title {
+      color: #0d2232;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .account-trainer-action-detail {
+      margin-top: 4px;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
     .account-trainer-code {
       font-size: 1.2rem;
       font-weight: 900;
@@ -981,7 +1132,7 @@
     }
     @media (max-width: 720px) {
       .trainer-dashboard-main {
-        margin-top: calc(var(--navbar-height, 72px) + 18px);
+        margin-top: calc(var(--navbar-height, 72px) - 42px);
         padding: 0 14px 18px;
       }
       .trainer-dashboard-shell {
@@ -1016,6 +1167,400 @@
       }
       .trainer-dashboard-shell-head p {
         font-size: 0.92rem;
+      }
+    }
+    .trainer-dashboard-manager-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(15, 36, 53, 0.1);
+      background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 248, 239, 0.95));
+      box-shadow: 0 16px 28px rgba(8, 22, 33, 0.06);
+    }
+    .trainer-dashboard-manager-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .trainer-dashboard-manager-kicker {
+      color: #b66714;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-dashboard-manager-title {
+      margin: 4px 0 0;
+      color: #0d2232;
+      font-size: 1.12rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .trainer-dashboard-manager-copy {
+      margin: 6px 0 0;
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .trainer-dashboard-manager-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      color: #102738;
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .trainer-dashboard-manager-status.is-pending {
+      border-color: rgba(227, 166, 63, 0.26);
+      background: rgba(255, 247, 232, 0.98);
+      color: #9a5c15;
+    }
+    .trainer-dashboard-manager-status.is-approved {
+      border-color: rgba(34, 197, 94, 0.34);
+      background: rgba(236, 253, 243, 0.98);
+      color: #15803d;
+      box-shadow: 0 10px 20px rgba(34, 197, 94, 0.12);
+    }
+    .trainer-dashboard-manager-tools {
+      display: grid;
+      gap: 12px;
+    }
+    .trainer-dashboard-manager-search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .trainer-dashboard-manager-search-row input {
+      flex: 1 1 260px;
+      min-height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      padding: 0 14px;
+      color: #102738;
+      font-size: 0.86rem;
+      font-weight: 700;
+      outline: none;
+      font-family: inherit;
+    }
+    .trainer-dashboard-manager-search-row input:focus {
+      border-color: rgba(227, 166, 63, 0.42);
+      box-shadow: 0 0 0 3px rgba(227, 166, 63, 0.14);
+    }
+    .trainer-dashboard-manager-search-btn {
+      min-height: 46px;
+      padding: 0 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: #10283c;
+      color: #fff;
+      font-size: 0.84rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-list {
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-dashboard-manager-option {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 36, 53, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+    }
+    .trainer-dashboard-manager-option-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .trainer-dashboard-manager-option strong {
+      color: #0d2232;
+      font-size: 0.94rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .trainer-dashboard-manager-option-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-manager-option-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .trainer-dashboard-manager-option-btn {
+      min-height: 38px;
+      padding: 0.58rem 0.82rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      color: #102738;
+      font-size: 0.76rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-option-btn:disabled,
+    .trainer-dashboard-manager-search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .trainer-dashboard-manager-muted {
+      color: rgba(13, 34, 50, 0.62);
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .trainer-dashboard-manager-step-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .trainer-dashboard-manager-step-selection {
+      color: #0d2232;
+      font-size: 0.96rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+    .trainer-dashboard-manager-switch {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0.58rem 0.82rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      color: #102738;
+      font-size: 0.76rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-modal.hidden {
+      display: none;
+    }
+    .trainer-dashboard-manager-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1260;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .trainer-dashboard-manager-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: rgba(5, 13, 22, 0.54);
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-modal-card {
+      position: relative;
+      z-index: 1;
+      width: min(682px, calc(100vw - 28px));
+      max-height: min(80vh, 820px);
+      overflow: auto;
+      border-radius: 24px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background:
+        radial-gradient(circle at top right, rgba(123, 179, 255, 0.14), transparent 32%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 254, 0.96));
+      box-shadow: 0 34px 64px rgba(6, 21, 33, 0.24);
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+    }
+    .trainer-dashboard-manager-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.86);
+      color: #0d2232;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    #trainer-dashboard-manager-modal-body {
+      display: grid;
+      gap: 16px;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    #trainer-dashboard-manager-modal-body.is-fading {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .trainer-dashboard-manager-modal-primary,
+    .trainer-dashboard-manager-modal-secondary {
+      min-height: 40px;
+      padding: 0.6rem 0.9rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      font-size: 0.78rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .trainer-dashboard-manager-modal-primary {
+      background: #10283c;
+      color: #fff;
+    }
+    .trainer-dashboard-manager-modal-secondary {
+      background: rgba(255, 255, 255, 0.96);
+      color: #102738;
+    }
+    .entry-logo-grid,
+    .entry-location-grid {
+      display: grid;
+      gap: 14px;
+    }
+    .entry-logo-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .entry-location-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .entry-logo-card,
+    .entry-location-card {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      box-shadow: none;
+    }
+    .entry-logo-card {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 10px;
+      min-height: 168px;
+      padding: 10px 8px 12px;
+      border-radius: 22px;
+      text-align: center;
+    }
+    .entry-location-card {
+      text-align: left;
+      border-radius: 22px;
+      padding: 16px;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 14px 28px rgba(13, 34, 50, 0.06);
+    }
+    .entry-logo-card:hover,
+    .entry-location-card:hover {
+      transform: translateY(-2px);
+    }
+    .entry-location-card:hover {
+      border-color: rgba(168, 118, 51, 0.52);
+      box-shadow: 0 18px 34px rgba(13, 34, 50, 0.09);
+    }
+    .entry-logo-card.is-selected,
+    .entry-location-card.is-selected {
+    }
+    .entry-location-card.is-selected {
+      border-color: rgba(168, 118, 51, 0.92);
+      box-shadow: 0 18px 40px rgba(168, 118, 51, 0.18);
+    }
+    .entry-logo-mark {
+      width: min(100%, 170px);
+      height: 112px;
+      display: grid;
+      place-items: center;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      overflow: hidden;
+      transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+    }
+    .entry-manager-mark {
+      width: 112px;
+      height: 112px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at top, rgba(245, 211, 176, 0.42), transparent 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 236, 225, 0.94));
+      border: 1px solid rgba(13, 34, 50, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    .entry-logo-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .entry-logo-card:hover .entry-logo-mark {
+      transform: scale(1.03);
+      opacity: 0.96;
+    }
+    .entry-logo-card.is-selected .entry-logo-mark {
+      transform: scale(1.06);
+      filter: drop-shadow(0 10px 18px rgba(168, 118, 51, 0.18));
+    }
+    .entry-logo-monogram {
+      color: #0d2232;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .entry-logo-card strong,
+    .entry-location-card strong {
+      color: #0d2232;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .entry-logo-card small,
+    .entry-location-card small {
+      display: block;
+      margin-top: 6px;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+    @media (max-width: 760px) {
+      .entry-location-grid {
+        grid-template-columns: 1fr;
+      }
+      .entry-logo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .trainer-dashboard-manager-search-row input,
+      .trainer-dashboard-manager-search-btn {
+        width: 100%;
       }
     }
   </style>
@@ -1108,8 +1653,7 @@
     </div>
     <div class="control-section hidden" id="control-trainer-section">
       <p class="section-label">TRAINER</p>
-      <a class="control-link active" id="control-trainer-dashboard-link" href="trainer-dashboard.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a>
-      <a class="control-link" id="control-trainer-settings-link" href="payment-settings.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Payment Settings</span></a>
+      <a class="control-link active" id="control-trainer-clients-link" href="trainer-dashboard.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Clients</span></a>
     </div>
     <div class="control-section hidden" id="control-owner-section">
       <p class="section-label">OWNER</p>
@@ -1122,19 +1666,8 @@
   </aside>
 
   <main class="trainer-dashboard-main">
+    <div id="trainer-dashboard-manager-host"></div>
     <section class="trainer-dashboard-shell">
-      <div class="trainer-dashboard-shell-head">
-        <div>
-          <div class="trainer-dashboard-shell-kicker">Trainer hub</div>
-          <h2>Trainer growth + earnings</h2>
-          <p id="trainer-dashboard-headline">Trainer growth + earnings</p>
-        </div>
-        <div class="trainer-dashboard-top-actions">
-          <a class="trainer-dashboard-action" href="trainers.html#onboarding">Edit trainer page</a>
-          <a class="trainer-dashboard-action ghost" href="coaches.html" id="trainer-dashboard-view-coaches">View coaches page</a>
-        </div>
-      </div>
-      <div class="account-trainer-status" id="account-trainer-status">Loading trainer dashboard...</div>
       <div id="account-trainer-shell"></div>
     </section>
   </main>
@@ -1225,7 +1758,15 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-04-10-owner-workout-test-1"></script>
+  <div class="trainer-dashboard-manager-modal hidden" id="trainer-dashboard-manager-modal" aria-hidden="true">
+    <button type="button" class="trainer-dashboard-manager-modal-backdrop" id="trainer-dashboard-manager-modal-backdrop" aria-label="Close manager switch popup"></button>
+    <div class="trainer-dashboard-manager-modal-card" role="dialog" aria-modal="true" aria-labelledby="trainer-dashboard-manager-modal-title">
+      <button type="button" class="trainer-dashboard-manager-modal-close" id="trainer-dashboard-manager-modal-close" aria-label="Close manager switch popup">×</button>
+      <div id="trainer-dashboard-manager-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-05-29-role-sidebar-2"></script>
   <script src="js/account-trainer.js?v=2026-03-29-account-trainer-25"></script>
 </body>
 </html>

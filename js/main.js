@@ -2244,9 +2244,13 @@ function persistGrocerySession() { return; } // Permanently disabled
 // Any attempt to open food wizard will silently fail
 
 function getDashboardNavHref(user = null) {
-    return Boolean(user?.isTrainer || user?.trainer?.active)
-        ? 'trainer-dashboard.html'
-        : 'overview.html#control-panel';
+    if (user && typeof window.__odeCanAccessClientTrainingPortal === 'function' && !window.__odeCanAccessClientTrainingPortal(user, null)) {
+        if (typeof window.__odeGetRestrictedPortalHref === 'function') {
+            return window.__odeGetRestrictedPortalHref(user);
+        }
+        return 'trainer-dashboard.html';
+    }
+    return 'overview.html#control-panel';
 }
 
 function syncNavbarDashboardLink(user = null) {
@@ -8835,68 +8839,10 @@ function setupCounters() {
    ============================================ */
 
 function setupTrialBadge() {
-    const shouldShow = document.body.classList.contains('training-page') || document.body.classList.contains('training-status-page');
-    if (!shouldShow) {
-        const existing = document.getElementById('trial-badge');
-        if (existing) existing.remove();
-        return;
-    }
-
-    const hasTrainingNav = !!document.querySelector('.nav-training, a[href="training.html"]');
-    if (!hasTrainingNav) return;
-
-    // Remove legacy/duplicate badge if present (older Training UI injected this).
+    const existing = document.getElementById('trial-badge');
+    if (existing) existing.remove();
     document.querySelectorAll('.training-free-badge').forEach((n) => n.remove());
-
-    let badge = document.getElementById('trial-badge');
-    if (!badge) {
-        badge = document.createElement('div');
-        badge.id = 'trial-badge';
-        badge.className = 'trial-badge';
-        badge.setAttribute('role', 'button');
-        badge.setAttribute('tabindex', '0');
-        badge.setAttribute('aria-haspopup', 'dialog');
-        badge.setAttribute('aria-label', 'Open training paywall');
-        document.body.appendChild(badge);
-    }
-    const openBadgePaywall = () => {
-        if (typeof window.__odeForceOpenAccessPrompt === 'function') {
-            return window.__odeForceOpenAccessPrompt({ reason: 'trial_badge' });
-        }
-        return window.__odeOpenAccessPrompt?.({ reason: 'trial_badge', forceOpen: true });
-    };
-    badge.onclick = (event) => {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        openBadgePaywall();
-    };
-    badge.onkeydown = (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        openBadgePaywall();
-    };
-    badge.onpointerdown = (event) => {
-        if (event.button !== 0) return;
-        event.preventDefault();
-        event.stopPropagation();
-        openBadgePaywall();
-    };
-    badge.dataset.paywallBound = '1';
-    if (!window.__odeTrialBadgeDocBound) {
-        window.__odeTrialBadgeDocBound = true;
-        document.addEventListener('pointerdown', (event) => {
-            const target = event?.target;
-            const badgeEl = target instanceof Element ? target.closest('#trial-badge') : null;
-            if (!badgeEl) return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (typeof window.__odeForceOpenAccessPrompt === 'function') {
-                window.__odeForceOpenAccessPrompt({ reason: 'trial_badge' });
-                return;
-            }
-            window.__odeOpenAccessPrompt?.({ reason: 'trial_badge', forceOpen: true });
-        }, true);
-    }
+    return;
 
     const readDemoTrialSim = (userId) => {
         const id = String(userId || '').trim();
@@ -9104,8 +9050,20 @@ function setupTrainingNavRouting() {
     if (!links.length) return;
 
     const routeToTraining = () => {
-        const hasSignedInUser = Boolean(window.__odeCurrentUser?.id || readAuthUserHint()?.id);
-        const targetHref = hasSignedInUser ? 'training.html' : 'training-coming-soon.html?start=1';
+        const signedInUser = window.__odeCurrentUser || readAuthUserHint() || null;
+        const hasSignedInUser = Boolean(signedInUser?.id);
+        const canUseClientPortal = hasSignedInUser
+            ? (typeof window.__odeCanAccessClientTrainingPortal === 'function'
+                ? window.__odeCanAccessClientTrainingPortal(signedInUser, null)
+                : !(signedInUser?.isTrainer || signedInUser?.trainer?.active || signedInUser?.isManager || signedInUser?.manager?.active))
+            : false;
+        const targetHref = hasSignedInUser
+            ? (canUseClientPortal
+                ? 'training.html'
+                : (typeof window.__odeGetRestrictedPortalHref === 'function'
+                    ? window.__odeGetRestrictedPortalHref(signedInUser)
+                    : 'trainer-dashboard.html'))
+            : 'training-coming-soon.html?start=1';
         try { sessionStorage.setItem('ode_training_nav_loading', '1'); } catch { /* ignore */ }
         window.location.href = targetHref;
     };
@@ -12796,12 +12754,26 @@ function readAuthUserHint() {
         return {
             id,
             username: String(user.username || '').trim(),
+            email: String(user.email || '').trim(),
             displayName: String(user.displayName || '').trim(),
             isOwner: Boolean(user.isOwner),
             isTrainer: Boolean(user.isTrainer || user?.trainer?.active),
+            isManager: Boolean(user.isManager || user?.manager?.active),
+            isClient: Boolean(user.isClient || user?.client?.active),
             isDemo: inferredDemo,
             demo: { active: inferredDemo },
-            trainer: { active: Boolean(user.isTrainer || user?.trainer?.active) }
+            trainer: {
+                active: Boolean(user.isTrainer || user?.trainer?.active),
+                onboarded: Boolean(user?.trainer?.onboarded || user?.trainerOnboardingComplete || user?.trainerOnboardingCompletedAt),
+                onboardingCompletedAt: user?.trainer?.onboardingCompletedAt || user?.trainerOnboardingCompletedAt || null
+            },
+            manager: {
+                active: Boolean(user.isManager || user?.manager?.active),
+                managerCode: String(user?.manager?.managerCode || '').trim(),
+                workspaceId: String(user?.manager?.workspaceId || '').trim(),
+                locationId: String(user?.manager?.locationId || '').trim()
+            },
+            client: { active: Boolean(user.isClient || user?.client?.active) }
         };
     } catch {
         return null;
@@ -12817,12 +12789,26 @@ function writeAuthUserHint(user) {
             user: {
                 id,
                 username: String(user?.username || '').trim(),
+                email: String(user?.email || '').trim(),
                 displayName: String(user?.displayName || '').trim(),
                 isOwner: Boolean(user?.isOwner),
                 isTrainer: Boolean(user?.isTrainer || user?.trainer?.active),
+                isManager: Boolean(user?.isManager || user?.manager?.active),
+                isClient: Boolean(user?.isClient || user?.client?.active),
                 isDemo: Boolean(user?.isDemo || user?.demo?.active),
                 demo: { active: Boolean(user?.isDemo || user?.demo?.active) },
-                trainer: { active: Boolean(user?.isTrainer || user?.trainer?.active) }
+                trainer: {
+                    active: Boolean(user?.isTrainer || user?.trainer?.active),
+                    onboarded: Boolean(user?.trainer?.onboarded || user?.trainerOnboardingComplete || user?.trainerOnboardingCompletedAt),
+                    onboardingCompletedAt: user?.trainer?.onboardingCompletedAt || user?.trainerOnboardingCompletedAt || null
+                },
+                manager: {
+                    active: Boolean(user?.isManager || user?.manager?.active),
+                    managerCode: String(user?.manager?.managerCode || '').trim(),
+                    workspaceId: String(user?.manager?.workspaceId || '').trim(),
+                    locationId: String(user?.manager?.locationId || '').trim()
+                },
+                client: { active: Boolean(user?.isClient || user?.client?.active) }
             }
         };
         localStorage.setItem(AUTH_USER_HINT_KEY, JSON.stringify(payload));
@@ -12894,8 +12880,11 @@ function initAuthUi() {
     let requestsNotifyTimer = 0;
     let messagesNotifyTimer = 0;
     let requestCountBaselineReady = false;
+    let messageCountBaselineReady = false;
     let lastKnownRequestTotal = 0;
+    let lastKnownMessageTotal = 0;
     let requestToastHideTimer = 0;
+    let liveNotificationPermissionArmed = false;
     let shownTrainerReviewNoticeKey = '';
     const FRIENDS_CACHE_KEY = 'ode_friends_cache_v1';
     const FRIENDS_CACHE_TTL = 1000 * 60 * 10;
@@ -12991,6 +12980,108 @@ function initAuthUi() {
         }, 180);
     };
 
+    const ensureLiveNotificationRail = () => {
+        let rail = document.getElementById('site-live-notification-rail');
+        if (!rail) {
+            rail = document.createElement('div');
+            rail.id = 'site-live-notification-rail';
+            rail.className = 'site-live-notification-rail';
+            document.body.appendChild(rail);
+        }
+        return rail;
+    };
+
+    const openMessagesCenter = () => {
+        openFriendsModal(friendsBtn || mobileFriendsBtn);
+        const messagesTab = friendsModal?.querySelector('.friends-tab[data-friends-tab="friends"]');
+        messagesTab?.click();
+        try { loadThreads(); } catch { /* ignore */ }
+    };
+
+    const showBrowserLiveNotification = ({ title = '', body = '', tag = '', onClick = null } = {}) => {
+        try {
+            if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+            const notification = new Notification(String(title || 'Notification'), {
+                body: String(body || '').trim(),
+                tag: String(tag || '').trim() || undefined,
+                renotify: false
+            });
+            notification.onclick = () => {
+                try { window.focus(); } catch { /* ignore */ }
+                if (typeof onClick === 'function') {
+                    try { onClick(); } catch { /* ignore */ }
+                }
+                try { notification.close(); } catch { /* ignore */ }
+            };
+        } catch {
+            // ignore notification failures
+        }
+    };
+
+    const armLiveNotificationPermissionPrompt = () => {
+        if (liveNotificationPermissionArmed) return;
+        if (typeof Notification === 'undefined') return;
+        if (Notification.permission !== 'default') return;
+        liveNotificationPermissionArmed = true;
+        const requestPermission = async () => {
+            window.removeEventListener('pointerdown', requestPermission, true);
+            window.removeEventListener('keydown', requestPermission, true);
+            try {
+                await Notification.requestPermission();
+            } catch {
+                // ignore permission failures
+            }
+        };
+        window.addEventListener('pointerdown', requestPermission, true);
+        window.addEventListener('keydown', requestPermission, true);
+    };
+
+    const showSiteLiveToast = ({
+        id = '',
+        title = 'Live update',
+        subtitle = '',
+        icon = '!',
+        actionLabel = '',
+        onAction = null,
+        autoHideMs = 4300
+    } = {}) => {
+        const rail = ensureLiveNotificationRail();
+        const toastId = String(id || '').trim() || `live-toast-${Date.now()}`;
+        const existing = rail.querySelector(`[data-live-toast-id="${toastId}"]`);
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'workout-saved-toast site-request-toast site-live-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('data-live-toast-id', toastId);
+        toast.innerHTML = `
+            <div class="workout-saved-icon" aria-hidden="true">${String(icon || '!').slice(0, 2)}</div>
+            <div class="workout-saved-text">
+                <div class="workout-saved-title">${escapeHtml(String(title || 'Live update'))}</div>
+                <div class="workout-saved-sub">${escapeHtml(String(subtitle || ''))}</div>
+            </div>
+            ${actionLabel ? `<button type="button" class="site-request-toast-link">${escapeHtml(String(actionLabel))}</button>` : ''}
+        `.trim();
+        const actionBtn = toast.querySelector('.site-request-toast-link');
+        actionBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (typeof onAction === 'function') {
+                try { onAction(); } catch { /* ignore */ }
+            }
+            toast.classList.remove('show');
+            window.setTimeout(() => {
+                try { toast.remove(); } catch { /* ignore */ }
+            }, 180);
+        });
+        rail.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        window.setTimeout(() => {
+            toast.classList.remove('show');
+            window.setTimeout(() => {
+                try { toast.remove(); } catch { /* ignore */ }
+            }, 180);
+        }, Math.max(2200, Number(autoHideMs || 4300)));
+    };
+
     const openRequestsCenter = () => {
         clearRequestToast();
         openFriendsModal(friendsBtn || mobileFriendsBtn);
@@ -13067,7 +13158,12 @@ function initAuthUi() {
                 : threads.reduce((sum, row) => (
                     sum + Math.max(0, Number(row?.unreadCount || 0))
                 ), 0);
-            return { total, ok: true };
+            return {
+                total,
+                ok: true,
+                threads,
+                latestThread: threads.find((row) => Number(row?.unreadCount || 0) > 0) || threads[0] || null
+            };
         } catch {
             return { total: 0, ok: false };
         }
@@ -13096,13 +13192,30 @@ function initAuthUi() {
             try { loadRequests(); } catch { /* ignore */ }
             return;
         }
-        if (document.hidden) return;
+        if (document.hidden) {
+            showBrowserLiveNotification({
+                title: `New request${delta === 1 ? '' : 's'}`,
+                body: total > 0 ? `${total} pending request${total === 1 ? '' : 's'} waiting for you.` : 'You have a new pending request.',
+                tag: 'ode-live-requests',
+                onClick: openRequestsCenter
+            });
+            return;
+        }
         showIncomingRequestToast(delta, total);
+        showSiteLiveToast({
+            id: 'ode-live-requests',
+            title: `New request${delta === 1 ? '' : 's'}`,
+            subtitle: total > 0 ? `${total} pending request${total === 1 ? '' : 's'} waiting for you.` : 'You have a new pending request.',
+            icon: '!',
+            actionLabel: 'View requests',
+            onAction: openRequestsCenter
+        });
     };
 
     const startIncomingRequestPolling = () => {
         if (requestsNotifyTimer) return;
         requestCountBaselineReady = false;
+        armLiveNotificationPermissionPrompt();
         pollIncomingRequestNotifications({ bootstrap: true });
         requestsNotifyTimer = window.setInterval(() => {
             pollIncomingRequestNotifications();
@@ -13123,16 +13236,53 @@ function initAuthUi() {
         updateControlSigninBadge(0, { signedIn: Boolean(currentUser) });
     };
 
-    const pollMessageNotifications = async () => {
+    const pollMessageNotifications = async ({ bootstrap = false } = {}) => {
         if (!currentUser) return;
         const counts = await fetchUnreadMessageCount();
         if (!counts.ok) return;
         updateControlMessagesBadge(counts.total, { signedIn: true });
+        const total = Math.max(0, Number(counts.total || 0));
+        if (!messageCountBaselineReady || bootstrap) {
+            messageCountBaselineReady = true;
+            lastKnownMessageTotal = total;
+            return;
+        }
+        const delta = total - lastKnownMessageTotal;
+        lastKnownMessageTotal = total;
+        if (delta <= 0) return;
+        const friendsTabActive = Boolean(friendsModal?.querySelector?.('.friends-tab.active[data-friends-tab="friends"]'));
+        const messagesPanelOpen = Boolean(friendsModal && !friendsModal.classList.contains('hidden') && friendsTabActive);
+        if (messagesPanelOpen) {
+            try { loadThreads(); } catch { /* ignore */ }
+            return;
+        }
+        const latest = counts.latestThread || null;
+        const sender = String(latest?.displayName || latest?.username || 'Someone').trim();
+        const preview = String(latest?.lastMessage || '').trim() || 'Sent you a new message.';
+        if (document.hidden) {
+            showBrowserLiveNotification({
+                title: `New message from ${sender}`,
+                body: preview,
+                tag: 'ode-live-messages',
+                onClick: openMessagesCenter
+            });
+            return;
+        }
+        showSiteLiveToast({
+            id: 'ode-live-messages',
+            title: `New message from ${sender}`,
+            subtitle: preview,
+            icon: '@',
+            actionLabel: 'Open messages',
+            onAction: openMessagesCenter
+        });
     };
 
     const startMessagePolling = () => {
         if (messagesNotifyTimer) return;
-        pollMessageNotifications();
+        messageCountBaselineReady = false;
+        armLiveNotificationPermissionPrompt();
+        pollMessageNotifications({ bootstrap: true });
         messagesNotifyTimer = window.setInterval(() => {
             pollMessageNotifications();
         }, 10000);
@@ -13143,6 +13293,8 @@ function initAuthUi() {
             window.clearInterval(messagesNotifyTimer);
             messagesNotifyTimer = 0;
         }
+        messageCountBaselineReady = false;
+        lastKnownMessageTotal = 0;
         updateControlMessagesBadge(0, { signedIn: Boolean(currentUser) });
     };
 
@@ -13197,6 +13349,297 @@ function initAuthUi() {
         Boolean(user?.isTrainer || user?.trainer?.active)
     );
 
+    const isManagerClientUser = (user = currentUser) => (
+        Boolean(user?.isManager || user?.manager?.active)
+    );
+
+    const canAccessClientTrainingPortal = (user = currentUser, meta = currentAuthMeta) => {
+        if (!user) return true;
+        if (isOwnerClientUser(user, meta)) return true;
+        return !isTrainerClientUser(user) && !isManagerClientUser(user);
+    };
+
+    window.__odeCanAccessClientTrainingPortal = canAccessClientTrainingPortal;
+    window.__odeGetRestrictedPortalHref = (user = currentUser) => (
+        isManagerClientUser(user)
+            ? getManagerTrainerHref(user)
+            : 'trainer-dashboard.html'
+    );
+
+    let managerLivePendingReviewIds = [];
+    let managerLiveReviewWatcherPrimed = false;
+    let managerLivePendingReviewEntries = [];
+    let managerLiveReviewStatusById = new Map();
+    let trainerLiveManagerReviewStatusById = new Map();
+    let trainerLiveManagerReviewWatcherPrimed = false;
+    const MANAGER_REVIEW_NOTICE_KEY = 'ode_manager_review_notice_v1';
+
+    const normalizeManagerCode = (code = '') => {
+        const normalized = String(code || '').trim().toUpperCase();
+        if (!normalized) return '';
+        if (normalized === 'MAX-ODE') return 'ODEOLOGY';
+        return normalized;
+    };
+
+    const fetchManagerTrainerReviewEntries = async (user = currentUser) => {
+        const managerCode = normalizeManagerCode(user?.manager?.managerCode || user?.managerCode || '');
+        if (!managerCode) return [];
+        try {
+            const resp = await fetch(`/api/auth/manager/review-requests?managerCode=${encodeURIComponent(managerCode)}`, {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) return [];
+            return Array.isArray(json?.requests) ? json.requests : [];
+        } catch {
+            return [];
+        }
+    };
+
+    const getPendingManagerTrainerReviewCount = (user = currentUser) => {
+        const managerCode = normalizeManagerCode(user?.manager?.managerCode || user?.managerCode || '');
+        if (!managerCode) return 0;
+        return managerLivePendingReviewEntries.filter((item) => {
+            const itemCode = normalizeManagerCode(item?.managerCode || '');
+            const status = String(item?.status || 'pending').trim().toLowerCase();
+            return itemCode === managerCode && status === 'pending';
+        }).length;
+    };
+
+    const getPendingManagerTrainerReviewEntries = (user = currentUser) => {
+        const managerCode = normalizeManagerCode(user?.manager?.managerCode || user?.managerCode || '');
+        if (!managerCode) return [];
+        return managerLivePendingReviewEntries
+            .filter((item) => {
+                const itemCode = normalizeManagerCode(item?.managerCode || '');
+                const status = String(item?.status || 'pending').trim().toLowerCase();
+                return itemCode === managerCode && status === 'pending';
+            })
+            .sort((a, b) => Number(b?.createdAt || 0) - Number(a?.createdAt || 0));
+    };
+
+    const syncManagerSidebarBadge = (user = currentUser) => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        const link = panel.querySelector('#control-manager-trainers-link');
+        if (!link) return;
+        let badge = link.querySelector('#control-manager-trainers-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'control-notif-badge hidden';
+            badge.id = 'control-manager-trainers-badge';
+            badge.setAttribute('aria-hidden', 'true');
+            link.appendChild(badge);
+        }
+        const count = getPendingManagerTrainerReviewCount(user);
+        badge.textContent = String(count);
+        badge.classList.toggle('hidden', count <= 0);
+    };
+
+    const openManagerRequestsCenter = () => {
+        const href = getManagerTrainerHref(currentUser);
+        if (href) window.location.href = href;
+    };
+
+    const readManagerReviewNoticeStore = () => {
+        try {
+            const raw = localStorage.getItem(MANAGER_REVIEW_NOTICE_KEY);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    };
+
+    const writeManagerReviewNoticeStore = (store) => {
+        try {
+            localStorage.setItem(MANAGER_REVIEW_NOTICE_KEY, JSON.stringify(store && typeof store === 'object' ? store : {}));
+        } catch {
+            // ignore
+        }
+    };
+
+    const managerReviewNoticeToken = (entry) => {
+        const id = String(entry?.id || '').trim();
+        const status = String(entry?.status || '').trim().toLowerCase();
+        const decidedAt = String(entry?.decidedAt || entry?.updatedAt || '').trim();
+        return [id, status, decidedAt].filter(Boolean).join(':');
+    };
+
+    const reconcileManagerReviewNotifications = async ({ user = currentUser, allowToast = false } = {}) => {
+        if (!isManagerClientUser(user)) {
+            managerLivePendingReviewEntries = [];
+            managerLivePendingReviewIds = [];
+            managerLiveReviewWatcherPrimed = false;
+            managerLiveReviewStatusById = new Map();
+            syncManagerSidebarBadge(user);
+            return;
+        }
+        managerLivePendingReviewEntries = await fetchManagerTrainerReviewEntries(user);
+        const nextStatusById = new Map();
+        managerLivePendingReviewEntries.forEach((item) => {
+            const id = String(item?.id || '').trim();
+            if (!id) return;
+            nextStatusById.set(id, String(item?.status || 'pending').trim().toLowerCase() || 'pending');
+        });
+        const pendingEntries = getPendingManagerTrainerReviewEntries(user);
+        const pendingIds = pendingEntries
+            .map((item) => String(item?.id || '').trim())
+            .filter(Boolean);
+        const newEntries = managerLiveReviewWatcherPrimed
+            ? pendingEntries.filter((item) => !managerLivePendingReviewIds.includes(String(item?.id || '').trim()))
+            : [];
+        const deniedEntries = managerLiveReviewWatcherPrimed && allowToast
+            ? managerLivePendingReviewEntries.filter((item) => {
+                const id = String(item?.id || '').trim();
+                if (!id) return false;
+                const requestedByRole = String(item?.requestedByRole || 'trainer').trim().toLowerCase();
+                if (requestedByRole !== 'manager') return false;
+                const previousStatus = managerLiveReviewStatusById.get(id) || '';
+                const nextStatus = nextStatusById.get(id) || 'pending';
+                return previousStatus === 'pending' && nextStatus === 'denied';
+            })
+            : [];
+        managerLivePendingReviewIds = pendingIds;
+        managerLiveReviewStatusById = nextStatusById;
+        managerLiveReviewWatcherPrimed = true;
+        syncManagerSidebarBadge(user);
+        if (allowToast && newEntries.length) {
+            const newest = newEntries[0] || {};
+            const trainer = newest?.trainer && typeof newest.trainer === 'object' ? newest.trainer : {};
+            const trainerName = String(trainer?.fullName || trainer?.email || 'A trainer').trim() || 'A trainer';
+            const company = String(newest?.managerCompanyName || '').trim();
+            const subtitle = company
+                ? `${trainerName} requested to join under ${company}.`
+                : `${trainerName} requested to join under your manager account.`;
+            const toastId = `manager-review-${String(newest?.id || pendingIds.join('|') || Date.now())}`;
+            showSiteLiveToast({
+                id: toastId,
+                icon: '!',
+                title: 'New trainer request',
+                subtitle,
+                actionLabel: 'View',
+                onAction: openManagerRequestsCenter,
+                autoHideMs: 4800
+            });
+            showBrowserLiveNotification({
+                title: 'New trainer request',
+                body: subtitle,
+                tag: toastId,
+                onClick: openManagerRequestsCenter
+            });
+        }
+        if (allowToast) {
+            const noticeStore = readManagerReviewNoticeStore();
+            const unseenDeniedEntries = managerLivePendingReviewEntries.filter((entry) => {
+                const requestedByRole = String(entry?.requestedByRole || 'trainer').trim().toLowerCase();
+                const status = String(entry?.status || '').trim().toLowerCase();
+                if (requestedByRole !== 'manager' || status !== 'denied') return false;
+                const token = managerReviewNoticeToken(entry);
+                if (!token) return false;
+                return noticeStore[token] !== '1';
+            });
+            const toNotify = deniedEntries.length
+                ? deniedEntries
+                : unseenDeniedEntries;
+            toNotify.forEach((entry) => {
+                const trainer = entry?.trainer && typeof entry.trainer === 'object' ? entry.trainer : {};
+                const trainerName = String(trainer?.fullName || trainer?.email || 'A trainer').trim() || 'A trainer';
+                const company = String(entry?.managerCompanyName || entry?.managerName || entry?.managerCode || '').trim();
+                const subtitle = company
+                    ? `${trainerName} denied your request under ${company}.`
+                    : `${trainerName} denied your manager request.`;
+                const toastId = `manager-review-denied-${String(entry?.id || Date.now())}`;
+                showSiteLiveToast({
+                    id: toastId,
+                    icon: '!',
+                    title: 'Trainer request denied',
+                    subtitle,
+                    actionLabel: 'View',
+                    onAction: openManagerRequestsCenter,
+                    autoHideMs: 5600
+                });
+                showBrowserLiveNotification({
+                    title: 'Trainer request denied',
+                    body: subtitle,
+                    tag: toastId,
+                    onClick: openManagerRequestsCenter
+                });
+                const token = managerReviewNoticeToken(entry);
+                if (token) noticeStore[token] = '1';
+            });
+            writeManagerReviewNoticeStore(noticeStore);
+        }
+    };
+
+    const fetchTrainerManagerReviewEntries = async () => {
+        if (!currentUser) return [];
+        try {
+            const resp = await fetch('/api/auth/trainer/manager-review-requests', {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) return [];
+            return Array.isArray(json?.requests) ? json.requests : [];
+        } catch {
+            return [];
+        }
+    };
+
+    const reconcileTrainerManagerReviewNotifications = async ({ user = currentUser, allowToast = false } = {}) => {
+        if (!isTrainerClientUser(user)) {
+            trainerLiveManagerReviewStatusById = new Map();
+            trainerLiveManagerReviewWatcherPrimed = false;
+            return;
+        }
+        const entries = await fetchTrainerManagerReviewEntries();
+        const nextStatusById = new Map();
+        entries.forEach((item) => {
+            const id = String(item?.id || '').trim();
+            if (!id) return;
+            nextStatusById.set(id, String(item?.status || 'pending').trim().toLowerCase() || 'pending');
+        });
+        if (allowToast && trainerLiveManagerReviewWatcherPrimed) {
+            entries.forEach((item) => {
+                const id = String(item?.id || '').trim();
+                if (!id) return;
+                const previousStatus = trainerLiveManagerReviewStatusById.get(id) || '';
+                const nextStatus = nextStatusById.get(id) || 'pending';
+                if (previousStatus !== 'pending') return;
+                if (nextStatus !== 'approved' && nextStatus !== 'denied') return;
+                const managerLabel = String(item?.managerCompanyName || item?.managerName || item?.managerCode || 'your manager').trim() || 'your manager';
+                const approved = nextStatus === 'approved';
+                const subtitle = approved
+                    ? `Approved under ${managerLabel}.`
+                    : `Denied under ${managerLabel}.`;
+                const toastId = `trainer-manager-review-${id}-${nextStatus}`;
+                showSiteLiveToast({
+                    id: toastId,
+                    icon: approved ? '+' : '!',
+                    title: approved ? 'Manager request approved' : 'Manager request denied',
+                    subtitle,
+                    autoHideMs: 4800
+                });
+                showBrowserLiveNotification({
+                    title: approved ? 'Manager request approved' : 'Manager request denied',
+                    body: subtitle,
+                    tag: toastId
+                });
+            });
+        }
+        trainerLiveManagerReviewStatusById = nextStatusById;
+        trainerLiveManagerReviewWatcherPrimed = true;
+    };
+
+    const getManagerTrainerHref = (user = currentUser) => {
+        const managerId = encodeURIComponent(String(user?.id || '').trim());
+        return managerId
+            ? `manager-trainers.html?managerId=${managerId}`
+            : 'manager-trainers.html';
+    };
+
     const getTrainerQuickActionHref = (user = currentUser) => (
         isTrainerClientUser(user)
             ? 'trainer-dashboard.html'
@@ -13206,20 +13649,45 @@ function initAuthUi() {
     const syncTrainingPortalSection = (user = currentUser, meta = currentAuthMeta) => {
         const panel = document.getElementById('control-panel');
         if (!panel) return;
+        const canUseClientPortal = canAccessClientTrainingPortal(user, meta);
+        const dashSection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+            const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+            return label === 'dash';
+        });
         const trainingSection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
             const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
             return label === 'training portal';
         });
-        if (!trainingSection) return;
-        trainingSection.classList.remove('hidden');
+        if (dashSection) dashSection.classList.toggle('hidden', !canUseClientPortal);
+        if (trainingSection) trainingSection.classList.toggle('hidden', !canUseClientPortal);
     };
 
     const syncTrainerSidebarSection = (user = currentUser, meta = currentAuthMeta) => {
         const panel = document.getElementById('control-panel');
         if (!panel) return;
         let trainerSection = panel.querySelector('#control-trainer-section');
-        let trainerLink = panel.querySelector('#control-trainer-dashboard-link');
-        let trainerSettingsLink = panel.querySelector('#control-trainer-settings-link');
+        let trainerClientsLink = panel.querySelector('#control-trainer-clients-link');
+        let trainerMessagesLink = panel.querySelector('#control-trainer-messages-link');
+        let trainerLeaderboardLink = panel.querySelector('#control-trainer-leaderboard-link');
+        let trainerCoachesLink = panel.querySelector('#control-trainer-coaches-link');
+        const trainerMode = isTrainerClientUser(user);
+        const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+            const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+            return label === 'community';
+        });
+        const communityLinks = communitySection ? Array.from(communitySection.querySelectorAll('.control-link')) : [];
+        const originalMessagesLink = communityLinks.find((link) => String(link.getAttribute('href') || '').trim() === 'friends.html') || null;
+        const originalLeaderboardLink = communityLinks.find((link) => String(link.getAttribute('href') || '').trim() === 'leaderboard.html') || null;
+        const originalCoachesLink = communityLinks.find((link) => {
+            if (String(link.getAttribute('href') || '').trim() !== 'coaches.html') return false;
+            const text = String(link.textContent || '').trim().toLowerCase();
+            return text.includes('coach') && !text.includes('chef');
+        }) || null;
+        const originalChefsLink = communityLinks.find((link) => {
+            if (String(link.getAttribute('href') || '').trim() !== 'coaches.html') return false;
+            const text = String(link.textContent || '').trim().toLowerCase();
+            return text.includes('chef');
+        }) || null;
 
         if (!trainerSection) {
             trainerSection = document.createElement('div');
@@ -13227,10 +13695,6 @@ function initAuthUi() {
             trainerSection.id = 'control-trainer-section';
             trainerSection.innerHTML = '<p class="section-label">TRAINER</p>';
             const ownerSection = panel.querySelector('#control-owner-section');
-            const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
-                const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
-                return label === 'community';
-            });
             if (ownerSection?.parentElement) {
                 ownerSection.insertAdjacentElement('beforebegin', trainerSection);
             } else if (communitySection?.parentElement) {
@@ -13240,25 +13704,159 @@ function initAuthUi() {
             }
         }
 
-        if (!trainerLink) {
-            trainerLink = document.createElement('a');
-            trainerLink.className = 'control-link';
-            trainerLink.id = 'control-trainer-dashboard-link';
-            trainerLink.href = 'trainer-dashboard.html';
-            trainerLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span>';
-            trainerSection.appendChild(trainerLink);
+        trainerSection.querySelector('#control-trainer-dashboard-link')?.remove();
+        trainerSection.querySelector('#control-trainer-settings-link')?.remove();
+
+        if (!trainerClientsLink) {
+            trainerClientsLink = document.createElement('a');
+            trainerClientsLink.className = 'control-link';
+            trainerClientsLink.id = 'control-trainer-clients-link';
+            trainerClientsLink.href = 'trainer-dashboard.html';
+            trainerClientsLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Clients</span>';
+            trainerSection.appendChild(trainerClientsLink);
         }
 
-        if (!trainerSettingsLink) {
-            trainerSettingsLink = document.createElement('a');
-            trainerSettingsLink.className = 'control-link';
-            trainerSettingsLink.id = 'control-trainer-settings-link';
-            trainerSettingsLink.href = 'payment-settings.html';
-            trainerSettingsLink.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Payment Settings</span>';
-            trainerSection.appendChild(trainerSettingsLink);
+        if (!trainerMessagesLink) {
+            trainerMessagesLink = document.createElement('a');
+            trainerMessagesLink.className = 'control-link';
+            trainerMessagesLink.id = 'control-trainer-messages-link';
+            trainerMessagesLink.href = 'friends.html';
+            trainerMessagesLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span>';
+            trainerSection.appendChild(trainerMessagesLink);
         }
 
-        trainerSection.classList.toggle('hidden', !(isTrainerClientUser(user) || isOwnerClientUser(user, meta)));
+        if (!trainerLeaderboardLink) {
+            trainerLeaderboardLink = document.createElement('a');
+            trainerLeaderboardLink.className = 'control-link';
+            trainerLeaderboardLink.id = 'control-trainer-leaderboard-link';
+            trainerLeaderboardLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span>';
+            trainerSection.appendChild(trainerLeaderboardLink);
+        }
+        if (trainerLeaderboardLink) trainerLeaderboardLink.href = 'leaderboard.html?view=trainer';
+
+        if (!trainerCoachesLink) {
+            trainerCoachesLink = document.createElement('a');
+            trainerCoachesLink.className = 'control-link';
+            trainerCoachesLink.id = 'control-trainer-coaches-link';
+            trainerCoachesLink.href = 'coaches.html';
+            trainerCoachesLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span>';
+            trainerSection.appendChild(trainerCoachesLink);
+        }
+
+        if (trainerClientsLink) trainerClientsLink.classList.toggle('hidden', !isTrainerClientUser(user));
+        trainerSection.classList.toggle('hidden', !trainerMode);
+        if (communitySection) communitySection.classList.toggle('hidden', trainerMode);
+
+        if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', trainerMode);
+        if (originalLeaderboardLink) originalLeaderboardLink.classList.toggle('hidden', trainerMode);
+        if (originalCoachesLink) {
+            const textEl = originalCoachesLink.querySelector('.text') || originalCoachesLink;
+            if (textEl) textEl.textContent = 'Coaches page';
+            originalCoachesLink.classList.toggle('hidden', trainerMode);
+        }
+    };
+
+    const syncManagerSidebarSection = (user = currentUser) => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        let managerSection = panel.querySelector('#control-manager-section');
+        let managerTrainersLink = panel.querySelector('#control-manager-trainers-link');
+        let managerMessagesLink = panel.querySelector('#control-manager-messages-link');
+        let managerLeaderboardLink = panel.querySelector('#control-manager-leaderboard-link');
+        let managerCoachesLink = panel.querySelector('#control-manager-coaches-link');
+        const trainerSection = panel.querySelector('#control-trainer-section');
+        const ownerSection = panel.querySelector('#control-owner-section');
+        const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+            const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+            return label === 'community';
+        });
+        const communityLinks = communitySection ? Array.from(communitySection.querySelectorAll('.control-link')) : [];
+        const originalMessagesLink = communityLinks.find((link) => String(link.getAttribute('href') || '').trim() === 'friends.html') || null;
+        const originalLeaderboardLink = communityLinks.find((link) => String(link.getAttribute('href') || '').trim() === 'leaderboard.html') || null;
+        const originalCoachesLink = communityLinks.find((link) => {
+            if (String(link.getAttribute('href') || '').trim() !== 'coaches.html') return false;
+            const text = String(link.textContent || '').trim().toLowerCase();
+            return text.includes('coach') && !text.includes('chef');
+        }) || null;
+        const originalChefsLink = communityLinks.find((link) => {
+            if (String(link.getAttribute('href') || '').trim() !== 'coaches.html') return false;
+            const text = String(link.textContent || '').trim().toLowerCase();
+            return text.includes('chef');
+        }) || null;
+
+        if (!managerSection) {
+            managerSection = document.createElement('div');
+            managerSection.className = 'control-section hidden';
+            managerSection.id = 'control-manager-section';
+            managerSection.innerHTML = '<p class="section-label">MANAGER</p>';
+            if (trainerSection?.parentElement) {
+                trainerSection.insertAdjacentElement('afterend', managerSection);
+            } else if (ownerSection?.parentElement) {
+                ownerSection.insertAdjacentElement('beforebegin', managerSection);
+            } else {
+                panel.appendChild(managerSection);
+            }
+        }
+
+        if (trainerSection && trainerSection.nextElementSibling !== managerSection) {
+            trainerSection.insertAdjacentElement('afterend', managerSection);
+        } else if (!trainerSection && ownerSection && ownerSection.previousElementSibling !== managerSection) {
+            ownerSection.insertAdjacentElement('beforebegin', managerSection);
+        }
+
+        if (!managerTrainersLink) {
+            managerTrainersLink = document.createElement('a');
+            managerTrainersLink.className = 'control-link';
+            managerTrainersLink.id = 'control-manager-trainers-link';
+            managerTrainersLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainers</span>';
+            managerSection.appendChild(managerTrainersLink);
+        }
+
+        if (!managerMessagesLink) {
+            managerMessagesLink = document.createElement('a');
+            managerMessagesLink.className = 'control-link';
+            managerMessagesLink.id = 'control-manager-messages-link';
+            managerMessagesLink.href = 'friends.html';
+            managerMessagesLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span>';
+            managerSection.appendChild(managerMessagesLink);
+        }
+
+        if (!managerLeaderboardLink) {
+            managerLeaderboardLink = document.createElement('a');
+            managerLeaderboardLink.className = 'control-link';
+            managerLeaderboardLink.id = 'control-manager-leaderboard-link';
+            managerLeaderboardLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span>';
+            managerSection.appendChild(managerLeaderboardLink);
+        }
+        if (managerLeaderboardLink) managerLeaderboardLink.href = 'leaderboard.html?view=manager';
+
+        if (!managerCoachesLink) {
+            managerCoachesLink = document.createElement('a');
+            managerCoachesLink.className = 'control-link';
+            managerCoachesLink.id = 'control-manager-coaches-link';
+            managerCoachesLink.href = 'coaches.html';
+            managerCoachesLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span>';
+            managerSection.appendChild(managerCoachesLink);
+        }
+
+        managerTrainersLink.href = getManagerTrainerHref(user);
+        const managerMode = isManagerClientUser(user);
+        managerSection.classList.toggle('hidden', !managerMode);
+        const communityLabel = communitySection?.querySelector('.section-label') || null;
+        if (communityLabel) communityLabel.classList.toggle('hidden', managerMode);
+        if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', managerMode);
+        if (originalLeaderboardLink) originalLeaderboardLink.classList.toggle('hidden', managerMode);
+        if (originalCoachesLink) {
+            const textEl = originalCoachesLink.querySelector('.text') || originalCoachesLink;
+            if (textEl) textEl.textContent = 'Coaches page';
+            originalCoachesLink.classList.toggle('hidden', managerMode);
+        }
+        if (originalChefsLink) {
+            const textEl = originalChefsLink.querySelector('.text') || originalChefsLink;
+            if (textEl) textEl.textContent = 'Available Chefs';
+            originalChefsLink.classList.remove('hidden');
+        }
+        syncManagerSidebarBadge(user);
     };
 
     const syncTrainerQuickActionButtons = (user = currentUser) => {
@@ -13281,10 +13879,27 @@ function initAuthUi() {
         window.location.href = getTrainerQuickActionHref();
     };
 
+    const enforceSignedInRolePageAccess = (user = currentUser, meta = currentAuthMeta) => {
+        if (canAccessClientTrainingPortal(user, meta)) return false;
+        const body = document.body;
+        if (!body) return false;
+        const inClientTrainingPortal = body.classList.contains('training-page')
+            || body.classList.contains('dashboard-page')
+            || body.classList.contains('overview-page');
+        if (!inClientTrainingPortal) return false;
+        const nextHref = typeof window.__odeGetRestrictedPortalHref === 'function'
+            ? window.__odeGetRestrictedPortalHref(user)
+            : 'trainer-dashboard.html';
+        window.location.replace(nextHref);
+        return true;
+    };
+
     const buildOwnerExitHref = (returnTo = '/owner-accounts.html', user = currentUser, meta = currentAuthMeta) => {
-        const safeReturnTo = String(returnTo || '/owner-accounts.html').trim() || '/owner-accounts.html';
+        const imp = getImpersonation(meta);
+        const defaultReturnTo = imp?.actorType === 'trainer' ? '/trainer-dashboard.html' : '/owner-accounts.html';
+        const safeReturnTo = String(returnTo || defaultReturnTo).trim() || defaultReturnTo;
         const params = new URLSearchParams();
-        params.set('returnTo', safeReturnTo.startsWith('/') ? safeReturnTo : '/owner-accounts.html');
+        params.set('returnTo', safeReturnTo.startsWith('/') ? safeReturnTo : defaultReturnTo);
         if (isDemoClientUser(user, meta) && user?.id) {
             params.set('cleanupUserId', String(user.id));
             params.set('cleanup', 'demo');
@@ -13307,7 +13922,8 @@ function initAuthUi() {
         const note = ensureOwnerViewNote();
         const imp = getImpersonation(meta);
         const viewedLabel = user?.displayName || user?.username || 'account';
-        const returnHref = buildOwnerExitHref('/owner-accounts.html', user, meta);
+        const actorLabel = imp?.actor?.displayName || imp?.owner?.displayName || 'your';
+        const returnHref = buildOwnerExitHref(imp?.actorType === 'trainer' ? '/trainer-dashboard.html' : '/owner-accounts.html', user, meta);
 
         note.innerHTML = '';
         if (!imp) {
@@ -13321,7 +13937,7 @@ function initAuthUi() {
         text.textContent = `Viewing ${viewedLabel} account. `;
         const link = document.createElement('a');
         link.href = returnHref;
-        link.textContent = 'Return to owner account';
+        link.textContent = `Return to ${actorLabel} account`;
         note.appendChild(text);
         note.appendChild(link);
         note.classList.remove('hidden');
@@ -13334,6 +13950,7 @@ function initAuthUi() {
         }
         if (mobileAuth?.ownerReturnLink) {
             mobileAuth.ownerReturnLink.href = returnHref;
+            mobileAuth.ownerReturnLink.textContent = `Return to ${actorLabel} account`;
         }
     };
 
@@ -13348,6 +13965,7 @@ function initAuthUi() {
         let accountsLink = panel.querySelector('#control-owner-accounts-link');
         let demoBtn = panel.querySelector('#control-owner-demo-btn');
         let workoutTestLink = panel.querySelector('#control-owner-workout-test-link');
+        let testOnboardingLink = panel.querySelector('#control-owner-test-onboarding-link');
         if (!ownerSection) {
             ownerSection = document.createElement('div');
             ownerSection.className = 'control-section hidden';
@@ -13410,8 +14028,18 @@ function initAuthUi() {
             workoutTestLink.href = 'workout-test.html';
             workoutTestLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Test</span>';
         }
+        if (!testOnboardingLink) {
+            testOnboardingLink = document.createElement('a');
+            testOnboardingLink.className = 'control-link';
+            testOnboardingLink.id = 'control-owner-test-onboarding-link';
+            testOnboardingLink.href = 'index.html?testOnboarding=1&testPath=user';
+            testOnboardingLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Test Onboarding</span>';
+        }
         if (demoBtn && workoutTestLink && demoBtn.nextElementSibling !== workoutTestLink) {
             demoBtn.insertAdjacentElement('afterend', workoutTestLink);
+        }
+        if (workoutTestLink && testOnboardingLink && workoutTestLink.nextElementSibling !== testOnboardingLink) {
+            workoutTestLink.insertAdjacentElement('afterend', testOnboardingLink);
         }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
@@ -13431,7 +14059,9 @@ function initAuthUi() {
             const textEl = demoBtn.querySelector('.text');
             if (textEl) textEl.textContent = isDemoClientUser(user, meta) ? 'Demo Controls' : 'Demo';
         }
-        const shouldShowOwnerSection = isOwnerClientUser(user, meta) || isDemoClientUser(user, meta);
+        const visibleManagerSection = Boolean(panel.querySelector('#control-manager-section:not(.hidden)'));
+        const managerMode = isManagerClientUser(user) || visibleManagerSection;
+        const shouldShowOwnerSection = !managerMode && (isOwnerClientUser(user, meta) || isDemoClientUser(user, meta));
         ownerSection.classList.toggle('hidden', !shouldShowOwnerSection);
     };
 
@@ -13439,6 +14069,8 @@ function initAuthUi() {
         currentUser = null;
         currentAuthMeta = null;
         window.__odeCurrentUser = null;
+        managerLivePendingReviewIds = [];
+        managerLiveReviewWatcherPrimed = false;
         clearAuthUserHint();
         signInBtn.classList.remove('hidden');
         signUpBtn.classList.remove('hidden');
@@ -13455,6 +14087,7 @@ function initAuthUi() {
         syncTrainerQuickActionButtons(null);
         syncTrainingPortalSection(null, null);
         syncTrainerSidebarSection(null);
+        syncManagerSidebarSection(null);
         syncOwnerWorkoutDbLink(null, null);
         syncNavbarDashboardLink(null);
         if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(null);
@@ -13462,7 +14095,16 @@ function initAuthUi() {
         stopIncomingRequestPolling();
         stopMessagePolling();
         updateControlSigninBadge(0, { signedIn: false });
+        syncManagerSidebarBadge(null);
         emitAuthChanged(null);
+        try {
+            if (typeof window.odeResetEntryAfterSignOut === 'function') {
+                window.odeResetEntryAfterSignOut();
+            }
+        } catch {
+            // ignore
+        }
+        window.scrollTo({ top: 0, behavior: 'auto' });
     };
 
     let friendsPrefetchTimer = null;
@@ -13511,12 +14153,6 @@ function initAuthUi() {
                     ? `\n\nReason: ${String(notice.reason).trim()}`
                     : '';
                 window.alert(`Your trainer application was denied. You need to go through the trainer signup process again.${reasonLine}`);
-                try {
-                    localStorage.setItem('ode_onboarding_force_v1', '1');
-                    localStorage.removeItem('ode_onboarding_done_v1');
-                } catch {
-                    // ignore
-                }
             }
             await markTrainerReviewNoticeSeen();
         }, 180);
@@ -13527,6 +14163,7 @@ function initAuthUi() {
         currentAuthMeta = meta || null;
         window.__odeCurrentUser = user;
         writeAuthUserHint(user);
+        if (enforceSignedInRolePageAccess(user, meta || null)) return;
         const label = user?.displayName || user?.username || 'Account';
         const imp = getImpersonation(meta);
         signInBtn.classList.add('hidden');
@@ -13547,6 +14184,9 @@ function initAuthUi() {
         syncTrainerQuickActionButtons(user);
         syncTrainingPortalSection(user, meta);
         syncTrainerSidebarSection(user);
+        syncManagerSidebarSection(user);
+        reconcileManagerReviewNotifications({ user, allowToast: false });
+        reconcileTrainerManagerReviewNotifications({ user, allowToast: false });
         syncOwnerWorkoutDbLink(user, meta);
         syncNavbarDashboardLink(user);
         if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(user);
@@ -13566,6 +14206,7 @@ function initAuthUi() {
         logoutBtn?.addEventListener('click', async () => {
             await authLogout();
             setSignedOutUi();
+            await redirectToGoogleLogin();
         });
         const returnOwnerLink = menu.querySelector('#auth-menu-return-owner');
         returnOwnerLink?.addEventListener('click', () => {
@@ -14736,6 +15377,7 @@ function initAuthUi() {
         e.preventDefault();
         await authLogout();
         setSignedOutUi();
+        await redirectToGoogleLogin();
     });
     mobileAuth?.dashboardLink?.addEventListener('click', () => {
         navMenu?.classList.remove('active');
@@ -14750,13 +15392,25 @@ function initAuthUi() {
 
     document.addEventListener('visibilitychange', () => {
         if (!currentUser) return;
-        if (!document.hidden) pollIncomingRequestNotifications();
+        if (!document.hidden) {
+            pollIncomingRequestNotifications();
+            reconcileManagerReviewNotifications({ user: currentUser, allowToast: true });
+            reconcileTrainerManagerReviewNotifications({ user: currentUser, allowToast: true });
+        }
     });
 
     window.addEventListener('focus', () => {
         if (!currentUser) return;
         pollIncomingRequestNotifications();
+        reconcileManagerReviewNotifications({ user: currentUser, allowToast: true });
+        reconcileTrainerManagerReviewNotifications({ user: currentUser, allowToast: true });
     });
+
+    window.setInterval(() => {
+        if (!currentUser || document.hidden) return;
+        reconcileManagerReviewNotifications({ user: currentUser, allowToast: true });
+        reconcileTrainerManagerReviewNotifications({ user: currentUser, allowToast: true });
+    }, 10000);
 
     const controlBtn = document.getElementById('control-signin');
     controlBtn?.addEventListener('click', async (e) => {
@@ -15732,8 +16386,7 @@ function initAuthGate() {
     const applyGate = () => {
         if (document.body.classList.contains('auth-gated')) return;
         document.body.classList.add('auth-gated');
-        if (typeof odeOpenAuthModal === 'function') odeOpenAuthModal('login');
-        else document.getElementById('control-signin')?.click?.();
+        void redirectToGoogleLogin();
     };
 
     const clearGate = () => {
@@ -15777,6 +16430,74 @@ function initAccessGate() {
         || protectedClasses.some((cls) => document.body?.classList?.contains(cls));
     const canPreviewFromPage = Boolean(document.getElementById('control-panel'));
     if (!isProtectedPage && !canPreviewFromPage) return;
+
+    const buildUnlockedAccessState = () => {
+        const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+        return {
+            user: liveUser,
+            payload: {
+                ok: true,
+                access: {
+                    ok: true,
+                    hasAccess: true,
+                    trialActive: false,
+                    freeTrainingEnabled: true,
+                    accessSource: 'free_training',
+                    accessType: 'free_training',
+                    currentAccessEndsAt: null,
+                    accessEndsAt: null,
+                    accessRemainingSeconds: null,
+                    accessRemainingLabel: 'Access available',
+                    quickUnlock: { redeemed: false },
+                    referrals: {
+                        signupCount: 0,
+                        qualifiedCount: 0,
+                        nextTier: null,
+                        nextRemainingCount: 0
+                    },
+                    offers: {}
+                },
+                referral: {
+                    ok: true,
+                    code: '',
+                    link: '',
+                    goal: 0,
+                    signupCount: 0,
+                    qualifiedCount: 0,
+                    remainingToGoal: 0,
+                    recent: []
+                }
+            }
+        };
+    };
+
+    const removeAccessUi = () => {
+        document.body.classList.remove('ode-access-locked');
+        document.getElementById('ode-access-banner')?.remove();
+        document.getElementById('ode-access-overlay')?.remove();
+        document.querySelectorAll('.ode-access-target-local').forEach((node) => node.classList.remove('ode-access-target-local'));
+        document.getElementById('training-root')?.classList?.remove('ode-access-program-blur');
+    };
+
+    window.__odeGetAccessState = () => buildUnlockedAccessState();
+    window.__odeOpenAccessPrompt = async () => false;
+    window.__odeForceOpenAccessPrompt = () => false;
+    window.__odeOpenAccessPaymentPreview = async () => false;
+
+    const publishUnlockedAccess = () => {
+        removeAccessUi();
+        try {
+            window.dispatchEvent(new CustomEvent('ode:access-updated', {
+                detail: buildUnlockedAccessState()
+            }));
+        } catch {
+            // ignore
+        }
+    };
+
+    window.addEventListener('odeauth', publishUnlockedAccess);
+    publishUnlockedAccess();
+    return;
 
     const ACCESS_HEARTBEAT_SECONDS = 15;
     const DEMO_SIM_PREFIX = 'ode_demo_sim_v1:';
@@ -19176,20 +19897,7 @@ function ensureMobileAuthUi(navMenu) {
 }
 
 function ensureFriendsButton(wrapper) {
-    if (!wrapper) return null;
-    let btn = wrapper.querySelector('#auth-friends-btn');
-    if (!btn) {
-        btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'auth-friends-btn';
-        btn.className = 'auth-nav-btn auth-friends-btn hidden';
-        btn.setAttribute('aria-label', 'Trainers');
-        btn.innerHTML = '<span class="auth-plus-mark" aria-hidden="true">+</span>';
-        const signInBtn = wrapper.querySelector('#auth-signin-btn');
-        if (signInBtn) wrapper.insertBefore(btn, signInBtn);
-        else wrapper.insertBefore(btn, wrapper.firstChild);
-    }
-    return btn;
+    return wrapper ? wrapper.querySelector('#auth-friends-btn') : null;
 }
 
 function ensureMobileFriendsButton(wrap) {
@@ -19410,8 +20118,8 @@ function ensureAuthModal() {
                 <input id="auth-signup-username" class="auth-input" autocomplete="username" required>
                 <label class="auth-label">Email</label>
                 <input id="auth-signup-email" class="auth-input" type="email" autocomplete="email" required>
-                <label class="auth-label">Phone (optional)</label>
-                <input id="auth-signup-phone" class="auth-input" type="tel" autocomplete="tel" placeholder="e.g. 5551234567">
+                <label class="auth-label">Phone</label>
+                <input id="auth-signup-phone" class="auth-input" type="tel" autocomplete="tel" placeholder="e.g. 5551234567" required>
                 <label class="auth-label">Display name</label>
                 <input id="auth-signup-displayname" class="auth-input" autocomplete="name" required>
                 <label class="auth-label">Referral code (optional)</label>
@@ -19430,6 +20138,14 @@ function ensureAuthModal() {
 function wireAuthModal(modal, { onSignedIn } = {}) {
     if (!modal || modal.dataset.wiredAuthModal === '1') return;
     modal.dataset.wiredAuthModal = '1';
+
+    const formatAuthPhoneValue = (value) => {
+        const digits = String(value || '').replace(/\D/g, '').slice(0, 10);
+        if (!digits) return '';
+        if (digits.length < 4) return digits;
+        if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    };
 
     const closeModal = () => {
         modal.classList.add('hidden');
@@ -19515,6 +20231,10 @@ function wireAuthModal(modal, { onSignedIn } = {}) {
     });
 
     const signupForm = modal.querySelector('#auth-signup-form');
+    const signupPhoneInput = modal.querySelector('#auth-signup-phone');
+    signupPhoneInput?.addEventListener('input', () => {
+        signupPhoneInput.value = formatAuthPhoneValue(signupPhoneInput.value);
+    });
     signupForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearAuthModalError(modal);
@@ -19589,6 +20309,11 @@ function odeOpenAuthModal(mode = 'login') {
     window.setTimeout(() => modal.querySelector('input')?.focus(), 40);
 }
 
+async function redirectToGoogleLogin() {
+    window.location.href = '/';
+    return true;
+}
+
 function setAuthModalError(modal, message) {
     const el = modal.querySelector('#auth-error');
     if (!el) return;
@@ -19632,6 +20357,21 @@ async function authSignup({ username, email, phone, displayName, password, refer
         const currentUrl = new URL(window.location.href);
         const referralCode = String(referralCodeInput || currentUrl.searchParams.get('ref') || '').trim();
         const coachInvite = String(currentUrl.searchParams.get('coachInvite') || '').trim();
+        const onboardingRole = (() => {
+            const path = String(currentUrl.pathname || '/').toLowerCase();
+            const onHomepageOnboarding = path === '/' || path.endsWith('/index.html') || String(currentUrl.searchParams.get('postAuth') || '').trim().toLowerCase() === 'roles';
+            if (!onHomepageOnboarding) return '';
+            try {
+                const raw = localStorage.getItem('ode_onboarding_draft_v1');
+                if (!raw) return '';
+                const parsed = JSON.parse(raw);
+                const path = String(parsed?.selectedPath || '').trim().toLowerCase();
+                if (path === 'trainer' || path === 'manager' || path === 'user' || path === 'client') return path;
+            } catch {
+                // ignore
+            }
+            return '';
+        })();
         const resp = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -19643,7 +20383,8 @@ async function authSignup({ username, email, phone, displayName, password, refer
                 displayName,
                 password,
                 referralCode,
-                coachInvite
+                coachInvite,
+                onboardingRole
             })
         });
         const data = await resp.json().catch(() => ({}));
@@ -19651,11 +20392,6 @@ async function authSignup({ username, email, phone, displayName, password, refer
         try {
             localStorage.setItem('ode_onboarding_force_v1', '1');
             localStorage.removeItem('ode_onboarding_done_v1');
-        } catch {
-            // ignore
-        }
-        try {
-            window.dispatchEvent(new CustomEvent('ode:tour:force-start'));
         } catch {
             // ignore
         }
@@ -20097,6 +20833,7 @@ function setupControlPanel() {
    ============================================ */
 
 function setupOnboardingTour() {
+    return;
     const TOUR_DONE_KEY = 'ode_onboarding_done_v1';
     const TOUR_STATE_KEY = 'ode_onboarding_state_v1';
     const TOUR_FORCE_KEY = 'ode_onboarding_force_v1';

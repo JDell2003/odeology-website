@@ -21462,6 +21462,25 @@ html[data-theme="light"] .ode-tour-btn.primary {
     pointer-events: auto;
 }
 
+.site-live-notification-rail {
+    position: fixed;
+    right: 26px;
+    bottom: 24px;
+    z-index: 9999;
+    display: grid;
+    gap: 10px;
+    align-content: end;
+    pointer-events: none;
+}
+
+.site-live-toast {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    pointer-events: auto;
+    max-width: min(420px, calc(100vw - 36px));
+}
+
 .site-request-toast-link {
     border: 1px solid rgba(231, 163, 77, 0.55);
     border-radius: 10px;
@@ -21529,10 +21548,18 @@ html[data-theme="light"] .ode-tour-btn.primary {
 }
 
 @media (max-width: 700px) {
+    .site-live-notification-rail {
+        right: 16px;
+        left: 16px;
+        bottom: 18px;
+    }
     .workout-saved-toast {
         right: 16px;
         left: 16px;
         bottom: 18px;
+    }
+    .site-live-toast {
+        max-width: none;
     }
 }
 

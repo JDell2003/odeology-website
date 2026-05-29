@@ -17,6 +17,9 @@
     const openAwardsBtn = $('#lb-awards-btn');
     const closeBtn = $('#lb-close');
     const backdrop = $('#lb-backdrop');
+    const headerEyebrow = $('.lb-header .eyebrow');
+    const headerTitle = $('.lb-header h1');
+    const headerSub = $('.lb-header .ns-muted');
 
     const openModal = () => modal?.classList.remove('hidden');
     const closeModal = () => modal?.classList.add('hidden');
@@ -92,6 +95,59 @@
         return `<span class="lb-pill" data-tone="${tone}"${awardAttr}${iconAttr} ${title ? `title="${escapeAttr(title)}"` : ''}>${label}</span>`;
     };
 
+    const trainerMetricLine = (row) => {
+        if (!row?.isTrainerClient && !row?.isManagerTrainer) return '';
+        const b = row?.breakdown && typeof row.breakdown === 'object' ? row.breakdown : {};
+        if (row?.isManagerTrainer) {
+            const activeClients = Number(b.activeClients || 0);
+            const newClients = Number(b.newClients || 0);
+            const retainedClients = Number(b.retainedClients || activeClients);
+            const workouts = Number(b.clientWorkouts || 0);
+            const checkins = Number(b.clientCheckins || 0);
+            const mealsOnPlan = Number(b.mealsOnPlanDays || 0);
+            const clientsWithPlans = Number(b.clientsWithPlans || 0);
+            const reviews = Number(b.approvedReviews || 0);
+            const workoutRate = Number(b.workoutsPerClient || 0);
+            const checkinRate = Number(b.checkinsPerClient || 0);
+            return `
+                <div class="lb-client-metrics">
+                    <span>Retained clients <strong>${retainedClients}</strong></span>
+                    <span>New clients <strong>${newClients}</strong></span>
+                    <span>Active clients <strong>${activeClients}</strong></span>
+                    <span>Client workouts <strong>${workouts}</strong> (${workoutRate.toFixed(1)}/client)</span>
+                    <span>Daily check-ins <strong>${checkins}</strong> (${checkinRate.toFixed(1)}/client)</span>
+                    <span>Meals on plan <strong>${mealsOnPlan}</strong></span>
+                    <span>Clients with plans <strong>${clientsWithPlans}</strong></span>
+                    <span>Workout reviews <strong>${reviews}</strong></span>
+                </div>
+            `;
+        }
+        const rate = Number(b.workoutRate || 0);
+        const adherence = Number(b.workoutAdherence || 0);
+        const checkins = Number(b.checkins || 0);
+        const mealsOnPlan = Number(b.mealsOnPlanDays || 0);
+        const mealTracked = Number(b.mealTrackedDays || 0);
+        const missedMeals = Number(b.missedMealDays || 0);
+        const missedCheckins = Number(b.missedCheckins || 0);
+        const waterDays = Number(b.waterDays || 0);
+        const measurements = Number(b.measurementDays || 0);
+        const reviews = Number(b.approvedReviews || 0);
+        const avgReadiness = b.avgReadiness == null ? '' : ` • Readiness ${Number(b.avgReadiness).toFixed(1)}/10`;
+        return `
+            <div class="lb-client-metrics">
+                <span>Workout rate <strong>${rate.toFixed(1)}/wk</strong> (${Math.round(adherence)}%)</span>
+                <span>Check-ins <strong>${checkins}</strong></span>
+                <span>Meals on plan <strong>${mealsOnPlan}</strong></span>
+                <span>Meals tracked <strong>${mealTracked}</strong></span>
+                <span>Missed meals <strong>${missedMeals}</strong></span>
+                <span>Missed check-ins <strong>${missedCheckins}</strong></span>
+                <span>Water <strong>${waterDays}</strong></span>
+                <span>Measurements <strong>${measurements}</strong></span>
+                <span>Approved workouts <strong>${reviews}</strong>${avgReadiness}</span>
+            </div>
+        `;
+    };
+
     const setModalHead = ({ title, sub, ariaLabel } = {}) => {
         if (modalTitle) modalTitle.textContent = String(title || '');
         if (modalSub) modalSub.textContent = String(sub || '');
@@ -155,13 +211,51 @@
                             return pills + more;
                         })()}
                     </div>
-                    ${r.bio ? `<div class="lb-bio">${String(r.bio)}</div>` : ''}
+                    ${trainerMetricLine(r)}
+                    ${r.bio ? `<div class="lb-bio">${escapeAttr(String(r.bio))}</div>` : ''}
                 </div>
                 <div class="lb-right">
                     <div class="lb-points">${Number(r.points || 0).toLocaleString()} pts</div>
+                    ${r.isTrainerClient ? '<div class="ns-muted" style="font-size:11px;text-align:right;">client score</div>' : ''}
+                    ${r.isManagerTrainer ? '<div class="ns-muted" style="font-size:11px;text-align:right;">trainer score</div>' : ''}
                 </div>
             </div>
         `).join('');
+    };
+
+    const setLeaderboardMode = (data) => {
+        const mode = String(data?.mode || 'community');
+        if (mode === 'trainer_clients') {
+            document.body.classList.add('leaderboard-trainer-clients');
+            if (headerEyebrow) headerEyebrow.textContent = 'Trainer';
+            if (headerTitle) headerTitle.textContent = 'Client Leaderboard';
+            if (headerSub) {
+                const summary = data?.summary && typeof data.summary === 'object' ? data.summary : {};
+                const count = Number(summary.clientCount || 0);
+                const avgRate = Number(summary.avgWorkoutRate || 0);
+                const atRisk = Number(summary.atRiskCount || 0);
+                headerSub.textContent = `${count} linked client${count === 1 ? '' : 's'} • Avg workout rate ${avgRate.toFixed(1)}/wk • ${atRisk} need attention`;
+            }
+            if (openAwardsBtn) openAwardsBtn.classList.add('hidden');
+        } else if (mode === 'manager_trainers') {
+            document.body.classList.add('leaderboard-trainer-clients');
+            if (headerEyebrow) headerEyebrow.textContent = 'Manager';
+            if (headerTitle) headerTitle.textContent = 'Trainer Leaderboard';
+            if (headerSub) {
+                const summary = data?.summary && typeof data.summary === 'object' ? data.summary : {};
+                const trainerCount = Number(summary.trainerCount || 0);
+                const activeClients = Number(summary.activeClients || 0);
+                const atRisk = Number(summary.atRiskCount || 0);
+                headerSub.textContent = `${trainerCount} trainer${trainerCount === 1 ? '' : 's'} • ${activeClients} active client${activeClients === 1 ? '' : 's'} • ${atRisk} need attention`;
+            }
+            if (openAwardsBtn) openAwardsBtn.classList.add('hidden');
+        } else {
+            document.body.classList.remove('leaderboard-trainer-clients');
+            if (headerEyebrow) headerEyebrow.textContent = 'Community';
+            if (headerTitle) headerTitle.textContent = 'Leaderboard';
+            if (headerSub) headerSub.textContent = 'Resets monthly. Rankings update throughout the day.';
+            if (openAwardsBtn) openAwardsBtn.classList.remove('hidden');
+        }
     };
 
     // Local fallback (for static hosting / no Node server).
@@ -499,7 +593,11 @@
 
     const load = async () => {
         try {
-            const resp = await fetch('/api/leaderboard', { credentials: 'include' });
+            const params = new URLSearchParams(window.location.search || '');
+            const view = String(params.get('view') || params.get('scope') || '').trim().toLowerCase();
+            const scopedView = ['trainer', 'manager'].includes(view) ? view : '';
+            const endpoint = scopedView ? `/api/leaderboard?view=${encodeURIComponent(scopedView)}` : '/api/leaderboard';
+            const resp = await fetch(endpoint, { credentials: 'include' });
             if (resp.status === 404) {
                 const month = monthKey(new Date());
                 const day = todayKey(new Date());
@@ -519,8 +617,23 @@
             }
 
             renderRules(data?.rules);
+            setLeaderboardMode(data);
             const entries = Array.isArray(data?.entries) ? data.entries : [];
-            renderList(entries);
+            if (entries.length) {
+                renderList(entries);
+            } else if (listEl && String(data?.mode || '') === 'trainer_clients') {
+                const msg = data?.error
+                    ? `Trainer leaderboard could not load: ${escapeAttr(data.error)}`
+                    : 'No linked clients with app accounts yet. Clients appear here after they accept or connect to your trainer account.';
+                listEl.innerHTML = `<div class="ns-muted">${msg}</div>`;
+            } else if (listEl && String(data?.mode || '') === 'manager_trainers') {
+                const msg = data?.error
+                    ? `Manager leaderboard could not load: ${escapeAttr(data.error)}`
+                    : 'No trainers are linked underneath this manager account yet.';
+                listEl.innerHTML = `<div class="ns-muted">${msg}</div>`;
+            } else {
+                renderList(entries);
+            }
 
             const you = data?.you || null;
             if (you && youEl && youSub && youRight) {

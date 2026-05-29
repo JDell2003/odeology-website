@@ -4091,6 +4091,95 @@ Last week: 80 lb</pre>
         return out;
       }
 
+      function parseLooseImportedEntries(raw) {
+        const source = normalizeOcrDocumentText(raw).trim();
+        if (!source) return [];
+        const out = [];
+        let sourceOrder = 0;
+        let currentWeekday = null;
+        let currentDayOrdinal = null;
+        let currentDayFocus = '';
+        const lines = source
+          .split(/\n+/g)
+          .map((line) => String(line || '').trim())
+          .filter(Boolean);
+
+        const pushLooseEntry = (candidateRaw) => {
+          const parsed = parseImportedLineDetail(candidateRaw);
+          if (parsed && isLikelyExerciseName(parsed.name)) {
+            if (Number.isInteger(currentWeekday)) parsed.weekday = currentWeekday;
+            if (Number.isInteger(currentDayOrdinal)) parsed.dayOrdinal = currentDayOrdinal;
+            if (currentDayFocus) parsed.dayFocus = currentDayFocus;
+            parsed.sourceOrder = sourceOrder++;
+            out.push(parsed);
+            return true;
+          }
+          const cleanName = cleanImportedEntry(candidateRaw);
+          if (!isLikelyExerciseName(cleanName)) return false;
+          const entry = {
+            sourceText: String(candidateRaw || '').trim(),
+            name: cleanName,
+            sets: null,
+            reps: '',
+            restSec: null,
+            projected: null,
+            sourceOrder: sourceOrder++
+          };
+          if (Number.isInteger(currentWeekday)) entry.weekday = currentWeekday;
+          if (Number.isInteger(currentDayOrdinal)) entry.dayOrdinal = currentDayOrdinal;
+          if (currentDayFocus) entry.dayFocus = currentDayFocus;
+          out.push(entry);
+          return true;
+        };
+
+        lines.forEach((line) => {
+          if (isImportTableHeaderLine(line)) return;
+          const header = inferImportDayHeader(line);
+          if (header && typeof header === 'object') {
+            if (Number.isInteger(header.weekday)) {
+              currentWeekday = Number(header.weekday);
+              currentDayOrdinal = null;
+            } else if (Number.isInteger(header.dayOrdinal)) {
+              currentDayOrdinal = Number(header.dayOrdinal);
+              currentWeekday = null;
+            }
+            if (String(header.dayFocus || '').trim()) currentDayFocus = String(header.dayFocus).trim();
+            return;
+          }
+
+          const inlineDay = extractImportInlineDayPrefix(line);
+          const parseSource = inlineDay?.remainder ? inlineDay.remainder : line;
+          if (Number.isInteger(inlineDay?.weekday)) currentWeekday = Number(inlineDay.weekday);
+          if (isImportLayoutLabelLine(parseSource)) return;
+
+          const directHit = pushLooseEntry(parseSource);
+          if (directHit) return;
+
+          const fragments = String(parseSource || '')
+            .split(/\s*(?:\||;|•|●)\s*/g)
+            .map((part) => String(part || '').trim())
+            .filter(Boolean);
+          if (fragments.length > 1) {
+            fragments.forEach((fragment) => {
+              pushLooseEntry(fragment);
+            });
+            return;
+          }
+
+          const dashParts = String(parseSource || '')
+            .split(/\s[-—–]\s/g)
+            .map((part) => String(part || '').trim())
+            .filter(Boolean);
+          if (dashParts.length > 1) {
+            dashParts.forEach((fragment) => {
+              pushLooseEntry(fragment);
+            });
+          }
+        });
+
+        return out;
+      }
+
       function parseImportedEntries(raw) {
         const structuredEntries = parseStructuredWorkoutLogEntries(raw);
         const source = normalizeOcrDocumentText(raw)
@@ -4186,7 +4275,9 @@ Last week: 80 lb</pre>
           seen.set(key, unique.length);
           unique.push(entry);
         });
-        if (!structuredEntries.length) return unique;
+        const looseEntries = (!structuredEntries.length && !unique.length) ? parseLooseImportedEntries(raw) : [];
+        if (!structuredEntries.length && !looseEntries.length) return unique;
+        if (!structuredEntries.length && looseEntries.length) return looseEntries;
         const merged = [];
         const mergedSeen = new Map();
         const pushMerged = (entry) => {
@@ -4202,6 +4293,7 @@ Last week: 80 lb</pre>
         };
         structuredEntries.forEach(pushMerged);
         unique.forEach(pushMerged);
+        looseEntries.forEach(pushMerged);
         merged.sort((a, b) => Number(a?.sourceOrder || 0) - Number(b?.sourceOrder || 0));
         return merged;
       }
@@ -7660,6 +7752,7 @@ Last week: 80 lb</pre>
             appendImportText(text);
             handled = true;
           }
+          if (text) enterImportTextMode();
           if (handled) e.preventDefault();
         });
 

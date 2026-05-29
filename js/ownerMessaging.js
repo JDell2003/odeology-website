@@ -1,6 +1,7 @@
 ﻿(() => {
   const $ = (sel) => document.querySelector(sel);
   const MAX_IMAGE_BYTES = 900000;
+  const OWNER_BADGE_STORAGE_PREFIX = 'ownerSeenBadge:v1';
 
   const state = {
     accounts: [],
@@ -16,10 +17,67 @@
     pendingDirectImageDataUrl: null,
     pendingDirectAttachmentNote: '',
     search: '',
-    searchTimer: null
+    searchTimer: null,
+    listVisibilityObserver: null
   };
 
   const PROFILE_STORAGE_PREFIX = 'ode_owner_profile_v1';
+
+  function badgeStorageKey(scope) {
+    return `${OWNER_BADGE_STORAGE_PREFIX}:${String(scope || '').trim().toLowerCase()}`;
+  }
+
+  function readSeenBadgeIds(scope) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(badgeStorageKey(scope)) || '[]');
+      return new Set(Array.isArray(parsed) ? parsed.map((item) => String(item || '')) : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function writeSeenBadgeIds(scope, seenIds) {
+    localStorage.setItem(badgeStorageKey(scope), JSON.stringify(Array.from(seenIds)));
+    window.dispatchEvent(new CustomEvent('owner-badge-update', { detail: { scope } }));
+  }
+
+  function markBadgeItemsSeen(scope, ids) {
+    const nextIds = Array.from(new Set((ids || []).map((item) => String(item || '')).filter(Boolean)));
+    if (!nextIds.length) return;
+    const seen = readSeenBadgeIds(scope);
+    let changed = false;
+    nextIds.forEach((id) => {
+      if (!seen.has(id)) {
+        seen.add(id);
+        changed = true;
+      }
+    });
+    if (changed) writeSeenBadgeIds(scope, seen);
+  }
+
+  function setupAccountVisibilityTracking() {
+    const listEl = $('#owner-msg-accounts');
+    if (!listEl) return;
+    if (state.listVisibilityObserver) {
+      state.listVisibilityObserver.disconnect();
+      state.listVisibilityObserver = null;
+    }
+    const rows = Array.from(listEl.querySelectorAll('[data-user-id]'));
+    if (!rows.length || typeof IntersectionObserver !== 'function') return;
+    state.listVisibilityObserver = new IntersectionObserver((entries) => {
+      const seenIds = entries
+        .filter((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.6)
+        .map((entry) => entry.target?.getAttribute?.('data-user-id'))
+        .filter(Boolean);
+      if (seenIds.length) {
+        markBadgeItemsSeen('outreach', seenIds);
+      }
+    }, {
+      root: listEl,
+      threshold: [0.6]
+    });
+    rows.forEach((row) => state.listVisibilityObserver.observe(row));
+  }
 
   function isMobileThreadUi() {
     return window.matchMedia('(max-width: 640px)').matches;
@@ -348,6 +406,7 @@
         </article>
       `;
     }).join('');
+    setupAccountVisibilityTracking();
   }
 
   function renderThread() {

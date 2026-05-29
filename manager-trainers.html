@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Trainers · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-03-23-riseforit-3">
+  <style>
+    body.manager-trainers-page {
+      overflow: auto !important;
+    }
+
+    body.manager-trainers-page #control-panel {
+      display: flex !important;
+    }
+
+    @media (min-width: 701px) {
+      body.manager-trainers-page.control-open {
+        padding-left: var(--control-width) !important;
+      }
+
+      body.manager-trainers-page.control-collapsed {
+        padding-left: var(--control-collapsed-width) !important;
+      }
+    }
+
+    .manager-trainers-wrap {
+      max-width: 1200px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .manager-trainers-card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .manager-trainers-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .manager-trainers-muted {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .manager-trainers-context {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .manager-trainers-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: rgba(15, 36, 53, 0.04);
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f2435;
+    }
+
+    .manager-trainers-status {
+      min-height: 18px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .manager-trainers-status.error {
+      color: #8f1d1d;
+    }
+
+    .manager-trainers-status.ok {
+      color: #1f6c2f;
+    }
+
+    body.manager-trainers-modal-open {
+      overflow: hidden !important;
+    }
+
+    .entry-logo-grid,
+    .entry-location-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .entry-logo-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: end;
+    }
+
+    .entry-location-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .entry-location-grid.entry-location-grid-single {
+      grid-template-columns: minmax(0, 320px);
+      justify-content: start;
+      align-items: start;
+      margin-top: 10px;
+    }
+
+    .entry-logo-card,
+    .entry-location-card {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      box-shadow: none;
+    }
+
+    .entry-logo-card {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 10px;
+      min-height: 196px;
+      padding: 18px 8px 12px;
+      border-radius: 22px;
+      text-align: center;
+    }
+
+    .entry-location-card {
+      text-align: left;
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 14px 28px rgba(13, 34, 50, 0.06);
+      min-height: 82px;
+    }
+
+    .entry-logo-card:hover,
+    .entry-location-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .entry-location-card:hover {
+      border-color: rgba(168, 118, 51, 0.52);
+      box-shadow: 0 18px 34px rgba(13, 34, 50, 0.09);
+    }
+
+    .entry-location-card.is-selected {
+      border-color: rgba(168, 118, 51, 0.92);
+      box-shadow: 0 18px 40px rgba(168, 118, 51, 0.18);
+    }
+
+    .entry-logo-mark {
+      width: min(100%, 220px);
+      height: 124px;
+      display: grid;
+      place-items: center;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      overflow: hidden;
+      transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+    }
+
+    .entry-logo-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .entry-logo-card:hover .entry-logo-mark {
+      transform: scale(1.03);
+      opacity: 0.96;
+    }
+
+    .entry-logo-card.is-selected .entry-logo-mark {
+      transform: scale(1.06);
+      filter: drop-shadow(0 10px 18px rgba(168, 118, 51, 0.18));
+    }
+
+    .entry-logo-monogram {
+      color: #0d2232;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .entry-logo-card strong,
+    .entry-location-card strong {
+      color: #0d2232;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .entry-logo-card small,
+    .entry-location-card small {
+      display: block;
+      margin-top: 6px;
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .manager-discovery-step-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .manager-discovery-step-head-link {
+      min-height: 22px;
+    }
+
+    .manager-discovery-inline-link {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      color: #4f6780;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      text-transform: none;
+    }
+
+    .manager-discovery-inline-link:hover,
+    .manager-discovery-inline-link:focus-visible {
+      color: #b26f18;
+    }
+
+    .manager-discovery-selection {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(13, 34, 50, 0.1);
+      background: rgba(15, 36, 53, 0.04);
+      font-weight: 700;
+      color: #172635;
+    }
+
+    .manager-discovery-search {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #fff;
+      font: inherit;
+      font-size: 17px;
+      color: #2f4760;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .manager-discovery-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .manager-discovery-trainer-stage {
+      display: grid;
+      gap: 18px;
+    }
+
+    .manager-discovery-trainer-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 150px));
+      justify-content: center;
+      gap: 24px;
+      align-items: start;
+      min-height: 180px;
+      padding: 8px 4px 0;
+    }
+
+    .manager-discovery-trainer-pick {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      width: 150px;
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .manager-discovery-trainer-avatar {
+      width: 112px;
+      height: 112px;
+      border-radius: 999px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(13, 34, 50, 0.08);
+      background:
+        radial-gradient(circle at top, rgba(245, 211, 176, 0.42), transparent 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 236, 225, 0.94));
+      box-shadow: 0 16px 32px rgba(13, 34, 50, 0.1);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .manager-discovery-trainer-pick:hover .manager-discovery-trainer-avatar,
+    .manager-discovery-trainer-pick:focus-visible .manager-discovery-trainer-avatar {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 36px rgba(168, 118, 51, 0.16);
+    }
+
+    .manager-discovery-trainer-pick.is-selected .manager-discovery-trainer-avatar {
+      border-color: rgba(198, 129, 31, 0.85);
+      box-shadow: 0 22px 40px rgba(198, 129, 31, 0.2);
+    }
+
+    .manager-discovery-trainer-pick.is-linked .manager-discovery-trainer-avatar {
+      border-color: rgba(39, 154, 80, 0.92);
+      box-shadow: 0 22px 40px rgba(39, 154, 80, 0.22);
+    }
+
+    .manager-discovery-trainer-pick.is-disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .manager-discovery-trainer-pick.is-disabled .manager-discovery-trainer-avatar {
+      box-shadow: 0 12px 24px rgba(13, 34, 50, 0.08);
+    }
+
+    .manager-discovery-trainer-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .manager-discovery-trainer-mono {
+      color: #0d2232;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .manager-discovery-trainer-name {
+      color: #0d2232;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .manager-discovery-review-card {
+      border: 1px solid rgba(205, 161, 98, 0.45);
+      border-radius: 24px;
+      background: rgba(255, 252, 248, 0.96);
+      padding: 20px 22px;
+      text-align: center;
+      display: grid;
+      gap: 8px;
+    }
+
+    .manager-discovery-review-card strong {
+      color: #0d2232;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .manager-discovery-review-card p {
+      margin: 0;
+      color: #526376;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .manager-discovery-submit {
+      width: 100%;
+      min-height: 56px;
+      border-radius: 999px;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,249,252,0.98));
+      color: #0d2232;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 18px 34px rgba(13, 34, 50, 0.08);
+    }
+
+    .manager-discovery-submit[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .manager-discovery-card {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .manager-discovery-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(168, 118, 51, 0.5);
+      box-shadow: 0 14px 26px rgba(13, 34, 50, 0.08);
+    }
+
+    .manager-discovery-card.is-selected {
+      border-color: rgba(168, 118, 51, 0.92);
+      box-shadow: 0 18px 34px rgba(168, 118, 51, 0.16);
+      background: linear-gradient(180deg, rgba(255, 248, 236, 0.96), rgba(255, 255, 255, 1));
+    }
+
+    .manager-discovery-card.is-disabled {
+      cursor: default;
+      opacity: 0.72;
+    }
+
+    .manager-discovery-card.is-disabled:hover {
+      transform: none;
+      border-color: rgba(0, 0, 0, 0.08);
+      box-shadow: none;
+    }
+
+    .manager-discovery-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .manager-discovery-card-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #172635;
+    }
+
+    .manager-discovery-card-sub {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .manager-discovery-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .entry-logo-grid,
+      .manager-discovery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .manager-discovery-trainer-list {
+        grid-template-columns: repeat(3, minmax(0, 150px));
+        gap: 18px;
+      }
+      .manager-trainers-modal-card {
+        padding: 22px 20px 24px;
+      }
+      .manager-discovery-hero {
+        padding: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .entry-logo-grid,
+      .entry-location-grid,
+      .manager-discovery-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .manager-discovery-trainer-list {
+        grid-template-columns: repeat(2, minmax(0, 150px));
+        justify-content: center;
+      }
+      .manager-discovery-topbar,
+      .manager-discovery-progress-head,
+      .manager-discovery-progress-foot {
+        align-items: flex-start;
+      }
+      .manager-discovery-nav {
+        gap: 8px;
+      }
+      .manager-discovery-arrow {
+        width: 46px;
+        height: 46px;
+        font-size: 30px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .manager-discovery-trainer-list {
+        grid-template-columns: minmax(0, 150px);
+      }
+    }
+
+    .manager-trainers-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .manager-trainers-section {
+      display: grid;
+      gap: 8px;
+    }
+
+    .manager-trainers-section.is-spotlight {
+      border: 1px solid rgba(201, 124, 18, 0.28);
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(255, 244, 222, 0.9), rgba(255, 255, 255, 0.96));
+      box-shadow: 0 18px 34px rgba(201, 124, 18, 0.12);
+    }
+
+    .manager-trainers-modal[hidden] {
+      display: none !important;
+    }
+
+    .manager-trainers-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+    }
+
+    .manager-trainers-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 19, 28, 0.52);
+      backdrop-filter: blur(6px);
+    }
+
+    .manager-trainers-modal-card {
+      position: relative;
+      width: min(1120px, calc(100vw - 32px));
+      max-height: min(88vh, 920px);
+      overflow: auto;
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at top left, rgba(228, 193, 145, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 255, 255, 0.98));
+      box-shadow: 0 36px 90px rgba(10, 19, 28, 0.22);
+      border: 1px solid rgba(168, 118, 51, 0.16);
+      padding: 26px 30px 30px;
+    }
+
+    .manager-trainers-modal-head {
+      display: none;
+    }
+
+    .manager-trainers-modal-head h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.05;
+      color: #0d2232;
+    }
+
+    .manager-trainers-modal-close {
+      display: none;
+    }
+
+    .manager-discovery-shell {
+      display: grid;
+      gap: 22px;
+    }
+
+    .manager-discovery-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .manager-discovery-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manager-discovery-arrow {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: 1px solid rgba(205, 161, 98, 0.55);
+      background: rgba(255, 252, 248, 0.98);
+      color: #0d2232;
+      font-size: 34px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .manager-discovery-arrow:hover,
+    .manager-discovery-arrow:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(168, 118, 51, 0.12);
+      border-color: rgba(205, 161, 98, 0.8);
+    }
+
+    .manager-discovery-path {
+      color: #b26f18;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+    }
+
+    .manager-discovery-hero {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      text-align: center;
+      padding: 0 24px;
+    }
+
+    .manager-discovery-hero h2 {
+      margin: 0;
+      color: #0d2232;
+      font-size: clamp(34px, 4vw, 56px);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      font-family: "Iowan Old Style", "Book Antiqua", "Palatino Linotype", serif;
+      font-weight: 700;
+    }
+
+    .manager-discovery-hero p {
+      margin: 0;
+      color: #516274;
+      font-size: 17px;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    .manager-discovery-progress-card {
+      border-radius: 22px;
+      border: 1px solid rgba(13, 34, 50, 0.1);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      padding: 16px 18px 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .manager-discovery-progress-head,
+    .manager-discovery-progress-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .manager-discovery-progress-head strong {
+      color: #172635;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .manager-discovery-progress-head span,
+    .manager-discovery-progress-foot span {
+      color: #5b6b7d;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .manager-discovery-progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(13, 34, 50, 0.08);
+      overflow: hidden;
+    }
+
+    .manager-discovery-progress-track span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #c6811f, #e2ae59);
+    }
+
+    .manager-discovery-stage {
+      display: grid;
+      gap: 18px;
+    }
+
+    .manager-discovery-search-wrap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .manager-discovery-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .manager-discovery-filter-pill {
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(13, 34, 50, 0.12);
+      background: rgba(255, 255, 255, 0.98);
+      color: #375067;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .manager-discovery-filter-pill.is-selected {
+      border-color: rgba(198, 129, 31, 0.88);
+      background: rgba(255, 243, 224, 0.95);
+      color: #0d2232;
+      box-shadow: 0 10px 24px rgba(198, 129, 31, 0.14);
+    }
+
+    .manager-trainers-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .manager-trainers-section-head h2 {
+      margin: 0;
+      font-size: 15px;
+      color: #172635;
+    }
+
+    .manager-trainers-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .manager-trainer-item {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .manager-trainer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .manager-trainer-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #172635;
+    }
+
+    .manager-trainer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .manager-trainer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .manager-delete-btn {
+      border-color: rgba(168, 25, 25, 0.45) !important;
+      color: #9f1f1f !important;
+      background: rgba(168, 25, 25, 0.04) !important;
+    }
+
+    .manager-delete-btn:hover,
+    .manager-delete-btn:focus-visible {
+      border-color: rgba(168, 25, 25, 0.7) !important;
+      color: #7c1414 !important;
+      background: rgba(168, 25, 25, 0.1) !important;
+    }
+
+    .manager-trainer-clients {
+      display: grid;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .manager-trainer-clients[hidden] {
+      display: none !important;
+    }
+
+    .manager-trainer-client-item {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      background: rgba(15, 36, 53, 0.03);
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body class="manager-trainers-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="manager-trainers-wrap">
+    <section class="manager-trainers-card">
+      <div class="manager-trainers-head">
+        <div>
+          <h1 style="margin:0;" id="manager-trainers-title">Manager Trainers</h1>
+          <div class="manager-trainers-muted">These are the trainers assigned underneath this manager account.</div>
+          <div class="manager-trainers-context" id="manager-trainers-context"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="manager-add-trainer-btn" type="button">Add a Trainer</button>
+          <a class="btn btn-ghost" href="owner-accounts.html">Accounts</a>
+        </div>
+      </div>
+      <div class="manager-trainers-status" id="manager-trainers-status"></div>
+      <div class="manager-trainers-list" id="manager-trainers-list"></div>
+    </section>
+  </main>
+
+  <div class="manager-trainers-modal" id="manager-add-trainer-modal" hidden aria-hidden="true">
+    <div class="manager-trainers-modal-backdrop" id="manager-add-trainer-backdrop"></div>
+    <section class="manager-trainers-modal-card" role="dialog" aria-modal="true" aria-labelledby="manager-add-trainer-title">
+      <div class="manager-trainers-modal-head">
+        <div>
+          <div class="manager-trainers-muted" style="text-transform:uppercase;letter-spacing:0.18em;">Manager Path</div>
+          <h2 id="manager-add-trainer-title">Add your trainers.</h2>
+          <div class="manager-trainers-muted">Choose a gym, then a location, then the trainers under that location.</div>
+        </div>
+        <button class="manager-trainers-modal-close" id="manager-add-trainer-close" type="button" aria-label="Close add trainer popup">&times;</button>
+      </div>
+      <div id="manager-add-trainer-modal-body"></div>
+    </section>
+  </div>
+
+  <script src="js/main.js?v=2026-05-29-role-sidebar-2"></script>
+  <script src="js/managerTrainers.js?v=2026-05-28-manager-trainers-6"></script>
+</body>
+</html>

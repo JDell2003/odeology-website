@@ -56,6 +56,21 @@ function clampInt(value, min, max, fallback) {
   return Math.max(min, Math.min(max, n));
 }
 
+function cleanShortText(value, max = 160) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function notesHasFlag(notes, flag) {
+  const hay = String(notes || '').toLowerCase();
+  const needle = String(flag || '').toLowerCase();
+  if (!needle) return false;
+  return hay.split(/[,\s;|/]+/).some((part) => part === needle);
+}
+
+function normalizeManagerCode(value) {
+  return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 80);
+}
+
 function mulberry32(seed) {
   let t = seed >>> 0;
   return () => {
@@ -486,9 +501,18 @@ async function resolveUserFromSession(req) {
   const tokenHash = sha256Hex(token);
   const result = await db.query(
     `
-      SELECT u.id, u.display_name, u.username, u.created_at
+      SELECT
+        u.id,
+        u.display_name,
+        u.username,
+        u.created_at,
+        u.admin_notes,
+        COALESCE(tp.meta->>'managerCode', '') AS manager_code,
+        COALESCE(tp.meta->>'workspaceId', '') AS workspace_id,
+        COALESCE(tp.meta->>'locationId', '') AS location_id
       FROM app_sessions s
       JOIN app_users u ON u.id = s.user_id
+      LEFT JOIN app_trainer_profiles tp ON tp.user_id = u.id
       WHERE s.session_token_hash = $1
         AND s.expires_at > now()
       LIMIT 1;
@@ -497,11 +521,317 @@ async function resolveUserFromSession(req) {
   );
   const row = result.rows?.[0] || null;
   if (!row) return null;
+  let hasTrainerWorkspace = false;
+  try {
+    const trainerResult = await db.query(
+      `
+        SELECT EXISTS (
+          SELECT 1 FROM app_trainer_profiles WHERE user_id = $1
+          UNION ALL
+          SELECT 1 FROM app_trainer_clients WHERE trainer_user_id = $1
+          UNION ALL
+          SELECT 1 FROM app_trainer_invites WHERE trainer_user_id = $1
+          LIMIT 1
+        ) AS has_trainer_workspace;
+      `,
+      [row.id]
+    );
+    hasTrainerWorkspace = trainerResult.rows?.[0]?.has_trainer_workspace === true;
+  } catch {
+    hasTrainerWorkspace = false;
+  }
+  const isManager = notesHasFlag(row.admin_notes, 'manager');
   return {
     id: row.id,
     displayName: row.display_name,
     username: row.username,
-    joinedAt: row.created_at
+    joinedAt: row.created_at,
+    isTrainer: notesHasFlag(row.admin_notes, 'trainer') || (hasTrainerWorkspace && !isManager),
+    isManager,
+    managerCode: normalizeManagerCode(row.manager_code || ''),
+    workspaceId: row.workspace_id || '',
+    locationId: row.location_id || ''
+  };
+}
+
+function trainerClientRules() {
+  return {
+    cadence: 'Trainer client leaderboard resets monthly and only includes clients linked to this trainer account.',
+    points: [
+      { action: 'Client logs a workout', points: 30, note: 'Each saved training day this month.' },
+      { action: 'Client submits a daily check-in', points: 10, note: 'Shows the client is reporting in.' },
+      { action: 'Meals on plan = Yes', points: 8, note: 'Nutrition adherence bonus.' },
+      { action: 'Meals or calories tracked', points: 5, note: 'Counts as meal tracking for the day.' },
+      { action: 'Water tracked', points: 4, note: 'Any water amount logged on the check-in.' },
+      { action: 'Measurements logged', points: 3, note: 'Per day with waist, chest, or hips logged.' },
+      { action: 'Trainer approves a workout', points: 10, note: 'Reviewed workouts count toward coaching accountability.' },
+      { action: 'Meals off plan', points: -5, note: 'Penalty when the client marks meals off plan.' },
+      { action: 'Check-in without meals tracked', points: -4, note: 'Tracks missed meals on reported days.' },
+      { action: 'Missed daily check-in', points: -2, note: 'Capped at 10 missed days so new clients are not buried.' }
+    ],
+    fairness: [
+      'Only linked clients for the signed-in trainer are ranked.',
+      'Workout rate assumes a practical target of 3 workouts per week unless a richer client schedule is added later.'
+    ]
+  };
+}
+
+function metricBadge(id, label, tone = 'slate', desc = '') {
+  return { id, label, tone, desc };
+}
+
+async function buildTrainerClientLeaderboard(trainer, { now = new Date() } = {}) {
+  if (!trainer?.id || !db.isConfigured()) return null;
+  const month = monthKey(now);
+  const day = todayKey(now);
+  const monthStart = monthStartIso(now);
+
+  const rosterResult = await db.query(
+    `
+      WITH roster AS (
+        SELECT
+          'coaching'::text AS source_type,
+          ti.id::text AS source_id,
+          ti.linked_user_id,
+          COALESCE(NULLIF(BTRIM(CONCAT(COALESCE(ti.first_name, ''), ' ', COALESCE(ti.last_name, ''))), ''), ti.email, 'Client') AS display_name,
+          ti.email,
+          COALESCE(ti.accepted_at, ti.created_at) AS joined_at
+        FROM app_trainer_invites ti
+        WHERE ti.trainer_user_id = $1
+          AND ti.invite_type = 'coaching_invite'
+          AND ti.linked_user_id IS NOT NULL
+        UNION ALL
+        SELECT
+          'manual'::text AS source_type,
+          c.id::text AS source_id,
+          c.linked_user_id,
+          c.display_name,
+          c.email,
+          c.created_at AS joined_at
+        FROM app_trainer_clients c
+        WHERE c.trainer_user_id = $1
+          AND c.status <> 'removed'
+          AND c.linked_user_id IS NOT NULL
+      ),
+      deduped AS (
+        SELECT DISTINCT ON (linked_user_id)
+          source_type,
+          source_id,
+          linked_user_id,
+          display_name,
+          email,
+          joined_at
+        FROM roster
+        ORDER BY linked_user_id, CASE WHEN source_type = 'coaching' THEN 0 ELSE 1 END, joined_at DESC
+      )
+      SELECT
+        d.*,
+        u.username,
+        u.display_name AS account_display_name,
+        u.created_at AS account_created_at,
+        tp.profile_image,
+        tp.bio
+      FROM deduped d
+      JOIN app_users u ON u.id = d.linked_user_id
+      LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+      ORDER BY d.joined_at DESC NULLS LAST, d.display_name ASC;
+    `,
+    [trainer.id]
+  );
+
+  const clients = Array.isArray(rosterResult.rows) ? rosterResult.rows : [];
+  const linkedIds = clients.map((row) => String(row.linked_user_id || '').trim()).filter(Boolean);
+  if (!linkedIds.length) {
+    return {
+      mode: 'trainer_clients',
+      month,
+      day,
+      rules: trainerClientRules(),
+      entries: [],
+      you: null,
+      summary: { clientCount: 0, avgWorkoutRate: 0, atRiskCount: 0 }
+    };
+  }
+
+  const workoutsRes = await db.query(
+    `
+      SELECT
+        user_id,
+        COUNT(*)::int AS workouts,
+        MAX(COALESCE(performed_at::timestamptz, created_at)) AS last_workout_at,
+        AVG(NULLIF(readiness, 0)) AS avg_readiness,
+        SUM(COALESCE(duration_ms, 0))::bigint AS total_duration_ms
+      FROM app_training_workouts
+      WHERE user_id = ANY($1::uuid[])
+        AND COALESCE(performed_at::timestamptz, created_at) >= $2::timestamptz
+      GROUP BY user_id;
+    `,
+    [linkedIds, monthStart]
+  );
+
+  const checkinsRes = await db.query(
+    `
+      SELECT user_id, day, data
+      FROM app_daily_checkins
+      WHERE user_id = ANY($1::uuid[])
+        AND day >= $2::date;
+    `,
+    [linkedIds, monthStart]
+  );
+
+  const reviewsRes = await db.query(
+    `
+      SELECT client_user_id, COUNT(*)::int AS approved_reviews
+      FROM app_trainer_workout_reviews
+      WHERE trainer_user_id = $1
+        AND client_user_id = ANY($2::uuid[])
+        AND reviewed_at >= $3::timestamptz
+        AND status = 'approved'
+      GROUP BY client_user_id;
+    `,
+    [trainer.id, linkedIds, monthStart]
+  );
+
+  const workoutsByUser = new Map();
+  (workoutsRes.rows || []).forEach((row) => workoutsByUser.set(String(row.user_id), row));
+  const reviewsByUser = new Map();
+  (reviewsRes.rows || []).forEach((row) => reviewsByUser.set(String(row.client_user_id), Number(row.approved_reviews || 0)));
+  const checkinsByUser = new Map();
+  (checkinsRes.rows || []).forEach((row) => {
+    const key = String(row.user_id);
+    if (!checkinsByUser.has(key)) checkinsByUser.set(key, []);
+    checkinsByUser.get(key).push(row);
+  });
+
+  const todayDate = new Date(`${day}T00:00:00Z`);
+  const startDate = new Date(monthStart);
+  const monthDaysElapsed = Math.max(1, Math.floor((todayDate - startDate) / 86400000) + 1);
+  const weeksElapsed = Math.max(1 / 7, monthDaysElapsed / 7);
+
+  const entries = clients.map((row) => {
+    const userId = String(row.linked_user_id || '');
+    const displayName = cleanShortText(row.display_name || row.account_display_name || row.email || 'Client', 120);
+    const initials = displayName.split(' ').map((s) => s.slice(0, 1)).join('').slice(0, 2).toUpperCase();
+    const avatarUrl = row.profile_image || encodeSvgDataUrl(avatarSvg({ initials, a: '#d8952f', b: '#1f2937' }));
+    const workouts = workoutsByUser.get(userId) || {};
+    const checkins = checkinsByUser.get(userId) || [];
+    const approvedReviews = reviewsByUser.get(userId) || 0;
+
+    let mealsOnPlanDays = 0;
+    let mealsOffPlanDays = 0;
+    let mealTrackedDays = 0;
+    let waterDays = 0;
+    let measurementDays = 0;
+    let readinessSum = 0;
+    let readinessCount = 0;
+
+    checkins.forEach((item) => {
+      const data = item?.data && typeof item.data === 'object' ? item.data : {};
+      const meals = Array.isArray(data.meals) ? data.meals : [];
+      const calories = Number(data?.macros?.calories);
+      const waterOz = Number(data?.waterOz);
+      const mealsOnPlan = String(data?.mealsOnPlan || '').trim().toLowerCase();
+      const readiness = Number(data?.readiness || data?.energy || data?.sleepQuality);
+      if (mealsOnPlan === 'yes') mealsOnPlanDays += 1;
+      if (mealsOnPlan === 'no') mealsOffPlanDays += 1;
+      if (meals.length || (Number.isFinite(calories) && calories > 0)) mealTrackedDays += 1;
+      if (Number.isFinite(waterOz) && waterOz > 0) waterDays += 1;
+      const c = data?.circumferences && typeof data.circumferences === 'object' ? data.circumferences : {};
+      if ([c.waistIn, c.chestIn, c.hipsIn].some((v) => Number.isFinite(Number(v)) && Number(v) > 0)) measurementDays += 1;
+      if (Number.isFinite(readiness) && readiness > 0) {
+        readinessSum += readiness;
+        readinessCount += 1;
+      }
+    });
+
+    const workoutCount = Number(workouts.workouts || 0);
+    const checkinCount = checkins.length;
+    const missedMealDays = Math.max(0, checkinCount - mealTrackedDays);
+    const possibleDays = Math.max(1, monthDaysElapsed);
+    const missedCheckins = Math.max(0, possibleDays - checkinCount);
+    const workoutRate = workoutCount / weeksElapsed;
+    const workoutAdherence = Math.min(100, Math.round((workoutRate / 3) * 100));
+    const avgReadiness = readinessCount
+      ? Math.round((readinessSum / readinessCount) * 10) / 10
+      : (workouts.avg_readiness ? Math.round(Number(workouts.avg_readiness) * 10) / 10 : null);
+
+    const points = Math.max(0,
+      (workoutCount * 30)
+      + (checkinCount * 10)
+      + (mealsOnPlanDays * 8)
+      + (mealTrackedDays * 5)
+      + (waterDays * 4)
+      + (measurementDays * 3)
+      + (approvedReviews * 10)
+      - (mealsOffPlanDays * 5)
+      - (missedMealDays * 4)
+      - (Math.min(missedCheckins, 10) * 2)
+    );
+
+    const riskFlags = [];
+    if (workoutAdherence < 50) riskFlags.push('low workout rate');
+    if (missedMealDays >= 3 || mealsOffPlanDays >= 3) riskFlags.push('meal misses');
+    if (missedCheckins >= 3) riskFlags.push('missed check-ins');
+    const status = riskFlags.length ? 'needs attention' : 'on track';
+
+    return {
+      id: userId,
+      displayName,
+      handle: row.username ? `@${row.username}` : (row.email || ''),
+      avatarUrl,
+      joinedAt: row.joined_at || row.account_created_at,
+      points,
+      breakdown: {
+        workouts: workoutCount,
+        checkins: checkinCount,
+        mealsOnPlanDays,
+        mealsOffPlanDays,
+        mealTrackedDays,
+        missedMealDays,
+        missedCheckins,
+        waterDays,
+        measurementDays,
+        approvedReviews,
+        workoutRate,
+        workoutAdherence,
+        avgReadiness,
+        lastWorkoutAt: workouts.last_workout_at || null,
+        totalDurationMs: Number(workouts.total_duration_ms || 0)
+      },
+      badges: [
+        metricBadge('workout_rate', `${workoutRate.toFixed(1)}/wk`, workoutAdherence >= 75 ? 'teal' : 'amber', 'Workout rate this month.'),
+        metricBadge('meals', `${mealsOnPlanDays}/${checkinCount || 0} meals on plan`, mealsOffPlanDays ? 'rose' : 'emerald', 'Nutrition adherence from check-ins.'),
+        metricBadge('missed', `${missedMealDays} missed meals`, missedMealDays ? 'rose' : 'slate', 'Check-in days without meals/calories tracked.'),
+        metricBadge('checkins', `${checkinCount} check-ins`, checkinCount >= Math.max(3, possibleDays - 2) ? 'teal' : 'amber', 'Daily check-ins this month.'),
+        metricBadge('status', status, riskFlags.length ? 'rose' : 'emerald', riskFlags.join(', '))
+      ],
+      bio: riskFlags.length ? `Watch: ${riskFlags.join(', ')}.` : 'Client is tracking consistently this month.',
+      streakDays: 0,
+      isBot: false,
+      isTrainerClient: true
+    };
+  });
+
+  const ranked = entries
+    .sort((a, b) => b.points - a.points || Number(b.breakdown.workoutAdherence || 0) - Number(a.breakdown.workoutAdherence || 0))
+    .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  const atRiskCount = ranked.filter((entry) => String(entry.bio || '').startsWith('Watch:')).length;
+  const avgWorkoutRate = ranked.length
+    ? ranked.reduce((sum, entry) => sum + Number(entry.breakdown?.workoutRate || 0), 0) / ranked.length
+    : 0;
+
+  return {
+    mode: 'trainer_clients',
+    month,
+    day,
+    rules: trainerClientRules(),
+    entries: ranked,
+    you: null,
+    summary: {
+      clientCount: ranked.length,
+      avgWorkoutRate: Math.round(avgWorkoutRate * 10) / 10,
+      atRiskCount
+    }
   };
 }
 
@@ -619,6 +949,307 @@ async function scoreUserForMonth(userId, { monthStart } = {}) {
   };
 }
 
+function managerTrainerRules() {
+  return {
+    cadence: 'Manager trainer leaderboard resets monthly and only includes trainers under this manager account.',
+    points: [
+      { action: 'Retain an active client', points: 25, note: 'Current linked clients still active under the trainer.' },
+      { action: 'Add a new client', points: 35, note: 'Linked client added this month.' },
+      { action: 'Client logs a workout', points: 12, note: 'Every client workout under that trainer.' },
+      { action: 'Client submits a daily check-in', points: 8, note: 'Daily client reporting.' },
+      { action: 'Client has an active meal/training plan', points: 12, note: 'Counts active client plans.' },
+      { action: 'Meals on plan = Yes', points: 5, note: 'Client nutrition adherence.' },
+      { action: 'Trainer approves/reviews a workout', points: 10, note: 'Trainer is keeping up with review work.' },
+      { action: 'Client meals off plan', points: -3, note: 'Penalty for nutrition misses.' },
+      { action: 'Client missed meal tracking', points: -2, note: 'Check-in day without meal/calorie tracking.' }
+    ],
+    fairness: [
+      'Scores are based on linked clients underneath each trainer.',
+      'The manager view rewards both growth and keeping existing clients active.'
+    ]
+  };
+}
+
+async function buildManagerTrainerLeaderboard(manager, { now = new Date() } = {}) {
+  if (!manager?.id || !db.isConfigured()) return null;
+  const managerCode = normalizeManagerCode(manager.managerCode || '');
+  const month = monthKey(now);
+  const day = todayKey(now);
+  const monthStart = monthStartIso(now);
+  if (!managerCode) {
+    return {
+      mode: 'manager_trainers',
+      month,
+      day,
+      rules: managerTrainerRules(),
+      entries: [],
+      you: null,
+      summary: { trainerCount: 0, activeClients: 0, atRiskCount: 0 }
+    };
+  }
+
+  const trainersRes = await db.query(
+    `
+      WITH trainer_matches AS (
+        SELECT tp.user_id AS trainer_user_id
+        FROM app_trainer_profiles tp
+        WHERE UPPER(COALESCE(tp.meta->>'managerCode', '')) = $1
+        UNION
+        SELECT mr.trainer_user_id
+        FROM app_trainer_manager_reviews mr
+        WHERE UPPER(COALESCE(mr.manager_code, '')) = $1
+          AND mr.status = 'approved'
+      )
+      SELECT
+        u.id,
+        u.username,
+        u.display_name,
+        u.email,
+        u.created_at,
+        tp.profile_image,
+        trp.full_name,
+        trp.contact_email,
+        trp.updated_at AS trainer_updated_at
+      FROM trainer_matches tm
+      JOIN app_users u ON u.id = tm.trainer_user_id
+      LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+      LEFT JOIN app_trainer_profiles trp ON trp.user_id = u.id
+      ORDER BY COALESCE(trp.updated_at, u.created_at) DESC;
+    `,
+    [managerCode]
+  );
+
+  const trainers = Array.isArray(trainersRes.rows) ? trainersRes.rows : [];
+  const trainerIds = trainers.map((row) => String(row.id || '').trim()).filter(Boolean);
+  if (!trainerIds.length) {
+    return {
+      mode: 'manager_trainers',
+      month,
+      day,
+      rules: managerTrainerRules(),
+      entries: [],
+      you: null,
+      summary: { trainerCount: 0, activeClients: 0, atRiskCount: 0 }
+    };
+  }
+
+  const clientsRes = await db.query(
+    `
+      WITH roster AS (
+        SELECT
+          ti.trainer_user_id,
+          ti.linked_user_id,
+          COALESCE(ti.accepted_at, ti.created_at) AS joined_at,
+          COALESCE(ti.payment_status, ti.status, 'active') AS status
+        FROM app_trainer_invites ti
+        WHERE ti.trainer_user_id = ANY($1::uuid[])
+          AND ti.invite_type = 'coaching_invite'
+          AND ti.linked_user_id IS NOT NULL
+        UNION ALL
+        SELECT
+          tc.trainer_user_id,
+          tc.linked_user_id,
+          tc.created_at AS joined_at,
+          tc.status
+        FROM app_trainer_clients tc
+        WHERE tc.trainer_user_id = ANY($1::uuid[])
+          AND tc.linked_user_id IS NOT NULL
+      ),
+      deduped AS (
+        SELECT DISTINCT ON (trainer_user_id, linked_user_id)
+          trainer_user_id,
+          linked_user_id,
+          joined_at,
+          status
+        FROM roster
+        ORDER BY trainer_user_id, linked_user_id, CASE WHEN status <> 'removed' THEN 0 ELSE 1 END, joined_at DESC
+      )
+      SELECT *
+      FROM deduped;
+    `,
+    [trainerIds]
+  );
+
+  const clients = Array.isArray(clientsRes.rows) ? clientsRes.rows : [];
+  const clientIds = Array.from(new Set(clients.map((row) => String(row.linked_user_id || '').trim()).filter(Boolean)));
+  const trainerClientRows = clients.filter((row) => String(row.status || '').trim().toLowerCase() !== 'removed');
+
+  const workoutsByClient = new Map();
+  const checkinsByClient = new Map();
+  const planClients = new Set();
+  if (clientIds.length) {
+    const workoutsRes = await db.query(
+      `
+        SELECT user_id, COUNT(*)::int AS workouts
+        FROM app_training_workouts
+        WHERE user_id = ANY($1::uuid[])
+          AND COALESCE(performed_at::timestamptz, created_at) >= $2::timestamptz
+        GROUP BY user_id;
+      `,
+      [clientIds, monthStart]
+    );
+    (workoutsRes.rows || []).forEach((row) => workoutsByClient.set(String(row.user_id), Number(row.workouts || 0)));
+
+    const checkinsRes = await db.query(
+      `
+        SELECT user_id, day, data
+        FROM app_daily_checkins
+        WHERE user_id = ANY($1::uuid[])
+          AND day >= $2::date;
+      `,
+      [clientIds, monthStart]
+    );
+    (checkinsRes.rows || []).forEach((row) => {
+      const key = String(row.user_id);
+      if (!checkinsByClient.has(key)) checkinsByClient.set(key, []);
+      checkinsByClient.get(key).push(row);
+    });
+
+    const plansRes = await db.query(
+      `
+        SELECT DISTINCT user_id
+        FROM app_training_plans
+        WHERE user_id = ANY($1::uuid[])
+          AND active = true;
+      `,
+      [clientIds]
+    );
+    (plansRes.rows || []).forEach((row) => planClients.add(String(row.user_id)));
+  }
+
+  const reviewsRes = await db.query(
+    `
+      SELECT trainer_user_id, COUNT(*)::int AS approved_reviews
+      FROM app_trainer_workout_reviews
+      WHERE trainer_user_id = ANY($1::uuid[])
+        AND reviewed_at >= $2::timestamptz
+        AND status = 'approved'
+      GROUP BY trainer_user_id;
+    `,
+    [trainerIds, monthStart]
+  );
+  const reviewsByTrainer = new Map();
+  (reviewsRes.rows || []).forEach((row) => reviewsByTrainer.set(String(row.trainer_user_id), Number(row.approved_reviews || 0)));
+
+  const clientsByTrainer = new Map();
+  trainerClientRows.forEach((row) => {
+    const key = String(row.trainer_user_id);
+    if (!clientsByTrainer.has(key)) clientsByTrainer.set(key, []);
+    clientsByTrainer.get(key).push(row);
+  });
+
+  const entries = trainers.map((trainer) => {
+    const trainerId = String(trainer.id || '');
+    const rows = clientsByTrainer.get(trainerId) || [];
+    const activeClients = rows.length;
+    let newClients = 0;
+    let clientWorkouts = 0;
+    let clientCheckins = 0;
+    let mealsOnPlanDays = 0;
+    let mealsOffPlanDays = 0;
+    let missedMealDays = 0;
+    let clientsWithPlans = 0;
+
+    rows.forEach((client) => {
+      const clientId = String(client.linked_user_id || '');
+      const joinedAt = new Date(String(client.joined_at || ''));
+      if (!Number.isNaN(joinedAt.getTime()) && joinedAt >= new Date(monthStart)) newClients += 1;
+      clientWorkouts += workoutsByClient.get(clientId) || 0;
+      if (planClients.has(clientId)) clientsWithPlans += 1;
+      const checkins = checkinsByClient.get(clientId) || [];
+      clientCheckins += checkins.length;
+      checkins.forEach((item) => {
+        const data = item?.data && typeof item.data === 'object' ? item.data : {};
+        const meals = Array.isArray(data.meals) ? data.meals : [];
+        const calories = Number(data?.macros?.calories);
+        const mealsOnPlan = String(data?.mealsOnPlan || '').trim().toLowerCase();
+        if (mealsOnPlan === 'yes') mealsOnPlanDays += 1;
+        if (mealsOnPlan === 'no') mealsOffPlanDays += 1;
+        if (!meals.length && !(Number.isFinite(calories) && calories > 0)) missedMealDays += 1;
+      });
+    });
+
+    const retainedClients = activeClients;
+    const approvedReviews = reviewsByTrainer.get(trainerId) || 0;
+    const workoutsPerClient = activeClients ? clientWorkouts / activeClients : 0;
+    const checkinsPerClient = activeClients ? clientCheckins / activeClients : 0;
+    const points = Math.max(0,
+      (retainedClients * 25)
+      + (newClients * 35)
+      + (clientWorkouts * 12)
+      + (clientCheckins * 8)
+      + (clientsWithPlans * 12)
+      + (mealsOnPlanDays * 5)
+      + (approvedReviews * 10)
+      - (mealsOffPlanDays * 3)
+      - (missedMealDays * 2)
+    );
+
+    const displayName = cleanShortText(trainer.full_name || trainer.display_name || trainer.username || 'Trainer', 120);
+    const initials = displayName.split(' ').map((s) => s.slice(0, 1)).join('').slice(0, 2).toUpperCase();
+    const avatarUrl = trainer.profile_image || encodeSvgDataUrl(avatarSvg({ initials, a: '#d8952f', b: '#0f172a' }));
+    const riskFlags = [];
+    if (activeClients === 0) riskFlags.push('no active clients');
+    if (activeClients > 0 && workoutsPerClient < 1) riskFlags.push('low client workout rate');
+    if (activeClients > 0 && checkinsPerClient < 2) riskFlags.push('low check-in rate');
+    if (activeClients > 0 && clientsWithPlans < activeClients) riskFlags.push('missing client plans');
+
+    return {
+      id: trainerId,
+      displayName,
+      handle: trainer.username ? `@${trainer.username}` : (trainer.contact_email || trainer.email || ''),
+      avatarUrl,
+      joinedAt: trainer.created_at,
+      points,
+      breakdown: {
+        retainedClients,
+        activeClients,
+        newClients,
+        clientWorkouts,
+        clientCheckins,
+        mealsOnPlanDays,
+        mealsOffPlanDays,
+        missedMealDays,
+        clientsWithPlans,
+        approvedReviews,
+        workoutsPerClient,
+        checkinsPerClient
+      },
+      badges: [
+        metricBadge('retention', `${retainedClients} retained`, retainedClients ? 'teal' : 'amber', 'Current active linked clients.'),
+        metricBadge('growth', `${newClients} new`, newClients ? 'emerald' : 'slate', 'New linked clients this month.'),
+        metricBadge('workouts', `${clientWorkouts} workouts`, workoutsPerClient >= 2 ? 'teal' : 'amber', 'Client workouts this month.'),
+        metricBadge('plans', `${clientsWithPlans}/${activeClients} plans`, clientsWithPlans >= activeClients && activeClients ? 'emerald' : 'rose', 'Clients with active plans.'),
+        metricBadge('status', riskFlags.length ? 'needs attention' : 'on track', riskFlags.length ? 'rose' : 'emerald', riskFlags.join(', '))
+      ],
+      bio: riskFlags.length ? `Watch: ${riskFlags.join(', ')}.` : 'Trainer roster is active and reporting.',
+      streakDays: 0,
+      isBot: false,
+      isManagerTrainer: true
+    };
+  });
+
+  const ranked = entries
+    .sort((a, b) => b.points - a.points || Number(b.breakdown.activeClients || 0) - Number(a.breakdown.activeClients || 0))
+    .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  const activeClients = ranked.reduce((sum, entry) => sum + Number(entry.breakdown?.activeClients || 0), 0);
+  const atRiskCount = ranked.filter((entry) => String(entry.bio || '').startsWith('Watch:')).length;
+
+  return {
+    mode: 'manager_trainers',
+    month,
+    day,
+    rules: managerTrainerRules(),
+    entries: ranked,
+    you: null,
+    summary: {
+      trainerCount: ranked.length,
+      activeClients,
+      atRiskCount
+    }
+  };
+}
+
 function buildLeaderboard({ entries, userEntry, month, day }) {
   const list = entries.slice().sort((a, b) => b.points - a.points);
   const ranked = list.map((row, idx) => ({ ...row, rank: idx + 1 }));
@@ -639,6 +1270,12 @@ module.exports = async function leaderboardRoutes(req, res, url) {
     const now = new Date();
     const month = monthKey(now);
     const day = todayKey(now);
+    const requestedTrainerView = ['trainer', 'trainer_clients', 'clients'].includes(
+      String(url.searchParams.get('view') || url.searchParams.get('scope') || '').trim().toLowerCase()
+    );
+    const requestedManagerView = ['manager', 'manager_trainers', 'trainers'].includes(
+      String(url.searchParams.get('view') || url.searchParams.get('scope') || '').trim().toLowerCase()
+    );
 
     const bots = makeBotPool({ month, day });
     let user = null;
@@ -653,6 +1290,41 @@ module.exports = async function leaderboardRoutes(req, res, url) {
     }
 
     if (user && db.isConfigured()) {
+      if (requestedTrainerView) {
+        try {
+          const trainerLeaderboard = await buildTrainerClientLeaderboard(user, { now });
+          if (trainerLeaderboard) return sendJson(res, 200, trainerLeaderboard);
+        } catch (err) {
+          return sendJson(res, 200, {
+            mode: 'trainer_clients',
+            month,
+            day,
+            rules: trainerClientRules(),
+            entries: [],
+            you: null,
+            summary: { clientCount: 0, avgWorkoutRate: 0, atRiskCount: 0 },
+            error: err?.message || 'Could not load trainer client leaderboard.'
+          });
+        }
+      }
+      if (requestedManagerView) {
+        try {
+          const managerLeaderboard = await buildManagerTrainerLeaderboard(user, { now });
+          if (managerLeaderboard) return sendJson(res, 200, managerLeaderboard);
+        } catch (err) {
+          return sendJson(res, 200, {
+            mode: 'manager_trainers',
+            month,
+            day,
+            rules: managerTrainerRules(),
+            entries: [],
+            you: null,
+            summary: { trainerCount: 0, activeClients: 0, atRiskCount: 0 },
+            error: err?.message || 'Could not load manager trainer leaderboard.'
+          });
+        }
+      }
+
       try {
         const profileRes = await db.query(
           `SELECT profile_image, bio FROM app_training_profiles WHERE user_id = $1 LIMIT 1;`,

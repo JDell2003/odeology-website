@@ -1,5 +1,8 @@
 (() => {
   const AUTH_USER_HINT_KEY = 'ode_auth_user_hint_v1';
+  const ONBOARDING_DONE_KEY = 'ode_onboarding_done_v1';
+  const ONBOARDING_FORCE_KEY = 'ode_onboarding_force_v1';
+  const TRAINER_ENTRY_PREFILL_KEY = 'ode_trainer_entry_prefill_v1';
   const MAX_COACH_BADGES = 2;
   const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const DAY_PREFIX = {
@@ -13,6 +16,11 @@
   };
 
   const $ = (sel) => document.querySelector(sel);
+  const trainerRoutingContext = {
+    managerCode: '',
+    workspaceId: '',
+    locationId: ''
+  };
 
   async function api(path, options = {}) {
     try {
@@ -127,6 +135,7 @@
         user: {
           id,
           username: String(user?.username || '').trim(),
+          email: String(user?.email || '').trim(),
           displayName: String(user?.displayName || '').trim(),
           isOwner: Boolean(user?.isOwner),
           isTech: Boolean(user?.isTech || user?.tech?.active),
@@ -134,7 +143,11 @@
           isDemo: Boolean(user?.isDemo || user?.demo?.active),
           demo: { active: Boolean(user?.isDemo || user?.demo?.active) },
           isTrainer: Boolean(user?.isTrainer || user?.trainer?.active),
-          trainer: { active: Boolean(user?.isTrainer || user?.trainer?.active) }
+          trainer: {
+            active: Boolean(user?.isTrainer || user?.trainer?.active),
+            onboarded: Boolean(user?.trainer?.onboarded || user?.trainerOnboardingComplete || user?.trainerOnboardingCompletedAt),
+            onboardingCompletedAt: user?.trainer?.onboardingCompletedAt || user?.trainerOnboardingCompletedAt || null
+          }
         }
       }));
     } catch {}
@@ -144,10 +157,38 @@
       isTech: Boolean(user?.isTech || user?.tech?.active),
       tech: { active: Boolean(user?.isTech || user?.tech?.active) },
       isTrainer: Boolean(user?.isTrainer || user?.trainer?.active),
-      trainer: { active: Boolean(user?.isTrainer || user?.trainer?.active) }
+      trainer: {
+        active: Boolean(user?.isTrainer || user?.trainer?.active),
+        onboarded: Boolean(user?.trainer?.onboarded || user?.trainerOnboardingComplete || user?.trainerOnboardingCompletedAt),
+        onboardingCompletedAt: user?.trainer?.onboardingCompletedAt || user?.trainerOnboardingCompletedAt || null
+      }
     };
     try {
       window.dispatchEvent(new CustomEvent('odeauth', { detail: { user: window.__odeCurrentUser } }));
+    } catch {}
+  }
+
+  function markHomepageOnboardingDone() {
+    try {
+      localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+      localStorage.removeItem(ONBOARDING_FORCE_KEY);
+    } catch {}
+  }
+
+  function readEntryPrefill() {
+    try {
+      const raw = sessionStorage.getItem(TRAINER_ENTRY_PREFILL_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearEntryPrefill() {
+    try {
+      sessionStorage.removeItem(TRAINER_ENTRY_PREFILL_KEY);
     } catch {}
   }
 
@@ -285,22 +326,56 @@
     }).filter((item) => item.result || item.person || item.beforeImage || item.afterImage || item.copy);
   }
 
-  function prefillForm(trainer = {}, currentUser = null) {
+  function prefillForm(trainer = {}, currentUser = null, entryPrefill = null) {
     const handleValue = trainer.publicHandle || trainer.username || currentUser?.username || '';
-    $('#trainer-full-name').value = trainer.fullName || currentUser?.displayName || '';
-    $('#trainer-email').value = trainer.email || currentUser?.email || '';
+    const prefill = entryPrefill && typeof entryPrefill === 'object' ? entryPrefill : {};
+    trainerRoutingContext.managerCode = String(
+      trainer.managerCode
+      || trainer?.meta?.managerCode
+      || prefill.managerCode
+      || currentUser?.manager?.managerCode
+      || ''
+    ).trim();
+    trainerRoutingContext.workspaceId = String(
+      trainer.workspaceId
+      || trainer?.meta?.workspaceId
+      || prefill.workspaceId
+      || prefill.selectedWorkspaceId
+      || currentUser?.manager?.workspaceId
+      || ''
+    ).trim();
+    trainerRoutingContext.locationId = String(
+      trainer.locationId
+      || trainer?.meta?.locationId
+      || prefill.locationId
+      || prefill.selectedLocationId
+      || currentUser?.manager?.locationId
+      || ''
+    ).trim();
+    const trainerRole = String(prefill.role || '').trim();
+    const gymName = String(prefill.gymName || '').trim();
+    const city = String(prefill.city || '').trim();
+    const summaryPrefill = [trainerRole, gymName ? `at ${gymName}` : '', city ? `in ${city}` : '']
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    $('#trainer-full-name').value = trainer.fullName || prefill.fullName || currentUser?.displayName || '';
+    $('#trainer-email').value = trainer.email || prefill.email || currentUser?.email || '';
     $('#trainer-display-name').value = trainer.displayName || '';
     $('#trainer-public-handle').value = handleValue ? `@${String(handleValue).replace(/^@+/, '')}` : '';
-    syncStandaloneUploadValue('photoDataUrl', trainer.photoDataUrl || '');
+    $('#trainer-phone').value = prefill.phone || '';
+    syncStandaloneUploadValue('photoDataUrl', trainer.photoDataUrl || prefill.photoDataUrl || '');
     $('#trainer-coach-custom-tags').value = Array.isArray(trainer.coachCustomTags) ? trainer.coachCustomTags.join(', ') : '';
     setCheckedValues('coachBadgeType', Array.isArray(trainer.coachBadgeType) ? trainer.coachBadgeType : []);
-    $('#trainer-summary').value = trainer.brandPositioning || '';
+    $('#trainer-summary').value = trainer.brandPositioning || prefill.brandPositioning || summaryPrefill || '';
     $('#trainer-top-label').value = trainer.topSectionLabel || '';
     $('#trainer-hero-headline').value = trainer.heroHeadline || '';
     $('#trainer-hero-support').value = trainer.heroSubheadline || '';
-    $('#trainer-city').value = trainer.city || '';
-    $('#trainer-state').value = trainer.state || '';
-    $('#trainer-format').value = trainer.coachingFormat || 'remote_in_person';
+    $('#trainer-city').value = trainer.city || prefill.publicCity || city || '';
+    $('#trainer-state').value = trainer.state || prefill.publicState || '';
+    $('#trainer-format').value = trainer.coachingFormat || prefill.coachingFormat || 'remote_in_person';
     $('#trainer-price').value = trainer?.offer?.monthlyCoachingPrice == null ? '' : String(trainer.offer.monthlyCoachingPrice);
     $('#trainer-years').value = trainer.yearsCoaching == null ? '' : String(trainer.yearsCoaching);
     $('#trainer-active-clients').value = trainer.activeClients == null ? '' : String(trainer.activeClients);
@@ -324,7 +399,7 @@
     $('#trainer-specialty-custom').value = Array.isArray(trainer.specialtyClientsCustom) ? trainer.specialtyClientsCustom.join(', ') : '';
     setCheckedValues('includedItems', Array.isArray(trainer.includedItems) ? trainer.includedItems : []);
     $('#trainer-included-custom').value = Array.isArray(trainer.includedItemsCustom) ? trainer.includedItemsCustom.join(', ') : '';
-    $('#trainer-bio').value = trainer.bio || trainer.coachBio || '';
+    $('#trainer-bio').value = trainer.bio || trainer.coachBio || (summaryPrefill ? `${summaryPrefill}.` : '');
     $('#trainer-philosophy').value = trainer.coachingPhilosophy || '';
     $('#trainer-ideal-client').value = trainer.idealClient || '';
     $('#trainer-instagram').value = trainer.instagramUrl || '';
@@ -398,7 +473,8 @@
           email: normalizedEmail,
           phone,
           displayName: fullName,
-          password
+          password,
+          onboardingRole: 'trainer'
         })
       });
       if (resp.ok && resp.json?.user) {
@@ -446,6 +522,9 @@
       fullName: $('#trainer-full-name')?.value || '',
       email: $('#trainer-email')?.value || '',
       displayName: $('#trainer-display-name')?.value || '',
+      managerCode: String(trainerRoutingContext.managerCode || currentUser?.manager?.managerCode || '').trim(),
+      workspaceId: String(trainerRoutingContext.workspaceId || currentUser?.manager?.workspaceId || '').trim(),
+      locationId: String(trainerRoutingContext.locationId || currentUser?.manager?.locationId || '').trim(),
       publicHandle,
       photoDataUrl: $('#trainer-photo')?.value || '',
       coachBadgeType,
@@ -693,6 +772,7 @@
       input.addEventListener('change', () => syncLimitedChecks('coachBadgeType', MAX_COACH_BADGES, '#trainer-badge-limit-note'));
     });
 
+    const entryPrefill = readEntryPrefill();
     const me = await api('/api/auth/me');
     if (me.ok && me.json?.user) {
       currentUser = me.json.user;
@@ -701,25 +781,28 @@
       if (authNoteEl) authNoteEl.textContent = `Signed in as ${currentUser.displayName || currentUser.username || 'Account'}.`;
       const dashboard = await api('/api/auth/trainer/dashboard');
       if (dashboard.ok && dashboard.json?.ok) {
-        prefillForm(dashboard.json?.trainer || {}, currentUser);
+        prefillForm(dashboard.json?.trainer || {}, currentUser, entryPrefill);
         syncLimitedChecks('coachBadgeType', MAX_COACH_BADGES, '#trainer-badge-limit-note');
         if (statusEl && dashboard.json?.trainer?.onboarded) {
+          markHomepageOnboardingDone();
           statusEl.textContent = 'Trainer profile loaded. Move panel by panel and resubmit for review if you change anything.';
         }
       } else {
-        prefillForm({}, currentUser);
+        prefillForm({}, currentUser, entryPrefill);
         syncLimitedChecks('coachBadgeType', MAX_COACH_BADGES, '#trainer-badge-limit-note');
         if (statusEl) statusEl.textContent = 'Move through the panels and submit the account for review.';
       }
     } else {
       setAccountSectionVisible(true);
       syncWizard({ reset: true });
-      prefillForm({});
+      prefillForm({}, null, entryPrefill);
       syncLimitedChecks('coachBadgeType', MAX_COACH_BADGES, '#trainer-badge-limit-note');
       syncSuggestedUsername();
       if (authNoteEl) authNoteEl.textContent = 'No account yet. Create the account first, then finish onboarding to turn on Trainer Access.';
       if (statusEl) statusEl.textContent = 'Start with the account panel. After the account is created, finish the rest and submit for review.';
     }
+
+    if (entryPrefill) clearEntryPrefill();
 
     formEl?.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -756,6 +839,7 @@
 
       currentUser = resp.json?.user || currentUser;
       persistAuthUser(currentUser || {});
+      markHomepageOnboardingDone();
       const trainerKey = normalizeUsername(payload.publicHandle || currentUser?.username || fullName);
       if (statusEl) statusEl.textContent = 'Submitted for review. Opening your trainer page...';
       if (authNoteEl) authNoteEl.textContent = 'Saved. Your trainer account is live with a review tag.';

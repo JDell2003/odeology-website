@@ -392,7 +392,7 @@
       .entry-panel.is-active {
         display: grid;
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: none;
       }
       .entry-panel.is-entering {
         animation: entryPanelIn 0.24s ease both;
@@ -1900,38 +1900,53 @@
         inset: 0;
         z-index: 1200;
         display: none;
-        align-items: center;
-        justify-content: center;
         padding: 24px;
         background: rgba(8, 18, 28, 0.48);
         backdrop-filter: blur(10px);
       }
       .entry-request-modal.is-open {
-        display: flex;
+        display: block;
+      }
+      .entry-request-shell {
+        min-height: calc(100vh - 48px);
+        width: min(100%, 860px);
+        margin: 0 auto;
+        display: grid;
+        place-items: center;
       }
       .entry-request-card {
         display: grid;
-        gap: 14px;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 0;
         width: min(720px, 100%);
-        max-height: min(88vh, 840px);
-        overflow: auto;
-        padding: 18px;
+        max-height: min(84vh, 760px);
+        overflow: hidden;
+        margin: auto;
         border: 1px solid rgba(13, 34, 50, 0.1);
         border-radius: 24px;
         background: rgba(255,255,255,0.98);
         box-shadow: 0 30px 80px rgba(13, 34, 50, 0.22);
+      }
+      .entry-request-body {
+        overflow-y: auto;
+        padding: 0 18px 18px;
       }
       .entry-request-actions {
         display: flex;
         justify-content: space-between;
         gap: 10px;
         flex-wrap: wrap;
+        padding: 18px;
+        border-top: 1px solid rgba(13, 34, 50, 0.08);
+        background: rgba(255,255,255,0.96);
       }
       .entry-request-head {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid rgba(13, 34, 50, 0.08);
       }
       .entry-request-head h4 {
         margin: 0;
@@ -2305,9 +2320,21 @@
         .entry-request-modal {
           padding: 18px;
         }
+        .entry-request-shell {
+          min-height: calc(100vh - 36px);
+          width: 100%;
+        }
         .entry-request-card {
           width: 100%;
-          max-height: 82vh;
+          max-height: calc(100vh - 36px);
+        }
+        .entry-request-head {
+          padding: 16px 16px 12px;
+        }
+        .entry-request-body {
+          padding: 0 16px 16px;
+        }
+        .entry-request-actions {
           padding: 16px;
         }
         .entry-access-choice-row {
@@ -3469,7 +3496,7 @@
           {
             id: 'ws-max-fitness-augusta',
             name: 'Max Fitness Augusta',
-            logoSrc: 'assets/images/logos/max-fitness-augusta.png',
+            logoSrc: '/assets/images/logos/max-fitness-augusta.png',
             logoScale: 0.9,
             logoText: 'MF',
             type: 'Commercial gym',
@@ -3482,7 +3509,7 @@
           {
             id: 'ws-riseforit-online',
             name: 'RiseForIt Online Coaching',
-            logoSrc: 'assets/images/logos/riseforit-online.svg',
+            logoSrc: '/assets/images/logos/riseforit-online.svg',
             logoScale: 0.84,
             logoText: 'RF',
             type: 'Online coaching company',
@@ -3495,7 +3522,7 @@
           {
             id: 'ws-downtown-strength-club',
             name: 'Downtown Strength Club',
-            logoSrc: 'assets/images/logos/downtown-strength-club.svg',
+            logoSrc: '/assets/images/logos/downtown-strength-club.svg',
             logoScale: 0.84,
             logoText: 'DS',
             type: 'Private training studio',
@@ -3619,6 +3646,11 @@
               trainerPasswordAttempted: false,
               trainerPasswordVerified: false,
               trainerPasswordStatus: '',
+              workoutSource: '',
+              customPlanDays: {},
+              customPlanSavedId: '',
+              customWorkoutStatus: '',
+              customWorkoutStatusKind: '',
               trainingRequestOpen: false,
               trainingRequestSubmitted: false,
               trainingRequestId: '',
@@ -3690,6 +3722,8 @@
             }
           },
           trainerManagerReviewEntries: [],
+          managerReviewEntries: [],
+          managerReviewStatusById: {},
           progressSteps: [],
           transitionState: 'idle',
           directory: {
@@ -3759,6 +3793,7 @@
               { id: 'location', label: 'Location' },
               { id: 'trainer', label: 'Trainer' },
               { id: 'access', label: 'Access' },
+              { id: 'workout-source', label: 'Workout' },
               { id: 'goal', label: 'Goal' },
               { id: 'profile', label: 'Schedule' },
               { id: 'equipment', label: 'Access' },
@@ -3797,6 +3832,131 @@
                   ${escapeHtml(option.label)}
                 </label>
               `).join('')}
+            </div>
+          `;
+        }
+
+        const CLIENT_PLAN_WEEKDAYS = [
+          { i: 1, short: 'Mon', label: 'Monday' },
+          { i: 2, short: 'Tue', label: 'Tuesday' },
+          { i: 3, short: 'Wed', label: 'Wednesday' },
+          { i: 4, short: 'Thu', label: 'Thursday' },
+          { i: 5, short: 'Fri', label: 'Friday' },
+          { i: 6, short: 'Sat', label: 'Saturday' },
+          { i: 0, short: 'Sun', label: 'Sunday' }
+        ];
+
+        function clientPlanDays(user = state.answers.user || {}) {
+          if (!user.customPlanDays || typeof user.customPlanDays !== 'object' || Array.isArray(user.customPlanDays)) {
+            user.customPlanDays = {};
+          }
+          return user.customPlanDays;
+        }
+
+        function clientPlanExerciseId(name = '') {
+          const slug = String(name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '')
+            .slice(0, 80);
+          return slug ? `custom_${slug}` : '';
+        }
+
+        function normalizeClientPlanRow(row = {}) {
+          return {
+            name: String(row.name || '').trim(),
+            sets: String(row.sets || '3').trim() || '3',
+            reps: String(row.reps || '8-12').trim() || '8-12',
+            restSec: String(row.restSec || '90').trim() || '90'
+          };
+        }
+
+        function serializeClientCustomPlanDays(user = state.answers.user || {}) {
+          const days = clientPlanDays(user);
+          return CLIENT_PLAN_WEEKDAYS
+            .map((day) => {
+              const rows = Array.isArray(days[String(day.i)]) ? days[String(day.i)] : [];
+              return {
+                weekday: day.i,
+                label: day.label,
+                exercises: rows
+                  .map(normalizeClientPlanRow)
+                  .filter((row) => row.name)
+                  .map((row) => ({
+                    exerciseId: clientPlanExerciseId(row.name),
+                    name: row.name,
+                    sets: Math.max(1, Math.min(8, Number(row.sets) || 3)),
+                    reps: row.reps,
+                    restSec: Math.max(30, Math.min(300, Number(row.restSec) || 90))
+                  }))
+              };
+            })
+            .filter((day) => day.exercises.length);
+        }
+
+        function renderClientCustomPlanBuilder(user = state.answers.user || {}) {
+          const days = clientPlanDays(user);
+          const selected = new Set(Object.keys(days).filter((key) => Array.isArray(days[key])));
+          const selectedDays = CLIENT_PLAN_WEEKDAYS.filter((day) => selected.has(String(day.i)));
+          const statusKind = String(user.customWorkoutStatusKind || '').trim();
+          return `
+            <div class="entry-summary-card">
+              <strong>Build your weekly workout.</strong>
+              <p>Select the days you train, add exercises under each day, then save the full plan before continuing.</p>
+            </div>
+            <div class="entry-option-grid is-three" aria-label="Select workout days">
+              ${CLIENT_PLAN_WEEKDAYS.map((day) => `
+                <button class="entry-chip ${selected.has(String(day.i)) ? 'is-selected' : ''}" type="button" data-client-plan-day="${day.i}" aria-pressed="${selected.has(String(day.i)) ? 'true' : 'false'}">
+                  ${escapeHtml(day.short)}
+                </button>
+              `).join('')}
+            </div>
+            <div class="entry-stack">
+              ${selectedDays.length ? selectedDays.map((day) => {
+                const rows = Array.isArray(days[String(day.i)]) ? days[String(day.i)] : [];
+                return `
+                  <div class="entry-summary-card">
+                    <strong>${escapeHtml(day.label)}</strong>
+                    <div class="entry-stack" style="margin-top:10px;">
+                      ${rows.length ? rows.map((rowRaw, idx) => {
+                        const row = normalizeClientPlanRow(rowRaw);
+                        return `
+                          <div class="entry-grid" data-client-plan-row="${day.i}:${idx}">
+                            <div class="entry-field full">
+                              <label>Exercise</label>
+                              <input type="text" value="${escapeHtml(row.name)}" placeholder="Bench Press, Squat, Lat Pulldown..." data-client-plan-field="name" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                            </div>
+                            <div class="entry-field">
+                              <label>Sets</label>
+                              <input type="number" min="1" max="8" value="${escapeHtml(row.sets)}" data-client-plan-field="sets" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                            </div>
+                            <div class="entry-field">
+                              <label>Reps</label>
+                              <input type="text" value="${escapeHtml(row.reps)}" placeholder="8-12" data-client-plan-field="reps" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                            </div>
+                            <div class="entry-field">
+                              <label>Rest sec</label>
+                              <input type="number" min="30" max="300" step="5" value="${escapeHtml(row.restSec)}" data-client-plan-field="restSec" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                            </div>
+                            <div class="entry-field">
+                              <label>&nbsp;</label>
+                              <button class="btn btn-secondary" type="button" data-client-plan-remove="${day.i}:${idx}">Remove</button>
+                            </div>
+                          </div>
+                        `;
+                      }).join('') : '<p class="entry-inline-note">No exercises on this day yet.</p>'}
+                      <button class="btn btn-secondary" type="button" data-client-plan-add="${day.i}">Add exercise</button>
+                    </div>
+                  </div>
+                `;
+              }).join('') : '<p class="entry-inline-note">Pick at least one weekday to start building.</p>'}
+            </div>
+            <div class="entry-managed-trainer-actions">
+              <button class="btn btn-primary" type="button" data-save-client-custom-plan="1">${user.customPlanSavedId ? 'Update workout plan' : 'Save workout plan'}</button>
+              <div class="entry-managed-trainer-note ${statusKind === 'error' ? 'is-error' : statusKind === 'success' ? 'is-success' : ''}">
+                ${escapeHtml(user.customWorkoutStatus || (user.customPlanSavedId ? 'Workout plan saved. You can continue.' : 'Save this workout plan before continuing.'))}
+              </div>
             </div>
           `;
         }
@@ -3848,6 +4008,41 @@
 
         function normalizeLookupText(value) {
           return String(value || '').trim().toLowerCase();
+        }
+
+        function disambiguateManagerDirectoryNames(managers = []) {
+          const counts = new Map();
+          managers.forEach((manager) => {
+            const key = [
+              normalizeLookupText(manager?.workspaceId),
+              normalizeLookupText(manager?.locationId),
+              normalizeLookupText(manager?.managerName)
+            ].join('|');
+            counts.set(key, (counts.get(key) || 0) + 1);
+          });
+          return managers.map((manager) => {
+            const key = [
+              normalizeLookupText(manager?.workspaceId),
+              normalizeLookupText(manager?.locationId),
+              normalizeLookupText(manager?.managerName)
+            ].join('|');
+            if ((counts.get(key) || 0) <= 1) return manager;
+            const suffix = String(manager?.username || manager?.managerCode || manager?.code || '').trim();
+            return {
+              ...manager,
+              managerName: suffix ? `${manager.managerName} (${suffix.startsWith('@') ? suffix : `@${suffix}`})` : manager.managerName
+            };
+          });
+        }
+
+        function resolveStaticAssetUrl(value) {
+          const raw = String(value || '').trim();
+          if (!raw) return '';
+          if (/^(?:https?:)?\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) return raw;
+          const normalized = raw.replace(/\\/g, '/');
+          if (normalized.startsWith('/')) return normalized;
+          if (normalized.startsWith('assets/')) return `/${normalized}`;
+          return normalized;
         }
 
         function workspaceDirectorySource() {
@@ -3923,7 +4118,7 @@
           return baseWorkspaces.map((workspace) => ({
             id: String(workspace.id || '').trim(),
             name: String(workspace.name || '').trim(),
-            logoSrc: String(workspace.logoSrc || '').trim(),
+            logoSrc: resolveStaticAssetUrl(workspace.logoSrc),
             logoText: String(workspace.logoText || workspace.name || '').trim(),
             type: String(workspace.type || '').trim(),
             city: String(workspace.city || '').trim(),
@@ -4226,6 +4421,23 @@ function formatWorkspaceLabel(workspace) {
           });
         }
 
+        function jumpToCurrentPathStep(stepId = '') {
+          const flow = currentFlow();
+          const targetId = String(stepId || '').trim();
+          if (!flow || !targetId) {
+            renderPanel();
+            return;
+          }
+          const nextStep = flow.steps.findIndex((step) => step.id === targetId) + 1;
+          if (!nextStep) {
+            renderPanel();
+            return;
+          }
+          runTransition(() => {
+            state.currentStep = nextStep;
+          });
+        }
+
         function workspaceFilterGroups() {
           const types = Array.from(new Set((state.directory.workspaces || []).map((workspace) => String(workspace.type || '').trim()).filter(Boolean)));
           return [
@@ -4290,51 +4502,55 @@ function formatWorkspaceLabel(workspace) {
               <button class="entry-request-link" type="button" data-request-gym-toggle="open">Request a Gym</button>
             </div>
             <div class="entry-request-modal ${user.requestGymOpen ? 'is-open' : ''}" data-request-gym-modal>
-              <div class="entry-request-card" role="dialog" aria-modal="true" aria-labelledby="request-gym-title">
-                <div class="entry-request-head">
-                  <div>
-                    <h4 id="request-gym-title">Request a Gym</h4>
-                    <p>Submit the gym, location, logo, and details. It will go into review for owner approval.</p>
+              <div class="entry-request-shell">
+                <div class="entry-request-card" role="dialog" aria-modal="true" aria-labelledby="request-gym-title">
+                  <div class="entry-request-head">
+                    <div>
+                      <h4 id="request-gym-title">Request a Gym</h4>
+                      <p>Submit the gym, location, logo, and details. It will go into review for owner approval.</p>
+                    </div>
+                    <button class="entry-request-close" type="button" data-request-gym-toggle="close" aria-label="Close request gym form">&times;</button>
                   </div>
-                  <button class="entry-request-close" type="button" data-request-gym-toggle="close" aria-label="Close request gym form">&times;</button>
-                </div>
-                <div class="entry-grid">
-                  <div class="entry-field">
-                    <label for="request-gym-name">Gym/company name</label>
-                    <input id="request-gym-name" name="requestGymName" type="text" value="${escapeHtml(user.requestGymName)}" placeholder="Gym/company name">
+                  <div class="entry-request-body">
+                    <div class="entry-grid">
+                      <div class="entry-field">
+                        <label for="request-gym-name">Gym/company name</label>
+                        <input id="request-gym-name" name="requestGymName" type="text" value="${escapeHtml(user.requestGymName)}" placeholder="Gym/company name">
+                      </div>
+                      <div class="entry-field">
+                        <label for="request-workspace-type">Business type</label>
+                        <input id="request-workspace-type" name="requestWorkspaceType" type="text" value="${escapeHtml(user.requestWorkspaceType)}" placeholder="Commercial gym, studio, online coaching">
+                      </div>
+                      <div class="entry-field">
+                        <label for="request-city">City</label>
+                        <input id="request-city" name="requestCity" type="text" value="${escapeHtml(user.requestCity)}" placeholder="City">
+                      </div>
+                      <div class="entry-field">
+                        <label for="request-state">State</label>
+                        <input id="request-state" name="requestState" type="text" value="${escapeHtml(user.requestState)}" placeholder="State">
+                      </div>
+                      <div class="entry-field full">
+                        <label for="request-address">Main location / address</label>
+                        <input id="request-address" name="requestAddress" type="text" value="${escapeHtml(user.requestAddress)}" placeholder="Main location or address">
+                      </div>
+                      <div class="entry-field full">
+                        <label for="request-website">Website optional</label>
+                        <input id="request-website" name="requestWebsite" type="url" value="${escapeHtml(user.requestWebsite)}" placeholder="https://...">
+                      </div>
+                      <div class="entry-field full">
+                        <label for="request-logo-url">Logo URL optional</label>
+                        <input id="request-logo-url" name="requestLogoUrl" type="url" value="${escapeHtml(user.requestLogoUrl)}" placeholder="https://.../logo.png">
+                      </div>
+                      <div class="entry-field full">
+                        <label for="request-notes">Notes</label>
+                        <textarea id="request-notes" name="requestNotes" placeholder="Anything the owner should know about this location or brand.">${escapeHtml(user.requestNotes)}</textarea>
+                      </div>
+                    </div>
                   </div>
-                  <div class="entry-field">
-                    <label for="request-workspace-type">Business type</label>
-                    <input id="request-workspace-type" name="requestWorkspaceType" type="text" value="${escapeHtml(user.requestWorkspaceType)}" placeholder="Commercial gym, studio, online coaching">
+                  <div class="entry-request-actions">
+                    <button class="btn btn-secondary" type="button" data-request-gym-toggle="close">Cancel</button>
+                    <button class="btn btn-primary" type="button" data-request-gym-submit="1">Submit for Review</button>
                   </div>
-                  <div class="entry-field">
-                    <label for="request-city">City</label>
-                    <input id="request-city" name="requestCity" type="text" value="${escapeHtml(user.requestCity)}" placeholder="City">
-                  </div>
-                  <div class="entry-field">
-                    <label for="request-state">State</label>
-                    <input id="request-state" name="requestState" type="text" value="${escapeHtml(user.requestState)}" placeholder="State">
-                  </div>
-                  <div class="entry-field full">
-                    <label for="request-address">Main location / address</label>
-                    <input id="request-address" name="requestAddress" type="text" value="${escapeHtml(user.requestAddress)}" placeholder="Main location or address">
-                  </div>
-                  <div class="entry-field full">
-                    <label for="request-website">Website optional</label>
-                    <input id="request-website" name="requestWebsite" type="url" value="${escapeHtml(user.requestWebsite)}" placeholder="https://...">
-                  </div>
-                  <div class="entry-field full">
-                    <label for="request-logo-url">Logo URL optional</label>
-                    <input id="request-logo-url" name="requestLogoUrl" type="url" value="${escapeHtml(user.requestLogoUrl)}" placeholder="https://.../logo.png">
-                  </div>
-                  <div class="entry-field full">
-                    <label for="request-notes">Notes</label>
-                    <textarea id="request-notes" name="requestNotes" placeholder="Anything the owner should know about this location or brand.">${escapeHtml(user.requestNotes)}</textarea>
-                  </div>
-                </div>
-                <div class="entry-request-actions">
-                  <button class="btn btn-secondary" type="button" data-request-gym-toggle="close">Cancel</button>
-                  <button class="btn btn-primary" type="button" data-request-gym-submit="1">Submit for Review</button>
                 </div>
               </div>
             </div>
@@ -4364,39 +4580,43 @@ function formatWorkspaceLabel(workspace) {
                 <button class="entry-request-link" type="button" data-request-location-toggle="open">Add a Location</button>
               </div>
               <div class="entry-request-modal ${user.requestLocationOpen ? 'is-open' : ''}" data-request-location-modal>
-                <div class="entry-request-card" role="dialog" aria-modal="true" aria-labelledby="request-location-title">
-                  <div class="entry-request-head">
-                    <div>
-                      <h4 id="request-location-title">Add a Location</h4>
-                      <p>Submit a new location for ${escapeHtml(workspace?.name || 'this gym')}. It will go into review for owner approval.</p>
+                <div class="entry-request-shell">
+                  <div class="entry-request-card" role="dialog" aria-modal="true" aria-labelledby="request-location-title">
+                    <div class="entry-request-head">
+                      <div>
+                        <h4 id="request-location-title">Add a Location</h4>
+                        <p>Submit a new location for ${escapeHtml(workspace?.name || 'this gym')}. It will go into review for owner approval.</p>
+                      </div>
+                      <button class="entry-request-close" type="button" data-request-location-toggle="close" aria-label="Close add location form">&times;</button>
                     </div>
-                    <button class="entry-request-close" type="button" data-request-location-toggle="close" aria-label="Close add location form">&times;</button>
-                  </div>
-                  <div class="entry-grid">
-                    <div class="entry-field">
-                      <label for="request-location-name">Location name</label>
-                      <input id="request-location-name" name="requestLocationName" type="text" value="${escapeHtml(user.requestLocationName)}" placeholder="North Augusta">
+                    <div class="entry-request-body">
+                      <div class="entry-grid">
+                        <div class="entry-field">
+                          <label for="request-location-name">Location name</label>
+                          <input id="request-location-name" name="requestLocationName" type="text" value="${escapeHtml(user.requestLocationName)}" placeholder="North Augusta">
+                        </div>
+                        <div class="entry-field">
+                          <label for="request-location-city">City</label>
+                          <input id="request-location-city" name="requestLocationCity" type="text" value="${escapeHtml(user.requestLocationCity)}" placeholder="City">
+                        </div>
+                        <div class="entry-field">
+                          <label for="request-location-state">State</label>
+                          <input id="request-location-state" name="requestLocationState" type="text" value="${escapeHtml(user.requestLocationState)}" placeholder="State">
+                        </div>
+                        <div class="entry-field full">
+                          <label for="request-location-address">Address optional</label>
+                          <input id="request-location-address" name="requestLocationAddress" type="text" value="${escapeHtml(user.requestLocationAddress)}" placeholder="Street address">
+                        </div>
+                        <div class="entry-field full">
+                          <label for="request-location-notes">Notes</label>
+                          <textarea id="request-location-notes" name="requestLocationNotes" placeholder="Anything the owner should know about this location.">${escapeHtml(user.requestLocationNotes)}</textarea>
+                        </div>
+                      </div>
                     </div>
-                    <div class="entry-field">
-                      <label for="request-location-city">City</label>
-                      <input id="request-location-city" name="requestLocationCity" type="text" value="${escapeHtml(user.requestLocationCity)}" placeholder="City">
+                    <div class="entry-request-actions">
+                      <button class="btn btn-secondary" type="button" data-request-location-toggle="close">Cancel</button>
+                      <button class="btn btn-primary" type="button" data-request-location-submit="1">Submit for Review</button>
                     </div>
-                    <div class="entry-field">
-                      <label for="request-location-state">State</label>
-                      <input id="request-location-state" name="requestLocationState" type="text" value="${escapeHtml(user.requestLocationState)}" placeholder="State">
-                    </div>
-                    <div class="entry-field full">
-                      <label for="request-location-address">Address optional</label>
-                      <input id="request-location-address" name="requestLocationAddress" type="text" value="${escapeHtml(user.requestLocationAddress)}" placeholder="Street address">
-                    </div>
-                    <div class="entry-field full">
-                      <label for="request-location-notes">Notes</label>
-                      <textarea id="request-location-notes" name="requestLocationNotes" placeholder="Anything the owner should know about this location.">${escapeHtml(user.requestLocationNotes)}</textarea>
-                    </div>
-                  </div>
-                  <div class="entry-request-actions">
-                    <button class="btn btn-secondary" type="button" data-request-location-toggle="close">Cancel</button>
-                    <button class="btn btn-primary" type="button" data-request-location-submit="1">Submit for Review</button>
                   </div>
                 </div>
               </div>
@@ -4476,7 +4696,7 @@ function formatWorkspaceLabel(workspace) {
               <div class="entry-managed-trainer-actions">
                 <button class="btn btn-primary" type="button" data-send-manager-trainer-requests="1" ${selected.size ? '' : 'disabled'}>Send Request</button>
                 <div class="entry-managed-trainer-note ${requestStatusKind === 'error' ? 'is-error' : requestStatusKind === 'success' ? 'is-success' : ''}">
-                  ${escapeHtml(requestStatusText || (selected.size ? `${selected.size} trainer${selected.size === 1 ? '' : 's'} selected.` : 'Select one or more trainers, then send the request to their accounts.'))}
+                  ${escapeHtml(requestStatusText || (selected.size ? `${selected.size} trainer${selected.size === 1 ? '' : 's'} selected.` : 'Optional: select trainers now and send requests, or continue and add them later from the manager panel.'))}
                 </div>
               </div>
             </div>
@@ -5160,6 +5380,7 @@ function formatWorkspaceLabel(workspace) {
               notes: String(user.injuryNotes || '')
             },
             priorityMuscles: Array.isArray(user.priorityMuscles) ? user.priorityMuscles : [],
+            workoutSource: String(user.workoutSource || ''),
             sleepHours: 7,
             activityLevel: 'Active',
             stress: 'Medium',
@@ -5183,6 +5404,12 @@ function formatWorkspaceLabel(workspace) {
               ? {
                   trainerInvite: state.inviteContext.trainerInvite,
                   trainerRef: state.inviteContext.trainerRef
+                }
+              : null,
+            customWorkout: String(user.workoutSource || '') === 'own'
+              ? {
+                  planId: String(user.customPlanSavedId || ''),
+                  days: serializeClientCustomPlanDays(user)
                 }
               : null,
             completedAt: Date.now(),
@@ -5239,6 +5466,18 @@ function formatWorkspaceLabel(workspace) {
         function buildTrainerOnboardingPayload(liveUserOverride = null) {
           const trainer = state.answers.trainer || {};
           const liveUser = liveUserOverride || window.__odeCurrentUser || readAuthUserHint() || null;
+          const selectedWorkspaceId = String(
+            trainer.selectedWorkspaceId
+            || trainer.workspaceId
+            || trainer?.meta?.workspaceId
+            || ''
+          ).trim();
+          const selectedLocationId = String(
+            trainer.selectedLocationId
+            || trainer.locationId
+            || trainer?.meta?.locationId
+            || ''
+          ).trim();
           const coachingFormat = trainer.coachingStyle === 'Online'
             ? 'remote_only'
             : trainer.coachingStyle === 'In-person'
@@ -5253,8 +5492,8 @@ function formatWorkspaceLabel(workspace) {
             displayName: String(liveUser?.displayName || trainer.fullName || '').trim(),
             publicHandle: String(liveUser?.username || '').trim(),
             managerCode: String(trainer.managerCode || '').trim(),
-            workspaceId: String(trainer.selectedWorkspaceId || '').trim(),
-            locationId: String(trainer.selectedLocationId || '').trim(),
+            workspaceId: selectedWorkspaceId,
+            locationId: selectedLocationId,
             brandPositioning: String(trainer.brandPositioning || trainer.summary || '').trim(),
             city: String(trainer.publicCity || trainer.city || '').trim(),
             state: String(trainer.publicState || trainer.state || '').trim(),
@@ -5361,9 +5600,9 @@ function formatWorkspaceLabel(workspace) {
                 existing ? mergeManagerDirectoryEntries(existing, normalizedEntry) : normalizedEntry
               );
             });
-            return Array.from(mergedByCode.values());
+            return disambiguateManagerDirectoryNames(Array.from(mergedByCode.values()));
           } catch {
-            return [...readTestManagers(), ...DEFAULT_MANAGER_DIRECTORY];
+            return disambiguateManagerDirectoryNames([...readTestManagers(), ...DEFAULT_MANAGER_DIRECTORY]);
           }
         }
 
@@ -5494,8 +5733,94 @@ function formatWorkspaceLabel(workspace) {
           return syncTrainerManagerReviewState(options);
         }
 
+        const MANAGER_REVIEW_NOTICE_KEY = 'ode_entry_manager_review_notice_v1';
+
+        function readManagerReviewNoticeStore() {
+          try {
+            const raw = localStorage.getItem(MANAGER_REVIEW_NOTICE_KEY);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return parsed && typeof parsed === 'object' ? parsed : {};
+          } catch {
+            return {};
+          }
+        }
+
+        function writeManagerReviewNoticeStore(store) {
+          try {
+            localStorage.setItem(MANAGER_REVIEW_NOTICE_KEY, JSON.stringify(store && typeof store === 'object' ? store : {}));
+          } catch {}
+        }
+
+        function buildManagerReviewNoticeToken(entry) {
+          return [
+            String(entry?.id || '').trim(),
+            String(entry?.status || '').trim().toLowerCase(),
+            String(entry?.decidedAt || entry?.updatedAt || '').trim()
+          ].filter(Boolean).join(':');
+        }
+
+        async function fetchManagerReviewEntries() {
+          if (!hasAuthenticatedUser()) return [];
+          const managerCode = normalizeManagerCode(
+            ensureManagerCode()
+            || window.__odeCurrentUser?.manager?.managerCode
+            || window.__odeCurrentUser?.managerCode
+            || ''
+          );
+          if (!managerCode) return [];
+          try {
+            const resp = await fetch(`/api/auth/manager/review-requests?managerCode=${encodeURIComponent(managerCode)}`, {
+              credentials: 'include',
+              cache: 'no-store'
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) return [];
+            return Array.isArray(json?.requests) ? json.requests : [];
+          } catch {
+            return [];
+          }
+        }
+
+        function syncManagerReviewState(options = {}) {
+          const { notify = false } = options;
+          const requests = Array.isArray(state.managerReviewEntries) ? state.managerReviewEntries : [];
+          const nextStatusById = {};
+          requests.forEach((entry) => {
+            const id = String(entry?.id || '').trim();
+            if (!id) return;
+            nextStatusById[id] = String(entry?.status || 'pending').trim().toLowerCase() || 'pending';
+          });
+          if (notify) {
+            const noticeStore = readManagerReviewNoticeStore();
+            requests.forEach((entry) => {
+              const id = String(entry?.id || '').trim();
+              if (!id) return;
+              const requestedByRole = String(entry?.requestedByRole || 'trainer').trim().toLowerCase();
+              const previousStatus = String(state.managerReviewStatusById[id] || '').trim().toLowerCase();
+              const nextStatus = String(nextStatusById[id] || 'pending').trim().toLowerCase();
+              if (requestedByRole !== 'manager' || nextStatus !== 'denied') return;
+              const token = buildManagerReviewNoticeToken(entry);
+              const unseen = token && noticeStore[token] !== '1';
+              const transitioned = previousStatus === 'pending' && nextStatus === 'denied';
+              if (!unseen && !transitioned) return;
+              const trainer = entry?.trainer && typeof entry.trainer === 'object' ? entry.trainer : {};
+              const trainerName = String(trainer?.fullName || trainer?.email || 'A trainer').trim() || 'A trainer';
+              showEntryToast(`${trainerName} denied your manager request.`);
+              if (token) noticeStore[token] = '1';
+            });
+            writeManagerReviewNoticeStore(noticeStore);
+          }
+          state.managerReviewStatusById = nextStatusById;
+          return true;
+        }
+
+        async function refreshManagerReviewUi(options = {}) {
+          state.managerReviewEntries = await fetchManagerReviewEntries();
+          return syncManagerReviewState(options);
+        }
+
         async function sendManagerTrainerRequests() {
-          const manager = state.answers.manager || {};
+          const manager = syncManagerDirectoryAnswers();
           const selectedTrainerIds = Array.isArray(manager.selectedTrainerIds)
             ? manager.selectedTrainerIds.map((id) => String(id || '').trim()).filter(Boolean)
             : [];
@@ -5510,8 +5835,10 @@ function formatWorkspaceLabel(workspace) {
             manager.requestStatusKind = 'error';
             manager.requestStatusText = 'Manager code is missing.';
             renderPanel();
+            window.alert(manager.requestStatusText);
             return false;
           }
+          registerManagerDirectoryEntry();
           const selectedTrainers = selectedTrainerIds
             .map((trainerId) => findTrainerById(trainerId))
             .filter(Boolean);
@@ -5519,6 +5846,7 @@ function formatWorkspaceLabel(workspace) {
             manager.requestStatusKind = 'error';
             manager.requestStatusText = 'Could not load the selected trainers.';
             renderPanel();
+            window.alert(manager.requestStatusText);
             return false;
           }
           manager.requestStatusKind = '';
@@ -5564,11 +5892,12 @@ function formatWorkspaceLabel(workspace) {
               manager.requestStatusKind = 'error';
               manager.requestStatusText = json?.error || 'Could not send requests.';
               renderPanel();
+              window.alert(manager.requestStatusText);
               return false;
             }
             const count = Array.isArray(json?.requests) ? json.requests.length : selectedTrainers.length;
             manager.requestStatusKind = 'success';
-            manager.requestStatusText = `${count} trainer request${count === 1 ? '' : 's'} sent to their account${count === 1 ? '' : 's'}.`;
+            manager.requestStatusText = `${count} trainer request${count === 1 ? '' : 's'} sent to their account${count === 1 ? '' : 's'}. You can keep going with the manager flow.`;
             renderPanel();
             showEntryToast(manager.requestStatusText);
             return true;
@@ -5576,6 +5905,7 @@ function formatWorkspaceLabel(workspace) {
             manager.requestStatusKind = 'error';
             manager.requestStatusText = 'Could not send requests.';
             renderPanel();
+            window.alert(manager.requestStatusText);
             return false;
           }
         }
@@ -5599,11 +5929,11 @@ function formatWorkspaceLabel(workspace) {
             ? trainer.managerRequestIds.map((id) => String(id || '').trim()).filter(Boolean)
             : [];
           const requests = Array.isArray(state.trainerManagerReviewEntries) ? state.trainerManagerReviewEntries : [];
+          const selectedManagerCodes = Array.isArray(trainer.selectedManagerCodes) ? trainer.selectedManagerCodes : [];
           let matched = requestIds
             .map((id) => requests.find((entry) => String(entry?.id || '').trim() === id))
             .filter(Boolean);
           if (!matched.length) {
-            const selectedManagerCodes = Array.isArray(trainer.selectedManagerCodes) ? trainer.selectedManagerCodes : [];
             const fallbackEntries = getTrainerManagerReviewEntriesForCodes(selectedManagerCodes)
               .filter((entry) => {
                 const status = String(entry?.status || 'pending').trim().toLowerCase();
@@ -5611,6 +5941,21 @@ function formatWorkspaceLabel(workspace) {
               });
             if (fallbackEntries.length) {
               matched = fallbackEntries;
+            }
+          }
+          if (!matched.length) {
+            const managerDrivenEntries = requests.filter((entry) => {
+              const requestedByRole = String(entry?.requestedByRole || 'trainer').trim().toLowerCase();
+              return requestedByRole === 'manager';
+            });
+            const activeManagerDrivenEntries = managerDrivenEntries.filter((entry) => {
+              const status = String(entry?.status || 'pending').trim().toLowerCase();
+              return status === 'pending' || status === 'approved';
+            });
+            if (activeManagerDrivenEntries.length) {
+              matched = activeManagerDrivenEntries;
+            } else if (managerDrivenEntries.length) {
+              matched = [managerDrivenEntries[0]];
             }
           }
           if (!matched.length) {
@@ -5646,7 +5991,12 @@ function formatWorkspaceLabel(workspace) {
             trainer.managerReviewNames = names;
             trainer.managerReviewName = names.join(', ');
           }
-          if (matched[0]?.managerCode) {
+          if (!selectedManagerCodes.length) {
+            trainer.selectedManagerCodes = matched
+              .map((entry) => normalizeManagerCode(entry?.managerCode || ''))
+              .filter(Boolean);
+          }
+          if (aggregateStatus === 'approved' && matched[0]?.managerCode) {
             trainer.managerCode = normalizeManagerCode(matched[0].managerCode);
           }
           if (aggregateStatus === 'denied') {
@@ -5917,6 +6267,93 @@ function formatWorkspaceLabel(workspace) {
           };
         }
 
+        function buildManagerOnboardingPayload() {
+          const manager = buildManagerPrefill();
+          const displayName = String(
+            manager.managerName
+            || window.__odeCurrentUser?.displayName
+            || window.__odeCurrentUser?.username
+            || readAuthUserHint()?.displayName
+            || readAuthUserHint()?.username
+            || 'Training Manager'
+          ).trim();
+          return {
+            fullName: displayName,
+            email: String(window.__odeCurrentUser?.email || readAuthUserHint()?.email || '').trim(),
+            displayName,
+            managerCode: String(manager.managerCode || '').trim(),
+            workspaceId: String(manager.selectedWorkspaceId || manager.workspaceId || '').trim(),
+            locationId: String(manager.selectedLocationId || manager.locationId || '').trim(),
+            city: String(manager.locationCity || manager.city || '').trim(),
+            state: String(manager.locationState || manager.state || '').trim(),
+            coachingFormat: 'in_person_only'
+          };
+        }
+
+        async function submitManagerHomepageOnboarding() {
+          if (!hasAuthenticatedUser()) return null;
+          const resp = await fetch('/api/auth/trainer/onboarding', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildManagerOnboardingPayload())
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok || !json?.ok) {
+            throw new Error(json?.error || 'Could not save manager onboarding.');
+          }
+          if (json.user) {
+            window.__odeCurrentUser = json.user;
+            writeAuthUserHint(json.user);
+          }
+          return json;
+        }
+
+        async function saveClientCustomPlan() {
+          const user = state.answers.user || {};
+          if (!hasAuthenticatedUser()) {
+            user.customWorkoutStatus = 'Log in or sign up first so this can save to your workout plan.';
+            user.customWorkoutStatusKind = 'error';
+            renderPanel();
+            return false;
+          }
+          const days = serializeClientCustomPlanDays(user);
+          if (!days.length) {
+            user.customWorkoutStatus = 'Select at least one day and add at least one exercise.';
+            user.customWorkoutStatusKind = 'error';
+            renderPanel();
+            return false;
+          }
+          user.customWorkoutStatus = 'Saving workout plan...';
+          user.customWorkoutStatusKind = '';
+          renderPanel();
+          try {
+            const resp = await fetch('/api/training/custom-plan', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ days })
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) {
+              user.customWorkoutStatus = json?.error || 'Could not save workout plan.';
+              user.customWorkoutStatusKind = 'error';
+              renderPanel();
+              return false;
+            }
+            user.customPlanSavedId = String(json?.plan?.id || json?.planId || 'saved');
+            user.customWorkoutStatus = 'Workout plan saved. You can continue.';
+            user.customWorkoutStatusKind = 'success';
+            renderPanel();
+            return true;
+          } catch {
+            user.customWorkoutStatus = 'Could not save workout plan.';
+            user.customWorkoutStatusKind = 'error';
+            renderPanel();
+            return false;
+          }
+        }
+
         function goToTrainerPath(nextAction) {
           markOnboardingDone();
           try {
@@ -5937,7 +6374,7 @@ function formatWorkspaceLabel(workspace) {
           window.location.href = 'trainers.html#onboarding';
         }
 
-        function goToManagerPath(nextAction) {
+        async function goToManagerPath(nextAction) {
           markScopedOnboardingCompletion('manager');
           markOnboardingDone();
           registerManagerDirectoryEntry();
@@ -5948,6 +6385,7 @@ function formatWorkspaceLabel(workspace) {
               savedAt: Date.now()
             }));
           } catch {}
+          await submitManagerHomepageOnboarding();
           window.location.href = `trainer-dashboard.html?role=manager&action=${encodeURIComponent(String(nextAction || 'dashboard').toLowerCase().replace(/\s+/g, '-'))}`;
         }
 
@@ -5996,15 +6434,22 @@ function formatWorkspaceLabel(workspace) {
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) return;
           void refreshTrainerManagerReviewUi({ notify: true });
+          void refreshManagerReviewUi({ notify: true });
         });
 
         window.addEventListener('focus', () => {
           void refreshTrainerManagerReviewUi({ notify: true });
+          void refreshManagerReviewUi({ notify: true });
         });
 
         window.setInterval(() => {
           if (document.hidden || state.selectedPath !== 'trainer') return;
           void refreshTrainerManagerReviewUi({ notify: true });
+        }, 10000);
+
+        window.setInterval(() => {
+          if (document.hidden || state.selectedPath !== 'manager') return;
+          void refreshManagerReviewUi({ notify: true });
         }, 10000);
 
         function openManagerInviteQrModal() {
@@ -6095,8 +6540,7 @@ function formatWorkspaceLabel(workspace) {
                     <span class="entry-group-title">Trainer type</span>
                     ${renderRadioGroup('trainerType', [
                       { value: 'independent', label: "I'm independent" },
-                      { value: 'company', label: 'I work at a gym/company' },
-                      { value: 'invited', label: 'I was invited by a manager', forceSelected: trainer.trainerType === 'invited' ? isKnownManagerInviteCode(trainer.inviteCode) : undefined }
+                      { value: 'company', label: 'I work at a gym/company' }
                     ], trainer.trainerType)}
                   </div>
                   ${trainer.trainerType === 'invited' ? `
@@ -6475,10 +6919,9 @@ function formatWorkspaceLabel(workspace) {
                 <div class="entry-stack">
                   <div class="entry-field full">
                     ${renderRadioGroup('connectionType', [
-                      { value: 'invite', label: 'I have a trainer invite link/code', forceSelected: (user.connectionType === 'invite' || hasInvite) ? isKnownTrainerInviteCode(user.inviteCode || state.inviteContext.trainerInvite) : undefined },
                       { value: 'workspace', label: 'I train at a gym/company' },
                       { value: 'solo', label: "I'm training on my own" }
-                    ], user.connectionType || (hasInvite ? 'invite' : ''), 'is-two')}
+                    ], (user.connectionType === 'invite' && !hasInvite) ? '' : (user.connectionType || (hasInvite ? 'invite' : '')), 'is-two')}
                   </div>
                   ${(user.connectionType === 'invite' || hasInvite) ? `
                     <div class="entry-grid">
@@ -6781,6 +7224,27 @@ function formatWorkspaceLabel(workspace) {
             };
           }
 
+          if (path === 'user' && step.id === 'workout-source') {
+            const statusKind = String(user.customWorkoutStatusKind || '').trim();
+            return {
+              title: 'How do you want to start?',
+              subtitle: 'Choose whether you already have a workout or want STRYVE to generate one for you.',
+              body: `
+                <div class="entry-stack">
+                  <div class="entry-field full">
+                    <span class="entry-group-title">Workout setup</span>
+                    ${renderRadioGroup('workoutSource', [
+                      { value: 'own', label: 'I have my own workout' },
+                      { value: 'generate', label: 'Generate a workout for me' }
+                    ], user.workoutSource)}
+                  </div>
+                  ${user.workoutSource === 'own' ? renderClientCustomPlanBuilder(user) : ''}
+                </div>
+              `,
+              continueLabel: 'Continue'
+            };
+          }
+
           if (path === 'user' && step.id === 'goal') {
             return {
               title: 'What are we building?',
@@ -6989,7 +7453,7 @@ function formatWorkspaceLabel(workspace) {
           if (path === 'manager' && step.id === 'trainers') {
             return {
               title: 'Choose your trainers.',
-              subtitle: 'Select one or more trainers underneath this manager at the chosen location.',
+              subtitle: 'Optional: select trainers now, or continue and add them later from the manager panel.',
               body: renderManagerTrainerCards(
                 manager.selectedWorkspaceId,
                 manager.selectedLocationId,
@@ -7863,7 +8327,7 @@ function formatWorkspaceLabel(workspace) {
         function isAutoAdvanceStep(path = state.selectedPath, step = currentStepConfig()) {
           if (!path || !step) return false;
           const autoAdvanceMap = {
-            user: new Set(['connection', 'workspace', 'location', 'trainer', 'goal']),
+            user: new Set(['connection', 'workspace', 'location', 'trainer', 'workout-source', 'goal']),
             trainer: new Set(['type', 'workspace', 'location']),
             manager: new Set(['workspace', 'location', 'setup'])
           };
@@ -7889,6 +8353,10 @@ function formatWorkspaceLabel(workspace) {
           }
           if (path === 'user' && step.id === 'trainer') {
             return Boolean(String(answers.selectedTrainerId || '').trim());
+          }
+          if (path === 'user' && step.id === 'workout-source') {
+            const workoutSource = String(answers.workoutSource || '').trim();
+            return workoutSource === 'generate';
           }
           if (path === 'user' && step.id === 'goal') {
             return Boolean(String(answers.goal || '').trim() && String(answers.phase || '').trim());
@@ -7976,6 +8444,19 @@ function formatWorkspaceLabel(workspace) {
           if (!state.selectedPath) return;
           const target = event.target;
           if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+          const planField = String(target.getAttribute('data-client-plan-field') || '').trim();
+          if (state.selectedPath === 'user' && planField) {
+            const day = String(target.getAttribute('data-client-plan-day') || '').trim();
+            const idx = Number(target.getAttribute('data-client-plan-idx') || -1);
+            const rows = clientPlanDays(state.answers.user)[day];
+            if (Array.isArray(rows) && Number.isInteger(idx) && rows[idx]) {
+              rows[idx][planField] = String(target.value || '');
+              state.answers.user.customPlanSavedId = '';
+              state.answers.user.customWorkoutStatus = 'Unsaved changes. Save this workout plan before continuing.';
+              state.answers.user.customWorkoutStatusKind = '';
+            }
+            return;
+          }
           const name = String(target.name || '').trim();
           if (!name) return;
 
@@ -8052,13 +8533,14 @@ function formatWorkspaceLabel(workspace) {
             updateChipState(onboardingPanel);
             if (
               (state.selectedPath === 'trainer' && (name === 'trainerType' || name === 'acceptingClients')) ||
-              (state.selectedPath === 'user' && name === 'connectionType') ||
+              (state.selectedPath === 'user' && (name === 'connectionType' || name === 'workoutSource')) ||
               (state.selectedPath === 'manager' && name === 'firstAction')
             ) {
               renderPanel();
               if (
                 (state.selectedPath === 'trainer' && name === 'trainerType') ||
                 (state.selectedPath === 'user' && name === 'connectionType') ||
+                (state.selectedPath === 'user' && name === 'workoutSource' && String(target.value || '') === 'generate') ||
                 (state.selectedPath === 'manager' && name === 'firstAction')
               ) {
                 scheduleAutoAdvance();
@@ -8371,6 +8853,15 @@ function formatWorkspaceLabel(workspace) {
             }
           }
 
+          if (path === 'user' && step.id === 'workout-source') {
+            if (!validateChoiceGroup('workoutSource', 'Choose whether you have your own workout or want one generated.')) return false;
+            const user = state.answers.user || {};
+            if (String(user.workoutSource || '') === 'own' && !String(user.customPlanSavedId || '').trim()) {
+              window.alert('Save your workout plan before continuing.');
+              return false;
+            }
+          }
+
           if (path === 'user' && step.id === 'goal') {
             if (!validateChoiceGroup('goal', 'Choose your main goal.')) return false;
             if (!validateChoiceGroup('phase', 'Choose your current phase.')) return false;
@@ -8395,13 +8886,6 @@ function formatWorkspaceLabel(workspace) {
           if (path === 'manager' && step.id === 'location') {
             if (!String((state.answers.manager || {}).selectedLocationId || '').trim()) {
               window.alert('Choose the location you manage.');
-              return false;
-            }
-          }
-
-          if (path === 'manager' && step.id === 'trainers') {
-            if (!Array.isArray((state.answers.manager || {}).selectedTrainerIds) || !state.answers.manager.selectedTrainerIds.length) {
-              window.alert('Select at least one trainer under this manager.');
               return false;
             }
           }
@@ -8431,10 +8915,10 @@ function formatWorkspaceLabel(workspace) {
             const connectionType = String(userAnswers.connectionType || '').trim();
             let nextStep = state.currentStep + 1;
             if (currentStepId === 'connection' && connectionType !== 'workspace') {
-              nextStep = flow.steps.findIndex((step) => step.id === 'goal') + 1;
+              nextStep = flow.steps.findIndex((step) => step.id === 'workout-source') + 1;
             }
             if (['workspace', 'location', 'trainer', 'access'].includes(currentStepId) && connectionType !== 'workspace') {
-              nextStep = flow.steps.findIndex((step) => step.id === 'goal') + 1;
+              nextStep = flow.steps.findIndex((step) => step.id === 'workout-source') + 1;
             }
             if (
               currentStepId === 'access'
@@ -8473,7 +8957,7 @@ function formatWorkspaceLabel(workspace) {
             const userAnswers = state.answers.user || {};
             const connectionType = String(userAnswers.connectionType || '').trim();
             let previousStep = state.currentStep - 1;
-            if (connectionType !== 'workspace' && currentStepId === 'goal') {
+            if (connectionType !== 'workspace' && currentStepId === 'workout-source') {
               previousStep = flow.steps.findIndex((step) => step.id === 'connection') + 1;
             }
             return Math.max(1, previousStep);
@@ -8586,7 +9070,8 @@ function formatWorkspaceLabel(workspace) {
           button.addEventListener('click', () => {
             const choice = String(button.getAttribute('data-auth-choice') || '').trim();
             if (choice === 'google') {
-              const returnTo = `${window.location.pathname || '/index.html'}?postAuth=roles`;
+              const role = String(state.selectedPath || '').trim().toLowerCase();
+              const returnTo = `${window.location.pathname || '/index.html'}?postAuth=roles${role ? `&signupRole=${encodeURIComponent(role)}` : ''}`;
               window.location.href = `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
               return;
             }
@@ -8675,6 +9160,51 @@ function formatWorkspaceLabel(workspace) {
           const codeSubmitAction = target.getAttribute('data-code-submit');
           if (codeSubmitAction) {
             submitCodeAction(codeSubmitAction);
+            return;
+          }
+          if (target.closest('[data-save-client-custom-plan]')) {
+            await saveClientCustomPlan();
+            return;
+          }
+          const planDayBtn = target.closest('[data-client-plan-day]');
+          if (planDayBtn instanceof HTMLElement) {
+            const day = String(planDayBtn.getAttribute('data-client-plan-day') || '').trim();
+            const days = clientPlanDays(state.answers.user);
+            if (Array.isArray(days[day])) {
+              delete days[day];
+            } else {
+              days[day] = [{ name: '', sets: '3', reps: '8-12', restSec: '90' }];
+            }
+            state.answers.user.customPlanSavedId = '';
+            state.answers.user.customWorkoutStatus = 'Unsaved changes. Save this workout plan before continuing.';
+            state.answers.user.customWorkoutStatusKind = '';
+            renderPanel();
+            return;
+          }
+          const planAddBtn = target.closest('[data-client-plan-add]');
+          if (planAddBtn instanceof HTMLElement) {
+            const day = String(planAddBtn.getAttribute('data-client-plan-add') || '').trim();
+            const days = clientPlanDays(state.answers.user);
+            if (!Array.isArray(days[day])) days[day] = [];
+            days[day].push({ name: '', sets: '3', reps: '8-12', restSec: '90' });
+            state.answers.user.customPlanSavedId = '';
+            state.answers.user.customWorkoutStatus = 'Unsaved changes. Save this workout plan before continuing.';
+            state.answers.user.customWorkoutStatusKind = '';
+            renderPanel();
+            return;
+          }
+          const planRemoveBtn = target.closest('[data-client-plan-remove]');
+          if (planRemoveBtn instanceof HTMLElement) {
+            const [day, idxRaw] = String(planRemoveBtn.getAttribute('data-client-plan-remove') || '').split(':');
+            const idx = Number(idxRaw);
+            const days = clientPlanDays(state.answers.user);
+            if (Array.isArray(days[day]) && Number.isInteger(idx)) {
+              days[day].splice(idx, 1);
+            }
+            state.answers.user.customPlanSavedId = '';
+            state.answers.user.customWorkoutStatus = 'Unsaved changes. Save this workout plan before continuing.';
+            state.answers.user.customWorkoutStatusKind = '';
+            renderPanel();
             return;
           }
           const workspaceCard = target.closest('[data-select-workspace]');
@@ -9002,7 +9532,11 @@ function formatWorkspaceLabel(workspace) {
               finalizeTestOnboarding('manager-dashboard');
               return;
             }
-            goToManagerPath('Explore manager dashboard');
+            try {
+              await goToManagerPath('Explore manager dashboard');
+            } catch (err) {
+              showEntryToast(err?.message || 'Could not save manager onboarding.');
+            }
             return;
           }
           if (action === 'manager-invite-trainers') {
@@ -9011,7 +9545,11 @@ function formatWorkspaceLabel(workspace) {
               finalizeTestOnboarding('manager-invite-trainers');
               return;
             }
-            goToManagerPath('Invite trainers');
+            try {
+              await goToManagerPath('Invite trainers');
+            } catch (err) {
+              showEntryToast(err?.message || 'Could not save manager onboarding.');
+            }
             return;
           }
           if (action === 'manager-add-client') {
@@ -9020,7 +9558,11 @@ function formatWorkspaceLabel(workspace) {
               finalizeTestOnboarding('manager-add-client');
               return;
             }
-            goToManagerPath('Add clients yourself');
+            try {
+              await goToManagerPath('Add clients yourself');
+            } catch (err) {
+              showEntryToast(err?.message || 'Could not save manager onboarding.');
+            }
             return;
           }
           if (action === 'manager-add-location') {

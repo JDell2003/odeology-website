@@ -20,6 +20,12 @@
 
   const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
   const TRAINING_DAY_CODES = ['SU', 'M', 'T', 'W', 'TH', 'F', 'S'];
+  const TRAINING_INTAKE_KEY = 'ode_training_intake_v2';
+  const ONBOARDING_FORCE_KEY = 'ode_onboarding_force_v1';
+  const ONBOARDING_DONE_KEY = 'ode_onboarding_done_v1';
+  const ACCOUNT_TRAINER_CHANGE_CODE_KEY = 'ode_account_change_trainer_invite_code_v1';
+  const TRAINER_INVITE_MAP_KEY = 'ode_trainer_invites_v1';
+  const MANAGER_ENTRY_KEY = 'ode_manager_entry_prefill_v1';
 
   function defaultTrainingDayCodes(daysPerWeekRaw) {
     const n = Math.max(0, Math.min(7, Math.floor(Number(daysPerWeekRaw) || 0)));
@@ -300,6 +306,544 @@
       return;
     }
     avatar.innerHTML = `<div class="account-fallback">${initialsFromName(name)}</div>`;
+  }
+
+  function readSavedTrainingIntake(profileResp = null) {
+    let local = null;
+    try {
+      local = JSON.parse(localStorage.getItem(TRAINING_INTAKE_KEY) || 'null');
+    } catch {
+      local = null;
+    }
+    const remote = profileResp?.ok
+      ? (profileResp.json?.profile?.profile?.training_intake || null)
+      : null;
+    return (local && typeof local === 'object') ? local : ((remote && typeof remote === 'object') ? remote : null);
+  }
+
+  function readManagerPrefill() {
+    try {
+      const raw = sessionStorage.getItem(MANAGER_ENTRY_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function initSetupUi(profileResp = null) {
+    const inviteOpenBtn = $('#account-invite-trainer-open');
+    const openBtn = $('#account-settings-open');
+    const backBtn = $('#account-settings-back');
+    const inviteLaunchCard = $('#account-invite-trainer-launch-card');
+    const launchCard = $('#account-settings-launch-card');
+    const settingsView = $('#account-settings-view');
+    const pendingCard = $('#account-pending-card');
+    const panelEl = $('#account-setup-panel');
+    const statusEl = $('#account-setup-status');
+    const titleEl = $('#account-settings-title');
+    const copyEl = $('#account-settings-copy');
+    if (!inviteOpenBtn || !openBtn || !backBtn || !inviteLaunchCard || !launchCard || !settingsView || !panelEl || !statusEl || !titleEl || !copyEl) return;
+
+    let intake = readSavedTrainingIntake(profileResp);
+    let settingsPanel = 'home';
+    let viewMode = 'settings';
+    let inviteQrExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
+
+    const setStatus = (message) => {
+      statusEl.textContent = String(message || '').trim();
+    };
+
+    const getManagerContext = () => {
+      const prefill = readManagerPrefill();
+      return {
+        managerCode: String(prefill?.managerCode || '').trim().toUpperCase(),
+        companyName: String(prefill?.companyName || '').trim(),
+        managerName: String(prefill?.managerName || '').trim(),
+        locationName: String(prefill?.locationName || '').trim()
+      };
+    };
+
+    const hasManagerInviteAccess = () => Boolean(getManagerContext().managerCode);
+
+    const resolveInviteBaseUrl = () => {
+      const configuredBase = String(
+        window.__ODE_INVITE_BASE_URL__
+        || localStorage.getItem('ode_invite_base_url')
+        || 'https://RiseForIt.up.railway.app/index.html'
+      ).trim();
+      const origin = String(window.location.origin || '').trim();
+      const hostname = String(window.location.hostname || '').trim().toLowerCase();
+      const isLocalHost = !hostname
+        || hostname === 'localhost'
+        || hostname === '127.0.0.1'
+        || hostname === '0.0.0.0'
+        || hostname.endsWith('.local');
+      if (isLocalHost) return configuredBase;
+      const path = String(window.location.pathname || '/index.html').trim() || '/index.html';
+      return `${origin.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+    };
+
+    const buildManagerInviteLink = (expiresAt = inviteQrExpiresAt) => {
+      const managerCode = getManagerContext().managerCode;
+      const params = new URLSearchParams();
+      params.set('managerInvite', managerCode);
+      params.set('expires', String(Number(expiresAt) || 0));
+      return `${resolveInviteBaseUrl()}?${params.toString()}`;
+    };
+
+    const buildManagerInviteText = (expiresAt = inviteQrExpiresAt) => {
+      const manager = getManagerContext();
+      const managerName = manager.managerName || manager.companyName || 'your manager';
+      const companyName = manager.companyName || 'the gym';
+      return `${managerName} invited you to join ${companyName} on STRYVE. This invite works for 24 hours: ${buildManagerInviteLink(expiresAt)}`;
+    };
+
+    const buildManagerInviteQrImageUrl = (expiresAt = inviteQrExpiresAt) => `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(buildManagerInviteLink(expiresAt))}`;
+
+    const buildManagerSmsHref = (expiresAt = inviteQrExpiresAt) => `sms:?body=${encodeURIComponent(buildManagerInviteText(expiresAt))}`;
+
+    const copyTextValue = async (value) => {
+      const text = String(value || '').trim();
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.setAttribute('readonly', '');
+        helper.style.position = 'absolute';
+        helper.style.left = '-9999px';
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand('copy');
+        helper.remove();
+      }
+    };
+
+    const showSettingsView = () => {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', 'settings');
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      } catch {
+        // ignore
+      }
+      render();
+    };
+
+    const showAccountView = () => {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('view');
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      } catch {
+        // ignore
+      }
+      render();
+    };
+
+    const restartOnboarding = async () => {
+      setStatus('Resetting onboarding...');
+      const resp = await api('/api/auth/trainer/onboarding/reset', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+      if (!resp.ok) {
+        setStatus(resp.json?.error || 'Could not reset onboarding.');
+        return;
+      }
+      try {
+        localStorage.setItem(ONBOARDING_FORCE_KEY, '1');
+        localStorage.removeItem(ONBOARDING_DONE_KEY);
+      } catch {
+        // ignore
+      }
+      window.location.href = 'index.html';
+    };
+
+    const saveCurrentSettings = async () => {
+      setStatus('Saving settings...');
+      const payload = intake && typeof intake === 'object'
+        ? { ...intake, completedAt: intake.completedAt || Date.now() }
+        : { completedAt: Date.now() };
+      try {
+        localStorage.setItem(TRAINING_INTAKE_KEY, JSON.stringify(payload));
+      } catch {
+        // ignore
+      }
+      const resp = await api('/api/profile', {
+        method: 'POST',
+        body: JSON.stringify({ profile: { training_intake: payload } })
+      });
+      intake = payload;
+      settingsPanel = 'saved';
+      setStatus(resp.ok ? 'Settings saved.' : 'Saved locally. Could not sync profile.');
+      render();
+    };
+
+    const openClientOnboarding = ({ inviteCode = '' } = {}) => {
+      try {
+        localStorage.setItem(ONBOARDING_FORCE_KEY, '1');
+        localStorage.removeItem(ONBOARDING_DONE_KEY);
+        if (String(inviteCode || '').trim()) {
+          localStorage.setItem(ACCOUNT_TRAINER_CHANGE_CODE_KEY, String(inviteCode || '').trim());
+        } else {
+          localStorage.removeItem(ACCOUNT_TRAINER_CHANGE_CODE_KEY);
+        }
+      } catch {
+        // ignore
+      }
+      window.location.href = 'index.html';
+    };
+
+    const readTrainerInviteMap = () => {
+      try {
+        const raw = localStorage.getItem(TRAINER_INVITE_MAP_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    };
+
+    const isKnownTrainerInviteCode = (code) => {
+      const normalized = String(code || '').trim();
+      if (!normalized) return false;
+      return Object.values(readTrainerInviteMap()).some((value) => String(value || '').trim() === normalized);
+    };
+
+    const renderSettingsHome = (user) => `
+      <div class="account-settings-menu">
+        <button type="button" class="account-settings-link" data-settings-action="credentials">Username and password</button>
+        <button type="button" class="account-settings-link" data-settings-action="change-trainer">Change trainer</button>
+        <button type="button" class="account-settings-link" data-settings-action="save">Save settings</button>
+        <button type="button" class="account-settings-link" data-settings-action="restart">Restart onboarding</button>
+      </div>
+      <div class="account-settings-panel-card">
+        <p class="account-settings-panel-note">Current account: <strong>${escapeHtml(user?.username || user?.displayName || 'Account')}</strong></p>
+      </div>
+    `;
+
+    const renderInviteTrainerPanel = () => {
+      const manager = getManagerContext();
+      const expiresAt = inviteQrExpiresAt;
+      const expiresText = new Date(expiresAt).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      return `
+        <div class="account-settings-panel">
+          <div class="account-settings-panel-card">
+            <h3 class="account-settings-panel-title">Invite Trainer</h3>
+            <p class="account-settings-panel-note">Manager code: <strong>${escapeHtml(manager.managerCode || 'Unavailable')}</strong></p>
+            <p class="account-settings-panel-note">${escapeHtml(manager.companyName || 'Manager workspace')}${manager.locationName ? ` • ${escapeHtml(manager.locationName)}` : ''}</p>
+            <p class="account-settings-panel-note">The QR code and SMS invite use a trainer invite link that expires in 24 hours. Current expiration: ${escapeHtml(expiresText)}</p>
+          </div>
+          <div class="account-settings-menu">
+            <button type="button" class="account-settings-link" data-settings-action="invite-show-qr">Generate QR code</button>
+            <button type="button" class="account-settings-link" data-settings-action="invite-copy-code">Copy invite code</button>
+            <button type="button" class="account-settings-link" data-settings-action="invite-send-sms">Send SMS invite</button>
+            <button type="button" class="account-settings-link" data-settings-action="back-home">Back to account</button>
+          </div>
+          ${settingsPanel === 'invite-trainer-qr' ? `
+            <div class="account-invite-qr-frame">
+              <img src="${escapeHtml(buildManagerInviteQrImageUrl(expiresAt))}" alt="Trainer invite QR code" width="220" height="220">
+              <p class="account-settings-panel-note" style="text-align:center;">Scan this on a phone to open trainer onboarding. It expires on ${escapeHtml(expiresText)}.</p>
+              <div class="account-settings-menu">
+                <a class="account-settings-link" href="${escapeHtml(buildManagerInviteLink(expiresAt))}" target="_blank" rel="noopener">Open Invite Link</a>
+                <a class="account-settings-link" href="${escapeHtml(buildManagerInviteQrImageUrl(expiresAt))}" target="_blank" rel="noopener" download="manager-trainer-invite-qr.png">Download QR</a>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
+
+    const renderCredentialsPanel = (user) => `
+      <div class="account-settings-panel">
+        <div class="account-settings-panel-card">
+          <h3 class="account-settings-panel-title">Username and password</h3>
+          <p class="account-settings-panel-note">Username: <strong>${escapeHtml(user?.username || 'Not set')}</strong></p>
+          <p class="account-settings-panel-note">Request a password reset link for this account from here.</p>
+          <div class="account-settings-inline-form">
+            <label for="account-reset-identifier">Email, username, or phone</label>
+            <input id="account-reset-identifier" type="text" value="${escapeHtml(user?.username || '')}" placeholder="Enter your email, username, or phone">
+          </div>
+        </div>
+        <div class="account-settings-menu">
+          <button type="button" class="account-settings-link" data-settings-action="send-reset">Send reset link</button>
+          <button type="button" class="account-settings-link" data-settings-action="back-home">Back to settings</button>
+        </div>
+      </div>
+    `;
+
+    const renderChangeTrainerPanel = () => `
+      <div class="account-settings-panel">
+        <div class="account-settings-panel-card">
+          <h3 class="account-settings-panel-title">Change trainer</h3>
+          <p class="account-settings-panel-note">Enter a referral code or restart the regular client onboarding flow.</p>
+          <div class="account-settings-inline-form">
+            <label for="account-change-trainer-code">Referral code</label>
+            <div class="account-settings-code-wrap">
+              <input id="account-change-trainer-code" type="text" placeholder="Enter referral code">
+              <button type="button" class="account-settings-code-submit" data-settings-action="confirm-code" aria-label="Check referral code">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="account-settings-menu">
+          <button type="button" class="account-settings-link" data-settings-action="regular-client-flow">Regular client flow</button>
+          <button type="button" class="account-settings-link" data-settings-action="back-home">Back to settings</button>
+        </div>
+      </div>
+    `;
+
+    const renderConfirmPanel = ({ title, copy, continueAction = '', backAction = 'back-home' } = {}) => `
+      <div class="account-settings-panel">
+        <div class="account-settings-panel-card">
+          <h3 class="account-settings-panel-title">${escapeHtml(title || 'Confirmation')}</h3>
+          <p class="account-settings-panel-note">${escapeHtml(copy || '')}</p>
+        </div>
+        <div class="account-settings-menu">
+          ${continueAction ? `<button type="button" class="account-settings-link" data-settings-action="${escapeHtml(continueAction)}">Continue</button>` : ''}
+          <button type="button" class="account-settings-link" data-settings-action="${escapeHtml(backAction)}">Back to settings</button>
+        </div>
+      </div>
+    `;
+
+    const renderRestartConfirmPanel = () => `
+      <div class="account-settings-panel">
+        <div class="account-settings-panel-card">
+          <h3 class="account-settings-panel-title">Restart onboarding?</h3>
+          <p class="account-settings-panel-note">This will send you back through onboarding so you can set the account up again.</p>
+        </div>
+        <div class="account-settings-menu">
+          <button type="button" class="account-settings-link is-danger" data-settings-action="confirm-restart">Confirm restart</button>
+          <button type="button" class="account-settings-link" data-settings-action="back-home">Back to settings</button>
+        </div>
+      </div>
+    `;
+
+    const requestPasswordReset = async () => {
+      const input = $('#account-reset-identifier');
+      const identifier = String(input?.value || '').trim();
+      if (!identifier) {
+        setStatus('Enter your email, username, or phone first.');
+        return;
+      }
+      setStatus('Sending reset link...');
+      const resp = await fetch('/api/auth/password/forgot', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier })
+      }).catch(() => null);
+      const data = await resp?.json?.().catch?.(() => ({}));
+      settingsPanel = 'password-sent';
+      setStatus(resp?.ok ? 'If the account exists, a reset link was sent.' : (data?.error || 'Could not request reset link.'));
+      render();
+    };
+
+    const render = () => {
+      const inSettingsView = (() => {
+        try {
+          return new URL(window.location.href).searchParams.get('view') === 'settings';
+        } catch {
+          return false;
+        }
+      })();
+      const hasIntake = intake && typeof intake === 'object';
+      const hasManagerInvite = hasManagerInviteAccess();
+      titleEl.textContent = viewMode === 'invite' ? 'Invite Trainer' : 'Settings';
+      copyEl.textContent = viewMode === 'invite'
+        ? 'Share your manager invite by QR code, copied code, or SMS.'
+        : 'Review and update the onboarding inputs tied to this account.';
+      inviteLaunchCard.classList.toggle('account-hidden', inSettingsView || !hasManagerInvite);
+      launchCard.classList.toggle('account-hidden', inSettingsView);
+      settingsView.classList.toggle('hidden', !inSettingsView);
+      pendingCard?.classList.toggle('account-hidden', inSettingsView);
+      setStatus(hasIntake ? 'Onboarding inputs saved to this account.' : 'No saved onboarding inputs yet.');
+      if (!inSettingsView) {
+        panelEl.innerHTML = '';
+        settingsPanel = 'home';
+        viewMode = 'settings';
+        return;
+      }
+      const currentUser = window.__odeCurrentUser || null;
+      if (viewMode === 'invite') {
+        if (!hasManagerInvite) {
+          panelEl.innerHTML = renderConfirmPanel({
+            title: 'Invite Trainer unavailable',
+            copy: 'No active manager code was found for this account yet.',
+            backAction: 'back-home'
+          });
+        } else {
+          panelEl.innerHTML = renderInviteTrainerPanel();
+        }
+      } else if (settingsPanel === 'credentials') {
+        panelEl.innerHTML = renderCredentialsPanel(currentUser);
+      } else if (settingsPanel === 'change-trainer') {
+        panelEl.innerHTML = renderChangeTrainerPanel();
+      } else if (settingsPanel === 'saved') {
+        panelEl.innerHTML = renderConfirmPanel({
+          title: 'Settings saved',
+          copy: 'Your current account settings were saved.',
+          backAction: 'back-home'
+        });
+      } else if (settingsPanel === 'change-trainer-code-confirm') {
+        panelEl.innerHTML = renderConfirmPanel({
+          title: 'Referral code ready',
+          copy: 'Your referral code was saved. Continue to onboarding to connect to the new trainer.',
+          continueAction: 'continue-referral-onboarding',
+          backAction: 'back-home'
+        });
+      } else if (settingsPanel === 'change-trainer-regular-confirm') {
+        panelEl.innerHTML = renderConfirmPanel({
+          title: 'Client flow ready',
+          copy: 'Continue to restart the regular client onboarding flow.',
+          continueAction: 'continue-regular-onboarding',
+          backAction: 'back-home'
+        });
+      } else if (settingsPanel === 'password-sent') {
+        panelEl.innerHTML = renderConfirmPanel({
+          title: 'Reset link requested',
+          copy: 'If the account exists, a password reset link was sent.',
+          backAction: 'back-home'
+        });
+      } else if (settingsPanel === 'restart-confirm') {
+        panelEl.innerHTML = renderRestartConfirmPanel();
+      } else {
+        panelEl.innerHTML = renderSettingsHome(currentUser);
+      }
+
+      panelEl.querySelectorAll('[data-settings-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const action = String(btn.getAttribute('data-settings-action') || '').trim();
+          if (action === 'invite-show-qr') {
+            inviteQrExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
+            settingsPanel = 'invite-trainer-qr';
+            setStatus('Trainer QR code ready.');
+            render();
+            return;
+          }
+          if (action === 'invite-copy-code') {
+            await copyTextValue(getManagerContext().managerCode);
+            setStatus('Invite code copied.');
+            return;
+          }
+          if (action === 'invite-send-sms') {
+            window.location.href = buildManagerSmsHref(Date.now() + (24 * 60 * 60 * 1000));
+            setStatus('Opening SMS app...');
+            return;
+          }
+          if (action === 'credentials') {
+            settingsPanel = 'credentials';
+            render();
+            return;
+          }
+          if (action === 'change-trainer') {
+            settingsPanel = 'change-trainer';
+            render();
+            return;
+          }
+          if (action === 'save') {
+            await saveCurrentSettings();
+            return;
+          }
+          if (action === 'restart') {
+            settingsPanel = 'restart-confirm';
+            setStatus('Confirm restart to continue.');
+            render();
+            return;
+          }
+          if (action === 'confirm-restart') {
+            await restartOnboarding();
+            return;
+          }
+          if (action === 'send-reset') {
+            await requestPasswordReset();
+            return;
+          }
+          if (action === 'confirm-code') {
+            const code = String($('#account-change-trainer-code')?.value || '').trim();
+            if (!code) {
+              setStatus('Enter a referral code first.');
+              return;
+            }
+            if (!isKnownTrainerInviteCode(code)) {
+              setStatus('Enter a valid referral code.');
+              return;
+            }
+            try {
+              localStorage.setItem(ACCOUNT_TRAINER_CHANGE_CODE_KEY, code);
+            } catch {
+              // ignore
+            }
+            settingsPanel = 'change-trainer-code-confirm';
+            setStatus('Referral code saved.');
+            render();
+            return;
+          }
+          if (action === 'regular-client-flow') {
+            try {
+              localStorage.removeItem(ACCOUNT_TRAINER_CHANGE_CODE_KEY);
+            } catch {
+              // ignore
+            }
+            settingsPanel = 'change-trainer-regular-confirm';
+            setStatus('Regular client flow selected.');
+            render();
+            return;
+          }
+          if (action === 'continue-referral-onboarding') {
+            const code = String(localStorage.getItem(ACCOUNT_TRAINER_CHANGE_CODE_KEY) || '').trim();
+            openClientOnboarding({ inviteCode: code });
+            return;
+          }
+          if (action === 'continue-regular-onboarding') {
+            openClientOnboarding({ inviteCode: '' });
+            return;
+          }
+          if (action === 'back-home') {
+            settingsPanel = 'home';
+            viewMode = 'settings';
+            setStatus(hasIntake ? 'Onboarding inputs saved to this account.' : 'No saved onboarding inputs yet.');
+            render();
+          }
+        });
+      });
+
+      const changeTrainerCodeInput = panelEl.querySelector('#account-change-trainer-code');
+      if (changeTrainerCodeInput instanceof HTMLInputElement) {
+        changeTrainerCodeInput.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          panelEl.querySelector('[data-settings-action="confirm-code"]')?.click();
+        });
+      }
+    };
+
+    inviteOpenBtn.addEventListener('click', () => {
+      viewMode = 'invite';
+      settingsPanel = 'invite-trainer-home';
+      inviteQrExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
+      setStatus('Manager invite tools ready.');
+      showSettingsView();
+    });
+    openBtn.addEventListener('click', () => {
+      viewMode = 'settings';
+      settingsPanel = 'home';
+      showSettingsView();
+    });
+    backBtn.addEventListener('click', showAccountView);
+
+    render();
   }
 
   function renderWarnings(items, statusText = '') {
@@ -1082,6 +1626,7 @@
 
     initRequestsUi();
     initPrUi();
+    initSetupUi(profileResp);
 
     if (statusEl) statusEl.textContent = '';
   }

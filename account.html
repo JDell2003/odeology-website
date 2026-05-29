@@ -26,7 +26,7 @@
     }
     .account-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 14px;
     }
@@ -36,6 +36,8 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
+      align-self: flex-start;
+      margin-left: auto;
     }
     .account-row-main {
       display: flex;
@@ -80,6 +82,267 @@
       margin-top: 10px;
       font-size: 13px;
       color: #666;
+    }
+    .account-hidden {
+      display: none !important;
+    }
+    .account-settings-link-card {
+      padding-block: 12px;
+    }
+    .account-settings-link {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 0;
+      border: 0;
+      border-top: 1px solid rgba(15, 36, 53, 0.12);
+      border-bottom: 1px solid rgba(15, 36, 53, 0.12);
+      background: transparent;
+      color: #102334;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .account-settings-link:hover,
+    .account-settings-link:focus-visible {
+      color: #9a5f12;
+      background: rgba(15, 36, 53, 0.03);
+    }
+    .account-settings-link.is-danger {
+      border-color: rgba(188, 39, 39, 0.22);
+      color: #b42323;
+    }
+    .account-settings-link.is-danger:hover,
+    .account-settings-link.is-danger:focus-visible {
+      color: #fff;
+      background: #c92d2d;
+    }
+    .account-settings-link svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .account-settings-view {
+      display: grid;
+      gap: 16px;
+    }
+    .account-settings-view.hidden {
+      display: none;
+    }
+    .account-settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .account-settings-head h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 0.01em;
+    }
+    .account-settings-copy {
+      margin-top: 6px;
+      color: #5f6973;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+    .account-settings-menu {
+      display: grid;
+      gap: 10px;
+    }
+    .account-settings-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 36, 53, 0.16);
+      background: rgba(15, 36, 53, 0.04);
+      color: #0f2435;
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .account-settings-status {
+      color: #6a7480;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+    .account-settings-panel {
+      display: grid;
+      gap: 14px;
+      padding: 4px 0;
+    }
+    .account-settings-panel-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px 0 4px;
+    }
+    .account-settings-panel-title {
+      margin: 0;
+      color: #111;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+    .account-settings-panel-note {
+      margin: 0;
+      color: #5f6973;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      font-weight: 700;
+    }
+    .account-invite-qr-frame {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(15, 36, 53, 0.1);
+      border-radius: 18px;
+      background: rgba(15, 36, 53, 0.03);
+    }
+    .account-invite-qr-frame img {
+      width: 220px;
+      height: 220px;
+      max-width: 100%;
+      border-radius: 16px;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid rgba(15, 36, 53, 0.1);
+    }
+    .account-settings-inline-form {
+      display: grid;
+      gap: 10px;
+    }
+    .account-settings-inline-form label {
+      color: #304252;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .account-settings-inline-form input {
+      width: 100%;
+      border: 1px solid rgba(15, 36, 53, 0.14);
+      border-radius: 14px;
+      background: #fff;
+      padding: 0.8rem 0.9rem;
+      color: #102334;
+      font: inherit;
+    }
+    .account-settings-code-wrap {
+      position: relative;
+    }
+    .account-settings-code-wrap input {
+      padding-right: 3.8rem;
+    }
+    .account-settings-code-submit {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #e4a141 0%, #cf8424 58%, #b86f15 100%);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(184, 111, 21, 0.22);
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    .account-settings-code-submit:hover,
+    .account-settings-code-submit:focus-visible {
+      transform: translateY(-50%) scale(1.04);
+    }
+    .account-settings-code-submit svg {
+      width: 14px;
+      height: 14px;
+    }
+    .account-setup-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .account-setup-field {
+      display: grid;
+      gap: 6px;
+    }
+    .account-setup-field.full {
+      grid-column: 1 / -1;
+    }
+    .account-setup-field label {
+      color: #304252;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .account-setup-field input,
+    .account-setup-field textarea {
+      width: 100%;
+      border: 1px solid rgba(15, 36, 53, 0.14);
+      border-radius: 14px;
+      background: #fff;
+      padding: 0.8rem 0.9rem;
+      color: #102334;
+      font: inherit;
+    }
+    .account-setup-field textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+    .account-setup-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0.36rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 36, 53, 0.12);
+      background: rgba(245, 248, 252, 0.96);
+      color: #143044;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+    .account-setup-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .account-setup-save {
+      min-width: 140px;
+    }
+    .account-setup-restart {
+      border: 0;
+      background: transparent;
+      color: #9a5f12;
+      font-size: 0.86rem;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 0;
+    }
+    .account-setup-restart:hover,
+    .account-setup-restart:focus-visible {
+      text-decoration: underline;
     }
     .account-requests-btn {
       display: inline-flex;
@@ -487,12 +750,16 @@
       font-weight: 700;
     }
     @media (max-width: 640px) {
-      .account-row {
-        align-items: flex-start;
-      }
       .account-row-actions {
-        width: 100%;
-        justify-content: flex-start;
+        width: auto;
+        max-width: 100%;
+        justify-content: flex-end;
+      }
+      .account-setup-grid {
+        grid-template-columns: 1fr;
+      }
+      .account-setup-actions {
+        align-items: flex-start;
       }
       .account-requests-btn {
         font-size: 0.8rem;
@@ -979,6 +1246,14 @@
     <symbol id="icon-book" viewBox="0 0 24 24">
       <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
     </symbol>
+    <symbol id="icon-sliders" viewBox="0 0 24 24">
+      <path d="M4 7h8"></path>
+      <path d="M16 7h4"></path>
+      <path d="M4 17h4"></path>
+      <path d="M12 17h8"></path>
+      <circle cx="13" cy="7" r="2"></circle>
+      <circle cx="9" cy="17" r="2"></circle>
+    </symbol>
         <symbol id="icon-folder" viewBox="0 0 24 24">
             <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
         </symbol>
@@ -1040,7 +1315,7 @@
       <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
       <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
       <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
-            <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
+            <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Available Chefs</span></a>
     </div>
     <div class="control-section hidden" id="control-trainer-section">
       <p class="section-label">TRAINER</p>
@@ -1105,7 +1380,33 @@
         </div>
       </div>
 
-      <section class="account-card">
+      <section class="account-card account-settings-link-card" id="account-invite-trainer-launch-card">
+        <button type="button" class="account-settings-link" id="account-invite-trainer-open" aria-label="Open trainer invite options">
+          <svg aria-hidden="true"><use href="#icon-share"></use></svg>
+          <span>Invite Trainer</span>
+        </button>
+      </section>
+
+      <section class="account-card account-settings-link-card" id="account-settings-launch-card">
+        <button type="button" class="account-settings-link" id="account-settings-open" aria-label="Open settings">
+          <svg aria-hidden="true"><use href="#icon-sliders"></use></svg>
+          <span>Settings</span>
+        </button>
+      </section>
+
+      <section class="account-card account-settings-view hidden" id="account-settings-view">
+        <div class="account-settings-head">
+          <div>
+            <h2 id="account-settings-title">Settings</h2>
+            <div class="account-settings-copy" id="account-settings-copy">Review and update the onboarding inputs tied to this account.</div>
+          </div>
+          <button type="button" class="account-settings-back" id="account-settings-back">Back</button>
+        </div>
+        <div class="account-settings-status" id="account-setup-status">Loading settings...</div>
+        <div id="account-setup-panel"></div>
+      </section>
+
+      <section class="account-card" id="account-pending-card">
         <div class="account-warnings-head">
           <h2>Pending</h2>
           <div class="account-warnings-status" id="account-warnings-status">Checking warnings...</div>
@@ -1120,7 +1421,7 @@
       window.location.replace('trainer-dashboard.html');
     }
   </script>
-  <script src="js/main.js?v=2026-03-28-owner-demo-41"></script>
+  <script src="js/main.js?v=2026-05-29-role-sidebar-2"></script>
   <script src="js/account.js?v=2026-03-26-account-pr-2"></script>
 </body>
 </html>

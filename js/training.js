@@ -193,7 +193,6 @@
     return Boolean(sim?.disableDateBlocker);
   }
 
-  let trainingEntryPaywallKey = '';
   const TRAINING_PAYWALL_ENABLED = false;
 
   async function openTrainingPaywall(reason = 'manual') {
@@ -220,15 +219,8 @@
     }
   }
 
-  async function maybeOpenTrainingEntryPaywall(reason = 'training_plan_entry') {
-    const userId = String(state?.auth?.user?.id || '').trim();
-    const planId = String(state?.planRow?.id || '').trim();
-    if (!userId || !planId) return false;
-    const nextKey = `${userId}:${planId}`;
-    if (trainingEntryPaywallKey === nextKey) return false;
-    const opened = await openTrainingPaywall(reason);
-    if (opened) trainingEntryPaywallKey = nextKey;
-    return opened;
+  async function maybeOpenTrainingEntryPaywall() {
+    return false;
   }
 
   function escapeHtml(value) {
@@ -4073,12 +4065,6 @@
     }
     if (action === 'confirm') {
       await endWorkoutTimer({ reason: source || 'confirmed', showToast: true });
-      window.setTimeout(() => {
-        void openTrainingPaywall('workout_end');
-      }, 220);
-      window.setTimeout(() => {
-        void openTrainingPaywall('workout_end_retry');
-      }, 900);
       return;
     }
     if (action === 'cancel' && !workoutTimer.paused) {
@@ -9688,6 +9674,16 @@ function toggleSharePopover(force) {
       setView('wizard');
       return;
     }
+    const canUseClientTrainingPortal = typeof window.__odeCanAccessClientTrainingPortal === 'function'
+      ? window.__odeCanAccessClientTrainingPortal(meUser, null)
+      : !(Boolean((meUser?.isTrainer || meUser?.trainer?.active || meUser?.isManager || meUser?.manager?.active)) && !Boolean(meUser?.isOwner));
+    if (!canUseClientTrainingPortal) {
+      const nextHref = typeof window.__odeGetRestrictedPortalHref === 'function'
+        ? window.__odeGetRestrictedPortalHref(meUser)
+        : 'trainer-dashboard.html';
+      window.location.replace(nextHref);
+      return;
+    }
     state.auth.user = meUser;
     shareEventsInFlight = false;
     shareUi.open = false;
@@ -9793,21 +9789,14 @@ function toggleSharePopover(force) {
       restoreWorkoutDraftState({ userId: state.auth.user?.id, planId: state.planRow.id });
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
       restorePersistedWorkoutRestTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
-      const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-      const dismissed = shouldSkipDemoUpsell(state.auth.user) || localStorage.getItem(dismissedKey) === '1';
       state.logs = [];
       state.allLogs = [];
-      setView(dismissed ? 'plan' : 'upsell');
+      setView('plan');
       void refreshTrainingLogs(state.planRow.id)
         .then(() => {
           render();
         })
         .catch(() => {});
-      if (!hadRenderablePlan) {
-        window.setTimeout(() => {
-          void maybeOpenTrainingEntryPaywall('training_plan_entry');
-        }, 140);
-      }
       return;
     }
     if (hasRenderablePlanRow(state.planRow) && Number(state.generating?.completedAt || 0) > 0) {
@@ -9863,7 +9852,7 @@ function toggleSharePopover(force) {
       class: 'btn btn-ghost',
       onclick: () => setWizard({ step: Math.max(1, step - 1) })
     }, 'Back');
-      const nextBtn = el('button', { type: 'button', class: 'btn btn-primary' }, step === 4 ? 'Build plan' : 'Continue');
+      const nextBtn = el('button', { type: 'button', class: 'btn btn-primary' }, step === 4 ? 'Save and go to dashboard' : 'Continue');
     if (step > 1) actions.appendChild(backBtn);
     actions.appendChild(nextBtn);
 
@@ -11129,7 +11118,7 @@ function toggleSharePopover(force) {
         clearError();
         const payload = buildOnboardingPayload();
         if (!payload) return flashError('Missing setup info.');
-        await submitOnboarding(payload);
+        await submitOnboarding(payload, { redirectToDashboardAfterSave: true });
       });
     }
 
@@ -11157,6 +11146,58 @@ function toggleSharePopover(force) {
         el('div', { class: 'training-muted', id: 'training-gen-meta', style: 'font-size:12px;' }, `0% - 0s elapsed. Usually about ${estimateSec}s.`)
       )
     );
+  }
+
+  function getClientDashboardHref() {
+    return 'dashboard.html';
+  }
+
+  function openWorkoutUploadNoticeModal({ onContinue } = {}) {
+    const existing = document.getElementById('training-workout-upload-notice');
+    if (existing) existing.remove();
+
+    const close = () => {
+      const node = document.getElementById('training-workout-upload-notice');
+      if (node) node.remove();
+    };
+
+    const continueToDashboard = () => {
+      close();
+      if (typeof onContinue === 'function') onContinue();
+    };
+
+    const overlay = el('div', {
+      class: 'schedule-modal',
+      id: 'training-workout-upload-notice',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'training-workout-upload-notice-title'
+    },
+    el('button', { class: 'schedule-modal-backdrop', type: 'button', 'aria-label': 'Close workout upload notice' }),
+    el('div', { class: 'schedule-modal-card' },
+      el('div', { class: 'schedule-modal-head' },
+        el('div', { class: 'schedule-modal-title', id: 'training-workout-upload-notice-title' }, 'Workout saved'),
+        el('button', { class: 'schedule-modal-close', type: 'button', 'aria-label': 'Close workout upload notice' }, '×')
+      ),
+      el('div', { class: 'schedule-modal-body' },
+        el('div', {
+          style: 'display:flex; align-items:center; gap:12px; margin-bottom:10px; color:var(--ink); font-weight:800;'
+        },
+        el('span', { 'aria-hidden': 'true', style: 'font-size:1.35rem; line-height:1;' }, '🕒'),
+        el('span', null, 'Your workout should be uploaded within 24 hours.')
+        ),
+        el('div', { class: 'training-muted' }, 'We’ll take you to your dashboard now.')
+      ),
+      el('div', { class: 'schedule-modal-actions' },
+        el('button', { type: 'button', class: 'btn btn-primary' }, 'Go to dashboard')
+      )
+    ));
+
+    overlay.querySelector('.schedule-modal-backdrop')?.addEventListener('click', continueToDashboard);
+    overlay.querySelector('.schedule-modal-close')?.addEventListener('click', continueToDashboard);
+    overlay.querySelector('.schedule-modal-actions button')?.addEventListener('click', continueToDashboard);
+    document.body.appendChild(overlay);
+    return overlay;
   }
 
   function buildOnboardingPayload() {
@@ -11283,7 +11324,8 @@ function toggleSharePopover(force) {
     };
   }
 
-  async function submitOnboarding(payload) {
+  async function submitOnboarding(payload, options = {}) {
+    const redirectToDashboardAfterSave = Boolean(options?.redirectToDashboardAfterSave);
     const selectedDayCount = Number(payload?.daysPerWeek || 0) || null;
     const selectedPriorityGroups = Array.isArray(payload?.priorityGroups)
       ? payload.priorityGroups.map((value) => String(value || '')).filter(Boolean)
@@ -11692,11 +11734,6 @@ function toggleSharePopover(force) {
       markTrainingQuickTourFirstPlanArmed();
       setTrainingQuickTourPending();
     }
-    if (state.planRow?.id) {
-      const dismissedKey = `ode_training_upsell_dismissed_${state.planRow.id}`;
-      if (shouldSkipDemoUpsell(state.auth.user)) localStorage.setItem(dismissedKey, '1');
-      else localStorage.removeItem(dismissedKey);
-    }
     markTrainingBuildCompleted({ requestId, requestKey, routeKind });
     try {
       console.info('training_build_frontend_render_plan_start', {
@@ -11704,12 +11741,20 @@ function toggleSharePopover(force) {
         routeKind,
         requestId,
         planId: state.planRow?.id || null,
-        targetView: state.planRow?.id ? (shouldSkipDemoUpsell(state.auth.user) ? 'plan' : 'upsell') : 'plan'
+        targetView: 'plan'
       });
     } catch {
       // ignore console failures
     }
-    setView(state.planRow?.id ? (shouldSkipDemoUpsell(state.auth.user) ? 'plan' : 'upsell') : 'plan');
+    if (redirectToDashboardAfterSave && isAuthed) {
+      openWorkoutUploadNoticeModal({
+        onContinue: () => {
+          window.location.href = getClientDashboardHref();
+        }
+      });
+      return;
+    }
+    setView('plan');
     try {
       console.info('training_build_frontend_render_plan_success', {
         endpoint,

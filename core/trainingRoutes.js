@@ -8971,15 +8971,234 @@ async function getActivePlan(userId) {
   return result.rows?.[0] || null;
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMerge(target, patch) {
+  const base = isPlainObject(target) ? { ...target } : {};
+  Object.entries(isPlainObject(patch) ? patch : {}).forEach(([key, value]) => {
+    if (isPlainObject(value) && isPlainObject(base[key])) {
+      base[key] = deepMerge(base[key], value);
+    } else {
+      base[key] = value;
+    }
+  });
+  return base;
+}
+
+function normalizeIntakeDayCodes(raw) {
+  const out = [];
+  const push = (value) => {
+    const normalized = String(value || '').trim();
+    if (!normalized || out.includes(normalized)) return;
+    out.push(normalized);
+  };
+  (Array.isArray(raw) ? raw : []).forEach((entry) => {
+    if (Number.isFinite(Number(entry))) {
+      const dayIndex = Math.max(0, Math.min(6, Math.round(Number(entry))));
+      const mapped = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][dayIndex];
+      if (mapped) push(mapped);
+      return;
+    }
+    const text = String(entry || '').trim().toLowerCase();
+    if (!text) return;
+    if (text.startsWith('su')) push('Su');
+    else if (text.startsWith('mo') || text === 'm') push('Mo');
+    else if (text.startsWith('tu') || text === 't') push('Tu');
+    else if (text.startsWith('we') || text === 'w') push('We');
+    else if (text.startsWith('th')) push('Th');
+    else if (text.startsWith('fr') || text === 'f') push('Fr');
+    else if (text.startsWith('sa') || text === 's') push('Sa');
+  });
+  return out;
+}
+
+function normalizeTextList(raw, maxItems = 16, maxLen = 120) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const entry of raw) {
+    const text = safeText(entry, maxLen);
+    if (!text || out.includes(text)) continue;
+    out.push(text);
+    if (out.length >= maxItems) break;
+  }
+  return out;
+}
+
+function normalizeStoredGoal(primaryGoalRaw, phaseRaw, fallbackRaw) {
+  const primaryGoal = String(primaryGoalRaw || '').trim().toLowerCase();
+  if (primaryGoal === 'cut fat') return 'cut fat';
+  if (primaryGoal === 'recomp') return 'recomp';
+  if (primaryGoal === 'build size') return 'build size';
+  const phase = String(phaseRaw || '').trim().toLowerCase();
+  if (phase === 'cut') return 'cut fat';
+  if (phase === 'maintain') return 'recomp';
+  if (phase === 'bulk') return 'build size';
+  const fallback = String(fallbackRaw || '').trim().toLowerCase();
+  if (fallback === 'muscle_gain') return 'build size';
+  if (fallback === 'fat_loss') return 'cut fat';
+  return fallback || 'build size';
+}
+
+function normalizeStoredPriority(focusRaw, fallbackRaw) {
+  const focus = String(focusRaw || '').trim().toLowerCase();
+  if (focus === 'strength') return 'strength';
+  if (focus === 'size') return 'size';
+  if (focus === 'aesthetic') return 'aesthetic';
+  const fallback = String(fallbackRaw || '').trim().toLowerCase();
+  if (fallback === 'strength' || fallback === 'size' || fallback === 'aesthetic') return fallback;
+  return 'aesthetic';
+}
+
+function normalizeStoredSessionLength(value, fallback = '60') {
+  const text = String(value || '').trim();
+  if (['30', '45', '60', '75+'].includes(text)) return text;
+  const minutes = Number.parseInt(text, 10);
+  if (minutes >= 75) return '75+';
+  if (minutes >= 60) return '60';
+  if (minutes >= 45) return '45';
+  if (minutes >= 30) return '30';
+  return fallback;
+}
+
+function normalizeStoredLocation(value, fallback = 'Commercial gym') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function normalizeStoredLoadStyle(value, fallback = 'Balanced mix') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function normalizeStoredOutputStyle(value, fallback = 'RPE/RIR cues') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function normalizeStoredActivityLevel(value, fallback = 'Active') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function normalizeStoredStress(value, fallback = 'Medium') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function normalizePainProfileMap(raw) {
+  if (!isPlainObject(raw)) return {};
+  const out = {};
+  Object.entries(raw).forEach(([key, value]) => {
+    const area = safeText(key, 80);
+    if (!area || !isPlainObject(value)) return;
+    const severity = clampInt(value?.severity, 0, 10, null);
+    const recency = safeText(value?.recency, 40);
+    if (!Number.isFinite(severity)) return;
+    out[area] = {
+      severity,
+      recency
+    };
+  });
+  return out;
+}
+
+function buildTrainingIntakeSnapshot(payload, existing = null) {
+  const src = isPlainObject(payload) ? payload : {};
+  const prior = isPlainObject(existing) ? existing : {};
+  const strength = isPlainObject(src.strength) ? src.strength : {};
+  const profile = isPlainObject(src.profile) ? src.profile : {};
+  const goalMode = safeText(strength.goalMode, 40);
+  const phase = safeText(src.phase || strength.phase, 40);
+  const goal = normalizeStoredGoal(src.primaryGoal, phase, goalMode || prior.goal);
+  const priority = normalizeStoredPriority(src.focus, prior.priority);
+  const preferredDays = normalizeIntakeDayCodes(src.preferredDays ?? strength.preferredDays ?? prior.preferredDays);
+  const focus = normalizeTextList(src.priorityGroups ?? src.emphasis ?? prior.focus, 10, 80);
+  const injuries = normalizeTextList(src.painAreas ?? prior.injuries, 12, 80);
+  const injuryDetails = normalizePainProfileMap(src.painProfilesByArea ?? prior.injuryDetails);
+  const avoidMoves = normalizeTextList(src.movementsToAvoid ?? prior.avoidMoves, 20, 120);
+  const equipment = normalizeTextList(src.equipmentAccess ?? prior.equipment, 20, 80);
+  const experience = safeText(src.experience || prior.experience || '6-24m', 40);
+  const sessionLength = normalizeStoredSessionLength(
+    src.sessionLengthMin || src.timePerSession || strength.timePerSession || prior.sessionLength,
+    prior.sessionLength || '60'
+  );
+
+  return {
+    ...prior,
+    completedAt: prior.completedAt || new Date().toISOString(),
+    step: Math.max(10, Number(prior.step) || 0),
+    goal,
+    timeline: safeText(src.timeline || prior.timeline || '8 weeks', 40),
+    priority,
+    age: Number.isFinite(Number(profile.age)) ? Number(profile.age) : (Number.isFinite(Number(prior.age)) ? Number(prior.age) : null),
+    experience,
+    trainToFailure: safeText(src.closeToFailure || prior.trainToFailure || 'No', 12) || 'No',
+    daysPerWeek: clampInt(src.daysPerWeek || prior.daysPerWeek, 1, 7, clampInt(prior.daysPerWeek, 1, 7, 4)),
+    sessionLength,
+    preferredDays,
+    location: normalizeStoredLocation(src.location || prior.location, prior.location || 'Commercial gym'),
+    equipment,
+    focus,
+    loadStyle: normalizeStoredLoadStyle(src.trainingStyle || src.equipmentStylePref || prior.loadStyle, prior.loadStyle || 'Balanced mix'),
+    injuries,
+    injuryDetails,
+    avoidMoves,
+    sleepHours: clampInt(src.sleepHours || prior.sleepHours, 4, 10, clampInt(prior.sleepHours, 4, 10, 7)),
+    activityLevel: normalizeStoredActivityLevel(src.activityLevel || prior.activityLevel, prior.activityLevel || 'Active'),
+    stress: normalizeStoredStress(src.stress || prior.stress, prior.stress || 'Medium'),
+    outputStyle: normalizeStoredOutputStyle(src.outputStyle || prior.outputStyle, prior.outputStyle || 'RPE/RIR cues'),
+    modality: safeText(src.trainingFeel || src.discipline || prior.modality || '', 80),
+    phase: phase || safeText(prior.phase, 40),
+    trainingWhy: safeText(src.primaryGoal || profile.goals || prior.trainingWhy || '', 160)
+  };
+}
+
+async function mergeUserProfile(userId, patch) {
+  const result = await db.query(
+    'SELECT profile FROM app_user_profiles WHERE user_id = $1 LIMIT 1;',
+    [userId]
+  );
+  const current = isPlainObject(result.rows?.[0]?.profile) ? result.rows[0].profile : {};
+  const merged = deepMerge(current, patch);
+  await db.query(
+    `
+      INSERT INTO app_user_profiles (user_id, profile)
+      VALUES ($1, $2::jsonb)
+      ON CONFLICT (user_id) DO UPDATE
+      SET profile = EXCLUDED.profile,
+          updated_at = now();
+    `,
+    [userId, JSON.stringify(merged)]
+  );
+  return merged;
+}
+
+async function syncTrainingIntakeProfile(userId, payload) {
+  const currentResult = await db.query(
+    'SELECT profile FROM app_user_profiles WHERE user_id = $1 LIMIT 1;',
+    [userId]
+  );
+  const currentProfile = isPlainObject(currentResult.rows?.[0]?.profile) ? currentResult.rows[0].profile : {};
+  const currentIntake = isPlainObject(currentProfile.training_intake) ? currentProfile.training_intake : null;
+  const nextIntake = buildTrainingIntakeSnapshot(payload, currentIntake);
+  return await mergeUserProfile(userId, {
+    training_intake: nextIntake
+  });
+}
+
 async function getProfile(userId) {
   const result = await db.query(
     `
-      SELECT user_id, onboarding_complete, discipline, experience, days_per_week,
-             strength, equipment_access, first_name, age, location_city, location_state, goals, profile_image,
-             calorie_offset, no_progress_iterations, flagged, eval_weight_lb, eval_weight_at,
-             last_weighin_lb, last_weighin_at, bio, injuries, updated_at
-      FROM app_training_profiles
-      WHERE user_id = $1
+      SELECT tp.user_id, tp.onboarding_complete, tp.discipline, tp.experience, tp.days_per_week,
+             tp.strength, tp.equipment_access, tp.first_name, tp.age, tp.location_city, tp.location_state, tp.goals, tp.profile_image,
+             tp.calorie_offset, tp.no_progress_iterations, tp.flagged, tp.eval_weight_lb, tp.eval_weight_at,
+             tp.last_weighin_lb, tp.last_weighin_at, tp.bio, tp.injuries, tp.updated_at,
+             p.profile->'training_intake' AS training_intake
+      FROM app_training_profiles tp
+      LEFT JOIN app_user_profiles p ON p.user_id = tp.user_id
+      WHERE tp.user_id = $1
       LIMIT 1;
     `,
     [userId]
@@ -11740,6 +11959,7 @@ async function trainingRoutes(req, res, url) {
           equipmentAccess: {},
           profile: { firstName: usedPayload?.name || '' }
         });
+        await syncTrainingIntakeProfile(user.id, usedPayload || payload);
         const plan = await createNewOblueprintPlan(user.id, { discipline, daysPerWeek, plan: planBuilt });
         if (matchesAbsGlutesLegsDebugCombo(usedPayload || payload)) {
           logAbsGlutesLegsDebug('route', 'onboarding-save-succeeded', {
@@ -11825,6 +12045,7 @@ async function trainingRoutes(req, res, url) {
             equipmentAccess: {},
             profile: { firstName: payload?.name || '' }
           });
+          await syncTrainingIntakeProfile(user.id, coerced);
           const plan = await createNewOblueprintPlan(user.id, { discipline: 'bodybuilding', daysPerWeek, plan: planBuilt });
           if (onboardingDebugRaw || matchesAbsGlutesLegsDebugCombo(coerced)) {
             logAbsGlutesLegsDebug('route', 'onboarding-save-succeeded', {
@@ -11893,6 +12114,7 @@ async function trainingRoutes(req, res, url) {
 
     try {
       await upsertProfile(user.id, payload);
+      await syncTrainingIntakeProfile(user.id, payload);
       const plan = await createNewPlan(user.id, {
         discipline: validated.discipline,
         daysPerWeek: validated.daysPerWeek,

@@ -647,6 +647,7 @@
   <script src="js/main.js?v=2026-04-10-owner-workout-test-1"></script>
   <script>
     (function () {
+      const OWNER_BADGE_STORAGE_PREFIX = 'ownerSeenBadge:v1';
       const previewFrame = document.getElementById('owner-doors-preview-frame');
       const previewTitle = document.getElementById('owner-doors-preview-title');
       const previewSlug = document.getElementById('owner-doors-preview-slug');
@@ -658,9 +659,69 @@
       const stageLabel = document.getElementById('owner-doors-stage-label');
       const previewButtons = Array.from(document.querySelectorAll('.owner-door-preview-trigger'));
       const deviceButtons = Array.from(document.querySelectorAll('[data-preview-device]'));
+      const previewList = document.querySelector('.owner-doors-list');
+      let visibilityObserver = null;
 
       if (!previewFrame || !previewTitle || !stageFrame || !stageLabel || !previewSlug || !previewCta || !previewRoute || !openHtmlLink || !openSlugLink) {
         return;
+      }
+
+      function badgeStorageKey(scope) {
+        return `${OWNER_BADGE_STORAGE_PREFIX}:${String(scope || '').trim().toLowerCase()}`;
+      }
+
+      function readSeenBadgeIds(scope) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(badgeStorageKey(scope)) || '[]');
+          return new Set(Array.isArray(parsed) ? parsed.map((item) => String(item || '')) : []);
+        } catch (_) {
+          return new Set();
+        }
+      }
+
+      function writeSeenBadgeIds(scope, seenIds) {
+        localStorage.setItem(badgeStorageKey(scope), JSON.stringify(Array.from(seenIds)));
+        window.dispatchEvent(new CustomEvent('owner-badge-update', { detail: { scope } }));
+      }
+
+      function markBadgeItemsSeen(scope, ids) {
+        const nextIds = Array.from(new Set((ids || []).map((item) => String(item || '')).filter(Boolean)));
+        if (!nextIds.length) {
+          return;
+        }
+        const seen = readSeenBadgeIds(scope);
+        let changed = false;
+        nextIds.forEach((id) => {
+          if (!seen.has(id)) {
+            seen.add(id);
+            changed = true;
+          }
+        });
+        if (changed) {
+          writeSeenBadgeIds(scope, seen);
+        }
+      }
+
+      function setupDoorVisibilityTracking() {
+        if (!previewList || typeof IntersectionObserver !== 'function') {
+          return;
+        }
+        if (visibilityObserver) {
+          visibilityObserver.disconnect();
+        }
+        visibilityObserver = new IntersectionObserver((entries) => {
+          const seenIds = entries
+            .filter((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.6)
+            .map((entry) => entry.target?.dataset?.previewSlug)
+            .filter(Boolean);
+          if (seenIds.length) {
+            markBadgeItemsSeen('doors', seenIds);
+          }
+        }, {
+          root: previewList,
+          threshold: [0.6]
+        });
+        previewButtons.forEach((button) => visibilityObserver.observe(button));
       }
 
       function buildFullUrl(path) {
@@ -731,6 +792,7 @@
         });
       });
 
+      setupDoorVisibilityTracking();
       setDevice('desktop');
       setActivePreview(previewButtons.find((button) => button.classList.contains('active')) || previewButtons[0]);
     }());
