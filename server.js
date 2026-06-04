@@ -1856,6 +1856,10 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res, '/training.html');
     }
 
+    if ((url.pathname === '/chat-widget' || url.pathname === '/chat-widget/' || url.pathname === '/chat-widget-verification' || url.pathname === '/chat-widget-verification.html') && req.method === 'GET') {
+        return serveStatic(req, res, '/chat-widget-verification.html');
+    }
+
     if (url.pathname === '/api/db/health' && req.method === 'GET') {
         if (!db.isConfigured()) {
             return sendJson(res, 501, {
