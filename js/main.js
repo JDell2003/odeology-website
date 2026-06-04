@@ -26,6 +26,7 @@ window.addEventListener('error', (event) => {
    ============================================ */
 
 const KLAVIYO_COMPANY_ID = 'W83QZb';
+const LEADCONNECTOR_WIDGET_ID = '6a20c3c31ce15bb9e9817a80';
 
 // Sitewide Klaviyo onsite bootstrap + loader.
 (function initKlaviyoOnsiteTracking() {
@@ -70,6 +71,24 @@ const KLAVIYO_COMPANY_ID = 'W83QZb';
     script.async = true;
     script.type = 'text/javascript';
     script.src = `https://static.klaviyo.com/onsite/js/${KLAVIYO_COMPANY_ID}/klaviyo.js?company_id=${KLAVIYO_COMPANY_ID}`;
+    (document.head || document.documentElement).appendChild(script);
+})();
+
+// Sitewide LeadConnector chat widget bootstrap.
+(function initLeadConnectorWidget() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (window.__odeLeadConnectorWidgetReady) return;
+    window.__odeLeadConnectorWidgetReady = true;
+
+    const existing = document.querySelector(`script[src="https://widgets.leadconnectorhq.com/loader.js"][data-widget-id="${LEADCONNECTOR_WIDGET_ID}"]`);
+    if (existing) return;
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://widgets.leadconnectorhq.com/loader.js';
+    script.dataset.resourcesUrl = 'https://widgets.leadconnectorhq.com/chat-widget/loader.js';
+    script.dataset.widgetId = LEADCONNECTOR_WIDGET_ID;
+    script.dataset.source = 'WEB_USER';
     (document.head || document.documentElement).appendChild(script);
 })();
 
