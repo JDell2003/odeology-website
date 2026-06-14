@@ -355,9 +355,7 @@ function expectPatternCoverage(plan, payload, entry) {
   const constrainedHingeEnvironment = !access.has('barbell');
   const severeRecentBackHipPain = ['Back', 'Hip'].some((area) => {
     const profile = payload?.painProfilesByArea?.[area];
-    const areaSelected = Array.isArray(payload?.painAreas) && payload.painAreas.includes(area);
-    if (Number(profile?.severity || 0) >= 6 && String(profile?.recency || '') === 'Recent') return true;
-    return areaSelected && lowerPosteriorProxyDays >= 1;
+    return Number(profile?.severity || 0) >= 6 && String(profile?.recency || '') === 'Recent';
   });
 
   assert.ok(benchDays >= 1 || flattenExercises(plan).some(isStrengthAnchor), `${entry.title}: missing upper strength exposure`);
@@ -379,7 +377,7 @@ function expectPatternCoverage(plan, payload, entry) {
     assert.ok(
       hingeDays >= 1
       || weekExercises.some(isHingeLike)
-      || (constrainedHingeEnvironment && (lowerPosteriorProxyDays >= 1 || lowerPosteriorSupportDays >= 1)),
+      || ((constrainedHingeEnvironment || severeRecentBackHipPain) && (lowerPosteriorProxyDays >= 1 || lowerPosteriorSupportDays >= 1)),
       `${entry.title}: hinge intent disappeared from a 4+ day week`
     );
   }
@@ -499,6 +497,41 @@ test('powerbuilding representative sample cases remain plausible after the outli
     assert.ok(flattenExercises(live.plan).some(isStrengthAnchor), `${entry.title}: strength anchor disappeared`);
     assert.ok(flattenExercises(live.plan).filter((exercise) => String(exercise?.style || '') === 'Isolation').length >= 2, `${entry.title}: hypertrophy accessories disappeared`);
   }
+});
+
+test('powerbuilding execution rejects unavailable equipment in the exact home beginner 30-minute route case', () => {
+  const payload = {
+    trainingFeel: 'Powerbuilding', primaryGoal: 'Build size', timeline: '12+ weeks', focus: 'Strength', experience: '<6m', location: 'Home', trainingStyle: 'Mostly free weights', outputStyle: 'Simple sets x reps', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '30',
+    priorityGroups: ['Chest', 'Back', 'Legs'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Sa'], equipmentAccess: ['Bodyweight', 'Dumbbells', 'Bench'], painAreas: [], painProfilesByArea: {}, weightLb: 165, bodyweight: 165, bench: 0, squat: 0, deadlift: 0,
+    benchVariation: 'Dumbbell bench press', benchWeight: 45, benchReps: 8, lowerMovement: 'Goblet squat', lowerWeight: 70, lowerReps: 8, hingeMovement: 'Dumbbell Romanian deadlift', hingeWeight: 60, hingeReps: 8, sleepHours: 7, activityLevel: 'Light', stress: 'Moderate', planSeed: 99123
+  };
+  const built = buildLivePlan(payload);
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route build failed');
+  assert.equal(built.source, 'direct', 'expected the route to keep a valid powerbuilding direct build instead of mutating it through fallback');
+  expectEquipmentRules(built.plan, payload, { title: 'exact home beginner 30-minute route case' }, 'direct');
+  const names = flattenExercises(built.plan).map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
+  assert.ok(!/\b(cable|machine|leverage|leg press|lat pulldown|barbell)\b/.test(names), 'unavailable equipment leaked into the exact route case');
+  assert.ok(flattenExercises(built.plan).some(isStrengthAnchor), 'expected a strength anchor to remain');
+  assert.ok(flattenExercises(built.plan).some((exercise) => String(exercise?.style || '') === 'Isolation'), 'expected a hypertrophy accessory to remain');
+  (firstWeek(built.plan).days || []).forEach((day) => {
+    assert.ok(dayExerciseCount(day) <= 4, `${day.dayType}: expected a realistic 30-minute beginner movement cap`);
+  });
+});
+
+test('powerbuilding hip-pain lower-priority case preserves safe posterior intent without forcing risky hinge work', () => {
+  const entry = POWERBUILDING_PRIORITY_MATRIX.find((candidate) => candidate.id === 28);
+  assert.ok(entry, 'expected matrix case 28 to exist');
+  const built = buildLivePlan(entry.payload);
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'case 28 build failed');
+  expectEquipmentRules(built.plan, entry.payload, entry, built.source === 'direct' ? 'direct' : built.source);
+  const weekExercises = firstWeekExercises(built.plan);
+  const names = weekExercises.map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
+  assert.ok(
+    weekExercises.some(isHingeLike) || weekExercises.some(isSafePosteriorSubstitute),
+    'case 28 should preserve some posterior-chain intent'
+  );
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg|good morning)\b/.test(names), 'case 28 should not force a risky deadlift-family hinge');
+  assert.ok(/\b(leg curl|hamstring curl|glute ham raise|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension)\b/.test(names), 'case 28 should keep a safe posterior-chain substitute');
 });
 
 test('powerbuilding outlier now passes directly without unsafe blocked patterns', () => {

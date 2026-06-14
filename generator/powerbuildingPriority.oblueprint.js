@@ -226,6 +226,12 @@ function isTrueHingePattern(exercise) {
     || /\b(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension)\b/.test(name);
 }
 
+function isSafePosteriorProxyPattern(exercise) {
+  const name = normalizeText(exercise?.name);
+  return /\b(leg curl|hamstring curl|glute ham raise|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension|hamstring slides?)\b/.test(name)
+    && !/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg|good morning)\b/.test(name);
+}
+
 function movementCapForDay(dayType, user, pb) {
   const type = String(dayType || '');
   const sessionCap = Number(user?.sessionCap || 6);
@@ -272,34 +278,62 @@ function exerciseKeepScore(exercise, index, dayType, user, pb) {
   return score;
 }
 
-function pushUniqueIndex(target, index, usedIndexes) {
-  if (index < 0 || usedIndexes.has(index)) return;
+function normalizeSelectionExerciseName(exercise) {
+  return normalizeText(exercise?.name);
+}
+
+function pushUniqueIndex(target, index, usedIndexes, usedNames, exercises) {
+  if (index < 0 || usedIndexes.has(index)) return false;
+  const normalizedName = normalizeSelectionExerciseName(exercises?.[index]);
+  if (normalizedName && usedNames?.has(normalizedName)) return false;
   usedIndexes.add(index);
+  if (normalizedName && usedNames) usedNames.add(normalizedName);
   target.push(index);
+  return true;
+}
+
+function replaceSelectedIndex(target, selectedIndex, nextIndex, usedIndexes, usedNames, exercises) {
+  if (!Array.isArray(target) || selectedIndex < 0 || selectedIndex >= target.length) return false;
+  if (nextIndex < 0) return false;
+  const nextName = normalizeSelectionExerciseName(exercises?.[nextIndex]);
+  const currentIndex = target[selectedIndex];
+  const currentName = normalizeSelectionExerciseName(exercises?.[currentIndex]);
+  if (nextName && usedNames?.has(nextName) && nextIndex !== currentIndex) return false;
+  if (currentIndex !== nextIndex) {
+    usedIndexes.delete(currentIndex);
+    const currentNameStillUsed = target.some((candidateIndex, idx) => idx !== selectedIndex && normalizeSelectionExerciseName(exercises?.[candidateIndex]) === currentName);
+    if (currentName && usedNames && !currentNameStillUsed) usedNames.delete(currentName);
+  }
+  target[selectedIndex] = nextIndex;
+  usedIndexes.add(nextIndex);
+  if (nextName && usedNames) usedNames.add(nextName);
+  return true;
 }
 
 function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
   const type = String(dayType || '');
   const used = new Set();
+  const usedNames = new Set();
   const selected = [];
+  const hipPain = painSeverity(user, 'hip');
   const anchorIndex = exercises.findIndex((exercise) => isStrengthAnchorExercise(exercise));
-  if (anchorIndex >= 0) pushUniqueIndex(selected, anchorIndex, used);
-  else pushUniqueIndex(selected, exercises.findIndex((exercise) => isCompound(exercise)), used);
+  if (anchorIndex >= 0) pushUniqueIndex(selected, anchorIndex, used, usedNames, exercises);
+  else pushUniqueIndex(selected, exercises.findIndex((exercise) => isCompound(exercise)), used, usedNames, exercises);
 
   if (['FullBodyA', 'Upper', 'UpperFocus'].includes(type)) {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPullCompound(exercise)), used);
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPullCompound(exercise)), used, usedNames, exercises);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used, usedNames, exercises);
   }
   if (['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type)) {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used);
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isTrueHingePattern(exercise)), used);
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPosteriorPattern(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used, usedNames, exercises);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isTrueHingePattern(exercise)), used, usedNames, exercises);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPosteriorPattern(exercise)), used, usedNames, exercises);
   }
   if (type === 'Pull') {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isArmExercise(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isArmExercise(exercise)), used, usedNames, exercises);
   }
   if (type === 'Push') {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Chest' && !isStrengthAnchorExercise(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Chest' && !isStrengthAnchorExercise(exercise)), used, usedNames, exercises);
   }
 
   const ranked = exercises
@@ -309,15 +343,52 @@ function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
     if (selected.length >= cap) break;
     const exercise = exercises[entry.index];
     if (used.has(entry.index)) continue;
+    const normalizedName = normalizeSelectionExerciseName(exercise);
+    if (normalizedName && usedNames.has(normalizedName)) continue;
     if (isBeginnerPowerbuilding(user) && selected.some((idx) => isStrengthAnchorExercise(exercises[idx])) && isStrengthAnchorExercise(exercise)) continue;
-    pushUniqueIndex(selected, entry.index, used);
+    pushUniqueIndex(selected, entry.index, used, usedNames, exercises);
   }
 
   if (pb?.preserveCore && selected.length < cap) {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCoreExercise(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCoreExercise(exercise)), used, usedNames, exercises);
   }
   if (pb?.preserveCalves && selected.length < cap) {
-    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCalfExercise(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCalfExercise(exercise)), used, usedNames, exercises);
+  }
+
+  const needsProtectedPosteriorCoverage = ['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type)
+    && (
+      pb?.emphasis === 'hinge'
+      || Number(pb?.priorityRanks?.Glutes || 99) <= 2
+      || Number(user?.daysPerWeek || 0) >= 4
+      || hipPain >= 6
+    );
+  if (needsProtectedPosteriorCoverage) {
+    const hasSelectedPosterior = selected.some((index) => isPosteriorPattern(exercises[index]) || (hipPain >= 6 && isSafePosteriorProxyPattern(exercises[index])));
+    const posteriorCandidateIndex = exercises.findIndex((exercise, index) => {
+      if (used.has(index)) return false;
+      if (hipPain >= 8) return isSafePosteriorProxyPattern(exercise);
+      if (hipPain >= 6) return isSafePosteriorProxyPattern(exercise) || isPosteriorPattern(exercise);
+      return isPosteriorPattern(exercise);
+    });
+    if (!hasSelectedPosterior && posteriorCandidateIndex >= 0) {
+      if (selected.length < cap) {
+        pushUniqueIndex(selected, posteriorCandidateIndex, used, usedNames, exercises);
+      } else {
+        const replaceAt = selected
+          .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
+          .filter((entry) => {
+            const exercise = exercises[entry.index];
+            if (isStrengthAnchorExercise(exercise)) return false;
+            if (isCoreExercise(exercise) && pb?.preserveCore) return false;
+            if (isCalfExercise(exercise) && pb?.preserveCalves) return false;
+            if (isSquatPattern(exercise) && selected.some((candidateIndex, idx) => idx !== entry.selectedIndex && isSquatPattern(exercises[candidateIndex]))) return true;
+            return !isPosteriorPattern(exercise);
+          })
+          .sort((a, b) => a.score - b.score)[0];
+        if (replaceAt) replaceSelectedIndex(selected, replaceAt.selectedIndex, posteriorCandidateIndex, used, usedNames, exercises);
+      }
+    }
   }
 
   const selectedExercises = selected.map((index) => exercises[index]).filter(Boolean);
@@ -326,13 +397,13 @@ function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
     const accessoryIndex = exercises.findIndex((exercise, index) => !used.has(index) && !isCompound(exercise));
     if (accessoryIndex >= 0) {
       if (selected.length < cap) {
-        pushUniqueIndex(selected, accessoryIndex, used);
+        pushUniqueIndex(selected, accessoryIndex, used, usedNames, exercises);
       } else {
         const replaceAt = selected
           .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
           .filter((entry) => !isStrengthAnchorExercise(exercises[entry.index]) && (!['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type) || !isSquatPattern(exercises[entry.index]) || selectedExercises.some((exercise, exerciseIndex) => exerciseIndex !== entry.selectedIndex && isSquatPattern(exercise))))
           .sort((a, b) => a.score - b.score)[0];
-        if (replaceAt) selected[replaceAt.selectedIndex] = accessoryIndex;
+        if (replaceAt) replaceSelectedIndex(selected, replaceAt.selectedIndex, accessoryIndex, used, usedNames, exercises);
       }
     }
   }
@@ -346,13 +417,13 @@ function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
     const trueHingeIndex = exercises.findIndex((exercise, index) => !used.has(index) && isTrueHingePattern(exercise));
     if (!hasSelectedTrueHinge && trueHingeIndex >= 0) {
       if (selected.length < cap) {
-        pushUniqueIndex(selected, trueHingeIndex, used);
+        pushUniqueIndex(selected, trueHingeIndex, used, usedNames, exercises);
       } else {
         const replaceAt = selected
           .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
           .filter((entry) => !isStrengthAnchorExercise(exercises[entry.index]) && !isCoreExercise(exercises[entry.index]) && !isCalfExercise(exercises[entry.index]))
           .sort((a, b) => a.score - b.score)[0];
-        if (replaceAt) selected[replaceAt.selectedIndex] = trueHingeIndex;
+        if (replaceAt) replaceSelectedIndex(selected, replaceAt.selectedIndex, trueHingeIndex, used, usedNames, exercises);
       }
     }
   }
