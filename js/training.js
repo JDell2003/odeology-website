@@ -919,6 +919,7 @@
 
   function mapIntakeToOblueprintPayload(intake) {
     if (!intake || typeof intake !== 'object') return null;
+    const disciplineRaw = lower(intake.discipline);
 
     const intakeGoalRaw = lower(intake.goal);
     const macroGoalMode = readLatestMacroGoalMode();
@@ -939,6 +940,11 @@
     const outputStyle = mapOutputStyle(intake.outputStyle);
     const closeToFailure = lower(intake.trainToFailure) === 'yes' ? 'Yes' : 'No';
     const trainingFeel = mapTrainingFeel(intake.modality, focus);
+    const discipline = disciplineRaw === 'powerbuilding'
+      ? 'powerbuilding'
+      : trainingFeel === 'Powerbuilding'
+        ? 'powerbuilding'
+        : 'bodybuilding';
 
     const daysPerWeek = Math.max(2, Math.min(6, Math.round(Number(intake.daysPerWeek) || 4)));
     const sessionLengthMin = ['30', '45', '60', '75+'].includes(String(intake.sessionLength))
@@ -953,6 +959,7 @@
     const painProfilesByArea = mapPainProfiles(intake.injuryDetails);
 
     return {
+      discipline,
       trainingFeel,
       primaryGoal,
       timeline,

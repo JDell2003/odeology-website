@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RiseForIt Training</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17" />
+  <link rel="stylesheet" href="css/main.css?v=2026-06-14-control-panel-shared-1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -655,10 +655,50 @@
     @media (min-width:981px){
       .opt{font-size:1rem;padding:.7rem 1.05rem}
     }
+    @media (min-width:701px){
+      body.training-redesign.has-control-panel .hero{
+        width:100%;
+        max-width:none;
+        margin-left:0;
+        margin-right:0;
+      }
+      body.training-redesign.has-control-panel .wrap.hero{
+        width:100%;
+      }
+    }
   </style>
 </head>
-<body class="training-redesign">
+<body class="training-redesign training-page">
   <div class="grain"></div>
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+    <symbol id="icon-chef" viewBox="0 0 24 24">
+      <path d="M8.5 10.5h7a3.5 3.5 0 0 0 0-7 4 4 0 0 0-3.5 2 3 3 0 0 0-5.5 2 3 3 0 0 0 2 3Z"></path>
+      <path d="M8 10.5h8v3.5a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3.5Z"></path>
+      <path d="M10 16v3.5M14 16v3.5"></path>
+    </symbol>
+  </svg>
   <nav class="navbar">
     <div class="navbar-container">
       <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
@@ -738,7 +778,7 @@
     </div>
   </div>
   <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-  <script src="js/main.js?v=2026-03-26-owner-demo-39"></script>
+  <script src="js/main.js?v=2026-06-14-control-panel-shared-1"></script>
   <script>
     (function() {
       const K='ode_training_intake_v2', H='ode_training_intake_history_v2';
@@ -927,19 +967,10 @@
           }
         });
       };
-      const redirectToRealTrainingFlow=()=>{
-        try{
-          const target=new URL('training.html',window.location.href);
-          target.searchParams.set('start','1');
-          window.location.href=target.toString();
-        }catch{
-          window.location.href='training.html?start=1';
-        }
-      };
       const startTop=document.getElementById('start-top') || document.getElementById('ns-start');
       const trackOwnBtn=document.getElementById('ns-track-own');
       const intakeClose=document.getElementById('intake-close');
-      if(startTop)startTop.addEventListener('click',redirectToRealTrainingFlow);
+      if(startTop)startTop.addEventListener('click',openIntake);
       if(trackOwnBtn)trackOwnBtn.addEventListener('click',openTrackOwnBuilder);
       if(intakeClose)intakeClose.addEventListener('click',closeIntake);
       try{
@@ -949,9 +980,7 @@
         if(restartParam==='1'||restartParam==='true'){
           openIntake();
         }
-        if(startParam==='1'||startParam==='true'){
-          redirectToRealTrainingFlow();
-        }
+        if(startParam==='1'||startParam==='true') openIntake();
       }catch{}
       document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&document.body.classList.contains('intake-open'))closeIntake();if(e.key==='Escape')closeZoom()});
       document.addEventListener('click',(e)=>{
@@ -1021,11 +1050,17 @@
       window.addEventListener('odeauth',()=>loadMealData(true));
       window.addEventListener('focus',()=>{});
 
-      const D={step:1,goal:'build size',timeline:'8 weeks',priority:'aesthetic',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'aesthetic bodybuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
+      const D={step:1,goal:'build size',timeline:'8 weeks',priority:'aesthetic',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'aesthetic bodybuilding',discipline:'bodybuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
       let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem(K)||'{}'))}catch{S=Object.assign({},D)}
       if(!String(S.goal||'').trim())S.goal='build size';
-      if(!['aesthetic'].includes(String(S.priority||'').trim().toLowerCase()))S.priority='aesthetic';
-      if(String(S.priority||'').trim().toLowerCase()==='aesthetic')S.modality='aesthetic bodybuilding';
+      if(!['aesthetic','strength'].includes(String(S.priority||'').trim().toLowerCase()))S.priority='aesthetic';
+      if(String(S.priority||'').trim().toLowerCase()==='strength'){
+        S.modality='powerbuilding';
+        S.discipline='powerbuilding';
+      }else{
+        S.modality='aesthetic bodybuilding';
+        S.discipline='bodybuilding';
+      }
       if(typeof S.mealOptionTouched!=='boolean'){
         S.mealOptionTouched=!!(S.phaseRate||S.keepPlanSame||S.mealAdjustmentApplied||S.mealPreviewActive||S.mealPreviewTarget);
       }
@@ -1735,7 +1770,7 @@
         if(S.step!==s) S.step=s;
         const m=M[s-1];el.t.textContent=m.t;el.f.style.width=(s*(100/9))+'%';
         let h='';
-        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Powerbuilding = Strength and Proportion',v:'strength',soon:true},{l:'Military = Endurance + strength',v:'size',soon:true}],S.priority,false,false)+'</div>';
+        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Powerbuilding = Strength and Proportion',v:'strength'},{l:'Military = Endurance + strength',v:'size',soon:true}],S.priority,false,false)+'</div>';
         if(s===2)h='<h3>Body stats snapshot</h3><p class="d">No perfect numbers needed. We just need a realistic baseline.</p><div class="fg" data-g="sex"><div class="t">Sex</div>'+btns([{l:'Male',v:'male'},{l:'Female',v:'female'}],S.sex,false,true)+'</div><div class="g2"><div><div class="t">Age: <strong id="ageO">'+S.age+'</strong></div><input id="age" type="range" min="16" max="70" value="'+S.age+'"/></div><div><div class="t">Height: <strong id="hO">'+S.heightIn+' in</strong></div><input id="heightIn" type="range" min="55" max="82" value="'+S.heightIn+'"/></div></div><div class="g2"><div><div class="t">Current weight: <strong id="wO">'+S.weightLb+' lb</strong></div><input id="weightLb" type="range" min="90" max="360" value="'+S.weightLb+'"/></div><div><div class="t" id="bfLabel">Estimated body fat <span class="hint">see image</span>: <strong id="bfO">'+S.bodyFatPct+'%</strong></div><input id="bodyFatPct" type="range" min="5" max="45" value="'+S.bodyFatPct+'"/></div></div><div class="sex-visual '+(S.sex?'show':'hidden')+'" id="sexVisual"><img id="sexImage" src="'+(S.sex==='female'?'assets/bodyfat-female-cropped.jpg':'assets/bodyfat-male.png')+'" alt="Body fat reference chart"/></div>';
         if(s===3)h='<h3>Training background and strength level</h3><p class="d">Rough values are enough. We use them to set the right first-block intensity.</p><div class="fg" data-g="experience"><div class="t">Training experience</div>'+btns([{l:'< 6 months',v:'<6m'},{l:'6-24 months',v:'6-24m'},{l:'2-5 years',v:'2-5y'},{l:'5+ years',v:'5y+'}],S.experience,false,false)+'</div><div class="g3"><div><div class="t">Bench (lb): <strong id="bO">'+S.bench+'</strong></div><input id="bench" type="range" min="45" max="405" step="2.5" value="'+S.bench+'"/></div><div><div class="t">Squat (lb): <strong id="sqO">'+S.squat+'</strong></div><input id="squat" type="range" min="45" max="585" step="2.5" value="'+S.squat+'"/></div><div><div class="t">Deadlift (lb): <strong id="dO">'+S.deadlift+'</strong></div><input id="deadlift" type="range" min="65" max="675" step="2.5" value="'+S.deadlift+'"/></div></div><div class="fg" data-g="trainToFailure"><div class="t">Can you safely train close to failure?</div>'+btns([{l:'Yes',v:'yes'},{l:'No',v:'no'}],S.trainToFailure,false,true)+'</div>';
         if(s===4)h='<h3>Schedule and session time</h3><p class="d">This sets your split and exercise count so the plan fits your week.</p><div class="fg"><div class="t">What days do you prefer to train on <span class="hint" id="dyO">'+S.daysPerWeek+' days</span></div>'+db()+'</div><div class="fg" data-g="sessionLength"><div class="t">Session length</div>'+btns([{l:'30 min',v:'30'},{l:'45 min',v:'45'},{l:'60 min',v:'60'},{l:'75+ min',v:'75+'}],S.sessionLength,false,true)+'</div>';
@@ -1882,7 +1917,19 @@
         h+='<div class="acts"><div class="row"><button type="button" class="btnx g" data-a="r">Restart</button>'+(s>1?'<button type="button" class="btnx g" data-a="b">Back</button>':'')+'</div><button type="button" class="btnx p" data-a="n" aria-disabled="false">'+(s===9?'Save + Enter Engine':'Next')+'</button></div>';
         el.c.innerHTML=h;
 
-        if(s===1){bindSingle('timeline',v=>S.timeline=v);bindSingle('priority',v=>{S.priority=v;if(v==='aesthetic')S.modality='aesthetic bodybuilding'})}
+        if(s===1){
+          bindSingle('timeline',v=>S.timeline=v);
+          bindSingle('priority',v=>{
+            S.priority=v;
+            if(v==='strength'){
+              S.modality='powerbuilding';
+              S.discipline='powerbuilding';
+            }else{
+              S.modality='aesthetic bodybuilding';
+              S.discipline='bodybuilding';
+            }
+          });
+        }
         if(s===2){
           bindSingle('sex',v=>S.sex=v);
           ['age','heightIn','weightLb','bodyFatPct'].forEach(id=>{const i=el.c.querySelector('#'+id);i.addEventListener('input',()=>{S[id]=Number(i.value);const o=id==='heightIn'?'hO':id==='weightLb'?'wO':id==='bodyFatPct'?'bfO':'ageO';el.c.querySelector('#'+o).textContent=id==='heightIn'?S.heightIn+' in':id==='weightLb'?S.weightLb+' lb':id==='bodyFatPct'?S.bodyFatPct+'%':S.age;save()})});

@@ -8,6 +8,10 @@ function readTrainingSource() {
   return fs.readFileSync(path.join(__dirname, '..', 'js', 'training.js'), 'utf8');
 }
 
+function readLegacyTrainingSource() {
+  return fs.readFileSync(path.join(__dirname, '..', 'training-coming-soon.html'), 'utf8');
+}
+
 function extractFunctionSource(source, name) {
   const marker = `function ${name}(`;
   const start = source.indexOf(marker);
@@ -68,6 +72,8 @@ test('frontend source wires shared payload fields for powerbuilding and bodybuil
   assert.match(src, /trainingFeel,\s*discipline: normalizedDiscipline,/);
   assert.match(src, /focus: normalizedDiscipline === 'powerbuilding' \? 'Strength' : 'Aesthetic'/);
   assert.match(src, /priorityGroups: mapWizardEmphasisToPriorityGroups\(emphasis\)/);
+  assert.match(src, /const discipline = disciplineRaw === 'powerbuilding'/);
+  assert.match(src, /trainingFeel === 'Powerbuilding'/);
   assert.match(src, /benchVariation: String\(normalizedStrength\.benchVariation \|\| normalizedStrength\.pressMovement \|\| ''\)/);
   assert.match(src, /benchWeight: Number\(normalizedStrength\.benchWeight \|\| normalizedStrength\.pressWeight \|\| 0\) \|\| null/);
   assert.match(src, /lowerMovement: String\(normalizedStrength\.lowerMovement \|\| normalizedStrength\.legMovement \|\| ''\)/);
@@ -81,4 +87,15 @@ test('frontend source keeps unready lanes disabled and enables powerbuilding lan
   assert.match(src, /const isDisabled = !\['bodybuilding', 'powerbuilding'\]\.includes\(opt\.key\)/);
   assert.match(src, /key:\s*'powerlifting'/);
   assert.match(src, /key:\s*'calisthenics'/);
+});
+
+test('legacy training entry point keeps powerbuilding in the modal wizard and keeps unready lanes disabled', () => {
+  const src = readLegacyTrainingSource();
+  assert.match(src, /Powerbuilding = Strength and Proportion',v:'strength'\}/);
+  assert.doesNotMatch(src, /Powerbuilding = Strength and Proportion',v:'strength',soon:true/);
+  assert.match(src, /Military = Endurance \+ strength',v:'size',soon:true/);
+  assert.match(src, /if\(startTop\)startTop\.addEventListener\('click',openIntake\)/);
+  assert.match(src, /if\(startParam==='1'\|\|startParam==='true'\) openIntake\(\)/);
+  assert.match(src, /if\(v==='strength'\)\{\s*S\.modality='powerbuilding';\s*S\.discipline='powerbuilding';\s*\}else\{/);
+  assert.doesNotMatch(src, /redirectToRealTrainingFlow\('powerbuilding'\)/);
 });
