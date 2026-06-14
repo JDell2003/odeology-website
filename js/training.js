@@ -302,6 +302,7 @@
           }
           state.profile = resp.json?.profile || state.profile;
           state.planRow = nextPlan;
+          sanitizeBodybuildingPlanInPlace(state.planRow);
           state.planError = null;
           state.logs = [];
           state.allLogs = [];
@@ -593,7 +594,37 @@
     ).trim().toLowerCase();
   }
 
+  function ensurePlanExerciseIdentityInPlace(planRow) {
+    if (!planRow?.plan || !Array.isArray(planRow.plan.weeks)) return { assignedSlotIds: 0, assignedExerciseIds: 0 };
+    let assignedSlotIds = 0;
+    let assignedExerciseIds = 0;
+    for (const week of planRow.plan.weeks || []) {
+      const weekIndex = Number(week?.index) || 1;
+      const days = Array.isArray(week?.days) ? week.days : [];
+      days.forEach((day, dayOffset) => {
+        const dayIndex = dayOffset + 1;
+        const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+        exercises.forEach((ex, exOffset) => {
+          if (!ex || typeof ex !== 'object') return;
+          const position = exOffset + 1;
+          const rawNameKey = normalizeLiftHistoryKey(ex?.displayName || ex?.name || ex?.exerciseId || ex?.id || '');
+          const fallbackKey = rawNameKey || `exercise_${position}`;
+          if (!String(ex.slotId || '').trim()) {
+            ex.slotId = `slot:${weekIndex}:${dayIndex}:${position}:${fallbackKey}`;
+            assignedSlotIds += 1;
+          }
+          if (!String(ex.id || '').trim()) {
+            ex.id = `ex:${weekIndex}:${dayIndex}:${position}:${fallbackKey}`;
+            assignedExerciseIds += 1;
+          }
+        });
+      });
+    }
+    return { assignedSlotIds, assignedExerciseIds };
+  }
+
   function sanitizeBodybuildingPlanInPlace(planRow) {
+    ensurePlanExerciseIdentityInPlace(planRow);
     if (!planRow?.plan || disciplineFromPlanRow(planRow) !== 'bodybuilding') {
       return { removed: 0, capped: 0 };
     }
@@ -1016,12 +1047,14 @@
 
   async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
+    if (hasRenderablePlanRow(state.planRow)) return false;
     if (!force && isAutoRetryPaused()) return false;
     if (!force && shouldOpenWizardOnly()) return false;
     const intake = await loadSavedIntake();
     if (!intake) return false;
     const forceStart = force || shouldForceAutostart();
-    if (!forceStart && !isIntakeComplete(intake)) return false;
+    if (!forceStart) return false;
+    if (!isIntakeComplete(intake)) return false;
     const payload = mapIntakeToOblueprintPayload(intake);
     if (!payload) return false;
     if (hasRenderablePlanRow(state.planRow) && hasRecentlyCompletedTrainingBuild(payload)) {
@@ -3362,7 +3395,10 @@
         body: JSON.stringify(built.payload)
       });
       if (!resp.ok) return false;
-      if (resp.json?.plan) state.planRow = resp.json.plan;
+      if (resp.json?.plan) {
+        state.planRow = resp.json.plan;
+        sanitizeBodybuildingPlanInPlace(state.planRow);
+      }
       if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
       upsertLocalWorkoutLog({
         weekIndex: built.payload.weekIndex,
@@ -4166,9 +4202,189 @@
   function normalizeDiscipline(raw) {
     const v = String(raw || '').trim().toLowerCase();
     if (v === 'powerlifting') return 'powerlifting';
+    if (v === 'powerbuilding') return 'powerbuilding';
     if (v === 'bodybuilding' || v === 'hypertrophy') return 'bodybuilding';
     if (v === 'calisthenics' || v === 'bodyweight') return 'calisthenics';
     return null;
+  }
+
+  function mapWizardDisciplineToTrainingFeel(disciplineRaw) {
+    const discipline = normalizeDiscipline(disciplineRaw);
+    if (discipline === 'powerbuilding') return 'Powerbuilding';
+    if (discipline === 'bodybuilding') return 'Aesthetic bodybuilding';
+    return '';
+  }
+
+  function mapWizardSessionBucketToSessionLength(timePerSessionRaw) {
+    const v = String(timePerSessionRaw || '').trim().toLowerCase();
+    if (v === 'under_45') return '30';
+    if (v === '45_60') return '45';
+    if (v === '60_75') return '60';
+    if (v === '75_plus') return '75+';
+    return '60';
+  }
+
+  function mapWizardEquipmentStyleToTrainingStyle(raw) {
+    const v = String(raw || '').trim().toLowerCase();
+    if (v === 'machine') return 'Mostly machines/cables';
+    if (v === 'barbell' || v === 'dumbbell') return 'Mostly free weights';
+    return 'Balanced mix';
+  }
+
+  function mapWizardTrainingAgeToExperience(raw, fallback = '6-24m') {
+    const v = String(raw || '').trim().toLowerCase();
+    if (v === '0_6') return '<6m';
+    if (v === '6_18') return '6-24m';
+    if (v === '18_36' || v === '3_5') return '2-5y';
+    if (v === '5_plus') return '5y+';
+    return fallback;
+  }
+
+  function mapWizardPhaseToPrimaryGoal(phaseRaw) {
+    const v = String(phaseRaw || '').trim().toLowerCase();
+    if (v === 'cut') return 'Cut fat';
+    if (v === 'maintain') return 'Recomp';
+    return 'Build size';
+  }
+
+  function mapWizardEquipmentAccessToList(equipmentAccess) {
+    const src = equipmentAccess && typeof equipmentAccess === 'object' ? equipmentAccess : { bodyweight: true };
+    const order = [
+      ['bodyweight', 'Bodyweight'],
+      ['dumbbell', 'Dumbbells'],
+      ['barbell', 'Barbell'],
+      ['cable', 'Cable'],
+      ['machine', 'Machines']
+    ];
+    return order.filter(([key]) => Boolean(src[key])).map(([, label]) => label);
+  }
+
+  function mapWizardEquipmentAccessToLocation(equipmentAccess) {
+    const list = mapWizardEquipmentAccessToList(equipmentAccess).map((entry) => String(entry || '').toLowerCase());
+    return list.some((entry) => entry.includes('cable') || entry.includes('machine')) ? 'Commercial gym' : 'Home';
+  }
+
+  function mapWizardEmphasisToPriorityGroups(rawList) {
+    const alias = {
+      chest: 'Chest',
+      back: 'Back',
+      shoulders: 'Shoulders',
+      arms: 'Arms',
+      quads: 'Legs',
+      legs: 'Legs',
+      hamstrings_glutes: 'Glutes',
+      glutes: 'Glutes',
+      calves: 'Calves',
+      abs: 'Core',
+      core: 'Core'
+    };
+    const out = [];
+    (Array.isArray(rawList) ? rawList : []).forEach((entry) => {
+      const mapped = alias[String(entry || '').trim().toLowerCase()] || '';
+      if (mapped && !out.includes(mapped)) out.push(mapped);
+    });
+    return out.slice(0, 3);
+  }
+
+  function mapWizardInjuryToPainFields(injuryRaw) {
+    const injury = injuryRaw && typeof injuryRaw === 'object' ? injuryRaw : { has: false, joints: [], note: '', severityByJoint: {} };
+    if (!injury.has) return { painAreas: [], painProfilesByArea: {}, movementsToAvoid: [] };
+    const areaMap = {
+      shoulder: 'Shoulder',
+      elbow: 'Elbow',
+      wrist: 'Wrist',
+      back: 'Back',
+      hip: 'Hip',
+      knee: 'Knee',
+      ankle: 'Ankle'
+    };
+    const painAreas = [];
+    const painProfilesByArea = {};
+    const movementsToAvoid = [];
+    const note = String(injury.note || '').trim();
+    (Array.isArray(injury.joints) ? injury.joints : []).forEach((joint) => {
+      const key = String(joint || '').trim().toLowerCase();
+      const area = areaMap[key];
+      if (!area || painAreas.includes(area)) return;
+      painAreas.push(area);
+      const severity = Number(injury?.severityByJoint?.[key]);
+      painProfilesByArea[area] = {
+        severity: Number.isFinite(severity) ? Math.max(1, Math.min(10, Math.round(severity))) : 5,
+        recency: 'Recent',
+        notes: note
+      };
+      if (area === 'Shoulder' && !movementsToAvoid.includes('bench press')) movementsToAvoid.push('bench press');
+      if (area === 'Back' && !movementsToAvoid.includes('deadlift')) movementsToAvoid.push('deadlift');
+      if (area === 'Knee' && !movementsToAvoid.includes('squat')) movementsToAvoid.push('squat');
+    });
+    return { painAreas, painProfilesByArea, movementsToAvoid };
+  }
+
+  function buildSharedOblueprintPayloadFromWizard({
+    discipline,
+    daysPerWeek,
+    strength = {},
+    experience = 'beginner',
+    goalMode = 'bulk',
+    resolvedPhase = 'bulk',
+    injury = null,
+    equipmentAccess = { bodyweight: true },
+    preferredDays = [],
+    unavailableDays = [],
+    timePerSession = '',
+    trainingAgeBucket = '',
+    emphasis = [],
+    equipmentStylePref = 'mix'
+  } = {}) {
+    const normalizedDiscipline = normalizeDiscipline(discipline);
+    if (!normalizedDiscipline || !['bodybuilding', 'powerbuilding'].includes(normalizedDiscipline)) return null;
+    const normalizedStrength = strength && typeof strength === 'object' ? strength : {};
+    const injuryFields = mapWizardInjuryToPainFields(injury);
+    const experienceMap = {
+      beginner: '<6m',
+      intermediate: '2-5y',
+      advanced: '5y+'
+    };
+    const fallbackExperience = experienceMap[String(experience || '').trim().toLowerCase()] || '6-24m';
+    const trainingFeel = mapWizardDisciplineToTrainingFeel(normalizedDiscipline);
+    return {
+      trainingFeel,
+      discipline: normalizedDiscipline,
+      primaryGoal: mapWizardPhaseToPrimaryGoal(goalMode || resolvedPhase),
+      timeline: '8 weeks',
+      focus: normalizedDiscipline === 'powerbuilding' ? 'Strength' : 'Aesthetic',
+      experience: mapWizardTrainingAgeToExperience(trainingAgeBucket, fallbackExperience),
+      location: mapWizardEquipmentAccessToLocation(equipmentAccess),
+      trainingStyle: mapWizardEquipmentStyleToTrainingStyle(equipmentStylePref),
+      outputStyle: 'RPE/RIR cues',
+      closeToFailure: 'No',
+      daysPerWeek: Number(daysPerWeek),
+      sessionLengthMin: mapWizardSessionBucketToSessionLength(timePerSession),
+      priorityGroups: mapWizardEmphasisToPriorityGroups(emphasis),
+      movementsToAvoid: injuryFields.movementsToAvoid,
+      preferredDays: resolvePreferredDaysForSubmit(daysPerWeek, preferredDays, unavailableDays),
+      equipmentAccess: mapWizardEquipmentAccessToList(equipmentAccess),
+      painAreas: injuryFields.painAreas,
+      painProfilesByArea: injuryFields.painProfilesByArea,
+      weightLb: Number(normalizedStrength.bodyweight || 0) || null,
+      bodyweight: Number(normalizedStrength.bodyweight || 0) || null,
+      bench: Number(normalizedStrength.bench || 0) || null,
+      squat: Number(normalizedStrength.squat || 0) || null,
+      deadlift: Number(normalizedStrength.deadlift || 0) || null,
+      benchVariation: String(normalizedStrength.benchVariation || normalizedStrength.pressMovement || '').trim() || null,
+      benchWeight: Number(normalizedStrength.benchWeight || normalizedStrength.pressWeight || 0) || null,
+      benchReps: Number(normalizedStrength.benchReps || normalizedStrength.pressReps || 0) || null,
+      lowerMovement: String(normalizedStrength.lowerMovement || normalizedStrength.legMovement || '').trim() || null,
+      lowerWeight: Number(normalizedStrength.lowerWeight || normalizedStrength.legWeight || 0) || null,
+      lowerReps: Number(normalizedStrength.lowerReps || normalizedStrength.legReps || 0) || null,
+      hingeMovement: String(normalizedStrength.hingeMovement || '').trim() || null,
+      hingeWeight: Number(normalizedStrength.hingeWeight || 0) || null,
+      hingeReps: Number(normalizedStrength.hingeReps || 0) || null,
+      sleepHours: 7,
+      activityLevel: 'Active',
+      stress: 'Medium',
+      planSeed: Date.now()
+    };
   }
 
   // Support deep-links like training.html?discipline=powerlifting
@@ -5570,6 +5786,31 @@ function toFreeExerciseDbRemotePath(src) {
   return `https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/${rel}`;
 }
 
+function isRemoteHttpMediaPath(src) {
+  return /^https?:\/\//i.test(String(src || '').trim());
+}
+
+function buildExerciseMediaCandidates(src) {
+  const raw = String(src || '').trim();
+  if (!raw) return [];
+  const rewritten = rewriteLegacyLocalMediaPath(raw);
+  const remote = toFreeExerciseDbRemotePath(rewritten);
+  const candidates = [];
+  const push = (value) => {
+    const next = String(value || '').trim();
+    if (!next) return;
+    if (!candidates.includes(next)) candidates.push(next);
+  };
+  if (isRemoteHttpMediaPath(rewritten)) {
+    push(rewritten);
+  } else {
+    push(rewritten);
+    push(remote);
+  }
+  if (isRemoteHttpMediaPath(raw)) push(raw);
+  return candidates;
+}
+
   function persistExerciseMediaCacheSoon() {
     try { window.clearTimeout(exerciseMediaPersistTimer); } catch { /* ignore */ }
     exerciseMediaPersistTimer = window.setTimeout(() => {
@@ -5969,7 +6210,10 @@ function toFreeExerciseDbRemotePath(src) {
       let mediaPathAlt = String(ex?.mediaPathAlt || '').trim();
       const mediaPathNorm = mediaPath.replace(/\\/g, '/');
       const isFreeDbMediaPath = /(?:^|\/)(?:free-exercise-db|exercise-db)\/exercises\//i.test(mediaPathNorm);
-      if (catalogMedia.mediaPath && (!mediaPath || isFreeDbMediaPath)) {
+      const prefersCatalogMedia = !mediaPath
+        || isFreeDbMediaPath
+        || (!isRemoteHttpMediaPath(mediaPath) && catalogMedia.mediaPath);
+      if (catalogMedia.mediaPath && prefersCatalogMedia) {
         mediaPath = catalogMedia.mediaPath;
         mediaPathAlt = catalogMedia.mediaPathAlt || '';
       }
@@ -5982,6 +6226,8 @@ function toFreeExerciseDbRemotePath(src) {
           type: 'local-pair',
           src0,
           src1,
+          candidates0: buildExerciseMediaCandidates(localSrc0),
+          candidates1: buildExerciseMediaCandidates(localSrc1),
           alt: displayName
         };
       }
@@ -5998,6 +6244,8 @@ function toFreeExerciseDbRemotePath(src) {
           type: 'local-pair',
           src0,
           src1,
+          candidates0: buildExerciseMediaCandidates(localSrc0),
+          candidates1: buildExerciseMediaCandidates(localSrc1),
           alt: displayName || name
         };
       }
@@ -6021,37 +6269,50 @@ function toFreeExerciseDbRemotePath(src) {
     }
     if (media?.type === 'image' && media?.src) {
       const img = el('img', { class: 'exercise-media-img', src: media.src, alt: ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
-      const remote = toFreeExerciseDbRemotePath(media.src);
-      if (remote && remote !== media.src) {
-        img.addEventListener('error', () => {
-          if (img.dataset.remoteTried === '1') return;
-          img.dataset.remoteTried = '1';
-          img.src = remote;
-        }, { once: true });
-      }
+      const candidates = buildExerciseMediaCandidates(media.src);
+      let candidateIndex = Math.max(0, candidates.indexOf(String(media.src || '').trim()));
+      img.addEventListener('error', () => {
+        candidateIndex += 1;
+        if (candidateIndex < candidates.length) {
+          img.src = candidates[candidateIndex];
+          return;
+        }
+        try { img.replaceWith(muscleIconSvg(ex?.bodyPart || ex?.muscle_group || ex?.muscleGroup || 'exercise')); } catch {}
+      });
       return img;
     }
     if (media?.type === 'local-pair' && media?.src0 && media?.src1) {
       const wrap = el('div', { class: 'exercise-media-pair' });
       const imgA = el('img', { class: 'exercise-media-img exercise-media-img-a', src: media.src0, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
       const imgB = el('img', { class: 'exercise-media-img exercise-media-img-b', src: media.src1, alt: media.alt || ex?.name || 'Exercise', loading: 'eager', decoding: 'async' });
-      const remote0 = toFreeExerciseDbRemotePath(media.src0);
-      const remote1 = toFreeExerciseDbRemotePath(media.src1);
-      let remoteAttempted = false;
-      const tryRemotePair = () => {
-        if (remoteAttempted) return false;
-        if (!remote0 || !remote1) return false;
-        remoteAttempted = true;
-        imgA.src = remote0;
-        imgB.src = remote1;
-        return true;
+      const candidates0 = Array.isArray(media.candidates0) && media.candidates0.length
+        ? media.candidates0.slice()
+        : buildExerciseMediaCandidates(media.src0);
+      const candidates1 = Array.isArray(media.candidates1) && media.candidates1.length
+        ? media.candidates1.slice()
+        : buildExerciseMediaCandidates(media.src1);
+      let candidateIndex = Math.max(
+        candidates0.indexOf(String(media.src0 || '').trim()),
+        candidates1.indexOf(String(media.src1 || '').trim()),
+        0
+      );
+      const advancePair = () => {
+        candidateIndex += 1;
+        const next0 = candidates0[candidateIndex] || '';
+        const next1 = candidates1[candidateIndex] || '';
+        if (next0 && next1) {
+          imgA.src = next0;
+          imgB.src = next1;
+          return true;
+        }
+        return false;
       };
       const onError = () => {
-        if (tryRemotePair()) return;
+        if (advancePair()) return;
         try { wrap.replaceWith(muscleIconSvg(ex?.bodyPart || ex?.muscle_group || ex?.muscleGroup || 'exercise')); } catch {}
       };
-      imgA.addEventListener('error', onError, { once: true });
-      imgB.addEventListener('error', onError, { once: true });
+      imgA.addEventListener('error', onError);
+      imgB.addEventListener('error', onError);
       wrap.appendChild(imgA);
       wrap.appendChild(imgB);
       return wrap;
@@ -7419,7 +7680,7 @@ function toFreeExerciseDbRemotePath(src) {
     return finalizeRankedSwapCandidates(scored, 6);
   }
 
-  function applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope }) {
+  async function applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope }) {
     const prevId = ex.exerciseId;
     ex.exerciseId = newExerciseId;
     const media = exerciseMediaFromId(newExerciseId);
@@ -7444,7 +7705,7 @@ function toFreeExerciseDbRemotePath(src) {
       at: new Date().toISOString()
     });
     try {
-      api('/api/training/override', {
+      const resp = await api('/api/training/override', {
         method: 'POST',
         body: JSON.stringify({
           planId: state.planRow?.id,
@@ -7458,6 +7719,10 @@ function toFreeExerciseDbRemotePath(src) {
           scope
         })
       });
+      if (resp?.ok && resp.json?.plan) {
+        state.planRow = resp.json.plan;
+        sanitizeBodybuildingPlanInPlace(state.planRow);
+      }
     } catch {
       // ignore
     }
@@ -7545,7 +7810,7 @@ function toFreeExerciseDbRemotePath(src) {
             type: 'button',
             class: 'btn btn-primary swap-scope-modal-btn',
             onclick: () => {
-              applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'single' });
+              void applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'single' });
               overlay.remove();
               onDone?.();
             }
@@ -7554,7 +7819,7 @@ function toFreeExerciseDbRemotePath(src) {
             type: 'button',
             class: 'btn btn-ghost swap-scope-modal-btn',
             onclick: () => {
-              applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'permanent' });
+              void applySwapSelection({ ex, dayIndex, weekIndex, newExerciseId, scope: 'permanent' });
               overlay.remove();
               onDone?.();
             }
@@ -9768,6 +10033,7 @@ function toggleSharePopover(force) {
 
     state.profile = fetchedProfile;
     state.planRow = fetchedPlanRow;
+    sanitizeBodybuildingPlanInPlace(state.planRow);
     const hasFetchedRenderablePlan = hasRenderablePlanRow(state.planRow);
     if (hasFetchedRenderablePlan) {
       state.planError = null;
@@ -9909,22 +10175,25 @@ function toggleSharePopover(force) {
       const intro =
         discipline === 'powerlifting'
           ? 'Strength-focused plan built around squat, bench, and deadlift.'
+          : discipline === 'powerbuilding'
+            ? 'Build strength on key lifts while adding muscle.'
           : discipline === 'calisthenics'
             ? 'Bodyweight program built around push, pull, and skill work.'
             : 'Hypertrophy program built around progressive overload.';
 
       const disciplineChoices = [
         { key: 'powerlifting', title: 'Powerlifting', sub: 'Squat • Bench • Deadlift' },
-        { key: 'bodybuilding', title: 'Hypertrophy', sub: 'Muscle gain' },
+        { key: 'powerbuilding', title: 'Powerbuilding', sub: 'Build strength on key lifts while adding muscle.' },
+        { key: 'bodybuilding', title: 'Aesthetic Bodybuilding', sub: 'Muscle gain and physique focus.' },
         { key: 'calisthenics', title: 'Calisthenics', sub: 'Bodyweight' }
       ];
 
       const disciplinePicker = el('div', null,
         el('div', { class: 'auth-label' }, 'Choose your program'),
         el('div', { class: 'training-muted' }, intro),
-        el('div', { class: 'training-choice-grid', style: 'grid-template-columns: repeat(3, minmax(0, 1fr))' },
+        el('div', { class: 'training-choice-grid', style: 'grid-template-columns: repeat(4, minmax(0, 1fr))' },
           disciplineChoices.map((opt) => {
-            const isDisabled = opt.key !== 'bodybuilding';
+            const isDisabled = !['bodybuilding', 'powerbuilding'].includes(opt.key);
             return el('label', {
               class: `training-choice${isDisabled ? ' is-disabled' : ''}`,
               style: isDisabled ? 'opacity:0.55; filter:grayscale(1); cursor:not-allowed;' : null,
@@ -10029,7 +10298,7 @@ function toggleSharePopover(force) {
 
       const nodes = [disciplinePicker];
 
-      if (discipline === 'bodybuilding') {
+      if (discipline === 'bodybuilding' || discipline === 'powerbuilding') {
         const phase = state.wizard.phase || 'bulk';
         nodes.push(
           el('div', { class: 'training-divider' }),
@@ -10216,7 +10485,7 @@ function toggleSharePopover(force) {
         );
       }
 
-        if (d === 'bodybuilding') {
+        if (d === 'bodybuilding' || d === 'powerbuilding') {
           const useWizardV2 = true;
           if (useWizardV2) {
             const pressMovement = String(s.pressMovement || 'Bench Press');
@@ -10831,7 +11100,7 @@ function toggleSharePopover(force) {
             && ['full_power', 'bench_only'].includes(ev);
           if (!requireValue(ok, 'Enter squat, bench, deadlift, current bodyweight, goal bodyweight, and event type.')) return;
         }
-        if (d === 'bodybuilding') {
+        if (d === 'bodybuilding' || d === 'powerbuilding') {
           const ok = Number(latestStrength.bodyweight) > 0
             && Number(latestStrength.height) > 0
             && Number(latestStrength.benchWeight) > 0 && Number(latestStrength.benchReps) > 0
@@ -11216,6 +11485,52 @@ function toggleSharePopover(force) {
     const equipmentAccess = state.wizard.equipmentAccess && typeof state.wizard.equipmentAccess === 'object'
       ? state.wizard.equipmentAccess
       : { bodyweight: true };
+    const normalizedDiscipline = normalizeDiscipline(discipline);
+
+    if (normalizedDiscipline === 'bodybuilding' || normalizedDiscipline === 'powerbuilding') {
+      const sharedPayload = buildSharedOblueprintPayloadFromWizard({
+        discipline: normalizedDiscipline,
+        daysPerWeek,
+        strength,
+        experience,
+        goalMode,
+        resolvedPhase,
+        injury,
+        equipmentAccess,
+        preferredDays: state.wizard.preferredDays,
+        unavailableDays: state.wizard.unavailableDays,
+        timePerSession: state.wizard.timePerSession,
+        trainingAgeBucket: state.wizard.trainingAgeBucket,
+        emphasis: state.wizard.emphasis,
+        equipmentStylePref: state.wizard.equipmentStylePref
+      });
+      if (!sharedPayload) return null;
+      return {
+        ...sharedPayload,
+        strength: {
+          ...strength,
+          goalMode,
+          phase: resolvedPhase,
+          targetWeightLb: Number(state.wizard.targetWeightLb),
+          timePerSession: String(state.wizard.timePerSession || '').trim().toLowerCase(),
+          trainingAgeBucket: String(state.wizard.trainingAgeBucket || '').trim().toLowerCase(),
+          emphasis: Array.isArray(state.wizard.emphasis) ? state.wizard.emphasis : [],
+          equipmentStylePref: String(state.wizard.equipmentStylePref || 'mix').trim().toLowerCase()
+        },
+        profile: {
+          firstName: String(profile.firstName || '').trim(),
+          age: Number(profile.age),
+          locationCity: String(profile.locationCity || '').trim(),
+          locationState: String(profile.locationState || '').trim(),
+          goals: String(profile.goals || '').trim()
+            || (resolvedPhase === 'cut' ? 'Goal: cut (definition)'
+              : resolvedPhase === 'maintain' ? 'Goal: maintain'
+                : 'Goal: bulk'),
+          injuries: String(profile.injuries || '').trim()
+        },
+        profileImage: state.wizard.profileImage?.dataUrl ? { dataUrl: state.wizard.profileImage.dataUrl } : null
+      };
+    }
 
     if (discipline === 'powerlifting') {
       strength.squat = Number(strength.squat);
@@ -12145,7 +12460,10 @@ function toggleSharePopover(force) {
       render();
       return;
     }
-    if (resp.json?.plan) state.planRow = resp.json.plan;
+    if (resp.json?.plan) {
+      state.planRow = resp.json.plan;
+      sanitizeBodybuildingPlanInPlace(state.planRow);
+    }
     if (resp.json?.liftHistory) rememberLiftHistory(resp.json.liftHistory);
     await refreshTrainingLogs(built.payload.planId);
     clearWorkoutDraftStateForDay({
@@ -12262,7 +12580,10 @@ function toggleSharePopover(force) {
       return;
     }
 
-    if (resp.json?.plan) state.planRow = resp.json.plan;
+    if (resp.json?.plan) {
+      state.planRow = resp.json.plan;
+      sanitizeBodybuildingPlanInPlace(state.planRow);
+    }
     await refreshTrainingLogs(planId);
     render(); */
   }
@@ -12444,7 +12765,7 @@ function toggleSharePopover(force) {
         } catch {
           // ignore
         }
-        window.location.href = 'training-coming-soon.html?restart=1';
+        window.location.href = 'training-coming-soon.html';
       };
 
       if (isPreview || !state.auth.user) {
