@@ -1612,6 +1612,7 @@ function getPowerbuildingPatternBlockProfile(user) {
     avoidBenchPattern: Boolean(pb.avoidBenchPattern),
     avoidDeadliftPattern: Boolean(pb.avoidDeadliftPattern),
     avoidSquatPattern: Boolean(pb.avoidSquatPattern),
+    barbellUnavailable: !(Array.isArray(user?.allowedEquipment) && user.allowedEquipment.includes('barbell')),
     lowRecovery: String(pb.recoveryTier || '') === 'low',
     severeBackOrHipPain: Math.max(Number(user?.injuryMap?.spine || 0), Number(user?.injuryMap?.back || 0), Number(user?.injuryMap?.hip || 0)) >= 6,
     severeKneePain: Number(user?.injuryMap?.knee || 0) >= 6
@@ -1622,7 +1623,7 @@ function allowPowerbuildingPosteriorSubstitute(dayType, user) {
   const profile = getPowerbuildingPatternBlockProfile(user);
   if (!profile) return false;
   if (!['Lower', 'LowerFocus', 'FullBodyB'].includes(String(dayType || ''))) return false;
-  return profile.lowRecovery || profile.severeBackOrHipPain || profile.avoidDeadliftPattern || profile.avoidSquatPattern;
+  return profile.lowRecovery || profile.severeBackOrHipPain || profile.avoidDeadliftPattern || profile.avoidSquatPattern || profile.barbellUnavailable;
 }
 
 function allowPowerbuildingNonSquatLower(dayType, user) {
@@ -5361,7 +5362,10 @@ function repairAndValidatePlan(weeks, user, exercises) {
           dayType: String(day?.dayType || '').trim() || undefined,
           dayExerciseCount: nextExercises.length
         });
-        const trimmed = applySessionCapTrimming({ ...day, exercises: nextExercises }, user.sessionCap, user.priorityGroups || [], user.profile, user);
+        const powerbuildingPolishedDay = user.discipline === 'powerbuilding'
+          ? powerbuildingPriority.polishPowerbuildingDay({ ...day, exercises: nextExercises }, user)
+          : { ...day, exercises: nextExercises };
+        const trimmed = applySessionCapTrimming(powerbuildingPolishedDay, user.sessionCap, user.priorityGroups || [], user.profile, user);
         emitPlannerDiagnosticHeartbeat(user, 'after_apply_session_cap_trimming', {
           ...finalValidationMeta,
           callBoundary: 'repairAndValidatePlan_after_apply_session_cap_trimming',
@@ -5558,6 +5562,9 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
             };
           })
         }));
+      }
+      if (user.discipline === 'powerbuilding') {
+        prescribed = prescribed.map((d) => powerbuildingPriority.polishPowerbuildingDay(d, user));
       }
       prescribed = prescribed.map((d) => applySessionCapTrimming(d, user.sessionCap, user.priorityGroups || [], user.profile, user));
       prescribed = prescribed.map((d) => ({
@@ -11137,6 +11144,31 @@ function findLowerCoachCleanupPosteriorReplacementIndex(day, user) {
   return ranked[0]?.index ?? -1;
 }
 
+function findLowerCoachCleanupQuadReplacementIndex(day, user) {
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const posteriorCount = exercises.filter((exercise) => isLowerCoachCleanupHingeCandidate(exercise, user) || hasSafePowerbuildingPosteriorSubstitute(exercise, user)).length;
+  const ranked = exercises
+    .map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      const name = normalizeName(exercise?.name);
+      if (!name) return null;
+      if (countLowerCoachCleanupQuadPatterns([exercise], user) > 0) return null;
+      let score = -1000;
+      if (isCoachCleanupLowerCandidate(exercise)) score = 70;
+      else if (truth.directCalf) score = 42;
+      else if (truth.directAb) score = 26;
+      else if (String(exercise?.style || '') === 'Isolation' && !exerciseDirectlyServesPriority(exercise, 'Legs', user)) score = 34;
+      else if (String(exercise?.style || '') === 'Isolation') score = 18;
+      else if (isLowerCoachCleanupHingeCandidate(exercise, user) || hasSafePowerbuildingPosteriorSubstitute(exercise, user)) score = posteriorCount > 1 ? 24 : -100;
+      else score = 12;
+      if (score <= -100) return null;
+      return { index, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || b.index - a.index);
+  return ranked[0]?.index ?? -1;
+}
+
 function attemptLowerCoachCleanupPosteriorSubstituteRepair(day, user, exercises, weekType) {
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
   const replacementSlots = [
@@ -11265,6 +11297,175 @@ function attemptLowerCoachCleanupHingeRepair(day, user, exercises, weekType) {
   };
 }
 
+function attemptLowerCoachCleanupQuadRepair(day, user, exercises, weekType) {
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const slot = buildPriorityIdentitySlot(nextDay?.dayType || '', 'Legs') || {
+    id: `${String(nextDay?.dayType || 'day').toLowerCase()}_quality_quad_support`,
+    pattern: 'Squat',
+    styleRequired: 'Compound',
+    muscleTarget: 'Legs',
+    primaryAllowed: ['Legs'],
+    subPreferred: ['Quads'],
+    subFallback: null,
+    optional: false
+  };
+  const rejectionReasons = [];
+  let availableQuadCandidatesCount = 0;
+  const replaceIdx = findLowerCoachCleanupQuadReplacementIndex(nextDay, user);
+  const current = replaceIdx >= 0
+    ? nextDay.exercises[replaceIdx]
+    : { sets: 2, style: slot.styleRequired, slotId: slot.id, primary: slot.muscleTarget, muscleTarget: slot.muscleTarget };
+  const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+    const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+    const name = normalizeName(candidate?.name);
+    if (!exerciseDirectlyServesPriority(candidate, 'Legs', user)) return false;
+    if (!(truth.progressionFriendly || String(candidate?.style || '') === 'Isolation')) return false;
+    return countLowerCoachCleanupQuadPatterns([candidate], user) > 0
+      || /(leg press|hack squat|split squat|lunge|step[\s-]*up|squat|leg extension)/.test(name);
+  });
+  if (!replacement) {
+    rejectionReasons.push('no_quad_candidate');
+  } else {
+    availableQuadCandidatesCount += 1;
+    if (replaceIdx >= 0) {
+      nextDay.exercises.splice(replaceIdx, 1, replacement);
+    } else if ((nextDay.exercises || []).length < Number(user?.sessionCap || 0)) {
+      nextDay.exercises.push(replacement);
+    } else {
+      rejectionReasons.push('session_cap_blocked_legs');
+    }
+    nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+    const repairedStructure = buildLowerCoachCleanupStructuralResult(nextDay, user);
+    if (repairedStructure.ok) {
+      return {
+        repaired: true,
+        day: nextDay,
+        availableQuadCandidatesCount,
+        rejectionReasons
+      };
+    }
+    rejectionReasons.push(repairedStructure.missingRequirement || 'invalid_quad_repair');
+  }
+  return {
+    repaired: false,
+    day,
+    availableQuadCandidatesCount,
+    rejectionReasons
+  };
+}
+
+function isPowerbuildingTrueHingeExercise(exercise) {
+  const name = normalizeName(exercise?.name);
+  if (!name) return false;
+  return /(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|pull[\s-]*through|back extension|hyperextension)/.test(name);
+}
+
+function findPowerbuildingTrueHingeReplacementIndex(day, user) {
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  const quadCount = countLowerCoachCleanupQuadPatterns(exercises, user);
+  const ranked = exercises
+    .map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      const name = normalizeName(exercise?.name);
+      if (!name || isPowerbuildingTrueHingeExercise(exercise)) return null;
+      let score = -1000;
+      const isQuadPattern = countLowerCoachCleanupQuadPatterns([exercise], user) > 0;
+      if (isQuadPattern && quadCount <= 1) return null;
+      if (truth.directCalf) score = 60;
+      else if (truth.directAb) score = 54;
+      else if (isCoachCleanupLowerCandidate(exercise)) score = 48;
+      else if (String(exercise?.style || '') === 'Isolation' && !exerciseDirectlyServesPriority(exercise, 'Legs', user)) score = 40;
+      else if (String(exercise?.style || '') === 'Isolation') score = 28;
+      else if (isLowerCoachCleanupHingeCandidate(exercise, user)) score = 22;
+      else score = 12;
+      return { index, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || b.index - a.index);
+  return ranked[0]?.index ?? -1;
+}
+
+function polishPowerbuildingTrueHingeExposure(day, user, exercises, weekType) {
+  if (String(user?.discipline || '') !== 'powerbuilding') return day;
+  if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
+  if (Number(user?.daysPerWeek || 0) < 4) return day;
+  const avoidDeadlift = (Array.isArray(user?.movementsToAvoid) ? user.movementsToAvoid : [])
+    .some((value) => /deadlift/i.test(String(value || '')));
+  if (avoidDeadlift) return day;
+  if (Math.max(Number(user?.injuryMap?.spine || 0), Number(user?.injuryMap?.back || 0), Number(user?.injuryMap?.hip || 0)) >= 6) return day;
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  if (nextDay.exercises.some((exercise) => isPowerbuildingTrueHingeExercise(exercise))) return nextDay;
+  const slot = {
+    id: `${String(nextDay?.dayType || 'day').toLowerCase()}_powerbuilding_hinge`,
+    pattern: 'Hinge',
+    styleRequired: 'Compound',
+    muscleTarget: 'Glutes',
+    primaryAllowed: ['Glutes', 'Legs'],
+    subPreferred: ['Glutes', 'Hamstrings-Hinge'],
+    subFallback: null,
+    optional: false
+  };
+  const replaceIdx = findPowerbuildingTrueHingeReplacementIndex(nextDay, user);
+  const current = replaceIdx >= 0
+    ? nextDay.exercises[replaceIdx]
+    : { sets: 2, style: slot.styleRequired, slotId: slot.id, primary: slot.muscleTarget, muscleTarget: slot.muscleTarget };
+  const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+    const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+    return isPowerbuildingTrueHingeExercise(candidate) && (truth.progressionFriendly || truth.controlledHingeAllowed);
+  });
+  if (!replacement) return nextDay;
+  if (replaceIdx >= 0) nextDay.exercises.splice(replaceIdx, 1, replacement);
+  else if ((nextDay.exercises || []).length < Number(user?.sessionCap || 0)) nextDay.exercises.push(replacement);
+  nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+  const structure = buildLowerCoachCleanupStructuralResult(nextDay, user);
+  return structure.ok ? nextDay : day;
+}
+
+function polishPowerbuildingPullCompoundSupport(day, user, exercises, weekType) {
+  if (String(user?.discipline || '') !== 'powerbuilding') return day;
+  if (Number(user?.daysPerWeek || 0) < 3) return day;
+  if (!['Push', 'Upper', 'UpperFocus', 'FullBodyA', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
+  const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  const hasPullCompound = nextDay.exercises.some((exercise) => {
+    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+    return String(exercise?.style || '') === 'Compound' && truth.pullRole === 'back_builder';
+  });
+  if (hasPullCompound) return nextDay;
+  const slot = buildPriorityIdentitySlot(nextDay?.dayType || '', 'Back') || {
+    id: `${String(nextDay?.dayType || 'day').toLowerCase()}_powerbuilding_back_support`,
+    pattern: 'HorizontalPull',
+    styleRequired: 'Compound',
+    muscleTarget: 'Back',
+    primaryAllowed: ['Back'],
+    subPreferred: ['Lats-Thickness', 'UpperBack', 'Lats-Width'],
+    subFallback: null,
+    optional: false
+  };
+  const replacementIndex = nextDay.exercises
+    .map((exercise, index) => {
+      const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+      let score = -1000;
+      if (String(exercise?.slotId || '').startsWith('pb_')) return null;
+      if (String(exercise?.style || '') === 'Isolation') score = 50;
+      else if (truth.pressRole === 'chest_press' || truth.pressRole === 'mixed') score = 26;
+      else if (truth.directCalf || truth.directAb) score = 18;
+      else score = 8;
+      return { index, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || b.index - a.index)[0]?.index ?? -1;
+  if (replacementIndex < 0) return nextDay;
+  const current = nextDay.exercises[replacementIndex];
+  const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+    const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
+    return String(candidate?.style || '') === 'Compound' && truth.pullRole === 'back_builder';
+  });
+  if (!replacement) return nextDay;
+  nextDay.exercises.splice(replacementIndex, 1, replacement);
+  nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
+  return nextDay;
+}
+
 function polishCoachSideEyeArmAccessories(day, user, exercises, weekType) {
   if (!['Push', 'Pull', 'Upper', 'UpperFocus', 'DeltsArms', 'FullBodyA', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
@@ -11308,6 +11509,7 @@ function polishLowerCoachCleanup(day, user, exercises, weekType, opts = {}) {
     }
     return attemptLowerCoachCleanupHingeRepair(candidateDay, user, exercises, weekType);
   };
+  const attemptMissingQuadRepair = (candidateDay) => attemptLowerCoachCleanupQuadRepair(candidateDay, user, exercises, weekType);
   const rememberBestValidDay = (candidateDay) => {
     const structure = buildLowerCoachCleanupStructuralResult(candidateDay, user);
     if (!structure.ok) return structure;
@@ -11379,42 +11581,46 @@ function polishLowerCoachCleanup(day, user, exercises, weekType, opts = {}) {
         });
         return bestValidDay;
       }
-      if (!replacedStructure.ok && replacedStructure.missingRequirement === 'missing_hinge_pattern') {
-        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+      if (!replacedStructure.ok && ['missing_hinge_pattern', 'missing_quad_pattern'].includes(String(replacedStructure.missingRequirement || ''))) {
+        logAbsGlutesLegsComboDebug(user, replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-missing-quad' : 'lower-coach-cleanup-missing-hinge', {
           day: nextDay?.day || null,
           dayType: nextDay?.dayType || null
         });
-        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+        logAbsGlutesLegsComboDebug(user, replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-attempt' : 'lower-coach-cleanup-hinge-repair-attempt', {
           day: nextDay?.day || null,
           dayType: nextDay?.dayType || null
         });
-        const hingeRepair = attemptMissingHingeRepair(nextDay);
-        if (hingeRepair.repaired) {
-          const repairedStructure = rememberBestValidDay(hingeRepair.day);
-          logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+        const structuralRepair = replacedStructure.missingRequirement === 'missing_quad_pattern'
+          ? attemptMissingQuadRepair(nextDay)
+          : attemptMissingHingeRepair(nextDay);
+        if (structuralRepair.repaired) {
+          const repairedStructure = rememberBestValidDay(structuralRepair.day);
+          logAbsGlutesLegsComboDebug(user, replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-success' : 'lower-coach-cleanup-hinge-repair-success', {
             day: nextDay?.day || null,
             dayType: nextDay?.dayType || null,
-            availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-            rejectionReasons: hingeRepair.rejectionReasons
+            availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+            availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+            rejectionReasons: structuralRepair.rejectionReasons
           });
           if (repairedStructure.ok) {
             resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
               week: opts?.weekIndex,
               day: nextDay?.day,
               dayType: nextDay?.dayType,
-              lastAttemptedRepair: 'hinge-repair'
+              lastAttemptedRepair: replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair'
             }, {
-              lastAttemptedRepair: 'hinge-repair',
+              lastAttemptedRepair: replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair',
               currentStructuralResult: repairedStructure
             });
-            return hingeRepair.day;
+            return structuralRepair.day;
           }
         }
-        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+        logAbsGlutesLegsComboDebug(user, replacedStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-failed' : 'lower-coach-cleanup-hinge-repair-failed', {
           day: nextDay?.day || null,
           dayType: nextDay?.dayType || null,
-          availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-          rejectionReasons: hingeRepair.rejectionReasons
+          availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+          availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+          rejectionReasons: structuralRepair.rejectionReasons
         });
         if (bestValidDay) return bestValidDay;
       }
@@ -11445,42 +11651,46 @@ function polishLowerCoachCleanup(day, user, exercises, weekType, opts = {}) {
       return removedDay;
     }
     const currentStructure = buildLowerCoachCleanupStructuralResult(nextDay, user);
-    if (currentStructure.missingRequirement === 'missing_hinge_pattern') {
-      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+    if (['missing_hinge_pattern', 'missing_quad_pattern'].includes(String(currentStructure.missingRequirement || ''))) {
+      logAbsGlutesLegsComboDebug(user, currentStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-missing-quad' : 'lower-coach-cleanup-missing-hinge', {
         day: nextDay?.day || null,
         dayType: nextDay?.dayType || null
       });
-      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+      logAbsGlutesLegsComboDebug(user, currentStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-attempt' : 'lower-coach-cleanup-hinge-repair-attempt', {
         day: nextDay?.day || null,
         dayType: nextDay?.dayType || null
       });
-      const hingeRepair = attemptMissingHingeRepair(nextDay);
-      if (hingeRepair.repaired) {
-        const repairedStructure = rememberBestValidDay(hingeRepair.day);
-        logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+      const structuralRepair = currentStructure.missingRequirement === 'missing_quad_pattern'
+        ? attemptMissingQuadRepair(nextDay)
+        : attemptMissingHingeRepair(nextDay);
+      if (structuralRepair.repaired) {
+        const repairedStructure = rememberBestValidDay(structuralRepair.day);
+        logAbsGlutesLegsComboDebug(user, currentStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-success' : 'lower-coach-cleanup-hinge-repair-success', {
           day: nextDay?.day || null,
           dayType: nextDay?.dayType || null,
-          availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-          rejectionReasons: hingeRepair.rejectionReasons
+          availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+          availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+          rejectionReasons: structuralRepair.rejectionReasons
         });
         if (repairedStructure.ok) {
           resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
             week: opts?.weekIndex,
             day: nextDay?.day,
             dayType: nextDay?.dayType,
-            lastAttemptedRepair: 'hinge-repair'
+            lastAttemptedRepair: currentStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair'
           }, {
-            lastAttemptedRepair: 'hinge-repair',
+            lastAttemptedRepair: currentStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair',
             currentStructuralResult: repairedStructure
           });
-          return hingeRepair.day;
+          return structuralRepair.day;
         }
       }
-      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+      logAbsGlutesLegsComboDebug(user, currentStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-failed' : 'lower-coach-cleanup-hinge-repair-failed', {
         day: nextDay?.day || null,
         dayType: nextDay?.dayType || null,
-        availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-        rejectionReasons: hingeRepair.rejectionReasons
+        availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+        availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+        rejectionReasons: structuralRepair.rejectionReasons
       });
       if (bestValidDay) return bestValidDay;
     }
@@ -11530,42 +11740,46 @@ function polishLowerCoachCleanup(day, user, exercises, weekType, opts = {}) {
   }
   nextDay.exercises = organizeDayExerciseOrder(nextDay.dayType || '', nextDay.exercises);
   const finalStructure = buildLowerCoachCleanupStructuralResult(nextDay, user);
-  if (!finalStructure.ok && finalStructure.missingRequirement === 'missing_hinge_pattern') {
-    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-missing-hinge', {
+  if (!finalStructure.ok && ['missing_hinge_pattern', 'missing_quad_pattern'].includes(String(finalStructure.missingRequirement || ''))) {
+    logAbsGlutesLegsComboDebug(user, finalStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-missing-quad' : 'lower-coach-cleanup-missing-hinge', {
       day: nextDay?.day || null,
       dayType: nextDay?.dayType || null
     });
-    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-attempt', {
+    logAbsGlutesLegsComboDebug(user, finalStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-attempt' : 'lower-coach-cleanup-hinge-repair-attempt', {
       day: nextDay?.day || null,
       dayType: nextDay?.dayType || null
     });
-    const hingeRepair = attemptMissingHingeRepair(nextDay);
-    if (hingeRepair.repaired) {
-      const repairedStructure = rememberBestValidDay(hingeRepair.day);
-      logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-success', {
+    const structuralRepair = finalStructure.missingRequirement === 'missing_quad_pattern'
+      ? attemptMissingQuadRepair(nextDay)
+      : attemptMissingHingeRepair(nextDay);
+    if (structuralRepair.repaired) {
+      const repairedStructure = rememberBestValidDay(structuralRepair.day);
+      logAbsGlutesLegsComboDebug(user, finalStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-success' : 'lower-coach-cleanup-hinge-repair-success', {
         day: nextDay?.day || null,
         dayType: nextDay?.dayType || null,
-        availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-        rejectionReasons: hingeRepair.rejectionReasons
+        availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+        availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+        rejectionReasons: structuralRepair.rejectionReasons
       });
       if (repairedStructure.ok) {
         resetLowerBodyRepairLoopGuard(user, 'lowerCoachCleanup', {
           week: opts?.weekIndex,
           day: nextDay?.day,
           dayType: nextDay?.dayType,
-          lastAttemptedRepair: 'hinge-repair'
+          lastAttemptedRepair: finalStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair'
         }, {
-          lastAttemptedRepair: 'hinge-repair',
+          lastAttemptedRepair: finalStructure.missingRequirement === 'missing_quad_pattern' ? 'quad-repair' : 'hinge-repair',
           currentStructuralResult: repairedStructure
         });
-        return hingeRepair.day;
+        return structuralRepair.day;
       }
     }
-    logAbsGlutesLegsComboDebug(user, 'lower-coach-cleanup-hinge-repair-failed', {
+    logAbsGlutesLegsComboDebug(user, finalStructure.missingRequirement === 'missing_quad_pattern' ? 'lower-coach-cleanup-quad-repair-failed' : 'lower-coach-cleanup-hinge-repair-failed', {
       day: nextDay?.day || null,
       dayType: nextDay?.dayType || null,
-      availableHingeCandidatesCount: hingeRepair.availableHingeCandidatesCount,
-      rejectionReasons: hingeRepair.rejectionReasons
+      availableHingeCandidatesCount: structuralRepair.availableHingeCandidatesCount,
+      availableQuadCandidatesCount: structuralRepair.availableQuadCandidatesCount,
+      rejectionReasons: structuralRepair.rejectionReasons
     });
     if (bestValidDay) return bestValidDay;
   }
@@ -11749,6 +11963,11 @@ function polishShortSessionHipDominantClustering(day, user, exercises, weekType)
 function polishLowerFatigueStacking(day, user, exercises, weekType, opts = {}) {
   if (!['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day?.dayType || ''))) return day;
   const nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+  if (String(user?.discipline || '') === 'powerbuilding'
+    && String(user?.profile?.sessionBandwidth || '') === 'tight'
+    && nextDay.exercises.length <= 4) {
+    return nextDay;
+  }
   let bestValidDay = null;
   const logLowerFatigueStructuralResult = (structure) => {
     const src = structure && typeof structure === 'object' ? structure : {};
@@ -12029,8 +12248,14 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           exercises,
           String(week?.weekType || 'base')
         );
-        const polishedNarrowIdentity = polishNarrowPrioritySessionIdentity(
+        const polishedPowerbuildingPull = polishPowerbuildingPullCompoundSupport(
           polishedIdentity,
+          user,
+          exercises,
+          String(week?.weekType || 'base')
+        );
+        const polishedNarrowIdentity = polishNarrowPrioritySessionIdentity(
+          polishedPowerbuildingPull,
           user,
           exercises,
           String(week?.weekType || 'base')
@@ -12060,8 +12285,14 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           String(week?.weekType || 'base'),
           { weekIndex: week?.weekIndex }
         );
-        const polishedAssembledLower = polishAssembledLowerDay(
+        const polishedPowerbuildingHinge = polishPowerbuildingTrueHingeExposure(
           polishedLowerCleanup,
+          user,
+          exercises,
+          String(week?.weekType || 'base')
+        );
+        const polishedAssembledLower = polishAssembledLowerDay(
+          polishedPowerbuildingHinge,
           user,
           exercises,
           String(week?.weekType || 'base')

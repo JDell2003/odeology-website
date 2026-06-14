@@ -136,6 +136,32 @@ function runLiveParityCase(classicProfile) {
   return built.plan;
 }
 
+function powerbuildingProfile(overrides = {}) {
+  return buildClassicProfile({
+    discipline: 'powerbuilding',
+    ...overrides,
+    strength: {
+      phase: 'maintain',
+      trainingAgeBucket: '6_18',
+      timePerSession: '60_75',
+      equipmentStylePref: 'mix',
+      injury: { has: false, joints: [], note: '' },
+      injurySeverityByJoint: {},
+      ...(overrides.strength || {})
+    }
+  });
+}
+
+function countExercises(plan, predicate) {
+  return flattenExercises(plan).filter((exercise) => {
+    try {
+      return predicate(exercise);
+    } catch {
+      return false;
+    }
+  }).length;
+}
+
 test('route fallback repairs raw invalid bodybuilding output before onboarding returns it', () => {
   const input = baseInput({
     daysPerWeek: 4,
@@ -190,6 +216,52 @@ test('route fallback keeps short-session shoulders-arms bodybuilding plan route-
   })));
   assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route fallback build failed');
   assert.doesNotThrow(() => trainingRoutes._private.assertBodybuildingPlanByEngine(built.plan));
+});
+
+test('route fallback keeps powerbuilding strength-plus-proportion plan route-valid', () => {
+  const built = trainingRoutes._private.buildOblueprintPlanWithFallback(
+    trainingRoutes._private.coerceClassicBodybuildingToOblueprintPayload(
+      powerbuildingProfile({
+        phase: 'maintain',
+        daysPerWeek: 4,
+        emphasis: ['chest', 'back'],
+        equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: true, machine: true },
+        equipmentStylePref: 'mix',
+        strength: {
+          phase: 'maintain',
+          timePerSession: '60_75',
+          equipmentStylePref: 'mix'
+        }
+      })
+    )
+  );
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'powerbuilding route fallback build failed');
+  assert.doesNotThrow(() => trainingRoutes._private.assertPowerbuildingPlanByEngine(built.plan));
+});
+
+test('powerbuilding plan preserves rep-first strength compounds and visible hypertrophy support', () => {
+  const plan = runLiveParityCase(powerbuildingProfile({
+    phase: 'maintain',
+    daysPerWeek: 4,
+    emphasis: ['chest', 'back'],
+    equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: true, machine: true },
+    equipmentStylePref: 'mix',
+    strength: {
+      phase: 'maintain',
+      timePerSession: '60_75',
+      equipmentStylePref: 'mix'
+    }
+  }));
+  assert.equal(plan?.meta?.discipline, 'powerbuilding');
+  assert.doesNotThrow(() => trainingRoutes._private.assertPowerbuildingPlanByEngine(plan));
+  assert.ok(
+    countExercises(plan, (exercise) => String(exercise?.style || '') === 'Compound' && /rep-first progression/i.test(String(exercise?.progressionRule || ''))) >= 4,
+    'expected multiple rep-first compound lifts in powerbuilding plan'
+  );
+  assert.ok(
+    countExercises(plan, (exercise) => String(exercise?.style || '') === 'Isolation') >= 4,
+    'expected visible hypertrophy accessories in powerbuilding plan'
+  );
 });
 
 function buildStage1Plan(input) {

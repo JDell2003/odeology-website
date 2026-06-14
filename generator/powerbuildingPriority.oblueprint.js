@@ -151,13 +151,236 @@ function buildPowerbuildingProfile(user) {
   };
 }
 
+function isStrengthFocus(user) {
+  return String(user?.focus || '') === 'Strength';
+}
+
+function isSizeFocus(user) {
+  return String(user?.focus || '') === 'Size';
+}
+
+function isAestheticFocus(user) {
+  return String(user?.focus || '') === 'Aesthetic';
+}
+
+function isBeginnerPowerbuilding(user) {
+  return String(user?.experience || '') === '<6m' || String(user?.profile?.complexity || '') === 'low';
+}
+
+function isTightPowerbuildingSession(user) {
+  return String(user?.sessionLengthMin || '') === '30' || String(user?.profile?.sessionBandwidth || '') === 'tight';
+}
+
+function isStrengthAnchorExercise(exercise) {
+  const progression = String(exercise?.progressionRule || '');
+  const reps = String(exercise?.reps || '');
+  return String(exercise?.slotId || '').startsWith('pb_')
+    || (/rep-first progression/i.test(progression) && /3-5|4-6|5-8/.test(reps));
+}
+
+function isCompound(exercise) {
+  return String(exercise?.style || '') === 'Compound';
+}
+
+function isCoreExercise(exercise) {
+  return Boolean(exercise?.directAb) || String(exercise?.muscleTarget || exercise?.primary || '') === 'Core';
+}
+
+function isCalfExercise(exercise) {
+  return Boolean(exercise?.directCalf) || /calf/i.test(String(exercise?.sub || ''));
+}
+
+function isArmExercise(exercise) {
+  return String(exercise?.muscleTarget || exercise?.primary || '') === 'Arms' || String(exercise?.directArmType || 'none') !== 'none';
+}
+
+function isShoulderAccessory(exercise) {
+  return String(exercise?.muscleTarget || exercise?.primary || '') === 'Shoulders'
+    || Boolean(exercise?.lateralDeltPattern)
+    || Boolean(exercise?.rearDeltPattern);
+}
+
+function isPressingCompound(exercise) {
+  return isCompound(exercise) && ['HorizontalPush', 'VerticalPush'].includes(String(exercise?.pattern || ''));
+}
+
+function isPullCompound(exercise) {
+  return isCompound(exercise) && ['HorizontalPull', 'VerticalPull'].includes(String(exercise?.pattern || ''));
+}
+
+function isSquatPattern(exercise) {
+  const name = normalizeText(exercise?.name);
+  return String(exercise?.pattern || '') === 'Squat'
+    || /\b(squat|leg press|hack squat|split squat|lunge|step up)\b/.test(name);
+}
+
+function isPosteriorPattern(exercise) {
+  const name = normalizeText(exercise?.name);
+  return String(exercise?.pattern || '') === 'Hinge'
+    || /\b(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|pull[- ]?through|leg curl|hamstring curl|glute ham raise|back extension|hyperextension)\b/.test(name);
+}
+
+function isTrueHingePattern(exercise) {
+  const name = normalizeText(exercise?.name);
+  return String(exercise?.pattern || '') === 'Hinge'
+    || /\b(deadlift|romanian deadlift|\brdl\b|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension)\b/.test(name);
+}
+
+function movementCapForDay(dayType, user, pb) {
+  const type = String(dayType || '');
+  const sessionCap = Number(user?.sessionCap || 6);
+  let cap = sessionCap;
+  if (isTightPowerbuildingSession(user)) cap = Math.min(cap, ['Lower', 'LowerFocus', 'Legs', 'FullBodyA', 'FullBodyB'].includes(type) ? 4 : 3);
+  else if (isBeginnerPowerbuilding(user)) cap = Math.min(cap, ['FullBodyA', 'FullBodyB', 'LowerFocus'].includes(type) ? 4 : 5);
+  if (isStrengthFocus(user)) cap -= 1;
+  if (pb?.recoveryTier === 'low') cap -= 1;
+  if (isSizeFocus(user) && !isTightPowerbuildingSession(user) && pb?.recoveryTier !== 'low') cap += 0;
+  if (isAestheticFocus(user) && ['Upper', 'UpperFocus', 'Pull', 'Push', 'DeltsArms'].includes(type) && String(user?.sessionLengthMin || '') === '75+') cap += 0;
+  return Math.max(3, Math.min(sessionCap, cap));
+}
+
+function priorityRankForExercise(exercise, pb) {
+  const key = canonicalPriority(exercise?.muscleTarget || exercise?.primary || '');
+  return Number(pb?.priorityRanks?.[key] || 99);
+}
+
+function exerciseKeepScore(exercise, index, dayType, user, pb) {
+  let score = 0;
+  const rank = priorityRankForExercise(exercise, pb);
+  if (isStrengthAnchorExercise(exercise)) score += 1000;
+  else if (isCompound(exercise)) score += 150;
+  else score += 70;
+  if (rank === 1) score += 120;
+  else if (rank === 2) score += 80;
+  else if (rank === 3) score += 45;
+  if (isCoreExercise(exercise) && pb?.preserveCore) score += 45;
+  if (isCalfExercise(exercise) && pb?.preserveCalves) score += 45;
+  if (isStrengthFocus(user) && !isStrengthAnchorExercise(exercise) && !isCompound(exercise)) score -= 18;
+  if (isSizeFocus(user) && !isCompound(exercise) && rank <= 3) score += 22;
+  if (isAestheticFocus(user) && (isShoulderAccessory(exercise) || isArmExercise(exercise))) score += 20;
+  if (rank === 1 && !isStrengthAnchorExercise(exercise)) score += 10;
+  if (pb?.avoidVerticalPress && Boolean(exercise?.shoulderPressPattern)) score -= 35;
+  if (pb?.avoidAggressiveTriceps && String(exercise?.directArmType || '') === 'triceps') score -= 18;
+  if (pb?.preferSupportedBackWork && Boolean(exercise?.axialLoadHigh) && isCompound(exercise)) score -= 25;
+  if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Shoulders' && Boolean(exercise?.shoulderPressPattern)) score -= 12;
+  if (isShoulderAccessory(exercise) && (Boolean(exercise?.lateralDeltPattern) || Boolean(exercise?.rearDeltPattern))) score += 18;
+  if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Chest' && isPressingCompound(exercise) && !isStrengthAnchorExercise(exercise) && !isStrengthFocus(user)) score -= 10;
+  if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Glutes' && Boolean(exercise?.axialLoadHigh) && pb?.recoveryTier === 'low') score -= 20;
+  score -= Math.min(index, 6);
+  if (String(dayType || '') === 'Push' && isPullCompound(exercise)) score -= 12;
+  if (String(dayType || '') === 'Pull' && isPressingCompound(exercise)) score -= 12;
+  return score;
+}
+
+function pushUniqueIndex(target, index, usedIndexes) {
+  if (index < 0 || usedIndexes.has(index)) return;
+  usedIndexes.add(index);
+  target.push(index);
+}
+
+function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
+  const type = String(dayType || '');
+  const used = new Set();
+  const selected = [];
+  const anchorIndex = exercises.findIndex((exercise) => isStrengthAnchorExercise(exercise));
+  if (anchorIndex >= 0) pushUniqueIndex(selected, anchorIndex, used);
+  else pushUniqueIndex(selected, exercises.findIndex((exercise) => isCompound(exercise)), used);
+
+  if (['FullBodyA', 'Upper', 'UpperFocus'].includes(type)) {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPullCompound(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used);
+  }
+  if (['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type)) {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isSquatPattern(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isTrueHingePattern(exercise)), used);
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isPosteriorPattern(exercise)), used);
+  }
+  if (type === 'Pull') {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isArmExercise(exercise)), used);
+  }
+  if (type === 'Push') {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Chest' && !isStrengthAnchorExercise(exercise)), used);
+  }
+
+  const ranked = exercises
+    .map((exercise, index) => ({ index, score: exerciseKeepScore(exercise, index, dayType, user, pb) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+  for (const entry of ranked) {
+    if (selected.length >= cap) break;
+    const exercise = exercises[entry.index];
+    if (used.has(entry.index)) continue;
+    if (isBeginnerPowerbuilding(user) && selected.some((idx) => isStrengthAnchorExercise(exercises[idx])) && isStrengthAnchorExercise(exercise)) continue;
+    pushUniqueIndex(selected, entry.index, used);
+  }
+
+  if (pb?.preserveCore && selected.length < cap) {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCoreExercise(exercise)), used);
+  }
+  if (pb?.preserveCalves && selected.length < cap) {
+    pushUniqueIndex(selected, exercises.findIndex((exercise, index) => !used.has(index) && isCalfExercise(exercise)), used);
+  }
+
+  const selectedExercises = selected.map((index) => exercises[index]).filter(Boolean);
+  const hasIsolationAccessory = selectedExercises.some((exercise) => !isCompound(exercise));
+  if (!hasIsolationAccessory) {
+    const accessoryIndex = exercises.findIndex((exercise, index) => !used.has(index) && !isCompound(exercise));
+    if (accessoryIndex >= 0) {
+      if (selected.length < cap) {
+        pushUniqueIndex(selected, accessoryIndex, used);
+      } else {
+        const replaceAt = selected
+          .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
+          .filter((entry) => !isStrengthAnchorExercise(exercises[entry.index]) && (!['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type) || !isSquatPattern(exercises[entry.index]) || selectedExercises.some((exercise, exerciseIndex) => exerciseIndex !== entry.selectedIndex && isSquatPattern(exercise))))
+          .sort((a, b) => a.score - b.score)[0];
+        if (replaceAt) selected[replaceAt.selectedIndex] = accessoryIndex;
+      }
+    }
+  }
+
+  const shouldProtectTrueHinge = ['FullBodyB', 'Lower', 'LowerFocus', 'Legs'].includes(type)
+    && Number(user?.daysPerWeek || 0) >= 4
+    && !pb?.avoidDeadliftPattern
+    && Math.max(painSeverity(user, 'back'), painSeverity(user, 'hip')) < 6;
+  if (shouldProtectTrueHinge) {
+    const hasSelectedTrueHinge = selected.some((index) => isTrueHingePattern(exercises[index]));
+    const trueHingeIndex = exercises.findIndex((exercise, index) => !used.has(index) && isTrueHingePattern(exercise));
+    if (!hasSelectedTrueHinge && trueHingeIndex >= 0) {
+      if (selected.length < cap) {
+        pushUniqueIndex(selected, trueHingeIndex, used);
+      } else {
+        const replaceAt = selected
+          .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
+          .filter((entry) => !isStrengthAnchorExercise(exercises[entry.index]) && !isCoreExercise(exercises[entry.index]) && !isCalfExercise(exercises[entry.index]))
+          .sort((a, b) => a.score - b.score)[0];
+        if (replaceAt) selected[replaceAt.selectedIndex] = trueHingeIndex;
+      }
+    }
+  }
+
+  return selected.sort((a, b) => a - b);
+}
+
+function polishPowerbuildingDay(day, user) {
+  const pb = user?.profile?.powerbuilding || buildPowerbuildingProfile(user);
+  if (!pb || !Array.isArray(day?.exercises) || !day.exercises.length) return day;
+  const cap = movementCapForDay(day?.dayType, user, pb);
+  if (day.exercises.length <= cap) return day;
+  const indexes = selectPowerbuildingExerciseIndexes(day.exercises, day?.dayType, user, pb, cap);
+  const exercises = indexes.map((index) => day.exercises[index]).filter(Boolean);
+  return { ...day, exercises };
+}
+
 function buildPowerbuildingSplit(user) {
   const pb = user?.profile?.powerbuilding || buildPowerbuildingProfile(user);
   const d = Number(user?.daysPerWeek || 0);
   const lowComplexity = user?.profile?.complexity === 'low' || user?.profile?.sessionBandwidth === 'tight';
   let split;
   if (lowComplexity && d <= 3) {
-    split = d === 2 ? ['FullBodyA', 'FullBodyB'] : ['FullBodyA', 'LowerFocus', 'FullBodyB'];
+    split = d === 2
+      ? ['FullBodyA', 'FullBodyB']
+      : isBeginnerPowerbuilding(user)
+        ? ['FullBodyA', 'LowerFocus', 'Pull']
+        : ['FullBodyA', 'LowerFocus', 'FullBodyB'];
   } else if (pb?.emphasis === 'bench') {
     split = d === 2 ? ['Push', 'LowerFocus']
       : d === 3 ? ['Push', 'LowerFocus', 'Pull']
@@ -310,14 +533,18 @@ function adjustPowerbuildingDayVolumes(days, user) {
       const rankMultiplier = rank === 1 ? 1 : rank === 2 ? 0.9 : rank === 3 ? 0.8 : 0.72;
       const isStrengthSlot = String(next?.slotId || '').startsWith('pb_');
       if (isStrengthSlot) {
-        next.sets = Math.max(3, Math.min(5, String(next.slotId).includes('primary') ? 4 : 3));
+        const primarySetTarget = isStrengthFocus(user) ? 4 : isAestheticFocus(user) ? 3 : 4;
+        const supportSetTarget = isStrengthFocus(user) ? 3 : isSizeFocus(user) ? 4 : 3;
+        next.sets = Math.max(3, Math.min(5, String(next.slotId).includes('primary') ? primarySetTarget : supportSetTarget));
       } else if (String(next?.style || '') === 'Isolation') {
+        const focusMultiplier = isStrengthFocus(user) ? 0.85 : isSizeFocus(user) ? 1.08 : isAestheticFocus(user) ? 1.05 : 1;
         next.sets = Math.max(
           (next.directCalf && pb.preserveCalves) || (next.directAb && pb.preserveCore) ? 2 : 1,
-          Math.min(4, Math.round(Number(next.sets || 2) * pb.accessoryMultiplier * rankMultiplier))
+          Math.min(4, Math.round(Number(next.sets || 2) * pb.accessoryMultiplier * rankMultiplier * focusMultiplier))
         );
       } else {
-        next.sets = Math.max(2, Math.min(4, Math.round(Number(next.sets || 2) * Math.max(0.85, pb.accessoryMultiplier))));
+        const compoundMultiplier = isStrengthFocus(user) ? 0.9 : isSizeFocus(user) ? 1.02 : 0.95;
+        next.sets = Math.max(2, Math.min(4, Math.round(Number(next.sets || 2) * Math.max(0.82, pb.accessoryMultiplier) * compoundMultiplier)));
       }
       if (next.axialLoadHigh && String(next?.style || '') === 'Compound') {
         axialCompounds += 1;
@@ -330,7 +557,7 @@ function adjustPowerbuildingDayVolumes(days, user) {
       }
       return next;
     });
-    return { ...day, exercises };
+    return polishPowerbuildingDay({ ...day, exercises }, user);
   });
 }
 
@@ -341,5 +568,6 @@ module.exports = {
   repOverride,
   rirOverride,
   progressionRuleOverride,
-  adjustPowerbuildingDayVolumes
+  adjustPowerbuildingDayVolumes,
+  polishPowerbuildingDay
 };

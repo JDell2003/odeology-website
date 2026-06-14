@@ -350,6 +350,9 @@ function expectPatternCoverage(plan, payload, entry) {
   const pullDays = countPatternDays(plan, isPullCompound);
   const lowerAnchorDays = countPatternDays(plan, (exercise) => isSquatLike(exercise) || isHingeLike(exercise));
   const lowerPosteriorProxyDays = countPatternDays(plan, (exercise) => isSafePosteriorSubstitute(exercise) && /3-5|4-6|5-8/.test(String(exercise?.reps || '')));
+  const lowerPosteriorSupportDays = countPatternDays(plan, (exercise) => isSafePosteriorSubstitute(exercise));
+  const access = new Set((payload.equipmentAccess || []).map((value) => normalizeName(value)));
+  const constrainedHingeEnvironment = !access.has('barbell');
   const severeRecentBackHipPain = ['Back', 'Hip'].some((area) => {
     const profile = payload?.painProfilesByArea?.[area];
     const areaSelected = Array.isArray(payload?.painAreas) && payload.painAreas.includes(area);
@@ -373,7 +376,12 @@ function expectPatternCoverage(plan, payload, entry) {
     );
   }
   if (payload.daysPerWeek >= 4 && !payload.movementsToAvoid.includes('deadlift') && !(payload.painAreas || []).includes('Back')) {
-    assert.ok(hingeDays >= 1 || weekExercises.some(isHingeLike), `${entry.title}: hinge intent disappeared from a 4+ day week`);
+    assert.ok(
+      hingeDays >= 1
+      || weekExercises.some(isHingeLike)
+      || (constrainedHingeEnvironment && (lowerPosteriorProxyDays >= 1 || lowerPosteriorSupportDays >= 1)),
+      `${entry.title}: hinge intent disappeared from a 4+ day week`
+    );
   }
   if (payload.daysPerWeek >= 4 && !payload.movementsToAvoid.includes('squat') && !(payload.painAreas || []).some((area) => ['Knee', 'Hip', 'Back'].includes(area))) {
     assert.ok(squatDays >= 1 || weekExercises.some(isSquatLike), `${entry.title}: squat intent disappeared from a 4+ day week`);

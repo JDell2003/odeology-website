@@ -49,6 +49,14 @@ function flattenExercises(plan) {
   return (plan?.weeks || []).flatMap((week) => (week.days || []).flatMap((day) => day.exercises || []));
 }
 
+function hasStrengthAnchor(plan) {
+  return flattenExercises(plan).some((exercise) => /rep-first progression/i.test(String(exercise?.progressionRule || '')) && /4-6|3-5/.test(String(exercise?.reps || '')));
+}
+
+function exerciseNames(plan) {
+  return flattenExercises(plan).map((exercise) => String(exercise?.name || ''));
+}
+
 function totalSets(plan, predicate = null) {
   return flattenExercises(plan).reduce((sum, exercise) => {
     if (predicate && !predicate(exercise)) return sum;
@@ -220,4 +228,85 @@ test('powerbuilding anchors appear early and stay away from reckless failure', (
     assert.ok(/4-6|3-5/.test(String(first?.reps || '')), `${day.dayType}: expected strength-range top slot`);
     assert.notEqual(String(first?.rir || ''), '0-2', `${day.dayType}: anchor should not be programmed to reckless failure`);
   });
+});
+
+test('powerbuilding direct builder handles the low-recovery pain outlier without fallback', () => {
+  const plan = engine.buildOblueprintPlan(baseInput({
+    primaryGoal: 'Cut fat',
+    sessionLengthMin: '45',
+    priorityGroups: ['Chest', 'Arms', 'Core'],
+    equipmentAccess: ['Dumbbells', 'Cable', 'Machines'],
+    movementsToAvoid: ['bench press', 'deadlift'],
+    painAreas: ['Shoulder', 'Back', 'Elbow'],
+    painProfilesByArea: {
+      Shoulder: { severity: 7, recency: 'Recent', notes: 'Overhead and wide pressing irritates it' },
+      Back: { severity: 6, recency: 'Recent', notes: 'Axial loading and unsupported rows flare it' },
+      Elbow: { severity: 6, recency: 'Recent', notes: 'Heavy triceps work and straight-bar curls irritate it' }
+    },
+    benchVariation: 'Incline dumbbell press',
+    benchWeight: 85,
+    benchReps: 8,
+    lowerMovement: 'Leg press',
+    lowerWeight: 360,
+    lowerReps: 8,
+    hingeMovement: 'Hip thrust',
+    hingeWeight: 315,
+    hingeReps: 8,
+    sleepHours: 5.5,
+    stress: 'High',
+    activityLevel: 'High',
+    planSeed: 4108
+  }), { fastBuild: true });
+  assert.equal(plan?.error, undefined, plan?.reason || plan?.message || plan?.error);
+  const names = exerciseNames(plan).join(' | ').toLowerCase();
+  assert.ok(hasStrengthAnchor(plan), 'expected at least one safe strength anchor to survive');
+  assert.ok(!/\bbench press\b/.test(names), 'bench-press family should stay removed');
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(names), 'deadlift-family work should stay removed');
+  const lowerFocus = plan.weeks[0].days.find((day) => day.dayType === 'LowerFocus');
+  assert.ok(lowerFocus, 'expected a LowerFocus day');
+  const lowerFocusNames = (lowerFocus.exercises || []).map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(lowerFocusNames), 'LowerFocus should not force deadlift-family work');
+  assert.ok(/\b(leg curl|hamstring curl|glute ham raise|leg extension|hip thrust|glute bridge|pull through)\b/.test(lowerFocusNames), 'LowerFocus should use a safe posterior or lower substitute');
+});
+
+test('powerbuilding movementsToAvoid blocks deadlift, bench, and squat families in direct builds', () => {
+  const deadliftBlocked = engine.buildOblueprintPlan(baseInput({
+    priorityGroups: ['Glutes', 'Back', 'Core'],
+    movementsToAvoid: ['deadlift'],
+    equipmentAccess: ['Dumbbells', 'Cable', 'Machines', 'Bench'],
+    hingeMovement: 'Hip thrust',
+    hingeWeight: 225,
+    hingeReps: 8,
+    planSeed: 5101
+  }), { fastBuild: true });
+  assert.equal(deadliftBlocked?.error, undefined, deadliftBlocked?.reason || deadliftBlocked?.error);
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(exerciseNames(deadliftBlocked).join(' ').toLowerCase()));
+
+  const benchBlocked = engine.buildOblueprintPlan(baseInput({
+    priorityGroups: ['Chest', 'Arms', 'Core'],
+    movementsToAvoid: ['bench press'],
+    equipmentAccess: ['Dumbbells', 'Cable', 'Machines', 'Bench'],
+    painAreas: ['Shoulder'],
+    painProfilesByArea: {
+      Shoulder: { severity: 6, recency: 'Recent', notes: 'Benching is poorly tolerated.' }
+    },
+    planSeed: 5102
+  }), { fastBuild: true });
+  assert.equal(benchBlocked?.error, undefined, benchBlocked?.reason || benchBlocked?.error);
+  assert.ok(!/\bbench\b/.test(exerciseNames(benchBlocked).join(' ').toLowerCase()));
+
+  const squatBlocked = engine.buildOblueprintPlan(baseInput({
+    priorityGroups: ['Legs', 'Core', 'Calves'],
+    movementsToAvoid: ['squat'],
+    equipmentAccess: ['Dumbbells', 'Cable', 'Machines', 'Bench'],
+    lowerMovement: 'Leg extension',
+    lowerWeight: 120,
+    lowerReps: 12,
+    hingeMovement: 'Hip thrust',
+    hingeWeight: 225,
+    hingeReps: 8,
+    planSeed: 5103
+  }), { fastBuild: true });
+  assert.equal(squatBlocked?.error, undefined, squatBlocked?.reason || squatBlocked?.error);
+  assert.ok(!/\b(squat|hack squat|leg press)\b/.test(exerciseNames(squatBlocked).join(' ').toLowerCase()));
 });
