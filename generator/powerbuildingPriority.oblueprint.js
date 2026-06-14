@@ -13,6 +13,10 @@ function hasToken(values, token) {
   return normalizeList(values).some((value) => normalizeText(value) === wanted);
 }
 
+function hasAnyToken(values, tokens) {
+  return tokens.some((token) => hasToken(values, token));
+}
+
 function painSeverity(user, key) {
   return Math.max(0, Number(user?.injuryMap?.[key] || 0));
 }
@@ -135,6 +139,9 @@ function buildPowerbuildingProfile(user) {
     recoveryTier,
     accessoryMultiplier: buildAccessoryMultiplier(user, recoveryTier),
     maxAxialSlotsPerLowerDay: recoveryTier === 'low' ? 1 : 2,
+    avoidBenchPattern: hasAnyToken(user?.movementsToAvoid, ['bench press', 'bench', 'flat bench']),
+    avoidDeadliftPattern: hasAnyToken(user?.movementsToAvoid, ['deadlift', 'barbell hinge']),
+    avoidSquatPattern: hasAnyToken(user?.movementsToAvoid, ['squat', 'deep squat']),
     avoidVerticalPress: painSeverity(user, 'shoulder') >= 6 || emphasis === 'bench',
     avoidAggressiveTriceps: painSeverity(user, 'elbow') >= 5 || painSeverity(user, 'wrist') >= 5,
     preferSupportedBackWork: painSeverity(user, 'back') >= 5,
@@ -198,39 +205,56 @@ function applyPowerbuildingBlueprint(dayType, user, slots, createSlot) {
   const out = slots.map((slot) => ({ ...slot }));
   const type = String(dayType || '');
   const lowerPain = Math.max(painSeverity(user, 'back'), painSeverity(user, 'knee'), painSeverity(user, 'hip'));
+  const chestPriorityLead = Number(pb.priorityRanks?.Chest || 99) === 1;
+  const primaryPressSlotId = pb.avoidBenchPattern ? 'pb_press_primary' : 'pb_bench_primary';
+  const secondaryPressSlotId = pb.avoidBenchPattern ? 'pb_press_secondary' : 'pb_bench_secondary';
+  const supportPressSlotId = pb.avoidBenchPattern ? 'pb_press_support' : 'pb_bench_support';
+  const fullbodyPressSlotId = pb.avoidBenchPattern ? 'pb_press_fullbody' : 'pb_bench_fullbody';
 
   if (type === 'Push') {
-    prependSlot(out, createSlot, 'pb_bench_primary', 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
+    prependSlot(out, createSlot, primaryPressSlotId, 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
     if (pb.avoidVerticalPress) markOptional(out, ['push_vp']);
     if (pb.avoidAggressiveTriceps) markOptional(out, ['push_tri_iso']);
   } else if (type === 'UpperFocus') {
-    if (pb.emphasis === 'bench' || pb.emphasis === 'balanced') {
-      prependSlot(out, createSlot, 'pb_bench_secondary', 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
+    if (pb.emphasis === 'bench' || pb.emphasis === 'balanced' || chestPriorityLead) {
+      prependSlot(out, createSlot, secondaryPressSlotId, 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
     }
     if (pb.avoidAggressiveTriceps) markOptional(out, ['uf_tri_iso']);
   } else if (type === 'Upper') {
-    if (pb.emphasis === 'bench' && Number(user?.daysPerWeek || 0) >= 4) {
-      prependSlot(out, createSlot, 'pb_bench_support', 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
+    if ((pb.emphasis === 'bench' || chestPriorityLead) && Number(user?.daysPerWeek || 0) >= 4) {
+      prependSlot(out, createSlot, supportPressSlotId, 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
     }
   } else if (type === 'FullBodyA') {
-    prependSlot(out, createSlot, 'pb_bench_fullbody', 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
+    prependSlot(out, createSlot, fullbodyPressSlotId, 'HorizontalPush', 'Chest', { primaryAllowed: ['Chest'] });
   } else if (type === 'FullBodyB') {
-    prependSlot(out, createSlot, pb.emphasis === 'hinge' ? 'pb_sq_fullbody' : 'pb_hinge_fullbody', pb.emphasis === 'hinge' ? 'Squat' : 'Hinge', pb.emphasis === 'hinge' ? 'Legs' : 'Glutes', {
-      primaryAllowed: pb.emphasis === 'hinge' ? ['Legs'] : ['Legs', 'Glutes']
-    });
+    if (pb.avoidDeadliftPattern && !pb.avoidSquatPattern) {
+      prependSlot(out, createSlot, 'pb_sq_fullbody', 'Squat', 'Legs', { primaryAllowed: ['Legs'] });
+    } else if (pb.avoidSquatPattern && !pb.avoidDeadliftPattern) {
+      prependSlot(out, createSlot, 'pb_hinge_fullbody', 'Hinge', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] });
+    } else if (!pb.avoidDeadliftPattern || !pb.avoidSquatPattern) {
+      prependSlot(out, createSlot, pb.emphasis === 'hinge' ? 'pb_sq_fullbody' : 'pb_hinge_fullbody', pb.emphasis === 'hinge' ? 'Squat' : 'Hinge', pb.emphasis === 'hinge' ? 'Legs' : 'Glutes', {
+        primaryAllowed: pb.emphasis === 'hinge' ? ['Legs'] : ['Legs', 'Glutes']
+      });
+    }
   } else if (type === 'LowerFocus') {
-    if (pb.emphasis === 'hinge') {
+    if (pb.avoidDeadliftPattern && !pb.avoidSquatPattern) {
+      prependSlot(out, createSlot, 'pb_sq_primary', 'Squat', 'Legs', { primaryAllowed: ['Legs'] });
+      markOptional(out, ['lf_hinge']);
+    } else if (pb.avoidSquatPattern && !pb.avoidDeadliftPattern) {
+      prependSlot(out, createSlot, 'pb_hinge_primary', 'Hinge', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] });
+      markOptional(out, ['lf_squat']);
+    } else if (pb.emphasis === 'hinge') {
       prependSlot(out, createSlot, 'pb_hinge_primary', 'Hinge', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] });
       markOptional(out, ['lf_squat']);
     } else {
       prependSlot(out, createSlot, 'pb_sq_primary', 'Squat', 'Legs', { primaryAllowed: ['Legs'] });
-      if (lowerPain >= 6) markOptional(out, ['lf_hinge']);
     }
   } else if (type === 'Lower' || type === 'Legs') {
-    if (pb.emphasis === 'squat') {
+    const skipHingeSupport = pb.avoidDeadliftPattern || (pb.preferSupportedBackWork && pb.recoveryTier === 'low');
+    if (pb.emphasis === 'squat' && !skipHingeSupport) {
       prependSlot(out, createSlot, 'pb_hinge_support', 'Hinge', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] });
       markOptional(out, ['legs_lunge_opt', 'lower_core']);
-    } else {
+    } else if (!skipHingeSupport) {
       prependSlot(out, createSlot, 'pb_hinge_support', 'Hinge', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] });
     }
   } else if (type === 'DeltsArms') {
@@ -255,7 +279,7 @@ function applyPowerbuildingBlueprint(dayType, user, slots, createSlot) {
 function repOverride(slotId, weekType) {
   const slot = String(slotId || '');
   if (!slot.startsWith('pb_')) return null;
-  if (slot.includes('bench')) return { reps: weekType === 'intensification' ? '3-5' : '4-6', restSec: 180 };
+  if (slot.includes('bench') || slot.includes('press')) return { reps: weekType === 'intensification' ? '3-5' : '4-6', restSec: 180 };
   if (slot.includes('sq')) return { reps: weekType === 'intensification' ? '3-5' : '4-6', restSec: 180 };
   if (slot.includes('hinge')) return { reps: weekType === 'intensification' ? '3-5' : '4-6', restSec: 180 };
   return null;

@@ -104,6 +104,11 @@ function isHingeLike(exercise) {
   );
 }
 
+function isSafePosteriorSubstitute(exercise) {
+  const name = normalizeName(exercise?.name);
+  return /\b(glute ham raise|leg curl|hamstring curl|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension)\b/.test(name);
+}
+
 function isPullCompound(exercise) {
   const name = normalizeName(exercise?.name);
   return String(exercise?.style || '') === 'Compound'
@@ -120,7 +125,7 @@ function directPrioritySets(plan, priority) {
     if (key === 'Chest') return primary === 'Chest' || isBenchLike(exercise);
     if (key === 'Back') return primary === 'Back' || isPullCompound(exercise);
     if (key === 'Legs') return primary === 'Legs' || isSquatLike(exercise);
-    if (key === 'Glutes') return primary === 'Glutes' || isHingeLike(exercise);
+    if (key === 'Glutes') return primary === 'Glutes' || isHingeLike(exercise) || isSafePosteriorSubstitute(exercise);
     if (key === 'Shoulders') return primary === 'Shoulders' || Boolean(exercise?.lateralDeltPattern) || Boolean(exercise?.rearDeltPattern) || Boolean(exercise?.shoulderPressPattern);
     if (key === 'Arms') return primary === 'Arms' || String(exercise?.directArmType || '').toLowerCase() !== 'none';
     if (key === 'Calves') return Boolean(exercise?.directCalf);
@@ -211,7 +216,11 @@ function expectIdentity(plan, aestheticPlan, entry) {
 
 function expectAnchorBehavior(plan, entry) {
   const anchorDays = (firstWeek(plan).days || []).filter((day) => isStrengthAnchor(day.exercises?.[0]));
-  const minAnchors = (firstWeek(plan).days || []).length >= 4 ? 2 : 1;
+  const severePain = Object.values(entry?.payload?.painProfilesByArea || {}).some((profile) => Number(profile?.severity || 0) >= 6 && String(profile?.recency || '') === 'Recent');
+  const blockedPatterns = Array.isArray(entry?.payload?.movementsToAvoid) && entry.payload.movementsToAvoid.length >= 2;
+  const minAnchors = severePain || blockedPatterns
+    ? 1
+    : (firstWeek(plan).days || []).length >= 4 ? 2 : 1;
   assert.ok(anchorDays.length >= minAnchors, `${entry.title}: expected strength anchors to appear early in the session`);
   anchorDays.forEach((day) => {
     const first = day.exercises[0];
@@ -340,20 +349,33 @@ function expectPatternCoverage(plan, payload, entry) {
   const hingeDays = countPatternDays(plan, isHingeLike);
   const pullDays = countPatternDays(plan, isPullCompound);
   const lowerAnchorDays = countPatternDays(plan, (exercise) => isSquatLike(exercise) || isHingeLike(exercise));
+  const lowerPosteriorProxyDays = countPatternDays(plan, (exercise) => isSafePosteriorSubstitute(exercise) && /3-5|4-6|5-8/.test(String(exercise?.reps || '')));
+  const severeRecentBackHipPain = ['Back', 'Hip'].some((area) => {
+    const profile = payload?.painProfilesByArea?.[area];
+    const areaSelected = Array.isArray(payload?.painAreas) && payload.painAreas.includes(area);
+    if (Number(profile?.severity || 0) >= 6 && String(profile?.recency || '') === 'Recent') return true;
+    return areaSelected && lowerPosteriorProxyDays >= 1;
+  });
 
   assert.ok(benchDays >= 1 || flattenExercises(plan).some(isStrengthAnchor), `${entry.title}: missing upper strength exposure`);
-  assert.ok(lowerAnchorDays >= 1, `${entry.title}: missing lower strength exposure`);
+  assert.ok(
+    lowerAnchorDays >= 1 || (severeRecentBackHipPain && lowerPosteriorProxyDays >= 1),
+    `${entry.title}: missing lower strength exposure`
+  );
   if (payload.daysPerWeek >= 3 && !(payload.movementsToAvoid || []).includes('bench press')) {
     assert.ok(pullDays >= 1 || weekExercises.some(isPullCompound), `${entry.title}: missing meaningful pull compound support`);
   }
 
   if (payload.daysPerWeek >= 3) {
-    assert.ok(squatDays >= 1 || hingeDays >= 1, `${entry.title}: missing a real lower anchor`);
+    assert.ok(
+      squatDays >= 1 || hingeDays >= 1 || (severeRecentBackHipPain && lowerPosteriorProxyDays >= 1),
+      `${entry.title}: missing a real lower anchor`
+    );
   }
   if (payload.daysPerWeek >= 4 && !payload.movementsToAvoid.includes('deadlift') && !(payload.painAreas || []).includes('Back')) {
     assert.ok(hingeDays >= 1 || weekExercises.some(isHingeLike), `${entry.title}: hinge intent disappeared from a 4+ day week`);
   }
-  if (payload.daysPerWeek >= 4 && !payload.movementsToAvoid.includes('squat') && !(payload.painAreas || []).some((area) => ['Knee', 'Hip'].includes(area))) {
+  if (payload.daysPerWeek >= 4 && !payload.movementsToAvoid.includes('squat') && !(payload.painAreas || []).some((area) => ['Knee', 'Hip', 'Back'].includes(area))) {
     assert.ok(squatDays >= 1 || weekExercises.some(isSquatLike), `${entry.title}: squat intent disappeared from a 4+ day week`);
   }
 }
@@ -401,4 +423,96 @@ test('powerbuilding execution matrix drives real plans through the live generato
       assert.ok(flattenExercises(plan).some((exercise) => String(exercise?.style || '') === 'Isolation'), `${entry.title}: isolation accessory work disappeared`);
     });
   }
+});
+
+test('powerbuilding representative sample cases remain plausible after the outlier fix', () => {
+  const representativeCases = [
+    {
+      title: 'strength chest 4d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Build size', timeline: '12+ weeks', focus: 'Strength', experience: '2-5y', location: 'Commercial gym', trainingStyle: 'Balanced mix', outputStyle: 'RPE/RIR cues', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '60',
+        priorityGroups: ['Chest', 'Shoulders', 'Arms'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Sa'], equipmentAccess: ['barbell', 'dumbbell', 'cable', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 190, bodyweight: 190, bench: 275, squat: 365, deadlift: 455,
+        benchVariation: 'Paused bench press', benchWeight: 245, benchReps: 4, lowerMovement: 'Back squat', lowerWeight: 315, lowerReps: 5, hingeMovement: 'Conventional deadlift', hingeWeight: 405, hingeReps: 4, sleepHours: 7.5, activityLevel: 'Moderate', stress: 'Moderate', planSeed: 4101
+      }
+    },
+    {
+      title: 'strength legs 4d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Recomp', timeline: '12+ weeks', focus: 'Strength', experience: '2-5y', location: 'Commercial gym', trainingStyle: 'Mostly free weights', outputStyle: 'RPE/RIR cues', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '60',
+        priorityGroups: ['Legs', 'Core', 'Calves'], movementsToAvoid: [], preferredDays: ['Mo', 'We', 'Fr', 'Sa'], equipmentAccess: ['barbell', 'dumbbell', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 205, bodyweight: 205, bench: 245, squat: 405, deadlift: 495,
+        benchVariation: 'Competition bench press', benchWeight: 225, benchReps: 5, lowerMovement: 'Back squat', lowerWeight: 365, lowerReps: 4, hingeMovement: 'Romanian deadlift', hingeWeight: 315, hingeReps: 6, sleepHours: 7, activityLevel: 'Moderate', stress: 'Moderate', planSeed: 4102
+      }
+    },
+    {
+      title: 'strength glutes back 4d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Build size', timeline: '8 weeks', focus: 'Strength', experience: '2-5y', location: 'Commercial gym', trainingStyle: 'Balanced mix', outputStyle: 'RPE/RIR cues', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '60',
+        priorityGroups: ['Glutes', 'Back', 'Core'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Fr'], equipmentAccess: ['barbell', 'dumbbell', 'cable', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 198, bodyweight: 198, bench: 255, squat: 355, deadlift: 475,
+        benchVariation: 'Close-grip bench press', benchWeight: 225, benchReps: 5, lowerMovement: 'Front squat', lowerWeight: 275, lowerReps: 5, hingeMovement: 'Conventional deadlift', hingeWeight: 425, hingeReps: 3, sleepHours: 7.5, activityLevel: 'Moderate', stress: 'Low', planSeed: 4103
+      }
+    },
+    {
+      title: 'size chest shoulders arms 5d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Build size', timeline: '12+ weeks', focus: 'Size', experience: '6-24m', location: 'Commercial gym', trainingStyle: 'Balanced mix', outputStyle: 'RPE/RIR cues', closeToFailure: 'Yes', daysPerWeek: 5, sessionLengthMin: '75+',
+        priorityGroups: ['Chest', 'Shoulders', 'Arms'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Fr', 'Sa'], equipmentAccess: ['barbell', 'dumbbell', 'cable', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 178, bodyweight: 178, bench: 225, squat: 315, deadlift: 405,
+        benchVariation: 'Incline bench press', benchWeight: 185, benchReps: 6, lowerMovement: 'High-bar squat', lowerWeight: 275, lowerReps: 6, hingeMovement: 'Romanian deadlift', hingeWeight: 275, hingeReps: 8, sleepHours: 8, activityLevel: 'Moderate', stress: 'Low', planSeed: 4104
+      }
+    },
+    {
+      title: 'aesthetic back shoulders arms 5d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Recomp', timeline: '8 weeks', focus: 'Aesthetic', experience: '6-24m', location: 'Commercial gym', trainingStyle: 'Mostly machines/cables', outputStyle: 'RPE/RIR cues', closeToFailure: 'Yes', daysPerWeek: 5, sessionLengthMin: '60',
+        priorityGroups: ['Back', 'Shoulders', 'Arms'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Fr', 'Sa'], equipmentAccess: ['dumbbell', 'cable', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 172, bodyweight: 172, bench: 185, squat: 275, deadlift: 315,
+        benchVariation: 'Machine chest press', benchWeight: 160, benchReps: 8, lowerMovement: 'Hack squat', lowerWeight: 225, lowerReps: 8, hingeMovement: 'Hip thrust', hingeWeight: 275, hingeReps: 8, sleepHours: 7.5, activityLevel: 'Moderate', stress: 'Moderate', planSeed: 4105
+      }
+    },
+    {
+      title: 'beginner 3d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Build size', timeline: '12+ weeks', focus: 'Strength', experience: '<6m', location: 'Commercial gym', trainingStyle: 'Balanced mix', outputStyle: 'Simple sets x reps', closeToFailure: 'No', daysPerWeek: 3, sessionLengthMin: '45',
+        priorityGroups: ['Chest', 'Back', 'Legs'], movementsToAvoid: [], preferredDays: ['Mo', 'We', 'Fr'], equipmentAccess: ['barbell', 'dumbbell', 'machine', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 165, bodyweight: 165, bench: 135, squat: 185, deadlift: 225,
+        benchVariation: 'Bench press', benchWeight: 115, benchReps: 5, lowerMovement: 'Goblet squat', lowerWeight: 70, lowerReps: 8, hingeMovement: 'Romanian deadlift', hingeWeight: 135, hingeReps: 6, sleepHours: 7, activityLevel: 'Light', stress: 'Moderate', planSeed: 4106
+      }
+    },
+    {
+      title: '30 minute 4d',
+      payload: {
+        trainingFeel: 'Powerbuilding', primaryGoal: 'Recomp', timeline: '8 weeks', focus: 'Strength', experience: '6-24m', location: 'Home', trainingStyle: 'Mostly free weights', outputStyle: 'RPE/RIR cues', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '30',
+        priorityGroups: ['Chest', 'Back', 'Legs'], movementsToAvoid: [], preferredDays: ['Mo', 'Tu', 'Th', 'Sa'], equipmentAccess: ['barbell', 'dumbbell', 'bench'], painAreas: [], painProfilesByArea: {}, weightLb: 185, bodyweight: 185, bench: 205, squat: 295, deadlift: 365,
+        benchVariation: 'Bench press', benchWeight: 185, benchReps: 4, lowerMovement: 'Back squat', lowerWeight: 255, lowerReps: 5, hingeMovement: 'Romanian deadlift', hingeWeight: 275, hingeReps: 6, sleepHours: 7, activityLevel: 'Moderate', stress: 'Moderate', planSeed: 4107
+      }
+    }
+  ];
+
+  for (const entry of representativeCases) {
+    const live = buildLivePlan(entry.payload);
+    assert.equal(live?.error, undefined, `${entry.title}: build failed`);
+    assert.ok(flattenExercises(live.plan).some(isStrengthAnchor), `${entry.title}: strength anchor disappeared`);
+    assert.ok(flattenExercises(live.plan).filter((exercise) => String(exercise?.style || '') === 'Isolation').length >= 2, `${entry.title}: hypertrophy accessories disappeared`);
+  }
+});
+
+test('powerbuilding outlier now passes directly without unsafe blocked patterns', () => {
+  const payload = {
+    trainingFeel: 'Powerbuilding', primaryGoal: 'Cut fat', timeline: '4 weeks', focus: 'Strength', experience: '2-5y', location: 'Commercial gym', trainingStyle: 'Balanced mix', outputStyle: 'RPE/RIR cues', closeToFailure: 'No', daysPerWeek: 4, sessionLengthMin: '45',
+    priorityGroups: ['Chest', 'Arms', 'Core'], movementsToAvoid: ['bench press', 'deadlift'], preferredDays: ['Mo', 'We', 'Fr', 'Sa'], equipmentAccess: ['dumbbell', 'cable', 'machine', 'bench'], painAreas: ['Shoulder', 'Back', 'Elbow'],
+    painProfilesByArea: {
+      Shoulder: { severity: 7, recency: 'Recent', notes: 'Overhead and wide pressing irritates it' },
+      Back: { severity: 6, recency: 'Recent', notes: 'Axial loading and unsupported rows flare it' },
+      Elbow: { severity: 6, recency: 'Recent', notes: 'Heavy triceps work and straight-bar curls irritate it' }
+    },
+    weightLb: 188, bodyweight: 188, bench: 245, squat: 335, deadlift: 425, benchVariation: 'Incline dumbbell press', benchWeight: 85, benchReps: 8, lowerMovement: 'Leg press', lowerWeight: 360, lowerReps: 8, hingeMovement: 'Hip thrust', hingeWeight: 315, hingeReps: 8, sleepHours: 5.5, activityLevel: 'High', stress: 'High', planSeed: 4108
+  };
+  const direct = engine.buildOblueprintPlan(payload, { fastBuild: true });
+  assert.equal(direct?.error, undefined, direct?.reason || direct?.message || direct?.error);
+  const names = flattenExercises(direct).map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
+  assert.ok(flattenExercises(direct).some(isStrengthAnchor), 'outlier lost powerbuilding anchor identity');
+  assert.ok(!/\bbench\b/.test(names), 'outlier leaked bench-family work');
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(names), 'outlier leaked deadlift-family work');
+  const lowerFocus = firstWeek(direct).days.find((day) => day.dayType === 'LowerFocus');
+  assert.ok(lowerFocus, 'outlier missing LowerFocus day');
+  const lowerFocusNames = (lowerFocus.exercises || []).map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
+  assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(lowerFocusNames), 'LowerFocus still forced deadlift-family work');
+  assert.ok(/\b(leg curl|hamstring curl|glute ham raise|leg extension|hip thrust|glute bridge|pull through)\b/.test(lowerFocusNames), 'LowerFocus failed to use a safe posterior substitute');
 });
