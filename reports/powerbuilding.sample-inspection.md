@@ -1,6 +1,10 @@
 # POWERBUILDING Sample Inspection
 
-Generated on 2026-06-14T15:42:23.797Z
+Generated on 2026-06-14T16:28:00.000Z
+
+Update note:
+- Powerbuilding route generation now preserves direct-builder limited-equipment outputs instead of sending valid Powerbuilding plans through the generic bodybuilding route-repair replacement bank.
+- Home / limited-equipment Powerbuilding samples should remain restricted to the declared `equipmentAccess` set end-to-end.
 
 ## 1. Strength focus + Chest priority + 4 days
 - Input summary: Strength focus, 4 days, 60 min, priorities Chest / Shoulders / Arms, goal Build size, experience 2-5y, equipment barbell, dumbbell, cable, machine, bench

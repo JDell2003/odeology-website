@@ -269,6 +269,42 @@ test('powerbuilding direct builder handles the low-recovery pain outlier without
   assert.ok(/\b(leg curl|hamstring curl|glute ham raise|leg extension|hip thrust|glute bridge|pull through)\b/.test(lowerFocusNames), 'LowerFocus should use a safe posterior or lower substitute');
 });
 
+test('powerbuilding route fallback preserves hard equipment limits for home dumbbell bench beginner plans', () => {
+  const built = trainingRoutes._private.buildOblueprintPlanWithFallback(baseInput({
+    experience: '<6m',
+    location: 'Home',
+    trainingStyle: 'Mostly free weights',
+    outputStyle: 'Simple sets x reps',
+    daysPerWeek: 4,
+    sessionLengthMin: '30',
+    preferredDays: ['Mo', 'Tu', 'Th', 'Sa'],
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Bench'],
+    priorityGroups: ['Chest', 'Back', 'Legs'],
+    bench: 0,
+    squat: 0,
+    deadlift: 0,
+    benchVariation: 'Dumbbell bench press',
+    benchWeight: 45,
+    benchReps: 8,
+    lowerMovement: 'Goblet squat',
+    lowerWeight: 70,
+    lowerReps: 8,
+    hingeMovement: 'Dumbbell Romanian deadlift',
+    hingeWeight: 60,
+    hingeReps: 8,
+    planSeed: 99123
+  }));
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route build failed');
+  assertAllowedEquipmentOnly(built.plan);
+  const names = exerciseNames(built.plan).join(' | ').toLowerCase();
+  assert.ok(!/\b(cable|machine|leverage|leg press|lat pulldown|barbell)\b/.test(names), 'unavailable equipment leaked into the route-built plan');
+  assert.ok(hasStrengthAnchor(built.plan), 'expected a safe strength anchor to remain');
+  assert.ok(flattenExercises(built.plan).some((exercise) => String(exercise?.style || '') === 'Isolation'), 'expected a hypertrophy accessory to remain');
+  built.plan.weeks[0].days.forEach((day) => {
+    assert.ok((day.exercises || []).length <= 4, `${day.dayType}: expected a realistic 30-minute beginner movement cap`);
+  });
+});
+
 test('powerbuilding movementsToAvoid blocks deadlift, bench, and squat families in direct builds', () => {
   const deadliftBlocked = engine.buildOblueprintPlan(baseInput({
     priorityGroups: ['Glutes', 'Back', 'Core'],

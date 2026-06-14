@@ -952,14 +952,19 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   };
 
   if (relax) {
-    normalized.location = 'Commercial gym';
-    normalized.trainingStyle = 'Balanced mix';
-    normalized.movementsToAvoid = [];
-    normalized.painAreas = [];
-    normalized.painProfilesByArea = {};
-    normalized.preferredDays = [];
-    normalized.equipmentAccess = [];
-    normalized.closeToFailure = 'No';
+    if (trainingFeel === 'Powerbuilding') {
+      normalized.trainingStyle = 'Balanced mix';
+      normalized.closeToFailure = 'No';
+    } else {
+      normalized.location = 'Commercial gym';
+      normalized.trainingStyle = 'Balanced mix';
+      normalized.movementsToAvoid = [];
+      normalized.painAreas = [];
+      normalized.painProfilesByArea = {};
+      normalized.preferredDays = [];
+      normalized.equipmentAccess = [];
+      normalized.closeToFailure = 'No';
+    }
   }
 
   return normalized;
@@ -1315,6 +1320,17 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         lastError = out;
         lastPayload = nextPayload;
         if (String(out?.error || '') === 'LOWER_BODY_REPAIR_LOOP_LIMIT') break;
+        continue;
+      }
+      const builtDiscipline = String(out?.meta?.discipline || '').toLowerCase();
+      if (builtDiscipline === 'powerbuilding') {
+        lastPlan = out;
+        lastPayload = nextPayload;
+        const directValidationError = validateCandidate(out);
+        if (!directValidationError) {
+          return { plan: out, usedPayload: nextPayload };
+        }
+        lastError = directValidationError;
         continue;
       }
       const finalizedRaw = runRouteStage('route repair', () => routeFinalizeBodybuildingPlan(out), {
@@ -7485,6 +7501,16 @@ function isPowerbuildingHingeAnchor(exercise) {
     );
 }
 
+function isPowerbuildingPosteriorProxyAnchor(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  return /rep-first progression/i.test(String(exercise?.progressionRule || ''))
+    && isPowerbuildingStrengthRange(exercise)
+    && (
+      /\b(glute ham raise|hamstring curl|leg curl|hamstring slides?|glute bridge|hip thrust|pull through|back extension)\b/.test(name)
+      || Boolean(exercise?.glutePrimaryStrength && String(exercise.glutePrimaryStrength).toLowerCase() !== 'none')
+    );
+}
+
 function isPowerbuildingPullCompound(exercise) {
   const name = String(exercise?.name || '').toLowerCase();
   const pattern = String(exercise?.pattern || '').toLowerCase();
@@ -7543,6 +7569,8 @@ function assertPowerbuildingPlanByEngine(planObj) {
     }
     const exercises = days.flatMap((day) => Array.isArray(day?.exercises) ? day.exercises : []);
     const isolationCount = exercises.filter((exercise) => String(exercise?.style || '') === 'Isolation').length;
+    const allowedEquipment = new Set((Array.isArray(planObj?.meta?.allowedEquipment) ? planObj.meta.allowedEquipment : []).map((token) => String(token || '').toLowerCase()));
+    const constrainedPosteriorProxyEnv = !allowedEquipment.has('barbell') && !allowedEquipment.has('cable') && !allowedEquipment.has('machine');
     if (!exercises.some(isPowerbuildingUpperPressAnchor)) {
       throwAssertionInvariant('Powerbuilding week missing upper-body strength anchor.', {
         validatorSection: 'powerbuilding strength validation',
@@ -7557,7 +7585,7 @@ function assertPowerbuildingPlanByEngine(planObj) {
         week: Number(week?.weekIndex || 0) || undefined
       });
     }
-    if (!exercises.some(isPowerbuildingHingeAnchor)) {
+    if (!exercises.some(isPowerbuildingHingeAnchor) && !(constrainedPosteriorProxyEnv && exercises.some(isPowerbuildingPosteriorProxyAnchor))) {
       throwAssertionInvariant('Powerbuilding week missing hinge strength anchor.', {
         validatorSection: 'powerbuilding strength validation',
         failedInvariant: 'missing_hinge_anchor',
