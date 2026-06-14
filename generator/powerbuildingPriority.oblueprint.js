@@ -200,6 +200,18 @@ function isShoulderAccessory(exercise) {
     || Boolean(exercise?.rearDeltPattern);
 }
 
+function isLateralDeltAccessory(exercise) {
+  const name = normalizeText(exercise?.name);
+  return Boolean(exercise?.lateralDeltPattern)
+    || /\b(lateral raise|side lateral raise)\b/.test(name);
+}
+
+function isRearDeltAccessory(exercise) {
+  const name = normalizeText(exercise?.name);
+  return Boolean(exercise?.rearDeltPattern)
+    || /\b(rear delt|face pull|reverse pec deck|reverse fly)\b/.test(name);
+}
+
 function isPressingCompound(exercise) {
   return isCompound(exercise) && ['HorizontalPush', 'VerticalPush'].includes(String(exercise?.pattern || ''));
 }
@@ -230,6 +242,135 @@ function isSafePosteriorProxyPattern(exercise) {
   const name = normalizeText(exercise?.name);
   return /\b(leg curl|hamstring curl|glute ham raise|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension|hamstring slides?)\b/.test(name)
     && !/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg|good morning)\b/.test(name);
+}
+
+function isBicepsIsolation(exercise) {
+  const directType = normalizeText(exercise?.directArmType);
+  const name = normalizeText(exercise?.name);
+  return directType === 'biceps'
+    || (!isCompound(exercise) && /\b(curl|preacher)\b/.test(name) && !/\btriceps\b/.test(name));
+}
+
+function isTricepsIsolation(exercise) {
+  const directType = normalizeText(exercise?.directArmType);
+  const name = normalizeText(exercise?.name);
+  return directType === 'triceps'
+    || (!isCompound(exercise) && /\b(triceps|pushdown|extension|skullcrusher|jm press)\b/.test(name));
+}
+
+function isOverheadPress(exercise) {
+  const name = normalizeText(exercise?.name);
+  return Boolean(exercise?.shoulderPressPattern)
+    || /\b(overhead press|shoulder press|military press)\b/.test(name);
+}
+
+function isChestPressPattern(exercise) {
+  const name = normalizeText(exercise?.name);
+  return isPressingCompound(exercise)
+    && (
+      String(exercise?.pattern || '') === 'HorizontalPush'
+      || /\b(bench|chest press|incline press|decline press)\b/.test(name)
+    );
+}
+
+function isLateAccessory(exercise) {
+  return isCoreExercise(exercise)
+    || isCalfExercise(exercise)
+    || isBicepsIsolation(exercise)
+    || isTricepsIsolation(exercise);
+}
+
+function powerbuildingNamePreferenceScore(exercise) {
+  const name = normalizeText(exercise?.name);
+  if (!name) return 0;
+  let score = 0;
+
+  if (/\bincline dumbbell curl\b/.test(name)) score += 18;
+  if (/^(dumbbell curl|cable curl|machine preacher curls?)$/.test(name)) score += 18;
+  if (/\bcable curl\b/.test(name) && !/\boverhead cable curl\b/.test(name)) score += 16;
+  if (/\bmachine preacher curl\b/.test(name)) score += 16;
+  if (/^(triceps pushdown|overhead triceps extension)$/.test(name)) score += 18;
+  if (/\bdumbbell lateral raise\b|\blateral raise\b|\bside lateral raise\b/.test(name)) score += 18;
+  if (/\brear delt raise\b|\brear delt fly\b|\brear delt row\b|\bface pull\b|\breverse pec deck\b|\breverse fly(?:es)?\b/.test(name)) score += 18;
+  if (/\brear delt raise\b|\bcable rear delt fly\b/.test(name)) score += 6;
+  if (/\bstanding calf raise\b/.test(name)) score += 18;
+  if (/\bcable crunch\b|\brope crunch\b/.test(name)) score += 18;
+  if (/\breverse crunch\b|\bhanging leg raise\b|\bplank\b|\bpallof press\b|\bpallof hold\b/.test(name)) score += 14;
+  if (/\bpallof press\b|\bpallof hold\b/.test(name)) score += 18;
+  if (/\bdumbbell row\b|\bone-arm dumbbell row\b|\bchest-supported row\b|\bchest-supported dumbbell row\b/.test(name)) score += 16;
+  if (/\bdumbbell bench press\b|\bmachine chest press\b|\bhip thrust\b|\bglute bridge\b|\bromanian deadlift\b|\bseated leg curl\b|\bleg extension\b/.test(name)) score += 12;
+
+  if (/\bseated close-grip concentration barbell curl\b/.test(name)) score -= 42;
+  if (/\bflexor incline dumbbell curls?\b/.test(name)) score -= 34;
+  if (/\brocking standing calf raise\b/.test(name)) score -= 34;
+  if (/\binner biceps\b/.test(name)) score -= 28;
+  if (/\bbench reverse crunch\b/.test(name)) score -= 28;
+  if (/\bexternal rotation\b/.test(name) && /\breverse fly/.test(name)) score -= 18;
+  if (/\blow-pulley\b/.test(name)) score -= 16;
+  if (/\bclose-grip concentration\b|\brocking\b|\bflexor\b/.test(name)) score -= 18;
+  if (/\bone-arm side laterals?\b/.test(name)) score -= 18;
+  if (/\b(one-arm|single-arm|alternating)\b/.test(name) && isBicepsIsolation(exercise)) score -= 6;
+  if (/\bwith palms facing in\b|\bwith head on bench\b|\blong bar\b|\blow-pulley\b|\bfull range-of-motion\b/.test(name)) score -= 12;
+  if (name.length >= 34) score -= Math.min(12, Math.floor((name.length - 28) / 3));
+
+  return score;
+}
+
+function countSelectedBy(selected, exercises, predicate) {
+  return selected.reduce((sum, index) => sum + (predicate(exercises[index]) ? 1 : 0), 0);
+}
+
+function hitsSelectionPatternCap(exercise, selected, exercises, user) {
+  const shoulderPriority = Number(user?.profile?.powerbuilding?.priorityRanks?.Shoulders || 99) <= 2;
+  const highRecovery = String(user?.profile?.powerbuilding?.recoveryTier || '') === 'high';
+  const bicepsCount = countSelectedBy(selected, exercises, isBicepsIsolation);
+  const tricepsCount = countSelectedBy(selected, exercises, isTricepsIsolation);
+  const chestPressCount = countSelectedBy(selected, exercises, isChestPressPattern);
+  const overheadPressCount = countSelectedBy(selected, exercises, isOverheadPress);
+  const coreCount = countSelectedBy(selected, exercises, isCoreExercise);
+  const lateralCount = countSelectedBy(selected, exercises, isLateralDeltAccessory);
+  const rearDeltCount = countSelectedBy(selected, exercises, isRearDeltAccessory);
+
+  if (isBicepsIsolation(exercise) && bicepsCount >= 2) return true;
+  if (isTricepsIsolation(exercise) && tricepsCount >= 2) return true;
+  if (isChestPressPattern(exercise) && chestPressCount >= 2) return true;
+  if (isOverheadPress(exercise) && overheadPressCount >= (shoulderPriority && highRecovery ? 2 : 1)) return true;
+  if (isCoreExercise(exercise) && coreCount >= 2) return true;
+  if (isLateralDeltAccessory(exercise) && lateralCount >= 1) return true;
+  if (isRearDeltAccessory(exercise) && rearDeltCount >= 1) return true;
+  return false;
+}
+
+function powerbuildingOrderBucket(exercise, dayType) {
+  const type = String(dayType || '');
+  if (isStrengthAnchorExercise(exercise)) return 0;
+  if (['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(type)) {
+    if (isSquatPattern(exercise)) return 1;
+    if (isTrueHingePattern(exercise)) return 2;
+    if (isPosteriorPattern(exercise) && !isLateAccessory(exercise)) return 3;
+  } else {
+    if (isPressingCompound(exercise) || isPullCompound(exercise)) return 1;
+    if (isCompound(exercise)) return 2;
+  }
+  if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Shoulders' && (Boolean(exercise?.lateralDeltPattern) || Boolean(exercise?.rearDeltPattern))) return 4;
+  if (!isCompound(exercise) && !isLateAccessory(exercise)) return 5;
+  if (isBicepsIsolation(exercise) || isTricepsIsolation(exercise)) return 6;
+  if (isCoreExercise(exercise)) return 7;
+  if (isCalfExercise(exercise)) return 8;
+  return 9;
+}
+
+function reorderPowerbuildingExercises(exercises, dayType) {
+  const list = Array.isArray(exercises) ? exercises.slice() : [];
+  return list.sort((a, b) => {
+    const bucketDiff = powerbuildingOrderBucket(a, dayType) - powerbuildingOrderBucket(b, dayType);
+    if (bucketDiff !== 0) return bucketDiff;
+    const compoundDiff = Number(isCompound(b)) - Number(isCompound(a));
+    if (compoundDiff !== 0) return compoundDiff;
+    const scoreDiff = powerbuildingNamePreferenceScore(b) - powerbuildingNamePreferenceScore(a);
+    if (scoreDiff !== 0) return scoreDiff;
+    return String(a?.name || '').localeCompare(String(b?.name || ''));
+  });
 }
 
 function movementCapForDay(dayType, user, pb) {
@@ -272,6 +413,7 @@ function exerciseKeepScore(exercise, index, dayType, user, pb) {
   if (isShoulderAccessory(exercise) && (Boolean(exercise?.lateralDeltPattern) || Boolean(exercise?.rearDeltPattern))) score += 18;
   if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Chest' && isPressingCompound(exercise) && !isStrengthAnchorExercise(exercise) && !isStrengthFocus(user)) score -= 10;
   if (canonicalPriority(exercise?.muscleTarget || exercise?.primary || '') === 'Glutes' && Boolean(exercise?.axialLoadHigh) && pb?.recoveryTier === 'low') score -= 20;
+  score += powerbuildingNamePreferenceScore(exercise);
   score -= Math.min(index, 6);
   if (String(dayType || '') === 'Push' && isPullCompound(exercise)) score -= 12;
   if (String(dayType || '') === 'Pull' && isPressingCompound(exercise)) score -= 12;
@@ -310,6 +452,49 @@ function replaceSelectedIndex(target, selectedIndex, nextIndex, usedIndexes, use
   return true;
 }
 
+function findReplaceableSelectionIndex(selected, exercises, dayType, user, pb, predicate = null) {
+  return selected
+    .map((index, selectedIndex) => ({ index, selectedIndex, score: exerciseKeepScore(exercises[index], index, dayType, user, pb) }))
+    .filter((entry) => {
+      const exercise = exercises[entry.index];
+      if (predicate && !predicate(exercise, entry)) return false;
+      if (isStrengthAnchorExercise(exercise)) return false;
+      if (isCoreExercise(exercise) && pb?.preserveCore) return false;
+      if (isCalfExercise(exercise) && pb?.preserveCalves) return false;
+      return true;
+    })
+    .sort((a, b) => a.score - b.score)[0];
+}
+
+function ensureShoulderPriorityCoverage(selected, exercises, dayType, user, pb, cap, used, usedNames) {
+  const type = String(dayType || '');
+  const shoulderPriority = Number(pb?.priorityRanks?.Shoulders || 99) <= 2;
+  if (!shoulderPriority) return;
+
+  const wantsLateral = ['Push', 'Upper', 'UpperFocus', 'DeltsArms'].includes(type);
+  const wantsRear = ['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(type);
+
+  const ensurePattern = (predicate, shouldApply) => {
+    if (!shouldApply) return;
+    if (selected.some((index) => predicate(exercises[index]))) return;
+    const candidateIndex = exercises.findIndex((exercise, index) => !used.has(index) && predicate(exercise));
+    if (candidateIndex < 0) return;
+    if (selected.length < cap) {
+      pushUniqueIndex(selected, candidateIndex, used, usedNames, exercises);
+      return;
+    }
+    const replaceAt = findReplaceableSelectionIndex(selected, exercises, dayType, user, pb, (exercise) => {
+      if (predicate(exercise)) return false;
+      if (isArmExercise(exercise) || isCoreExercise(exercise)) return true;
+      return !isCompound(exercise);
+    });
+    if (replaceAt) replaceSelectedIndex(selected, replaceAt.selectedIndex, candidateIndex, used, usedNames, exercises);
+  };
+
+  ensurePattern(isLateralDeltAccessory, wantsLateral);
+  ensurePattern(isRearDeltAccessory, wantsRear);
+}
+
 function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
   const type = String(dayType || '');
   const used = new Set();
@@ -346,6 +531,7 @@ function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
     const normalizedName = normalizeSelectionExerciseName(exercise);
     if (normalizedName && usedNames.has(normalizedName)) continue;
     if (isBeginnerPowerbuilding(user) && selected.some((idx) => isStrengthAnchorExercise(exercises[idx])) && isStrengthAnchorExercise(exercise)) continue;
+    if (hitsSelectionPatternCap(exercise, selected, exercises, user)) continue;
     pushUniqueIndex(selected, entry.index, used, usedNames, exercises);
   }
 
@@ -428,16 +614,64 @@ function selectPowerbuildingExerciseIndexes(exercises, dayType, user, pb, cap) {
     }
   }
 
-  return selected.sort((a, b) => a - b);
+  ensureShoulderPriorityCoverage(selected, exercises, dayType, user, pb, cap, used, usedNames);
+
+  const selectedExercisesOrdered = reorderPowerbuildingExercises(
+    selected.map((index) => exercises[index]).filter(Boolean),
+    dayType
+  );
+  return selectedExercisesOrdered
+    .map((exercise) => exercises.indexOf(exercise))
+    .filter((index) => index >= 0);
 }
 
 function polishPowerbuildingDay(day, user) {
   const pb = user?.profile?.powerbuilding || buildPowerbuildingProfile(user);
   if (!pb || !Array.isArray(day?.exercises) || !day.exercises.length) return day;
   const cap = movementCapForDay(day?.dayType, user, pb);
-  if (day.exercises.length <= cap) return day;
   const indexes = selectPowerbuildingExerciseIndexes(day.exercises, day?.dayType, user, pb, cap);
-  const exercises = indexes.map((index) => day.exercises[index]).filter(Boolean);
+  let trimmed = indexes.map((index) => day.exercises[index]).filter(Boolean);
+  const seen = {
+    biceps: 0,
+    triceps: 0,
+    chestPress: 0,
+    overheadPress: 0,
+    core: 0,
+    lateral: 0,
+    rear: 0
+  };
+  trimmed = trimmed.filter((exercise) => {
+    if (isBicepsIsolation(exercise)) {
+      seen.biceps += 1;
+      return seen.biceps <= 2;
+    }
+    if (isTricepsIsolation(exercise)) {
+      seen.triceps += 1;
+      return seen.triceps <= 2;
+    }
+    if (isChestPressPattern(exercise)) {
+      seen.chestPress += 1;
+      return seen.chestPress <= 2;
+    }
+    if (isOverheadPress(exercise)) {
+      seen.overheadPress += 1;
+      return seen.overheadPress <= (Number(pb?.priorityRanks?.Shoulders || 99) <= 2 && pb?.recoveryTier === 'high' ? 2 : 1);
+    }
+    if (isCoreExercise(exercise)) {
+      seen.core += 1;
+      return seen.core <= 2;
+    }
+    if (isLateralDeltAccessory(exercise)) {
+      seen.lateral += 1;
+      return seen.lateral <= 1;
+    }
+    if (isRearDeltAccessory(exercise)) {
+      seen.rear += 1;
+      return seen.rear <= 1;
+    }
+    return true;
+  });
+  const exercises = reorderPowerbuildingExercises(trimmed, day?.dayType);
   return { ...day, exercises };
 }
 

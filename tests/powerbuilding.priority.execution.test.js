@@ -109,6 +109,30 @@ function isSafePosteriorSubstitute(exercise) {
   return /\b(glute ham raise|leg curl|hamstring curl|hip thrust|glute bridge|pull[- ]?through|back extension|hyperextension)\b/.test(name);
 }
 
+function isBicepsIsolation(exercise) {
+  const name = normalizeName(exercise?.name);
+  return String(exercise?.directArmType || '').toLowerCase() === 'biceps'
+    || (String(exercise?.style || '') === 'Isolation' && /\b(curl|preacher)\b/.test(name) && !/\btriceps\b/.test(name));
+}
+
+function isTricepsIsolation(exercise) {
+  const name = normalizeName(exercise?.name);
+  return String(exercise?.directArmType || '').toLowerCase() === 'triceps'
+    || (String(exercise?.style || '') === 'Isolation' && /\b(triceps|pushdown|extension|skullcrusher)\b/.test(name));
+}
+
+function isShoulderAccessory(exercise) {
+  return Boolean(exercise?.lateralDeltPattern) || Boolean(exercise?.rearDeltPattern);
+}
+
+function isCompound(exercise) {
+  return String(exercise?.style || '') === 'Compound';
+}
+
+function isAwkwardPowerbuildingName(name) {
+  return /\b(inner biceps|flexor|close-grip concentration barbell curl|rocking|bench reverse crunch|with head on bench|external rotation|low-pulley)\b/.test(normalizeName(name));
+}
+
 function isPullCompound(exercise) {
   const name = normalizeName(exercise?.name);
   return String(exercise?.style || '') === 'Compound'
@@ -165,6 +189,10 @@ function countAnchorDays(plan, predicate) {
 
 function countPatternDays(plan, predicate) {
   return (firstWeek(plan).days || []).filter((day) => (day.exercises || []).some(predicate)).length;
+}
+
+function dayIndexOfFirst(day, predicate) {
+  return (day?.exercises || []).findIndex(predicate);
 }
 
 function lowerHeavyDayIndexes(plan) {
@@ -556,4 +584,76 @@ test('powerbuilding outlier now passes directly without unsafe blocked patterns'
   const lowerFocusNames = (lowerFocus.exercises || []).map((exercise) => String(exercise?.name || '').toLowerCase()).join(' | ');
   assert.ok(!/\b(deadlift|romanian deadlift|\brdl\b|stiff[- ]?leg)\b/.test(lowerFocusNames), 'LowerFocus still forced deadlift-family work');
   assert.ok(/\b(leg curl|hamstring curl|glute ham raise|leg extension|hip thrust|glute bridge|pull through)\b/.test(lowerFocusNames), 'LowerFocus failed to use a safe posterior substitute');
+});
+
+test('powerbuilding 5-day abs shoulders arms case stays ordered and avoids accessory spam', () => {
+  const built = buildLivePlan(clonePayload(POWERBUILDING_PRIORITY_MATRIX[4].payload, {
+    priorityGroups: ['Core', 'Shoulders', 'Arms'],
+    daysPerWeek: 5,
+    preferredDays: ['Mo', 'Tu', 'Th', 'Fr', 'Sa'],
+    equipmentAccess: ['Barbell', 'Dumbbells', 'Cable', 'Machines', 'Bench'],
+    planSeed: 88001
+  }));
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route build failed');
+  const week = firstWeek(built.plan);
+  week.days.forEach((day) => {
+    const exercises = day.exercises || [];
+    const biceps = exercises.filter(isBicepsIsolation).length;
+    const triceps = exercises.filter(isTricepsIsolation).length;
+    assert.ok(biceps <= 2, `${day.dayType}: too many biceps isolations`);
+    assert.ok(triceps <= 2, `${day.dayType}: too many triceps isolations`);
+    if (['Lower', 'LowerFocus', 'Legs', 'FullBodyB'].includes(String(day.dayType || ''))) {
+      const firstPosterior = dayIndexOfFirst(day, (exercise) => isHingeLike(exercise) || isSafePosteriorSubstitute(exercise));
+      const firstCore = dayIndexOfFirst(day, (exercise) => Boolean(exercise?.directAb));
+      if (firstPosterior >= 0 && firstCore >= 0) {
+        assert.ok(firstPosterior < firstCore, `${day.dayType}: core interrupted lower posterior work`);
+      }
+    }
+  });
+  assert.ok(flattenExercises(built.plan).some(isShoulderAccessory), 'shoulder priority lost lateral/rear delt work');
+  assert.ok(countPatternDays(built.plan, (exercise) => Boolean(exercise?.directAb)) >= 2, 'core priority should appear across the week');
+  const names = flattenExercises(built.plan).map((exercise) => String(exercise?.name || ''));
+  const awkwardNames = names.filter(isAwkwardPowerbuildingName);
+  assert.ok(awkwardNames.length <= 1, `too many awkward accessory names: ${awkwardNames.join(', ')}`);
+  assert.ok(!names.some((name) => /\b(high cable curls|overhead cable curls|flexor incline dumbbell curls?|seated dumbbell inner biceps curl)\b/i.test(name)), 'weird curl names should not beat cleaner curl options');
+  assert.ok(!names.some((name) => /\bcable bench reverse crunch\b/i.test(name)), 'awkward reverse crunch naming should not survive when cleaner core names exist');
+});
+
+test('powerbuilding chest shoulders arms case caps press spam and shows shoulder work', () => {
+  const built = buildLivePlan(clonePayload(POWERBUILDING_PRIORITY_MATRIX[3].payload, {
+    priorityGroups: ['Chest', 'Shoulders', 'Arms'],
+    equipmentAccess: ['Barbell', 'Dumbbells', 'Cable', 'Machines', 'Bench'],
+    planSeed: 88002
+  }));
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route build failed');
+  firstWeek(built.plan).days.forEach((day) => {
+    const exercises = day.exercises || [];
+    const chestPresses = exercises.filter(isBenchLike).length;
+    const overheadPresses = exercises.filter((exercise) => Boolean(exercise?.shoulderPressPattern)).length;
+    assert.ok(chestPresses <= 2, `${day.dayType}: too many chest press patterns`);
+    assert.ok(overheadPresses <= 1, `${day.dayType}: too many shoulder press patterns`);
+  });
+  const names = flattenExercises(built.plan).map((exercise) => normalizeName(exercise?.name));
+  assert.ok(names.some((name) => /\blateral raise\b/.test(name)), 'shoulder priority lost lateral delt work');
+  assert.ok(flattenExercises(built.plan).some(isShoulderAccessory), 'shoulder priority lost visible shoulder accessory work');
+});
+
+test('powerbuilding beginner 30-minute plans keep anchor-first minimal structure', () => {
+  const built = buildLivePlan(clonePayload(POWERBUILDING_PRIORITY_MATRIX[29].payload, {
+    experience: '<6m',
+    sessionLengthMin: '30',
+    daysPerWeek: 4,
+    equipmentAccess: ['Bodyweight', 'Dumbbells', 'Bench'],
+    planSeed: 88003
+  }));
+  assert.equal(built?.error, undefined, built?.error?.reason || built?.error?.error || 'route build failed');
+  firstWeek(built.plan).days.forEach((day) => {
+    const exercises = day.exercises || [];
+    assert.ok(exercises.length <= 4, `${day.dayType}: expected 3-4 movements max`);
+    if (exercises.length) {
+      assert.ok(isStrengthAnchor(exercises[0]) || isCompound(exercises[0]), `${day.dayType}: top slot should be anchor/compound`);
+    }
+    const accessoryCount = exercises.filter((exercise) => String(exercise?.style || '') === 'Isolation').length;
+    assert.ok(accessoryCount <= 2, `${day.dayType}: accessory spam in 30-minute beginner day`);
+  });
 });

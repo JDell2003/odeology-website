@@ -1150,6 +1150,23 @@ function normalizeBodybuildingDisplayName(name, user) {
   const raw = String(name || '').trim();
   if (!(user?.discipline === 'bodybuilding' || user?.discipline === 'powerbuilding')) return raw;
   if (!raw) return raw;
+  if (user?.discipline === 'powerbuilding') {
+    if (/^seated dumbbell inner biceps curl$/i.test(raw)) return 'Dumbbell Curl';
+    if (/^flexor incline dumbbell curls?$/i.test(raw)) return 'Incline Dumbbell Curl';
+    if (/^high cable curls?$/i.test(raw) || /^overhead cable curls?$/i.test(raw)) return 'Cable Curl';
+    if (/^machine preacher curls?$/i.test(raw)) return 'Machine Preacher Curl';
+    if (/^cable rope overhead triceps extension$/i.test(raw) || /^dumbbell one arm triceps? extension$/i.test(raw)) return 'Overhead Triceps Extension';
+    if (/^triceps pushdown$/i.test(raw)) return 'Triceps Pushdown';
+    if (/^cable seated lateral raise$/i.test(raw) || /^seated side lateral raise$/i.test(raw) || /^side lateral raise$/i.test(raw) || /^bent over low-pulley side lateral$/i.test(raw)) return 'Dumbbell Lateral Raise';
+    if (/^seated bent-over rear delt raise$/i.test(raw) || /^bent over dumbbell rear delt raise with head on bench$/i.test(raw) || /^reverse flyes(?: with external rotation)?$/i.test(raw)) return 'Rear Delt Raise';
+    if (/^cable bench reverse crunch$/i.test(raw)) return 'Reverse Crunch';
+    if (/^cable oblique crunch$/i.test(raw)) return 'Cable Crunch';
+    if (/^cable pallof hold$/i.test(raw)) return 'Pallof Press';
+    if (/^machine bench press$/i.test(raw) || /^leverage chest press$/i.test(raw) || /^leverage incline chest press$/i.test(raw) || /^leverage decline chest press$/i.test(raw)) return 'Machine Chest Press';
+    if (/^chest-supported row$/i.test(raw)) return 'Chest-Supported Row';
+    if (/^chest-supported dumbbell row$/i.test(raw)) return 'Chest-Supported Row';
+    if (/^dumbbell incline row$/i.test(raw)) return 'One-Arm Dumbbell Row';
+  }
   if (/^shotgun row$/i.test(raw) && Array.isArray(user?.allowedEquipment) && user.allowedEquipment.includes('cable') && !user.allowedEquipment.includes('dumbbell')) {
     return 'Shotgun Cable Row';
   }
@@ -3704,6 +3721,7 @@ function organizeDayExerciseOrder(dayType, exercises, user = null) {
   const remaining = src.slice();
   const ordered = [];
   const type = String(dayType || '');
+  const isPowerbuilding = String(user?.discipline || '') === 'powerbuilding';
   const takePowerbuildingAnchor = () => {
     if (String(user?.discipline || '') !== 'powerbuilding') return;
     const idx = remaining.findIndex((ex) => String(ex?.slotId || '').startsWith('pb_'));
@@ -3757,10 +3775,17 @@ function organizeDayExerciseOrder(dayType, exercises, user = null) {
   };
   takePowerbuildingAnchor();
   takeFirst(isMainCandidate);
-  [1, 2, 3].forEach((rank) => {
-    moveAll((ex) => isDirectPriorityAccessory(ex) && priorityRank(ex) === rank && !isForearms(ex) && !isNeck(ex));
-  });
-  moveAll((ex) => isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
+  if (isPowerbuilding) {
+    moveAll((ex) => isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
+    [1, 2, 3].forEach((rank) => {
+      moveAll((ex) => isDirectPriorityAccessory(ex) && priorityRank(ex) === rank && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
+    });
+  } else {
+    [1, 2, 3].forEach((rank) => {
+      moveAll((ex) => isDirectPriorityAccessory(ex) && priorityRank(ex) === rank && !isForearms(ex) && !isNeck(ex));
+    });
+    moveAll((ex) => isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
+  }
   moveAll((ex) => !isCompound(ex) && !isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
   moveAll((ex) => isArms(ex) && !isForearms(ex) && !isNeck(ex) && !isCalves(ex) && !isCore(ex));
   moveAll((ex) => isForearms(ex));
@@ -5414,9 +5439,12 @@ function repairAndValidatePlan(weeks, user, exercises) {
             dayType: day?.dayType
           });
         }
+        const finalizedDay = user.discipline === 'powerbuilding'
+          ? powerbuildingPriority.polishPowerbuildingDay({ ...deduped, exercises: finalExercises }, user)
+          : { ...deduped, exercises: finalExercises };
         nextDays.push({
-          ...deduped,
-          exercises: organizeDayExerciseOrder(deduped.dayType, finalExercises, user)
+          ...finalizedDay,
+          exercises: organizeDayExerciseOrder(finalizedDay.dayType, finalizedDay.exercises, user)
         });
         if (!firstDayProcessed) {
           firstDayProcessed = true;
@@ -12310,10 +12338,55 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           exercises,
           String(week?.weekType || 'base')
         );
-        return enforceNarrowPriorityOffGoalCap(polishNarrowPrioritySessionOrder({
-          ...day,
-          exercises: organizeDayExerciseOrder(day?.dayType || '', polishedDay.exercises || [])
-        }, user), user);
+        const finalizedPowerbuildingDay = user?.discipline === 'powerbuilding'
+          ? powerbuildingPriority.polishPowerbuildingDay({ ...day, exercises: polishedDay.exercises || [] }, user)
+          : { ...day, exercises: polishedDay.exercises || [] };
+        let orderedDay = {
+          ...finalizedPowerbuildingDay,
+          exercises: organizeDayExerciseOrder(day?.dayType || '', finalizedPowerbuildingDay.exercises || [], user)
+        };
+        orderedDay = enforceNarrowPriorityOffGoalCap(polishNarrowPrioritySessionOrder(orderedDay, user), user);
+        if (user?.discipline === 'powerbuilding') {
+          const shoulderPriority = Number(user?.profile?.powerbuilding?.priorityRanks?.Shoulders || 99) <= 2;
+          if (shoulderPriority && String(orderedDay?.dayType || '') === 'Pull') {
+            const hasRearDelt = (orderedDay.exercises || []).some((exercise) => Boolean((exercise?.canonicalTruth || buildExerciseTruth(exercise, user))?.rearDeltPattern));
+            if (!hasRearDelt) {
+              const replaceIndex = (orderedDay.exercises || []).findIndex((exercise) => {
+                const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+                return truth.directArmType === 'biceps' || truth.directArmType === 'triceps' || truth.coreFamily !== 'none';
+              });
+              if (replaceIndex >= 0) {
+                const replacement = buildQualityReplacement(
+                  orderedDay,
+                  orderedDay.exercises[replaceIndex],
+                  {
+                    id: `${String(orderedDay.dayType || 'day').toLowerCase()}_pb_rear_delt_repair`,
+                    pattern: 'Isolation',
+                    styleRequired: 'Isolation',
+                    muscleTarget: 'Shoulders',
+                    primaryAllowed: ['Shoulders', 'Back'],
+                    subPreferred: ['Rear', 'UpperBack'],
+                    subFallback: null,
+                    optional: false
+                  },
+                  user,
+                  exercises,
+                  String(week?.weekType || 'base'),
+                  (candidate) => Boolean((candidate?.canonicalTruth || buildExerciseTruth(candidate, user))?.rearDeltPattern)
+                );
+                if (replacement) {
+                  orderedDay.exercises.splice(replaceIndex, 1, replacement);
+                }
+              }
+            }
+          }
+          orderedDay = powerbuildingPriority.polishPowerbuildingDay(orderedDay, user);
+          orderedDay = {
+            ...orderedDay,
+            exercises: organizeDayExerciseOrder(orderedDay?.dayType || '', orderedDay.exercises || [], user)
+          };
+        }
+        return orderedDay;
       });
       const polishedBackFrequency = polishBackPriorityFrequency(
         { ...week, days: nextDays },
@@ -12587,6 +12660,50 @@ function buildOblueprintPlan(input, opts = {}) {
       stage: plan?.stage || plan?.failedStage || 'route repair',
       failedStage: plan?.failedStage || plan?.stage || 'route repair'
     });
+    if (user?.discipline === 'powerbuilding' && Array.isArray(plan?.weeks)) {
+      const shoulderPriority = Number(user?.profile?.powerbuilding?.priorityRanks?.Shoulders || 99) <= 2;
+      plan.weeks = plan.weeks.map((week) => ({
+        ...week,
+        days: (Array.isArray(week?.days) ? week.days : []).map((day) => {
+          let nextDay = { ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] };
+          if (shoulderPriority && String(nextDay?.dayType || '') === 'Pull') {
+            const hasRearDelt = nextDay.exercises.some((exercise) => Boolean((exercise?.canonicalTruth || buildExerciseTruth(exercise, user))?.rearDeltPattern));
+            if (!hasRearDelt) {
+              const replaceIndex = nextDay.exercises.findIndex((exercise) => {
+                const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
+                return truth.directArmType === 'biceps' || truth.directArmType === 'triceps' || truth.coreFamily !== 'none';
+              });
+              if (replaceIndex >= 0) {
+                const replacement = buildQualityReplacement(
+                  nextDay,
+                  nextDay.exercises[replaceIndex],
+                  {
+                    id: `${String(nextDay.dayType || 'day').toLowerCase()}_pb_rear_delt_repair`,
+                    pattern: 'Isolation',
+                    styleRequired: 'Isolation',
+                    muscleTarget: 'Shoulders',
+                    primaryAllowed: ['Shoulders', 'Back'],
+                    subPreferred: ['Rear', 'UpperBack'],
+                    subFallback: null,
+                    optional: false
+                  },
+                  user,
+                  PREPROCESSED_CACHE,
+                  String(week?.weekType || 'base'),
+                  (candidate) => Boolean((candidate?.canonicalTruth || buildExerciseTruth(candidate, user))?.rearDeltPattern)
+                );
+                if (replacement) nextDay.exercises.splice(replaceIndex, 1, replacement);
+              }
+            }
+          }
+          nextDay = powerbuildingPriority.polishPowerbuildingDay(nextDay, user);
+          return {
+            ...nextDay,
+            exercises: organizeDayExerciseOrder(nextDay?.dayType || '', nextDay.exercises || [], user)
+          };
+        })
+      }));
+    }
     if (opts?.fastBuild) {
       plan.meta = plan.meta && typeof plan.meta === 'object' ? plan.meta : {};
       plan.meta.plannerStages = plan.meta.plannerStages && typeof plan.meta.plannerStages === 'object'
