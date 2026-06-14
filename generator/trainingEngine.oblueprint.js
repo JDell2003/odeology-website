@@ -11,6 +11,7 @@ const {
   evaluateGlutesLegsCoreDebugCombo,
   matchesGlutesLegsCoreDebugCombo
 } = require('../js/training-debug-combo');
+const powerbuildingPriority = require('./powerbuildingPriority.oblueprint');
 
 const STYLE_ENUM = new Set(['Compound', 'Isolation', 'Mobility', 'Skill', 'Cardio', 'Power', 'Plyo']);
 const PATTERN_ENUM = new Set([
@@ -1853,14 +1854,14 @@ function buildExerciseOutput(chosen, user, slot, sets, rr, extra = {}) {
     sets,
     reps: rr.reps,
     restSec: rr.restSec,
-    progressionRule: progressionRuleForExercise(chosen, user),
+    progressionRule: progressionRuleForExercise({ ...chosen, slotId: slot.id }, user),
     flags: ['avoidFilteredOk', 'injurySafeOk'],
     muscleTarget: slot.muscleTarget,
     slotId: slot.id,
     optional: slot.optional,
     ...extra
   };
-  const rir = rirForExercise(chosen, user, extra.weekType);
+  const rir = rirForExercise(chosen, user, extra.weekType, slot.id);
   if (rir) item.rir = rir;
   return item;
 }
@@ -2205,7 +2206,7 @@ function deriveUserProfile(user) {
   const armSpecializationSubtype = priorities.includes('Arms')
     ? forearmPriorityFlag ? 'full_arm_plus_forearm' : 'upper_arm_only'
     : 'none';
-  return {
+  const profile = {
     priorityRanking,
     priorityRankMap,
     upperPriorityCount,
@@ -2233,6 +2234,10 @@ function deriveUserProfile(user) {
     smallAccessoryRecovery,
     minimalEquipmentAccessoryMode
   };
+  if (String(user?.discipline || '') === 'powerbuilding') {
+    profile.powerbuilding = powerbuildingPriority.buildPowerbuildingProfile({ ...user, profile });
+  }
+  return profile;
 }
 
 function normalizeUserInput(input) {
@@ -2453,6 +2458,9 @@ function scaleTargets(baseTargets, weekType, blockLength, weekIndex) {
 }
 
 function buildSplit(user, forceUpperLower = false) {
+  if (String(user?.discipline || '') === 'powerbuilding') {
+    return powerbuildingPriority.buildPowerbuildingSplit(user);
+  }
   const d = user.daysPerWeek;
   const profile = user?.profile || deriveUserProfile(user);
   const lowFreqSmallMuscleBias = d <= 3 && hasPriorityGroup(user, 'Abs') && hasPriorityGroup(user, 'Calves');
@@ -2739,11 +2747,9 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
   }
 
   if (user.discipline === 'powerbuilding') {
-    if (dayType === 'Push' || dayType === 'Upper') slots.unshift(makeSlot(`pb_bench_${dayType.toLowerCase()}`, 'HorizontalPush', 'Compound', 'Chest', { primaryAllowed: ['Chest'] }));
-    if (dayType === 'Legs' || dayType === 'Lower') slots.unshift(makeSlot(`pb_sq_${dayType.toLowerCase()}`, 'Squat', 'Compound', 'Legs', { primaryAllowed: ['Legs'] }));
-    if ((dayType === 'Legs' || dayType === 'Lower') && !slots.some((s) => String(s.id || '').startsWith('pb_hinge_'))) {
-      slots.unshift(makeSlot(`pb_hinge_${dayType.toLowerCase()}`, 'Hinge', 'Compound', 'Glutes', { primaryAllowed: ['Legs', 'Glutes'] }));
-    }
+    const nextSlots = powerbuildingPriority.applyPowerbuildingBlueprint(dayType, user, slots, makeSlot);
+    slots.length = 0;
+    slots.push(...nextSlots);
   }
   if (
     hasPriorityGroup(user, 'Hamstrings/Glutes')
@@ -3411,19 +3417,22 @@ function fillSlots(dayBlueprint, exercises, user, weekPicked, weekState = null, 
 function repsRestByExercise(ex, weekType, user, slotId) {
   const isCompound = ex.style === 'Compound';
   const isCorePattern = ['CoreFlexion', 'CoreStability', 'CoreRotation'].includes(ex.pattern);
-  const isMainPB = user.discipline === 'powerbuilding' && /^pb_/.test(String(slotId || ''));
+  const pbOverride = user.discipline === 'powerbuilding'
+    ? powerbuildingPriority.repOverride(slotId, weekType)
+    : null;
   if (weekType === 'deload') return { reps: isCompound ? '6-10' : '10-15', restSec: isCompound ? 150 : 75, rir: '3-4' };
-  if (isMainPB) {
-    if (slotId.includes('bench')) return { reps: weekType === 'intensification' ? '3-5' : '6-10', restSec: weekType === 'intensification' ? 180 : 150 };
-    if (slotId.includes('sq')) return { reps: weekType === 'intensification' ? '3-5' : '5-8', restSec: 180 };
-  }
+  if (pbOverride) return pbOverride;
   if (isCorePattern) return { reps: weekType === 'intensification' ? '8-15' : '8-20', restSec: 60 };
   if (isCompound) return { reps: weekType === 'intensification' ? '6-10' : '6-12', restSec: weekType === 'intensification' ? 150 : 120 };
   return { reps: weekType === 'intensification' ? '10-15' : '10-20', restSec: 75 };
 }
 
-function rirForExercise(ex, user, weekType) {
+function rirForExercise(ex, user, weekType, slotId = '') {
   if (user.outputStyle === 'Simple sets x reps') return null;
+  if (user.discipline === 'powerbuilding') {
+    const override = powerbuildingPriority.rirOverride(ex, user, weekType, slotId);
+    if (override) return override;
+  }
   if (weekType === 'deload') return '3-4';
   const isCompound = ex.style === 'Compound';
   if (user.closeToFailure === 'Yes') {
@@ -3435,6 +3444,10 @@ function rirForExercise(ex, user, weekType) {
 }
 
 function progressionRuleForExercise(ex, user) {
+  if (user.discipline === 'powerbuilding' && ex?.slotId) {
+    const override = powerbuildingPriority.progressionRuleOverride(ex, user, ex.slotId);
+    if (override) return override;
+  }
   if (user.discipline === 'powerbuilding' && ex.style === 'Compound') {
     return 'Rep-first progression: hit top reps at target RIR, then increase load 2.5-5% next exposure; reset to bottom reps.';
   }
@@ -3559,19 +3572,22 @@ function allocateSetsReps(days, weekType, targets, user) {
     return { ...day, exercises: finalExercises };
   });
 
+  const adjustedDays = user.discipline === 'powerbuilding'
+    ? powerbuildingPriority.adjustPowerbuildingDayVolumes(outDays, user)
+    : outDays;
   if (user.discipline === 'powerbuilding' && user.focus === 'Strength') {
-    outDays.forEach((day) => {
+    adjustedDays.forEach((day) => {
       day.exercises.forEach((ex) => {
-        if (ex.style === 'Isolation') ex.sets = Math.max(2, Math.floor(ex.sets * 0.9));
+        if (ex.style === 'Isolation') ex.sets = Math.max(1, Math.floor(ex.sets * 0.9));
       });
     });
   }
-  outDays.forEach((day) => {
+  adjustedDays.forEach((day) => {
     day.exercises.forEach((ex) => {
       ex.sets = Math.max(1, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(ex.sets) || 1));
     });
   });
-  return outDays;
+  return adjustedDays;
 }
 
 function applySessionCapTrimming(day, sessionCap, priorityGroups, profile = null, user = null) {
@@ -3648,6 +3664,11 @@ function organizeDayExerciseOrder(dayType, exercises, user = null) {
   const remaining = src.slice();
   const ordered = [];
   const type = String(dayType || '');
+  const takePowerbuildingAnchor = () => {
+    if (String(user?.discipline || '') !== 'powerbuilding') return;
+    const idx = remaining.findIndex((ex) => String(ex?.slotId || '').startsWith('pb_'));
+    if (idx >= 0) ordered.push(...remaining.splice(idx, 1));
+  };
   const isCore = (ex) => {
     const p = String(ex?.pattern || '');
     const m = String(ex?.muscleTarget || ex?.primary || '');
@@ -3694,6 +3715,7 @@ function organizeDayExerciseOrder(dayType, exercises, user = null) {
     if (type === 'Upper') return p === 'HorizontalPush' || p === 'HorizontalPull';
     return false;
   };
+  takePowerbuildingAnchor();
   takeFirst(isMainCandidate);
   [1, 2, 3].forEach((rank) => {
     moveAll((ex) => isDirectPriorityAccessory(ex) && priorityRank(ex) === rank && !isForearms(ex) && !isNeck(ex));

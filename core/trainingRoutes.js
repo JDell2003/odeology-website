@@ -1065,7 +1065,26 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     }
   };
   const validateCandidate = (plan) => {
-    if (String(plan?.meta?.discipline || '').toLowerCase() !== 'bodybuilding') return null;
+    const discipline = String(plan?.meta?.discipline || '').toLowerCase();
+    if (discipline === 'powerbuilding') {
+      try {
+        assertPowerbuildingPlanByEngine(plan);
+        return null;
+      } catch (err) {
+        if (buildOpts?.immediateValidationErrorHandoff) {
+          const normalized = normalizePlanBuildError(err, {
+            functionName: 'assertPowerbuildingPlanByEngine',
+            stage: 'assertPowerbuildingPlanByEngine',
+            failedStage: 'assertPowerbuildingPlanByEngine'
+          });
+          normalized.error = 'FINAL_ROUTE_VALIDATION_FAILED';
+          normalized.code = 'FINAL_ROUTE_VALIDATION_FAILED';
+          throw normalized;
+        }
+        return err;
+      }
+    }
+    if (discipline !== 'bodybuilding') return null;
     let didReturn = false;
     let didThrow = false;
     let thrownError = null;
@@ -7392,6 +7411,190 @@ function assertBodybuildingPlanByEngine(planObj) {
   });
 }
 
+function parseRepRangeBounds(repRange) {
+  const raw = String(repRange || '').trim();
+  const match = raw.match(/(\d+)\s*-\s*(\d+)/);
+  if (match) {
+    return {
+      min: Number(match[1]),
+      max: Number(match[2])
+    };
+  }
+  const single = raw.match(/(\d+)/);
+  if (single) {
+    const value = Number(single[1]);
+    return { min: value, max: value };
+  }
+  return { min: NaN, max: NaN };
+}
+
+function isPowerbuildingRepFirstCompound(exercise) {
+  return String(exercise?.style || '') === 'Compound'
+    && /rep-first progression/i.test(String(exercise?.progressionRule || ''));
+}
+
+function isPowerbuildingStrengthRange(exercise) {
+  const { max } = parseRepRangeBounds(exercise?.reps);
+  return Number.isFinite(max) && max <= 10;
+}
+
+function isPowerbuildingBenchAnchor(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  const pattern = String(exercise?.pattern || '').toLowerCase();
+  const pressRole = String(exercise?.pressRole || '').toLowerCase();
+  return isPowerbuildingRepFirstCompound(exercise)
+    && isPowerbuildingStrengthRange(exercise)
+    && (
+      pattern === 'horizontalpush'
+      || pressRole === 'chest_press'
+      || /\b(bench press|chest press|incline press|decline press)\b/.test(name)
+    );
+}
+
+function isPowerbuildingUpperPressAnchor(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  return isPowerbuildingBenchAnchor(exercise)
+    || (
+      isPowerbuildingRepFirstCompound(exercise)
+      && isPowerbuildingStrengthRange(exercise)
+      && (
+        Boolean(exercise?.shoulderPressPattern)
+        || /\b(overhead press|shoulder press|military press)\b/.test(name)
+      )
+    );
+}
+
+function isPowerbuildingSquatAnchor(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  const pattern = String(exercise?.pattern || '').toLowerCase();
+  return isPowerbuildingRepFirstCompound(exercise)
+    && isPowerbuildingStrengthRange(exercise)
+    && (
+      pattern === 'squat'
+      || /\b(back squat|front squat|squat|leg press|hack squat)\b/.test(name)
+    );
+}
+
+function isPowerbuildingHingeAnchor(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  const pattern = String(exercise?.pattern || '').toLowerCase();
+  return isPowerbuildingRepFirstCompound(exercise)
+    && (
+      pattern === 'hinge'
+      || /\b(romanian deadlift|rdl|deadlift|good morning|hip thrust|glute bridge|stiff[- ]?leg|back extension)\b/.test(name)
+    );
+}
+
+function isPowerbuildingPullCompound(exercise) {
+  const name = String(exercise?.name || '').toLowerCase();
+  const pattern = String(exercise?.pattern || '').toLowerCase();
+  const pullRole = String(exercise?.pullRole || '').toLowerCase();
+  return String(exercise?.style || '') === 'Compound'
+    && (
+      pattern === 'horizontalpull'
+      || pattern === 'verticalpull'
+      || pullRole === 'row'
+      || pullRole === 'vertical_pull'
+      || /\b(row|pulldown|pull-?up|chin-?up|high row)\b/.test(name)
+    );
+}
+
+function isPowerbuildingUpperAccessory(exercise) {
+  if (String(exercise?.style || '') !== 'Isolation') return false;
+  const primary = String(exercise?.primary || exercise?.muscleTarget || '').toLowerCase();
+  return ['chest', 'shoulders', 'arms'].includes(primary)
+    || String(exercise?.directArmType || '').toLowerCase() !== 'none'
+    || Boolean(exercise?.lateralDeltPattern)
+    || Boolean(exercise?.rearDeltPattern)
+    || Boolean(exercise?.shoulderPressPattern);
+}
+
+function isPowerbuildingLowerAccessory(exercise) {
+  if (String(exercise?.style || '') !== 'Isolation') return false;
+  const primary = String(exercise?.primary || exercise?.muscleTarget || '').toLowerCase();
+  const name = String(exercise?.name || '').toLowerCase();
+  return ['legs', 'glutes', 'calves'].includes(primary)
+    || Boolean(exercise?.directCalf)
+    || /\b(calf|leg curl|hamstring curl|leg extension)\b/.test(name);
+}
+
+function assertPowerbuildingPlanByEngine(planObj) {
+  if (String(planObj?.meta?.discipline || '').toLowerCase() !== 'powerbuilding') {
+    throwAssertionInvariant('Powerbuilding validator received non-powerbuilding plan.', {
+      validatorSection: 'powerbuilding plan shape validation',
+      failedInvariant: 'wrong_discipline'
+    });
+  }
+  const weeks = Array.isArray(planObj?.weeks) ? planObj.weeks : [];
+  if (!weeks.length) {
+    throwAssertionInvariant('Powerbuilding plan must include at least one week.', {
+      validatorSection: 'powerbuilding plan shape validation',
+      failedInvariant: 'missing_weeks'
+    });
+  }
+  for (const week of weeks) {
+    const days = Array.isArray(week?.days) ? week.days : [];
+    if (!days.length) {
+      throwAssertionInvariant('Powerbuilding week must include at least one day.', {
+        validatorSection: 'powerbuilding plan shape validation',
+        failedInvariant: 'missing_days',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    const exercises = days.flatMap((day) => Array.isArray(day?.exercises) ? day.exercises : []);
+    const isolationCount = exercises.filter((exercise) => String(exercise?.style || '') === 'Isolation').length;
+    if (!exercises.some(isPowerbuildingUpperPressAnchor)) {
+      throwAssertionInvariant('Powerbuilding week missing upper-body strength anchor.', {
+        validatorSection: 'powerbuilding strength validation',
+        failedInvariant: 'missing_upper_press_anchor',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (!exercises.some(isPowerbuildingSquatAnchor)) {
+      throwAssertionInvariant('Powerbuilding week missing squat/leg-press strength anchor.', {
+        validatorSection: 'powerbuilding strength validation',
+        failedInvariant: 'missing_squat_anchor',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (!exercises.some(isPowerbuildingHingeAnchor)) {
+      throwAssertionInvariant('Powerbuilding week missing hinge strength anchor.', {
+        validatorSection: 'powerbuilding strength validation',
+        failedInvariant: 'missing_hinge_anchor',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (!exercises.some(isPowerbuildingPullCompound)) {
+      throwAssertionInvariant('Powerbuilding week missing back compound support work.', {
+        validatorSection: 'powerbuilding proportion validation',
+        failedInvariant: 'missing_pull_compound',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (!exercises.some(isPowerbuildingUpperAccessory)) {
+      throwAssertionInvariant('Powerbuilding week missing upper-body hypertrophy accessory.', {
+        validatorSection: 'powerbuilding proportion validation',
+        failedInvariant: 'missing_upper_accessory',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (!exercises.some(isPowerbuildingLowerAccessory)) {
+      throwAssertionInvariant('Powerbuilding week missing lower-body hypertrophy accessory.', {
+        validatorSection: 'powerbuilding proportion validation',
+        failedInvariant: 'missing_lower_accessory',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+    if (isolationCount < 2) {
+      throwAssertionInvariant('Powerbuilding week missing enough hypertrophy accessories.', {
+        validatorSection: 'powerbuilding proportion validation',
+        failedInvariant: 'insufficient_isolation_accessories',
+        week: Number(week?.weekIndex || 0) || undefined
+      });
+    }
+  }
+}
+
 const BODYBUILDING_VALIDATION_CONTRACT = [
   {
     id: 'invalid_exercise_object',
@@ -12415,6 +12618,7 @@ trainingRoutes._private = {
   buildOblueprintPlanWithFallback,
   coerceClassicBodybuildingToOblueprintPayload,
   assertBodybuildingPlanByEngine,
+  assertPowerbuildingPlanByEngine,
   validateBodybuildingPlanContract,
   getCanonicalMovementFamily: routeGetCanonicalMovementFamily,
   simulateTargetedCanonicalReplacement: routeSimulateTargetedCanonicalReplacement,
