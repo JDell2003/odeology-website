@@ -619,6 +619,7 @@ function trimForSession(exercises, additions, user) {
   const scored = source.map((exercise, index) => {
     let score = 0;
     if (isStrengthAnchor(exercise)) score += 100;
+    if (exercise?.militaryIdentityKeep) score += 80;
     if (String(exercise?.style || '') === 'Compound') score += 35;
     if (isPriorityAccessory(exercise, profile)) score += 25;
     if (exercise?.directAb || exercise?.directCalf) score += 8;
@@ -643,16 +644,17 @@ function preserveMilitaryDayIdentityLift(exercises, baseDayType) {
     if (index < 0) return;
     list[index] = {
       ...list[index],
+      militaryIdentityKeep: true,
       slotId: String(list[index]?.slotId || '').startsWith('mh_') ? list[index].slotId : slotId
     };
   };
 
   if (['Upper', 'FullBodyA'].includes(base)) {
-    promoteIdentitySlot((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press', 'mh_upper_identity');
+    promoteIdentitySlot((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press', 'mil_upper_identity');
     return list;
   }
   if (['LowerFocus', 'Lower', 'FullBodyB'].includes(base)) {
-    promoteIdentitySlot((exercise) => isTrueHingeName(exercise), 'mh_lower_identity');
+    promoteIdentitySlot((exercise) => isTrueHingeName(exercise), 'mil_lower_identity');
     return list;
   }
   return list;
@@ -831,6 +833,14 @@ function isTrueHingeName(exercise) {
   return /\b(trap bar|hex bar|deadlift|rack pull|romanian deadlift|\brdl\b)\b/.test(name);
 }
 
+function trueHingePriority(exercise) {
+  const name = normalizeText(exercise?.name);
+  if (/\b(trap bar|hex bar|deadlift)\b/.test(name) && !/\bromanian\b/.test(name)) return 0;
+  if (/\brack pull\b/.test(name)) return 1;
+  if (/\bromanian deadlift|\brdl\b/.test(name)) return 2;
+  return 9;
+}
+
 function normalizeAnchorExercise(exercise, weekType, { preferTrueHinge = false } = {}) {
   const next = { ...exercise };
   next.sets = Math.max(2, Math.min(4, Number(next?.sets || 3)));
@@ -863,9 +873,11 @@ function enforceTrueHingeAnchor(week, user) {
     .filter((day) => ['LowerFocus', 'Lower', 'FullBodyB'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
   const fallbackDays = days.filter((day) => ['FullBodyA'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
   for (const day of [...preferredDays, ...fallbackDays]) {
-    const baseDayType = String(day?.militaryBaseDayType || day?.dayType || '');
     const exercises = Array.isArray(day?.exercises) ? day.exercises.slice() : [];
-    const hingeIndex = exercises.findIndex(isTrueHingeName);
+    const hingeIndex = exercises
+      .map((exercise, index) => ({ exercise, index, priority: trueHingePriority(exercise) }))
+      .filter((entry) => entry.priority < 9)
+      .sort((a, b) => a.priority - b.priority || a.index - b.index)[0]?.index ?? -1;
     if (hingeIndex < 0) continue;
     exercises[hingeIndex] = normalizeAnchorExercise(exercises[hingeIndex], weekType, { preferTrueHinge: true });
     for (let i = 0; i < exercises.length; i += 1) {
