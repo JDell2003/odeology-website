@@ -56,6 +56,8 @@ Strength work stays early. Conditioning quality is not progressed by taking stre
 
 High-intensity conditioning is capped at two weekly exposures under normal recovery and one under low recovery. Zone 2 is separated from the hardest work-capacity day when the schedule has enough room.
 
+Preferred weekdays are used to spread the two hard-conditioning exposures. When users select consecutive training days, the builder chooses the widest available calendar spacing rather than blindly placing intervals and work capacity on adjacent days.
+
 Session task caps:
 
 - 30 minutes: 4 tasks
@@ -66,6 +68,8 @@ Session task caps:
 ## Constraints
 
 `equipmentAccess` is a hard filter. Sled work appears only with sled access. Loaded carries require an eligible load. Home/bodyweight plans use compatible substitutes.
+
+Custom running, carry, sled, power, and endurance tasks intentionally use generic icon fallbacks with null image paths. Existing database exercises continue using their existing media, so a custom readiness task cannot render a broken image URL.
 
 Pain and movement avoidance affect weekly structure:
 

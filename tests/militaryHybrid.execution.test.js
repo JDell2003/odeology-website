@@ -58,6 +58,38 @@ function assertMilitaryIdentity(plan) {
   assert.equal(exercises.some((exercise) => /\b(weapon|combat|tactical drill|firearm)\b/i.test(String(exercise.name || exercise.notes || ''))), false);
 }
 
+function weekdayIndex(value) {
+  const key = String(value || '').trim().toLowerCase();
+  return {
+    su: 0, sun: 0,
+    mo: 1, mon: 1,
+    tu: 2, tue: 2,
+    we: 3, wed: 3,
+    th: 4, thu: 4,
+    fr: 5, fri: 5,
+    sa: 6, sat: 6
+  }[key];
+}
+
+function hasPrioritySupport(plan, priority) {
+  const exercises = flatten(plan, true);
+  const key = String(priority || '').trim().toLowerCase();
+  return exercises.some((exercise) => {
+    const name = String(exercise.name || '').toLowerCase();
+    const primary = String(exercise.primary || exercise.muscleTarget || '').toLowerCase();
+    if (key === 'chest') return primary === 'chest' || /\b(bench|chest press|push-up)\b/.test(name);
+    if (key === 'back') return primary === 'back' || /\b(row|pulldown|pull-up|chin-up|rope climb)\b/.test(name);
+    if (key === 'legs') return primary === 'legs' || /\b(squat|leg press|lunge|step[- ]?up|leg extension)\b/.test(name);
+    if (key === 'glutes') return /\b(glute|hip thrust|bridge|deadlift|rdl|pull[- ]?through|leg curl|hamstring)\b/.test(name);
+    if (key === 'shoulders') return primary === 'shoulders' || /\b(shoulder|lateral raise|rear delt|upright row)\b/.test(name);
+    if (key === 'arms') return ['biceps', 'triceps'].includes(String(exercise.directArmType || '').toLowerCase())
+      || /\b(curl|triceps|pushdown|extension|close-grip bench)\b/.test(name);
+    if (key === 'calves') return Boolean(exercise.directCalf) || /\bcalf\b/.test(name);
+    if (key === 'core') return Boolean(exercise.directAb) || /\b(plank|crunch|pallof|side bend|twist|leg raise)\b/.test(name);
+    return false;
+  });
+}
+
 test('all military matrix cases build directly and satisfy the route validator', () => {
   for (const entry of MILITARY_HYBRID_MATRIX) {
     const plan = buildDirect(entry.payload);
@@ -135,4 +167,40 @@ test('route wrapper preserves the military lane instead of applying bodybuilding
   assert.equal(result?.error, undefined, result?.error?.reason || result?.error?.error);
   assert.equal(result.plan?.meta?.discipline, 'military');
   assert.doesNotThrow(() => trainingRoutes._private.assertMilitaryHybridPlanByEngine(result.plan));
+});
+
+test('poor preferred-day spacing keeps hard conditioning separated when possible', () => {
+  const plan = buildDirect(basePayload({
+    preferredDays: ['Mo', 'Tu', 'We', 'Th'],
+    planSeed: 6106
+  }));
+  const firstWeek = plan.weeks[0];
+  const hardDays = firstWeek.days
+    .filter((day) => day.exercises.some((exercise) => exercise.hardConditioning))
+    .map((day, index) => plan.schedule[firstWeek.days.indexOf(day)]?.day || index);
+  assert.equal(hardDays.length, 2);
+  const [left, right] = hardDays.map(weekdayIndex);
+  assert.ok(Number.isInteger(left) && Number.isInteger(right));
+  assert.ok(Math.abs(left - right) >= 2, `hard conditioning remained back-to-back: ${hardDays.join(', ')}`);
+});
+
+test('custom readiness tasks always have a safe icon fallback instead of a broken image', () => {
+  const plan = buildDirect(basePayload({ planSeed: 6107 }));
+  const customTasks = flatten(plan, true).filter((exercise) => exercise.taskType === 'military_readiness');
+  assert.ok(customTasks.length > 0);
+  for (const exercise of customTasks) {
+    assert.equal(exercise.mediaPath, null);
+    assert.equal(exercise.mediaPathAlt, null);
+    assert.ok(String(exercise.mediaIcon || '').trim(), `${exercise.name} is missing its icon fallback`);
+  }
+});
+
+test('every shared priority group remains visible in Military output', () => {
+  const priorityCases = MILITARY_HYBRID_MATRIX.filter((entry) => /priority/.test(entry.title));
+  assert.ok(priorityCases.length >= 8);
+  for (const entry of priorityCases) {
+    const selectedPriority = entry.payload.priorityGroups[0];
+    const plan = buildDirect(entry.payload);
+    assert.ok(hasPrioritySupport(plan, selectedPriority), `${entry.title}: ${selectedPriority} support disappeared`);
+  }
 });

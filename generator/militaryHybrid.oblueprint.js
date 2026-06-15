@@ -1,4 +1,13 @@
 const WEEKDAY_DEFAULT_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const WEEKDAY_INDEX = new Map([
+  ['su', 0], ['sun', 0], ['sunday', 0],
+  ['mo', 1], ['mon', 1], ['monday', 1],
+  ['tu', 2], ['tue', 2], ['tuesday', 2],
+  ['we', 3], ['wed', 3], ['wednesday', 3],
+  ['th', 4], ['thu', 4], ['thursday', 4],
+  ['fr', 5], ['fri', 5], ['friday', 5],
+  ['sa', 6], ['sat', 6], ['saturday', 6]
+]);
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
@@ -580,6 +589,55 @@ function orderMilitaryDay(exercises) {
   });
 }
 
+function weekdayIndex(value, fallback) {
+  const key = normalizeText(value);
+  return WEEKDAY_INDEX.has(key) ? WEEKDAY_INDEX.get(key) : fallback;
+}
+
+function cyclicDayDistance(a, b) {
+  const distance = Math.abs(Number(a) - Number(b));
+  return Math.min(distance, 7 - distance);
+}
+
+function chooseHardConditioningIndexes(user, dayCount, count) {
+  if (count <= 0 || dayCount <= 0) return [];
+  if (count === 1 || dayCount < 4) return [0];
+  const preferred = Array.isArray(user?.preferredDays) && user.preferredDays.length === dayCount
+    ? user.preferredDays
+    : WEEKDAY_DEFAULT_ORDER.slice(0, dayCount);
+  const indexed = preferred.map((day, index) => ({
+    index,
+    weekday: weekdayIndex(day, index + 1)
+  }));
+  let best = [0, dayCount - 1];
+  let bestScore = -1;
+  for (let left = 0; left < indexed.length; left += 1) {
+    for (let right = left + 1; right < indexed.length; right += 1) {
+      const distance = cyclicDayDistance(indexed[left].weekday, indexed[right].weekday);
+      const sessionSpread = right - left;
+      const score = (distance * 10) + sessionSpread;
+      if (score > bestScore) {
+        bestScore = score;
+        best = [indexed[left].index, indexed[right].index];
+      }
+    }
+  }
+  return best;
+}
+
+function chooseAerobicIndexes(dayCount, hardIndexes, target) {
+  const blocked = new Set(hardIndexes);
+  const candidates = Array.from({ length: dayCount }, (_, index) => index)
+    .filter((index) => !blocked.has(index));
+  const selected = [];
+  while (selected.length < target && candidates.length) {
+    const next = candidates.shift();
+    selected.push(next);
+    if (candidates.length > 1) candidates.push(candidates.shift());
+  }
+  return selected;
+}
+
 function militaryExerciseFamily(exercise) {
   const name = normalizeText(exercise?.name);
   if (/\b(pulldown|pull-up|pull up|chin-up|chin up|rope climb)\b/.test(name)) return 'vertical_pull';
@@ -651,13 +709,15 @@ function buildWeeklyTaskAssignments(user, weekIndex, dayCount) {
     if (!item || index < 0 || index >= assignments.length) return;
     assignments[index].push(item);
   };
+  const hardIndexes = chooseHardConditioningIndexes(user, dayCount, profile.hardConditioningCap);
+  const aerobicIndexes = chooseAerobicIndexes(dayCount, hardIndexes, profile.zone2Target);
   add(0, powerTask(user, weekIndex));
-  if (dayCount >= 2) add(dayCount >= 4 ? 1 : dayCount - 1, zone2Task(user, weekIndex, 1));
+  if (dayCount >= 2) add(aerobicIndexes[0] ?? dayCount - 1, zone2Task(user, weekIndex, 1));
   if (dayCount >= 3) add(1, plankTask(weekIndex));
   if (dayCount >= 4) add(2, pushupTask(user, weekIndex));
-  if (profile.hardConditioningCap >= 1) add(Math.min(dayCount - 1, dayCount >= 4 ? 2 : 0), intervalTask(user, weekIndex));
-  if (profile.hardConditioningCap >= 2 && dayCount >= 4) add(dayCount - 1, workCapacityTask(user, weekIndex));
-  if (profile.zone2Target >= 2 && dayCount >= 5) add(Math.max(0, dayCount - 2), zone2Task(user, weekIndex, 2));
+  if (profile.hardConditioningCap >= 1) add(hardIndexes[0] ?? 0, intervalTask(user, weekIndex));
+  if (profile.hardConditioningCap >= 2 && dayCount >= 4) add(hardIndexes[1] ?? dayCount - 1, workCapacityTask(user, weekIndex));
+  if (profile.zone2Target >= 2 && dayCount >= 5) add(aerobicIndexes[1] ?? Math.max(0, dayCount - 2), zone2Task(user, weekIndex, 2));
 
   if (String(user?.sessionLengthMin || '') === '30') {
     return assignments.map((items) => items.slice(0, 2));
@@ -742,6 +802,8 @@ function finalizeMilitaryPlan(plan, user) {
         identity: 'ACFT-style readiness, strength, running, work capacity, bodyweight endurance, power, and targeted hypertrophy',
         recoveryTier: profile.recoveryTier,
         hardConditioningCap: profile.hardConditioningCap,
+        hardConditioningDays: chooseHardConditioningIndexes(user, Number(user?.daysPerWeek || schedule.length), profile.hardConditioningCap)
+          .map((index) => schedule[index]?.day || user?.preferredDays?.[index] || WEEKDAY_DEFAULT_ORDER[index]),
         zone2Target: profile.zone2Target,
         runningBlocked: profile.runningBlocked,
         impactRestricted: profile.impactRestricted,

@@ -6,11 +6,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -19,9 +20,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Leverage High Row | Compound | 3 | 6-12 | 2-4 |
 | Wide-Grip Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
-| Cable Bench Reverse Crunch | Isolation | 2 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -32,7 +33,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -41,18 +42,18 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | V-Bar Pulldown | Compound | 3 | 6-12 | 2-4 |
 | One-Arm High-Pulley Cable Side Bends | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Barbell Hip Thrust | Compound | 3 | 4-6 | 2-3 |
 | Smith Machine Leg Press | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
+| Glute Ham Raise | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Standing Barbell Calf Raise | Isolation | 2 | 10-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
 **Manual audit:** Clear strength, power, intervals, work-capacity, and aerobic identity. Pulling selection remains database-dependent but family caps prevent spam.
 
@@ -62,11 +63,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 2 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Tu, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 1 on Tu; Zone 2 exposures 1
 
-###  - Strength + Intervals
+### Tu - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -77,7 +79,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Sa - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -96,11 +98,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 3 days, 60-minute sessions, <6m, priorities Legs, Back, Core
+- **Preferred days:** Mo, We, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 1 on Mo; Zone 2 exposures 1
 
-###  - Strength + Intervals
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -111,18 +114,18 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - LowerFocus
+### We - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Trap Bar Deadlift | Compound | 3 | 4-6 | 2-3 |
 | Dumbbell Squat | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
-| Seated Leg Curl | Isolation | 2 | 10-20 | 2-4 |
 | Standing Barbell Calf Raise | Isolation | 3 | 10-20 | 2-4 |
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
+| Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Zone 2
+### Sa - FullBodyB
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -131,7 +134,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Full Range-Of-Motion Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
 | Leverage Incline Chest Press | Compound | 4 | 6-12 | 2-4 |
 | Pallof Press | Isolation | 2 | 8-20 | 2-4 |
-| Zone 2 Run | Aerobic base | 1 | - | - |
+| Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 
 **Manual audit:** Beginner structure is direct and conservative. Exercise complexity remains bounded by the shared eligible pool.
 
@@ -141,11 +144,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 5 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Fr, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 2
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Fr; Zone 2 exposures 2
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -154,9 +158,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Close-Grip Front Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | V-Bar Pulldown | Compound | 3 | 6-12 | 2-4 |
-| Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -167,7 +171,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -175,10 +179,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Cable Row | Compound | 3 | 6-12 | 2-4 |
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Cable Oblique Crunch | Isolation | 2 | 8-20 | 2-4 |
+| Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Fr - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -187,9 +191,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Hack Squat | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
-| Zone 2 Run | Aerobic base | 1 | - | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -198,7 +202,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Seated Leg Curl | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
+| Zone 2 Run | Aerobic base | 1 | - | - |
 
 **Manual audit:** Good distribution across five days with separate aerobic and work-capacity exposures.
 
@@ -208,11 +212,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 6 days, 60-minute sessions, 5y+, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, We, Fr, Sa, Su
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 8; stress Low
-- **Recovery tier:** high; hard conditioning 2; Zone 2 exposures 2
+- **Recovery tier:** high; hard conditioning 2 on Mo, Fr; Zone 2 exposures 2
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -221,9 +226,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 2 | 6-12 | 2-4 |
 | Elevated Cable Rows | Compound | 3 | 6-12 | 2-4 |
 | Wide-Grip Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
-| Underhand Cable Pulldowns | Compound | 3 | 6-12 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -234,7 +239,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### We - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -242,10 +247,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Seated Cable Rows | Compound | 2 | 6-12 | 2-4 |
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Elevated Cable Rows | Compound | 3 | 6-12 | 2-4 |
+| Calf-Machine Shoulder Shrug | Isolation | 3 | 10-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - FullBodyA
+### Fr - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -253,10 +258,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Seated Cable Rows | Compound | 4 | 6-12 | 2-4 |
 | Narrow Stance Leg Press | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
-| One-Legged Cable Kickback | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Strength + Zone 2
+### Sa - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -267,7 +272,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Work Capacity
+### Su - DeltsArms
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -276,7 +281,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Seated Barbell Twist | Isolation | 2 | 8-20 | 2-4 |
 | Reverse Flyes | Isolation | 2 | 10-20 | 2-4 |
 | Machine Preacher Curls | Isolation | 2 | 10-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
+| Seated Bent-Over Two-Arm Dumbbell Triceps Extension | Isolation | 2 | 10-20 | 2-4 |
 
 **Manual audit:** Advanced frequency is plausible and avoids adding a third hard-conditioning exposure.
 
@@ -286,11 +291,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 3 days, 30-minute sessions, <6m, priorities Legs, Back, Core
+- **Preferred days:** Mo, We, Sa
 - **Equipment:** Bodyweight, Dumbbells, Bench
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 1 on Mo; Zone 2 exposures 1
 
-###  - Strength + Intervals
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -299,23 +305,23 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Dumbbell Incline Row | Compound | 3 | 6-12 | 2-4 |
 | Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - LowerFocus
+### We - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Dumbbell Squat | Compound | 3 | 6-12 | 2-4 |
-| Split Squat with Dumbbells | Compound | 3 | 6-12 | 2-4 |
 | Glute Bridge | Safe posterior-chain support | 3 | 10-15 | 2-3 |
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
+| Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Zone 2
+### Sa - FullBodyB
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Step-up with Knee Raise | Compound | 3 | 6-12 | 2-4 |
 | Single-Leg High Box Squat | Compound | 3 | 6-12 | 2-4 |
+| Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Glute Bridge | Safe posterior-chain support | 3 | 10-15 | 2-3 |
-| Zone 2 Run | Aerobic base | 1 | - | - |
 
 **Manual audit:** Four-task cap is respected with home-compatible exercises and no cable, machine, barbell, or sled leak.
 
@@ -325,11 +331,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 45-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -337,9 +344,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Broad Jump Practice | Explosive power | 4 | 3 | - |
 | Leverage High Row | Compound | 3 | 6-12 | 2-4 |
 | Wide-Grip Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
-| Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -349,7 +356,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -357,9 +364,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | V-Bar Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -367,7 +374,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Smith Machine Leg Press | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Pallof Press | Isolation | 2 | 8-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
+| Standing Barbell Calf Raise | Isolation | 2 | 10-20 | 2-4 |
 
 **Manual audit:** Five-task cap keeps the sessions useful without late trimming bloat.
 
@@ -377,11 +384,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 75+-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -392,9 +400,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Rope Climb | Compound | 4 | 6-12 | 2-4 |
 | Cable Crunch | Isolation | 2 | 8-20 | 2-4 |
 | Cable Oblique Crunch | Isolation | 2 | 8-20 | 2-4 |
-| Cable Seated Lateral Raise | Isolation | 3 | 10-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -407,7 +415,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -418,9 +426,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Machine Bicep Curl | Isolation | 3 | 10-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -431,7 +439,6 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Glute Ham Raise | Isolation | 2 | 10-20 | 2-4 |
 | Leg Extensions | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
 **Manual audit:** Eight-task ceiling is used for a longer session while pattern-family caps control redundancy.
 
@@ -441,11 +448,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -454,9 +462,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Leverage High Row | Compound | 3 | 6-12 | 2-4 |
 | Wide-Grip Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
-| One-Arm High-Pulley Cable Side Bends | Isolation | 2 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -467,7 +475,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -476,18 +484,18 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | V-Bar Pulldown | Compound | 3 | 6-12 | 2-4 |
 | One-Arm High-Pulley Cable Side Bends | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Shuttle + Loaded Carry Circuit | Sprint-drag-carry qualities | 4 | 4 x 20 m shuttle + 30 m loaded carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Barbell Hip Thrust | Compound | 3 | 4-6 | 2-3 |
 | Smith Machine Leg Press | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
+| Glute Ham Raise | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Standing Barbell Calf Raise | Isolation | 2 | 10-20 | 2-4 |
-| Shuttle + Loaded Carry Circuit | Sprint-drag-carry qualities | 4 | 4 x 20 m shuttle + 30 m loaded carry | - |
 
 **Manual audit:** Loaded carry replaces sled work and remains within available equipment.
 
@@ -497,11 +505,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid running; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Power
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -510,9 +519,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Close-Grip Front Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Rope Climb | Compound | 4 | 6-12 | 2-4 |
-| Barbell Side Bend | Isolation | 2 | 8-20 | 2-4 |
+| Low-Impact Conditioning Intervals | Work capacity | 6 | 30 sec hard / 90 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -523,7 +532,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Low-Impact Zone 2 Cardio | Aerobic base | 1 | - | - |
 
-###  - Upper + Calisthenics
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -532,9 +541,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Underhand Cable Pulldowns | Compound | 3 | 6-12 | 2-4 |
 | Cable Crunch | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Low-Impact Conditioning Intervals | Work capacity | 6 | 30 sec hard / 90 sec easy | - |
+| Carry + Bodyweight Work-Capacity Circuit | Sprint-drag-carry qualities | 4 | 20 m carry + 8 controlled step-ups + 20 sec plank | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -542,8 +551,8 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Leg Press | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Glute Ham Raise | Isolation | 2 | 10-20 | 2-4 |
+| Leg Extensions | Isolation | 2 | 10-20 | 2-4 |
 | Pallof Press | Isolation | 2 | 8-20 | 2-4 |
-| Carry + Bodyweight Work-Capacity Circuit | Sprint-drag-carry qualities | 4 | 20 m carry + 8 controlled step-ups + 20 sec plank | - |
 
 **Manual audit:** Running is replaced by low-impact intervals, low-impact Zone 2, and non-running work capacity.
 
@@ -553,11 +562,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid deadlift; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -566,9 +576,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Underhand Cable Pulldowns | Compound | 3 | 6-12 | 2-4 |
 | Close-Grip Front Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
-| Cable Crunch | Isolation | 2 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -579,7 +589,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -588,18 +598,18 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Rope Climb | Compound | 3 | 6-12 | 2-4 |
 | Barbell Side Bend | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
 | Hack Squat | Compound | 3 | 4-6 | 2-3 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Seated Leg Curl | Isolation | 2 | 10-20 | 2-4 |
+| Leg Extensions | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
 | Smith Machine Calf Raise | Isolation | 2 | 10-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
 **Manual audit:** Deadlift-family work is removed while glute/hamstring support remains.
 
@@ -609,11 +619,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 5; stress High
-- **Recovery tier:** low; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** low; hard conditioning 1 on Mo; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -622,9 +633,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Elevated Cable Rows | Compound | 3 | 6-12 | 2-4 |
 | Full Range-Of-Motion Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | V-Bar Pulldown | Compound | 4 | 6-12 | 2-4 |
-| Dumbbell Side Bend | Isolation | 1 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 4 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -635,7 +646,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -643,10 +654,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Cable Row | Compound | 3 | 6-12 | 2-4 |
 | Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Barbell Side Bend | Isolation | 1 | 8-20 | 2-4 |
+| Cable Pallof Hold | Isolation | 1 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 4 | 60 sec hard / 120 sec easy | - |
 
-###  - Lower
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -665,11 +676,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain Back; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 1
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -678,9 +690,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Underhand Cable Pulldowns | Compound | 3 | 6-12 | 2-4 |
 | Close-Grip Front Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
-| Cable Bench Reverse Crunch | Isolation | 2 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -691,7 +703,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -700,9 +712,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Rope Climb | Compound | 3 | 6-12 | 2-4 |
 | One-Arm High-Pulley Cable Side Bends | Isolation | 2 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -710,8 +722,8 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Barbell Hack Squat | Compound | 3 | 6-12 | 2-4 |
 | Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
 | Glute Ham Raise | Isolation | 2 | 10-20 | 2-4 |
+| Leg Extensions | Isolation | 2 | 10-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
 **Manual audit:** No forced deadlift-family anchor; safe posterior-chain work preserves the training effect.
 
@@ -721,11 +733,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain Knee; sleep 7; stress Medium
-- **Recovery tier:** low; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** low; hard conditioning 1 on Mo; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Power
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -734,9 +747,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 2 | 6-12 | 2-4 |
 | Elevated Cable Rows | Compound | 3 | 6-12 | 2-4 |
 | Full Range-Of-Motion Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
-| V-Bar Pulldown | Compound | 4 | 6-12 | 2-4 |
+| Low-Impact Conditioning Intervals | Work capacity | 5 | 30 sec hard / 90 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -747,7 +760,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Low-Impact Zone 2 Cardio | Aerobic base | 1 | - | - |
 
-###  - Upper + Calisthenics
+### Th - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -755,10 +768,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Leverage High Row | Compound | 3 | 6-12 | 2-4 |
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Cable Crunch | Isolation | 1 | 8-20 | 2-4 |
+| Seated Barbell Twist | Isolation | 1 | 8-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Low-Impact Conditioning Intervals | Work capacity | 5 | 30 sec hard / 90 sec easy | - |
 
-###  - Lower
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -777,11 +790,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, Th, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain Shoulder; sleep 7; stress Medium
-- **Recovery tier:** low; hard conditioning 1; Zone 2 exposures 1
+- **Recovery tier:** low; hard conditioning 1 on Mo; Zone 2 exposures 1
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -790,9 +804,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Full Range-Of-Motion Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
-| One-Arm High-Pulley Cable Side Bends | Isolation | 1 | 8-20 | 2-4 |
+| Run Intervals | Running speed endurance | 4 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -803,7 +817,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -811,10 +825,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
 | Close-Grip Front Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
 | Cable Crunch | Isolation | 1 | 8-20 | 2-4 |
+| Cable Oblique Crunch | Isolation | 1 | 8-20 | 2-4 |
 | Pain-Free Upper-Body Endurance | Bodyweight endurance | 3 | Submaximal technical sets | - |
-| Run Intervals | Running speed endurance | 4 | 60 sec hard / 120 sec easy | - |
 
-###  - Lower
+### Sa - Lower
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -833,11 +847,12 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 
 - **Source:** direct
 - **Input:** 5 days, 60-minute sessions, 6-24m, priorities Calves, Core, Shoulders
+- **Preferred days:** Mo, Tu, Th, Fr, Sa
 - **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
 - **Constraints:** avoid ; pain ; sleep 7; stress Medium
-- **Recovery tier:** normal; hard conditioning 2; Zone 2 exposures 2
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Fr; Zone 2 exposures 2
 
-###  - Strength + Power
+### Mo - Strength + Intervals
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -846,9 +861,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Leverage Shoulder Press | Compound | 3 | 6-12 | 2-4 |
 | Seated Cable Rows | Compound | 2 | 6-12 | 2-4 |
 | Elevated Cable Rows | Compound | 2 | 6-12 | 2-4 |
-| Full Range-Of-Motion Lat Pulldown | Compound | 2 | 6-12 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Tu - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -859,7 +874,7 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Plank Endurance | Core endurance | 3 | 30-60 sec | - |
 | Zone 2 Run | Aerobic base | 1 | - | - |
 
-###  - Strength + Intervals
+### Th - Upper + Calisthenics
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -867,10 +882,10 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Elevated Cable Rows | Compound | 2 | 6-12 | 2-4 |
 | Seated Barbell Twist | Isolation | 2 | 8-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
+| Reverse Flyes With External Rotation | Isolation | 2 | 10-20 | 2-4 |
 | Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
-| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
 
-###  - Strength + Zone 2
+### Fr - Work Capacity
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -879,9 +894,9 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Rocking Standing Calf Raise | Isolation | 2 | 10-20 | 2-4 |
 | Dumbbell Side Bend | Isolation | 2 | 8-20 | 2-4 |
 | Seated Bent-Over Rear Delt Raise | Isolation | 3 | 10-20 | 2-4 |
-| Zone 2 Run | Aerobic base | 1 | - | - |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
 
-###  - Work Capacity
+### Sa - Strength + Zone 2
 
 | Exercise | Role | Sets | Reps | RIR |
 |---|---|---:|---|---|
@@ -890,16 +905,74 @@ Generated from the real direct Oblueprint builder. No sample uses fallback. Rati
 | Calf Press On The Leg Press Machine | Isolation | 2 | 10-20 | 2-4 |
 | Cable Bench Reverse Crunch | Isolation | 2 | 8-20 | 2-4 |
 | Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
-| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
+| Zone 2 Run | Aerobic base | 1 | - | - |
 
 **Manual audit:** Calves and core remain visible while shoulder work is distributed instead of becoming press spam.
 
 **Rating:** 8.9/10 - PASS
 
+## 17. Consecutive preferred days
+
+- **Source:** direct
+- **Input:** 4 days, 60-minute sessions, 6-24m, priorities Legs, Back, Core
+- **Preferred days:** Mo, Tu, We, Th
+- **Equipment:** Barbell, Dumbbells, Bench, Cable, Machines, Sled
+- **Constraints:** avoid ; pain ; sleep 7; stress Medium
+- **Recovery tier:** normal; hard conditioning 2 on Mo, Th; Zone 2 exposures 1
+
+### Mo - Strength + Intervals
+
+| Exercise | Role | Sets | Reps | RIR |
+|---|---|---:|---|---|
+| Leverage Decline Chest Press | Compound | 4 | 4-6 | 2-3 |
+| Broad Jump Practice | Explosive power | 4 | 3 | - |
+| Chest-Supported Row | Compound | 3 | 6-12 | 2-4 |
+| Underhand Cable Pulldowns | Compound | 3 | 6-12 | 2-4 |
+| Close-Grip Front Lat Pulldown | Compound | 4 | 6-12 | 2-4 |
+| Run Intervals | Running speed endurance | 6 | 60 sec hard / 120 sec easy | - |
+
+### Tu - Strength + Zone 2
+
+| Exercise | Role | Sets | Reps | RIR |
+|---|---|---:|---|---|
+| Barbell Glute Bridge | Compound | 3 | 4-6 | 2-3 |
+| Barbell Hack Squat | Compound | 3 | 6-12 | 2-4 |
+| Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
+| Standing Dumbbell Calf Raise | Isolation | 3 | 10-20 | 2-4 |
+| Plank Endurance | Core endurance | 3 | 30-60 sec | - |
+| Zone 2 Run | Aerobic base | 1 | - | - |
+
+### We - Upper + Calisthenics
+
+| Exercise | Role | Sets | Reps | RIR |
+|---|---|---:|---|---|
+| Leverage Incline Chest Press | Compound | 2 | 4-6 | 2-3 |
+| Seated Cable Rows | Compound | 3 | 6-12 | 2-4 |
+| Full Range-Of-Motion Lat Pulldown | Compound | 3 | 6-12 | 2-4 |
+| Dumbbell Side Bend | Isolation | 2 | 8-20 | 2-4 |
+| Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
+| Push-Up Endurance | Bodyweight endurance | 3 | AMRAP leaving 2 reps in reserve | - |
+
+### Th - Work Capacity
+
+| Exercise | Role | Sets | Reps | RIR |
+|---|---|---:|---|---|
+| Romanian Deadlift from Deficit | Compound | 3 | 4-6 | 2-3 |
+| Hack Squat | Compound | 3 | 6-12 | 2-4 |
+| Barbell Step Ups | Compound | 3 | 6-12 | 2-4 |
+| Cable Pallof Hold | Isolation | 2 | 8-20 | 2-4 |
+| Smith Machine Calf Raise | Isolation | 2 | 10-20 | 2-4 |
+| Sprint-Drag-Carry Circuit | Sprint-drag-carry qualities | 4 | 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry | - |
+
+**Manual audit:** Four consecutive preferred days are respected, but intervals and work capacity are placed on Monday and Thursday rather than back-to-back.
+
+**Rating:** 9.2/10 - PASS
+
 ## Overall Assessment
 
-- All 16 plans came from the direct Military builder.
+- All 17 plans came from the direct Military builder.
 - All include strength, readiness conditioning, aerobic work, and hypertrophy support.
-- Session caps, equipment restrictions, pain changes, running/deadlift avoidance, and recovery caps are visible in the output.
+- Session caps, equipment restrictions, pain changes, running/deadlift avoidance, recovery caps, and poor-day-spacing behavior are visible in the output.
+- Custom readiness tasks use generic icon fallbacks and null image paths, preventing broken custom-task images.
 - No combat, weapons, or tactical content is generated.
 - Residual limitation: exact exercise naming still depends on the shared exercise database, so some eligible variations are less familiar than a coach might choose manually. Family caps and constraint filters prevent this from becoming structural spam.
