@@ -12,6 +12,7 @@ const {
   matchesGlutesLegsCoreDebugCombo
 } = require('../js/training-debug-combo');
 const powerbuildingPriority = require('./powerbuildingPriority.oblueprint');
+const militaryHybrid = require('./militaryHybrid.oblueprint');
 
 const STYLE_ENUM = new Set(['Compound', 'Isolation', 'Mobility', 'Skill', 'Cardio', 'Power', 'Plyo']);
 const PATTERN_ENUM = new Set([
@@ -1623,9 +1624,23 @@ function resolveCurrentLowerDayStructuralResult(day) {
 }
 
 function getPowerbuildingPatternBlockProfile(user) {
+  if (String(user?.discipline || '') === 'military' && user?.profile?.military) {
+    const military = user.profile.military;
+    return {
+      militaryMode: true,
+      avoidBenchPattern: Boolean(military.pushupRestricted),
+      avoidDeadliftPattern: Boolean(military.hingeBlocked),
+      avoidSquatPattern: Boolean(military.squatBlocked),
+      barbellUnavailable: !(Array.isArray(user?.allowedEquipment) && user.allowedEquipment.includes('barbell')),
+      lowRecovery: String(military.recoveryTier || '') === 'low',
+      severeBackOrHipPain: Math.max(Number(user?.injuryMap?.spine || 0), Number(user?.injuryMap?.back || 0), Number(user?.injuryMap?.hip || 0)) >= 6,
+      severeKneePain: Number(user?.injuryMap?.knee || 0) >= 6
+    };
+  }
   const pb = user?.profile?.powerbuilding || null;
   if (String(user?.discipline || '') !== 'powerbuilding' || !pb) return null;
   return {
+    militaryMode: false,
     avoidBenchPattern: Boolean(pb.avoidBenchPattern),
     avoidDeadliftPattern: Boolean(pb.avoidDeadliftPattern),
     avoidSquatPattern: Boolean(pb.avoidSquatPattern),
@@ -1647,7 +1662,7 @@ function allowPowerbuildingNonSquatLower(dayType, user) {
   const profile = getPowerbuildingPatternBlockProfile(user);
   if (!profile) return false;
   return ['Lower', 'LowerFocus', 'FullBodyB'].includes(String(dayType || ''))
-    && (profile.avoidSquatPattern || profile.severeKneePain);
+    && (profile.militaryMode || profile.avoidSquatPattern || profile.severeKneePain);
 }
 
 function buildLowerBodyRepairLoopLimitError(user, meta = {}) {
@@ -2049,6 +2064,7 @@ function preprocessExercises(exercises) {
 function resolveDiscipline(trainingFeel) {
   if (trainingFeel === 'Aesthetic bodybuilding') return 'bodybuilding';
   if (trainingFeel === 'Powerbuilding') return 'powerbuilding';
+  if (trainingFeel === 'Military Hybrid') return 'military';
   return null;
 }
 
@@ -2294,6 +2310,9 @@ function deriveUserProfile(user) {
   if (String(user?.discipline || '') === 'powerbuilding') {
     profile.powerbuilding = powerbuildingPriority.buildPowerbuildingProfile({ ...user, profile });
   }
+  if (String(user?.discipline || '') === 'military') {
+    profile.military = militaryHybrid.buildMilitaryProfile({ ...user, profile });
+  }
   return profile;
 }
 
@@ -2517,6 +2536,9 @@ function scaleTargets(baseTargets, weekType, blockLength, weekIndex) {
 function buildSplit(user, forceUpperLower = false) {
   if (String(user?.discipline || '') === 'powerbuilding') {
     return powerbuildingPriority.buildPowerbuildingSplit(user);
+  }
+  if (String(user?.discipline || '') === 'military') {
+    return militaryHybrid.buildMilitarySplit(user);
   }
   const d = user.daysPerWeek;
   const profile = user?.profile || deriveUserProfile(user);
@@ -2805,6 +2827,11 @@ function buildDayBlueprint(dayType, user, weekType, opts = {}) {
 
   if (user.discipline === 'powerbuilding') {
     const nextSlots = powerbuildingPriority.applyPowerbuildingBlueprint(dayType, user, slots, makeSlot);
+    slots.length = 0;
+    slots.push(...nextSlots);
+  }
+  if (user.discipline === 'military') {
+    const nextSlots = militaryHybrid.applyMilitaryBlueprint(dayType, user, slots, makeSlot);
     slots.length = 0;
     slots.push(...nextSlots);
   }
@@ -3477,8 +3504,12 @@ function repsRestByExercise(ex, weekType, user, slotId) {
   const pbOverride = user.discipline === 'powerbuilding'
     ? powerbuildingPriority.repOverride(slotId, weekType)
     : null;
+  const militaryOverride = user.discipline === 'military'
+    ? militaryHybrid.repOverride(slotId, weekType)
+    : null;
   if (weekType === 'deload') return { reps: isCompound ? '6-10' : '10-15', restSec: isCompound ? 150 : 75, rir: '3-4' };
   if (pbOverride) return pbOverride;
+  if (militaryOverride) return militaryOverride;
   if (isCorePattern) return { reps: weekType === 'intensification' ? '8-15' : '8-20', restSec: 60 };
   if (isCompound) return { reps: weekType === 'intensification' ? '6-10' : '6-12', restSec: weekType === 'intensification' ? 150 : 120 };
   return { reps: weekType === 'intensification' ? '10-15' : '10-20', restSec: 75 };
@@ -3488,6 +3519,10 @@ function rirForExercise(ex, user, weekType, slotId = '') {
   if (user.outputStyle === 'Simple sets x reps') return null;
   if (user.discipline === 'powerbuilding') {
     const override = powerbuildingPriority.rirOverride(ex, user, weekType, slotId);
+    if (override) return override;
+  }
+  if (user.discipline === 'military') {
+    const override = militaryHybrid.rirOverride(user, weekType, slotId);
     if (override) return override;
   }
   if (weekType === 'deload') return '3-4';
@@ -3503,6 +3538,10 @@ function rirForExercise(ex, user, weekType, slotId = '') {
 function progressionRuleForExercise(ex, user) {
   if (user.discipline === 'powerbuilding' && ex?.slotId) {
     const override = powerbuildingPriority.progressionRuleOverride(ex, user, ex.slotId);
+    if (override) return override;
+  }
+  if (user.discipline === 'military' && ex?.slotId) {
+    const override = militaryHybrid.progressionRuleOverride(ex.slotId);
     if (override) return override;
   }
   if (user.discipline === 'powerbuilding' && ex.style === 'Compound') {
@@ -6971,6 +7010,7 @@ function reinforceLowFrequencyPriorityAccessories(weeks, user, exercises) {
   if (!needCalves && !needCore) return weeks;
   const targetCalfDays = Math.min(2, Number(user?.daysPerWeek || 0));
   const targetCoreDays = needCore ? Math.min(2, Number(user?.daysPerWeek || 0)) : 0;
+  const priorities = new Set((user?.priorityGroups || []).map((value) => String(value || '')));
   return weeks.map((week) => {
     const days = Array.isArray(week?.days) ? week.days.map((day) => ({ ...day, exercises: Array.isArray(day?.exercises) ? day.exercises.slice() : [] })) : [];
     let calfDays = days.filter((day) => day.exercises.some((ex) => /\bcalf\b/.test(normalizeName(ex?.name)))).length;
@@ -12703,6 +12743,18 @@ function buildOblueprintPlan(input, opts = {}) {
           };
         })
       }));
+    }
+    if (user?.discipline === 'military') {
+      const militaryPlan = militaryHybrid.finalizeMilitaryPlan(plan, user);
+      if (opts?.fastBuild) {
+        militaryPlan.meta = militaryPlan.meta && typeof militaryPlan.meta === 'object' ? militaryPlan.meta : {};
+        militaryPlan.meta.plannerStages = militaryPlan.meta.plannerStages && typeof militaryPlan.meta.plannerStages === 'object'
+          ? militaryPlan.meta.plannerStages
+          : {};
+        militaryPlan.meta.plannerStages.eliteGradingLayer = false;
+        militaryPlan.meta.fastBuild = true;
+      }
+      return militaryPlan;
     }
     if (opts?.fastBuild) {
       plan.meta = plan.meta && typeof plan.meta === 'object' ? plan.meta : {};

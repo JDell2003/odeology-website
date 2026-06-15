@@ -68,11 +68,11 @@ test('powerbuilding keeps the shared priority groups mapping', () => {
 
 test('frontend source wires shared payload fields for powerbuilding and bodybuilding', () => {
   const src = readTrainingSource();
-  assert.match(src, /if \(normalizedDiscipline === 'bodybuilding' \|\| normalizedDiscipline === 'powerbuilding'\)/);
+  assert.match(src, /if \(normalizedDiscipline === 'bodybuilding' \|\| normalizedDiscipline === 'powerbuilding' \|\| normalizedDiscipline === 'military'\)/);
   assert.match(src, /trainingFeel,\s*discipline: normalizedDiscipline,/);
-  assert.match(src, /focus: normalizedDiscipline === 'powerbuilding' \? 'Strength' : 'Aesthetic'/);
+  assert.match(src, /focus: normalizedDiscipline === 'bodybuilding' \? 'Aesthetic' : 'Strength'/);
   assert.match(src, /priorityGroups: mapWizardEmphasisToPriorityGroups\(emphasis\)/);
-  assert.match(src, /const discipline = disciplineRaw === 'powerbuilding'/);
+  assert.match(src, /disciplineRaw === 'powerbuilding' \|\| trainingFeel === 'Powerbuilding'/);
   assert.match(src, /trainingFeel === 'Powerbuilding'/);
   assert.match(src, /benchVariation: String\(normalizedStrength\.benchVariation \|\| normalizedStrength\.pressMovement \|\| ''\)/);
   assert.match(src, /benchWeight: Number\(normalizedStrength\.benchWeight \|\| normalizedStrength\.pressWeight \|\| 0\) \|\| null/);
@@ -84,7 +84,7 @@ test('frontend source keeps unready lanes disabled and enables powerbuilding lan
   const src = readTrainingSource();
   assert.match(src, /key:\s*'powerbuilding',\s*title:\s*'Powerbuilding'/);
   assert.match(src, /Build strength on key lifts while adding muscle\./);
-  assert.match(src, /const isDisabled = !\['bodybuilding', 'powerbuilding'\]\.includes\(opt\.key\)/);
+  assert.match(src, /const isDisabled = !\['bodybuilding', 'powerbuilding', 'military'\]\.includes\(opt\.key\)/);
   assert.match(src, /key:\s*'powerlifting'/);
   assert.match(src, /key:\s*'calisthenics'/);
 });
@@ -93,7 +93,7 @@ test('legacy training entry point keeps powerbuilding in the modal wizard and ke
   const src = readLegacyTrainingSource();
   assert.match(src, /Powerbuilding = Strength and Proportion',v:'strength'\}/);
   assert.doesNotMatch(src, /Powerbuilding = Strength and Proportion',v:'strength',soon:true/);
-  assert.match(src, /Military = Endurance \+ strength',v:'size',soon:true/);
+  assert.match(src, /Military = Endurance \+ Strength',v:'military'/);
   assert.match(src, /if\(startTop\)startTop\.addEventListener\('click',openIntake\)/);
   assert.match(src, /if\(startParam==='1'\|\|startParam==='true'\) openIntake\(\)/);
   assert.match(src, /if\(v==='strength'\)\{\s*S\.modality='powerbuilding';\s*S\.discipline='powerbuilding';\s*\}else\{/);

@@ -762,9 +762,10 @@
   }
 
   function mapTrainingFeel(raw, focusLabel) {
+    const v = lower(raw);
+    if (v.includes('military')) return 'Military Hybrid';
     if (focusLabel === 'Aesthetic') return 'Aesthetic bodybuilding';
     if (focusLabel === 'Strength') return 'Powerbuilding';
-    const v = lower(raw);
     if (v.includes('power')) return 'Powerbuilding';
     if (v.includes('aesthetic') || v.includes('bodybuilding')) return 'Aesthetic bodybuilding';
     return 'Aesthetic bodybuilding';
@@ -928,7 +929,13 @@
       : goalModeToPrimaryGoal(macroGoalMode);
 
     const focusRaw = lower(intake.priority);
-    const focus = focusRaw === 'strength' ? 'Strength' : focusRaw === 'size' ? 'Size' : 'Aesthetic';
+    const focus = focusRaw === 'military'
+      ? 'Strength'
+      : focusRaw === 'strength'
+        ? 'Strength'
+        : focusRaw === 'size'
+          ? 'Size'
+          : 'Aesthetic';
 
     const timeline = ['4 weeks', '8 weeks', '12+ weeks'].includes(String(intake.timeline || ''))
       ? String(intake.timeline)
@@ -940,9 +947,9 @@
     const outputStyle = mapOutputStyle(intake.outputStyle);
     const closeToFailure = lower(intake.trainToFailure) === 'yes' ? 'Yes' : 'No';
     const trainingFeel = mapTrainingFeel(intake.modality, focus);
-    const discipline = disciplineRaw === 'powerbuilding'
-      ? 'powerbuilding'
-      : trainingFeel === 'Powerbuilding'
+    const discipline = disciplineRaw === 'military' || trainingFeel === 'Military Hybrid'
+      ? 'military'
+      : disciplineRaw === 'powerbuilding' || trainingFeel === 'Powerbuilding'
         ? 'powerbuilding'
         : 'bodybuilding';
 
@@ -4210,6 +4217,7 @@
     const v = String(raw || '').trim().toLowerCase();
     if (v === 'powerlifting') return 'powerlifting';
     if (v === 'powerbuilding') return 'powerbuilding';
+    if (v === 'military' || v === 'military hybrid') return 'military';
     if (v === 'bodybuilding' || v === 'hypertrophy') return 'bodybuilding';
     if (v === 'calisthenics' || v === 'bodyweight') return 'calisthenics';
     return null;
@@ -4218,6 +4226,7 @@
   function mapWizardDisciplineToTrainingFeel(disciplineRaw) {
     const discipline = normalizeDiscipline(disciplineRaw);
     if (discipline === 'powerbuilding') return 'Powerbuilding';
+    if (discipline === 'military') return 'Military Hybrid';
     if (discipline === 'bodybuilding') return 'Aesthetic bodybuilding';
     return '';
   }
@@ -4344,7 +4353,7 @@
     equipmentStylePref = 'mix'
   } = {}) {
     const normalizedDiscipline = normalizeDiscipline(discipline);
-    if (!normalizedDiscipline || !['bodybuilding', 'powerbuilding'].includes(normalizedDiscipline)) return null;
+    if (!normalizedDiscipline || !['bodybuilding', 'powerbuilding', 'military'].includes(normalizedDiscipline)) return null;
     const normalizedStrength = strength && typeof strength === 'object' ? strength : {};
     const injuryFields = mapWizardInjuryToPainFields(injury);
     const experienceMap = {
@@ -4359,7 +4368,7 @@
       discipline: normalizedDiscipline,
       primaryGoal: mapWizardPhaseToPrimaryGoal(goalMode || resolvedPhase),
       timeline: '8 weeks',
-      focus: normalizedDiscipline === 'powerbuilding' ? 'Strength' : 'Aesthetic',
+      focus: normalizedDiscipline === 'bodybuilding' ? 'Aesthetic' : 'Strength',
       experience: mapWizardTrainingAgeToExperience(trainingAgeBucket, fallbackExperience),
       location: mapWizardEquipmentAccessToLocation(equipmentAccess),
       trainingStyle: mapWizardEquipmentStyleToTrainingStyle(equipmentStylePref),
@@ -10184,6 +10193,8 @@ function toggleSharePopover(force) {
           ? 'Strength-focused plan built around squat, bench, and deadlift.'
           : discipline === 'powerbuilding'
             ? 'Build strength on key lifts while adding muscle.'
+          : discipline === 'military'
+            ? 'Build endurance, strength, work capacity, and athletic readiness.'
           : discipline === 'calisthenics'
             ? 'Bodyweight program built around push, pull, and skill work.'
             : 'Hypertrophy program built around progressive overload.';
@@ -10192,6 +10203,7 @@ function toggleSharePopover(force) {
         { key: 'powerlifting', title: 'Powerlifting', sub: 'Squat • Bench • Deadlift' },
         { key: 'powerbuilding', title: 'Powerbuilding', sub: 'Build strength on key lifts while adding muscle.' },
         { key: 'bodybuilding', title: 'Aesthetic Bodybuilding', sub: 'Muscle gain and physique focus.' },
+        { key: 'military', title: 'Military Hybrid', sub: 'Endurance + strength + readiness.' },
         { key: 'calisthenics', title: 'Calisthenics', sub: 'Bodyweight' }
       ];
 
@@ -10200,7 +10212,7 @@ function toggleSharePopover(force) {
         el('div', { class: 'training-muted' }, intro),
         el('div', { class: 'training-choice-grid', style: 'grid-template-columns: repeat(4, minmax(0, 1fr))' },
           disciplineChoices.map((opt) => {
-            const isDisabled = !['bodybuilding', 'powerbuilding'].includes(opt.key);
+            const isDisabled = !['bodybuilding', 'powerbuilding', 'military'].includes(opt.key);
             return el('label', {
               class: `training-choice${isDisabled ? ' is-disabled' : ''}`,
               style: isDisabled ? 'opacity:0.55; filter:grayscale(1); cursor:not-allowed;' : null,
@@ -10305,7 +10317,7 @@ function toggleSharePopover(force) {
 
       const nodes = [disciplinePicker];
 
-      if (discipline === 'bodybuilding' || discipline === 'powerbuilding') {
+      if (discipline === 'bodybuilding' || discipline === 'powerbuilding' || discipline === 'military') {
         const phase = state.wizard.phase || 'bulk';
         nodes.push(
           el('div', { class: 'training-divider' }),
@@ -10492,7 +10504,7 @@ function toggleSharePopover(force) {
         );
       }
 
-        if (d === 'bodybuilding' || d === 'powerbuilding') {
+        if (d === 'bodybuilding' || d === 'powerbuilding' || d === 'military') {
           const useWizardV2 = true;
           if (useWizardV2) {
             const pressMovement = String(s.pressMovement || 'Bench Press');
@@ -11107,7 +11119,7 @@ function toggleSharePopover(force) {
             && ['full_power', 'bench_only'].includes(ev);
           if (!requireValue(ok, 'Enter squat, bench, deadlift, current bodyweight, goal bodyweight, and event type.')) return;
         }
-        if (d === 'bodybuilding' || d === 'powerbuilding') {
+        if (d === 'bodybuilding' || d === 'powerbuilding' || d === 'military') {
           const ok = Number(latestStrength.bodyweight) > 0
             && Number(latestStrength.height) > 0
             && Number(latestStrength.benchWeight) > 0 && Number(latestStrength.benchReps) > 0
@@ -11494,7 +11506,7 @@ function toggleSharePopover(force) {
       : { bodyweight: true };
     const normalizedDiscipline = normalizeDiscipline(discipline);
 
-    if (normalizedDiscipline === 'bodybuilding' || normalizedDiscipline === 'powerbuilding') {
+    if (normalizedDiscipline === 'bodybuilding' || normalizedDiscipline === 'powerbuilding' || normalizedDiscipline === 'military') {
       const sharedPayload = buildSharedOblueprintPayloadFromWizard({
         discipline: normalizedDiscipline,
         daysPerWeek,

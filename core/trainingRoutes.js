@@ -7,6 +7,7 @@ const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity } = require('./trainingEngine');
 const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
+const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
 const { emitUserEvent } = require('./emailEvents');
@@ -522,6 +523,7 @@ function humanDisciplineLabel(disciplineRaw) {
   if (d === 'powerlifting') return 'Powerlifting';
   if (d === 'calisthenics') return 'Calisthenics';
   if (d === 'powerbuilding') return 'Powerbuilding';
+  if (d === 'military') return 'Military Hybrid';
   return 'Training';
 }
 
@@ -829,6 +831,7 @@ function normalizeDiscipline(raw) {
   if (v === 'powerlifting') return 'powerlifting';
   if (v === 'bodybuilding') return 'bodybuilding';
   if (v === 'powerbuilding') return 'powerbuilding';
+  if (v === 'military') return 'military';
   if (v === 'calisthenics') return 'calisthenics';
   return null;
 }
@@ -837,6 +840,7 @@ function resolveOblueprintDiscipline(trainingFeel) {
   const v = String(trainingFeel || '').trim().toLowerCase();
   if (v === 'aesthetic bodybuilding' || v === 'bodybuilding') return 'bodybuilding';
   if (v === 'powerbuilding') return 'powerbuilding';
+  if (v === 'military hybrid' || v === 'military') return 'military';
   return null;
 }
 
@@ -866,7 +870,11 @@ function normalizeOblueprintExperience(raw) {
 function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const discipline = resolveOblueprintDiscipline(src.trainingFeel);
-  const trainingFeel = discipline === 'powerbuilding' ? 'Powerbuilding' : 'Aesthetic bodybuilding';
+  const trainingFeel = discipline === 'powerbuilding'
+    ? 'Powerbuilding'
+    : discipline === 'military'
+      ? 'Military Hybrid'
+      : 'Aesthetic bodybuilding';
   const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
   const asArray = (v) => Array.isArray(v) ? v : [];
   const uniqueStrings = (list, max = 24) => {
@@ -917,7 +925,11 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     trainingFeel,
     primaryGoal: oneOf(String(src.primaryGoal || '').trim(), ['Build size', 'Cut fat', 'Recomp'], 'Build size'),
     timeline: oneOf(String(src.timeline || '').trim(), ['4 weeks', '8 weeks', '12+ weeks'], '8 weeks'),
-    focus: oneOf(String(src.focus || '').trim(), ['Size', 'Strength', 'Aesthetic'], trainingFeel === 'Powerbuilding' ? 'Strength' : 'Aesthetic'),
+    focus: oneOf(
+      String(src.focus || '').trim(),
+      ['Size', 'Strength', 'Aesthetic'],
+      trainingFeel === 'Aesthetic bodybuilding' ? 'Aesthetic' : 'Strength'
+    ),
     experience: normalizeOblueprintExperience(src.experience),
     location: oneOf(String(src.location || '').trim(), ['Home', 'Commercial gym'], 'Commercial gym'),
     trainingStyle: oneOf(String(src.trainingStyle || '').trim(), ['Mostly machines/cables', 'Mostly free weights', 'Balanced mix'], 'Balanced mix'),
@@ -952,7 +964,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   };
 
   if (relax) {
-    if (trainingFeel === 'Powerbuilding') {
+    if (trainingFeel === 'Powerbuilding' || trainingFeel === 'Military Hybrid') {
       normalized.trainingStyle = 'Balanced mix';
       normalized.closeToFailure = 'No';
     } else {
@@ -1071,6 +1083,14 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
   };
   const validateCandidate = (plan) => {
     const discipline = String(plan?.meta?.discipline || '').toLowerCase();
+    if (discipline === 'military') {
+      try {
+        militaryHybrid.validateMilitaryPlan(plan);
+        return null;
+      } catch (err) {
+        return err;
+      }
+    }
     if (discipline === 'powerbuilding') {
       try {
         assertPowerbuildingPlanByEngine(plan);
@@ -1323,7 +1343,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         continue;
       }
       const builtDiscipline = String(out?.meta?.discipline || '').toLowerCase();
-      if (builtDiscipline === 'powerbuilding') {
+      if (builtDiscipline === 'powerbuilding' || builtDiscipline === 'military') {
         lastPlan = out;
         lastPayload = nextPayload;
         const directValidationError = validateCandidate(out);
@@ -1546,7 +1566,11 @@ function mapClassicInjuryToOblueprint(strength) {
 function coerceClassicBodybuildingToOblueprintPayload(payload) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const discipline = String(src?.discipline || '').trim().toLowerCase();
-  const trainingFeel = discipline === 'powerbuilding' ? 'Powerbuilding' : 'Aesthetic bodybuilding';
+  const trainingFeel = discipline === 'powerbuilding'
+    ? 'Powerbuilding'
+    : discipline === 'military'
+      ? 'Military Hybrid'
+      : 'Aesthetic bodybuilding';
   const strength = src?.strength && typeof src.strength === 'object' ? src.strength : {};
   const phase = String(strength?.phase || src?.phase || '').trim().toLowerCase();
   const equipmentStylePref = String(strength?.equipmentStylePref || src?.equipmentStylePref || 'mix').trim().toLowerCase();
@@ -1555,7 +1579,7 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     trainingFeel,
     primaryGoal: mapClassicPhaseToPrimaryGoal(phase),
     timeline: '8 weeks',
-    focus: 'Aesthetic',
+    focus: discipline === 'military' ? 'Strength' : 'Aesthetic',
     experience: mapClassicTrainingAgeToOblueprint(strength?.trainingAgeBucket, src?.experience),
     location: equipmentAccessToList(src?.equipmentAccess).some((token) => /machine|cable/i.test(String(token || ''))) ? 'Commercial gym' : 'Home',
     trainingStyle: mapClassicEquipmentStyleToTrainingStyle(equipmentStylePref),
@@ -12647,6 +12671,7 @@ trainingRoutes._private = {
   coerceClassicBodybuildingToOblueprintPayload,
   assertBodybuildingPlanByEngine,
   assertPowerbuildingPlanByEngine,
+  assertMilitaryHybridPlanByEngine: militaryHybrid.validateMilitaryPlan,
   validateBodybuildingPlanContract,
   getCanonicalMovementFamily: routeGetCanonicalMovementFamily,
   simulateTargetedCanonicalReplacement: routeSimulateTargetedCanonicalReplacement,

@@ -1053,8 +1053,11 @@
       const D={step:1,goal:'build size',timeline:'8 weeks',priority:'aesthetic',sex:'',age:25,heightIn:70,weightLb:180,bodyFatPct:20,bodyType:'average',experience:'6-24m',bench:135,squat:185,deadlift:225,trainToFailure:'',daysPerWeek:4,sessionLength:'60',preferredDays:[1,3,5],preferredDaysAuto:true,location:'commercial gym',equipment:['barbell','dumbbells','machines'],focus:['back'],weakPoints:'upper chest',loadStyle:'mixed',injuries:[],injuryDetails:{},avoidMoves:[],sleepHours:7,activityLevel:'active',stress:'medium',phaseRate:'',outputStyle:'RPE/RIR',modality:'aesthetic bodybuilding',discipline:'bodybuilding',fullName:'',profilePhotoName:'',profilePhotoData:'',trainingWhy:'',mealStatus:'idle',mealDataId:null,mealAdjustment:null,mealAdjustmentApplied:false,keepPlanSame:false,mealPlanResolution:'',mealPlanAlignment:'',mealPreviewActive:false,mealPreviewTarget:null,mealOptionTouched:false,mealPreviewValues:null};
       let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem(K)||'{}'))}catch{S=Object.assign({},D)}
       if(!String(S.goal||'').trim())S.goal='build size';
-      if(!['aesthetic','strength'].includes(String(S.priority||'').trim().toLowerCase()))S.priority='aesthetic';
-      if(String(S.priority||'').trim().toLowerCase()==='strength'){
+      if(!['aesthetic','strength','military'].includes(String(S.priority||'').trim().toLowerCase()))S.priority='aesthetic';
+      if(String(S.priority||'').trim().toLowerCase()==='military'){
+        S.modality='military hybrid';
+        S.discipline='military';
+      }else if(String(S.priority||'').trim().toLowerCase()==='strength'){
         S.modality='powerbuilding';
         S.discipline='powerbuilding';
       }else{
@@ -1770,7 +1773,7 @@
         if(S.step!==s) S.step=s;
         const m=M[s-1];el.t.textContent=m.t;el.f.style.width=(s*(100/9))+'%';
         let h='';
-        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Powerbuilding = Strength and Proportion',v:'strength'},{l:'Military = Endurance + strength',v:'size',soon:true}],S.priority,false,false)+'</div>';
+        if(s===1)h='<h3>What are we optimizing first?</h3><p class="d">Primary goal is inferred from your latest macro calculation. Timeline + focus set your training block.</p><div class="fg" data-g="timeline"><div class="t">Timeline <span class="hint">how long you can commit</span></div>'+btns([{l:'4 weeks',v:'4 weeks'},{l:'8 weeks',v:'8 weeks'},{l:'12+ weeks',v:'12+ weeks'}],S.timeline,false,true)+'</div><div class="fg" data-g="priority"><div class="t">Focus <span class="hint">what matters most</span></div>'+btns([{l:'Aesthetic = shape and proportion',v:'aesthetic'},{l:'Powerbuilding = Strength and Proportion',v:'strength'},{l:'Military = Endurance + Strength',v:'military'}],S.priority,false,false)+'</div>';
         if(s===2)h='<h3>Body stats snapshot</h3><p class="d">No perfect numbers needed. We just need a realistic baseline.</p><div class="fg" data-g="sex"><div class="t">Sex</div>'+btns([{l:'Male',v:'male'},{l:'Female',v:'female'}],S.sex,false,true)+'</div><div class="g2"><div><div class="t">Age: <strong id="ageO">'+S.age+'</strong></div><input id="age" type="range" min="16" max="70" value="'+S.age+'"/></div><div><div class="t">Height: <strong id="hO">'+S.heightIn+' in</strong></div><input id="heightIn" type="range" min="55" max="82" value="'+S.heightIn+'"/></div></div><div class="g2"><div><div class="t">Current weight: <strong id="wO">'+S.weightLb+' lb</strong></div><input id="weightLb" type="range" min="90" max="360" value="'+S.weightLb+'"/></div><div><div class="t" id="bfLabel">Estimated body fat <span class="hint">see image</span>: <strong id="bfO">'+S.bodyFatPct+'%</strong></div><input id="bodyFatPct" type="range" min="5" max="45" value="'+S.bodyFatPct+'"/></div></div><div class="sex-visual '+(S.sex?'show':'hidden')+'" id="sexVisual"><img id="sexImage" src="'+(S.sex==='female'?'assets/bodyfat-female-cropped.jpg':'assets/bodyfat-male.png')+'" alt="Body fat reference chart"/></div>';
         if(s===3)h='<h3>Training background and strength level</h3><p class="d">Rough values are enough. We use them to set the right first-block intensity.</p><div class="fg" data-g="experience"><div class="t">Training experience</div>'+btns([{l:'< 6 months',v:'<6m'},{l:'6-24 months',v:'6-24m'},{l:'2-5 years',v:'2-5y'},{l:'5+ years',v:'5y+'}],S.experience,false,false)+'</div><div class="g3"><div><div class="t">Bench (lb): <strong id="bO">'+S.bench+'</strong></div><input id="bench" type="range" min="45" max="405" step="2.5" value="'+S.bench+'"/></div><div><div class="t">Squat (lb): <strong id="sqO">'+S.squat+'</strong></div><input id="squat" type="range" min="45" max="585" step="2.5" value="'+S.squat+'"/></div><div><div class="t">Deadlift (lb): <strong id="dO">'+S.deadlift+'</strong></div><input id="deadlift" type="range" min="65" max="675" step="2.5" value="'+S.deadlift+'"/></div></div><div class="fg" data-g="trainToFailure"><div class="t">Can you safely train close to failure?</div>'+btns([{l:'Yes',v:'yes'},{l:'No',v:'no'}],S.trainToFailure,false,true)+'</div>';
         if(s===4)h='<h3>Schedule and session time</h3><p class="d">This sets your split and exercise count so the plan fits your week.</p><div class="fg"><div class="t">What days do you prefer to train on <span class="hint" id="dyO">'+S.daysPerWeek+' days</span></div>'+db()+'</div><div class="fg" data-g="sessionLength"><div class="t">Session length</div>'+btns([{l:'30 min',v:'30'},{l:'45 min',v:'45'},{l:'60 min',v:'60'},{l:'75+ min',v:'75+'}],S.sessionLength,false,true)+'</div>';
@@ -1921,7 +1924,10 @@
           bindSingle('timeline',v=>S.timeline=v);
           bindSingle('priority',v=>{
             S.priority=v;
-            if(v==='strength'){
+            if(v==='military'){
+              S.modality='military hybrid';
+              S.discipline='military';
+            }else if(v==='strength'){
               S.modality='powerbuilding';
               S.discipline='powerbuilding';
             }else{
