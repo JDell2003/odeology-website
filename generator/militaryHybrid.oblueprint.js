@@ -365,10 +365,10 @@ function workCapacityTask(user, weekIndex) {
       pattern: 'Carry',
       role: 'Sprint-drag-carry qualities',
       sets: profile.recoveryTier === 'low' ? 3 : 4,
-      reps: '25 m sprint, 25 m sled drag, 25 m lateral shuffle, 25 m carry',
+      reps: '1 round = 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry',
       restSec: 150,
       requiredEquipment: ['sled'],
-      notes: 'Complete the full sequence as one round. Rest 150 sec before the next round.',
+      notes: 'Treat each set as one clean round. Move fast, keep transitions organized, and rest 150 sec before the next round.',
       hardConditioning: true
     });
   }
@@ -380,10 +380,10 @@ function workCapacityTask(user, weekIndex) {
       pattern: 'Carry',
       role: 'Sprint-drag-carry qualities',
       sets: profile.recoveryTier === 'low' ? 3 : 4,
-      reps: '20 m out-and-back shuttle, then 30 m loaded carry',
+      reps: '1 round = 20 m shuttle out + 20 m shuttle back + 30 m loaded carry',
       restSec: 150,
       requiredEquipment: [hasEquipment(user, ['kettlebell']) ? 'kettlebell' : 'dumbbell'],
-      notes: 'Treat each set as one round. Accelerate under control and keep the carry posture tall.',
+      notes: 'Treat each set as one round. Accelerate under control, stay tall on the carry, and recover fully between rounds.',
       hardConditioning: true
     });
   }
@@ -589,6 +589,51 @@ function safeUpperPressAnchor(weekIndex, user) {
   };
 }
 
+function safeTrueHingeAnchor(weekIndex, user) {
+  const useTrapBar = hasEquipment(user, ['trap bar', 'hex bar']);
+  const useBarbell = !useTrapBar && hasEquipment(user, ['barbell']);
+  const useDumbbell = !useTrapBar && !useBarbell && hasEquipment(user, ['dumbbell']);
+  const name = useTrapBar
+    ? 'Trap Bar Deadlift'
+    : useBarbell
+      ? 'Barbell Deadlift'
+      : useDumbbell
+        ? 'Dumbbell Romanian Deadlift'
+        : 'Glute Bridge';
+  const requiredEquipment = useTrapBar
+    ? ['trap bar']
+    : useBarbell
+      ? ['barbell']
+      : useDumbbell
+        ? ['dumbbell']
+        : [];
+  const pattern = /deadlift/i.test(name) ? 'Hinge' : 'Hinge';
+  return {
+    id: `mh_safe_true_hinge_w${weekIndex}`,
+    exerciseId: `mh_safe_true_hinge_w${weekIndex}`,
+    canonicalExerciseId: normalizeText(name).replace(/[^a-z0-9]+/g, '_'),
+    name,
+    displayName: name,
+    style: /Glute Bridge/i.test(name) ? 'Isolation' : 'Compound',
+    pattern,
+    primary: 'Glutes',
+    primaryMuscle: 'Glutes',
+    muscleTarget: 'Glutes',
+    subMuscle: 'Posterior-chain strength',
+    bodyPart: 'Lower Body',
+    sets: 3,
+    reps: '4-6',
+    restSec: 180,
+    rir: '2-3',
+    requiredEquipment,
+    equipment: requiredEquipment,
+    mediaPath: null,
+    mediaPathAlt: null,
+    mediaIcon: 'hinge',
+    progressionRule: progressionRuleOverride('mh_hinge_strength')
+  };
+}
+
 function isStrengthAnchor(exercise) {
   return String(exercise?.slotId || '').startsWith('mh_')
     || /readiness progression/i.test(String(exercise?.progressionRule || ''))
@@ -653,7 +698,14 @@ function preserveMilitaryDayIdentityLift(exercises, baseDayType) {
     promoteIdentitySlot((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press', 'mil_upper_identity');
     return list;
   }
-  if (['LowerFocus', 'Lower', 'FullBodyB'].includes(base)) {
+  if (base === 'LowerFocus') {
+    promoteIdentitySlot((exercise) => {
+      const family = militaryExerciseFamily(exercise);
+      return family === 'knee_dominant' || family === 'posterior' || family === 'core';
+    }, 'mil_lowerfocus_identity');
+    return list;
+  }
+  if (['Lower', 'FullBodyB'].includes(base)) {
     promoteIdentitySlot((exercise) => isTrueHingeName(exercise), 'mil_lower_identity');
     return list;
   }
@@ -866,22 +918,58 @@ function demoteAnchorExercise(exercise) {
 
 function enforceTrueHingeAnchor(week, user) {
   const profile = user?.profile?.military;
-  if (!week || !profile || profile.hingeBlocked || !hasEquipment(user, ['barbell'])) return week;
+  if (!week || !profile || profile.hingeBlocked || !hasEquipment(user, ['barbell', 'trap bar', 'hex bar', 'dumbbell'])) return week;
   const days = Array.isArray(week?.days) ? week.days : [];
   const weekType = String(week?.weekType || 'base');
   const preferredDays = days
-    .filter((day) => ['LowerFocus', 'Lower', 'FullBodyB'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
+    .filter((day) => ['Lower', 'FullBodyB', 'LowerFocus'].includes(String(day?.militaryBaseDayType || day?.dayType || '')))
+    .sort((left, right) => {
+      const rank = (day) => {
+        const base = String(day?.militaryBaseDayType || day?.dayType || '');
+        if (base === 'Lower') return 0;
+        if (base === 'FullBodyB') return 1;
+        if (base === 'LowerFocus') return 2;
+        return 9;
+      };
+      return rank(left) - rank(right);
+    });
   const fallbackDays = days.filter((day) => ['FullBodyA'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
   for (const day of [...preferredDays, ...fallbackDays]) {
+    const baseDayType = String(day?.militaryBaseDayType || day?.dayType || '');
     const exercises = Array.isArray(day?.exercises) ? day.exercises.slice() : [];
     const hingeIndex = exercises
       .map((exercise, index) => ({ exercise, index, priority: trueHingePriority(exercise) }))
       .filter((entry) => entry.priority < 9)
       .sort((a, b) => a.priority - b.priority || a.index - b.index)[0]?.index ?? -1;
-    if (hingeIndex < 0) continue;
-    exercises[hingeIndex] = normalizeAnchorExercise(exercises[hingeIndex], weekType, { preferTrueHinge: true });
+    const anchorCandidate = safeTrueHingeAnchor(Number(week?.weekIndex || 1), user);
+    let finalAnchorIndex = hingeIndex;
+    if (hingeIndex < 0) {
+      if (!['Lower', 'FullBodyB'].includes(baseDayType)) continue;
+      const replaceIndex = exercises.findIndex((exercise) => (
+        !exercise?.taskType
+        && !isStrengthAnchor(exercise)
+        && String(exercise?.style || '') !== 'Power'
+        && String(exercise?.style || '') !== 'Plyo'
+      ));
+      if (replaceIndex >= 0) {
+        exercises.splice(replaceIndex, 1, normalizeAnchorExercise(anchorCandidate, weekType, { preferTrueHinge: true }));
+        finalAnchorIndex = replaceIndex;
+      } else {
+        exercises.unshift(normalizeAnchorExercise(anchorCandidate, weekType, { preferTrueHinge: true }));
+        finalAnchorIndex = 0;
+      }
+    } else {
+      const bestExisting = exercises[hingeIndex];
+      const shouldUpgrade = trueHingePriority(bestExisting) > 0 && ['Lower', 'FullBodyB'].includes(baseDayType);
+      exercises[hingeIndex] = normalizeAnchorExercise(
+        shouldUpgrade ? anchorCandidate : bestExisting,
+        weekType,
+        { preferTrueHinge: true }
+      );
+      finalAnchorIndex = hingeIndex;
+    }
     for (let i = 0; i < exercises.length; i += 1) {
-      if (i === hingeIndex) continue;
+      if (i === finalAnchorIndex) continue;
       if (!isStrengthAnchor(exercises[i])) continue;
       if (militaryExerciseFamily(exercises[i]) !== 'posterior') continue;
       exercises[i] = {
@@ -911,7 +999,7 @@ function enforceDayIdentityAnchors(week) {
     const currentFamily = currentAnchor ? militaryExerciseFamily(currentAnchor) : '';
     let candidateIndex = -1;
     let shouldReplaceExistingAnchor = currentAnchorIndex < 0;
-    if (['LowerFocus', 'Lower', 'FullBodyB'].includes(baseDayType)) {
+    if (['Lower', 'FullBodyB'].includes(baseDayType)) {
       candidateIndex = exercises.findIndex(isTrueHingeName);
       if (candidateIndex >= 0) {
         shouldReplaceExistingAnchor = !currentAnchor || !isTrueHingeName(currentAnchor);
@@ -922,6 +1010,8 @@ function enforceDayIdentityAnchors(week) {
         ));
         shouldReplaceExistingAnchor = !currentAnchor || !['posterior', 'knee_dominant'].includes(currentFamily);
       }
+    } else if (baseDayType === 'LowerFocus') {
+      continue;
     } else {
       candidateIndex = exercises.findIndex((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press');
       if (candidateIndex >= 0) {
@@ -943,6 +1033,67 @@ function enforceDayIdentityAnchors(week) {
       preferTrueHinge: isTrueHingeName(exercises[candidateIndex])
     });
     day.exercises = orderMilitaryDay(exercises);
+  }
+  return week;
+}
+
+function militaryCoreSubtype(exercise) {
+  const name = normalizeText(exercise?.name);
+  if (/\bpallof\b/.test(name)) return 'anti_rotation';
+  if (/\bplank\b/.test(name)) return 'bracing';
+  if (/\bcrunch|leg raise\b/.test(name)) return 'flexion';
+  if (/\boblique|twist|side bend\b/.test(name)) return 'rotation';
+  return 'other';
+}
+
+function isMilitaryHardConditioningTask(exercise) {
+  return exercise?.taskType === 'military_readiness' && exercise?.hardConditioning;
+}
+
+function rebalanceConditioningDays(week) {
+  const days = Array.isArray(week?.days) ? week.days : [];
+  for (const day of days) {
+    const baseDayType = String(day?.militaryBaseDayType || day?.dayType || '');
+    const exercises = Array.isArray(day?.exercises) ? day.exercises.slice() : [];
+    if (!exercises.length) continue;
+
+    const hasIntervals = exercises.some((exercise) => exercise?.militaryRole === 'Running speed endurance');
+    const hasCarryCircuit = exercises.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities');
+    if (!hasIntervals && !hasCarryCircuit) continue;
+
+    const next = [];
+    let keptRow = false;
+    let keptPosterior = false;
+    let keptArms = 0;
+    let keptShoulders = 0;
+    for (const exercise of exercises) {
+      if (exercise?.taskType) {
+        next.push(exercise);
+        continue;
+      }
+      const family = militaryExerciseFamily(exercise);
+      if (hasIntervals && family === 'posterior' && ['FullBodyA', 'Upper'].includes(baseDayType)) {
+        if (next.some((entry) => militaryExerciseFamily(entry) === 'horizontal_press')) continue;
+      }
+      if (family === 'row') {
+        if (keptRow) continue;
+        keptRow = true;
+      }
+      if (hasCarryCircuit && family === 'posterior') {
+        if (keptPosterior && !isStrengthAnchor(exercise)) continue;
+        keptPosterior = true;
+      }
+      if (family === 'shoulder_accessory') {
+        if (keptShoulders >= 1 && !exercise?.militaryIdentityKeep) continue;
+        keptShoulders += 1;
+      }
+      if (family === 'biceps' || family === 'triceps') {
+        if (keptArms >= 2 && !exercise?.militaryIdentityKeep) continue;
+        keptArms += 1;
+      }
+      next.push(exercise);
+    }
+    day.exercises = orderMilitaryDay(next);
   }
   return week;
 }
@@ -981,6 +1132,27 @@ function pruneWeeklyAccessorySpam(week, user) {
       });
     });
   }
+
+  const seenRows = new Set();
+  const seenCoreSubtypes = new Set();
+  days.forEach((day) => {
+    day.exercises = (Array.isArray(day?.exercises) ? day.exercises : []).filter((exercise) => {
+      const family = militaryExerciseFamily(exercise);
+      if (family === 'row') {
+        const nameKey = normalizeText(exercise?.name);
+        if (seenRows.has(nameKey) && !isStrengthAnchor(exercise)) return false;
+        seenRows.add(nameKey);
+      }
+      if (family === 'core') {
+        const subtype = militaryCoreSubtype(exercise);
+        if (subtype === 'anti_rotation') {
+          if (seenCoreSubtypes.has(subtype) && !exercise?.militaryIdentityKeep) return false;
+          seenCoreSubtypes.add(subtype);
+        }
+      }
+      return true;
+    });
+  });
 
   return week;
 }
@@ -1034,19 +1206,18 @@ function buildWeeklyTaskAssignments(user, weekIndex, days) {
 function militaryDayLabel(baseDayType, exercises, fallback) {
   const list = Array.isArray(exercises) ? exercises : [];
   const base = String(baseDayType || fallback || '').trim();
-  if (base === 'Upper' && list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Strength + Intervals';
-  if (base === 'Upper' && list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Power';
-  if (base === 'LowerFocus' && list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Lower + Zone 2';
-  if (base === 'Pull' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up';
-  if (base === 'UpperFocus' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up';
-  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Strength + Intervals';
+  if (base === 'Upper' && list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Armor';
+  if (base === 'LowerFocus' && list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Zone 2 + Durability';
+  if (base === 'Pull' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
+  if (base === 'UpperFocus' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
+  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals / SDC';
   if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Intervals / SDC';
   if (base === 'Lower' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Lower + Carry';
   if (list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Work Capacity';
-  if (list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Strength + Intervals';
-  if (list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Strength + Zone 2';
-  if (list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up';
-  if (list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Power';
+  if (list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals / SDC';
+  if (list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Zone 2 + Durability';
+  if (list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
+  if (list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Armor';
   return String(fallback || 'Military Hybrid');
 }
 
@@ -1103,10 +1274,12 @@ function finalizeMilitaryPlan(plan, user) {
       })
     };
     return pruneWeeklyAccessorySpam(
-      enforceDayIdentityAnchors(
-        enforceTrueHingeAnchor(
-          promoteWeeklyStrengthAnchor(nextWeek, user),
-          user
+      rebalanceConditioningDays(
+        enforceDayIdentityAnchors(
+          enforceTrueHingeAnchor(
+            promoteWeeklyStrengthAnchor(nextWeek, user),
+            user
+          )
         )
       ),
       user
