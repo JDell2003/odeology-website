@@ -2335,18 +2335,40 @@
     wrap.classList.toggle('is-active', visible);
     if (visible && standaloneInspectorState.bounds) {
       const bounds = standaloneInspectorState.bounds;
-      const shellRect = shell.getBoundingClientRect();
       const gap = 10;
-      const maxLeft = Math.max(8, window.innerWidth - shellRect.width - 8);
-      const desiredLeft = Math.max(8, Math.min(Number(bounds.left || 0), maxLeft));
-      let desiredTop = Number(bounds.bottom || 0) + gap;
-      const maxTop = Math.max(8, window.innerHeight - shellRect.height - 8);
-      if (desiredTop > maxTop) desiredTop = Math.max(8, Number(bounds.top || 0) - shellRect.height - gap);
+      // Prefer sitting beside the selected element (left first, then right)
+      // as a compact stacked panel; only drop below it when neither side has
+      // room, so the bar never covers the middle of the field.
+      shell.classList.add('is-side');
+      let shellRect = shell.getBoundingClientRect();
+      const leftSide = Number(bounds.left || 0) - shellRect.width - gap;
+      const rightSide = Number(bounds.right || 0) + gap;
+      let desiredLeft;
+      if (leftSide >= 8) {
+        desiredLeft = leftSide;
+      } else if (rightSide + shellRect.width <= (window.innerWidth || 0) - 8) {
+        desiredLeft = rightSide;
+      } else {
+        shell.classList.remove('is-side');
+        shellRect = shell.getBoundingClientRect();
+        desiredLeft = Number(bounds.left || 0);
+      }
+      const sidePlaced = shell.classList.contains('is-side');
+      const maxLeft = Math.max(8, (window.innerWidth || 0) - shellRect.width - 8);
+      const maxTop = Math.max(8, (window.innerHeight || 0) - shellRect.height - 8);
+      let desiredTop;
+      if (sidePlaced) {
+        desiredTop = Number(bounds.top || 0);
+      } else {
+        desiredTop = Number(bounds.bottom || 0) + gap;
+        if (desiredTop > maxTop) desiredTop = Math.max(8, Number(bounds.top || 0) - shellRect.height - gap);
+      }
       shell.style.left = `${Math.max(8, Math.min(desiredLeft, maxLeft))}px`;
       shell.style.top = `${Math.max(8, Math.min(desiredTop, maxTop))}px`;
       shell.style.right = 'auto';
       shell.style.bottom = 'auto';
     } else {
+      shell.classList.remove('is-side');
       shell.style.removeProperty('top');
       shell.style.removeProperty('left');
       shell.style.removeProperty('right');
@@ -6179,6 +6201,16 @@
           }
           .trainer-standalone-inspector.is-active{
             display:flex;
+          }
+          .trainer-standalone-inspector-shell.is-side .trainer-standalone-inspector{
+            flex-wrap:wrap;
+            width:288px;
+            max-width:min(320px,calc(100vw - 24px));
+          }
+          .trainer-standalone-inspector-shell.is-side .trainer-standalone-inspector input,
+          .trainer-standalone-inspector-shell.is-side .trainer-standalone-inspector select{
+            flex:1 1 120px;
+            min-width:0;
           }
           .trainer-standalone-inspector-minimize{
             position:absolute;
