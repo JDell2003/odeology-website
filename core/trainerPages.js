@@ -1201,7 +1201,7 @@ async function restoreTrainerPageVersion(db, trainerUserId, versionId) {
   };
 }
 
-const RESERVED_SITE_SLUGS = new Set(['averystone', 'demo', 'demo-trainer-layout']);
+const RESERVED_SITE_SLUGS = new Set(['demo', 'demo-trainer-layout']);
 
 async function saveTrainerPage(db, trainerUserId, payload, { versionKind = 'manual_save', publish = false } = {}) {
   const fallbackSiteSlug = await resolveTrainerSiteSlug(db, trainerUserId);
