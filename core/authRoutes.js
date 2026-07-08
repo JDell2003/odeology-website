@@ -6100,11 +6100,16 @@ function sendJson(res, status, payload, extraHeaders = {}) {
 }
 
 async function readJsonBody(req) {
+  return await readJsonBodyWithLimit(req, MAX_BODY_BYTES);
+}
+
+async function readJsonBodyWithLimit(req, maxBytes = MAX_BODY_BYTES) {
+  const limit = Math.max(10_000, Number(maxBytes) || MAX_BODY_BYTES);
   return await new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > MAX_BODY_BYTES) {
+      if (body.length > limit) {
         reject(new Error('Body too large'));
         req.destroy();
       }
@@ -6117,6 +6122,20 @@ async function readJsonBody(req) {
       }
     });
   });
+}
+
+// Coach page saves carry the whole page markup (often with embedded media),
+// and lead submissions can include file uploads - both need far more than the
+// default request budget.
+const TRAINER_PAGE_SAVE_MAX_BODY_BYTES = Math.max(1_000_000, Number(process.env.TRAINER_PAGE_SAVE_MAX_BODY_BYTES || 12_000_000));
+const TRAINER_LEAD_MAX_BODY_BYTES = Math.max(1_000_000, Number(process.env.TRAINER_LEAD_MAX_BODY_BYTES || 25_000_000));
+
+async function readTrainerPageSaveBody(req) {
+  return await readJsonBodyWithLimit(req, TRAINER_PAGE_SAVE_MAX_BODY_BYTES);
+}
+
+async function readTrainerLeadBody(req) {
+  return await readJsonBodyWithLimit(req, TRAINER_LEAD_MAX_BODY_BYTES);
 }
 
 async function readRawBody(req) {
@@ -6386,7 +6405,7 @@ async function resolveTrainerPageTargetUserId(dbApi, actor, payload) {
 
 async function handleTrainerPageSaveWithDeps(req, res, {
   requireTrainerActorFn = requireTrainerActor,
-  readJsonBodyFn = readJsonBody,
+  readJsonBodyFn = readTrainerPageSaveBody,
   trainerPagesApi = trainerPages,
   dbApi = db,
   sendJsonFn = sendJson
@@ -6703,7 +6722,7 @@ async function handlePublicTrainerQualification(req, res) {
 }
 
 async function handlePublicTrainerLeadCreateWithDeps(req, res, {
-  readJsonBodyFn = readJsonBody,
+  readJsonBodyFn = readTrainerLeadBody,
   trainerPagesApi = trainerPages,
   dbApi = db,
   sendJsonFn = sendJson,

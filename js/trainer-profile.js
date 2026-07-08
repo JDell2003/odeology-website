@@ -6617,7 +6617,7 @@
       .trainer-settings-status-pill.is-live{background:rgba(34,197,94,.14);color:#4ade80}
       .trainer-settings-status-pill.is-draft{background:rgba(250,204,21,.13);color:#fde047}
       .trainer-settings-status-dot{width:7px;height:7px;border-radius:999px;background:currentColor;box-shadow:0 0 8px currentColor}
-      @media (max-width: 560px){.trainer-settings-panel{max-height:92vh}.trainer-settings-body{padding:2px 14px 16px}.trainer-settings-head{padding:16px 14px 12px}}
+      @media (max-width: 560px){#trainer-settings-overlay{padding:8px;align-items:flex-end}.trainer-settings-panel{width:100%;max-height:94dvh;border-radius:18px 18px 0 0}.trainer-settings-body{padding:2px 14px 16px}.trainer-settings-head{padding:16px 14px 12px}.trainer-settings-row{gap:6px}.trainer-settings-btn{min-height:42px}}
     `;
     document.head.appendChild(style);
   }
@@ -9134,6 +9134,277 @@
     reply({ ok: true, message: String(consult.successMessage || '').trim() || 'Sent! The coach will reach out soon.' });
   }
 
+  const CONSULT_FIELD_TYPE_CHOICES = [
+    ['text', 'Short answer'],
+    ['textarea', 'Paragraph'],
+    ['email', 'Email'],
+    ['tel', 'Phone'],
+    ['select', 'Dropdown'],
+    ['checkbox', 'Checkbox']
+  ];
+
+  function consultDraftCustomCode() {
+    const source = editorState.draft?.draftContent?.customCode
+      || pageState.currentTrainerPage?.draftContent?.customCode
+      || {};
+    return {
+      html: String(source.html || ''),
+      css: String(source.css || ''),
+      javascript: String(source.javascript || '')
+    };
+  }
+
+  function parseConsultDocument(html) {
+    const isFullDoc = /<!doctype|<html[\s>]/i.test(String(html || ''));
+    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    return { doc, isFullDoc };
+  }
+
+  function serializeConsultDocument(doc, isFullDoc) {
+    return isFullDoc ? `<!doctype html>\n${doc.documentElement.outerHTML}` : doc.body.innerHTML;
+  }
+
+  function consultFormFieldEls(form) {
+    return Array.from(form.querySelectorAll('input,textarea,select')).filter((el) => {
+      const type = String(el.getAttribute('type') || '').toLowerCase();
+      return !['submit', 'button', 'reset', 'hidden'].includes(type);
+    });
+  }
+
+  function consultFieldWrapperOf(el) {
+    const label = el.closest('label');
+    if (label && label.querySelectorAll('input,textarea,select').length === 1) return label;
+    return el;
+  }
+
+  function consultFieldTypeOf(el) {
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'textarea') return 'textarea';
+    if (tag === 'select') return 'select';
+    const type = String(el.getAttribute('type') || 'text').toLowerCase();
+    if (type === 'checkbox') return 'checkbox';
+    if (type === 'email') return 'email';
+    if (type === 'tel') return 'tel';
+    return 'text';
+  }
+
+  function consultFieldLabelOf(el) {
+    const placeholder = String(el.getAttribute('placeholder') || '').trim();
+    if (placeholder) return placeholder;
+    const wrapper = consultFieldWrapperOf(el);
+    if (wrapper !== el) {
+      const text = String(wrapper.textContent || '').trim();
+      if (text) return text.slice(0, 120);
+    }
+    const name = String(el.getAttribute('name') || '').trim();
+    if (name) return name.replace(/[_-]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+    return 'Field';
+  }
+
+  function describeConsultFormFromDraft() {
+    const { html } = consultDraftCustomCode();
+    const { doc } = parseConsultDocument(html);
+    const form = doc.querySelector('form');
+    if (!form) return { exists: false, fields: [], submitLabel: '' };
+    const fields = consultFormFieldEls(form).map((el, index) => ({
+      index,
+      label: consultFieldLabelOf(el),
+      type: consultFieldTypeOf(el),
+      required: el.hasAttribute('required'),
+      options: el.tagName.toLowerCase() === 'select'
+        ? Array.from(el.querySelectorAll('option'))
+          .filter((opt) => !opt.disabled && String(opt.value || opt.textContent || '').trim())
+          .map((opt) => String(opt.textContent || '').trim())
+        : []
+    }));
+    const submitButton = form.querySelector('button[type="submit"],input[type="submit"]') || form.querySelector('button');
+    const submitLabel = submitButton
+      ? String(submitButton.tagName.toLowerCase() === 'input' ? submitButton.value : submitButton.textContent || '').trim()
+      : '';
+    return { exists: true, fields, submitLabel };
+  }
+
+  function consultSlugName(label, usedNames) {
+    const base = String(label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'field';
+    let name = base;
+    let n = 2;
+    while (usedNames.includes(name)) {
+      name = `${base}_${n}`;
+      n += 1;
+    }
+    usedNames.push(name);
+    return name;
+  }
+
+  function styleConsultDraftControl(el, type) {
+    if (type === 'textarea') {
+      el.style.minHeight = '120px';
+      el.style.padding = '14px';
+      el.style.resize = 'vertical';
+    } else {
+      el.style.minHeight = '46px';
+      el.style.padding = '0 14px';
+    }
+    el.style.border = '1px solid rgba(15,23,42,.12)';
+    el.style.borderRadius = '14px';
+    el.style.font = '500 15px/1.4 system-ui,sans-serif';
+    el.style.width = '100%';
+    el.style.boxSizing = 'border-box';
+    el.style.background = '#ffffff';
+    el.style.color = '#0f172a';
+  }
+
+  function buildConsultDraftField(doc, field, usedNames, existingEl) {
+    const allowed = ['text', 'email', 'tel', 'textarea', 'select', 'checkbox'];
+    const type = allowed.includes(String(field?.type || '').trim()) ? String(field.type).trim() : 'text';
+    const label = String(field?.label || '').trim().slice(0, 120) || 'Field';
+    const name = consultSlugName(label, usedNames);
+    const options = Array.isArray(field?.options)
+      ? field.options.map((opt) => String(opt || '').trim().slice(0, 120)).filter(Boolean).slice(0, 24)
+      : [];
+    const fillSelectOptions = (select) => {
+      select.innerHTML = '';
+      const placeholderOption = doc.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.disabled = true;
+      placeholderOption.setAttribute('selected', '');
+      placeholderOption.textContent = label;
+      select.appendChild(placeholderOption);
+      options.forEach((optionLabel) => {
+        const option = doc.createElement('option');
+        option.value = optionLabel;
+        option.textContent = optionLabel;
+        select.appendChild(option);
+      });
+    };
+    if (existingEl && consultFieldTypeOf(existingEl) === type && type !== 'checkbox') {
+      existingEl.setAttribute('name', name);
+      if (type !== 'select') existingEl.setAttribute('placeholder', label);
+      if (field?.required === true) existingEl.setAttribute('required', '');
+      else existingEl.removeAttribute('required');
+      if (type === 'select') fillSelectOptions(existingEl);
+      return consultFieldWrapperOf(existingEl);
+    }
+    if (type === 'checkbox') {
+      const wrap = doc.createElement('label');
+      wrap.style.cssText = 'display:flex;align-items:center;gap:10px;font:500 14px/1.4 system-ui,sans-serif;color:#334155;cursor:pointer';
+      const input = doc.createElement('input');
+      input.setAttribute('type', 'checkbox');
+      input.setAttribute('name', name);
+      input.setAttribute('value', 'Yes');
+      if (field?.required === true) input.setAttribute('required', '');
+      input.style.cssText = 'width:18px;height:18px;accent-color:#2563eb';
+      const span = doc.createElement('span');
+      span.textContent = label;
+      wrap.appendChild(input);
+      wrap.appendChild(span);
+      return wrap;
+    }
+    if (type === 'select') {
+      const select = doc.createElement('select');
+      select.setAttribute('name', name);
+      if (field?.required === true) select.setAttribute('required', '');
+      styleConsultDraftControl(select, 'select');
+      fillSelectOptions(select);
+      return select;
+    }
+    if (type === 'textarea') {
+      const textarea = doc.createElement('textarea');
+      textarea.setAttribute('name', name);
+      textarea.setAttribute('placeholder', label);
+      if (field?.required === true) textarea.setAttribute('required', '');
+      styleConsultDraftControl(textarea, 'textarea');
+      return textarea;
+    }
+    const input = doc.createElement('input');
+    input.setAttribute('type', type);
+    input.setAttribute('name', name);
+    input.setAttribute('placeholder', label);
+    if (field?.required === true) input.setAttribute('required', '');
+    styleConsultDraftControl(input, type);
+    return input;
+  }
+
+  function commitStandaloneDraftHtml(nextHtml) {
+    const base = editorState.draft || pageState.currentTrainerPage;
+    if (!base) return false;
+    const next = cloneJson(base);
+    next.mode = 'custom_code';
+    next.draftContent = next.draftContent && typeof next.draftContent === 'object' ? next.draftContent : {};
+    next.draftContent.mode = 'custom_code';
+    next.draftContent.customCode = next.draftContent.customCode && typeof next.draftContent.customCode === 'object'
+      ? next.draftContent.customCode
+      : { html: '', css: '', javascript: '', iframes: [], embedScripts: [] };
+    next.draftContent.customCode.html = String(nextHtml || '');
+    editorState.draft = normalizeBuilderPageShape(next, editorState.original || pageState.currentTrainerPage || {});
+    pageState.currentTrainerPage = cloneJson(editorState.draft);
+    editorState.dirty = JSON.stringify(editorState.draft || {}) !== JSON.stringify(editorState.original || {});
+    const input = $('#trainer-page-code-html');
+    if (input instanceof HTMLTextAreaElement) input.value = String(nextHtml || '');
+    pushBuilderHistory(editorState.draft);
+    syncBuilderToolbarState();
+    queueBuilderAutosave();
+    if (editorState.enabled) renderCurrentProfile();
+    return true;
+  }
+
+  function applyConsultFormToDraft({ fields, submitLabel }) {
+    const { html } = consultDraftCustomCode();
+    const { doc, isFullDoc } = parseConsultDocument(html);
+    const form = doc.querySelector('form');
+    if (!form) return { ok: false, error: 'No consultation form found on this page.' };
+    const existingEls = consultFormFieldEls(form);
+    const usedNames = [];
+    const nodes = (Array.isArray(fields) ? fields : []).slice(0, 24).map((field) => (
+      buildConsultDraftField(doc, field, usedNames, Number.isInteger(field?.index) ? existingEls[field.index] : null)
+    ));
+    existingEls.forEach((el) => {
+      const wrapper = consultFieldWrapperOf(el);
+      if (wrapper.parentElement) wrapper.remove();
+    });
+    const anchor = form.querySelector('button[type="submit"],input[type="submit"]')
+      || form.querySelector('button')
+      || form.querySelector('[data-consult-form-status]');
+    let anchorTop = anchor;
+    while (anchorTop && anchorTop.parentElement && anchorTop.parentElement !== form) anchorTop = anchorTop.parentElement;
+    nodes.forEach((node) => {
+      if (anchorTop && anchorTop.parentElement === form) form.insertBefore(node, anchorTop);
+      else form.appendChild(node);
+    });
+    const cleanSubmitLabel = String(submitLabel || '').trim().slice(0, 60);
+    if (cleanSubmitLabel) {
+      const submitButton = form.querySelector('button[type="submit"],input[type="submit"]') || form.querySelector('button');
+      if (submitButton) {
+        if (submitButton.tagName.toLowerCase() === 'input') submitButton.setAttribute('value', cleanSubmitLabel);
+        else submitButton.textContent = cleanSubmitLabel;
+      }
+    }
+    form.setAttribute('data-standalone-consult-form', '1');
+    const committed = commitStandaloneDraftHtml(serializeConsultDocument(doc, isFullDoc));
+    return committed ? { ok: true } : { ok: false, error: 'Could not update the page draft.' };
+  }
+
+  function insertConsultFormIntoDraft() {
+    const { html } = consultDraftCustomCode();
+    const { doc, isFullDoc } = parseConsultDocument(html);
+    if (doc.querySelector('form')) return { ok: true };
+    const section = doc.createElement('section');
+    section.style.cssText = 'position:relative;display:grid;gap:14px;padding:24px;margin:16px auto;max-width:460px;border-radius:24px;background:#ffffff;box-shadow:0 18px 36px rgba(15,23,42,.10)';
+    section.innerHTML = '<div style="font:800 28px/1.1 system-ui,sans-serif;color:#0f172a">Book a consultation</div>'
+      + '<div style="font:500 15px/1.6 system-ui,sans-serif;color:#475569">Tell us what you need and we will reach out with next steps.</div>'
+      + '<form data-standalone-consult-form="1" style="display:grid;gap:12px">'
+      + '<input type="text" name="fullName" placeholder="Your name" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px">'
+      + '<input type="email" name="email" placeholder="Email address" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px">'
+      + '<input type="tel" name="phone" placeholder="Phone (optional)" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px">'
+      + '<textarea name="goal" placeholder="What do you need help with?" style="min-height:120px;padding:14px;border:1px solid rgba(15,23,42,.12);border-radius:14px;resize:vertical"></textarea>'
+      + '<button type="submit" style="min-height:48px;padding:0 18px;border:0;border-radius:999px;background:#2563eb;color:#ffffff;font:800 15px/1 system-ui,sans-serif;width:fit-content">Request consultation</button>'
+      + '<div data-consult-form-status style="font:600 13px/1.4 system-ui,sans-serif;color:#475569"></div>'
+      + '</form>';
+    doc.body.appendChild(section);
+    const committed = commitStandaloneDraftHtml(serializeConsultDocument(doc, isFullDoc));
+    return committed ? { ok: true } : { ok: false, error: 'Could not update the page draft.' };
+  }
+
   function openConsultFormSettingsModal() {
     const page = trainerSettingsPage();
     if (!page?.id) {
@@ -9165,7 +9436,7 @@
           <div class="trainer-settings-card">
             <div class="trainer-settings-kicker">Form fields</div>
             <div data-consult-fields-list style="display:grid;gap:10px">
-              <div class="trainer-settings-note" style="margin-top:0">Reading your form...</div>
+              <div class="trainer-settings-note" style="margin-top:0">Loading fields...</div>
             </div>
             <div class="trainer-settings-row" style="margin-top:10px">
               <button type="button" class="trainer-settings-btn is-ghost" data-consult-field-add>+ Add field</button>
@@ -9223,24 +9494,22 @@
     const feedbackEl = overlay.querySelector('[data-consult-feedback]');
     const fieldsListEl = overlay.querySelector('[data-consult-fields-list]');
     const submitLabelInput = overlay.querySelector('[data-consult-submit-label]');
-    const previewWindow = () => {
-      const frame = document.querySelector('iframe[data-standalone-live-preview="1"]');
-      return frame instanceof HTMLIFrameElement ? frame.contentWindow : null;
-    };
-    const CONSULT_FIELD_TYPES = [
-      ['text', 'Short answer'],
-      ['textarea', 'Paragraph'],
-      ['email', 'Email'],
-      ['tel', 'Phone'],
-      ['select', 'Dropdown'],
-      ['checkbox', 'Checkbox']
-    ];
+    // Keep keystrokes inside the modal: broken third-party keydown handlers on
+    // the page (e.g. template page-events scripts) must never eat typing here.
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeTrainerSettingsModal();
+        return;
+      }
+      event.stopPropagation();
+    });
+    const CONSULT_FIELD_TYPES = CONSULT_FIELD_TYPE_CHOICES;
     const rowInputStyle = 'min-height:36px;padding:0 10px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:rgba(2,6,23,.55);color:#f8fafc;font:600 12.5px/1.2 system-ui,sans-serif;outline:none';
     const rowButtonStyle = 'min-width:30px;min-height:30px;border:0;border-radius:8px;background:rgba(148,163,184,.14);color:#e2e8f0;font:700 13px/1 system-ui,sans-serif;cursor:pointer';
     const buildConsultFieldRow = (field = {}) => {
       const row = document.createElement('div');
       row.setAttribute('data-field-row', '1');
-      if (field.id) row.setAttribute('data-field-id', String(field.id));
+      if (Number.isInteger(field.index) && field.index >= 0) row.setAttribute('data-field-index', String(field.index));
       row.style.cssText = 'display:grid;gap:8px;padding:12px;border-radius:12px;background:rgba(2,6,23,.4);border:1px solid rgba(148,163,184,.16)';
       const type = String(field.type || 'text');
       row.innerHTML = `
@@ -9273,16 +9542,38 @@
       }
       fields.forEach((field) => fieldsListEl.appendChild(buildConsultFieldRow(field)));
     };
-    window.__trainerConsultFieldsSink = (data) => {
-      renderConsultFieldRows(Array.isArray(data?.fields) ? data.fields : []);
-      if (submitLabelInput && typeof data?.submitLabel === 'string' && !submitLabelInput.dataset.userTouched) {
-        submitLabelInput.value = data.submitLabel;
+    const refreshConsultFieldEditor = ({ preserveSubmitLabel = false } = {}) => {
+      const described = describeConsultFormFromDraft();
+      if (!described.exists) {
+        if (fieldsListEl) {
+          fieldsListEl.innerHTML = '';
+          const note = document.createElement('div');
+          note.className = 'trainer-settings-note';
+          note.style.marginTop = '0';
+          note.textContent = 'This page has no consultation form yet.';
+          const insertButton = document.createElement('button');
+          insertButton.type = 'button';
+          insertButton.className = 'trainer-settings-btn';
+          insertButton.style.marginTop = '10px';
+          insertButton.textContent = 'Insert a consultation form';
+          insertButton.addEventListener('click', () => {
+            const result = insertConsultFormIntoDraft();
+            if (result.ok) {
+              trainerSettingsFeedback(feedbackEl, 'Consultation form added to your page. Customize the fields below.', true);
+              refreshConsultFieldEditor();
+            } else {
+              trainerSettingsFeedback(feedbackEl, result.error || 'Could not add the form.', false);
+            }
+          });
+          fieldsListEl.appendChild(note);
+          fieldsListEl.appendChild(insertButton);
+        }
+        return described;
       }
-      if (data?.applied === true) {
-        trainerSettingsFeedback(feedbackEl, 'Form updated in the live preview. Press Done when you finish editing to save your site.', true);
-      }
+      renderConsultFieldRows(described.fields);
+      if (submitLabelInput && !preserveSubmitLabel) submitLabelInput.value = described.submitLabel;
+      return described;
     };
-    submitLabelInput?.addEventListener('input', () => { submitLabelInput.dataset.userTouched = '1'; });
     fieldsListEl?.addEventListener('change', (event) => {
       const typeSelect = event.target instanceof Element ? event.target.closest('[data-field-type]') : null;
       if (!typeSelect) return;
@@ -9315,38 +9606,35 @@
       row.querySelector('[data-field-label]')?.focus();
     });
     overlay.querySelector('[data-consult-fields-apply]')?.addEventListener('click', () => {
-      const target = previewWindow();
-      if (!target) {
-        trainerSettingsFeedback(feedbackEl, 'Open the editor first, then apply field changes.', false);
-        return;
-      }
-      const fields = Array.from(fieldsListEl?.querySelectorAll('[data-field-row]') || []).map((row) => ({
-        id: row.getAttribute('data-field-id') || '',
-        label: String(row.querySelector('[data-field-label]')?.value || '').trim(),
-        type: String(row.querySelector('[data-field-type]')?.value || 'text'),
-        required: row.querySelector('[data-field-required]')?.checked === true,
-        options: String(row.querySelector('[data-field-options]')?.value || '')
-          .split(',')
-          .map((opt) => opt.trim())
-          .filter(Boolean)
-      })).filter((field) => field.label);
+      const fields = Array.from(fieldsListEl?.querySelectorAll('[data-field-row]') || []).map((row) => {
+        const originalIndex = Number(row.getAttribute('data-field-index'));
+        return {
+          index: Number.isInteger(originalIndex) && originalIndex >= 0 ? originalIndex : null,
+          label: String(row.querySelector('[data-field-label]')?.value || '').trim(),
+          type: String(row.querySelector('[data-field-type]')?.value || 'text'),
+          required: row.querySelector('[data-field-required]')?.checked === true,
+          options: String(row.querySelector('[data-field-options]')?.value || '')
+            .split(',')
+            .map((opt) => opt.trim())
+            .filter(Boolean)
+        };
+      }).filter((field) => field.label);
       if (!fields.length) {
         trainerSettingsFeedback(feedbackEl, 'Give each field a label first (or add at least one field).', false);
         return;
       }
-      try {
-        target.postMessage({
-          type: 'trainer_standalone_consult_fields_set',
-          fields,
-          submitLabel: String(submitLabelInput?.value || '').trim()
-        }, '*');
-      } catch {
-        trainerSettingsFeedback(feedbackEl, 'Could not reach the preview. Reload and try again.', false);
+      const result = applyConsultFormToDraft({
+        fields,
+        submitLabel: String(submitLabelInput?.value || '').trim()
+      });
+      if (!result.ok) {
+        trainerSettingsFeedback(feedbackEl, result.error || 'Could not update the form.', false);
+        return;
       }
+      trainerSettingsFeedback(feedbackEl, 'Form updated. It already shows in the preview - press Done when you finish editing to save your site.', true);
+      refreshConsultFieldEditor({ preserveSubmitLabel: true });
     });
-    try {
-      previewWindow()?.postMessage({ type: 'trainer_standalone_consult_fields_get' }, '*');
-    } catch {}
+    refreshConsultFieldEditor();
     overlay.querySelector('[data-consult-test]')?.addEventListener('click', async () => {
       const url = String(webhookInput?.value || '').trim();
       if (!/^https?:\/\//i.test(url)) {
