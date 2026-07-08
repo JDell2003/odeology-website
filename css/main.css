@@ -24426,3 +24426,214 @@ body.seo-meal-page .seo-meal-hero {
     .coach-deck-card.is-b, .coach-deck-card.is-c { display: none; }
     .coach-deck-stamp { opacity: 0; }
 }
+
+/* ── Coaches Pass & Match browsing mode ───────────────────────────── */
+.coaches-view-toggle {
+    display: inline-flex;
+    gap: 4px;
+    margin: 4px 0 18px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, .06);
+    border: 1px solid rgba(15, 23, 42, .08);
+}
+.coaches-view-toggle button {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    background: transparent;
+    color: #475569;
+    font: 800 13px/1 system-ui, sans-serif;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+.coaches-view-toggle button.is-active {
+    background: #0f172a;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .22);
+}
+.coach-match-browser {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0 30px;
+}
+.coach-match-counter {
+    font: 800 12px/1 system-ui, sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.coach-match-stage {
+    position: relative;
+    width: min(400px, 92vw);
+    height: 470px;
+}
+.coach-match-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 26px 24px 22px;
+    border-radius: 26px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 22px 48px rgba(15, 23, 42, .14);
+    user-select: none;
+    touch-action: pan-y;
+    transition: transform .28s cubic-bezier(.2, .8, .3, 1), opacity .28s ease;
+}
+.coach-match-card.is-dragging { transition: none; cursor: grabbing; }
+.coach-match-card[data-depth="0"] { z-index: 3; cursor: grab; }
+.coach-match-card[data-depth="1"] { z-index: 2; transform: translateY(14px) scale(.95); }
+.coach-match-card[data-depth="2"] { z-index: 1; transform: translateY(28px) scale(.9); opacity: .8; }
+.coach-match-card.is-leaving-right { transform: translateX(130%) rotate(16deg) !important; opacity: 0; }
+.coach-match-card.is-leaving-left { transform: translateX(-130%) rotate(-16deg) !important; opacity: 0; }
+.coach-match-card-stamp {
+    position: absolute;
+    top: 22px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    border: 3px solid currentColor;
+    font: 900 17px/1 system-ui, sans-serif;
+    letter-spacing: .14em;
+    opacity: 0;
+    transition: opacity .12s ease;
+    pointer-events: none;
+}
+.coach-match-card-stamp.is-match { left: 20px; color: #16a34a; transform: rotate(-12deg); }
+.coach-match-card-stamp.is-pass { right: 20px; color: #dc2626; transform: rotate(12deg); }
+.coach-match-card.show-match .coach-match-card-stamp.is-match,
+.coach-match-card.is-leaving-right .coach-match-card-stamp.is-match { opacity: 1; }
+.coach-match-card.show-pass .coach-match-card-stamp.is-pass,
+.coach-match-card.is-leaving-left .coach-match-card-stamp.is-pass { opacity: 1; }
+.coach-match-card-avatar {
+    width: 148px;
+    height: 148px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 4px solid #f1f5f9;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .16);
+    margin-bottom: 4px;
+}
+.coach-match-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.coach-match-card-name { font: 900 24px/1.15 system-ui, sans-serif; color: #0f172a; }
+.coach-match-card-handle { font: 600 13px/1.2 system-ui, sans-serif; color: #94a3b8; }
+.coach-match-card-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 2px; }
+.coach-match-card-chips span {
+    padding: 6px 13px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, .09);
+    color: #1d4ed8;
+    font: 800 11.5px/1 system-ui, sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.coach-match-card-overview {
+    font: 500 14px/1.55 system-ui, sans-serif;
+    color: #475569;
+    max-width: 300px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.coach-match-card-mode { font: 700 12px/1.3 system-ui, sans-serif; color: #64748b; }
+.coach-match-card a.coach-match-card-view {
+    margin-top: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: 999px;
+    background: #0f172a;
+    color: #fff;
+    font: 800 13px/1 system-ui, sans-serif;
+    text-decoration: none;
+    transition: transform .14s ease, filter .14s ease;
+}
+.coach-match-card a.coach-match-card-view:hover { transform: translateY(-1px); filter: brightness(1.12); }
+.coach-match-actions { display: flex; gap: 26px; align-items: center; }
+.coach-match-btn {
+    width: 66px;
+    height: 66px;
+    border-radius: 999px;
+    border: 0;
+    font-size: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, .18);
+    transition: transform .14s ease, filter .14s ease;
+    background: #ffffff;
+}
+.coach-match-btn:hover { transform: translateY(-2px) scale(1.05); }
+.coach-match-btn.is-pass { color: #dc2626; border: 2px solid rgba(220, 38, 38, .25); }
+.coach-match-btn.is-match { color: #16a34a; border: 2px solid rgba(22, 163, 74, .3); background: rgba(22, 163, 74, .06); }
+.coach-match-help { font: 600 12.5px/1.4 system-ui, sans-serif; color: #94a3b8; }
+.coach-match-empty {
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+    padding: 46px 24px;
+    border-radius: 24px;
+    background: #f8fafc;
+    border: 1px dashed rgba(15, 23, 42, .16);
+    text-align: center;
+    width: min(400px, 92vw);
+}
+.coach-match-empty strong { font: 900 20px/1.2 system-ui, sans-serif; color: #0f172a; }
+.coach-match-empty p { margin: 0; font: 500 13.5px/1.55 system-ui, sans-serif; color: #64748b; max-width: 300px; }
+.coach-match-restart {
+    margin-top: 6px;
+    min-height: 44px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    font: 800 13px/1 system-ui, sans-serif;
+    cursor: pointer;
+}
+.coach-match-strip {
+    width: min(400px, 92vw);
+    padding: 16px 18px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .08);
+}
+.coach-match-strip-title {
+    font: 800 11px/1.2 system-ui, sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #16a34a;
+    margin-bottom: 10px;
+}
+.coach-match-strip-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.coach-match-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 6px;
+    border-radius: 999px;
+    background: rgba(22, 163, 74, .07);
+    border: 1px solid rgba(22, 163, 74, .2);
+    color: #0f172a;
+    font: 700 13px/1 system-ui, sans-serif;
+    text-decoration: none;
+    transition: transform .14s ease;
+}
+.coach-match-chip:hover { transform: translateY(-1px); }
+.coach-match-chip img { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; }
+.coach-match-strip-hint { font: 500 12.5px/1.4 system-ui, sans-serif; color: #94a3b8; }
+@media (prefers-reduced-motion: reduce) {
+    .coach-match-card { transition: none; }
+}

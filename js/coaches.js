@@ -18,6 +18,24 @@
     }
   }
 
+  // A request the server never answers must not strand the page on the
+  // loading deck - fall back after a bounded wait.
+  function apiWithTimeout(path, timeoutMs) {
+    return Promise.race([
+      api(path),
+      new Promise((resolve) => setTimeout(() => resolve({ ok: false, status: 0, json: {}, timedOut: true }), Math.max(1000, timeoutMs || 8000)))
+    ]);
+  }
+
+  function cachedTrainerDirectory() {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem('trainer-directory-cache') || 'null');
+      return Array.isArray(parsed) && parsed.length ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
   function escapeHtml(raw) {
     return String(raw || '')
       .replace(/&/g, '&amp;')
@@ -287,7 +305,16 @@
     let currentUser = null;
     let activeReviewTab = 'all';
     let lastFocusedCoachLink = null;
-    const meResp = await api('/api/auth/me');
+    let applyFiltersRef = null;
+    // Absolute backstop: whatever happens above us, the loading deck may
+    // never sit on screen forever.
+    const deckWatchdog = window.setTimeout(() => {
+      if (!gridEl.querySelector('.coach-deck-loading')) return;
+      if (!cards.length) cards = cachedTrainerDirectory() || demoTrainerFallback();
+      if (typeof applyFiltersRef === 'function') applyFiltersRef();
+      else renderTrainerGrid(gridEl, cards, {}, {});
+    }, 12000);
+    const meResp = await apiWithTimeout('/api/auth/me', 6000);
     currentUser = meResp.ok ? (meResp.json?.user || null) : null;
     const canModerate = canModerateTrainerReviews(currentUser);
     if (reviewTabsEl) reviewTabsEl.classList.toggle('is-visible', canModerate);
@@ -332,11 +359,11 @@
     });
 
     const loadCards = async () => {
-      const resp = await api('/api/auth/trainers');
+      const resp = await apiWithTimeout('/api/auth/trainers', 9000);
       if (resp.status === 401) {
         cards = demoTrainerFallback();
       } else if (!resp.ok || !resp.json?.ok) {
-        cards = demoTrainerFallback();
+        cards = cachedTrainerDirectory() || demoTrainerFallback();
       } else {
         const trainers = Array.isArray(resp.json?.trainers) ? resp.json.trainers : [];
         cards = trainers.length ? trainers : demoTrainerFallback();
@@ -351,8 +378,207 @@
     // intentional instead of a flash.
     const deckElapsed = Date.now() - deckShownAt;
     if (deckElapsed < 1100) await new Promise((resolve) => setTimeout(resolve, 1100 - deckElapsed));
+    window.clearTimeout(deckWatchdog);
     gridEl.classList.add('coaches-grid-reveal');
     window.setTimeout(() => gridEl.classList.remove('coaches-grid-reveal'), 1600);
+
+    let viewMode = 'deck';
+    try {
+      const storedMode = String(localStorage.getItem('coaches-view-mode') || '').trim();
+      if (storedMode === 'cards' || storedMode === 'deck') viewMode = storedMode;
+    } catch {}
+    let deckIndex = 0;
+    let deckListSignature = '';
+    let deckMatches = [];
+    try {
+      const storedMatches = JSON.parse(sessionStorage.getItem('coaches-deck-matches') || 'null');
+      if (Array.isArray(storedMatches)) deckMatches = storedMatches.map((id) => String(id)).filter(Boolean);
+    } catch {}
+    const persistDeckMatches = () => {
+      try { sessionStorage.setItem('coaches-deck-matches', JSON.stringify(deckMatches)); } catch {}
+    };
+
+    if (!document.getElementById('coaches-view-toggle')) {
+      gridEl.insertAdjacentHTML('beforebegin', `
+        <div class="coaches-view-toggle" id="coaches-view-toggle" role="tablist" aria-label="Browse style">
+          <button type="button" data-view-mode="deck" role="tab">&#10084;&#65039; Pass &amp; Match</button>
+          <button type="button" data-view-mode="cards" role="tab">&#9783; Cards</button>
+        </div>
+      `);
+      document.getElementById('coaches-view-toggle')?.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('[data-view-mode]') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        viewMode = button.dataset.viewMode === 'cards' ? 'cards' : 'deck';
+        try { localStorage.setItem('coaches-view-mode', viewMode); } catch {}
+        applyFilters();
+      });
+    }
+    const syncViewToggle = () => {
+      document.querySelectorAll('#coaches-view-toggle [data-view-mode]').forEach((button) => {
+        const active = String(button.getAttribute('data-view-mode') || '') === viewMode;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    };
+
+    const buildDeckProfileCard = (trainer, depth) => {
+      const fullName = trainer.fullName || trainer.displayName || 'Coach';
+      const username = trainer.publicHandle || trainer.username || trainer.displayName || 'coach';
+      const coachTags = [
+        ...(Array.isArray(trainer.coachBadgeType) ? trainer.coachBadgeType : []),
+        ...(Array.isArray(trainer.coachCustomTags) ? trainer.coachCustomTags : [])
+      ].filter(Boolean);
+      const tierName = coachTags[0] || trainer?.proof?.tier?.name || 'Starter';
+      const experienceLevel = coachTags[1] || trainer.experienceLevel || 'Experienced';
+      const avatarSrc = trainer.photoDataUrl || 'assets/images/placeholders/profile-placeholder.jpg';
+      const overview = truncate(
+        trainer.brandPositioning || trainer.differentiator || trainer.clientTypes || trainer.idealClient || 'Trainer profile preview',
+        150
+      );
+      return `
+        <article class="coach-match-card" data-match-card data-depth="${depth}" data-trainer-id="${escapeHtml(String(trainer.id || ''))}">
+          <span class="coach-match-card-stamp is-match" aria-hidden="true">MATCH</span>
+          <span class="coach-match-card-stamp is-pass" aria-hidden="true">PASS</span>
+          <div class="coach-match-card-avatar"><img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(fullName)}" draggable="false"></div>
+          <div class="coach-match-card-name">${escapeHtml(fullName)}</div>
+          <div class="coach-match-card-handle">@${escapeHtml(username)}</div>
+          <div class="coach-match-card-chips">
+            <span>${escapeHtml(tierName)}</span>
+            <span>${escapeHtml(experienceLevel)}</span>
+          </div>
+          <div class="coach-match-card-overview">${escapeHtml(overview)}</div>
+          <div class="coach-match-card-mode">${escapeHtml(buildModeText(trainer))}</div>
+          <a class="coach-pill coach-match-card-view" href="${escapeHtml(buildTrainerProfileHref(trainer))}">View full profile</a>
+        </article>
+      `;
+    };
+
+    const deckFilteredList = (filters) => cards.filter((trainer) => (
+      matchesTrainerFilters(trainer, filters) && getTrainerReviewStatus(trainer) !== 'review'
+    ));
+
+    const renderCoachMatchBrowser = (filters) => {
+      const list = deckFilteredList(filters);
+      const signature = list.map((trainer) => String(trainer.id || '')).join('|');
+      if (signature !== deckListSignature) {
+        deckListSignature = signature;
+        deckIndex = 0;
+      }
+      const matchedTrainers = deckMatches
+        .map((id) => cards.find((trainer) => String(trainer.id || '') === id))
+        .filter(Boolean);
+      const matchesStrip = `
+        <div class="coach-match-strip${matchedTrainers.length ? '' : ' is-empty'}">
+          <div class="coach-match-strip-title">Your matches</div>
+          ${matchedTrainers.length
+            ? `<div class="coach-match-strip-row">${matchedTrainers.map((trainer) => `
+                <a class="coach-pill coach-match-chip" href="${escapeHtml(buildTrainerProfileHref(trainer))}">
+                  <img src="${escapeHtml(trainer.photoDataUrl || 'assets/images/placeholders/profile-placeholder.jpg')}" alt="">
+                  <span>${escapeHtml(trainer.fullName || trainer.displayName || 'Coach')}</span>
+                </a>
+              `).join('')}</div>`
+            : '<div class="coach-match-strip-hint">Coaches you match with land here.</div>'}
+        </div>
+      `;
+      if (!list.length) {
+        gridEl.innerHTML = `
+          <div class="coach-match-browser">
+            <div class="coach-match-empty">No trainers match that search yet.</div>
+            ${matchesStrip}
+          </div>
+        `;
+        return;
+      }
+      if (deckIndex >= list.length) {
+        gridEl.innerHTML = `
+          <div class="coach-match-browser">
+            <div class="coach-match-empty">
+              <strong>You've met everyone!</strong>
+              <p>That's every coach for this search. Check your matches below or run the deck again.</p>
+              <button type="button" class="coach-match-restart" data-deck-restart>Run it back</button>
+            </div>
+            ${matchesStrip}
+          </div>
+        `;
+        gridEl.querySelector('[data-deck-restart]')?.addEventListener('click', () => {
+          deckIndex = 0;
+          renderCoachMatchBrowser(filters);
+        });
+        return;
+      }
+      const visible = list.slice(deckIndex, deckIndex + 3);
+      gridEl.innerHTML = `
+        <div class="coach-match-browser">
+          <div class="coach-match-counter">${deckIndex + 1} of ${list.length}</div>
+          <div class="coach-match-stage">
+            ${visible.map((trainer, depth) => buildDeckProfileCard(trainer, depth)).reverse().join('')}
+          </div>
+          <div class="coach-match-actions">
+            <button type="button" class="coach-match-btn is-pass" data-deck-pass aria-label="Pass">&#10005;</button>
+            <button type="button" class="coach-match-btn is-match" data-deck-match aria-label="Match">&#10084;</button>
+          </div>
+          <div class="coach-match-help">Swipe the card or use the buttons - matches save below.</div>
+          ${matchesStrip}
+        </div>
+      `;
+      const topCard = gridEl.querySelector('[data-match-card][data-depth="0"]');
+      const advance = (action) => {
+        if (!topCard || topCard.dataset.leaving === '1') return;
+        topCard.dataset.leaving = '1';
+        const trainer = list[deckIndex];
+        if (action === 'match' && trainer) {
+          const id = String(trainer.id || '');
+          if (id && !deckMatches.includes(id)) {
+            deckMatches.push(id);
+            persistDeckMatches();
+          }
+        }
+        topCard.classList.add(action === 'match' ? 'is-leaving-right' : 'is-leaving-left');
+        window.setTimeout(() => {
+          deckIndex += 1;
+          renderCoachMatchBrowser(filters);
+        }, 340);
+      };
+      gridEl.querySelector('[data-deck-pass]')?.addEventListener('click', () => advance('pass'));
+      gridEl.querySelector('[data-deck-match]')?.addEventListener('click', () => advance('match'));
+      if (topCard) {
+        let dragPointerId = null;
+        let dragStartX = 0;
+        let dragDx = 0;
+        topCard.addEventListener('pointerdown', (event) => {
+          if (event.target instanceof Element && event.target.closest('a,button')) return;
+          dragPointerId = event.pointerId;
+          dragStartX = event.clientX;
+          dragDx = 0;
+          topCard.setPointerCapture?.(event.pointerId);
+          topCard.classList.add('is-dragging');
+        });
+        topCard.addEventListener('pointermove', (event) => {
+          if (dragPointerId !== event.pointerId) return;
+          dragDx = event.clientX - dragStartX;
+          topCard.style.transform = `translateX(${dragDx}px) rotate(${dragDx / 18}deg)`;
+          topCard.classList.toggle('show-match', dragDx > 55);
+          topCard.classList.toggle('show-pass', dragDx < -55);
+        });
+        const endDrag = (event) => {
+          if (dragPointerId !== event.pointerId) return;
+          dragPointerId = null;
+          topCard.classList.remove('is-dragging');
+          if (dragDx > 95) {
+            advance('match');
+            return;
+          }
+          if (dragDx < -95) {
+            advance('pass');
+            return;
+          }
+          topCard.style.transform = '';
+          topCard.classList.remove('show-match', 'show-pass');
+        };
+        topCard.addEventListener('pointerup', endDrag);
+        topCard.addEventListener('pointercancel', endDrag);
+      }
+    };
 
     const applyFilters = () => {
       const reviewCount = cards.filter((trainer) => getTrainerReviewStatus(trainer) === 'review').length;
@@ -364,16 +590,23 @@
       document.querySelectorAll('[data-review-tab]').forEach((button) => {
         button.classList.toggle('is-active', String(button.getAttribute('data-review-tab') || '') === activeReviewTab);
       });
-      renderTrainerGrid(gridEl, cards, {
+      const filters = {
         search: normalizeText(searchInput?.value),
         city: normalizeText(cityInput?.value),
         state: normalizeText(stateInput?.value),
         zip: normalizeText(zipInput?.value)
-      }, {
+      };
+      syncViewToggle();
+      if (viewMode === 'deck' && !(canModerate && activeReviewTab === 'review')) {
+        renderCoachMatchBrowser(filters);
+        return;
+      }
+      renderTrainerGrid(gridEl, cards, filters, {
         canModerate,
         activeTab: activeReviewTab
       });
     };
+    applyFiltersRef = applyFilters;
 
     gridEl.addEventListener('click', async (event) => {
       const coachLink = event.target instanceof Element ? event.target.closest('.coach-pill') : null;
