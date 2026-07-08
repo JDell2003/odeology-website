@@ -9188,16 +9188,47 @@
     return 'text';
   }
 
-  function consultFieldLabelOf(el) {
+  function consultFieldExternalLabelEl(doc, el) {
+    const id = String(el.getAttribute('id') || '').trim();
+    if (id) {
+      try {
+        const byFor = doc.querySelector(`label[for="${id.replace(/"/g, '\\"')}"]`);
+        if (byFor) return byFor;
+      } catch {}
+    }
+    const prev = el.previousElementSibling;
+    if (prev && prev.tagName.toLowerCase() === 'label' && !prev.querySelector('input,textarea,select')) return prev;
+    const parent = el.parentElement;
+    if (parent) {
+      const labels = Array.from(parent.querySelectorAll(':scope > label'))
+        .filter((label) => !label.contains(el) && !label.querySelector('input,textarea,select'));
+      if (labels.length === 1) return labels[0];
+    }
+    return null;
+  }
+
+  function consultFieldLabelOf(doc, el) {
     const placeholder = String(el.getAttribute('placeholder') || '').trim();
-    if (placeholder) return placeholder;
+    if (placeholder) return placeholder.slice(0, 120);
+    const aria = String(el.getAttribute('aria-label') || '').trim();
+    if (aria) return aria.slice(0, 120);
+    const external = consultFieldExternalLabelEl(doc, el);
+    if (external) {
+      const text = String(external.textContent || '').replace(/\s+/g, ' ').trim();
+      if (text) return text.slice(0, 120);
+    }
     const wrapper = consultFieldWrapperOf(el);
     if (wrapper !== el) {
-      const text = String(wrapper.textContent || '').trim();
+      const text = String(wrapper.textContent || '').replace(/\s+/g, ' ').trim();
+      if (text) return text.slice(0, 120);
+    }
+    if (el.tagName.toLowerCase() === 'select') {
+      const prompt = Array.from(el.querySelectorAll('option')).find((opt) => opt.disabled || !String(opt.value || '').trim());
+      const text = String(prompt?.textContent || '').replace(/\s+/g, ' ').trim();
       if (text) return text.slice(0, 120);
     }
     const name = String(el.getAttribute('name') || '').trim();
-    if (name) return name.replace(/[_-]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+    if (name) return name.replace(/[_-]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase()).slice(0, 120);
     return 'Field';
   }
 
@@ -9208,12 +9239,14 @@
     if (!form) return { exists: false, fields: [], submitLabel: '' };
     const fields = consultFormFieldEls(form).map((el, index) => ({
       index,
-      label: consultFieldLabelOf(el),
+      label: consultFieldLabelOf(doc, el),
       type: consultFieldTypeOf(el),
       required: el.hasAttribute('required'),
       options: el.tagName.toLowerCase() === 'select'
         ? Array.from(el.querySelectorAll('option'))
-          .filter((opt) => !opt.disabled && String(opt.value || opt.textContent || '').trim())
+          .filter((opt, idx) => !opt.disabled
+            && String(opt.value || '').trim()
+            && !(idx === 0 && /^(select|choose|pick|--)/i.test(String(opt.textContent || '').trim())))
           .map((opt) => String(opt.textContent || '').trim())
         : []
     }));
@@ -9283,6 +9316,8 @@
       if (field?.required === true) existingEl.setAttribute('required', '');
       else existingEl.removeAttribute('required');
       if (type === 'select') fillSelectOptions(existingEl);
+      const externalLabel = consultFieldExternalLabelEl(doc, existingEl);
+      if (externalLabel) externalLabel.textContent = label;
       return consultFieldWrapperOf(existingEl);
     }
     if (type === 'checkbox') {
@@ -9355,22 +9390,44 @@
     if (!form) return { ok: false, error: 'No consultation form found on this page.' };
     const existingEls = consultFormFieldEls(form);
     const usedNames = [];
-    const nodes = (Array.isArray(fields) ? fields : []).slice(0, 24).map((field) => (
-      buildConsultDraftField(doc, field, usedNames, Number.isInteger(field?.index) ? existingEls[field.index] : null)
-    ));
-    existingEls.forEach((el) => {
-      const wrapper = consultFieldWrapperOf(el);
-      if (wrapper.parentElement) wrapper.remove();
-    });
-    const anchor = form.querySelector('button[type="submit"],input[type="submit"]')
-      || form.querySelector('button')
-      || form.querySelector('[data-consult-form-status]');
-    let anchorTop = anchor;
-    while (anchorTop && anchorTop.parentElement && anchorTop.parentElement !== form) anchorTop = anchorTop.parentElement;
-    nodes.forEach((node) => {
-      if (anchorTop && anchorTop.parentElement === form) form.insertBefore(node, anchorTop);
-      else form.appendChild(node);
-    });
+    const cleanFields = (Array.isArray(fields) ? fields : []).slice(0, 24);
+    const structureUnchanged = cleanFields.length === existingEls.length
+      && cleanFields.every((field, position) => field?.index === position);
+    if (structureUnchanged) {
+      // Nothing added, removed, or reordered: update every field where it
+      // already sits so custom template layouts stay intact.
+      cleanFields.forEach((field, position) => {
+        const el = existingEls[position];
+        const node = buildConsultDraftField(doc, field, usedNames, el);
+        const wrapper = consultFieldWrapperOf(el);
+        if (node !== wrapper && wrapper.parentElement) {
+          const externalLabel = consultFieldExternalLabelEl(doc, el);
+          if (externalLabel) externalLabel.textContent = String(field?.label || '').trim().slice(0, 120) || 'Field';
+          wrapper.parentElement.replaceChild(node, wrapper);
+        }
+      });
+    } else {
+      const nodes = cleanFields.map((field) => (
+        buildConsultDraftField(doc, field, usedNames, Number.isInteger(field?.index) ? existingEls[field.index] : null)
+      ));
+      existingEls.forEach((el) => {
+        const wrapper = consultFieldWrapperOf(el);
+        if (nodes.includes(wrapper)) return;
+        const externalLabel = consultFieldExternalLabelEl(doc, el);
+        if (externalLabel?.parentElement) externalLabel.remove();
+        if (wrapper.parentElement) wrapper.remove();
+      });
+      const anchor = form.querySelector('button[type="submit"],input[type="submit"]')
+        || form.querySelector('button')
+        || form.querySelector('[data-consult-form-status]');
+      let anchorTop = anchor;
+      while (anchorTop && anchorTop.parentElement && anchorTop.parentElement !== form) anchorTop = anchorTop.parentElement;
+      nodes.forEach((node) => {
+        if (node.parentElement) node.remove();
+        if (anchorTop && anchorTop.parentElement === form) form.insertBefore(node, anchorTop);
+        else form.appendChild(node);
+      });
+    }
     const cleanSubmitLabel = String(submitLabel || '').trim().slice(0, 60);
     if (cleanSubmitLabel) {
       const submitButton = form.querySelector('button[type="submit"],input[type="submit"]') || form.querySelector('button');
