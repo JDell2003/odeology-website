@@ -1,3 +1,4 @@
 node_modules
 free-exercise-db/
 data/trainer-media/
+.env
