@@ -9161,7 +9161,11 @@
   }
 
   function serializeConsultDocument(doc, isFullDoc) {
-    return isFullDoc ? `<!doctype html>\n${doc.documentElement.outerHTML}` : doc.body.innerHTML;
+    if (isFullDoc) return `<!doctype html>\n${doc.documentElement.outerHTML}`;
+    // The parser hoists leading <style>/<link> tags from fragments into
+    // <head>; put them back so the page keeps its styling.
+    const hoisted = doc.head ? doc.head.innerHTML : '';
+    return `${hoisted}${doc.body.innerHTML}`;
   }
 
   function consultFormFieldEls(form) {
@@ -9310,14 +9314,25 @@
         select.appendChild(option);
       });
     };
-    if (existingEl && consultFieldTypeOf(existingEl) === type && type !== 'checkbox') {
+    if (existingEl && consultFieldTypeOf(existingEl) === type) {
       existingEl.setAttribute('name', name);
-      if (type !== 'select') existingEl.setAttribute('placeholder', label);
+      if (type !== 'select' && type !== 'checkbox') existingEl.setAttribute('placeholder', label);
       if (field?.required === true) existingEl.setAttribute('required', '');
       else existingEl.removeAttribute('required');
       if (type === 'select') fillSelectOptions(existingEl);
       const externalLabel = consultFieldExternalLabelEl(doc, existingEl);
       if (externalLabel) externalLabel.textContent = label;
+      if (type === 'checkbox') {
+        const wrapper = consultFieldWrapperOf(existingEl);
+        if (wrapper !== existingEl) {
+          const span = Array.from(wrapper.querySelectorAll('span,div')).find((node) => !node.querySelector('input,textarea,select'));
+          if (span) span.textContent = label;
+          else {
+            const textNode = Array.from(wrapper.childNodes).find((node) => node.nodeType === 3 && String(node.textContent || '').trim());
+            if (textNode) textNode.textContent = ` ${label}`;
+          }
+        }
+      }
       return consultFieldWrapperOf(existingEl);
     }
     if (type === 'checkbox') {
@@ -9383,49 +9398,131 @@
     return true;
   }
 
+  function consultFieldBlockOf(form, el) {
+    // The smallest ancestor holding just this field (its container div with
+    // the label) - the unit we move or remove so template styling survives.
+    let node = el;
+    while (node.parentElement && node.parentElement !== form) {
+      if (consultFormFieldEls(node.parentElement).length > 1) break;
+      node = node.parentElement;
+    }
+    return node;
+  }
+
+  function consultSwapControl(doc, oldControl, newNode, label) {
+    // Replace just the control inside its block, carrying over the template's
+    // visual identity (classes, id) so CSS keeps applying.
+    const newControl = newNode.matches?.('input,textarea,select') ? newNode : newNode.querySelector('input,textarea,select');
+    const oldClass = oldControl.getAttribute('class');
+    if (newControl && oldClass) {
+      newControl.setAttribute('class', oldClass);
+      newControl.removeAttribute('style');
+    }
+    const oldId = oldControl.getAttribute('id');
+    if (newControl && oldId) newControl.setAttribute('id', oldId);
+    const externalLabel = consultFieldExternalLabelEl(doc, oldControl);
+    if (externalLabel) externalLabel.textContent = label;
+    const oldWrapper = consultFieldWrapperOf(oldControl);
+    if (oldWrapper.parentElement) oldWrapper.parentElement.replaceChild(newNode, oldWrapper);
+    return newControl || newNode;
+  }
+
+  function consultCloneBlockFor(doc, form, field, usedNames, templateControl) {
+    // New fields copy the look of an existing field by cloning its block.
+    const node = buildConsultDraftField(doc, field, usedNames, null);
+    if (!templateControl) return node;
+    const templateBlock = consultFieldBlockOf(form, templateControl);
+    if (templateBlock === templateControl || templateBlock === consultFieldWrapperOf(templateControl)) {
+      // Bare control with no container: copy its classes onto ours.
+      const control = node.matches?.('input,textarea,select') ? node : node.querySelector('input,textarea,select');
+      const templateClass = templateControl.getAttribute('class');
+      if (control && templateClass) {
+        control.setAttribute('class', templateClass);
+        control.removeAttribute('style');
+      }
+      return node;
+    }
+    const clone = templateBlock.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach((idNode) => idNode.removeAttribute('id'));
+    const cloneControl = clone.querySelector('input,textarea,select');
+    if (!cloneControl) return node;
+    const label = String(field?.label || '').trim().slice(0, 120) || 'Field';
+    const cloneLabelEl = Array.from(clone.querySelectorAll('label')).find((labelNode) => !labelNode.querySelector('input,textarea,select'));
+    if (cloneLabelEl) {
+      cloneLabelEl.textContent = label;
+      cloneLabelEl.removeAttribute('for');
+    }
+    const desiredControl = node.matches?.('input,textarea,select') ? node : node.querySelector('input,textarea,select');
+    if (desiredControl) {
+      const cloneClass = cloneControl.getAttribute('class');
+      if (cloneClass) {
+        desiredControl.setAttribute('class', cloneClass);
+        desiredControl.removeAttribute('style');
+      }
+      cloneControl.parentElement.replaceChild(
+        node.matches?.('input,textarea,select') ? desiredControl : node,
+        cloneControl
+      );
+    }
+    return clone;
+  }
+
   function applyConsultFormToDraft({ fields, submitLabel }) {
     const { html } = consultDraftCustomCode();
     const { doc, isFullDoc } = parseConsultDocument(html);
     const form = doc.querySelector('form');
     if (!form) return { ok: false, error: 'No consultation form found on this page.' };
     const existingEls = consultFormFieldEls(form);
+    const blocks = existingEls.map((el) => consultFieldBlockOf(form, el));
     const usedNames = [];
     const cleanFields = (Array.isArray(fields) ? fields : []).slice(0, 24);
-    const structureUnchanged = cleanFields.length === existingEls.length
-      && cleanFields.every((field, position) => field?.index === position);
-    if (structureUnchanged) {
-      // Nothing added, removed, or reordered: update every field where it
-      // already sits so custom template layouts stay intact.
-      cleanFields.forEach((field, position) => {
-        const el = existingEls[position];
+    const keptPositions = new Set(cleanFields.map((field) => field?.index).filter((idx) => Number.isInteger(idx)));
+
+    // 1) Update kept fields in place; build new/replacement nodes.
+    const desiredBlocks = cleanFields.map((field) => {
+      const label = String(field?.label || '').trim().slice(0, 120) || 'Field';
+      if (Number.isInteger(field?.index) && existingEls[field.index]) {
+        const el = existingEls[field.index];
         const node = buildConsultDraftField(doc, field, usedNames, el);
-        const wrapper = consultFieldWrapperOf(el);
-        if (node !== wrapper && wrapper.parentElement) {
-          const externalLabel = consultFieldExternalLabelEl(doc, el);
-          if (externalLabel) externalLabel.textContent = String(field?.label || '').trim().slice(0, 120) || 'Field';
-          wrapper.parentElement.replaceChild(node, wrapper);
-        }
-      });
+        if (node === consultFieldWrapperOf(el)) return blocks[field.index];
+        const newControl = consultSwapControl(doc, el, node, label);
+        return consultFieldBlockOf(form, newControl);
+      }
+      const templateControl = existingEls.find((el, idx) => keptPositions.has(idx)) || existingEls[0] || null;
+      return consultCloneBlockFor(doc, form, field, usedNames, templateControl);
+    });
+
+    // 2) Remove deleted fields as whole blocks (with any external label).
+    existingEls.forEach((el, idx) => {
+      if (keptPositions.has(idx)) return;
+      const externalLabel = consultFieldExternalLabelEl(doc, el);
+      const block = blocks[idx];
+      if (block.parentElement) block.remove();
+      else if (consultFieldWrapperOf(el).parentElement) consultFieldWrapperOf(el).remove();
+      if (externalLabel && externalLabel.isConnected && externalLabel.parentElement) externalLabel.remove();
+    });
+
+    // 3) Place blocks. When all kept blocks share one parent, order everything
+    //    there; otherwise leave kept blocks alone and add new ones at the end.
+    const connectedDesired = desiredBlocks.filter((block) => block.isConnected);
+    const commonParent = connectedDesired.length && connectedDesired.every((block) => block.parentElement === connectedDesired[0].parentElement)
+      ? connectedDesired[0].parentElement
+      : null;
+    if (commonParent) {
+      const placeholder = doc.createElement('span');
+      commonParent.insertBefore(placeholder, connectedDesired[0]);
+      desiredBlocks.forEach((block) => commonParent.insertBefore(block, placeholder));
+      placeholder.remove();
     } else {
-      const nodes = cleanFields.map((field) => (
-        buildConsultDraftField(doc, field, usedNames, Number.isInteger(field?.index) ? existingEls[field.index] : null)
-      ));
-      existingEls.forEach((el) => {
-        const wrapper = consultFieldWrapperOf(el);
-        if (nodes.includes(wrapper)) return;
-        const externalLabel = consultFieldExternalLabelEl(doc, el);
-        if (externalLabel?.parentElement) externalLabel.remove();
-        if (wrapper.parentElement) wrapper.remove();
-      });
       const anchor = form.querySelector('button[type="submit"],input[type="submit"]')
         || form.querySelector('button')
         || form.querySelector('[data-consult-form-status]');
       let anchorTop = anchor;
       while (anchorTop && anchorTop.parentElement && anchorTop.parentElement !== form) anchorTop = anchorTop.parentElement;
-      nodes.forEach((node) => {
-        if (node.parentElement) node.remove();
-        if (anchorTop && anchorTop.parentElement === form) form.insertBefore(node, anchorTop);
-        else form.appendChild(node);
+      desiredBlocks.forEach((block) => {
+        if (block.isConnected) return;
+        if (anchorTop && anchorTop.parentElement === form) form.insertBefore(block, anchorTop);
+        else form.appendChild(block);
       });
     }
     const cleanSubmitLabel = String(submitLabel || '').trim().slice(0, 60);
@@ -9664,7 +9761,8 @@
     });
     overlay.querySelector('[data-consult-fields-apply]')?.addEventListener('click', () => {
       const fields = Array.from(fieldsListEl?.querySelectorAll('[data-field-row]') || []).map((row) => {
-        const originalIndex = Number(row.getAttribute('data-field-index'));
+        const rawIndex = row.getAttribute('data-field-index');
+        const originalIndex = rawIndex === null || rawIndex === '' ? NaN : Number(rawIndex);
         return {
           index: Number.isInteger(originalIndex) && originalIndex >= 0 ? originalIndex : null,
           label: String(row.querySelector('[data-field-label]')?.value || '').trim(),
