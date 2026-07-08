@@ -24258,3 +24258,171 @@ body.seo-meal-page .seo-meal-hero {
     font: 500 13px/1.6 system-ui, sans-serif;
     color: #64748b;
 }
+
+/* ── Coaches page loading deck (swipe teaser) ─────────────────────── */
+.coach-deck-loading {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 46px 16px 30px;
+}
+.coach-deck-stage {
+    position: relative;
+    width: min(400px, 90vw);
+    height: 138px;
+}
+.coach-deck-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px;
+    border-radius: 22px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .12);
+    will-change: transform, opacity;
+}
+.coach-deck-card.is-a { animation: coachDeckRight 5.4s cubic-bezier(.45, .05, .35, 1) infinite; }
+.coach-deck-card.is-b { animation: coachDeckLeft 5.4s cubic-bezier(.45, .05, .35, 1) infinite; animation-delay: -1.8s; }
+.coach-deck-card.is-c { animation: coachDeckRight 5.4s cubic-bezier(.45, .05, .35, 1) infinite; animation-delay: -3.6s; }
+@keyframes coachDeckRight {
+    0%   { transform: translateY(28px) scale(.88); opacity: 0; z-index: 1; }
+    10%  { opacity: 1; }
+    33%  { transform: translateY(14px) scale(.94); opacity: 1; z-index: 2; }
+    62%  { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; z-index: 3; }
+    72%  { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; z-index: 3; }
+    92%  { transform: translateX(78%) translateY(-8px) rotate(12deg); opacity: 1; z-index: 3; }
+    100% { transform: translateX(135%) translateY(-14px) rotate(17deg); opacity: 0; z-index: 3; }
+}
+@keyframes coachDeckLeft {
+    0%   { transform: translateY(28px) scale(.88); opacity: 0; z-index: 1; }
+    10%  { opacity: 1; }
+    33%  { transform: translateY(14px) scale(.94); opacity: 1; z-index: 2; }
+    62%  { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; z-index: 3; }
+    72%  { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; z-index: 3; }
+    92%  { transform: translateX(-78%) translateY(-8px) rotate(-12deg); opacity: 1; z-index: 3; }
+    100% { transform: translateX(-135%) translateY(-14px) rotate(-17deg); opacity: 0; z-index: 3; }
+}
+.coach-deck-stamp {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font: 900 13px/1 system-ui, sans-serif;
+    letter-spacing: .14em;
+    border: 2.5px solid currentColor;
+    transform: rotate(-8deg);
+    opacity: 0;
+}
+.coach-deck-stamp.is-match { color: #16a34a; background: rgba(22, 163, 74, .08); }
+.coach-deck-stamp.is-pass { color: #94a3b8; background: rgba(148, 163, 184, .1); left: 18px; right: auto; transform: rotate(8deg); }
+.coach-deck-card.is-a .coach-deck-stamp,
+.coach-deck-card.is-c .coach-deck-stamp { animation: coachDeckStampIn 5.4s ease infinite; }
+.coach-deck-card.is-b .coach-deck-stamp { animation: coachDeckStampIn 5.4s ease infinite; animation-delay: -1.8s; }
+.coach-deck-card.is-c .coach-deck-stamp { animation-delay: -3.6s; }
+@keyframes coachDeckStampIn {
+    0%, 70%  { opacity: 0; transform: scale(1.6) rotate(-8deg); }
+    78%, 96% { opacity: 1; transform: scale(1) rotate(-8deg); }
+    100%     { opacity: 0; transform: scale(1) rotate(-8deg); }
+}
+.coach-deck-avatar {
+    flex: 0 0 auto;
+    width: 62px;
+    height: 62px;
+    border-radius: 999px;
+    background: linear-gradient(100deg, #e8edf5 38%, #f7fafc 50%, #e8edf5 62%);
+    background-size: 220% 100%;
+    animation: coachDeckShimmer 1.6s linear infinite;
+}
+.coach-deck-lines {
+    flex: 1 1 auto;
+    display: grid;
+    gap: 9px;
+}
+.coach-deck-lines i {
+    display: block;
+    height: 11px;
+    border-radius: 999px;
+    background: linear-gradient(100deg, #e8edf5 38%, #f7fafc 50%, #e8edf5 62%);
+    background-size: 220% 100%;
+    animation: coachDeckShimmer 1.6s linear infinite;
+}
+@keyframes coachDeckShimmer {
+    from { background-position: 110% 0; }
+    to   { background-position: -110% 0; }
+}
+.coach-deck-caption {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font: 800 16px/1.2 system-ui, sans-serif;
+    color: #0f172a;
+}
+.coach-deck-dots { display: inline-flex; gap: 3px; padding-left: 2px; }
+.coach-deck-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: currentColor;
+    animation: coachDeckDot 1.2s ease-in-out infinite;
+}
+.coach-deck-dots i:nth-child(2) { animation-delay: .15s; }
+.coach-deck-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes coachDeckDot {
+    0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+    30% { transform: translateY(-5px); opacity: 1; }
+}
+.coach-deck-hint {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font: 700 12px/1 system-ui, sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    animation: coachDeckHintPulse 2.7s ease-in-out infinite;
+}
+.coach-deck-hint-divider {
+    width: 34px;
+    height: 1px;
+    background: rgba(148, 163, 184, .5);
+}
+@keyframes coachDeckHintPulse {
+    0%, 100% { opacity: .55; }
+    50% { opacity: 1; }
+}
+/* Real cards sweep in once loading finishes */
+.coaches-grid-reveal > .coach-card {
+    animation: coachCardReveal .55s cubic-bezier(.2, .8, .3, 1) backwards;
+}
+.coaches-grid-reveal > .coach-card:nth-child(1) { animation-delay: .03s; }
+.coaches-grid-reveal > .coach-card:nth-child(2) { animation-delay: .09s; }
+.coaches-grid-reveal > .coach-card:nth-child(3) { animation-delay: .15s; }
+.coaches-grid-reveal > .coach-card:nth-child(4) { animation-delay: .21s; }
+.coaches-grid-reveal > .coach-card:nth-child(5) { animation-delay: .27s; }
+.coaches-grid-reveal > .coach-card:nth-child(6) { animation-delay: .33s; }
+.coaches-grid-reveal > .coach-card:nth-child(7) { animation-delay: .39s; }
+.coaches-grid-reveal > .coach-card:nth-child(8) { animation-delay: .45s; }
+.coaches-grid-reveal > .coach-card:nth-child(n+9) { animation-delay: .5s; }
+@keyframes coachCardReveal {
+    from { opacity: 0; transform: translateY(22px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .coach-deck-card,
+    .coach-deck-stamp,
+    .coach-deck-avatar,
+    .coach-deck-lines i,
+    .coach-deck-dots i,
+    .coach-deck-hint,
+    .coaches-grid-reveal > .coach-card {
+        animation: none !important;
+    }
+    .coach-deck-card.is-b, .coach-deck-card.is-c { display: none; }
+    .coach-deck-stamp { opacity: 0; }
+}

@@ -244,6 +244,30 @@
     gridEl.innerHTML = filtered.map((trainer) => buildCoachCard(trainer, options)).join('');
   }
 
+  function renderCoachesLoadingDeck(gridEl) {
+    const deckCard = (variant) => `
+      <div class="coach-deck-card ${variant}">
+        <span class="coach-deck-stamp ${variant === 'is-b' ? 'is-pass' : 'is-match'}">${variant === 'is-b' ? 'PASS' : 'MATCH'}</span>
+        <span class="coach-deck-avatar"></span>
+        <span class="coach-deck-lines">
+          <i style="width:58%"></i>
+          <i style="width:34%"></i>
+          <i style="width:88%"></i>
+          <i style="width:72%"></i>
+        </span>
+      </div>
+    `;
+    gridEl.innerHTML = `
+      <div class="coach-deck-loading" role="status" aria-label="Finding coaches">
+        <div class="coach-deck-stage">
+          ${deckCard('is-a')}${deckCard('is-b')}${deckCard('is-c')}
+        </div>
+        <div class="coach-deck-caption">Finding your coach<span class="coach-deck-dots"><i></i><i></i><i></i></span></div>
+        <div class="coach-deck-hint"><span>&#10005;&nbsp;&nbsp;pass</span><span class="coach-deck-hint-divider"></span><span>match&nbsp;&nbsp;&#10084;</span></div>
+      </div>
+    `;
+  }
+
   async function init() {
     const gridEl = $('#coaches-grid');
     const searchInput = $('#coach-search-input');
@@ -256,6 +280,8 @@
     const accessSignupBtn = $('#coaches-access-signup');
     const accessSigninBtn = $('#coaches-access-signin');
     if (!gridEl) return;
+    renderCoachesLoadingDeck(gridEl);
+    const deckShownAt = Date.now();
 
     let cards = [];
     let currentUser = null;
@@ -321,6 +347,12 @@
     };
 
     await loadCards();
+    // Let the deck play a beat even on instant loads so the reveal feels
+    // intentional instead of a flash.
+    const deckElapsed = Date.now() - deckShownAt;
+    if (deckElapsed < 1100) await new Promise((resolve) => setTimeout(resolve, 1100 - deckElapsed));
+    gridEl.classList.add('coaches-grid-reveal');
+    window.setTimeout(() => gridEl.classList.remove('coaches-grid-reveal'), 1600);
 
     const applyFilters = () => {
       const reviewCount = cards.filter((trainer) => getTrainerReviewStatus(trainer) === 'review').length;
