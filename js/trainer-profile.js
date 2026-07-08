@@ -1608,6 +1608,93 @@
     window.setTimeout(() => toast.remove(), Math.max(800, Number(autoHideMs) || 2600));
   }
 
+  function uploadTrainerMediaBlob(blob, { kind = 'image', mime = '', fileName = '', onProgress } = {}) {
+    const attempt = () => new Promise((resolve) => {
+      const query = new URLSearchParams({ type: kind, name: String(fileName || '') });
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/api/auth/trainer/page/media?${query.toString()}`);
+      xhr.setRequestHeader('Content-Type', mime || 'application/octet-stream');
+      xhr.withCredentials = true;
+      // A stalled connection must fail fast enough to retry instead of
+      // leaving the placeholder spinning forever.
+      xhr.timeout = kind === 'video' ? 180000 : 60000;
+      xhr.upload.onprogress = (progressEvent) => {
+        if (progressEvent.lengthComputable && typeof onProgress === 'function') {
+          onProgress(Math.max(1, Math.min(99, Math.round((progressEvent.loaded / progressEvent.total) * 100))));
+        }
+      };
+      xhr.onload = () => {
+        let json = null;
+        try { json = JSON.parse(xhr.responseText || 'null'); } catch {}
+        resolve({ status: xhr.status, json });
+      };
+      xhr.onerror = () => resolve({ status: 0, json: null });
+      xhr.ontimeout = () => resolve({ status: 0, json: null, timedOut: true });
+      xhr.send(blob);
+    });
+    return (async () => {
+      let last = null;
+      for (let attemptNo = 1; attemptNo <= 3; attemptNo += 1) {
+        last = await attempt();
+        if (last.status >= 200 && last.status < 300 && last.json?.ok) return last;
+        // 4xx failures (auth, size, format) will not improve on retry.
+        if (last.status >= 400 && last.status < 500) return last;
+        if (attemptNo < 3) await new Promise((resolveDelay) => setTimeout(resolveDelay, attemptNo * 800));
+      }
+      return last;
+    })();
+  }
+
+  function captureVideoPosterBlob(sourceBlob) {
+    // Grab the first frame locally so the placed video shows a real
+    // thumbnail instead of a black box until someone presses play.
+    return new Promise((resolve) => {
+      let settled = false;
+      const objectUrl = URL.createObjectURL(sourceBlob);
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        try { URL.revokeObjectURL(objectUrl); } catch {}
+        resolve(value || null);
+      };
+      const timer = window.setTimeout(() => finish(null), 8000);
+      const video = document.createElement('video');
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      const capture = () => {
+        try {
+          const width = video.videoWidth;
+          const height = video.videoHeight;
+          if (!width || !height) {
+            finish(null);
+            return;
+          }
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, 1280 / width);
+          canvas.width = Math.max(1, Math.round(width * scale));
+          canvas.height = Math.max(1, Math.round(height * scale));
+          canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((posterBlob) => finish(posterBlob), 'image/jpeg', 0.82);
+        } catch {
+          finish(null);
+        }
+      };
+      video.addEventListener('loadeddata', () => {
+        // Nudge past 0s: the very first decoded frame is often black.
+        try {
+          video.currentTime = Math.min(0.1, Math.max(0.01, (Number(video.duration) || 1) / 20));
+        } catch {
+          capture();
+        }
+      }, { once: true });
+      video.addEventListener('seeked', capture, { once: true });
+      video.addEventListener('error', () => finish(null), { once: true });
+      video.src = objectUrl;
+    });
+  }
+
   async function handleStandaloneMediaUploadMessage(event, data) {
     const frame = document.querySelector('iframe[data-standalone-live-preview="1"]');
     if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) return;
@@ -1674,24 +1761,50 @@
         reply({ ok: false });
         return;
       }
-      const query = new URLSearchParams({ type: kind, name: String(data?.fileName || '') });
-      const resp = await fetch(`/api/auth/trainer/page/media?${query.toString()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': mime },
-        credentials: 'same-origin',
-        body: blob
+      const postProgress = (percent) => {
+        const liveFrame = document.querySelector('iframe[data-standalone-live-preview="1"]');
+        if (!(liveFrame instanceof HTMLIFrameElement) || !liveFrame.contentWindow) return;
+        try {
+          liveFrame.contentWindow.postMessage({ type: 'trainer_standalone_media_progress', token, kind, percent }, '*');
+        } catch {}
+      };
+      // Capture the first frame while the video uploads so both finish
+      // together instead of one after the other.
+      const posterPromise = kind === 'video' ? captureVideoPosterBlob(blob) : Promise.resolve(null);
+      const result = await uploadTrainerMediaBlob(blob, {
+        kind,
+        mime,
+        fileName: String(data?.fileName || ''),
+        onProgress: postProgress
       });
-      const json = await resp.json().catch(() => null);
-      if (!resp.ok || !json?.ok || !json?.media?.url) {
+      const json = result?.json || null;
+      if (!json?.ok || !json?.media?.url) {
+        const status = Number(result?.status) || 0;
         const reason = String(json?.error || '').trim()
-          || (resp.status === 401 ? 'You are signed out - sign in again and retry.' : '')
-          || (resp.status === 413 ? `The file is too large to upload (limit ${maxLabel}).` : '')
-          || `Upload failed (server responded ${resp.status}).`;
+          || (status === 401 ? 'You are signed out - sign in again and retry.' : '')
+          || (status === 413 ? `The file is too large to upload (limit ${maxLabel}).` : '')
+          || (result?.timedOut ? 'The upload timed out - check your connection and try again.' : '')
+          || (status === 0 ? 'The upload could not reach the server after several tries - check your connection.' : '')
+          || `Upload failed (server responded ${status}).`;
         showStandaloneTransientToast(reason, 'error', { autoHideMs: 6000 });
         reply({ ok: false });
         return;
       }
-      reply({ ok: true, url: json.media.url });
+      let posterUrl = '';
+      if (kind === 'video') {
+        try {
+          const posterBlob = await posterPromise;
+          if (posterBlob) {
+            const posterResult = await uploadTrainerMediaBlob(posterBlob, {
+              kind: 'image',
+              mime: 'image/jpeg',
+              fileName: `${String(data?.fileName || 'video').replace(/\.[^.]+$/, '')}-poster.jpg`
+            });
+            posterUrl = String(posterResult?.json?.media?.url || '').trim();
+          }
+        } catch {}
+      }
+      reply({ ok: true, url: json.media.url, poster: posterUrl });
       showStandaloneTransientToast(kind === 'video' ? 'Video uploaded.' : 'Image uploaded.', 'success', { autoHideMs: 2200 });
     } catch {
       showStandaloneTransientToast(
@@ -3948,9 +4061,14 @@
             img.style.borderRadius = '18px';
             return img;
           }
-          function buildUploadedVideoNode(url) {
+          function buildUploadedVideoNode(url, poster) {
             const video = document.createElement('video');
-            video.src = String(url || '').trim();
+            const cleanUrl = String(url || '').trim();
+            // The #t fragment makes browsers paint the first frame as the
+            // thumbnail even when no poster image is available.
+            video.src = cleanUrl && !cleanUrl.includes('#') ? cleanUrl + '#t=0.001' : cleanUrl;
+            const cleanPoster = String(poster || '').trim();
+            if (cleanPoster) video.setAttribute('poster', cleanPoster);
             video.controls = true;
             video.setAttribute('playsinline', '');
             video.preload = 'metadata';
@@ -5145,6 +5263,15 @@
               reportScrollState(String(data.token || ''));
               return;
             }
+            if (data.type === 'trainer_standalone_media_progress') {
+              const progressToken = String(data.token || '').trim();
+              const pendingBox = progressToken ? document.querySelector('[data-standalone-media-pending="' + progressToken + '"]') : null;
+              if (pendingBox instanceof HTMLElement) {
+                const percent = Math.max(0, Math.min(100, Math.round(Number(data.percent) || 0)));
+                pendingBox.textContent = (String(data.kind || '') === 'video' ? 'Uploading video... ' : 'Uploading image... ') + percent + '%';
+              }
+              return;
+            }
             if (data.type === 'trainer_standalone_media_done') {
               const token = String(data.token || '').trim();
               const pending = token ? document.querySelector('[data-standalone-media-pending="' + token + '"]') : null;
@@ -5152,7 +5279,7 @@
               const targetBox = pendingMediaTargetBoxes[token];
               delete pendingMediaTargetBoxes[token];
               if (data.ok === true && typeof data.url === 'string' && data.url) {
-                const media = String(data.kind || '') === 'video' ? buildUploadedVideoNode(data.url) : buildUploadedImageNode(data.url);
+                const media = String(data.kind || '') === 'video' ? buildUploadedVideoNode(data.url, data.poster) : buildUploadedImageNode(data.url);
                 pending.replaceWith(media);
                 if (targetBox instanceof HTMLElement && targetBox.isConnected) embedMediaIntoBox(media, targetBox);
                 selectAndSync(media);
