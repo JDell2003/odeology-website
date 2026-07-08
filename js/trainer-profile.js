@@ -1634,12 +1634,16 @@
     });
     return (async () => {
       let last = null;
-      for (let attemptNo = 1; attemptNo <= 3; attemptNo += 1) {
+      // 5 tries with growing waits (~15s of backoff) so uploads survive a
+      // server restart, schema warm-up, or a DNS blip instead of giving up
+      // in three seconds.
+      const maxAttempts = 5;
+      for (let attemptNo = 1; attemptNo <= maxAttempts; attemptNo += 1) {
         last = await attempt();
         if (last.status >= 200 && last.status < 300 && last.json?.ok) return last;
         // 4xx failures (auth, size, format) will not improve on retry.
         if (last.status >= 400 && last.status < 500) return last;
-        if (attemptNo < 3) await new Promise((resolveDelay) => setTimeout(resolveDelay, attemptNo * 800));
+        if (attemptNo < maxAttempts) await new Promise((resolveDelay) => setTimeout(resolveDelay, attemptNo * 1500));
       }
       return last;
     })();
