@@ -1311,6 +1311,102 @@
     `;
   }
 
+  function prettifyConsultFieldKey(key) {
+    const clean = String(key || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return 'Field';
+    return clean.replace(/\b\w/g, (ch) => ch.toUpperCase());
+  }
+
+  function renderConsultFormHits(leads) {
+    const list = (Array.isArray(leads) ? leads : [])
+      .slice()
+      .sort((a, b) => new Date(b?.updatedAt || b?.createdAt || 0) - new Date(a?.updatedAt || a?.createdAt || 0));
+    if (!list.length) {
+      return `
+        <div class="consult-hits-empty">
+          <div class="consult-hits-empty-icon">&#128203;</div>
+          <strong>No form hits yet</strong>
+          <p>When someone fills out the consultation form on your coach page, every answer lands here instantly. Share your page link or QR code to start collecting.</p>
+        </div>
+      `;
+    }
+    return `
+      <div class="consult-hits-list">
+        ${list.map((lead) => {
+          const answers = lead?.answers && typeof lead.answers === 'object' ? lead.answers : {};
+          const uploads = Array.isArray(lead?.uploads) ? lead.uploads : [];
+          const uploadCount = uploads.reduce((count, entry) => count + (Array.isArray(entry?.files) ? entry.files.length : 0), 0);
+          const name = String(lead?.fullName || '').trim() || 'Anonymous visitor';
+          const initial = name.slice(0, 1).toUpperCase();
+          const email = String(lead?.email || '').trim();
+          const phone = String(lead?.phone || '').trim();
+          const structured = [
+            ['Goal', lead?.goal],
+            ['Budget', lead?.budget],
+            ['Location', lead?.location],
+            ['Coaching type', lead?.coachingType],
+            ['Availability', lead?.availability],
+            ['Injuries', lead?.injuries]
+          ].filter(([, value]) => String(value || '').trim());
+          const structuredKeys = new Set(['goal', 'budget', 'location', 'coachingtype', 'coaching_type', 'availability', 'injuries', 'fullname', 'full_name', 'name', 'email', 'phone']);
+          const extraAnswers = Object.entries(answers).filter(([key, value]) => {
+            const flat = String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return String(value || '').trim() && !structuredKeys.has(flat) && !structuredKeys.has(String(key || '').toLowerCase());
+          });
+          return `
+            <article class="consult-hit-card">
+              <div class="consult-hit-head">
+                <div class="consult-hit-avatar" aria-hidden="true">${escapeHtml(initial)}</div>
+                <div class="consult-hit-who">
+                  <strong>${escapeHtml(name)}</strong>
+                  <div class="consult-hit-contact">
+                    ${email ? `<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : ''}
+                    ${email && phone ? '<span aria-hidden="true">&#8226;</span>' : ''}
+                    ${phone ? `<a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>` : ''}
+                    ${!email && !phone ? '<span>No contact details</span>' : ''}
+                  </div>
+                </div>
+                <span class="consult-hit-stage">${escapeHtml(normalizeLeadStage(lead?.status))}</span>
+              </div>
+              <div class="consult-hit-meta">
+                <span>&#128197; ${escapeHtml(formatShortDate(lead?.updatedAt || lead?.createdAt) || 'Recently')}</span>
+                <span>&#128196; ${escapeHtml(String(lead?.sourcePageName || 'Coach page').trim() || 'Coach page')}</span>
+                <span>&#9993; ${escapeHtml(String(lead?.formId || '').trim() || 'Consultation form')}</span>
+                ${uploadCount ? `<span>&#128206; ${escapeHtml(String(uploadCount))} file${uploadCount === 1 ? '' : 's'}</span>` : ''}
+              </div>
+              ${structured.length ? `
+                <div class="consult-hit-grid">
+                  ${structured.map(([label, value]) => `
+                    <div class="consult-hit-field">
+                      <span>${escapeHtml(label)}</span>
+                      <div>${escapeHtml(String(value).trim())}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              ${extraAnswers.length ? `
+                <div class="consult-hit-answers">
+                  <div class="consult-hit-answers-title">Everything else they filled out</div>
+                  ${extraAnswers.map(([key, value]) => `
+                    <div class="consult-hit-field">
+                      <span>${escapeHtml(prettifyConsultFieldKey(key))}</span>
+                      <div>${escapeHtml(Array.isArray(value) ? value.join(', ') : String(value).trim())}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div class="consult-hit-actions">
+                ${email ? `<a class="consult-hit-btn" href="mailto:${escapeHtml(email)}">Email back</a>` : ''}
+                ${phone ? `<a class="consult-hit-btn" href="sms:${escapeHtml(phone)}">Text back</a>` : ''}
+                <a class="consult-hit-btn is-ghost" href="trainer-dashboard.html?tab=potential-clients">Open in Potential Clients</a>
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
   function renderTrainerDashboard(data) {
     const managerContext = getManagerDashboardContext();
     const trainer = data?.trainer || {};
@@ -1350,6 +1446,7 @@
           <button type="button" class="account-trainer-pill${workoutApproveCount > 0 ? ' has-alert' : ''}" data-clients-view="workout-approve" aria-pressed="false">Workout Approve <span>${workoutApproveCount}</span></button>
           <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false">Actions <span>${actionsCount}</span></button>
           <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="potential-clients" aria-pressed="false">Potential Clients <span>${potentialCount}</span></button>
+          <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="consult-form-hits" aria-pressed="false">Consult Form Hits <span>${potentialCount}</span></button>
           <button type="button" class="account-trainer-pill${requestsCount > 0 ? ' has-alert' : ''}" data-clients-view="requests" aria-pressed="false">Requests <span>${requestsCount}</span></button>
         </div>
         <section class="account-trainer-panel" data-clients-panel="current">
@@ -1376,6 +1473,11 @@
           <h3>Potential Clients</h3>
           <div class="account-trainer-muted">Public trainer page leads land here and stay scoped to your account only.</div>
           ${renderPotentialLeads(leads, data?.leadUi || {})}
+        </section>
+        <section class="account-trainer-panel" data-clients-panel="consult-form-hits">
+          <h3>Consult Form Hits</h3>
+          <div class="account-trainer-muted">Every consultation form submission from your coach page, with every field the visitor filled out.</div>
+          ${renderConsultFormHits(leads)}
         </section>
         <section class="account-trainer-panel" data-clients-panel="requests">
           <h3>Requests</h3>

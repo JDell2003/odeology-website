@@ -3072,6 +3072,12 @@
           }
           function syncContextMenuOptions() {
             if (buttonAlignGroupEl) buttonAlignGroupEl.hidden = !isButtonLikeNode(activeEl);
+            const formTrigger = contextMenuEl.querySelector('button[data-menu-action="form"]');
+            if (formTrigger) {
+              const hasConsultForm = Boolean(findConsultationForm());
+              formTrigger.textContent = hasConsultForm ? 'Modify consultation form' : 'Add consultation form';
+              formTrigger.setAttribute('data-form-mode', hasConsultForm ? 'modify' : 'add');
+            }
             const layoutButtons = {
               block: contextMenuEl.querySelector('button[data-menu-action="layout_block"]'),
               inline: contextMenuEl.querySelector('button[data-menu-action="layout_inline"]'),
@@ -4122,8 +4128,11 @@
             wrap.style.borderRadius = '24px';
             wrap.style.background = '#ffffff';
             wrap.style.boxShadow = '0 18px 36px rgba(15,23,42,.10)';
-            wrap.innerHTML = '<div style="font:800 28px/1.1 system-ui,sans-serif;color:#0f172a">Book a consultation</div><div style="font:500 15px/1.6 system-ui,sans-serif;color:#475569">Tell us what you need and we will reach out with next steps.</div><form style="display:grid;gap:12px"><input type="text" placeholder="Your name" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px"><input type="email" placeholder="Email address" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px"><textarea placeholder="What do you need help with?" style="min-height:120px;padding:14px;border:1px solid rgba(15,23,42,.12);border-radius:14px;resize:vertical"></textarea><button type="button" style="min-height:48px;padding:0 18px;border:0;border-radius:999px;background:#2563eb;color:#ffffff;font:800 15px/1 system-ui,sans-serif;width:fit-content">Request consultation</button></form>';
+            wrap.innerHTML = '<div style="font:800 28px/1.1 system-ui,sans-serif;color:#0f172a">Book a consultation</div><div style="font:500 15px/1.6 system-ui,sans-serif;color:#475569">Tell us what you need and we will reach out with next steps.</div><form data-standalone-consult-form="1" style="display:grid;gap:12px"><input type="text" name="fullName" placeholder="Your name" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px"><input type="email" name="email" placeholder="Email address" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px"><input type="tel" name="phone" placeholder="Phone (optional)" style="min-height:46px;padding:0 14px;border:1px solid rgba(15,23,42,.12);border-radius:14px"><textarea name="goal" placeholder="What do you need help with?" style="min-height:120px;padding:14px;border:1px solid rgba(15,23,42,.12);border-radius:14px;resize:vertical"></textarea><button type="submit" style="min-height:48px;padding:0 18px;border:0;border-radius:999px;background:#2563eb;color:#ffffff;font:800 15px/1 system-ui,sans-serif;width:fit-content">Request consultation</button><div data-consult-form-status style="font:600 13px/1.4 system-ui,sans-serif;color:#475569"></div></form>';
             return wrap;
+          }
+          function findConsultationForm() {
+            return rootEl.querySelector('form');
           }
           function runMenuAction(action) {
             if (!action) return;
@@ -4183,6 +4192,13 @@
               return;
             }
             if (action === 'form') {
+              const existingForm = findConsultationForm();
+              if (existingForm) {
+                try {
+                  window.parent.postMessage({ type: 'trainer_standalone_consult_settings' }, '*');
+                } catch {}
+                return;
+              }
               appendInsertedNode(createConsultationFormNode());
             }
           }
@@ -5272,6 +5288,96 @@
               }
               window.setTimeout(function() { queueHeightPost(true); }, 40);
               window.setTimeout(function() { queueHeightPost(false); }, 220);
+            }
+            if (publicCtaBridgeEnabled) {
+              const consultFormStatus = function(form, message, isError) {
+                let status = form.querySelector('[data-consult-form-status]');
+                if (!status) {
+                  status = document.createElement('div');
+                  status.setAttribute('data-consult-form-status', '1');
+                  status.style.font = '600 13px/1.4 system-ui,sans-serif';
+                  form.appendChild(status);
+                }
+                status.style.color = isError ? '#dc2626' : '#16a34a';
+                status.textContent = String(message || '');
+              };
+              const collectConsultFormAnswers = function(form) {
+                const answers = {};
+                const record = function(key, value) {
+                  const cleanKey = String(key || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+                  const cleanValue = String(value || '').trim().slice(0, 2000);
+                  if (!cleanKey || !cleanValue) return;
+                  answers[cleanKey] = Object.prototype.hasOwnProperty.call(answers, cleanKey)
+                    ? String(answers[cleanKey]) + ', ' + cleanValue
+                    : cleanValue;
+                };
+                form.querySelectorAll('input,textarea,select').forEach(function(field) {
+                  if (!(field instanceof HTMLElement)) return;
+                  const type = String(field.getAttribute('type') || '').toLowerCase();
+                  if (['submit', 'button', 'reset', 'file', 'password', 'hidden'].includes(type)) return;
+                  if ((type === 'checkbox' || type === 'radio') && !field.checked) return;
+                  const key = field.getAttribute('name') || field.getAttribute('id')
+                    || field.getAttribute('placeholder') || field.getAttribute('aria-label')
+                    || (type === 'email' ? 'email' : (type === 'tel' ? 'phone' : 'field'));
+                  record(key, field.value);
+                });
+                return answers;
+              };
+              let consultFormCounter = 0;
+              const submitConsultForm = function(form) {
+                if (form.getAttribute('data-consult-form-sending') === '1') return;
+                const answers = collectConsultFormAnswers(form);
+                if (!Object.keys(answers).length) {
+                  consultFormStatus(form, 'Fill in the form first.', true);
+                  return;
+                }
+                if (!form.getAttribute('data-consult-form-token')) {
+                  consultFormCounter += 1;
+                  form.setAttribute('data-consult-form-token', 'form-' + Date.now() + '-' + consultFormCounter);
+                }
+                form.setAttribute('data-consult-form-sending', '1');
+                consultFormStatus(form, 'Sending...', false);
+                try {
+                  window.parent.postMessage({
+                    type: 'trainer_builder_lead',
+                    token: form.getAttribute('data-consult-form-token'),
+                    formId: form.getAttribute('data-standalone-consult-form') ? 'consultation-form' : (String(form.id || '').trim() || 'custom-form'),
+                    answers
+                  }, '*');
+                } catch {
+                  form.removeAttribute('data-consult-form-sending');
+                  consultFormStatus(form, 'Could not send right now.', true);
+                }
+              };
+              window.addEventListener('message', function(event) {
+                const d = event && event.data && typeof event.data === 'object' ? event.data : null;
+                if (!d || d.type !== 'trainer_builder_lead_result') return;
+                const form = document.querySelector('form[data-consult-form-token="' + String(d.token || '') + '"]');
+                if (!form) return;
+                form.removeAttribute('data-consult-form-sending');
+                if (d.ok) {
+                  try { form.reset(); } catch {}
+                  consultFormStatus(form, d.message || 'Sent! The coach will reach out soon.', false);
+                } else {
+                  consultFormStatus(form, d.error || 'Could not send right now.', true);
+                }
+              });
+              document.addEventListener('submit', function(event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement)) return;
+                event.preventDefault();
+                submitConsultForm(form);
+              }, true);
+              document.addEventListener('click', function(event) {
+                const button = event.target instanceof Element
+                  ? event.target.closest('form button:not([type]),form button[type="button"],form input[type="button"]')
+                  : null;
+                if (!button) return;
+                const form = button.closest('form');
+                if (!form || form.querySelector('button[type="submit"],input[type="submit"]')) return;
+                event.preventDefault();
+                submitConsultForm(form);
+              });
             }
             const postPreviewBridgeReady = function() {
               try {
@@ -7635,6 +7741,14 @@
           void handleStandaloneEditorNavMessage(data);
           return;
         }
+        if (data.type === 'trainer_standalone_consult_settings') {
+          openConsultFormSettingsModal();
+          return;
+        }
+        if (data.type === 'trainer_builder_lead' && window.__trainerPublicCtaBridgeBound !== true) {
+          void handleTrainerBuilderLeadMessage(event, data);
+          return;
+        }
         if (data.type === 'trainer_builder_cta' && window.__trainerPublicCtaBridgeBound !== true) {
           // Owners viewing their own rendered site never bind the public CTA
           // listener - follow the link here so nav buttons still work.
@@ -8708,6 +8822,180 @@
     });
   }
 
+  async function handleTrainerBuilderLeadMessage(event, data) {
+    const token = String(data?.token || '').trim();
+    const answers = data?.answers && typeof data.answers === 'object' ? data.answers : {};
+    const reply = (payload) => {
+      try {
+        event.source?.postMessage({ type: 'trainer_builder_lead_result', token, ...payload }, '*');
+      } catch {}
+    };
+    const activePage = pageState.publicPagePayload?.page || pageState.currentTrainerPage || null;
+    const siteSlug = String(activePage?.siteSlug || '').trim();
+    if (!siteSlug) {
+      reply({ ok: false, error: 'This page cannot receive submissions yet.' });
+      return;
+    }
+    const findAnswer = (patterns) => {
+      for (const key of Object.keys(answers)) {
+        if (patterns.some((pattern) => key.includes(pattern))) {
+          const value = String(answers[key] || '').trim();
+          if (value) return value;
+        }
+      }
+      return '';
+    };
+    const emailish = Object.values(answers)
+      .map((value) => String(value || '').trim())
+      .find((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) || '';
+    const payload = {
+      siteSlug,
+      pageSlug: String(activePage?.pageSlug || '').trim(),
+      pageName: String(activePage?.pageName || '').trim(),
+      formId: String(data?.formId || 'custom-form').trim().slice(0, 120),
+      fullName: findAnswer(['fullname', 'full_name', 'your_name', 'name']),
+      email: findAnswer(['email']) || emailish,
+      phone: findAnswer(['phone', 'tel', 'mobile']),
+      goal: findAnswer(['goal', 'message', 'help', 'about', 'need']),
+      answers
+    };
+    const resp = await api('/api/coach/pages/lead', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok || !resp.json?.ok) {
+      reply({ ok: false, error: resp.json?.error || 'Could not send right now. Try again shortly.' });
+      return;
+    }
+    const consult = activePage?.settings?.consultForm && typeof activePage.settings.consultForm === 'object'
+      ? activePage.settings.consultForm
+      : {};
+    reply({ ok: true, message: String(consult.successMessage || '').trim() || 'Sent! The coach will reach out soon.' });
+  }
+
+  function openConsultFormSettingsModal() {
+    const page = trainerSettingsPage();
+    if (!page?.id) {
+      showStandaloneTransientToast('Save your site with Done first, then open the form settings.', 'error');
+      return;
+    }
+    ensureTrainerSettingsStyle();
+    closeTrainerSettingsModal();
+    const settings = page.settings && typeof page.settings === 'object' ? cloneJson(page.settings) : {};
+    const consult = settings.consultForm && typeof settings.consultForm === 'object' ? settings.consultForm : {};
+    const overlay = document.createElement('div');
+    overlay.id = 'trainer-settings-overlay';
+    overlay.innerHTML = `
+      <div class="trainer-settings-panel" role="dialog" aria-modal="true" aria-label="Consultation form settings">
+        <div class="trainer-settings-head">
+          <div>
+            <div class="trainer-settings-title">Consultation form</div>
+            <div class="trainer-settings-sub">Control where submissions go and what visitors see.</div>
+          </div>
+          <button type="button" class="trainer-settings-close" data-consult-close aria-label="Close">&#10005;</button>
+        </div>
+        <div class="trainer-settings-body">
+          <div class="trainer-settings-card">
+            <div class="trainer-settings-kicker">Where submissions land</div>
+            <div class="trainer-settings-note" style="margin-top:0">
+              Every submission is saved automatically: open <strong>Consult Form Hits</strong> in your control panel to see every field someone filled out, and <strong>Potential Clients</strong> to work the lead pipeline. Nothing extra to set up.
+            </div>
+          </div>
+          <div class="trainer-settings-card">
+            <div class="trainer-settings-kicker">Webhook / API forwarding</div>
+            <div class="trainer-settings-field">
+              <label for="trainer-consult-webhook">Webhook URL (optional)</label>
+              <input id="trainer-consult-webhook" type="url" placeholder="https://hooks.zapier.com/..." value="${escapeHtml(String(consult.webhookUrl || '').trim())}" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="trainer-settings-note" style="margin-top:0">
+              Each submission is also POSTed as JSON to this URL the moment it arrives. Works with Zapier, Make, Slack, GoHighLevel, or your own API - use it to get a text, an email, or a CRM entry however you want it.
+            </div>
+            <div class="trainer-settings-row" style="margin-top:10px">
+              <button type="button" class="trainer-settings-btn is-ghost" data-consult-test>Send test payload</button>
+            </div>
+          </div>
+          <div class="trainer-settings-card">
+            <div class="trainer-settings-kicker">After someone submits</div>
+            <div class="trainer-settings-field">
+              <label for="trainer-consult-success">Thank-you message</label>
+              <input id="trainer-consult-success" type="text" maxlength="200" placeholder="Sent! The coach will reach out soon." value="${escapeHtml(String(consult.successMessage || '').trim())}">
+            </div>
+            <div class="trainer-settings-note" style="margin-top:0">Shown inside the form right after a visitor submits.</div>
+          </div>
+          <div class="trainer-settings-card">
+            <div class="trainer-settings-row">
+              <button type="button" class="trainer-settings-btn" data-consult-save>Save form settings</button>
+              <button type="button" class="trainer-settings-btn is-ghost" data-consult-close>Cancel</button>
+            </div>
+            <div class="trainer-settings-feedback" data-consult-feedback></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', handleTrainerSettingsKeydown, true);
+    overlay.addEventListener('mousedown', (event) => {
+      if (event.target === overlay) closeTrainerSettingsModal();
+    });
+    overlay.querySelectorAll('[data-consult-close]').forEach((button) => {
+      button.addEventListener('click', () => closeTrainerSettingsModal());
+    });
+    const webhookInput = overlay.querySelector('#trainer-consult-webhook');
+    const successInput = overlay.querySelector('#trainer-consult-success');
+    const feedbackEl = overlay.querySelector('[data-consult-feedback]');
+    overlay.querySelector('[data-consult-test]')?.addEventListener('click', async () => {
+      const url = String(webhookInput?.value || '').trim();
+      if (!/^https?:\/\//i.test(url)) {
+        trainerSettingsFeedback(feedbackEl, 'Enter a webhook URL that starts with https:// first.', false);
+        return;
+      }
+      try {
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            event: 'consult_form_test',
+            coachSite: trainerSettingsLiveUrl(page),
+            lead: {
+              fullName: 'Test Lead',
+              email: 'test@example.com',
+              phone: '+1 555 010 1234',
+              answers: { goal: 'This is a test submission from your consultation form settings.' }
+            },
+            sentAt: new Date().toISOString()
+          })
+        });
+        trainerSettingsFeedback(feedbackEl, 'Test payload sent - check your webhook receiver.', true);
+      } catch {
+        trainerSettingsFeedback(feedbackEl, 'Could not reach that URL from the browser. Save it anyway - the server will still deliver real submissions.', false);
+      }
+    });
+    overlay.querySelector('[data-consult-save]')?.addEventListener('click', async () => {
+      const url = String(webhookInput?.value || '').trim();
+      if (url && !/^https?:\/\//i.test(url)) {
+        trainerSettingsFeedback(feedbackEl, 'Webhook URL must start with http:// or https://.', false);
+        return;
+      }
+      trainerSettingsFeedback(feedbackEl, 'Saving...', true);
+      try {
+        await saveTrainerPageSettingsPatch({
+          settings: {
+            ...settings,
+            consultForm: {
+              ...consult,
+              webhookUrl: url,
+              successMessage: String(successInput?.value || '').trim()
+            }
+          }
+        });
+        trainerSettingsFeedback(feedbackEl, 'Saved. New submissions use these settings right away.', true);
+      } catch (err) {
+        trainerSettingsFeedback(feedbackEl, err?.message || 'Could not save settings.', false);
+      }
+    });
+  }
+
   function bindPublicLeadForms() {
     document.querySelectorAll('[data-public-trainer-form]').forEach((formEl) => {
       formEl.addEventListener('submit', async (event) => {
@@ -8985,6 +9273,10 @@
               frame.style.height = `${nextHeight}px`;
             }
           }
+          return;
+        }
+        if (data.type === 'trainer_builder_lead') {
+          void handleTrainerBuilderLeadMessage(event, data);
           return;
         }
         if (data.type !== 'trainer_builder_cta') return;

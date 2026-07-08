@@ -1739,6 +1739,52 @@ async function upsertPublicQualificationSession(db, payload = {}) {
   };
 }
 
+function forwardLeadToConsultWebhook(page, lead, rawPayload = {}) {
+  const consult = page?.settings?.consultForm && typeof page.settings.consultForm === 'object'
+    ? page.settings.consultForm
+    : null;
+  const webhookUrl = String(consult?.webhookUrl || '').trim();
+  if (!/^https?:\/\//i.test(webhookUrl) || typeof fetch !== 'function' || !lead) return;
+  const body = JSON.stringify({
+    event: 'consult_form_submitted',
+    submittedAt: new Date().toISOString(),
+    coachPage: {
+      siteSlug: lead.sourceSiteSlug || page?.siteSlug || '',
+      pageSlug: lead.sourcePageSlug || page?.pageSlug || '',
+      pageName: lead.sourcePageName || page?.pageName || '',
+      publicPath: buildPublicPath(lead.sourceSiteSlug || page?.siteSlug || '', lead.sourcePageSlug || page?.pageSlug || '')
+    },
+    lead: {
+      id: lead.id,
+      formId: lead.formId || '',
+      fullName: lead.fullName || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
+      goal: lead.goal || '',
+      budget: lead.budget || '',
+      location: lead.location || '',
+      coachingType: lead.coachingType || '',
+      availability: lead.availability || '',
+      injuries: lead.injuries || '',
+      answers: cleanObject(lead.answers),
+      tags: Array.isArray(lead.tags) ? lead.tags : []
+    },
+    raw: cleanObject(rawPayload.answers)
+  });
+  // Fire-and-forget: a slow or broken webhook must never block or fail the
+  // lead submission itself.
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal: controller?.signal
+  }).catch(() => {}).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 async function createPublicLead(db, payload = {}) {
   const src = cleanObject(payload);
   const siteSlug = normalizeSiteSlug(src.siteSlug || src.slug || 'coach', 'coach');
@@ -1925,6 +1971,9 @@ async function createPublicLead(db, payload = {}) {
       payload: src
     });
     Object.assign(automationSummary, summary);
+    try {
+      forwardLeadToConsultWebhook(publicPage.page, lead, src);
+    } catch {}
     const refreshed = await applyAutomationSummaryToLead(db, lead, automationSummary);
     return {
       lead: refreshed,

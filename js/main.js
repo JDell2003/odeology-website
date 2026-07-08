@@ -13903,6 +13903,16 @@ function initAuthUi() {
             trainerSection.appendChild(trainerPotentialClientsLink);
         }
 
+        let trainerConsultHitsLink = panel.querySelector('#control-trainer-consult-hits-link');
+        if (!trainerConsultHitsLink) {
+            trainerConsultHitsLink = document.createElement('a');
+            trainerConsultHitsLink.className = 'control-link';
+            trainerConsultHitsLink.id = 'control-trainer-consult-hits-link';
+            trainerConsultHitsLink.href = 'trainer-dashboard.html?tab=consult-form-hits';
+            trainerConsultHitsLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Consult Form Hits</span>';
+            trainerPotentialClientsLink.insertAdjacentElement('afterend', trainerConsultHitsLink);
+        }
+
         if (!trainerLeaderboardLink) {
             trainerLeaderboardLink = document.createElement('a');
             trainerLeaderboardLink.className = 'control-link';
