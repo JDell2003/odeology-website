@@ -4134,6 +4134,228 @@
           function findConsultationForm() {
             return rootEl.querySelector('form');
           }
+          function isNativeFormControlTarget(target) {
+            if (!(target instanceof Element)) return false;
+            const control = target.closest('input,textarea,select,option,label');
+            return Boolean(control && control.closest('form'));
+          }
+          function consultFieldElements(form) {
+            return Array.from(form.querySelectorAll('input,textarea,select')).filter(function(el) {
+              const type = String(el.getAttribute('type') || '').toLowerCase();
+              return !['submit', 'button', 'reset', 'hidden'].includes(type);
+            });
+          }
+          function consultFieldWrapper(el) {
+            const label = el.closest('label');
+            if (label && label.querySelectorAll('input,textarea,select').length === 1) return label;
+            return el;
+          }
+          function consultFieldType(el) {
+            const tag = el.tagName.toLowerCase();
+            if (tag === 'textarea') return 'textarea';
+            if (tag === 'select') return 'select';
+            const type = String(el.getAttribute('type') || 'text').toLowerCase();
+            if (type === 'checkbox') return 'checkbox';
+            if (type === 'email') return 'email';
+            if (type === 'tel') return 'tel';
+            return 'text';
+          }
+          function consultFieldLabel(el) {
+            const placeholder = String(el.getAttribute('placeholder') || '').trim();
+            if (placeholder) return placeholder;
+            const wrapper = consultFieldWrapper(el);
+            if (wrapper !== el) {
+              const text = String(wrapper.textContent || '').trim();
+              if (text) return text.slice(0, 80);
+            }
+            const name = String(el.getAttribute('name') || '').trim();
+            if (name) return name.replace(/[_-]+/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+            return 'Field';
+          }
+          function describeConsultFields() {
+            const form = findConsultationForm();
+            if (!form) return { fields: [], submitLabel: '' };
+            let counter = 0;
+            const fields = consultFieldElements(form).map(function(el) {
+              if (!el.getAttribute('data-consult-field-id')) {
+                counter += 1;
+                el.setAttribute('data-consult-field-id', 'cf-' + Date.now().toString(36) + '-' + counter + '-' + Math.floor(Math.random() * 1e5).toString(36));
+              }
+              return {
+                id: el.getAttribute('data-consult-field-id'),
+                label: consultFieldLabel(el),
+                type: consultFieldType(el),
+                required: el.required === true,
+                options: el.tagName.toLowerCase() === 'select'
+                  ? Array.from(el.options).filter(function(opt) { return !opt.disabled && String(opt.value || opt.textContent || '').trim(); }).map(function(opt) { return String(opt.textContent || '').trim(); })
+                  : []
+              };
+            });
+            const submitButton = form.querySelector('button[type="submit"],input[type="submit"]');
+            const submitLabel = submitButton
+              ? String(submitButton.tagName.toLowerCase() === 'input' ? submitButton.value : submitButton.textContent || '').trim()
+              : '';
+            return { fields, submitLabel };
+          }
+          function slugConsultFieldName(label, usedNames) {
+            const base = String(label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'field';
+            let name = base;
+            let n = 2;
+            while (usedNames.includes(name)) {
+              name = base + '_' + n;
+              n += 1;
+            }
+            usedNames.push(name);
+            return name;
+          }
+          function styleConsultControl(el, type) {
+            if (type === 'textarea') {
+              el.style.minHeight = '120px';
+              el.style.padding = '14px';
+              el.style.resize = 'vertical';
+            } else {
+              el.style.minHeight = '46px';
+              el.style.padding = '0 14px';
+            }
+            el.style.border = '1px solid rgba(15,23,42,.12)';
+            el.style.borderRadius = '14px';
+            el.style.font = '500 15px/1.4 system-ui,sans-serif';
+            el.style.width = '100%';
+            el.style.boxSizing = 'border-box';
+            el.style.background = '#ffffff';
+            el.style.color = '#0f172a';
+          }
+          function buildConsultFieldNode(field, usedNames, existingEl) {
+            const allowed = ['text', 'email', 'tel', 'textarea', 'select', 'checkbox'];
+            const type = allowed.includes(String(field?.type || '').trim()) ? String(field.type).trim() : 'text';
+            const label = String(field?.label || '').trim().slice(0, 120) || 'Field';
+            const name = slugConsultFieldName(label, usedNames);
+            const fieldId = String(field?.id || '').trim() || ('cf-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36));
+            const options = Array.isArray(field?.options)
+              ? field.options.map(function(opt) { return String(opt || '').trim().slice(0, 120); }).filter(Boolean).slice(0, 24)
+              : [];
+            const reusable = existingEl && consultFieldType(existingEl) === type && type !== 'checkbox';
+            if (reusable) {
+              existingEl.setAttribute('data-consult-field-id', fieldId);
+              existingEl.setAttribute('name', name);
+              if (type !== 'select') existingEl.setAttribute('placeholder', label);
+              existingEl.required = field?.required === true;
+              if (type === 'select') {
+                existingEl.innerHTML = '';
+                const placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.disabled = true;
+                placeholderOption.selected = true;
+                placeholderOption.textContent = label;
+                existingEl.appendChild(placeholderOption);
+                options.forEach(function(optionLabel) {
+                  const option = document.createElement('option');
+                  option.value = optionLabel;
+                  option.textContent = optionLabel;
+                  existingEl.appendChild(option);
+                });
+              }
+              return consultFieldWrapper(existingEl);
+            }
+            if (type === 'checkbox') {
+              const wrap = document.createElement('label');
+              wrap.style.display = 'flex';
+              wrap.style.alignItems = 'center';
+              wrap.style.gap = '10px';
+              wrap.style.font = '500 14px/1.4 system-ui,sans-serif';
+              wrap.style.color = '#334155';
+              wrap.style.cursor = 'pointer';
+              const input = document.createElement('input');
+              input.type = 'checkbox';
+              input.name = name;
+              input.value = 'Yes';
+              input.required = field?.required === true;
+              input.setAttribute('data-consult-field-id', fieldId);
+              input.style.width = '18px';
+              input.style.height = '18px';
+              input.style.accentColor = '#2563eb';
+              const span = document.createElement('span');
+              span.textContent = label;
+              wrap.appendChild(input);
+              wrap.appendChild(span);
+              return wrap;
+            }
+            if (type === 'select') {
+              const select = document.createElement('select');
+              select.name = name;
+              select.required = field?.required === true;
+              select.setAttribute('data-consult-field-id', fieldId);
+              styleConsultControl(select, 'select');
+              const placeholderOption = document.createElement('option');
+              placeholderOption.value = '';
+              placeholderOption.disabled = true;
+              placeholderOption.selected = true;
+              placeholderOption.textContent = label;
+              select.appendChild(placeholderOption);
+              options.forEach(function(optionLabel) {
+                const option = document.createElement('option');
+                option.value = optionLabel;
+                option.textContent = optionLabel;
+                select.appendChild(option);
+              });
+              return select;
+            }
+            if (type === 'textarea') {
+              const textarea = document.createElement('textarea');
+              textarea.name = name;
+              textarea.placeholder = label;
+              textarea.required = field?.required === true;
+              textarea.setAttribute('data-consult-field-id', fieldId);
+              styleConsultControl(textarea, 'textarea');
+              return textarea;
+            }
+            const input = document.createElement('input');
+            input.type = type;
+            input.name = name;
+            input.placeholder = label;
+            input.required = field?.required === true;
+            input.setAttribute('data-consult-field-id', fieldId);
+            styleConsultControl(input, type);
+            return input;
+          }
+          function applyConsultFields(fields, submitLabel) {
+            const form = findConsultationForm();
+            if (!form) return false;
+            const existingEls = consultFieldElements(form);
+            const byId = new Map();
+            existingEls.forEach(function(el) {
+              const id = el.getAttribute('data-consult-field-id');
+              if (id) byId.set(id, el);
+            });
+            const usedNames = [];
+            const nodes = (Array.isArray(fields) ? fields : []).slice(0, 24).map(function(field) {
+              return buildConsultFieldNode(field, usedNames, field?.id ? byId.get(String(field.id)) : null);
+            });
+            existingEls.forEach(function(el) {
+              const wrapper = consultFieldWrapper(el);
+              if (wrapper.parentElement) wrapper.remove();
+            });
+            const anchor = form.querySelector('button[type="submit"],input[type="submit"]')
+              || form.querySelector('button')
+              || form.querySelector('[data-consult-form-status]');
+            let anchorTop = anchor;
+            while (anchorTop && anchorTop.parentElement && anchorTop.parentElement !== form) anchorTop = anchorTop.parentElement;
+            nodes.forEach(function(node) {
+              if (anchorTop && anchorTop.parentElement === form) form.insertBefore(node, anchorTop);
+              else form.appendChild(node);
+            });
+            const cleanSubmitLabel = String(submitLabel || '').trim().slice(0, 60);
+            if (cleanSubmitLabel) {
+              const submitButton = form.querySelector('button[type="submit"],input[type="submit"]') || form.querySelector('button');
+              if (submitButton) {
+                if (submitButton.tagName.toLowerCase() === 'input') submitButton.value = cleanSubmitLabel;
+                else submitButton.textContent = cleanSubmitLabel;
+              }
+            }
+            form.setAttribute('data-standalone-consult-form', '1');
+            syncMarkupToParent();
+            return true;
+          }
           function runMenuAction(action) {
             if (!action) return;
             if (action === 'button') {
@@ -4300,6 +4522,12 @@
               return;
             }
             hideContextMenu();
+            if (isNativeFormControlTarget(event.target)) {
+              // Let inputs, dropdowns, and checkboxes inside forms behave
+              // natively in the editor so trainers can try their own form.
+              if (editingText && activeEl) finishInlineEdit(true);
+              return;
+            }
             const target = resolveSelectionTarget(event.target, event);
             if (!isEditableTarget(target)) {
               if (editingText && activeEl) finishInlineEdit(true);
@@ -4358,6 +4586,7 @@
           document.addEventListener('click', function(event) {
             if (hoverDeleteEl.contains(event.target)) return;
             if (contextMenuEl.contains(event.target)) return;
+            if (isNativeFormControlTarget(event.target)) return;
             const target = resolveSelectionTarget(event.target, event);
             if (!isEditableTarget(target)) return;
             if (!isInteractiveActionNode(target)) return;
@@ -4367,6 +4596,7 @@
           document.addEventListener('click', function(event) {
             if (hoverDeleteEl.contains(event.target)) return;
             if (contextMenuEl.contains(event.target)) return;
+            if (isNativeFormControlTarget(event.target)) return;
             const target = resolveSelectionTarget(event.target, event);
             if (!isEditableTarget(target)) return;
             if (suppressClick) {
@@ -4383,6 +4613,7 @@
             }
           });
           document.addEventListener('dblclick', function(event) {
+            if (isNativeFormControlTarget(event.target)) return;
             const target = normalizeEditableNode(event.target);
             if (!isEditableTarget(target)) return;
             selectNode(target, { preserveGroup: isSelectedNode(target) && selectedNodes().length > 1 });
@@ -4400,9 +4631,24 @@
           }, true);
           window.addEventListener('message', function(event) {
             const d = event && event.data && typeof event.data === 'object' ? event.data : null;
-            if (!d || d.type !== 'trainer_standalone_viewport_insets') return;
-            parentVisibleTop = Math.max(0, Number(d.visibleTop) || 0);
-            parentVisibleBottom = Math.max(0, Number(d.visibleBottom) || 0);
+            if (!d) return;
+            if (d.type === 'trainer_standalone_viewport_insets') {
+              parentVisibleTop = Math.max(0, Number(d.visibleTop) || 0);
+              parentVisibleBottom = Math.max(0, Number(d.visibleBottom) || 0);
+              return;
+            }
+            if (d.type === 'trainer_standalone_consult_fields_get') {
+              try {
+                window.parent.postMessage({ type: 'trainer_standalone_consult_fields', ...describeConsultFields() }, '*');
+              } catch {}
+              return;
+            }
+            if (d.type === 'trainer_standalone_consult_fields_set') {
+              const applied = applyConsultFields(Array.isArray(d.fields) ? d.fields : [], d.submitLabel);
+              try {
+                window.parent.postMessage({ type: 'trainer_standalone_consult_fields', applied, ...describeConsultFields() }, '*');
+              } catch {}
+            }
           });
           document.addEventListener('click', function(event) {
             const direct = event.target instanceof Element && !hoverDeleteEl.contains(event.target) && !contextMenuEl.contains(event.target)
@@ -4911,12 +5157,22 @@
           shapeRowEl?.querySelector('.shape-submenu')?.addEventListener('mouseenter', function() {
             shapeRowEl.classList.add('is-open');
           });
+          let routePickerCloseTimer = 0;
           buttonRouteRowEl?.addEventListener('mouseenter', function() {
+            window.clearTimeout(routePickerCloseTimer);
             openRoutePicker();
           });
           buttonRouteRowEl?.addEventListener('mouseleave', function(event) {
             const nextTarget = event?.relatedTarget;
             if (nextTarget instanceof Node && buttonRouteRowEl.contains(nextTarget)) return;
+            window.clearTimeout(routePickerCloseTimer);
+            routePickerCloseTimer = window.setTimeout(function() {
+              // Keep the picker open while the trainer is typing in the Add
+              // route form even if the pointer drifts away.
+              if (routePickerEl && routePickerEl.contains(document.activeElement)) return;
+              if (buttonRouteRowEl.matches(':hover') || routePickerEl?.matches(':hover')) return;
+              closeRoutePicker();
+            }, 240);
           });
           buttonRouteRowEl?.querySelector('button[data-menu-action="button"]')?.addEventListener('mouseenter', function() {
             openRoutePicker();
@@ -6369,6 +6625,7 @@
   function closeTrainerSettingsModal() {
     document.getElementById('trainer-settings-overlay')?.remove();
     document.removeEventListener('keydown', handleTrainerSettingsKeydown, true);
+    window.__trainerConsultFieldsSink = null;
   }
 
   function handleTrainerSettingsKeydown(event) {
@@ -7745,6 +8002,10 @@
           openConsultFormSettingsModal();
           return;
         }
+        if (data.type === 'trainer_standalone_consult_fields') {
+          if (typeof window.__trainerConsultFieldsSink === 'function') window.__trainerConsultFieldsSink(data);
+          return;
+        }
         if (data.type === 'trainer_builder_lead' && window.__trainerPublicCtaBridgeBound !== true) {
           void handleTrainerBuilderLeadMessage(event, data);
           return;
@@ -8902,6 +9163,23 @@
             </div>
           </div>
           <div class="trainer-settings-card">
+            <div class="trainer-settings-kicker">Form fields</div>
+            <div data-consult-fields-list style="display:grid;gap:10px">
+              <div class="trainer-settings-note" style="margin-top:0">Reading your form...</div>
+            </div>
+            <div class="trainer-settings-row" style="margin-top:10px">
+              <button type="button" class="trainer-settings-btn is-ghost" data-consult-field-add>+ Add field</button>
+            </div>
+            <div class="trainer-settings-field" style="margin-top:12px">
+              <label for="trainer-consult-submit-label">Submit button text</label>
+              <input id="trainer-consult-submit-label" data-consult-submit-label type="text" maxlength="60" placeholder="Request consultation">
+            </div>
+            <div class="trainer-settings-row">
+              <button type="button" class="trainer-settings-btn" data-consult-fields-apply>Apply changes to form</button>
+            </div>
+            <div class="trainer-settings-note">Rename questions, switch a question to a dropdown with your own choices, mark it required, reorder, or remove it. Changes show instantly in the preview - press Done afterwards to save your site.</div>
+          </div>
+          <div class="trainer-settings-card">
             <div class="trainer-settings-kicker">Webhook / API forwarding</div>
             <div class="trainer-settings-field">
               <label for="trainer-consult-webhook">Webhook URL (optional)</label>
@@ -8943,6 +9221,132 @@
     const webhookInput = overlay.querySelector('#trainer-consult-webhook');
     const successInput = overlay.querySelector('#trainer-consult-success');
     const feedbackEl = overlay.querySelector('[data-consult-feedback]');
+    const fieldsListEl = overlay.querySelector('[data-consult-fields-list]');
+    const submitLabelInput = overlay.querySelector('[data-consult-submit-label]');
+    const previewWindow = () => {
+      const frame = document.querySelector('iframe[data-standalone-live-preview="1"]');
+      return frame instanceof HTMLIFrameElement ? frame.contentWindow : null;
+    };
+    const CONSULT_FIELD_TYPES = [
+      ['text', 'Short answer'],
+      ['textarea', 'Paragraph'],
+      ['email', 'Email'],
+      ['tel', 'Phone'],
+      ['select', 'Dropdown'],
+      ['checkbox', 'Checkbox']
+    ];
+    const rowInputStyle = 'min-height:36px;padding:0 10px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:rgba(2,6,23,.55);color:#f8fafc;font:600 12.5px/1.2 system-ui,sans-serif;outline:none';
+    const rowButtonStyle = 'min-width:30px;min-height:30px;border:0;border-radius:8px;background:rgba(148,163,184,.14);color:#e2e8f0;font:700 13px/1 system-ui,sans-serif;cursor:pointer';
+    const buildConsultFieldRow = (field = {}) => {
+      const row = document.createElement('div');
+      row.setAttribute('data-field-row', '1');
+      if (field.id) row.setAttribute('data-field-id', String(field.id));
+      row.style.cssText = 'display:grid;gap:8px;padding:12px;border-radius:12px;background:rgba(2,6,23,.4);border:1px solid rgba(148,163,184,.16)';
+      const type = String(field.type || 'text');
+      row.innerHTML = `
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <input data-field-label type="text" maxlength="120" placeholder="Question label" value="${escapeHtml(String(field.label || '').trim())}" style="flex:1 1 90px;min-width:0;${rowInputStyle}">
+          <select data-field-type style="${rowInputStyle};flex:0 0 auto">
+            ${CONSULT_FIELD_TYPES.map(([value, label]) => `<option value="${value}"${type === value ? ' selected' : ''}>${label}</option>`).join('')}
+          </select>
+          <button type="button" data-field-up title="Move up" style="${rowButtonStyle}">&#8593;</button>
+          <button type="button" data-field-down title="Move down" style="${rowButtonStyle}">&#8595;</button>
+          <button type="button" data-field-remove title="Remove field" style="${rowButtonStyle};color:#fca5a5">&#10005;</button>
+        </div>
+        <input data-field-options type="text" placeholder="Choices, separated by commas (e.g. Online, In person, Hybrid)" value="${escapeHtml((Array.isArray(field.options) ? field.options : []).join(', '))}" style="${rowInputStyle};${type === 'select' ? '' : 'display:none'}">
+        <label style="display:flex;align-items:center;gap:8px;font:600 12px/1.2 system-ui,sans-serif;color:#cbd5e1;cursor:pointer">
+          <input data-field-required type="checkbox"${field.required === true ? ' checked' : ''} style="width:15px;height:15px;accent-color:#2563eb"> Required
+        </label>
+      `;
+      return row;
+    };
+    const renderConsultFieldRows = (fields) => {
+      if (!fieldsListEl) return;
+      fieldsListEl.innerHTML = '';
+      if (!fields.length) {
+        const note = document.createElement('div');
+        note.className = 'trainer-settings-note';
+        note.style.marginTop = '0';
+        note.textContent = 'No fields yet - use + Add field to build your form.';
+        fieldsListEl.appendChild(note);
+        return;
+      }
+      fields.forEach((field) => fieldsListEl.appendChild(buildConsultFieldRow(field)));
+    };
+    window.__trainerConsultFieldsSink = (data) => {
+      renderConsultFieldRows(Array.isArray(data?.fields) ? data.fields : []);
+      if (submitLabelInput && typeof data?.submitLabel === 'string' && !submitLabelInput.dataset.userTouched) {
+        submitLabelInput.value = data.submitLabel;
+      }
+      if (data?.applied === true) {
+        trainerSettingsFeedback(feedbackEl, 'Form updated in the live preview. Press Done when you finish editing to save your site.', true);
+      }
+    };
+    submitLabelInput?.addEventListener('input', () => { submitLabelInput.dataset.userTouched = '1'; });
+    fieldsListEl?.addEventListener('change', (event) => {
+      const typeSelect = event.target instanceof Element ? event.target.closest('[data-field-type]') : null;
+      if (!typeSelect) return;
+      const row = typeSelect.closest('[data-field-row]');
+      const optionsInput = row?.querySelector('[data-field-options]');
+      if (optionsInput) optionsInput.style.display = typeSelect.value === 'select' ? '' : 'none';
+    });
+    fieldsListEl?.addEventListener('click', (event) => {
+      const button = event.target instanceof Element ? event.target.closest('button') : null;
+      if (!button) return;
+      const row = button.closest('[data-field-row]');
+      if (!row) return;
+      if (button.hasAttribute('data-field-remove')) {
+        row.remove();
+        if (!fieldsListEl.querySelector('[data-field-row]')) renderConsultFieldRows([]);
+        return;
+      }
+      if (button.hasAttribute('data-field-up') && row.previousElementSibling?.hasAttribute('data-field-row')) {
+        row.parentElement.insertBefore(row, row.previousElementSibling);
+        return;
+      }
+      if (button.hasAttribute('data-field-down') && row.nextElementSibling?.hasAttribute('data-field-row')) {
+        row.parentElement.insertBefore(row.nextElementSibling, row);
+      }
+    });
+    overlay.querySelector('[data-consult-field-add]')?.addEventListener('click', () => {
+      fieldsListEl?.querySelector('.trainer-settings-note')?.remove();
+      const row = buildConsultFieldRow({ label: '', type: 'text', required: false, options: [] });
+      fieldsListEl?.appendChild(row);
+      row.querySelector('[data-field-label]')?.focus();
+    });
+    overlay.querySelector('[data-consult-fields-apply]')?.addEventListener('click', () => {
+      const target = previewWindow();
+      if (!target) {
+        trainerSettingsFeedback(feedbackEl, 'Open the editor first, then apply field changes.', false);
+        return;
+      }
+      const fields = Array.from(fieldsListEl?.querySelectorAll('[data-field-row]') || []).map((row) => ({
+        id: row.getAttribute('data-field-id') || '',
+        label: String(row.querySelector('[data-field-label]')?.value || '').trim(),
+        type: String(row.querySelector('[data-field-type]')?.value || 'text'),
+        required: row.querySelector('[data-field-required]')?.checked === true,
+        options: String(row.querySelector('[data-field-options]')?.value || '')
+          .split(',')
+          .map((opt) => opt.trim())
+          .filter(Boolean)
+      })).filter((field) => field.label);
+      if (!fields.length) {
+        trainerSettingsFeedback(feedbackEl, 'Give each field a label first (or add at least one field).', false);
+        return;
+      }
+      try {
+        target.postMessage({
+          type: 'trainer_standalone_consult_fields_set',
+          fields,
+          submitLabel: String(submitLabelInput?.value || '').trim()
+        }, '*');
+      } catch {
+        trainerSettingsFeedback(feedbackEl, 'Could not reach the preview. Reload and try again.', false);
+      }
+    });
+    try {
+      previewWindow()?.postMessage({ type: 'trainer_standalone_consult_fields_get' }, '*');
+    } catch {}
     overlay.querySelector('[data-consult-test]')?.addEventListener('click', async () => {
       const url = String(webhookInput?.value || '').trim();
       if (!/^https?:\/\//i.test(url)) {
