@@ -1738,6 +1738,27 @@
 
   const standalonePreviewNavWatchdogs = new WeakMap();
 
+  function postStandalonePreviewViewportInsets() {
+    document.querySelectorAll('iframe[data-standalone-live-preview="1"]').forEach((frame) => {
+      if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) return;
+      const rect = frame.getBoundingClientRect();
+      if (!rect.height) return;
+      // The code editor dock is fixed over the bottom of the window while
+      // editing; the preview iframe can also extend past the window. Tell the
+      // bridge which vertical band of its viewport the trainer can really see.
+      const dock = document.querySelector('.trainer-builder-setup-input');
+      const dockRect = dock ? dock.getBoundingClientRect() : null;
+      const windowBottom = window.innerHeight || document.documentElement.clientHeight || 0;
+      const visibleBottomPx = Math.min(windowBottom, dockRect ? dockRect.top : windowBottom) - rect.top;
+      const scaleY = rect.height / Math.max(1, frame.clientHeight || rect.height);
+      const visibleBottom = Math.max(0, Math.round(visibleBottomPx / (scaleY || 1)));
+      const visibleTop = Math.max(0, Math.round((0 - rect.top) / (scaleY || 1)));
+      try {
+        frame.contentWindow.postMessage({ type: 'trainer_standalone_viewport_insets', visibleTop, visibleBottom }, '*');
+      } catch {}
+    });
+  }
+
   async function handleStandaloneEditorNavMessage(data) {
     if (!editorState.enabled) return;
     const href = String(data?.href || '').trim();
@@ -2787,7 +2808,7 @@
       `.trim();
     };
     const bridgeStyle = editable
-      ? '<style id="standalone-bridge-style">html,body,*{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{width:0;height:0}[data-standalone-selected="1"]{outline:2px solid #2563eb !important;outline-offset:2px !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="n"]{cursor:n-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="s"]{cursor:s-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="e"]{cursor:e-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="w"]{cursor:w-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="ne"]{cursor:ne-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="nw"]{cursor:nw-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="se"]{cursor:se-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="sw"]{cursor:sw-resize !important;}[data-standalone-selected="1"]:not([data-standalone-rim-hover="1"]){cursor:grab !important;}[data-standalone-selected="1"][data-standalone-dragging="1"]{cursor:grabbing !important;}[data-standalone-editing="1"]{cursor:text !important;}[data-shape-handle]{cursor:move !important}#standalone-context-menu{position:fixed;z-index:2147483647;display:none;min-width:220px;padding:8px;border-radius:14px;background:rgba(15,23,42,.96);border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.28);backdrop-filter:blur(12px);overflow:visible}#standalone-context-menu[data-menu-drag-hover="1"]{cursor:grab}#standalone-context-menu[data-menu-dragging="1"]{cursor:grabbing}#standalone-context-menu .menu-row{position:relative}#standalone-context-menu button>span{float:right;margin-left:8px}#standalone-context-menu button{display:block;width:100%;min-height:38px;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:#f8fafc;font:700 13px/1.2 system-ui,sans-serif;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#standalone-context-menu button:hover,#standalone-context-menu .menu-row.is-open>button{background:rgba(255,255,255,.08)}#standalone-context-menu hr{margin:6px 0;border:0;border-top:1px solid rgba(255,255,255,.08)}#standalone-context-menu .shape-submenu,#standalone-context-menu .route-submenu{position:absolute;left:calc(100% + 2px);top:-8px;display:none;min-width:190px;padding:8px;border-radius:14px;background:rgba(15,23,42,.98);border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.28)}#standalone-context-menu .shape-submenu::before,#standalone-context-menu .route-submenu::before{content:\"\";position:absolute;left:-22px;top:0;bottom:0;width:26px}#standalone-context-menu .shape-submenu{min-width:190px}#standalone-context-menu .route-submenu{width:360px;max-height:min(76vh,480px);padding:14px;gap:12px;flex-direction:column;overflow:hidden;display:flex !important}#standalone-context-menu .route-submenu[data-side=\"left\"]{left:auto;right:calc(100% + 2px)}#standalone-context-menu .menu-row.is-open .shape-submenu,#standalone-context-menu .menu-row.is-open .route-submenu{display:flex}#standalone-context-menu .route-submenu-title{font:800 12px/1.2 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#cbd5e1;padding:2px 4px 0}#standalone-context-menu .route-submenu-scroll{display:grid;gap:8px;min-height:0;max-height:none;overflow:auto;padding-right:4px;flex:1 1 auto}#standalone-context-menu .route-submenu-empty{padding:16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.1);font:500 12px/1.6 system-ui,sans-serif;color:#94a3b8;text-align:center}#standalone-context-menu button.route-submenu-item{display:block;width:100%;min-height:0;padding:14px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:left;transition:all .12s ease;text-decoration:none}#standalone-context-menu button.route-submenu-item strong{display:block;margin:0 0 6px;font:700 13px/1.35 system-ui,sans-serif;color:#f8fafc;white-space:normal;word-break:break-word}#standalone-context-menu button.route-submenu-item span{display:block;font:500 11px/1.45 system-ui,sans-serif;color:#cbd5e1;white-space:normal;word-break:break-word;max-height:44px;overflow:hidden}#standalone-context-menu button.route-submenu-item:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}#standalone-context-menu .route-submenu-footer{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);flex:0 0 auto;background:linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,.98) 14px,rgba(15,23,42,.98) 100%)}#standalone-context-menu button.route-submenu-add{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;border:2px dashed rgba(96,165,250,.4);background:rgba(96,165,250,.06);color:#60a5fa;font:700 13px/1.2 system-ui,sans-serif;cursor:pointer;flex:0 0 auto;transition:all .15s ease;width:100%}#standalone-context-menu button.route-submenu-add:hover{background:rgba(255,255,255,.08)}#standalone-context-menu .route-submenu-form{display:none;gap:8px;flex:0 0 auto}#standalone-context-menu .route-submenu-form.is-active{display:grid}#standalone-context-menu .route-submenu-form input{width:100%;min-height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(96,165,250,.3);background:rgba(15,23,42,.88);color:#f8fafc;font:600 13px/1.2 system-ui,sans-serif;outline:none;transition:all .15s ease}#standalone-context-menu .route-submenu-form input::placeholder{color:#94a3b8}#standalone-context-menu .route-submenu-form input:focus{border-color:rgba(96,165,250,.78);box-shadow:0 0 0 1px rgba(96,165,250,.28)}#standalone-context-menu .route-submenu-create{display:flex;align-items:center;justify-content:center;min-height:44px;width:100%;border:0;border-radius:10px;background:#2563eb;color:#fff;font:800 13px/1 system-ui,sans-serif;cursor:pointer;transition:background .15s ease}#standalone-context-menu .route-submenu-create:hover{background:#1d4ed8}#standalone-hover-delete{position:fixed;z-index:2147483647;display:none;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:999px;background:#dc2626;color:#fff;box-shadow:0 16px 30px rgba(220,38,38,.32);cursor:pointer;transform:translate(-50%,-50%)}#standalone-hover-delete:hover{background:#b91c1c}#standalone-hover-delete svg{width:18px;height:18px;pointer-events:none}#standalone-marquee{position:fixed;z-index:2147483646;display:none;border:1px solid rgba(37,99,235,.9);background:rgba(37,99,235,.12);pointer-events:none}[data-standalone-drop-target="1"]{outline:3px dashed #16a34a !important;outline-offset:-3px !important;}</style>'
+      ? '<style id="standalone-bridge-style">html,body,*{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{width:0;height:0}[data-standalone-selected="1"]{outline:2px solid #2563eb !important;outline-offset:2px !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="n"]{cursor:n-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="s"]{cursor:s-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="e"]{cursor:e-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="w"]{cursor:w-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="ne"]{cursor:ne-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="nw"]{cursor:nw-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="se"]{cursor:se-resize !important;}[data-standalone-selected="1"][data-standalone-rim-hover="1"][data-standalone-rim-cursor="sw"]{cursor:sw-resize !important;}[data-standalone-selected="1"]:not([data-standalone-rim-hover="1"]){cursor:grab !important;}[data-standalone-selected="1"][data-standalone-dragging="1"]{cursor:grabbing !important;}[data-standalone-editing="1"]{cursor:text !important;}[data-shape-handle]{cursor:move !important}#standalone-context-menu{position:absolute;z-index:2147483647;display:none;min-width:220px;padding:8px;border-radius:14px;background:rgba(15,23,42,.96);border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.28);backdrop-filter:blur(12px);overflow:visible}#standalone-context-menu[data-menu-drag-hover="1"]{cursor:grab}#standalone-context-menu[data-menu-dragging="1"]{cursor:grabbing}#standalone-context-menu .menu-row{position:relative}#standalone-context-menu button[data-menu-action]>span{float:right;margin-left:8px;color:#94a3b8}#standalone-context-menu button{display:block;width:100%;min-height:38px;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:#f8fafc;font:700 13px/1.2 system-ui,sans-serif;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#standalone-context-menu button:hover,#standalone-context-menu .menu-row.is-open>button{background:rgba(255,255,255,.08)}#standalone-context-menu hr{margin:6px 0;border:0;border-top:1px solid rgba(255,255,255,.08)}#standalone-context-menu .shape-submenu,#standalone-context-menu .route-submenu{position:absolute;left:calc(100% + 2px);top:-8px;display:none;min-width:190px;padding:8px;border-radius:14px;background:rgba(15,23,42,.98);border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.28)}#standalone-context-menu .shape-submenu::before,#standalone-context-menu .route-submenu::before{content:\"\";position:absolute;left:-22px;top:0;bottom:0;width:26px}#standalone-context-menu .shape-submenu{min-width:190px}#standalone-context-menu .route-submenu{width:360px;max-height:min(76vh,480px);padding:14px;gap:12px;flex-direction:column;overflow:hidden;display:flex !important;box-sizing:border-box}#standalone-context-menu .route-submenu[data-side=\"left\"]{left:auto;right:calc(100% + 2px)}#standalone-context-menu .menu-row.is-open .shape-submenu,#standalone-context-menu .menu-row.is-open .route-submenu{display:flex}#standalone-context-menu .route-submenu-title{font:800 12px/1.2 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#cbd5e1;padding:2px 4px 0}#standalone-context-menu .route-submenu-scroll{display:block;min-height:0;max-height:none;overflow-y:auto;padding-right:4px;flex:1 1 auto}#standalone-context-menu .route-submenu-scroll>*{margin:0 0 8px}#standalone-context-menu .route-submenu-scroll>*:last-child{margin-bottom:0}#standalone-context-menu .route-submenu-empty{padding:16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.1);font:500 12px/1.6 system-ui,sans-serif;color:#94a3b8;text-align:center}#standalone-context-menu button.route-submenu-item{display:block;width:100%;height:auto;min-height:0;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:left;transition:all .12s ease;text-decoration:none;white-space:normal;overflow:visible;text-overflow:clip}#standalone-context-menu button.route-submenu-item strong{display:block;margin:0 0 6px;font:700 13px/1.35 system-ui,sans-serif;color:#f8fafc;white-space:normal;word-break:break-word}#standalone-context-menu button.route-submenu-item span{display:block;font:500 11px/1.45 system-ui,sans-serif;color:#cbd5e1;white-space:normal;word-break:break-word;max-height:44px;overflow:hidden}#standalone-context-menu button.route-submenu-item:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}#standalone-context-menu .route-submenu-footer{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);flex:0 0 auto;background:linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,.98) 14px,rgba(15,23,42,.98) 100%)}#standalone-context-menu button.route-submenu-add{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;border:2px dashed rgba(96,165,250,.4);background:rgba(96,165,250,.06);color:#60a5fa;font:700 13px/1.2 system-ui,sans-serif;cursor:pointer;flex:0 0 auto;transition:all .15s ease;width:100%}#standalone-context-menu button.route-submenu-add:hover{background:rgba(255,255,255,.08)}#standalone-context-menu .route-submenu-form{display:none;gap:8px;flex:0 0 auto}#standalone-context-menu .route-submenu-form.is-active{display:grid}#standalone-context-menu .route-submenu-form input{width:100%;min-height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(96,165,250,.3);background:rgba(15,23,42,.88);color:#f8fafc;font:600 13px/1.2 system-ui,sans-serif;outline:none;transition:all .15s ease}#standalone-context-menu .route-submenu-form input::placeholder{color:#94a3b8}#standalone-context-menu .route-submenu-form input:focus{border-color:rgba(96,165,250,.78);box-shadow:0 0 0 1px rgba(96,165,250,.28)}#standalone-context-menu .route-submenu-create{display:flex;align-items:center;justify-content:center;min-height:44px;width:100%;border:0;border-radius:10px;background:#2563eb;color:#fff;font:800 13px/1 system-ui,sans-serif;cursor:pointer;transition:background .15s ease}#standalone-context-menu .route-submenu-create:hover{background:#1d4ed8}#standalone-hover-delete{position:fixed;z-index:2147483647;display:none;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:999px;background:#dc2626;color:#fff;box-shadow:0 16px 30px rgba(220,38,38,.32);cursor:pointer;transform:translate(-50%,-50%)}#standalone-hover-delete:hover{background:#b91c1c}#standalone-hover-delete svg{width:18px;height:18px;pointer-events:none}#standalone-marquee{position:fixed;z-index:2147483646;display:none;border:1px solid rgba(37,99,235,.9);background:rgba(37,99,235,.12);pointer-events:none}[data-standalone-drop-target="1"]{outline:3px dashed #16a34a !important;outline-offset:-3px !important;}</style>'
       : '';
     const bridgeScript = String.raw`
       <script id="standalone-bridge-script">
@@ -2905,6 +2926,14 @@
           let draggingContextMenu = false;
           let contextMenuDragOffsetX = 0;
           let contextMenuDragOffsetY = 0;
+          let parentVisibleTop = 0;
+          let parentVisibleBottom = 0;
+          function visibleViewportBand() {
+            const rawHeight = Math.max(0, window.innerHeight || document.documentElement?.clientHeight || 0);
+            const bottom = parentVisibleBottom > 160 ? Math.min(rawHeight, parentVisibleBottom) : rawHeight;
+            const top = Math.min(Math.max(0, parentVisibleTop), Math.max(0, bottom - 200));
+            return { top, bottom };
+          }
           const marqueeEl = document.createElement('div');
           marqueeEl.id = 'standalone-marquee';
           document.body.appendChild(marqueeEl);
@@ -3091,9 +3120,13 @@
           }
           function positionRoutePicker() {
             if (!routePickerEl || !buttonRouteRowEl?.classList.contains('is-open')) return;
-            const viewportHeight = Math.max(0, window.innerHeight || document.documentElement?.clientHeight || 0);
+            // Clamp inside the band the trainer can actually see: the parent
+            // reports how much of this frame the window and code dock leave
+            // visible.
+            const band = visibleViewportBand();
+            const viewportHeight = band.bottom;
             const viewportWidth = Math.max(0, window.innerWidth || document.documentElement?.clientWidth || 0);
-            const safeMaxHeight = Math.max(240, Math.min(520, viewportHeight - 24));
+            const safeMaxHeight = Math.max(240, Math.min(440, (band.bottom - band.top) - 56));
             routePickerEl.style.maxHeight = String(safeMaxHeight) + 'px';
             routePickerEl.style.left = 'calc(100% + 2px)';
             routePickerEl.style.right = 'auto';
@@ -3114,7 +3147,7 @@
             const finalRect = routePickerEl.getBoundingClientRect();
             const menuRect = finalRect.width ? finalRect : measuredRect;
             const overflowBottom = menuRect.bottom - viewportHeight;
-            const overflowTop = 8 - menuRect.top;
+            const overflowTop = (band.top + 8) - menuRect.top;
             let top = -8;
             if (overflowBottom > 0) top -= overflowBottom + 8;
             if (overflowTop > 0) top += overflowTop;
@@ -3138,11 +3171,17 @@
           function showContextMenu(x, y) {
             syncContextMenuOptions();
             const menuWidth = 220;
-            const menuHeight = 320;
+            const menuHeight = 430;
+            // The menu is absolutely positioned in the document so it scrolls
+            // with the page content; clamp within the band of this frame the
+            // trainer can actually see, then convert to document coordinates.
+            const band = visibleViewportBand();
             const maxX = Math.max(8, (window.innerWidth || 0) - menuWidth - 12);
-            const maxY = Math.max(8, (window.innerHeight || 0) - menuHeight - 12);
-            contextMenuEl.style.left = Math.max(8, Math.min(Number(x || 0), maxX)) + 'px';
-            contextMenuEl.style.top = Math.max(8, Math.min(Number(y || 0), maxY)) + 'px';
+            const maxY = Math.max(band.top + 8, band.bottom - menuHeight - 12);
+            const viewportX = Math.max(8, Math.min(Number(x || 0), maxX));
+            const viewportY = Math.max(band.top + 8, Math.min(Number(y || 0), maxY));
+            contextMenuEl.style.left = (viewportX + (window.scrollX || 0)) + 'px';
+            contextMenuEl.style.top = (viewportY + (window.scrollY || 0)) + 'px';
             contextMenuEl.style.display = 'block';
           }
           function detectContextMenuDragZone(event) {
@@ -3709,6 +3748,10 @@
             return !['img','input','textarea','select','option','video','iframe','source','track','br','hr','meta','link'].includes(tag);
           }
           function insertionContainer() {
+            // Never nest new elements inside a link or button - a button created
+            // while another button is selected must become its sibling.
+            const interactiveHost = activeEl?.closest ? activeEl.closest('a,button,[data-standalone-route-button]') : null;
+            if (interactiveHost?.parentElement) return interactiveHost.parentElement;
             if (activeEl && canContainChildren(activeEl)) return activeEl;
             if (activeEl?.parentElement) return activeEl.parentElement;
             return rootEl;
@@ -4339,6 +4382,12 @@
               ? event.target.closest('a[href],[data-standalone-route-href]')
               : null;
           }, true);
+          window.addEventListener('message', function(event) {
+            const d = event && event.data && typeof event.data === 'object' ? event.data : null;
+            if (!d || d.type !== 'trainer_standalone_viewport_insets') return;
+            parentVisibleTop = Math.max(0, Number(d.visibleTop) || 0);
+            parentVisibleBottom = Math.max(0, Number(d.visibleBottom) || 0);
+          });
           document.addEventListener('click', function(event) {
             const direct = event.target instanceof Element && !hoverDeleteEl.contains(event.target) && !contextMenuEl.contains(event.target)
               ? event.target.closest('a[href],[data-standalone-route-href]')
@@ -4478,8 +4527,10 @@
               const rect = contextMenuEl.getBoundingClientRect();
               const maxX = Math.max(8, (window.innerWidth || 0) - rect.width - 12);
               const maxY = Math.max(8, (window.innerHeight || 0) - rect.height - 12);
-              contextMenuEl.style.left = Math.max(8, Math.min((Number(event.clientX || 0) - contextMenuDragOffsetX), maxX)) + 'px';
-              contextMenuEl.style.top = Math.max(8, Math.min((Number(event.clientY || 0) - contextMenuDragOffsetY), maxY)) + 'px';
+              const dragX = Math.max(8, Math.min((Number(event.clientX || 0) - contextMenuDragOffsetX), maxX));
+              const dragY = Math.max(8, Math.min((Number(event.clientY || 0) - contextMenuDragOffsetY), maxY));
+              contextMenuEl.style.left = (dragX + (window.scrollX || 0)) + 'px';
+              contextMenuEl.style.top = (dragY + (window.scrollY || 0)) + 'px';
               return;
             }
             syncContextMenuDragHover(event);
@@ -7183,6 +7234,12 @@
       ...document.querySelectorAll('iframe[data-standalone-live-preview="1"]'),
       ...(isStandalonePublicCoachRoute() ? document.querySelectorAll('iframe[data-builder-preview-frame="1"]') : [])
     ];
+    if (window.__standalonePreviewInsetsBound !== true) {
+      window.__standalonePreviewInsetsBound = true;
+      window.addEventListener('scroll', postStandalonePreviewViewportInsets, { passive: true });
+      window.addEventListener('resize', postStandalonePreviewViewportInsets);
+    }
+    postStandalonePreviewViewportInsets();
     navGuardFrames.forEach((frame) => {
       if (!(frame instanceof HTMLIFrameElement) || frame.dataset.navGuardBound === '1') return;
       frame.dataset.navGuardBound = '1';
@@ -7571,6 +7628,7 @@
             window.clearTimeout(standalonePreviewNavWatchdogs.get(frame) || 0);
             standalonePreviewNavWatchdogs.delete(frame);
           });
+          postStandalonePreviewViewportInsets();
           return;
         }
         if (data.type === 'trainer_standalone_nav') {
