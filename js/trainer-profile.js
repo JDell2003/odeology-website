@@ -6051,6 +6051,28 @@
           .trainer-builder-setup-resize-handle::after {
             top: 16px;
           }
+          .trainer-builder-setup-clear {
+            position: absolute;
+            top: 10px;
+            right: 48px;
+            z-index: 4;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            padding: 0 14px;
+            border: 1px solid rgba(148,163,184,.38);
+            border-radius: 10px;
+            background: linear-gradient(180deg,rgba(30,41,59,.96),rgba(15,23,42,.98));
+            color: #f8fafc;
+            font: 800 12px/1 system-ui,sans-serif;
+            cursor: pointer;
+            box-shadow: 0 14px 28px rgba(2,6,23,.32);
+          }
+          .trainer-builder-setup-clear[data-armed="1"] {
+            background: #dc2626;
+            border-color: #dc2626;
+          }
           .trainer-builder-setup-code-surface {
             position: relative;
             height: 100%;
@@ -6239,6 +6261,9 @@
             min-height:38px;
           }
           @media (max-width: 767px) {
+            .trainer-builder-setup-clear {
+              display: inline-flex;
+            }
             .trainer-standalone-inspector{
               max-width:calc(100vw - 16px);
               overflow-x:auto;
@@ -6370,6 +6395,7 @@
           </div>
           <div class="trainer-builder-setup-textarea-shell">
             <button type="button" class="trainer-builder-setup-resize-handle" data-standalone-code-resize="1" aria-label="Resize code editor"></button>
+            <button type="button" class="trainer-builder-setup-clear" data-standalone-code-clear="1" aria-label="Clear the code">Clear</button>
             <div class="trainer-builder-setup-code-surface">
               <pre id="trainer-page-code-highlight" class="trainer-builder-setup-code-highlight" aria-hidden="true">${renderStandaloneCodeHighlight(codeBlock)}</pre>
               <textarea id="trainer-page-code-html" class="trainer-builder-setup-textarea" spellcheck="false" placeholder="Paste your custom website code here...">${escapeHtml(codeBlock)}</textarea>
@@ -7625,6 +7651,31 @@
         void completeSimpleCodeEdit();
       };
     });
+    document.querySelectorAll('[data-standalone-code-clear]').forEach((button) => {
+      button.onclick = () => {
+        // First tap arms, second tap clears - protects against fat-finger
+        // wipes on phones. Undo can still bring the code back.
+        if (button.dataset.armed !== '1') {
+          button.dataset.armed = '1';
+          button.textContent = 'Tap again';
+          window.clearTimeout(Number(button.dataset.armTimer) || 0);
+          button.dataset.armTimer = String(window.setTimeout(() => {
+            button.dataset.armed = '0';
+            button.textContent = 'Clear';
+          }, 2600));
+          return;
+        }
+        window.clearTimeout(Number(button.dataset.armTimer) || 0);
+        button.dataset.armed = '0';
+        button.textContent = 'Clear';
+        const codeInput = $('#trainer-page-code-html');
+        if (codeInput instanceof HTMLTextAreaElement) {
+          codeInput.value = '';
+          codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+          try { codeInput.focus(); } catch {}
+        }
+      };
+    });
     const navGuardFrames = [
       ...document.querySelectorAll('iframe[data-standalone-live-preview="1"]'),
       ...(isStandalonePublicCoachRoute() ? document.querySelectorAll('iframe[data-builder-preview-frame="1"]') : [])
@@ -7804,6 +7855,15 @@
       const standaloneCodeShellForEdit = standaloneCodeInput.closest('.trainer-builder-setup-textarea-shell');
       const standaloneCodeSurfaceForEdit = standaloneCodeInput.closest('.trainer-builder-setup-code-surface');
       standaloneCodeSurfaceForEdit?.addEventListener('dblclick', () => {
+        standaloneCodeShellForEdit?.classList.add('is-code-editing');
+        standaloneCodeInput.focus();
+      });
+      standaloneCodeSurfaceForEdit?.addEventListener('click', () => {
+        // Phones cannot double-tap into the code box reliably - a single tap
+        // starts editing on touch/small screens.
+        const coarsePointer = (window.matchMedia?.('(pointer: coarse)')?.matches === true)
+          || (window.innerWidth || 0) <= 767;
+        if (!coarsePointer) return;
         standaloneCodeShellForEdit?.classList.add('is-code-editing');
         standaloneCodeInput.focus();
       });
