@@ -1,3 +1,7 @@
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
 const LEAD_STAGES = [
   'New Lead',
   'Contacted',
@@ -9,6 +13,42 @@ const LEAD_STAGES = [
   'Lost',
   'Waitlist'
 ];
+
+// Media bytes live on disk, not in Postgres: streaming videos out of the
+// database burns hosted-DB data transfer quota extremely fast.
+const TRAINER_MEDIA_DIR = path.join(__dirname, '..', 'data', 'trainer-media');
+const TRAINER_MEDIA_EXTENSIONS = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/avif': 'avif',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/ogg': 'ogv',
+  'video/quicktime': 'mov'
+};
+
+function trainerMediaFileName(mediaId, mimeType) {
+  const ext = TRAINER_MEDIA_EXTENSIONS[String(mimeType || '').toLowerCase()] || 'bin';
+  return `${String(mediaId)}.${ext}`;
+}
+
+async function writeTrainerMediaFile(fileName, bytes) {
+  await fs.promises.mkdir(TRAINER_MEDIA_DIR, { recursive: true });
+  await fs.promises.writeFile(path.join(TRAINER_MEDIA_DIR, fileName), bytes);
+  return fileName;
+}
+
+async function readTrainerMediaFile(fileName) {
+  const safe = path.basename(String(fileName || ''));
+  if (!safe) return null;
+  try {
+    return await fs.promises.readFile(path.join(TRAINER_MEDIA_DIR, safe));
+  } catch {
+    return null;
+  }
+}
 
 const MAX_TRAINER_PAGES = 5;
 const MAX_LEAD_UPLOAD_GROUPS = 10;
@@ -163,7 +203,9 @@ const TRAINER_PAGE_SCHEMA_SQL = [
       created_at timestamptz NOT NULL DEFAULT now()
     );
   `,
-  `CREATE INDEX IF NOT EXISTS idx_app_trainer_page_media_trainer_user_id ON app_trainer_page_media(trainer_user_id, created_at DESC);`
+  `CREATE INDEX IF NOT EXISTS idx_app_trainer_page_media_trainer_user_id ON app_trainer_page_media(trainer_user_id, created_at DESC);`,
+  `ALTER TABLE app_trainer_page_media ADD COLUMN IF NOT EXISTS file_path text;`,
+  `ALTER TABLE app_trainer_page_media ALTER COLUMN data DROP NOT NULL;`
 ];
 
 const TRAINER_PAGE_MEDIA_IMAGE_MAX_BYTES = Math.max(250_000, Number(process.env.TRAINER_PAGE_MEDIA_IMAGE_MAX_BYTES || 10_000_000));
@@ -2172,16 +2214,27 @@ async function saveTrainerPageMedia(db, trainerUserId, { mediaType, mimeType, fi
   if (Number(countResult.rows?.[0]?.total || 0) >= TRAINER_PAGE_MEDIA_MAX_ITEMS) {
     throw new Error(`Media library limit reached (${TRAINER_PAGE_MEDIA_MAX_ITEMS} files).`);
   }
-  const result = await db.query(
-    `
-      INSERT INTO app_trainer_page_media (trainer_user_id, media_type, mime_type, file_name, byte_size, data)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, media_type, mime_type, file_name, byte_size, created_at;
-    `,
-    [trainerUserId, kind, mime, cleanShortText(fileName, 160), bytes.length, bytes]
-  );
+  const mediaId = crypto.randomUUID();
+  const storedFileName = await writeTrainerMediaFile(trainerMediaFileName(mediaId, mime), bytes);
+  let result;
+  try {
+    result = await db.query(
+      `
+        INSERT INTO app_trainer_page_media (id, trainer_user_id, media_type, mime_type, file_name, byte_size, data, file_path)
+        VALUES ($1, $2, $3, $4, $5, $6, NULL, $7)
+        RETURNING id, media_type, mime_type, file_name, byte_size, created_at;
+      `,
+      [mediaId, trainerUserId, kind, mime, cleanShortText(fileName, 160), bytes.length, storedFileName]
+    );
+  } catch (err) {
+    fs.promises.unlink(path.join(TRAINER_MEDIA_DIR, storedFileName)).catch(() => {});
+    throw err;
+  }
   const row = result.rows?.[0] || null;
-  if (!row) throw new Error('Could not store media.');
+  if (!row) {
+    fs.promises.unlink(path.join(TRAINER_MEDIA_DIR, storedFileName)).catch(() => {});
+    throw new Error('Could not store media.');
+  }
   return {
     id: row.id,
     url: `/api/coach/media/${row.id}`,
@@ -2197,18 +2250,37 @@ async function getTrainerPageMedia(db, mediaIdRaw) {
   const mediaId = String(mediaIdRaw || '').trim();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mediaId)) return null;
   const result = await db.query(
-    'SELECT id, media_type, mime_type, file_name, byte_size, data FROM app_trainer_page_media WHERE id = $1 LIMIT 1;',
+    'SELECT id, media_type, mime_type, file_name, byte_size, data, file_path FROM app_trainer_page_media WHERE id = $1 LIMIT 1;',
     [mediaId]
   );
   const row = result.rows?.[0] || null;
   if (!row) return null;
+  let bytes = null;
+  if (row.file_path) {
+    bytes = await readTrainerMediaFile(row.file_path);
+  }
+  if (!bytes && row.data) {
+    bytes = Buffer.isBuffer(row.data) ? row.data : Buffer.from(row.data || '');
+    // Lazily migrate database-stored media to disk so serving it stops
+    // consuming hosted-database data transfer.
+    if (bytes.length) {
+      const migratedName = trainerMediaFileName(row.id, row.mime_type);
+      writeTrainerMediaFile(migratedName, bytes)
+        .then(() => db.query(
+          'UPDATE app_trainer_page_media SET file_path = $2, data = NULL WHERE id = $1;',
+          [row.id, migratedName]
+        ))
+        .catch(() => {});
+    }
+  }
+  if (!bytes || !bytes.length) return null;
   return {
     id: row.id,
     mediaType: row.media_type,
     mimeType: row.mime_type,
     fileName: row.file_name,
-    byteSize: Number(row.byte_size) || 0,
-    data: Buffer.isBuffer(row.data) ? row.data : Buffer.from(row.data || '')
+    byteSize: Number(row.byte_size) || bytes.length,
+    data: bytes
   };
 }
 
