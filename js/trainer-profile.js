@@ -1210,6 +1210,25 @@
     editorState.historyPast.push(cloneJson(next));
     if (editorState.historyPast.length > 60) editorState.historyPast = editorState.historyPast.slice(-60);
     editorState.historyFuture = [];
+    editorState.lastHistoryPushAt = Date.now();
+  }
+
+  function pushBuilderHistoryCoalesced(snapshot) {
+    // Typing bursts collapse into one undo step: replace the top entry while
+    // keystrokes come in quick succession so Undo reverts the whole edit, not
+    // one character.
+    const now = Date.now();
+    const withinBurst = Number(editorState.lastHistoryPushAt || 0) > 0
+      && (now - Number(editorState.lastHistoryPushAt)) < 900
+      && editorState.historyPast.length > 1;
+    if (!withinBurst) {
+      pushBuilderHistory(snapshot);
+      return;
+    }
+    const next = normalizeBuilderPageShape(snapshot || editorState.draft || createBlankTrainerPage(pageState.trainer));
+    editorState.historyPast[editorState.historyPast.length - 1] = cloneJson(next);
+    editorState.historyFuture = [];
+    editorState.lastHistoryPushAt = now;
   }
 
   function applyBuilderSnapshot(snapshot) {
@@ -1233,7 +1252,8 @@
       standaloneCodeInput.value = nextCode;
       const nextSrcdoc = buildStandalonePreviewSrcdoc(sanitizeStandaloneEditorMarkup(nextCode), {
         editable: true,
-        viewportMode: standalonePreviewViewportMode()
+        viewportMode: standalonePreviewViewportMode(),
+        initialScroll: previewScroll
       });
       livePreview.addEventListener('load', function restoreStandaloneUndoScroll() {
         livePreview.removeEventListener('load', restoreStandaloneUndoScroll);
@@ -2753,7 +2773,29 @@
     });
   }
 
-  function buildStandalonePreviewSrcdoc(rawHtml = '', { editable = false, viewportMode = 'responsive', desktopWidth = 1920 } = {}) {
+  function buildStandalonePreviewSrcdoc(rawHtml = '', { editable = false, viewportMode = 'responsive', desktopWidth = 1920, initialScroll = null } = {}) {
+    const initialScrollX = Math.max(0, Math.round(Number(initialScroll?.x) || 0));
+    const initialScrollY = Math.max(0, Math.round(Number(initialScroll?.y) || 0));
+    // Applied inside the fresh document before the trainer can perceive a
+    // jump to the top - undo/redo keeps them looking at the spot they edited.
+    const initialScrollScript = (initialScrollX || initialScrollY) ? `
+      <script id="standalone-initial-scroll">
+        (function() {
+          var targetX = ${initialScrollX};
+          var targetY = ${initialScrollY};
+          var tries = 0;
+          var apply = function() {
+            tries += 1;
+            window.scrollTo(targetX, targetY);
+            var maxY = Math.max(0, (document.documentElement.scrollHeight || 0) - window.innerHeight);
+            if (tries < 24 && maxY < targetY) window.setTimeout(apply, 80);
+          };
+          if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
+          else apply();
+          window.addEventListener('load', apply);
+        })();
+      <\/script>
+    ` : '';
     const parsed = extractCombinedCodeParts(rawHtml);
     const useDesktopViewport = String(viewportMode || '').trim().toLowerCase() === 'desktop';
     const viewportContent = useDesktopViewport
@@ -5231,8 +5273,8 @@
       }
       if (closingHead) next = next.replace(/<\/head>/i, `${!/<meta[^>]+name=(["'])viewport\1[^>]*>/i.test(next) ? `<meta name="viewport" content="${viewportContent}">` : ''}${!/<meta[^>]+http-equiv=(["'])Content-Security-Policy\1[^>]*>/i.test(next) ? inlinePreviewCsp : ''}${runtimeErrorStyle}${rootLayoutGuardStyle}${viewportGuardStyle}${buttonEnhancementStyle}${bridgeStyle}</head>`);
       else next = next.replace(/<html[^>]*>/i, (match) => `${match}<head><meta name="viewport" content="${viewportContent}">${inlinePreviewCsp}${runtimeErrorStyle}${rootLayoutGuardStyle}${viewportGuardStyle}${buttonEnhancementStyle}${bridgeStyle}</head>`);
-      if (closingBody) next = next.replace(/<\/body>/i, `${runtimeErrorMarkup}${bridgeScript}${scriptExecutorMarkup}</body>`);
-      else next = `${next}${runtimeErrorMarkup}${bridgeScript}${scriptExecutorMarkup}`;
+      if (closingBody) next = next.replace(/<\/body>/i, `${runtimeErrorMarkup}${bridgeScript}${scriptExecutorMarkup}${initialScrollScript}</body>`);
+      else next = `${next}${runtimeErrorMarkup}${bridgeScript}${scriptExecutorMarkup}${initialScrollScript}`;
       return next;
     }
     return `
@@ -5254,6 +5296,7 @@
         <div id="standalone-page-root">${parsed.html || ''}</div>
         ${bridgeScript}
         ${standaloneInlineScriptExecutor(parsed.scripts)}
+        ${initialScrollScript}
       </body>
       </html>
     `.trim();
@@ -7902,7 +7945,7 @@
         editorState.draft = normalizeBuilderPageShape(next, editorState.original || pageState.currentTrainerPage || {});
         pageState.currentTrainerPage = cloneJson(editorState.draft);
         editorState.dirty = JSON.stringify(editorState.draft || {}) !== JSON.stringify(editorState.original || {});
-        pushBuilderHistory(editorState.draft);
+        pushBuilderHistoryCoalesced(editorState.draft);
         syncBuilderToolbarState();
         queueBuilderAutosave();
       };
