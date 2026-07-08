@@ -4,7 +4,7 @@ const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 let pool = null;
 let lastPoolConfig = null;
 let lastDriver = 'pg';
-const DB_QUERY_TIMEOUT_MS = Math.max(1000, Number(process.env.DB_QUERY_TIMEOUT_MS || 4500));
+const DB_QUERY_TIMEOUT_MS = Math.max(1000, Number(process.env.DB_QUERY_TIMEOUT_MS || 15000));
 
 function getDatabaseUrl() {
   return String(process.env.DATABASE_URL || '').trim();
@@ -53,7 +53,7 @@ const buildPoolConfig = () => {
   const common = {
     max: 5,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: Math.max(1000, Number(process.env.DB_CONNECT_TIMEOUT_MS || 4500)),
+    connectionTimeoutMillis: Math.max(1000, Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000)),
     keepAlive: true,
     ssl: sslEnabled ? { rejectUnauthorized: false } : false
   };
@@ -123,7 +123,10 @@ async function query(text, params) {
     ]);
   } catch (err) {
     if (timedOut || err instanceof DbUnavailableError || isTransientPgError(err)) {
-      await resetPool();
+      // Only tear the pool down on real connection-level failures. A single
+      // slow query must not destroy every warm connection - that turns one
+      // timeout into a site-wide 503 storm while fresh pools cold-start.
+      if (!timedOut) await resetPool();
       if (err instanceof DbUnavailableError) throw err;
       throw new DbUnavailableError('Database temporarily unavailable', err);
     }

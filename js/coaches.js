@@ -239,7 +239,6 @@
             </div>
             <div class="coach-overview">${escapeHtml(overview)}</div>
             <div class="coach-mode-line">${escapeHtml(modeText)}</div>
-            <div class="coach-card-more"><span>Full profile, results &amp; pricing inside</span><i aria-hidden="true">&rarr;</i></div>
           </div>
           <span class="coach-toggle" aria-hidden="true">&gt;</span>
         </a>
@@ -472,7 +471,7 @@
           </div>
           <div class="coach-match-card-overview">${escapeHtml(overview)}</div>
           <div class="coach-match-card-mode">${escapeHtml(buildModeText(trainer))}</div>
-          <a class="coach-pill coach-match-card-view" href="${escapeHtml(buildTrainerProfileHref(trainer))}">View full profile</a>
+          <a class="coach-pill coach-match-card-view" href="${escapeHtml(buildTrainerProfileHref(trainer))}">Visit their website</a>
         </article>
       `;
     };
@@ -629,30 +628,8 @@
         canModerate,
         activeTab: activeReviewTab
       });
-      animateCardsIntoView();
     };
     applyFiltersRef = applyFilters;
-
-    let cardsScrollObserver = null;
-    const animateCardsIntoView = () => {
-      cardsScrollObserver?.disconnect();
-      cardsScrollObserver = null;
-      if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
-      const cardEls = Array.from(gridEl.querySelectorAll('.coach-card'));
-      if (!cardEls.length || typeof IntersectionObserver !== 'function') return;
-      gridEl.classList.add('coach-card-anim');
-      cardsScrollObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add('is-inview');
-          cardsScrollObserver?.unobserve(entry.target);
-        });
-      }, { threshold: 0.12 });
-      cardEls.forEach((el, index) => {
-        el.style.transitionDelay = `${(index % 5) * 70}ms`;
-        cardsScrollObserver.observe(el);
-      });
-    };
 
     gridEl.addEventListener('click', async (event) => {
       const coachLink = event.target instanceof Element ? event.target.closest('.coach-pill') : null;
