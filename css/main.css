@@ -24637,3 +24637,62 @@ body.seo-meal-page .seo-meal-hero {
 @media (prefers-reduced-motion: reduce) {
     .coach-match-card { transition: none; }
 }
+
+/* ── Coaches cards: centered everywhere + scroll-enticing design ──── */
+.coaches-grid .coach-card {
+    margin-right: 0;
+    width: min(100%, 760px);
+    transition: transform .22s cubic-bezier(.2, .8, .3, 1), box-shadow .22s ease, opacity .45s ease;
+}
+/* Moderators get the side gutter back so approve/deny stays clear */
+.coaches-grid .coach-card:has([data-review-actions]) {
+    margin-right: 56px;
+}
+.coaches-grid .coach-card:hover {
+    transform: translateY(-4px) scale(1.008);
+    box-shadow: 0 22px 44px rgba(7, 20, 31, .12);
+}
+/* Rotating accent ring keeps the list visually alive while scanning */
+.coaches-grid .coach-card:nth-child(4n+1) { border-top: 3px solid rgba(37, 99, 235, .55); }
+.coaches-grid .coach-card:nth-child(4n+2) { border-top: 3px solid rgba(22, 163, 74, .5); }
+.coaches-grid .coach-card:nth-child(4n+3) { border-top: 3px solid rgba(217, 70, 239, .45); }
+.coaches-grid .coach-card:nth-child(4n+4) { border-top: 3px solid rgba(245, 158, 11, .55); }
+/* Overview fades out mid-sentence - the unfinished thought pulls the tap */
+.coaches-grid .coach-overview {
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, rgba(0, 0, 0, .35));
+    mask-image: linear-gradient(180deg, #000 55%, rgba(0, 0, 0, .35));
+}
+.coach-card-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    font: 800 12px/1 system-ui, sans-serif;
+    color: #2563eb;
+}
+.coach-card-more i {
+    font-style: normal;
+    transition: transform .18s ease;
+}
+.coaches-grid .coach-card:hover .coach-card-more i {
+    transform: translateX(4px);
+}
+/* Cards rise in one by one as they enter the viewport */
+.coach-card-anim .coach-card {
+    opacity: 0;
+    transform: translateY(30px) scale(.975);
+}
+.coach-card-anim .coach-card.is-inview {
+    opacity: 1;
+    transform: none;
+}
+.coach-card-anim .coach-card.is-inview:hover {
+    transform: translateY(-4px) scale(1.008);
+}
+@media (prefers-reduced-motion: reduce) {
+    .coach-card-anim .coach-card {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}

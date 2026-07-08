@@ -239,6 +239,7 @@
             </div>
             <div class="coach-overview">${escapeHtml(overview)}</div>
             <div class="coach-mode-line">${escapeHtml(modeText)}</div>
+            <div class="coach-card-more"><span>Full profile, results &amp; pricing inside</span><i aria-hidden="true">&rarr;</i></div>
           </div>
           <span class="coach-toggle" aria-hidden="true">&gt;</span>
         </a>
@@ -358,19 +359,43 @@
       if (hasAccountAccess()) closeAccessModal();
     });
 
-    const loadCards = async () => {
-      const resp = await apiWithTimeout('/api/auth/trainers', 9000);
-      if (resp.status === 401) {
+    let directoryDegraded = false;
+    const loadCards = async ({ attempts = 3 } = {}) => {
+      let resp = null;
+      // The trainers endpoint 503s while the database reconnects - retry a
+      // few times before ever falling back to the demo card.
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        resp = await apiWithTimeout('/api/auth/trainers', 7000);
+        if (resp.ok && resp.json?.ok) break;
+        if (resp.status === 401) break;
+        if (attempt < attempts) await new Promise((resolveDelay) => setTimeout(resolveDelay, attempt * 900));
+      }
+      if (resp?.status === 401) {
+        directoryDegraded = false;
         cards = demoTrainerFallback();
-      } else if (!resp.ok || !resp.json?.ok) {
+      } else if (!resp?.ok || !resp?.json?.ok) {
+        directoryDegraded = true;
         cards = cachedTrainerDirectory() || demoTrainerFallback();
       } else {
+        directoryDegraded = false;
         const trainers = Array.isArray(resp.json?.trainers) ? resp.json.trainers : [];
         cards = trainers.length ? trainers : demoTrainerFallback();
+        try {
+          sessionStorage.setItem('trainer-directory-cache', JSON.stringify(cards));
+        } catch {}
       }
-      try {
-        sessionStorage.setItem('trainer-directory-cache', JSON.stringify(cards));
-      } catch {}
+    };
+    let directoryHealTimer = 0;
+    let directoryHealTries = 0;
+    const scheduleDirectoryHeal = () => {
+      if (!directoryDegraded || directoryHealTimer || directoryHealTries >= 10) return;
+      directoryHealTimer = window.setTimeout(async () => {
+        directoryHealTimer = 0;
+        directoryHealTries += 1;
+        await loadCards({ attempts: 1 });
+        if (typeof applyFiltersRef === 'function') applyFiltersRef();
+        scheduleDirectoryHeal();
+      }, 12000);
     };
 
     await loadCards();
@@ -379,8 +404,7 @@
     const deckElapsed = Date.now() - deckShownAt;
     if (deckElapsed < 1100) await new Promise((resolve) => setTimeout(resolve, 1100 - deckElapsed));
     window.clearTimeout(deckWatchdog);
-    gridEl.classList.add('coaches-grid-reveal');
-    window.setTimeout(() => gridEl.classList.remove('coaches-grid-reveal'), 1600);
+    scheduleDirectoryHeal();
 
     let viewMode = 'deck';
     try {
@@ -605,8 +629,30 @@
         canModerate,
         activeTab: activeReviewTab
       });
+      animateCardsIntoView();
     };
     applyFiltersRef = applyFilters;
+
+    let cardsScrollObserver = null;
+    const animateCardsIntoView = () => {
+      cardsScrollObserver?.disconnect();
+      cardsScrollObserver = null;
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+      const cardEls = Array.from(gridEl.querySelectorAll('.coach-card'));
+      if (!cardEls.length || typeof IntersectionObserver !== 'function') return;
+      gridEl.classList.add('coach-card-anim');
+      cardsScrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-inview');
+          cardsScrollObserver?.unobserve(entry.target);
+        });
+      }, { threshold: 0.12 });
+      cardEls.forEach((el, index) => {
+        el.style.transitionDelay = `${(index % 5) * 70}ms`;
+        cardsScrollObserver.observe(el);
+      });
+    };
 
     gridEl.addEventListener('click', async (event) => {
       const coachLink = event.target instanceof Element ? event.target.closest('.coach-pill') : null;
