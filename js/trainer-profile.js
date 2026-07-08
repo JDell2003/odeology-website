@@ -1699,6 +1699,195 @@
     });
   }
 
+  const TRAINER_VIDEO_MAX_SECONDS = 20 * 60;
+
+  function formatVideoClock(totalSeconds) {
+    const safe = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+    const minutes = Math.floor(safe / 60);
+    const seconds = String(safe % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+
+  function captureVideoElementFrame(videoEl, maxWidth = 1280, quality = 0.85) {
+    return new Promise((resolve) => {
+      try {
+        const width = videoEl.videoWidth;
+        const height = videoEl.videoHeight;
+        if (!width || !height) {
+          resolve(null);
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / width);
+        canvas.width = Math.max(1, Math.round(width * scale));
+        canvas.height = Math.max(1, Math.round(height * scale));
+        canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  function openVideoThumbnailPicker(blob) {
+    // Shown between picking a video file and actually uploading it: the
+    // trainer scrubs to (or taps) the frame visitors should see before play,
+    // and only submitting here posts the video.
+    return new Promise((resolve) => {
+      ensureTrainerSettingsStyle();
+      document.getElementById('trainer-thumb-overlay')?.remove();
+      const maxSeconds = Number(window.__trainerVideoMaxSeconds) || TRAINER_VIDEO_MAX_SECONDS;
+      const objectUrl = URL.createObjectURL(blob);
+      const overlay = document.createElement('div');
+      overlay.id = 'trainer-thumb-overlay';
+      overlay.setAttribute('style', 'position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(2,6,23,.62);backdrop-filter:blur(6px)');
+      overlay.innerHTML = `
+        <div class="trainer-settings-panel" role="dialog" aria-modal="true" aria-label="Pick a video thumbnail">
+          <div class="trainer-settings-head">
+            <div>
+              <div class="trainer-settings-title">Pick your thumbnail</div>
+              <div class="trainer-settings-sub">This frame shows before visitors press play.</div>
+            </div>
+            <button type="button" class="trainer-settings-close" data-thumb-cancel aria-label="Cancel upload">&#10005;</button>
+          </div>
+          <div class="trainer-settings-body">
+            <div class="trainer-settings-card">
+              <video data-thumb-video muted playsinline preload="auto" style="display:block;width:100%;max-height:280px;border-radius:14px;background:#000"></video>
+              <input data-thumb-scrub type="range" min="0" max="1000" value="0" style="width:100%;margin-top:12px;accent-color:#2563eb">
+              <div class="trainer-settings-note" style="margin-top:4px">Frame at <span data-thumb-time>0:00</span> &middot; drag the slider or tap a frame below</div>
+              <div data-thumb-strip style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px"></div>
+            </div>
+            <div class="trainer-settings-card">
+              <div class="trainer-settings-row">
+                <button type="button" class="trainer-settings-btn" data-thumb-confirm disabled>Post video with this thumbnail</button>
+                <button type="button" class="trainer-settings-btn is-ghost" data-thumb-cancel>Cancel</button>
+              </div>
+              <div class="trainer-settings-feedback" data-thumb-feedback></div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const videoEl = overlay.querySelector('[data-thumb-video]');
+      const scrubEl = overlay.querySelector('[data-thumb-scrub]');
+      const timeEl = overlay.querySelector('[data-thumb-time]');
+      const stripEl = overlay.querySelector('[data-thumb-strip]');
+      const confirmEl = overlay.querySelector('[data-thumb-confirm]');
+      const feedbackEl = overlay.querySelector('[data-thumb-feedback]');
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        overlay.remove();
+        try { URL.revokeObjectURL(objectUrl); } catch {}
+        resolve(result);
+      };
+      overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay) finish(null);
+      });
+      overlay.querySelectorAll('[data-thumb-cancel]').forEach((button) => {
+        button.addEventListener('click', () => finish(null));
+      });
+      overlay.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') finish(null);
+        event.stopPropagation();
+      });
+      videoEl.addEventListener('error', () => finish({ posterBlob: null, unreadable: true }), { once: true });
+      videoEl.addEventListener('loadedmetadata', async () => {
+        let duration = Number(videoEl.duration) || 0;
+        if (!Number.isFinite(duration) || duration <= 0) {
+          // Some recordings (WebM especially) report Infinity until the
+          // player is forced to the end once.
+          duration = await new Promise((resolveDuration) => {
+            let done = false;
+            const settle = () => {
+              const measured = Number(videoEl.duration);
+              if (done) return;
+              if (!Number.isFinite(measured) || measured <= 0) return;
+              done = true;
+              videoEl.removeEventListener('durationchange', settle);
+              videoEl.removeEventListener('seeked', settle);
+              try { videoEl.currentTime = 0; } catch {}
+              resolveDuration(measured);
+            };
+            videoEl.addEventListener('durationchange', settle);
+            videoEl.addEventListener('seeked', settle);
+            window.setTimeout(() => {
+              if (done) return;
+              done = true;
+              try { videoEl.currentTime = 0; } catch {}
+              resolveDuration(0);
+            }, 4000);
+            try { videoEl.currentTime = 1e7; } catch {}
+          });
+        }
+        if (duration > maxSeconds) {
+          finish({ tooLong: duration });
+          return;
+        }
+        confirmEl.disabled = false;
+        const seekTo = (seconds) => {
+          try { videoEl.currentTime = Math.min(Math.max(0, seconds), Math.max(0, duration - 0.05)); } catch {}
+        };
+        scrubEl.addEventListener('input', () => {
+          seekTo((Number(scrubEl.value) / 1000) * duration);
+        });
+        videoEl.addEventListener('timeupdate', () => {
+          timeEl.textContent = formatVideoClock(videoEl.currentTime);
+        });
+        seekTo(Math.min(0.1, duration / 20));
+        // Filmstrip: six tappable frames captured from a second, hidden player
+        // so building it never fights the trainer's scrubbing.
+        try {
+          const stripVideo = document.createElement('video');
+          stripVideo.muted = true;
+          stripVideo.playsInline = true;
+          stripVideo.preload = 'auto';
+          stripVideo.src = objectUrl;
+          await new Promise((ready, bad) => {
+            stripVideo.addEventListener('loadedmetadata', ready, { once: true });
+            stripVideo.addEventListener('error', bad, { once: true });
+          });
+          for (const fraction of [0.02, 0.18, 0.36, 0.52, 0.7, 0.88]) {
+            if (settled) break;
+            const at = fraction * duration;
+            await new Promise((seeked) => {
+              stripVideo.addEventListener('seeked', seeked, { once: true });
+              stripVideo.currentTime = at;
+              window.setTimeout(seeked, 1500);
+            });
+            const frameBlob = await captureVideoElementFrame(stripVideo, 240, 0.7);
+            if (!frameBlob) continue;
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(frameBlob);
+            img.setAttribute('data-thumb-at', String(at));
+            img.style.cssText = 'width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent';
+            img.addEventListener('click', () => {
+              stripEl.querySelectorAll('img').forEach((node) => { node.style.borderColor = 'transparent'; });
+              img.style.borderColor = '#2563eb';
+              seekTo(at);
+              scrubEl.value = String(Math.round((at / duration) * 1000));
+            });
+            stripEl.appendChild(img);
+          }
+        } catch {}
+      }, { once: true });
+      confirmEl.addEventListener('click', async () => {
+        confirmEl.disabled = true;
+        confirmEl.textContent = 'Capturing frame...';
+        const posterBlob = await captureVideoElementFrame(videoEl);
+        if (!posterBlob) {
+          trainerSettingsFeedback(feedbackEl, 'Could not capture that frame - try a different moment.', false);
+          confirmEl.disabled = false;
+          confirmEl.textContent = 'Post video with this thumbnail';
+          return;
+        }
+        finish({ posterBlob });
+      });
+      videoEl.src = objectUrl;
+    });
+  }
+
   async function handleStandaloneMediaUploadMessage(event, data) {
     const frame = document.querySelector('iframe[data-standalone-live-preview="1"]');
     if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) return;
@@ -1772,9 +1961,32 @@
           liveFrame.contentWindow.postMessage({ type: 'trainer_standalone_media_progress', token, kind, percent }, '*');
         } catch {}
       };
-      // Capture the first frame while the video uploads so both finish
-      // together instead of one after the other.
-      const posterPromise = kind === 'video' ? captureVideoPosterBlob(blob) : Promise.resolve(null);
+      let pickedPosterBlob = null;
+      if (kind === 'video') {
+        // The trainer picks the exact thumbnail frame first - only submitting
+        // the picker posts the video. Also enforces the 20 minute cap.
+        const picked = await openVideoThumbnailPicker(blob);
+        if (picked?.tooLong) {
+          showStandaloneTransientToast(
+            `That video is ${Math.ceil(picked.tooLong / 60)} minutes long - the limit is 20 minutes. Trim it and try again.`,
+            'error',
+            { autoHideMs: 6500 }
+          );
+          reply({ ok: false });
+          return;
+        }
+        if (!picked) {
+          showStandaloneTransientToast('Video upload canceled.', 'success', { autoHideMs: 2200 });
+          reply({ ok: false });
+          return;
+        }
+        pickedPosterBlob = picked.posterBlob || null;
+      }
+      // Fall back to auto-capturing the first frame only when the picker
+      // could not read the file; runs while the video uploads.
+      const posterPromise = kind === 'video'
+        ? (pickedPosterBlob ? Promise.resolve(pickedPosterBlob) : captureVideoPosterBlob(blob))
+        : Promise.resolve(null);
       const result = await uploadTrainerMediaBlob(blob, {
         kind,
         mime,
