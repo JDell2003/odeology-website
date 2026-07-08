@@ -2187,7 +2187,7 @@ function servingsPerContainerFromFood(food) {
 }
 
 // Control panel elements
-const controlPanel = document.getElementById('control-panel');
+let controlPanel = document.getElementById('control-panel');
 const controlCloseBtn = document.getElementById('control-close');
 
 /* ============================================
@@ -2273,7 +2273,7 @@ function setupNav() {
     const navMenu = document.getElementById('nav-menu');
     const body = document.body;
 
-    if (!hamburger || !navMenu) return;
+    if (!navMenu) return;
 
     // Hard-normalize top navbar items so desktop/mobile always show Training in nav.
     const path = String(location.pathname || '').toLowerCase();
@@ -2288,6 +2288,18 @@ function setupNav() {
         <li><a href="${getDashboardNavHref()}" data-nav-dashboard="1">Dashboard</a></li>
     `;
 
+    const closeDrawer = () => {
+        navMenu.classList.remove('active');
+        body.classList.remove('nav-drawer-open');
+        hamburger?.setAttribute('aria-expanded', 'false');
+    };
+
+    const openDrawer = () => {
+        navMenu.classList.add('active');
+        body.classList.add('nav-drawer-open');
+        hamburger?.setAttribute('aria-expanded', 'true');
+    };
+
     let backdrop = document.querySelector('.nav-drawer-backdrop');
     if (!backdrop) {
         backdrop = document.createElement('div');
@@ -2295,23 +2307,13 @@ function setupNav() {
         document.body.appendChild(backdrop);
     }
 
-    const closeDrawer = () => {
-        navMenu.classList.remove('active');
-        body.classList.remove('nav-drawer-open');
+    if (hamburger) {
         hamburger.setAttribute('aria-expanded', 'false');
-    };
-
-    const openDrawer = () => {
-        navMenu.classList.add('active');
-        body.classList.add('nav-drawer-open');
-        hamburger.setAttribute('aria-expanded', 'true');
-    };
-
-    hamburger.setAttribute('aria-expanded', 'false');
-    hamburger.addEventListener('click', () => {
-        if (navMenu.classList.contains('active')) closeDrawer();
-        else openDrawer();
-    });
+        hamburger.addEventListener('click', () => {
+            if (navMenu.classList.contains('active')) closeDrawer();
+            else openDrawer();
+        });
+    }
 
     navMenu.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', () => closeDrawer());
@@ -2397,6 +2399,159 @@ function setupMacroNavLink() {
         }
         macroLink.setAttribute('href', `index.html${targetSelector}`);
     });
+}
+
+function ensureControlMobileFabNav() {
+    let nav = document.getElementById('control-mobile-fab-nav');
+    if (!nav) {
+        nav = document.createElement('nav');
+        nav.id = 'control-mobile-fab-nav';
+        nav.className = 'control-mobile-fab-nav hidden';
+        document.body.appendChild(nav);
+    }
+    nav.setAttribute('aria-label', 'Control panel quick navigation');
+    const path = String(window.location.pathname || '').toLowerCase();
+    const isTrainingPage = /\/training\.html$/i.test(window.location.pathname || '');
+    const isOverviewPage = /\/overview\.html$/i.test(window.location.pathname || '');
+    nav.innerHTML = `
+        <a class="control-mobile-fab-link" href="training.html" aria-label="Training" ${isTrainingPage ? 'aria-current="page"' : ''}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4"></path><path d="M6 8v8"></path><path d="M9 9h6"></path><path d="M15 8v8"></path><path d="M18 10v4"></path><path d="M6 12h12"></path></svg>
+            <span class="control-mobile-fab-link-label">Training</span>
+        </a>
+        <a class="control-mobile-fab-link" href="macro-calculator.html" aria-label="Macro Calculator">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"></rect><path d="M8 7.5h8"></path><path d="M8 12h2"></path><path d="M12 12h2"></path><path d="M16 12h0"></path><path d="M8 16h2"></path><path d="M12 16h2"></path><path d="M16 16h0"></path></svg>
+            <span class="control-mobile-fab-link-label">Macro Calculator</span>
+        </a>
+        <a class="control-mobile-fab-link" id="control-mobile-fab-dashboard" href="${getDashboardNavHref()}" aria-label="Dashboard" ${isOverviewPage ? 'aria-current="page"' : ''}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
+            <span class="control-mobile-fab-link-label">Dashboard</span>
+        </a>
+        <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"></circle><path d="M8.3 12.45 10.75 14.9 15.85 9.65"></path></svg>
+            <span class="control-mobile-fab-link-label">Dash</span>
+        </button>
+    `.trim();
+    const dashBtn = nav.querySelector('#control-mobile-fab-dash');
+    if (dashBtn && dashBtn.dataset.bound !== '1') {
+        dashBtn.dataset.bound = '1';
+        dashBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const checkinControl = document.getElementById('control-checkin');
+            if (checkinControl) {
+                try { openControlPanel(); } catch { /* ignore */ }
+                window.setTimeout(() => {
+                    try { checkinControl.click(); } catch { /* ignore */ }
+                }, 0);
+                return;
+            }
+            window.location.href = 'overview.html#control-panel';
+        });
+    }
+    return {
+        wrap: nav,
+        dashboardLink: nav.querySelector('#control-mobile-fab-dashboard')
+    };
+}
+
+function ensureControlMobileFabDock() {
+    let dock = document.getElementById('control-mobile-fab-dock');
+    if (!dock) {
+        dock = document.createElement('div');
+        dock.id = 'control-mobile-fab-dock';
+        dock.className = 'control-mobile-fab-dock';
+        document.body.appendChild(dock);
+    }
+    return dock;
+}
+
+function ensureSharedControlPanel() {
+    let panel = document.getElementById('control-panel');
+    if (panel) return panel;
+
+    panel = document.createElement('aside');
+    panel.className = 'control-panel';
+    panel.id = 'control-panel';
+    panel.setAttribute('aria-label', 'Control panel');
+    panel.innerHTML = `
+        <div class="control-panel-header"></div>
+        <div class="control-section" data-auth-section="1">
+            <p class="section-label">ACCOUNT</p>
+            <button class="control-link" id="control-signin" type="button">
+                <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+                <span class="text">Sign in</span>
+            </button>
+            <button class="control-link hidden" id="control-signup" type="button">
+                <span class="icon"><svg><use href="#icon-account"></use></svg></span>
+                <span class="text">Sign up</span>
+            </button>
+        </div>
+        <div class="control-section">
+            <button class="control-link" id="control-tour" type="button">
+                <span class="icon"><svg><use href="#icon-book"></use></svg></span>
+                <span class="text">Quick tour</span>
+            </button>
+        </div>
+        <div class="control-section">
+            <p class="section-label">DASH</p>
+            <div class="control-pill-row">
+                <button class="control-link control-checkin-pill" id="control-checkin" type="button">
+                    <span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span>
+                    <span class="text">Dash</span>
+                </button>
+            </div>
+        </div>
+        <div class="control-section">
+            <p class="section-label">TRAINING PORTAL</p>
+            <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+            <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a>
+        </div>
+        <div class="control-section">
+            <p class="section-label">COMMUNITY</p>
+            <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+            <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+            <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Available Chefs</span></a>
+        </div>
+        <div class="control-section hidden" id="control-owner-section">
+            <p class="section-label">OWNER</p>
+            <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+            <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
+            <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+            <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+            <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+        </div>
+    `.trim();
+
+    document.body.appendChild(panel);
+    return panel;
+}
+
+function shouldHideControlMobileFabButton() {
+    const path = String(window.location.pathname || '').toLowerCase();
+    if (
+        path === '/' ||
+        path.endsWith('/index.html') ||
+        path.endsWith('index.html') ||
+        path.endsWith('/grocery-final.html') ||
+        path.endsWith('grocery-final.html') ||
+        path.endsWith('/grocery-plan.html') ||
+        path.endsWith('grocery-plan.html')
+    ) {
+        return true;
+    }
+
+    if (document.body?.classList?.contains('final-page')) return true;
+
+    if (document.body?.classList?.contains('training-page')) {
+        const root = document.getElementById('training-root');
+        const text = String(root?.textContent || '').toLowerCase();
+        const hasGenerateWorkout = /generate workout|ready to generate your workout|no plan found/.test(text);
+        const hasPlanActions = /make new workout|modify current workout|regenerate with new rules|simple pdf|complex pdf/.test(text);
+        if (hasGenerateWorkout && !hasPlanActions) return true;
+    }
+
+    return false;
 }
 
 /* ============================================
@@ -9290,7 +9445,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuthGate();
     initAccessGate();
     setupControlPanel();
-
     if (isTrainingPage) {
         setupTrialBadge();
         setupComingSoonLinks();
@@ -13371,6 +13525,7 @@ function initAuthUi() {
     let managerLiveReviewStatusById = new Map();
     let trainerLiveManagerReviewStatusById = new Map();
     let trainerLiveManagerReviewWatcherPrimed = false;
+    let trainerManagerReviewPollBackoffUntil = 0;
     const MANAGER_REVIEW_NOTICE_KEY = 'ode_manager_review_notice_v1';
 
     const normalizeManagerCode = (code = '') => {
@@ -13574,15 +13729,22 @@ function initAuthUi() {
 
     const fetchTrainerManagerReviewEntries = async () => {
         if (!currentUser) return [];
+        if (trainerManagerReviewPollBackoffUntil > Date.now()) return [];
         try {
             const resp = await fetch('/api/auth/trainer/manager-review-requests', {
                 credentials: 'include',
                 cache: 'no-store'
             });
             const json = await resp.json().catch(() => ({}));
+            if (resp.status >= 500) {
+                trainerManagerReviewPollBackoffUntil = Date.now() + 120000;
+                return [];
+            }
             if (!resp.ok || !json?.ok) return [];
+            trainerManagerReviewPollBackoffUntil = 0;
             return Array.isArray(json?.requests) ? json.requests : [];
         } catch {
+            trainerManagerReviewPollBackoffUntil = Date.now() + 120000;
             return [];
         }
     };
@@ -13667,9 +13829,17 @@ function initAuthUi() {
         let trainerSection = panel.querySelector('#control-trainer-section');
         let trainerClientsLink = panel.querySelector('#control-trainer-clients-link');
         let trainerMessagesLink = panel.querySelector('#control-trainer-messages-link');
+        let trainerPotentialClientsLink = panel.querySelector('#control-trainer-potential-clients-link');
         let trainerLeaderboardLink = panel.querySelector('#control-trainer-leaderboard-link');
         let trainerCoachesLink = panel.querySelector('#control-trainer-coaches-link');
         const trainerMode = isTrainerClientUser(user);
+        const trainingSection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
+            const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
+            return label === 'training portal';
+        });
+        const groceryCalendarLink = trainingSection
+            ? Array.from(trainingSection.querySelectorAll('.control-link')).find((link) => String(link.getAttribute('href') || '').trim() === 'grocery-calendar.html') || null
+            : null;
         const communitySection = Array.from(panel.querySelectorAll('.control-section')).find((sec) => {
             const label = String(sec.querySelector('.section-label')?.textContent || '').trim().toLowerCase();
             return label === 'community';
@@ -13724,6 +13894,15 @@ function initAuthUi() {
             trainerSection.appendChild(trainerMessagesLink);
         }
 
+        if (!trainerPotentialClientsLink) {
+            trainerPotentialClientsLink = document.createElement('a');
+            trainerPotentialClientsLink.className = 'control-link';
+            trainerPotentialClientsLink.id = 'control-trainer-potential-clients-link';
+            trainerPotentialClientsLink.href = 'trainer-dashboard.html?tab=potential-clients';
+            trainerPotentialClientsLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Potential Clients</span>';
+            trainerSection.appendChild(trainerPotentialClientsLink);
+        }
+
         if (!trainerLeaderboardLink) {
             trainerLeaderboardLink = document.createElement('a');
             trainerLeaderboardLink.className = 'control-link';
@@ -13739,7 +13918,14 @@ function initAuthUi() {
             trainerCoachesLink.id = 'control-trainer-coaches-link';
             trainerCoachesLink.href = 'coaches.html';
             trainerCoachesLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span>';
-            trainerSection.appendChild(trainerCoachesLink);
+        }
+        if (trainerCoachesLink) {
+            if (groceryCalendarLink?.parentElement === trainingSection) {
+                groceryCalendarLink.insertAdjacentElement('afterend', trainerCoachesLink);
+            } else if (trainingSection && trainerCoachesLink.parentElement !== trainingSection) {
+                trainingSection.appendChild(trainerCoachesLink);
+            }
+            trainerCoachesLink.classList.remove('hidden');
         }
 
         if (trainerClientsLink) trainerClientsLink.classList.toggle('hidden', !isTrainerClientUser(user));
@@ -13956,7 +14142,6 @@ function initAuthUi() {
     const syncOwnerWorkoutDbLink = (user, meta = null) => {
         const panel = document.getElementById('control-panel');
         if (!panel) return;
-        if (isHomeControlPanelPage()) return;
         let ownerSection = panel.querySelector('#control-owner-section');
         let link = panel.querySelector('#control-workout-db-link');
         let msgLink = panel.querySelector('#control-owner-messaging-link');
@@ -14058,9 +14243,7 @@ function initAuthUi() {
             const textEl = demoBtn.querySelector('.text');
             if (textEl) textEl.textContent = isDemoClientUser(user, meta) ? 'Demo Controls' : 'Demo';
         }
-        const visibleManagerSection = Boolean(panel.querySelector('#control-manager-section:not(.hidden)'));
-        const managerMode = isManagerClientUser(user) || visibleManagerSection;
-        const shouldShowOwnerSection = !managerMode && (isOwnerClientUser(user, meta) || isDemoClientUser(user, meta));
+        const shouldShowOwnerSection = isOwnerClientUser(user, meta) || isDemoClientUser(user, meta);
         ownerSection.classList.toggle('hidden', !shouldShowOwnerSection);
     };
 
@@ -14090,6 +14273,8 @@ function initAuthUi() {
         syncOwnerWorkoutDbLink(null, null);
         syncNavbarDashboardLink(null);
         if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(null);
+        const controlMobileFabDashboardLink = document.getElementById('control-mobile-fab-dashboard');
+        if (controlMobileFabDashboardLink) controlMobileFabDashboardLink.href = getDashboardNavHref(null);
         setImpersonationUi(null, null);
         stopIncomingRequestPolling();
         stopMessagePolling();
@@ -14189,6 +14374,8 @@ function initAuthUi() {
         syncOwnerWorkoutDbLink(user, meta);
         syncNavbarDashboardLink(user);
         if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(user);
+        const controlMobileFabDashboardLink = document.getElementById('control-mobile-fab-dashboard');
+        if (controlMobileFabDashboardLink) controlMobileFabDashboardLink.href = getDashboardNavHref(user);
         setImpersonationUi(user, meta);
         showTrainerReviewNoticeIfNeeded(user);
 
@@ -20045,7 +20232,6 @@ function shouldSkipBackgroundAuthPolling() {
 function ensureControlPanelAuthUi() {
     const panel = document.getElementById('control-panel');
     if (!panel) return null;
-    if (isHomeControlPanelPage()) return null;
 
     let signInBtn = panel.querySelector('#control-signin');
     let signUpBtn = panel.querySelector('#control-signup');
@@ -20658,8 +20844,21 @@ function calculateAdjustedBaselineFoods(baselineArray, macroResults, mealsPerDay
    CONTROL PANEL (LEFT)
    ============================================ */
 function setupControlPanel() {
+    controlPanel = ensureSharedControlPanel();
     if (!controlPanel) return;
-    const isHomePage = isHomeControlPanelPage();
+    const isStandaloneCoachRoute = /^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(String(window.location.pathname || '').trim());
+    if (isStandaloneCoachRoute) {
+        controlPanel.setAttribute('hidden', '');
+        controlPanel.style.display = 'none';
+        controlPanel.classList.remove('open');
+        controlPanel.classList.add('collapsed');
+        document.body.classList.remove('has-control-panel', 'control-pinned', 'control-open');
+        document.body.classList.add('control-collapsed');
+        document.getElementById('control-mobile-fab-dock')?.remove();
+        document.getElementById('control-mobile-fab')?.remove();
+        document.getElementById('control-mobile-fab-nav')?.remove();
+        return;
+    }
     const isOverviewPage = document.body?.classList?.contains('overview-page');
     const isMobileControl = (() => {
         try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; }
@@ -20707,16 +20906,7 @@ function setupControlPanel() {
         }
     };
 
-    if (isHomePage) {
-        document.body.classList.remove('has-control-panel', 'control-pinned', 'control-open', 'control-collapsed');
-        controlPanel.classList.remove('open', 'collapsed');
-        controlPanel.setAttribute('hidden', 'hidden');
-        controlPanel.style.display = 'none';
-        document.getElementById('control-mobile-fab')?.remove();
-        return;
-    }
-
-    // Any page that includes the control panel should show it.
+    // Shared control panel should be available on every page.
     controlPanel.removeAttribute('hidden');
     controlPanel.style.display = '';
     document.body.classList.add('has-control-panel');
@@ -20752,12 +20942,19 @@ function setupControlPanel() {
             fab.className = 'control-mobile-fab';
             fab.textContent = 'Control Panel';
             fab.setAttribute('aria-label', 'Open control panel');
-            document.body.appendChild(fab);
         }
+        const fabDock = ensureControlMobileFabDock();
+        const fabNav = ensureControlMobileFabNav();
+        fabDock.appendChild(fab);
+        fabDock.appendChild(fabNav.wrap);
         const syncFab = () => {
             const isOpen = controlPanel.classList.contains('open') && !controlPanel.classList.contains('collapsed');
-            fab.classList.toggle('hidden', isOpen);
+            const hideFabButton = shouldHideControlMobileFabButton();
+            fab.classList.toggle('hidden', isOpen || hideFabButton);
             fab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            fabDock.classList.toggle('nav-only', !isOpen && hideFabButton);
+            fabDock.classList.toggle('hidden', isOpen);
+            fabNav?.wrap?.classList.toggle('hidden', isOpen);
         };
         fab.addEventListener('click', () => {
             openControlPanel();
@@ -20767,12 +20964,24 @@ function setupControlPanel() {
             window.setTimeout(syncFab, 0);
         });
         syncFab();
+        if (document.body?.classList?.contains('training-page')) {
+            const trainingRoot = document.getElementById('training-root');
+            if (trainingRoot && !trainingRoot.__odeControlFabObserver) {
+                const observer = new MutationObserver(() => {
+                    window.setTimeout(syncFab, 0);
+                });
+                observer.observe(trainingRoot, { childList: true, subtree: true, characterData: true });
+                trainingRoot.__odeControlFabObserver = observer;
+            }
+        }
     } else {
         // Desktop: keep pinned/open.
         document.body.classList.add('control-pinned');
         openControlPanel();
         if (controlCloseBtn) controlCloseBtn.remove();
+        document.getElementById('control-mobile-fab-dock')?.remove();
         document.getElementById('control-mobile-fab')?.remove();
+        document.getElementById('control-mobile-fab-nav')?.remove();
     }
     const syncQuickTourPillPlacement = () => {
         let mobile = false;
@@ -35650,6 +35859,8 @@ function populateTimeSelects() {
 }
 
 function toggleControlPanel() {
+    controlPanel = document.getElementById('control-panel') || ensureSharedControlPanel();
+    if (!controlPanel) return;
     if (controlPanel.classList.contains('collapsed')) {
         openControlPanel();
     } else {
@@ -35658,6 +35869,8 @@ function toggleControlPanel() {
 }
 
 function openControlPanel() {
+    controlPanel = document.getElementById('control-panel') || ensureSharedControlPanel();
+    if (!controlPanel) return;
     controlPanel.classList.add('open');
     controlPanel.classList.remove('collapsed');
     document.body.classList.add('control-open');
@@ -35674,6 +35887,8 @@ function openControlPanel() {
 }
 
 function collapseControlPanel() {
+    controlPanel = document.getElementById('control-panel') || ensureSharedControlPanel();
+    if (!controlPanel) return;
     if (document.body.classList.contains('control-pinned')) return;
     controlPanel?.classList.remove('open');
     controlPanel?.classList.add('collapsed');

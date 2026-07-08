@@ -6049,15 +6049,7 @@ Last week: 80 lb</pre>
           markFirstCustomPlanSavedAndArmTour();
           setStatus('Imported workout saved. Opening training builder...', 'ok');
           window.setTimeout(() => {
-            try {
-              sessionStorage.setItem('ode_training_force_autostart', '1');
-              sessionStorage.removeItem('ode_training_open_wizard_only');
-              sessionStorage.setItem('ode_training_constructing_v1', '1');
-              sessionStorage.removeItem('ode_training_nav_loading');
-            } catch {
-              // ignore
-            }
-            window.location.href = 'training.html?from=intake#training';
+            window.location.href = 'training.html?from=custom-builder#training';
           }, 420);
           return true;
         } catch {
@@ -8250,15 +8242,7 @@ Last week: 80 lb</pre>
       }
 
       function openGenerateWorkoutFlow() {
-        try {
-          sessionStorage.setItem('ode_training_force_autostart', '1');
-          sessionStorage.removeItem('ode_training_open_wizard_only');
-          sessionStorage.setItem('ode_training_constructing_v1', '1');
-          sessionStorage.removeItem('ode_training_nav_loading');
-        } catch {
-          // ignore
-        }
-        window.location.href = 'training.html?from=intake#training';
+        window.location.href = 'training-coming-soon.html?restart=1';
       }
 
       function syncImportStripLayout() {

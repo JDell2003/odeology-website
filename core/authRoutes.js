@@ -6,6 +6,7 @@ const {
   emitKlaviyoEvent,
   buildOnboardingEmailPayload
 } = require('./emailEvents');
+const trainerPages = require('./trainerPages');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const OWNER_BACKUP_COOKIE_NAME = process.env.OWNER_BACKUP_COOKIE_NAME || `${COOKIE_NAME}_owner_backup`;
@@ -32,6 +33,13 @@ const ANNUAL_ACCESS_DAYS = Math.max(1, Number(process.env.ANNUAL_ACCESS_DAYS || 
 const TRAINER_PAYOUT_CENTS_PER_SUBSCRIPTION = Math.max(0, Number(process.env.TRAINER_PAYOUT_CENTS_PER_SUBSCRIPTION || 500));
 const TRAINER_REFERRAL_BONUS_CENTS = Math.max(0, Number(process.env.TRAINER_REFERRAL_BONUS_CENTS || 500));
 const TRAINER_REFERRAL_BONUS_TRIGGER_RULE = String(process.env.TRAINER_REFERRAL_BONUS_TRIGGER_RULE || 'app_activation_threshold').trim() || 'app_activation_threshold';
+const PUBLIC_TRAINER_LEAD_WINDOW_MS = Math.max(5_000, Number(process.env.PUBLIC_TRAINER_LEAD_WINDOW_MS || 10 * 60 * 1000));
+const PUBLIC_TRAINER_LEAD_LIMIT = Math.max(1, Number(process.env.PUBLIC_TRAINER_LEAD_LIMIT || 8));
+const PUBLIC_TRAINER_EVENT_WINDOW_MS = Math.max(5_000, Number(process.env.PUBLIC_TRAINER_EVENT_WINDOW_MS || 10 * 60 * 1000));
+const PUBLIC_TRAINER_EVENT_LIMIT = Math.max(1, Number(process.env.PUBLIC_TRAINER_EVENT_LIMIT || 120));
+const PUBLIC_TRAINER_PAGE_TIMEOUT_MS = Math.max(1000, Number(process.env.PUBLIC_TRAINER_PAGE_TIMEOUT_MS || 5000));
+const publicTrainerLeadRateLimit = new Map();
+const publicTrainerEventRateLimit = new Map();
 
 function toEpochMs(raw) {
   if (!raw) return NaN;
@@ -74,6 +82,52 @@ function normalizeManagerCode(raw) {
   if (!value) return '';
   if (value === 'MAX-ODE') return 'ODEOLOGY';
   return value;
+}
+
+function getRequestIp(req) {
+  const forwarded = String(req?.headers?.['x-forwarded-for'] || '').trim();
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return String(req?.socket?.remoteAddress || req?.connection?.remoteAddress || 'unknown').trim() || 'unknown';
+}
+
+function buildPublicTrainerThrottleKey(req, payload = {}) {
+  const siteSlug = trainerPages.normalizeSiteSlug(payload?.siteSlug || payload?.slug || 'coach', 'coach');
+  const ip = getRequestIp(req);
+  return `${ip}::${siteSlug}`;
+}
+
+function checkPublicTrainerLeadRateLimit(req, payload = {}) {
+  const key = buildPublicTrainerThrottleKey(req, payload);
+  const now = Date.now();
+  const windowStart = now - PUBLIC_TRAINER_LEAD_WINDOW_MS;
+  const attempts = (publicTrainerLeadRateLimit.get(key) || []).filter((stamp) => Number.isFinite(stamp) && stamp >= windowStart);
+  if (attempts.length >= PUBLIC_TRAINER_LEAD_LIMIT) {
+    const retryAfterMs = Math.max(1_000, PUBLIC_TRAINER_LEAD_WINDOW_MS - (now - attempts[0]));
+    return {
+      ok: false,
+      retryAfterSec: Math.max(1, Math.ceil(retryAfterMs / 1000))
+    };
+  }
+  attempts.push(now);
+  publicTrainerLeadRateLimit.set(key, attempts);
+  return { ok: true, retryAfterSec: 0 };
+}
+
+function checkPublicTrainerEventRateLimit(req, payload = {}) {
+  const key = buildPublicTrainerThrottleKey(req, payload);
+  const now = Date.now();
+  const windowStart = now - PUBLIC_TRAINER_EVENT_WINDOW_MS;
+  const attempts = (publicTrainerEventRateLimit.get(key) || []).filter((stamp) => Number.isFinite(stamp) && stamp >= windowStart);
+  if (attempts.length >= PUBLIC_TRAINER_EVENT_LIMIT) {
+    const retryAfterMs = Math.max(1_000, PUBLIC_TRAINER_EVENT_WINDOW_MS - (now - attempts[0]));
+    return {
+      ok: false,
+      retryAfterSec: Math.max(1, Math.ceil(retryAfterMs / 1000))
+    };
+  }
+  attempts.push(now);
+  publicTrainerEventRateLimit.set(key, attempts);
+  return { ok: true, retryAfterSec: 0 };
 }
 
 function csvToSet(raw) {
@@ -4232,35 +4286,49 @@ function mapTrainerManagerReviewRow(row) {
 async function listTrainerManagerReviewRequestsByTrainer(trainerUserId) {
   const uid = String(trainerUserId || '').trim();
   if (!uid) return [];
-  const result = await db.query(
-    `
-      SELECT *
-      FROM app_trainer_manager_reviews
-      WHERE trainer_user_id = $1
-      ORDER BY
-        CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
-        created_at DESC;
-    `,
-    [uid]
-  );
-  return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+  try {
+    const result = await db.query(
+      `
+        SELECT *
+        FROM app_trainer_manager_reviews
+        WHERE trainer_user_id = $1
+        ORDER BY
+          CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+          created_at DESC;
+      `,
+      [uid]
+    );
+    return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+  } catch (err) {
+    if (err instanceof DbUnavailableError || isTransientPgError(err) || String(err?.code || '') === '42P01') {
+      return [];
+    }
+    throw err;
+  }
 }
 
 async function listTrainerManagerReviewRequestsByManager(managerCodeRaw) {
   const managerCode = normalizeManagerCode(managerCodeRaw);
   if (!managerCode) return [];
-  const result = await db.query(
-    `
-      SELECT *
-      FROM app_trainer_manager_reviews
-      WHERE UPPER(manager_code) = $1
-      ORDER BY
-        CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
-        created_at DESC;
-    `,
-    [managerCode]
-  );
-  return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+  try {
+    const result = await db.query(
+      `
+        SELECT *
+        FROM app_trainer_manager_reviews
+        WHERE UPPER(manager_code) = $1
+        ORDER BY
+          CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'denied' THEN 2 ELSE 3 END,
+          created_at DESC;
+      `,
+      [managerCode]
+    );
+    return (result.rows || []).map(mapTrainerManagerReviewRow).filter(Boolean);
+  } catch (err) {
+    if (err instanceof DbUnavailableError || isTransientPgError(err) || String(err?.code || '') === '42P01') {
+      return [];
+    }
+    throw err;
+  }
 }
 
 async function listTrainerManagerDirectory() {
@@ -5362,6 +5430,12 @@ async function listTrainerDirectory() {
       LEFT JOIN app_referral_codes rc ON rc.user_id = u.id AND rc.active = true
       LEFT JOIN app_user_profiles p ON p.user_id = u.id
       WHERE tp.onboarding_completed_at IS NOT NULL
+        OR EXISTS (
+          SELECT 1
+          FROM app_trainer_pages pg
+          WHERE pg.trainer_user_id = tp.user_id
+            AND pg.is_published = true
+        )
       ORDER BY tp.updated_at DESC, tp.onboarding_completed_at DESC
       LIMIT 120;
     `
@@ -6046,12 +6120,17 @@ async function readJsonBody(req) {
 }
 
 async function readRawBody(req) {
+  return await readRawBodyWithLimit(req, MAX_BODY_BYTES);
+}
+
+async function readRawBodyWithLimit(req, maxBytes = MAX_BODY_BYTES) {
+  const limit = Math.max(1, Number(maxBytes) || MAX_BODY_BYTES);
   return await new Promise((resolve, reject) => {
     const chunks = [];
     let total = 0;
     req.on('data', (chunk) => {
       total += chunk.length;
-      if (total > MAX_BODY_BYTES) {
+      if (total > limit) {
         reject(new Error('Body too large'));
         req.destroy();
         return;
@@ -6092,6 +6171,22 @@ function sendDbUnavailable(res) {
     error: 'DB_UNAVAILABLE',
     message: 'Service temporarily unavailable. Try again.'
   });
+}
+
+async function withTimeout(work, ms, label = 'operation') {
+  let timeoutId = null;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(work),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new DbUnavailableError(`${label} timed out after ${ms}ms`));
+        }, Math.max(1, Number(ms) || 1));
+      })
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 async function handleAccountsList(req, res, url) {
@@ -6196,21 +6291,29 @@ async function requireOwnerActor(req, res) {
   return actor;
 }
 
-async function requireTrainerActor(req, res) {
-  const actor = await getUserFromRequest(req);
+async function requireTrainerActorWithDeps(req, res, {
+  getUserFromRequestFn = getUserFromRequest,
+  getTrainerProfileFn = getTrainerProfile,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await getUserFromRequestFn(req);
   if (!actor) {
-    sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    sendJsonFn(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     return null;
   }
   if (actor.isOwner) {
     return actor;
   }
-  const profile = await getTrainerProfile(actor.id);
+  const profile = await getTrainerProfileFn(actor.id);
   if (!actor?.isTrainer && !profile) {
-    sendJson(res, 403, { ok: false, error: 'TRAINER_REQUIRED' });
+    sendJsonFn(res, 403, { ok: false, error: 'TRAINER_REQUIRED' });
     return null;
   }
   return actor;
+}
+
+async function requireTrainerActor(req, res) {
+  return requireTrainerActorWithDeps(req, res);
 }
 
 async function requireManagerActor(req, res) {
@@ -6237,6 +6340,451 @@ async function handleTrainerDashboard(req, res) {
 async function handleTrainerDirectoryList(req, res) {
   const trainers = await listTrainerDirectory();
   return sendJson(res, 200, { ok: true, trainers });
+}
+
+async function handleTrainerPagesList(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const pages = await trainerPages.listTrainerPages(db, actor.id);
+  return sendJson(res, 200, {
+    ok: true,
+    limit: trainerPages.MAX_TRAINER_PAGES,
+    pages
+  });
+}
+
+async function handleTrainerPageVersionsList(req, res, url) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const pageId = cleanShortText(url.searchParams.get('pageId') || url.searchParams.get('id'), 80);
+  if (!pageId) return sendJson(res, 400, { ok: false, error: 'Page id is required.' });
+  const versions = await trainerPages.listTrainerPageVersions(db, actor.id, pageId, {
+    limit: url.searchParams.get('limit') || 25
+  });
+  return sendJson(res, 200, { ok: true, versions });
+}
+
+const TRAINER_PAGE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveTrainerPageTargetUserId(dbApi, actor, payload) {
+  if (actor?.isOwner !== true && actor?.isTech !== true) return actor.id;
+  const pageId = String(payload?.pageId || payload?.id || '').trim();
+  if (pageId && TRAINER_PAGE_UUID_RE.test(pageId)) {
+    try {
+      const result = await dbApi.query(
+        'SELECT trainer_user_id FROM app_trainer_pages WHERE id = $1 LIMIT 1;',
+        [pageId]
+      );
+      const pageOwnerId = result.rows?.[0]?.trainer_user_id;
+      if (pageOwnerId) return pageOwnerId;
+    } catch {}
+  }
+  const requested = String(payload?.trainerUserId || '').trim();
+  if (requested && TRAINER_PAGE_UUID_RE.test(requested)) return requested;
+  return actor.id;
+}
+
+async function handleTrainerPageSaveWithDeps(req, res, {
+  requireTrainerActorFn = requireTrainerActor,
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await requireTrainerActorFn(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  try {
+    const targetTrainerUserId = await resolveTrainerPageTargetUserId(dbApi, actor, payload);
+    const page = await trainerPagesApi.saveTrainerPage(dbApi, targetTrainerUserId, payload, {
+      versionKind: payload?.autosave === true ? 'autosave' : 'manual_save',
+      publish: payload?.publish === true && payload?.autosave !== true
+    });
+    const pages = await trainerPagesApi.listTrainerPages(dbApi, targetTrainerUserId);
+    return sendJsonFn(res, 200, { ok: true, page, pages });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not save trainer page.' });
+  }
+}
+
+async function handleTrainerPageSave(req, res) {
+  return handleTrainerPageSaveWithDeps(req, res);
+}
+
+async function handleTrainerPagePublishWithDeps(req, res, {
+  requireTrainerActorFn = requireTrainerActor,
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await requireTrainerActorFn(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const pageId = cleanShortText(payload?.pageId || payload?.id, 80);
+  if (!pageId) return sendJsonFn(res, 400, { ok: false, error: 'Page id is required.' });
+  try {
+    const targetTrainerUserId = await resolveTrainerPageTargetUserId(dbApi, actor, payload);
+    const page = await trainerPagesApi.publishTrainerPage(dbApi, targetTrainerUserId, pageId);
+    const pages = await trainerPagesApi.listTrainerPages(dbApi, targetTrainerUserId);
+    return sendJsonFn(res, 200, { ok: true, page, pages });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not publish trainer page.' });
+  }
+}
+
+async function handleTrainerPagePublish(req, res) {
+  return handleTrainerPagePublishWithDeps(req, res);
+}
+
+async function handleTrainerPageUnpublishWithDeps(req, res, {
+  requireTrainerActorFn = requireTrainerActor,
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await requireTrainerActorFn(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const pageId = cleanShortText(payload?.pageId || payload?.id, 80);
+  if (!pageId) return sendJsonFn(res, 400, { ok: false, error: 'Page id is required.' });
+  try {
+    const targetTrainerUserId = await resolveTrainerPageTargetUserId(dbApi, actor, payload);
+    const page = await trainerPagesApi.unpublishTrainerPage(dbApi, targetTrainerUserId, pageId);
+    const pages = await trainerPagesApi.listTrainerPages(dbApi, targetTrainerUserId);
+    return sendJsonFn(res, 200, { ok: true, page, pages });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not unpublish trainer page.' });
+  }
+}
+
+async function handleTrainerPageUnpublish(req, res) {
+  return handleTrainerPageUnpublishWithDeps(req, res);
+}
+
+async function handleTrainerLeadsListWithDeps(req, res, url, {
+  requireTrainerActorFn = requireTrainerActor,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await requireTrainerActorFn(req, res);
+  if (!actor) return true;
+  const leads = await trainerPagesApi.listTrainerLeads(dbApi, actor.id, {
+    status: url.searchParams.get('status') || '',
+    query: url.searchParams.get('q') || ''
+  });
+  return sendJsonFn(res, 200, {
+    ok: true,
+    stages: trainerPagesApi.LEAD_STAGES,
+    leads
+  });
+}
+
+async function handleTrainerLeadUpdateWithDeps(req, res, {
+  requireTrainerActorFn = requireTrainerActor,
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson
+} = {}) {
+  const actor = await requireTrainerActorFn(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const leadId = cleanShortText(payload?.leadId || payload?.id, 80);
+  if (!leadId) return sendJsonFn(res, 400, { ok: false, error: 'Lead id is required.' });
+  try {
+    const lead = await trainerPagesApi.updateTrainerLead(dbApi, actor.id, leadId, payload);
+    if (!lead) return sendJsonFn(res, 404, { ok: false, error: 'Lead not found.' });
+    return sendJsonFn(res, 200, { ok: true, lead });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not update lead.' });
+  }
+}
+
+async function handleTrainerPageVersionRestore(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const versionId = cleanShortText(payload?.versionId || payload?.id, 80);
+  if (!versionId) return sendJson(res, 400, { ok: false, error: 'Version id is required.' });
+  try {
+    const restored = await trainerPages.restoreTrainerPageVersion(db, actor.id, versionId);
+    const pages = await trainerPages.listTrainerPages(db, actor.id);
+    const versions = restored?.page?.id
+      ? await trainerPages.listTrainerPageVersions(db, actor.id, restored.page.id, { limit: 25 })
+      : [];
+    return sendJson(res, 200, {
+      ok: true,
+      page: restored.page,
+      restoredFrom: restored.restoredFrom,
+      pages,
+      versions
+    });
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not restore trainer page version.' });
+  }
+}
+
+async function handleTrainerPageMediaUpload(req, res, url) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const mediaType = cleanShortText(url.searchParams.get('type'), 20).toLowerCase();
+  const fileName = cleanShortText(url.searchParams.get('name'), 160);
+  const mimeType = cleanShortText(String(req.headers['content-type'] || '').split(';')[0], 80).toLowerCase();
+  const maxBytes = mediaType === 'video'
+    ? trainerPages.TRAINER_PAGE_MEDIA_VIDEO_MAX_BYTES
+    : trainerPages.TRAINER_PAGE_MEDIA_IMAGE_MAX_BYTES;
+  let data;
+  try {
+    data = await readRawBodyWithLimit(req, maxBytes + 1024);
+  } catch (err) {
+    return sendJson(res, 413, { ok: false, error: err?.message || 'Upload too large.' });
+  }
+  try {
+    await ensureSchema();
+    const media = await trainerPages.saveTrainerPageMedia(db, actor.id, { mediaType, mimeType, fileName, data });
+    return sendJson(res, 200, { ok: true, media });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/trainer/page/media');
+    return sendJson(res, 400, { ok: false, error: err?.message || 'Could not upload media.' });
+  }
+}
+
+async function handlePublicTrainerMediaGet(req, res, mediaId) {
+  let media;
+  try {
+    media = await trainerPages.getTrainerPageMedia(db, mediaId);
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:GET:/api/coach/media');
+    return sendJson(res, 500, { ok: false, error: 'Could not load media.' });
+  }
+  if (!media) return sendJson(res, 404, { ok: false, error: 'Media not found.' });
+  const total = media.data.length;
+  const baseHeaders = {
+    'Content-Type': media.mimeType || 'application/octet-stream',
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'Accept-Ranges': 'bytes',
+    'X-Content-Type-Options': 'nosniff'
+  };
+  const rangeMatch = String(req.headers.range || '').trim().match(/^bytes=(\d*)-(\d*)$/);
+  if (rangeMatch && (rangeMatch[1] || rangeMatch[2])) {
+    let start = rangeMatch[1] ? Number(rangeMatch[1]) : NaN;
+    let end = rangeMatch[2] ? Number(rangeMatch[2]) : NaN;
+    if (Number.isNaN(start)) {
+      start = Math.max(0, total - end);
+      end = total - 1;
+    } else if (Number.isNaN(end)) {
+      end = total - 1;
+    }
+    end = Math.min(end, total - 1);
+    if (start > end || start >= total) {
+      res.writeHead(416, { ...baseHeaders, 'Content-Range': `bytes */${total}` });
+      res.end();
+      return true;
+    }
+    const chunk = media.data.subarray(start, end + 1);
+    res.writeHead(206, {
+      ...baseHeaders,
+      'Content-Range': `bytes ${start}-${end}/${total}`,
+      'Content-Length': chunk.length
+    });
+    res.end(chunk);
+    return true;
+  }
+  res.writeHead(200, { ...baseHeaders, 'Content-Length': total });
+  res.end(media.data);
+  return true;
+}
+
+async function handleTrainerLeadsList(req, res, url) {
+  return handleTrainerLeadsListWithDeps(req, res, url);
+}
+
+async function handleTrainerLeadUpdate(req, res) {
+  return handleTrainerLeadUpdateWithDeps(req, res);
+}
+
+async function handlePublicTrainerPageGet(req, res, url) {
+  const siteSlug = cleanShortText(url.searchParams.get('siteSlug') || url.searchParams.get('slug'), 80);
+  const pageSlug = cleanShortText(url.searchParams.get('pageSlug') || url.searchParams.get('page'), 80);
+  if (!siteSlug) return sendJson(res, 400, { ok: false, error: 'Coach slug is required.' });
+  let payload = null;
+  try {
+    payload = await withTimeout(
+      () => trainerPages.getPublicTrainerPage(db, siteSlug, pageSlug),
+      PUBLIC_TRAINER_PAGE_TIMEOUT_MS,
+      'public trainer page lookup'
+    );
+  } catch (err) {
+    if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+      logTransientDbError(err, `authRoutes:GET:/api/coach/pages/public`);
+      return sendDbUnavailable(res);
+    }
+    throw err;
+  }
+  if (!payload) return sendJson(res, 404, { ok: false, error: 'Published coach page not found.' });
+  return sendJson(res, 200, {
+    ok: true,
+    ...payload,
+    qualification: trainerPages.normalizeQualificationSettings(payload?.page?.settings?.qualification)
+  });
+}
+
+async function handlePublicTrainerQualificationWithDeps(req, res, {
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson,
+  rateLimitFn = checkPublicTrainerLeadRateLimit
+} = {}) {
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const rateLimit = rateLimitFn(req, payload);
+  if (!rateLimit.ok) {
+    return sendJsonFn(res, 429, {
+      ok: false,
+      error: 'Too many qualification submissions from this address. Try again shortly.'
+    }, {
+      'Retry-After': String(rateLimit.retryAfterSec || 60)
+    });
+  }
+  try {
+    const result = await trainerPagesApi.upsertPublicQualificationSession(dbApi, payload);
+    return sendJsonFn(res, 200, {
+      ok: true,
+      session: result.session,
+      lead: result.lead,
+      automation: result.automation || {},
+      qualification: result.qualification || trainerPagesApi.normalizeQualificationSettings?.({}) || null,
+      publicPage: {
+        pageId: result.publicPage?.page?.id || null,
+        siteSlug: result.publicPage?.page?.siteSlug || '',
+        pageSlug: result.publicPage?.page?.pageSlug || ''
+      }
+    });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not save qualification.' });
+  }
+}
+
+async function handlePublicTrainerQualification(req, res) {
+  return handlePublicTrainerQualificationWithDeps(req, res);
+}
+
+async function handlePublicTrainerLeadCreateWithDeps(req, res, {
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson,
+  rateLimitFn = checkPublicTrainerLeadRateLimit
+} = {}) {
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const rateLimit = rateLimitFn(req, payload);
+  if (!rateLimit.ok) {
+    return sendJsonFn(res, 429, {
+      ok: false,
+      error: 'Too many lead submissions from this address. Try again shortly.'
+    }, {
+      'Retry-After': String(rateLimit.retryAfterSec || 60)
+    });
+  }
+  try {
+    const created = await trainerPagesApi.createPublicLead(dbApi, payload);
+    return sendJsonFn(res, 200, {
+      ok: true,
+      lead: created.lead,
+      automation: created.automation || {},
+      publicPage: {
+        pageId: created.publicPage?.page?.id || null,
+        siteSlug: created.publicPage?.page?.siteSlug || '',
+        pageSlug: created.publicPage?.page?.pageSlug || ''
+      }
+    });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not submit lead.' });
+  }
+}
+
+async function handlePublicTrainerLeadCreate(req, res) {
+  return handlePublicTrainerLeadCreateWithDeps(req, res);
+}
+
+async function handlePublicTrainerPageEventWithDeps(req, res, {
+  readJsonBodyFn = readJsonBody,
+  trainerPagesApi = trainerPages,
+  dbApi = db,
+  sendJsonFn = sendJson,
+  rateLimitFn = checkPublicTrainerEventRateLimit
+} = {}) {
+  let payload;
+  try {
+    payload = await readJsonBodyFn(req);
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err.message || 'Invalid JSON' });
+  }
+  const rateLimit = rateLimitFn(req, payload);
+  if (!rateLimit.ok) {
+    return sendJsonFn(res, 429, {
+      ok: false,
+      error: 'Too many page events from this address. Try again shortly.'
+    }, {
+      'Retry-After': String(rateLimit.retryAfterSec || 60)
+    });
+  }
+  try {
+    const result = await trainerPagesApi.processPublicTrainerPageEvent(dbApi, payload);
+    return sendJsonFn(res, 200, {
+      ok: true,
+      automation: result.automation || {},
+      publicPage: {
+        pageId: result.publicPage?.page?.id || null,
+        siteSlug: result.publicPage?.page?.siteSlug || '',
+        pageSlug: result.publicPage?.page?.pageSlug || ''
+      }
+    });
+  } catch (err) {
+    return sendJsonFn(res, 400, { ok: false, error: err?.message || 'Could not process page event.' });
+  }
+}
+
+async function handlePublicTrainerPageEvent(req, res) {
+  return handlePublicTrainerPageEventWithDeps(req, res);
 }
 
 async function requireReviewAdminActor(req, res) {
@@ -8540,6 +9088,7 @@ async function ensureSchema(options = {}) {
     `ALTER TABLE app_trainer_profiles ADD COLUMN IF NOT EXISTS stripe_requirements_currently_due jsonb NOT NULL DEFAULT '[]'::jsonb;`,
     `ALTER TABLE app_trainer_profiles ADD COLUMN IF NOT EXISTS stripe_requirements_past_due jsonb NOT NULL DEFAULT '[]'::jsonb;`,
     `ALTER TABLE app_trainer_profiles ADD COLUMN IF NOT EXISTS stripe_last_sync_at timestamptz;`,
+    ...trainerPages.TRAINER_PAGE_SCHEMA_SQL,
     `
     CREATE TABLE IF NOT EXISTS app_trainer_products (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -8825,12 +9374,12 @@ async function ensureSchema(options = {}) {
 
 async function getUserFromRequest(req) {
   if (!db.isConfigured()) return null;
-  await ensureSchema();
-
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies[COOKIE_NAME];
-  if (!token) return null;
-  const tokenHash = sha256Hex(token);
+  const backupToken = String(cookies[OWNER_BACKUP_COOKIE_NAME] || '').trim();
+  if (!token && !backupToken) return null;
+  await ensureSchema();
+  const tokenHash = sha256Hex(String(token || ''));
 
   const result = await db.query(
     `
@@ -8846,7 +9395,14 @@ async function getUserFromRequest(req) {
   );
 
   const row = result.rows?.[0];
-  if (!row) return null;
+  if (!row) {
+    // The active session cookie can go stale after account impersonation ends
+    // while the owner/trainer backup session is still valid - fall back to it.
+    if (backupToken && backupToken !== token) {
+      return await getUserFromSessionToken(backupToken);
+    }
+    return null;
+  }
   try {
     await db.query('UPDATE app_users SET last_seen = now() WHERE id = $1;', [row.id]);
   } catch {
@@ -9405,9 +9961,10 @@ async function maybeCleanup() {
   }
 }
 
-module.exports = async function authRoutes(req, res, url) {
+const authRoutes = async function authRoutes(req, res, url) {
   if (
     !url.pathname.startsWith('/api/auth/')
+    && !url.pathname.startsWith('/api/coach/')
     && !url.pathname.startsWith('/api/stripe/')
     && url.pathname !== '/api/trainer-products'
     && url.pathname !== '/api/trainer/sales'
@@ -9520,6 +10077,22 @@ module.exports = async function authRoutes(req, res, url) {
       return await handlePublicTrainerProductCheckoutVerify(req, res, url);
     }
 
+    if (url.pathname === '/api/coach/pages/public' && req.method === 'GET') {
+      return await handlePublicTrainerPageGet(req, res, url);
+    }
+
+    if (url.pathname === '/api/coach/pages/lead' && req.method === 'POST') {
+      return await handlePublicTrainerLeadCreate(req, res);
+    }
+
+    if (url.pathname === '/api/coach/pages/qualification' && req.method === 'POST') {
+      return await handlePublicTrainerQualification(req, res);
+    }
+
+    if (url.pathname === '/api/coach/pages/event' && req.method === 'POST') {
+      return await handlePublicTrainerPageEvent(req, res);
+    }
+
     if (url.pathname === '/api/auth/trainer/dashboard' && req.method === 'GET') {
       return await handleTrainerDashboard(req, res);
     }
@@ -9530,6 +10103,47 @@ module.exports = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/trainers' && req.method === 'GET') {
       return await handleTrainerDirectoryList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/pages' && req.method === 'GET') {
+      return await handleTrainerPagesList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/page/versions' && req.method === 'GET') {
+      return await handleTrainerPageVersionsList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/trainer/pages' && req.method === 'POST') {
+      return await handleTrainerPageSave(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/page/publish' && req.method === 'POST') {
+      return await handleTrainerPagePublish(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/page/unpublish' && req.method === 'POST') {
+      return await handleTrainerPageUnpublish(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/page/version/restore' && req.method === 'POST') {
+      return await handleTrainerPageVersionRestore(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/page/media' && req.method === 'POST') {
+      return await handleTrainerPageMediaUpload(req, res, url);
+    }
+
+    const coachMediaMatch = url.pathname.match(/^\/api\/coach\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+    if (coachMediaMatch && req.method === 'GET') {
+      return await handlePublicTrainerMediaGet(req, res, coachMediaMatch[1]);
+    }
+
+    if (url.pathname === '/api/auth/trainer/leads' && req.method === 'GET') {
+      return await handleTrainerLeadsList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/trainer/lead' && req.method === 'POST') {
+      return await handleTrainerLeadUpdate(req, res);
     }
 
     if (url.pathname === '/api/auth/trainer/review/approve' && req.method === 'POST') {
@@ -9818,3 +10432,21 @@ module.exports = async function authRoutes(req, res, url) {
     throw err;
   }
 };
+
+authRoutes._private = {
+  getUserFromRequest,
+  withTimeout,
+  requireTrainerActorWithDeps,
+  checkPublicTrainerEventRateLimit,
+  handlePublicTrainerPageGet,
+  handlePublicTrainerQualificationWithDeps,
+  handlePublicTrainerLeadCreateWithDeps,
+  handleTrainerPageSaveWithDeps,
+  handleTrainerPagePublishWithDeps,
+  handleTrainerPageUnpublishWithDeps,
+  handleTrainerLeadsListWithDeps,
+  handleTrainerLeadUpdateWithDeps,
+  handlePublicTrainerPageEventWithDeps
+};
+
+module.exports = authRoutes;

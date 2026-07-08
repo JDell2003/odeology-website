@@ -1,19 +1,46 @@
-const { Pool } = require('pg');
+const { Pool: PgPool } = require('pg');
+const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 
 let pool = null;
 let lastPoolConfig = null;
+let lastDriver = 'pg';
+const DB_QUERY_TIMEOUT_MS = Math.max(1000, Number(process.env.DB_QUERY_TIMEOUT_MS || 4500));
+
+function getDatabaseUrl() {
+  return String(process.env.DATABASE_URL || '').trim();
+}
 
 const isConfigured = () => {
-  if (process.env.DATABASE_URL) return true;
+  if (getDatabaseUrl()) return true;
   return Boolean(process.env.PGHOST && process.env.PGDATABASE && process.env.PGUSER && process.env.PGPASSWORD);
 };
 
+const isNeonConnectionString = (value = '') => {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  try {
+    return /\.neon\.tech$/i.test(new URL(text).hostname || '');
+  } catch {
+    return text.includes('.neon.tech');
+  }
+};
+
+const createNeonPool = (config) => {
+  const { Pool: NeonPool, neonConfig } = require('@neondatabase/serverless');
+  const ws = require('ws');
+  if (!neonConfig.webSocketConstructor) {
+    neonConfig.webSocketConstructor = ws;
+  }
+  return new NeonPool(config);
+};
+
 const buildPoolConfig = () => {
-  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+  const databaseUrl = getDatabaseUrl();
+  const hasDatabaseUrl = Boolean(databaseUrl);
   const hostFromUrl = (() => {
     if (!hasDatabaseUrl) return '';
     try {
-      return new URL(process.env.DATABASE_URL).hostname || '';
+      return new URL(databaseUrl).hostname || '';
     } catch {
       return '';
     }
@@ -26,14 +53,14 @@ const buildPoolConfig = () => {
   const common = {
     max: 5,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: Math.max(1000, Number(process.env.DB_CONNECT_TIMEOUT_MS || 4500)),
     keepAlive: true,
     ssl: sslEnabled ? { rejectUnauthorized: false } : false
   };
 
   if (process.env.DATABASE_URL) {
     return {
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl,
       ...common
     };
   }
@@ -54,30 +81,67 @@ const getPool = () => {
   }
   if (!pool) {
     lastPoolConfig = buildPoolConfig();
-    pool = new Pool(lastPoolConfig);
+    const useNeonServerless = isNeonConnectionString(lastPoolConfig?.connectionString);
+    pool = useNeonServerless ? createNeonPool(lastPoolConfig) : new PgPool(lastPoolConfig);
+    lastDriver = useNeonServerless ? 'neon-serverless' : 'pg';
     pool.on('error', (err) => {
       console.error('[db] Pool error', err?.message || err);
       // Allow automatic recreation on next query if a pooled client dies.
       pool = null;
+      lastDriver = 'pg';
     });
   }
   return pool;
 };
 
-const query = (text, params) => getPool().query(text, params);
-
-const close = async () => {
+const resetPool = async () => {
   if (!pool) return;
   const current = pool;
   pool = null;
   lastPoolConfig = null;
-  await current.end();
+  try {
+    await current.end();
+  } catch {
+    // ignore pool shutdown failures
+  }
+};
+
+async function query(text, params) {
+  const activePool = getPool();
+  let timeoutId = null;
+  let timedOut = false;
+  try {
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        reject(new DbUnavailableError(`Database query timed out after ${DB_QUERY_TIMEOUT_MS}ms`));
+      }, DB_QUERY_TIMEOUT_MS);
+    });
+    return await Promise.race([
+      activePool.query(text, params),
+      timeoutPromise
+    ]);
+  } catch (err) {
+    if (timedOut || err instanceof DbUnavailableError || isTransientPgError(err)) {
+      await resetPool();
+      if (err instanceof DbUnavailableError) throw err;
+      throw new DbUnavailableError('Database temporarily unavailable', err);
+    }
+    throw err;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+const close = async () => {
+  await resetPool();
 };
 
 const getDiagnostics = () => {
   const sslEnabled = Boolean(lastPoolConfig?.ssl && lastPoolConfig.ssl !== false);
-  if (!pool) return { sslEnabled, totalCount: 0, idleCount: 0, waitingCount: 0 };
+  if (!pool) return { driver: lastDriver, sslEnabled, totalCount: 0, idleCount: 0, waitingCount: 0 };
   return {
+    driver: lastDriver,
     sslEnabled,
     totalCount: Number(pool.totalCount || 0),
     idleCount: Number(pool.idleCount || 0),

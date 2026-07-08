@@ -1,6 +1,7 @@
 (() => {
   const $ = (sel) => document.querySelector(sel);
   const OWNER_BADGE_STORAGE_PREFIX = 'ownerSeenBadge:v1';
+  const AUTH_USER_HINT_KEY = 'ode_auth_user_hint_v1';
   const DOOR_BADGE_ITEM_IDS = [
     '/training.html',
     '/#resources',
@@ -41,6 +42,44 @@
 
   function badgeStorageKey(scope) {
     return `${OWNER_BADGE_STORAGE_PREFIX}:${String(scope || '').trim().toLowerCase()}`;
+  }
+
+  function readAuthUserHint() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(AUTH_USER_HINT_KEY) || 'null');
+      const user = parsed?.user;
+      const id = String(user?.id || '').trim();
+      if (!id) return null;
+      return {
+        id,
+        username: String(user?.username || '').trim(),
+        email: String(user?.email || '').trim(),
+        displayName: String(user?.displayName || '').trim(),
+        isOwner: Boolean(user?.isOwner),
+        isManager: Boolean(user?.isManager || user?.manager?.active)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function isOwnerUser(user) {
+    const uname = String(user?.username || '').trim().toLowerCase();
+    const dname = String(user?.displayName || '').trim().toLowerCase();
+    if (user?.isOwner) return true;
+    return ['riseforit', 'riseforitowner', 'jason', 'odeology', 'odeology_'].includes(uname)
+      || ['riseforit', 'odeology', 'odeology_'].includes(dname);
+  }
+
+  async function getOwnerSessionUser() {
+    const me = await api('/api/auth/me');
+    const meUser = me.json?.user || null;
+    if (me.ok && isOwnerUser(meUser)) return { ok: true, user: meUser, fallback: false };
+    const hintedUser = readAuthUserHint();
+    if (hintedUser && isOwnerUser(hintedUser) && (me.json?.dbUnavailable || !me.ok)) {
+      return { ok: true, user: hintedUser, fallback: true };
+    }
+    return { ok: false, user: meUser, fallback: false };
   }
 
   function readSeenBadgeIds(scope) {
@@ -664,14 +703,14 @@
   }
 
   async function init() {
-    const me = await api('/api/auth/me');
-    if (!me.ok || !me.json?.user?.isOwner) {
+    const session = await getOwnerSessionUser();
+    if (!session.ok) {
       const wrap = $('#owner-accounts-list');
       if (wrap) wrap.innerHTML = '<div class="owner-accounts-muted">Owner access required.</div>';
       setListCount('');
       return;
     }
-    state.currentUserId = String(me.json?.user?.id || '').trim();
+    state.currentUserId = String(session.user?.id || '').trim();
 
     bindEvents();
     window.addEventListener('storage', (event) => {
@@ -688,6 +727,9 @@
     syncAccountFilters();
     syncGymFilters();
     updateShortcutBadges();
+    if (session.fallback) {
+      setStatus('Using cached owner session while auth reconnects.', 'error');
+    }
     await refreshOwnerData();
     autoOpenManagerViewFromQuery();
     startLiveRefresh();

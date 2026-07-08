@@ -12061,6 +12061,10 @@ async function trainingRoutes(req, res, url) {
       }));
       return sendJson(res, 200, { ok: true, photos });
     } catch (err) {
+      if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+        logTransientTrainingError(err, 'training-progress-photos-get');
+        return sendJson(res, 200, { ok: true, photos: [], unavailable: true });
+      }
       return handleTrainingDbFailure(res, err, 'training-progress-photos-get', 'Failed to load progress photos');
     }
   }

@@ -726,7 +726,7 @@
     }
   },
   "usda:v2:tilapia": {
-    "cachedAt": 1769735842189,
+    "cachedAt": 1780303583927,
     "data": {
       "fdc_id": 175176,
       "gtin_upc": null,
@@ -758,7 +758,7 @@
     }
   },
   "usda:v2:tuna": {
-    "cachedAt": 1769735850640,
+    "cachedAt": 1780303592375,
     "data": {
       "fdc_id": 2706308,
       "gtin_upc": null,
@@ -822,7 +822,7 @@
     }
   },
   "usda:v2:pork chops": {
-    "cachedAt": 1769735860520,
+    "cachedAt": 1780303630545,
     "data": {
       "fdc_id": 2727575,
       "gtin_upc": null,
@@ -854,7 +854,7 @@
     }
   },
   "usda:upc:076371011167": {
-    "cachedAt": 1769735875932,
+    "cachedAt": 1780303638635,
     "data": {
       "fdc_id": 1932577,
       "gtin_upc": "076371011167",
@@ -1846,7 +1846,7 @@
     }
   },
   "usda:v2:tofu": {
-    "cachedAt": 1769938841810,
+    "cachedAt": 1780303641967,
     "data": {
       "fdc_id": 167722,
       "gtin_upc": null,

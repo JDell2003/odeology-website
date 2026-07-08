@@ -4926,6 +4926,12 @@
     return '—';
   }
 
+  function firstWordName(value = '') {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return text.split(/\s+/).filter(Boolean)[0] || '';
+  }
+
   function targetWeightTextToken(value) {
     return String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
   }
@@ -11700,6 +11706,10 @@ function toggleSharePopover(force) {
     }
 
     clearWorkoutGenerationState({ cancelRequest: true, clearFlags: false });
+    state.generating.activeRequestKey = requestKey;
+    state.generating.activeRouteKind = 'pending_training_route';
+    state.generating.activeEndpoint = '';
+    state.generating.frontendRequestStartedAt = Date.now();
     state.generating.requestId = Number(state.generating.requestId || 0) + 1;
     const requestId = state.generating.requestId;
     const comboEval = evaluateTrainingDebugCombo ? evaluateTrainingDebugCombo(payload, { rawClassic: true }) : { matched: false, reasonIfFalse: 'matcher_unavailable' };
@@ -11742,7 +11752,6 @@ function toggleSharePopover(force) {
     const minDelay = new Promise((r) => setTimeout(r, minMs));
     const endpoint = isAuthed ? '/api/training/onboarding' : '/api/training/preview';
     const routeKind = isAuthed ? 'signed_in_onboarding' : 'signed_out_preview';
-    state.generating.activeRequestKey = requestKey;
     state.generating.activeRouteKind = routeKind;
     state.generating.activeEndpoint = endpoint;
     state.generating.frontendRequestStartedAt = requestStartedAt;
@@ -13067,9 +13076,17 @@ function toggleSharePopover(force) {
         const text = String(value || '').trim();
         return text || fallback;
       };
-      const preferredDays = Array.isArray(intake?.preferredDays) && intake.preferredDays.length
-        ? intake.preferredDays
-        : (Array.isArray(plan?.meta?.schedule?.preferredDays) ? plan.meta.schedule.preferredDays : []);
+      const resolvedPreferredDays = Array.isArray(plan?.schedule)
+        ? plan.schedule.map((entry) => String(entry?.day || '').trim()).filter(Boolean)
+        : [];
+      const intakePreferredDays = Array.isArray(intake?.preferredDays) ? intake.preferredDays : [];
+      const preferredDays = intakePreferredDays.length === daysPerWeek
+        ? intakePreferredDays
+        : (Array.isArray(plan?.meta?.militaryHybrid?.preferredDaysResolved) && plan.meta.militaryHybrid.preferredDaysResolved.length
+          ? plan.meta.militaryHybrid.preferredDaysResolved
+          : (Array.isArray(plan?.meta?.schedule?.preferredDays) && plan.meta.schedule.preferredDays.length === daysPerWeek
+            ? plan.meta.schedule.preferredDays
+            : resolvedPreferredDays));
       const painAreas = Array.isArray(intake?.injuries) ? intake.injuries : [];
       const painDetailText = (() => {
         const detail = intake?.injuryDetails && typeof intake.injuryDetails === 'object' ? intake.injuryDetails : {};
@@ -13199,9 +13216,17 @@ function toggleSharePopover(force) {
         const text = String(value || '').trim();
         return text || fallback;
       };
-      const preferredDays = Array.isArray(intake?.preferredDays) && intake.preferredDays.length
-        ? intake.preferredDays
-        : (Array.isArray(plan?.meta?.schedule?.preferredDays) ? plan.meta.schedule.preferredDays : []);
+      const resolvedPreferredDays = Array.isArray(plan?.schedule)
+        ? plan.schedule.map((entry) => String(entry?.day || '').trim()).filter(Boolean)
+        : [];
+      const intakePreferredDays = Array.isArray(intake?.preferredDays) ? intake.preferredDays : [];
+      const preferredDays = intakePreferredDays.length === daysPerWeek
+        ? intakePreferredDays
+        : (Array.isArray(plan?.meta?.militaryHybrid?.preferredDaysResolved) && plan.meta.militaryHybrid.preferredDaysResolved.length
+          ? plan.meta.militaryHybrid.preferredDaysResolved
+          : (Array.isArray(plan?.meta?.schedule?.preferredDays) && plan.meta.schedule.preferredDays.length === daysPerWeek
+            ? plan.meta.schedule.preferredDays
+            : resolvedPreferredDays));
       const painAreas = Array.isArray(intake?.injuries) ? intake.injuries : [];
       const painDetailText = (() => {
         const detail = intake?.injuryDetails && typeof intake.injuryDetails === 'object' ? intake.injuryDetails : {};
@@ -13217,9 +13242,9 @@ function toggleSharePopover(force) {
       })();
 
       const summary = [
-        { k: 'Discipline', v: discipline || 'â€”' },
-        { k: 'Skill level', v: experience || 'â€”' },
-        { k: 'Days / week', v: String(daysPerWeek || 'â€”') },
+        { k: 'Discipline', v: discipline || 'Not provided' },
+        { k: 'Skill level', v: experience || 'Not provided' },
+        { k: 'Days / week', v: String(daysPerWeek || 'Not provided') },
         { k: 'Preferred days', v: listText(preferredDays) },
         { k: 'Session length', v: listText(intake?.sessionLength) },
         { k: 'Location', v: listText(intake?.location) },
@@ -13229,7 +13254,7 @@ function toggleSharePopover(force) {
         { k: 'Pain areas', v: painDetailText },
         { k: 'Avoid moves', v: listText(intake?.avoidMoves, 'None') },
         { k: 'Close to failure', v: listText(intake?.trainToFailure) },
-        { k: 'Sleep', v: Number.isFinite(Number(intake?.sleepHours)) ? `${Math.round(Number(intake.sleepHours))} hrs/night` : 'â€”' },
+        { k: 'Sleep', v: Number.isFinite(Number(intake?.sleepHours)) ? `${Math.round(Number(intake.sleepHours))} hrs/night` : 'Not provided' },
         { k: 'Activity', v: listText(intake?.activityLevel) }
       ];
 
@@ -13312,9 +13337,1046 @@ function toggleSharePopover(force) {
       }, 250);
     };
 
+    const complexPdfListText = (value, fallback = '—') => {
+      if (Array.isArray(value)) {
+        const parts = value.map((item) => String(item || '').trim()).filter(Boolean);
+        return parts.length ? parts.join(', ') : fallback;
+      }
+      const text = String(value || '').trim();
+      return text || fallback;
+    };
+
+    const complexPdfFirst = (...values) => {
+      for (const value of values) {
+        if (Array.isArray(value) && value.length) return value;
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (value && typeof value === 'object' && Object.keys(value).length) return value;
+        if (String(value || '').trim()) return value;
+      }
+      return null;
+    };
+
+    const complexPdfRequestedWeeks = (timelineRaw = '', actualWeeks = 8) => {
+      const text = String(timelineRaw || '').trim().toLowerCase();
+      if (text.startsWith('4')) return 4;
+      if (text.startsWith('8')) return 8;
+      if (text.startsWith('10')) return 10;
+      if (text.includes('12')) return 12;
+      const actual = Number(actualWeeks);
+      return Number.isFinite(actual) && actual > 0 ? actual : 8;
+    };
+
+    const complexPdfFormatStarter = (weight, reps) => {
+      const load = Number(weight);
+      const repText = String(reps || '').trim();
+      if (Number.isFinite(load) && load > 0 && repText) return `${Math.round(load)} lb x ${repText}`;
+      if (Number.isFinite(load) && load > 0) return `${Math.round(load)} lb`;
+      if (repText) return repText;
+      return 'Not provided';
+    };
+
+    const complexPdfPriorityMatch = (exercise, priorities = []) => {
+      const raw = [
+        exercise?.displayName,
+        exercise?.name,
+        exercise?.muscleTarget,
+        exercise?.bodyPart,
+        exercise?.muscle_group,
+        exercise?.muscleGroup,
+        exercise?.category,
+        exercise?.movementPattern,
+        exercise?.pattern,
+        ...(Array.isArray(exercise?.primaryMuscles) ? exercise.primaryMuscles : []),
+        ...(Array.isArray(exercise?.secondaryMuscles) ? exercise.secondaryMuscles : []),
+        ...(Array.isArray(exercise?.muscleKeys) ? exercise.muscleKeys : [])
+      ].map((value) => normalizeName(value)).filter(Boolean).join(' ');
+      return (Array.isArray(priorities) ? priorities : []).filter((priority) => {
+        const p = normalizeName(priority);
+        if (!p) return false;
+        if (p === 'arms') return /\b(biceps|triceps|curl|pushdown|extension|skull crusher)\b/.test(raw);
+        if (p === 'shoulders') return /\b(shoulder|delt|lateral raise|rear delt|overhead press)\b/.test(raw);
+        if (p === 'legs') return /\b(quad|leg|squat|split squat|lunge|leg extension|leg press)\b/.test(raw);
+        if (p === 'glutes') return /\b(glute|hip thrust|bridge|hinge|rdl|romanian deadlift|pull through)\b/.test(raw);
+        if (p === 'core') return /\b(core|ab|abs|plank|pallof|crunch|dead bug|leg raise|oblique)\b/.test(raw);
+        if (p === 'calves') return /\bcalf\b/.test(raw);
+        if (p === 'chest') return /\b(chest|bench|press|fly)\b/.test(raw);
+        if (p === 'back') return /\b(back|row|pull|pulldown|lat|rear delt)\b/.test(raw);
+        return raw.includes(p);
+      });
+    };
+
+    const complexPdfExerciseRole = (exercise, index, priorities = [], painAreas = []) => {
+      const family = decisionMovementFamilyForName(
+        exercise?.displayName || exercise?.name,
+        exercise?.family || exercise?.movementPattern || exercise?.pattern || ''
+      );
+      const matchedPriorities = complexPdfPriorityMatch(exercise, priorities);
+      const name = normalizeName(exercise?.displayName || exercise?.name);
+      const hasPainContext = Array.isArray(painAreas) && painAreas.length > 0;
+      const painSafeCandidate = hasPainContext && /chest supported|supported row|machine chest press|landmine|leg curl|hamstring curl|hip thrust|glute bridge|split squat|goblet squat|pull through|pallof|dead bug|reverse crunch/.test(name);
+      const compoundFamily = new Set(['chest_press', 'shoulder_press', 'horizontal_pull', 'vertical_pull', 'squat_pattern', 'hinge_pattern']);
+      if (painSafeCandidate && index > 0) return { role: 'Pain-safe substitute', badge: 'pain-safe', matchedPriorities };
+      if (index === 0 && compoundFamily.has(family)) return { role: 'Strength anchor', badge: 'anchor', matchedPriorities };
+      if (index <= 1 && compoundFamily.has(family)) return { role: 'Secondary compound', badge: 'compound', matchedPriorities };
+      if (family === 'core_rotation' || family === 'core_stability' || family === 'core_flexion') return { role: 'Core / stability', badge: 'core', matchedPriorities };
+      if (family === 'calves') return { role: 'Calves / small muscle', badge: 'small', matchedPriorities };
+      if (matchedPriorities.length) return { role: 'Priority accessory', badge: 'priority', matchedPriorities };
+      return { role: 'Hypertrophy accessory', badge: 'hypertrophy', matchedPriorities };
+    };
+
+    const complexPdfExerciseNote = (exercise, roleInfo, context = {}) => {
+      const matched = Array.isArray(roleInfo?.matchedPriorities) ? roleInfo.matchedPriorities : [];
+      const priorityLabel = matched[0] || '';
+      const family = decisionMovementFamilyForName(
+        exercise?.displayName || exercise?.name,
+        exercise?.family || exercise?.movementPattern || exercise?.pattern || ''
+      );
+      const familyCue = (() => {
+        if (family === 'hamstring_curl' || family === 'hinge_pattern') return 'This builds posterior-chain strength without wasting effort on sloppy reps.';
+        if (family === 'knee_extension' || family === 'squat_pattern') return 'This targets the knee-dominant lower-body pattern and should stay controlled from top to bottom.';
+        if (family === 'calves') return 'This directly supports calf development. Use a full stretch and a clean top position.';
+        if (family === 'core_flexion' || family === 'core_rotation' || family === 'core_stability') return 'This supports trunk strength and direct core development so heavier lifts stay more stable.';
+        if (family === 'lateral_raise' || family === 'rear_delt') return 'This protects shoulder development through lateral and rear-delt work instead of only adding more pressing fatigue.';
+        if (family === 'biceps_curl') return 'This directly trains biceps. Control the elbow position and own the squeeze at the top.';
+        if (family === 'triceps_extension') return 'This directly trains triceps so pressing strength and upper-arm size keep moving together.';
+        if (family === 'horizontal_pull' || family === 'vertical_pull') return 'This supports back development and upper-body balance so pressing work stays more stable.';
+        if (family === 'chest_press' || family === 'chest_fly') return 'This supports chest development with cleaner hypertrophy work than another heavy press slot.';
+        return '';
+      })();
+      if (roleInfo?.role === 'Strength anchor') return 'Keep setup and bar path repeatable. Use the final set as feedback for whether reps or load should move next week.';
+      if (roleInfo?.role === 'Secondary compound') return 'This supports the main pattern with more hypertrophy value and less technical demand than the anchor.';
+      if (roleInfo?.role === 'Priority accessory') return priorityLabel ? `This directly supports your ${priorityLabel.toLowerCase()} priority. ${familyCue || 'Chase clean tension instead of noisy reps.'}` : (familyCue || 'This is protected priority volume. Stay controlled and keep the target muscle doing the work.');
+      if (roleInfo?.role === 'Core / stability') return 'Use this to improve trunk stiffness and position control so heavier work stays cleaner and safer.';
+      if (roleInfo?.role === 'Calves / small muscle') return 'Full range and crisp tempo matter more here than chasing heavy load.';
+      if (roleInfo?.role === 'Pain-safe substitute') return 'This variation keeps the training effect while reducing stress on a sensitive joint or pattern.';
+      return familyCue || 'Treat this as productive hypertrophy work: smooth tempo, stable setup, and stop before technique turns sloppy.';
+    };
+
+    const complexPdfWeekPhase = (weekNumber, projection = null) => {
+      const deloadSet = new Set(Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks.map((n) => Number(n)).filter((n) => Number.isFinite(n)) : []);
+      if (deloadSet.has(Number(weekNumber))) return 'Reduced-fatigue week';
+      if (weekNumber === 1) return 'Baseline week';
+      if (weekNumber === 2) return 'Add reps where earned';
+      if (weekNumber === 3) return 'Progress reps or load';
+      if (weekNumber === 4) return 'Fatigue check';
+      if (weekNumber <= 7) return 'Build phase';
+      if (weekNumber <= 9) return 'Push phase';
+      if (weekNumber <= 12) return 'Intensification / performance check';
+      return 'Continue progression';
+    };
+
+    const complexPdfBuildContext = () => {
+      const intake = readLocalIntake() || state.profile?.training_intake || null;
+      const normalized = mapIntakeToOblueprintPayload(intake) || {};
+      const weeks = Array.isArray(plan?.weeks) ? plan.weeks : [];
+      const activePlanWeek = weeks.find((entry) => Number(entry?.index) === Number(activeWeek)) || weeks[0] || { index: 1, days: [] };
+      const profileStrength = state.profile?.strength || {};
+      const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
+      const preferredDays = Array.isArray(normalized?.preferredDays) && normalized.preferredDays.length
+        ? normalized.preferredDays
+        : (Array.isArray(intake?.preferredDays) ? intake.preferredDays : (Array.isArray(plan?.meta?.schedule?.preferredDays) ? plan.meta.schedule.preferredDays : []));
+      const priorities = Array.isArray(normalized?.priorityGroups) && normalized.priorityGroups.length
+        ? normalized.priorityGroups
+        : (Array.isArray(intake?.focus) ? intake.focus.map((value) => String(value || '').trim()).filter(Boolean) : []);
+      const painAreas = Array.isArray(normalized?.painAreas) && normalized.painAreas.length
+        ? normalized.painAreas
+        : (Array.isArray(intake?.injuries) ? intake.injuries.map((value) => String(value || '').trim()).filter(Boolean) : []);
+      const painProfiles = normalized?.painProfilesByArea && typeof normalized.painProfilesByArea === 'object'
+        ? normalized.painProfilesByArea
+        : (intake?.injuryDetails && typeof intake.injuryDetails === 'object' ? intake.injuryDetails : {});
+      const equipmentAccess = Array.isArray(normalized?.equipmentAccess) && normalized.equipmentAccess.length
+        ? normalized.equipmentAccess
+        : (Array.isArray(intake?.equipment) ? intake.equipment.map((value) => String(value || '').trim()).filter(Boolean) : []);
+      const movementsToAvoid = Array.isArray(normalized?.movementsToAvoid) && normalized.movementsToAvoid.length
+        ? normalized.movementsToAvoid
+        : (Array.isArray(intake?.avoidMoves) ? intake.avoidMoves.map((value) => String(value || '').trim()).filter(Boolean) : []);
+      const daysPerWeek = Number(plan?.meta?.daysPerWeek) || Number(normalized?.daysPerWeek) || (Array.isArray(activePlanWeek?.days) ? activePlanWeek.days.length : 1) || 1;
+      const disciplineRaw = String(normalized?.discipline || plan?.meta?.discipline || '').trim().toLowerCase();
+      const trainingFeel = String(normalized?.trainingFeel || plan?.meta?.trainingFeel || (disciplineRaw === 'powerbuilding' ? 'Powerbuilding' : 'Aesthetic bodybuilding')).trim() || 'Training';
+      const isPowerbuilding = trainingFeel.toLowerCase().includes('power');
+      const focus = String(normalized?.focus || intake?.priority || '').trim() || (isPowerbuilding ? 'Strength' : 'Aesthetic');
+      const primaryGoal = String(normalized?.primaryGoal || intake?.goal || plan?.meta?.primaryGoal || '').trim() || 'Build size';
+      const timeline = String(normalized?.timeline || intake?.timeline || '').trim() || '8 weeks';
+      const requestedWeeks = complexPdfRequestedWeeks(timeline, weeks.length || 8);
+      const projection = plan?.meta?.progressionProjection && typeof plan.meta.progressionProjection === 'object' ? plan.meta.progressionProjection : null;
+      const actualWeeks = weeks.length || 1;
+      const sessionLengthMin = String(normalized?.sessionLengthMin || intake?.sessionLength || plan?.meta?.sessionLengthMin || '').trim() || '60';
+      const location = String(normalized?.location || intake?.location || '').trim() || 'Commercial gym';
+      const trainingStyle = String(normalized?.trainingStyle || intake?.loadStyle || '').trim() || 'Balanced mix';
+      const outputStyle = String(normalized?.outputStyle || intake?.outputStyle || '').trim() || 'RPE/RIR cues';
+      const closeToFailure = String(normalized?.closeToFailure || intake?.trainToFailure || '').trim() || 'No';
+      const sleepHours = complexPdfFirst(normalized?.sleepHours, intake?.sleepHours);
+      const activityLevel = String(normalized?.activityLevel || intake?.activityLevel || '').trim() || 'Moderate';
+      const stress = String(normalized?.stress || intake?.stress || '').trim() || 'Moderate';
+      const fullName = String(
+        complexPdfFirst(
+          state.auth?.user?.displayName,
+          state.auth?.user?.display_name,
+          state.profile?.displayName,
+          state.profile?.fullName,
+          state.profile?.profile?.firstName,
+          intake?.profile?.firstName,
+          intake?.name,
+          state.auth?.user?.username
+        ) || ''
+      ).trim();
+      const athleteName = firstWordName(fullName) || 'Athlete';
+      return {
+        intake,
+        normalized,
+        projection,
+        activePlanWeek,
+        weeks,
+        actualWeeks,
+        requestedWeeks,
+        detailedWeeks: requestedWeeks <= 8 ? weeks.slice(0, Math.min(actualWeeks, requestedWeeks)) : weeks.slice(0, 1),
+        detailedMode: requestedWeeks <= 8 ? 'full' : 'template',
+        preferredDays,
+        priorities,
+        painAreas,
+        painProfiles,
+        equipmentAccess,
+        movementsToAvoid,
+        daysPerWeek,
+        trainingFeel,
+        discipline: disciplineRaw === 'powerbuilding' ? 'Powerbuilding' : 'Aesthetic bodybuilding',
+        isPowerbuilding,
+        focus,
+        primaryGoal,
+        timeline,
+        sessionLengthMin,
+        location,
+        trainingStyle,
+        outputStyle,
+        closeToFailure,
+        sleepHours,
+        activityLevel,
+        stress,
+        athleteName,
+        athleteFullName: fullName || athleteName,
+        bodyweight: complexPdfFirst(profileStrength?.bodyweight, normalized?.bodyweight, intake?.weightLb, baselines?.bodyweight),
+        benchVariation: String(complexPdfFirst(profileStrength?.benchVariation, normalized?.benchVariation, intake?.benchVariation, profileStrength?.pressMovement, baselines?.bodybuilding?.movements?.press, 'Bench Press') || 'Bench Press'),
+        lowerMovement: String(complexPdfFirst(profileStrength?.lowerMovement, normalized?.lowerMovement, intake?.lowerMovement, profileStrength?.legMovement, baselines?.bodybuilding?.movements?.leg, 'Squat Pattern') || 'Squat Pattern'),
+        hingeMovement: String(complexPdfFirst(profileStrength?.hingeMovement, normalized?.hingeMovement, intake?.hingeMovement, baselines?.bodybuilding?.movements?.hinge, 'Hinge Pattern') || 'Hinge Pattern'),
+        benchWeight: complexPdfFirst(profileStrength?.benchWeight, normalized?.benchWeight, intake?.benchWeight),
+        benchReps: complexPdfFirst(profileStrength?.benchReps, normalized?.benchReps, intake?.benchReps),
+        lowerWeight: complexPdfFirst(profileStrength?.lowerWeight, normalized?.lowerWeight, intake?.lowerWeight),
+        lowerReps: complexPdfFirst(profileStrength?.lowerReps, normalized?.lowerReps, intake?.lowerReps),
+        hingeWeight: complexPdfFirst(profileStrength?.hingeWeight, normalized?.hingeWeight, intake?.hingeWeight),
+        hingeReps: complexPdfFirst(profileStrength?.hingeReps, normalized?.hingeReps, intake?.hingeReps)
+      };
+    };
+
     const printComplexPlanPdf = () => {
-      state.planError = 'Complex PDF is the next export pass. Use Simple PDF for now.';
-      render();
+      const context = complexPdfBuildContext();
+      const todayLabel = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      const coverPriorityText = complexPdfListText(context.priorities, 'General development');
+      const preferredDayText = complexPdfListText(context.preferredDays, 'Auto-scheduled');
+      const painDetailText = context.painAreas.length
+        ? context.painAreas.map((area) => {
+          const raw = context.painProfiles?.[area] && typeof context.painProfiles[area] === 'object' ? context.painProfiles[area] : null;
+          const severity = Number(raw?.severity);
+          const recency = String(raw?.recency || '').trim();
+          if (Number.isFinite(severity) && recency) return `${area} (${severity}/10, ${recency})`;
+          if (Number.isFinite(severity)) return `${area} (${severity}/10)`;
+          return String(area || '').trim();
+        }).filter(Boolean).join(', ')
+        : 'None reported';
+      const profileNarrative = context.priorities.length
+        ? `${context.athleteName}, your plan was built around ${coverPriorityText}. The week spreads this work across multiple sessions so priorities stay visible without turning the program into junk volume.`
+        : `${context.athleteName}, your plan balances main lifts, hypertrophy work, and recovery so the week reads like a real training block instead of a random report.`;
+      const coverSubtitle = context.isPowerbuilding ? 'Strength + Muscle Training Block' : 'Hypertrophy Training Block';
+      const detailedWeekStart = 1;
+      const detailedWeekEnd = Math.min(context.requestedWeeks, 12);
+      const strengthSnapshotRows = [
+        [context.benchVariation, complexPdfFormatStarter(context.benchWeight, context.benchReps)],
+        [context.lowerMovement, complexPdfFormatStarter(context.lowerWeight, context.lowerReps)],
+        [context.hingeMovement, complexPdfFormatStarter(context.hingeWeight, context.hingeReps)]
+      ].map((row) => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td></tr>`).join('');
+
+      const projectionRowsByWeek = new Map();
+      for (const row of Array.isArray(context.projection?.weeklyTable) ? context.projection.weeklyTable : []) {
+        const weekNum = Number(row?.week);
+        if (!Number.isFinite(weekNum)) continue;
+        if (!projectionRowsByWeek.has(weekNum)) projectionRowsByWeek.set(weekNum, []);
+        projectionRowsByWeek.get(weekNum).push(row);
+      }
+
+      const resolveWeekTemplate = (weekNumber) => context.weeks.find((entry) => Number(entry?.index) === weekNumber) || context.weeks[0] || { days: [] };
+      const scheduledLabel = (dayIndex) => scheduledWeekdayLabel(dayIndex, context.daysPerWeek, activeDate) || `Day ${dayIndex}`;
+      const strengthDataProvided = [context.benchWeight, context.lowerWeight, context.hingeWeight, context.benchReps, context.lowerReps, context.hingeReps]
+        .some((value) => (typeof value === 'number' && Number.isFinite(value) && value > 0) || String(value || '').trim());
+      const strengthNarrative = strengthDataProvided
+        ? 'Starter strength numbers were used where available to set conservative target loads and progression pacing.'
+        : 'Starter strength numbers were not provided, so target loads should be treated as conservative estimates.';
+      const customStrategyCopy = (() => {
+        const lowerPriorities = context.priorities.map((value) => String(value || '').trim().toLowerCase());
+        const parts = [];
+        if (lowerPriorities.includes('core')) parts.push('Core is trained through flexion and anti-rotation to support heavy lifts and direct ab development.');
+        if (lowerPriorities.includes('shoulders')) parts.push('Shoulders are biased toward lateral and rear-delt work, not just more pressing.');
+        if (lowerPriorities.includes('arms')) parts.push('Arms are split across biceps and triceps so volume is spread across the week.');
+        if (lowerPriorities.includes('chest')) parts.push('Chest priority uses supportive press and fly work without turning the week into endless benching.');
+        if (lowerPriorities.includes('back') || lowerPriorities.includes('glutes')) parts.push('Back and glute work are spread across rows, posterior-chain work, and recovery-safe accessories instead of hinge spam.');
+        parts.push('Main lifts stay first so strength is not buried under accessory fatigue.');
+        return parts;
+      })();
+      const coachGreeting = context.athleteName || 'Athlete';
+      const inferSplitName = (day = {}, fallbackDayIndex = 1) => {
+        const raw = String(day?.focus || day?.name || '').trim();
+        if (raw && !/^day\s+\d+$/i.test(raw)) return raw;
+        const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+        const families = exercises.map((exercise) => decisionMovementFamilyForName(
+          exercise?.displayName || exercise?.name,
+          exercise?.family || exercise?.movementPattern || exercise?.pattern || ''
+        ));
+        const hasLower = families.some((family) => family === 'squat_pattern' || family === 'hinge_pattern' || family === 'hamstring_curl' || family === 'calves');
+        const hasPress = families.some((family) => family === 'chest_press' || family === 'shoulder_press' || family === 'triceps_extension');
+        const hasPull = families.some((family) => family === 'horizontal_pull' || family === 'vertical_pull' || family === 'biceps_curl');
+        if (hasLower) return 'Lower';
+        if (hasPress && hasPull) return 'Upper';
+        if (hasPress) return 'Push';
+        if (hasPull) return 'Pull';
+        return `Day ${fallbackDayIndex}`;
+      };
+      const formatPdfTarget = (exercise, projected) => {
+        const family = decisionMovementFamilyForName(
+          exercise?.displayName || exercise?.name,
+          exercise?.family || exercise?.movementPattern || exercise?.pattern || ''
+        );
+        if (projected && typeof projected === 'object' && projected.unit === 'bw') return 'Bodyweight';
+        if (projected && typeof projected === 'object' && Number.isFinite(projected.value) && projected.value > 0) return `${projected.value} lb`;
+        if (/cable/i.test(String(exercise?.displayName || exercise?.name || '')) || family === 'core_rotation') return 'Cable stack';
+        if (family === 'core_flexion' || family === 'core_stability') return 'Bodyweight';
+        if (family === 'calves' && !Number.isFinite(Number(projected?.value || NaN))) return 'Bodyweight';
+        if (family === 'lateral_raise' || family === 'rear_delt' || family === 'biceps_curl' || family === 'triceps_extension') return 'Manual load';
+        if (family === 'chest_press' || family === 'horizontal_pull' || family === 'vertical_pull' || family === 'squat_pattern' || family === 'hinge_pattern') return 'Estimate';
+        return 'Manual load';
+      };
+      const shortTableNote = (exercise, roleInfo) => {
+        const family = decisionMovementFamilyForName(
+          exercise?.displayName || exercise?.name,
+          exercise?.family || exercise?.movementPattern || exercise?.pattern || ''
+        );
+        if (roleInfo?.role === 'Strength anchor') return 'Add reps first.';
+        if (roleInfo?.role === 'Secondary compound') return 'Keep form strict.';
+        if (roleInfo?.role === 'Priority accessory') return 'Control tempo.';
+        if (roleInfo?.role === 'Core / stability') return 'Brace hard.';
+        if (roleInfo?.role === 'Calves / small muscle') return 'Full range.';
+        if (roleInfo?.role === 'Pain-safe substitute') return 'Use safe range.';
+        if (family === 'biceps_curl' || family === 'triceps_extension') return 'Stop 1-2 RIR.';
+        return 'Smooth reps.';
+      };
+      const sectionDivider = (title, subtitle, index) => `
+        <section class="manual-page divider-page">
+          <div class="manual-page-inner divider-inner">
+            <div class="divider-index">Section ${escapeHtml(String(index).padStart(2, '0'))}</div>
+            <h1 class="divider-title">${escapeHtml(title)}</h1>
+            <p class="divider-subtitle">${escapeHtml(subtitle)}</p>
+            <div class="divider-accent"></div>
+            <div class="manual-footer manual-footer-invert"><span>${escapeHtml(`${title} • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+          </div>
+        </section>
+      `;
+
+      const blockOverviewRows = Array.from({ length: context.requestedWeeks }).map((_, idx) => {
+        const weekNumber = idx + 1;
+        const planWeek = resolveWeekTemplate(weekNumber);
+        const dayCount = Array.isArray(planWeek?.days) ? planWeek.days.length : context.daysPerWeek;
+        const weekRows = projectionRowsByWeek.get(weekNumber) || [];
+        const weekNote = weekRows.find((row) => String(row?.note || '').trim())?.note || complexPdfWeekPhase(weekNumber, context.projection);
+        return `
+          <tr>
+            <td>Week ${weekNumber}</td>
+            <td>${escapeHtml(complexPdfWeekPhase(weekNumber, context.projection))}</td>
+            <td>${escapeHtml(weekNote)}</td>
+            <td>${escapeHtml(`${dayCount} training days`)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const workoutTablePages = Array.from({ length: context.requestedWeeks }).map((_, idx) => {
+        const weekNumber = idx + 1;
+        const planWeek = resolveWeekTemplate(weekNumber);
+        const days = Array.isArray(planWeek?.days) ? planWeek.days : [];
+        const rows = days.map((day, dayIndex) => {
+          const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+          return exercises.map((exercise, exerciseIndex) => {
+            const roleInfo = complexPdfExerciseRole(exercise, exerciseIndex, context.priorities, context.painAreas);
+            const projected = resolveProjectedForExercise(exercise, plan, {});
+            const rir = String(exercise?.rir || exercise?.rpe || '').trim()
+              || (context.outputStyle === 'Simple sets x reps' ? '—' : (roleInfo.role === 'Strength anchor' ? '2-3 RIR' : '1-2 RIR'));
+            const sets = Math.max(1, Number(exercise?.sets) || 1);
+            const warmups = roleInfo.role === 'Strength anchor'
+              ? '2-4 ramps'
+              : (roleInfo.role === 'Secondary compound' ? '1-2 ramps' : '—');
+            return `
+              <tr>
+                <td>W${weekNumber}</td>
+                <td>${escapeHtml(scheduledLabel(dayIndex + 1))}</td>
+                <td>${escapeHtml(inferSplitName(day, dayIndex + 1))}</td>
+                <td><div class="exercise-name">${escapeHtml(exercise?.displayName || exercise?.name || 'Exercise')}</div><div class="exercise-role">${escapeHtml(roleInfo.role)}</div></td>
+                <td>${escapeHtml(warmups)}</td>
+                <td>${escapeHtml(String(sets))}</td>
+                <td>${escapeHtml(String(exercise?.reps || '—'))}</td>
+                <td>${escapeHtml(formatPdfTarget(exercise, projected))}</td>
+                <td>${escapeHtml(rir)}</td>
+                <td>${escapeHtml(fmtRest(exercise?.restSec || exercise?.rest))}</td>
+                <td class="track-cell">${sets >= 1 ? '&nbsp;' : '—'}</td>
+                <td class="track-cell">${sets >= 2 ? '&nbsp;' : '—'}</td>
+                <td class="track-cell">${sets >= 3 ? '&nbsp;' : '—'}</td>
+                <td class="track-cell">${sets >= 4 ? '&nbsp;' : '—'}</td>
+                <td class="track-cell">${sets >= 5 ? '&nbsp;' : '—'}</td>
+                <td>${escapeHtml(shortTableNote(exercise, roleInfo))}</td>
+              </tr>
+            `;
+          }).join('');
+        }).join('');
+        const weekCoachNotes = days.flatMap((day, dayIndex) => {
+          const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+          return exercises.slice(0, 5).map((exercise, exerciseIndex) => {
+            const roleInfo = complexPdfExerciseRole(exercise, exerciseIndex, context.priorities, context.painAreas);
+            return `<li><strong>${escapeHtml(exercise?.displayName || exercise?.name || 'Exercise')}</strong>: ${escapeHtml(complexPdfExerciseNote(exercise, roleInfo, context))}</li>`;
+          });
+        }).slice(0, 8).join('');
+        return `
+          <section class="manual-page landscape-page">
+            <div class="manual-page-inner landscape-inner">
+              <div class="manual-page-kicker">Workout tables</div>
+              <div class="table-header">
+                <div>
+                  <h2>Week ${weekNumber} Training Table</h2>
+                  <p class="manual-lead">${escapeHtml(complexPdfWeekPhase(weekNumber, context.projection))}. ${escapeHtml(context.actualWeeks < weekNumber ? `${context.athleteName}, this week repeats the generated split template with the same progression rules.` : `${context.athleteName}, log your actual sets here. Next week’s progression should come from this performance, not guessing.`)}</p>
+                </div>
+                <div class="table-header-badge">${escapeHtml(`${days.length || context.daysPerWeek} days`)}</div>
+              </div>
+              <table class="manual-table dense-table">
+                <thead>
+                  <tr>
+                    <th>Week</th>
+                    <th>Day</th>
+                    <th>Split</th>
+                    <th>Exercise</th>
+                    <th>Warm-up sets</th>
+                    <th>Working sets</th>
+                    <th>Reps</th>
+                    <th>Load / target weight</th>
+                    <th>RPE / RIR</th>
+                    <th>Rest</th>
+                    <th>Set 1</th>
+                    <th>Set 2</th>
+                    <th>Set 3</th>
+                    <th>Set 4</th>
+                    <th>Set 5</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>${rows || '<tr><td colspan="16">No exercises listed.</td></tr>'}</tbody>
+              </table>
+              <div class="coach-note-block">
+                <strong>${escapeHtml(`${coachGreeting}, coach notes for Week ${weekNumber}`)}</strong>
+                <ul class="manual-list">${weekCoachNotes || `<li>${escapeHtml(`${coachGreeting}, log the week cleanly and let the next progression decision come from performance, not guessing.`)}</li>`}</ul>
+              </div>
+              <div class="manual-footer"><span>${escapeHtml(`Workout Tables • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+            </div>
+          </section>
+        `;
+      }).join('');
+
+      const priorityFrequency = context.priorities.map((priority) => {
+        let exposures = 0;
+        for (let weekNumber = 1; weekNumber <= context.requestedWeeks; weekNumber += 1) {
+          const planWeek = resolveWeekTemplate(weekNumber);
+          const days = Array.isArray(planWeek?.days) ? planWeek.days : [];
+          for (const day of days) {
+            const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+            if (exercises.some((exercise) => complexPdfPriorityMatch(exercise, [priority]).length)) exposures += 1;
+          }
+        }
+        const label = exposures >= Math.max(8, context.requestedWeeks) ? 'High frequency' : exposures >= Math.max(4, Math.ceil(context.requestedWeeks / 2)) ? 'Moderate frequency' : 'Protected exposure';
+        return { priority, label };
+      });
+
+      const reviewPages = (() => {
+        const spans = [];
+        for (let start = 1; start <= context.requestedWeeks; start += context.requestedWeeks > 8 ? 2 : 1) {
+          spans.push({ start, end: Math.min(context.requestedWeeks, start + (context.requestedWeeks > 8 ? 1 : 0)) });
+        }
+        return spans.map((span) => `
+          <section class="manual-page">
+            <div class="manual-page-inner">
+              <div class="manual-page-kicker">Weekly review</div>
+              <h2>${escapeHtml(span.start === span.end ? `Week ${span.start} review` : `Weeks ${span.start}-${span.end} review`)}</h2>
+              <p class="manual-lead">${escapeHtml(`${context.athleteName}, review your ${coverPriorityText} work here. If those areas felt productive and recovered, progress carefully next week. If joints or performance dropped, hold load or reduce accessory volume.`)}</p>
+              <div class="manual-review-grid">
+                <div class="manual-review-line"><strong>Best lift</strong></div>
+                <div class="manual-review-line"><strong>Hardest lift</strong></div>
+                <div class="manual-review-line"><strong>Exercise to increase next</strong></div>
+                <div class="manual-review-line"><strong>Exercise to hold steady</strong></div>
+                <div class="manual-review-line"><strong>Pain / recovery notes</strong></div>
+                <div class="manual-review-line"><strong>Sleep / recovery rating</strong></div>
+                <div class="manual-review-line manual-review-line-wide"><strong>Coach notes</strong></div>
+              </div>
+              <ul class="manual-list">
+                ${context.priorities.map((priority) => {
+                  const key = String(priority || '').trim().toLowerCase();
+                  if (key === 'core') return `<li>${escapeHtml('Core: Did bracing and control improve under the main lifts?')}</li>`;
+                  if (key === 'shoulders') return `<li>${escapeHtml('Shoulders: Did lateral and rear-delt work feel clean and recover well?')}</li>`;
+                  if (key === 'arms') return `<li>${escapeHtml('Arms: Did elbows recover well while biceps and triceps volume stayed productive?')}</li>`;
+                  if (key === 'chest') return `<li>${escapeHtml('Chest: Did pressing strength and chest tension improve without shoulder irritation?')}</li>`;
+                  if (key === 'back' || key === 'glutes') return `<li>${escapeHtml('Posterior chain / back: Did rows, bracing, and posterior-chain work support the anchors without low-back overload?')}</li>`;
+                  return `<li>${escapeHtml(`${priority}: Did this priority improve while recovery stayed acceptable?`)}</li>`;
+                }).join('')}
+                <li>${escapeHtml('Strength: Which anchor lift should increase next?')}</li>
+              </ul>
+              <div class="manual-footer"><span>${escapeHtml(`Weekly Review • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+            </div>
+          </section>
+        `).join('');
+      })();
+
+      const html = `
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
+  <title></title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm; }
+    @page landscape { size: A4 landscape; margin: 9mm; }
+    :root {
+      color-scheme: light;
+      --ink: #0d1014;
+      --muted: #59616b;
+      --paper: #ffffff;
+      --panel: #f3f5f7;
+      --line: #d3d8de;
+      --line-strong: #838b96;
+      --accent: #ef8b18;
+      --accent-soft: #ffb85f;
+      --dark: #111418;
+      --dark-2: #0a0c0f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #eceff2;
+      color: var(--ink);
+      font-family: "Arial Narrow", "Helvetica Neue Condensed", "Space Grotesk", Arial, sans-serif;
+      line-height: 1.35;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      counter-reset: manualPage;
+    }
+    .pdf-export-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 14px;
+      background: #101318;
+      color: #f3f5f7;
+      font-size: 12px;
+      border-bottom: 3px solid var(--accent);
+    }
+    .pdf-export-toolbar button {
+      border: 0;
+      background: var(--accent);
+      color: #0b0d10;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .manual-page {
+      page-break-after: always;
+      break-after: page;
+      counter-increment: manualPage;
+    }
+    .manual-page:last-child { page-break-after: auto; break-after: auto; }
+    .landscape-page { page: landscape; }
+    .manual-page-inner {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      min-height: calc(100vh - 20mm);
+      background: var(--paper);
+      border: 1px solid #b7bfc8;
+      box-shadow: 0 18px 40px rgba(16, 18, 22, 0.14);
+      padding: 14mm 12mm 9mm;
+      position: relative;
+      overflow: hidden;
+    }
+    .manual-page-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    }
+    .manual-cover {
+      min-height: calc(100vh - 52mm);
+      margin: -14mm -12mm -9mm;
+      padding: 16mm 14mm 12mm;
+      background:
+        linear-gradient(140deg, rgba(239,139,24,0.16), transparent 36%),
+        linear-gradient(180deg, #151920 0%, #0a0c10 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 26px;
+    }
+    .manual-brand, .manual-page-kicker {
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      font-weight: 800;
+    }
+    .manual-brand { color: #d8dde3; margin-bottom: 10px; }
+    .manual-page-kicker { color: var(--accent); margin-bottom: 10px; }
+    .cover-title {
+      margin: 0;
+      font-size: 42px;
+      line-height: 0.94;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      max-width: 14ch;
+    }
+    .cover-accent {
+      width: 128px;
+      height: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      margin: 14px 0 16px;
+    }
+    .cover-subtitle {
+      margin: 0;
+      max-width: 34ch;
+      color: #d1d7de;
+      font-size: 15px;
+    }
+    .manual-grid-4, .manual-grid-3, .manual-review-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .manual-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .manual-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .manual-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .manual-stat, .manual-callout {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 11px;
+    }
+    .manual-stat-label {
+      color: #4d5660;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .manual-stat-value {
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.28;
+    }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1; }
+    h2 {
+      font-size: 28px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    h3 {
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 16px;
+    }
+    p { margin: 0 0 10px; }
+    .manual-lead {
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 72ch;
+    }
+    .manual-copy p + p { margin-top: 8px; }
+    .manual-callout-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+    .manual-callout strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8d5000;
+    }
+    .manual-toc { display: grid; gap: 8px; margin-top: 16px; }
+    .manual-toc-item {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #d7dce1;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .manual-toc-num { color: var(--accent); }
+    .manual-toc-page { color: #68717c; }
+    .manual-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 11px;
+    }
+    .manual-table th, .manual-table td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .manual-table th {
+      background: #151920;
+      color: #fff;
+      font-size: 9.8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .manual-table tbody tr:nth-child(even) td { background: #f7f8fa; }
+    .exercise-name { font-weight: 800; }
+    .exercise-role {
+      margin-top: 2px;
+      color: #5d6670;
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+    }
+    .table-header-badge {
+      border: 1px solid var(--line-strong);
+      padding: 8px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+    .dense-table { table-layout: fixed; }
+    .dense-table th, .dense-table td { padding: 6px 5px; font-size: 9.4px; }
+    .dense-table th:nth-child(4), .dense-table td:nth-child(4) { width: 14%; }
+    .dense-table th:last-child, .dense-table td:last-child { width: 15%; }
+    .track-cell { min-width: 34px; height: 24px; background: #fff; }
+    .manual-list { margin: 10px 0 0 18px; padding: 0; }
+    .manual-list li + li { margin-top: 8px; }
+    .manual-review-line {
+      min-height: 92px;
+      border: 1px dashed #b2bac3;
+      padding: 12px;
+      background: #fff;
+    }
+    .manual-review-line strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .manual-review-line-wide { grid-column: 1 / -1; min-height: 126px; }
+    .manual-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #d0d5db;
+      color: #5e6670;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .manual-footer-invert {
+      color: #d8dde3;
+      border-top-color: rgba(255,255,255,0.14);
+      margin-top: auto;
+    }
+    .manual-page-number::after { content: "Page " counter(manualPage); }
+    .divider-page .manual-page-inner::before { display: none; }
+    .divider-inner {
+      background:
+        linear-gradient(140deg, rgba(239,139,24,0.18), transparent 38%),
+        linear-gradient(180deg, var(--dark) 0%, var(--dark-2) 100%);
+      color: #fff;
+      border-color: #0a0c10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .divider-index {
+      color: var(--accent-soft);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 16px;
+    }
+    .divider-title {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      max-width: 11ch;
+    }
+    .divider-subtitle {
+      margin-top: 10px;
+      max-width: 42ch;
+      color: #d2d8df;
+      font-size: 15px;
+    }
+    .divider-accent {
+      width: 142px;
+      height: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      margin-top: 20px;
+    }
+    .landscape-inner { max-width: 100%; }
+    @media print {
+      .pdf-export-toolbar { display: none !important; }
+      body { background: #fff; }
+      .manual-page-inner {
+        min-height: auto;
+        box-shadow: none;
+        border-width: 0;
+        padding: 12mm 10mm 8mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="pdf-export-toolbar">
+    <span>For the cleanest PDF, turn off browser “Headers and footers” in the print dialog, then save as PDF.</span>
+    <button type="button" onclick="window.print()">Print / Save PDF</button>
+  </div>
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-cover">
+        <div>
+          <div class="manual-brand">RiseForIt / ODeology</div>
+          <div class="manual-page-kicker">Custom training manual</div>
+          <h1 class="cover-title">${escapeHtml(context.isPowerbuilding ? 'Custom Powerbuilding Program' : 'Custom Bodybuilding Program')}</h1>
+          <div class="cover-accent" aria-hidden="true"></div>
+          <p class="cover-subtitle">${escapeHtml(coverSubtitle)}</p>
+          <p class="cover-subtitle" style="margin-top:10px">${escapeHtml(`Built for ${context.athleteName}`)}</p>
+        </div>
+        <div class="manual-grid-4">
+          <div class="manual-stat"><div class="manual-stat-label">Goal / focus</div><div class="manual-stat-value">${escapeHtml(`${context.primaryGoal} • ${context.focus}`)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Plan length</div><div class="manual-stat-value">${escapeHtml(`${context.requestedWeeks} weeks`)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Week range</div><div class="manual-stat-value">${escapeHtml(`Weeks ${detailedWeekStart}-${detailedWeekEnd}`)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Priority groups</div><div class="manual-stat-value">${escapeHtml(coverPriorityText)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Days per week</div><div class="manual-stat-value">${escapeHtml(String(context.daysPerWeek))}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Generated</div><div class="manual-stat-value">${escapeHtml(todayLabel)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Discipline</div><div class="manual-stat-value">${escapeHtml(context.trainingFeel)}</div></div>
+          <div class="manual-stat"><div class="manual-stat-label">Format</div><div class="manual-stat-value">${escapeHtml('Full block manual')}</div></div>
+        </div>
+        <div class="manual-footer manual-footer-invert"><span>${escapeHtml(`RiseForIt / ODeology • ${coverSubtitle}`)}</span><span class="manual-page-number"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Table of contents</div>
+      <h2>Manual contents</h2>
+      <div class="manual-toc">
+        <div class="manual-toc-item"><span class="manual-toc-num">01</span><span>Athlete Profile</span><span class="manual-toc-page">Profile</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">02</span><span>Program Overview</span><span class="manual-toc-page">Overview</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">03</span><span>Training Block</span><span class="manual-toc-page">Block</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">04</span><span>Workout Tables</span><span class="manual-toc-page">Program</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">05</span><span>Priority Strategy</span><span class="manual-toc-page">Priority</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">06</span><span>Recovery / Deload</span><span class="manual-toc-page">Recovery</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">07</span><span>Substitutions / Safety</span><span class="manual-toc-page">Safety</span></div>
+        <div class="manual-toc-item"><span class="manual-toc-num">08</span><span>Weekly Review</span><span class="manual-toc-page">Review</span></div>
+      </div>
+      <div class="manual-footer"><span>${escapeHtml(`Table of Contents • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Athlete Profile', `${context.athleteName}, these are the inputs that shaped your plan.`, 1)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Coach's note</div>
+      <h2>Coach's Note</h2>
+      <p class="manual-lead">${escapeHtml(`${context.athleteName}, this ${context.requestedWeeks}-week ${context.trainingFeel} block was built for your goal of ${context.primaryGoal} with a ${context.focus} focus. You selected ${coverPriorityText}, so the plan keeps heavy strength anchors early and places targeted accessory work after the main lifts. Your equipment access, session length, recovery inputs, pain areas, and avoid-movement list shaped the exercise selection.`)}</p>
+      <div class="manual-callout-grid">
+        <div class="manual-callout"><strong>Built to improve</strong>${escapeHtml(context.priorities.length ? `Your selected priorities: ${coverPriorityText}, while keeping the main lifts productive.` : 'Main lift performance, productive hypertrophy, and week-to-week consistency.')}</div>
+        <div class="manual-callout"><strong>How to progress</strong>${escapeHtml('Add reps before load, then increase weight only when the top of the range is earned with clean form.')}</div>
+        <div class="manual-callout"><strong>What to watch</strong>${escapeHtml('If joints flare or performance drops, reduce accessory volume or swap the movement before forcing progression.')}</div>
+      </div>
+      <div class="manual-footer"><span>${escapeHtml(`Coach's Note • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Athlete profile</div>
+      <h2>${escapeHtml(`${context.trainingFeel} profile`)}</h2>
+      <p class="manual-lead">${escapeHtml(profileNarrative)}</p>
+      <div class="manual-grid-4">
+        <div class="manual-stat"><div class="manual-stat-label">Discipline</div><div class="manual-stat-value">${escapeHtml(context.discipline)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Goal / focus</div><div class="manual-stat-value">${escapeHtml(`${context.primaryGoal} • ${context.focus}`)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Plan length</div><div class="manual-stat-value">${escapeHtml(context.timeline)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Days / week</div><div class="manual-stat-value">${escapeHtml(String(context.daysPerWeek))}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Preferred days</div><div class="manual-stat-value">${escapeHtml(preferredDayText)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Session length</div><div class="manual-stat-value">${escapeHtml(`${context.sessionLengthMin} minutes`)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Location</div><div class="manual-stat-value">${escapeHtml(context.location)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Equipment access</div><div class="manual-stat-value">${escapeHtml(complexPdfListText(context.equipmentAccess, 'General gym access'))}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Training style</div><div class="manual-stat-value">${escapeHtml(context.trainingStyle)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Priority groups</div><div class="manual-stat-value">${escapeHtml(coverPriorityText)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Pain areas</div><div class="manual-stat-value">${escapeHtml(painDetailText)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Avoid movements</div><div class="manual-stat-value">${escapeHtml(complexPdfListText(context.movementsToAvoid, 'None listed'))}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Close-to-failure</div><div class="manual-stat-value">${escapeHtml(context.closeToFailure)}</div></div>
+        <div class="manual-stat"><div class="manual-stat-label">Recovery inputs</div><div class="manual-stat-value">${escapeHtml(`Sleep ${complexPdfListText(context.sleepHours, 'Not provided')} • Activity ${context.activityLevel} • Stress ${context.stress}`)}</div></div>
+      </div>
+      <h3>Starting strength snapshot</h3>
+      <table class="manual-table">
+        <thead><tr><th>Pattern</th><th>Starting value</th></tr></thead>
+        <tbody>${strengthSnapshotRows}</tbody>
+      </table>
+      <p class="manual-lead" style="margin-top:12px">${escapeHtml(strengthNarrative)}</p>
+      <div class="manual-footer"><span>${escapeHtml(`Athlete Profile • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Program Overview', `${context.athleteName}, this is how the block blends strength anchors, targeted accessories, and practical constraints.`, 2)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Program overview</div>
+      <h2>How this block works</h2>
+      <div class="manual-copy">
+        <p>${escapeHtml(context.isPowerbuilding ? 'Powerbuilding blends heavy strength work with hypertrophy accessories. Main lifts build skill and strength; accessories build muscle, weak points, and joint balance.' : 'This block uses structured compounds to anchor the week while accessory work drives hypertrophy and shape changes.')}</p>
+        <p>Reps progress first, then load. Pain, equipment, and movement-avoidance constraints override ideal exercise selection so the plan stays realistic.</p>
+        <p>${escapeHtml(context.priorities.length ? `${context.athleteName}, you selected ${coverPriorityText}. The plan spreads that work across the week instead of crowding it into one vanity session.` : `${context.athleteName}, the week stays anchor-first so strength work is never buried under random accessories.`)}</p>
+      </div>
+      <div class="manual-callout-grid">
+        <div class="manual-callout"><strong>Main lifts</strong>Add reps first. When all sets hit the top of the range with clean form, add load next time.</div>
+        <div class="manual-callout"><strong>Accessories</strong>Stay controlled. Stop 1-2 reps short of failure unless noted. Add reps before load.</div>
+        <div class="manual-callout"><strong>Pain rule</strong>Pain beats progression. Reduce load, shorten range, or swap movement.</div>
+      </div>
+      <h3>Using target weights and effort</h3>
+      <ul class="manual-list">
+        <li>If the target load feels too easy, earn extra reps before adding weight.</li>
+        <li>If the target load feels too hard, reduce it and protect setup quality.</li>
+        <li>Hold load when fatigue, pain, or technique says the week needs more control.</li>
+        <li>Performance drives strength. Reduce volume before forcing more intensity.</li>
+      </ul>
+      <div class="manual-footer"><span>${escapeHtml(`Program Overview • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Training Block', `${context.athleteName}, this block map shows progression without wasting pages on filler.`, 3)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Training block overview</div>
+      <h2>${escapeHtml(`${context.requestedWeeks}-week block map`)}</h2>
+      <p class="manual-lead">${escapeHtml(`${context.athleteName}, the block map shows progression, reduced-fatigue weeks, and schedule intent. The workout tables carry the actual program detail.`)}</p>
+      <table class="manual-table">
+        <thead><tr><th>Week</th><th>Phase</th><th>Instruction</th><th>Schedule note</th></tr></thead>
+        <tbody>${blockOverviewRows}</tbody>
+      </table>
+      <div class="manual-footer"><span>${escapeHtml(`Training Block • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Workout Tables', `${context.athleteName}, these pages are where the program becomes action. Track every set.`, 4)}
+  ${workoutTablePages}
+
+  ${sectionDivider('Priority Strategy', `${context.athleteName}, this is how your selected priorities are protected without burying the main lifts.`, 5)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Priority strategy</div>
+      <h2>How the priorities are distributed</h2>
+      <p class="manual-lead">Priority work should be visible enough to matter, but not so crowded that it wrecks recovery or weakens the anchor lifts.</p>
+      <div class="manual-grid-3">
+        ${priorityFrequency.length ? priorityFrequency.map((entry) => `
+          <div class="manual-stat">
+            <div class="manual-stat-label">${escapeHtml(entry.priority)}</div>
+            <div class="manual-stat-value">${escapeHtml(entry.label)}</div>
+          </div>
+        `).join('') : '<div class="manual-callout">No explicit priority groups were selected.</div>'}
+      </div>
+      <ul class="manual-list">
+        ${customStrategyCopy.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
+      </ul>
+      <div class="manual-footer"><span>${escapeHtml(`Priority Strategy • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Recovery / Deload', `${context.athleteName}, if performance drops, adjust volume before forcing load.`, 6)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Recovery and deload guidance</div>
+      <h2>Manage fatigue before it manages you</h2>
+      <div class="manual-callout"><strong>Performance drives strength</strong> ${escapeHtml(`${context.athleteName}, if fatigue blocks performance, reduce volume before forcing more intensity.`)}</div>
+      <ul class="manual-list">
+        <li>Hold load when bar speed, setup quality, or recovery falls off.</li>
+        <li>Reduce a set or two when sleep is poor, stress is high, or pain starts changing movement quality.</li>
+        <li>Swap a movement when equipment or pain changes make the day less productive than planned.</li>
+        <li>Use reduced-fatigue weeks to rebuild readiness, not to prove toughness.</li>
+      </ul>
+      <div class="manual-footer"><span>${escapeHtml(`Recovery / Deload • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Substitutions / Safety', `${context.athleteName}, keep the training effect when pain, equipment, or setup quality says a movement needs to change.`, 7)}
+  <section class="manual-page">
+    <div class="manual-page-inner">
+      <div class="manual-page-kicker">Safety and substitutions</div>
+      <h2>Keep the training effect, not the ego</h2>
+      <ul class="manual-list">
+        <li>Use Swap Exercise when equipment is missing, setup is awkward, or a movement feels wrong.</li>
+        <li>Respond to pain by reducing load, shortening range, or switching to the safer variation already implied by the plan.</li>
+        <li>Stop the set when position, speed, or control falls apart.</li>
+        <li>Respect the avoid-movement list. Productive training matters more than forcing a pattern you already know is a poor fit.</li>
+      </ul>
+      <div class="manual-footer"><span>${escapeHtml(`Safety / Substitutions • RiseForIt / ODeology`)}</span><span class="manual-page-number"></span></div>
+    </div>
+  </section>
+
+  ${sectionDivider('Weekly Review', `${context.athleteName}, use these pages to decide what should progress, what should stay steady, and what needs recovery adjustment.`, 8)}
+  ${reviewPages}
+</body>
+</html>`;
+
+      const win = window.open('', '_blank');
+      if (!win) {
+        state.planError = 'Allow pop-ups to export the PDF.';
+        render();
+        return;
+      }
+      try {
+        win.opener = null;
+      } catch {
+        // ignore
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        try { win.print(); } catch { /* ignore */ }
+      }, 350);
     };
 
     const openWorkoutEditorFromPlan = () => {

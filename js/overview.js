@@ -2139,22 +2139,33 @@
         const section = $('#control-owner-section');
         const link = $('#control-workout-db-link');
         if (!link) return;
+        const readAuthUserHint = () => {
+            try {
+                return JSON.parse(localStorage.getItem('ode_auth_user_hint_v1') || 'null')?.user || null;
+            } catch {
+                return null;
+            }
+        };
         const isOwnerClientUser = (user) => {
             const uname = String(user?.username || '').trim().toLowerCase();
             const dname = String(user?.displayName || '').trim().toLowerCase();
             if (user?.isOwner) return true;
-            return ['RiseForIt', 'RiseForIt', 'RiseForItOwner', 'jason'].includes(uname)
-                || ['RiseForIt', 'RiseForIt'].includes(dname);
+            return ['riseforit', 'riseforitowner', 'jason', 'odeology', 'odeology_'].includes(uname)
+                || ['riseforit', 'odeology', 'odeology_'].includes(dname);
         };
         try {
             const resp = await fetch('/api/auth/me', { credentials: 'include' });
             const json = await resp.json().catch(() => ({}));
-            const isOwner = Boolean(resp.ok && isOwnerClientUser(json?.user));
+            const isOwner = Boolean(
+                (resp.ok && isOwnerClientUser(json?.user))
+                || (json?.dbUnavailable && isOwnerClientUser(readAuthUserHint()))
+            );
             if (section) section.classList.toggle('hidden', !isOwner);
             else link.classList.toggle('hidden', !isOwner);
         } catch {
-            if (section) section.classList.add('hidden');
-            else link.classList.add('hidden');
+            const isOwner = Boolean(isOwnerClientUser(readAuthUserHint()));
+            if (section) section.classList.toggle('hidden', !isOwner);
+            else link.classList.toggle('hidden', !isOwner);
         }
     };
 

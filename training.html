@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RiseForIt Training</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
+    <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <script src="js/external-keydown-shield.js?v=2026-03-25-keydown-shield-1"></script>
+    <script src="js/external-keydown-shield.js?v=2026-06-14-keydown-shield-6"></script>
 </head>
 <body class="training-page">
     <div class="preloader" id="preloader">
@@ -110,7 +110,7 @@
     </nav>
 
     <!-- CONTROL PANEL (LEFT) -->
-    <aside class="control-panel open" id="control-panel" aria-label="Control panel">
+    <aside class="control-panel" id="control-panel" aria-label="Control panel">
         <div class="control-panel-header"></div>
         <div class="control-section">
             <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
@@ -124,12 +124,12 @@
             <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
             <a class="control-link active" href="training.html" aria-current="true"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
             <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+            <a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a>
         </div>
         <div class="control-section">
             <p class="section-label">COMMUNITY</p>
             <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
             <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
-            <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
         </div>
         <div class="control-section hidden" id="control-owner-section">
@@ -147,11 +147,30 @@
         </div>
     </section>
 
+    <nav id="control-mobile-fab-nav" class="control-mobile-fab-nav hidden" aria-label="Control panel quick navigation">
+        <a class="control-mobile-fab-link" href="training.html" aria-label="Training" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4"></path><path d="M6 8v8"></path><path d="M9 9h6"></path><path d="M15 8v8"></path><path d="M18 10v4"></path><path d="M6 12h12"></path></svg>
+            <span class="control-mobile-fab-link-label">Training</span>
+        </a>
+        <a class="control-mobile-fab-link" href="macro-calculator.html" aria-label="Macro Calculator">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"></rect><path d="M8 7.5h8"></path><path d="M8 12h2"></path><path d="M12 12h2"></path><path d="M16 12h0"></path><path d="M8 16h2"></path><path d="M12 16h2"></path><path d="M16 16h0"></path></svg>
+            <span class="control-mobile-fab-link-label">Macro Calculator</span>
+        </a>
+        <a class="control-mobile-fab-link" id="control-mobile-fab-dashboard" href="overview.html" aria-label="Dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
+            <span class="control-mobile-fab-link-label">Dashboard</span>
+        </a>
+        <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"></circle><path d="M8.3 12.45 10.75 14.9 15.85 9.65"></path></svg>
+            <span class="control-mobile-fab-link-label">Dash</span>
+        </button>
+    </nav>
+
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-04-10-owner-workout-test-1"></script>
+    <script src="js/main.js?v=2026-06-14-training-request-fix-1"></script>
     <script src="js/avatar-cropper.js"></script>
     <script src="js/training-debug-combo.js?v=2026-05-03-glutes-legs-core-1"></script>
-    <script src="js/training.js?v=2026-03-26-demo-plan-18"></script>
+    <script src="js/training.js?v=2026-06-14-training-request-fix-1"></script>
 </body>
 </html>
 

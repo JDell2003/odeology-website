@@ -634,6 +634,406 @@ function safeTrueHingeAnchor(weekIndex, user) {
   };
 }
 
+function militarySupportExercise({
+  id,
+  canonicalExerciseId,
+  name,
+  style = 'Compound',
+  pattern = 'Compound',
+  primary = 'Upper Body',
+  primaryMuscle = primary,
+  muscleTarget = primary,
+  subMuscle = '',
+  bodyPart = '',
+  sets = 3,
+  reps = '8-12',
+  restSec = 90,
+  rir = '2-3',
+  requiredEquipment = [],
+  mediaIcon = 'support',
+  notes = '',
+  militaryIdentityKeep = false
+} = {}) {
+  return {
+    id,
+    exerciseId: id,
+    canonicalExerciseId: canonicalExerciseId || normalizeText(name).replace(/[^a-z0-9]+/g, '_'),
+    name,
+    displayName: name,
+    style,
+    pattern,
+    primary,
+    primaryMuscle,
+    muscleTarget,
+    subMuscle,
+    bodyPart,
+    sets,
+    reps,
+    restSec,
+    rir,
+    requiredEquipment,
+    equipment: requiredEquipment,
+    mediaPath: null,
+    mediaPathAlt: null,
+    mediaIcon,
+    notes,
+    militaryIdentityKeep,
+    progressionRule: style === 'Isolation'
+      ? 'Add clean reps before load and stop before technique or target-muscle tension fades.'
+      : 'Progress clean reps before load and keep 1-3 reps in reserve.'
+  };
+}
+
+function hasPullupBar(user) {
+  return hasEquipment(user, ['pull-up bar', 'pullup bar', 'pullup_bar']);
+}
+
+function safeVerticalPullSupport(weekIndex, user, { keep = false } = {}) {
+  if (hasPullupBar(user)) {
+    return militarySupportExercise({
+      id: `mh_vertical_pull_w${weekIndex}`,
+      canonicalExerciseId: 'pull_up',
+      name: 'Pull-Up',
+      style: 'Compound',
+      pattern: 'VerticalPull',
+      primary: 'Back',
+      primaryMuscle: 'Back',
+      muscleTarget: 'Back',
+      subMuscle: 'Lats and upper-back',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '6-10',
+      restSec: 120,
+      requiredEquipment: ['pull-up bar'],
+      mediaIcon: 'pull',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['cable'])) {
+    return militarySupportExercise({
+      id: `mh_vertical_pull_w${weekIndex}`,
+      canonicalExerciseId: 'wide_grip_lat_pulldown',
+      name: 'Wide-Grip Lat Pulldown',
+      style: 'Compound',
+      pattern: 'VerticalPull',
+      primary: 'Back',
+      primaryMuscle: 'Back',
+      muscleTarget: 'Back',
+      subMuscle: 'Lats and upper-back',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '8-12',
+      restSec: 105,
+      requiredEquipment: ['cable'],
+      mediaIcon: 'pull',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['machine'])) {
+    return militarySupportExercise({
+      id: `mh_vertical_pull_w${weekIndex}`,
+      canonicalExerciseId: 'lat_pulldown',
+      name: 'Lat Pulldown',
+      style: 'Compound',
+      pattern: 'VerticalPull',
+      primary: 'Back',
+      primaryMuscle: 'Back',
+      muscleTarget: 'Back',
+      subMuscle: 'Lats and upper-back',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '8-12',
+      restSec: 105,
+      requiredEquipment: ['machine'],
+      mediaIcon: 'pull',
+      militaryIdentityKeep: keep
+    });
+  }
+  return null;
+}
+
+function safePullSupport(weekIndex, user, { keep = false } = {}) {
+  const vertical = safeVerticalPullSupport(weekIndex, user, { keep });
+  if (vertical) return vertical;
+  if (hasEquipment(user, ['machine'])) {
+    return militarySupportExercise({
+      id: `mh_pull_support_w${weekIndex}`,
+      canonicalExerciseId: 'chest_supported_row',
+      name: 'Chest-Supported Row',
+      style: 'Compound',
+      pattern: 'Row',
+      primary: 'Back',
+      primaryMuscle: 'Back',
+      muscleTarget: 'Back',
+      subMuscle: 'Upper-back stability',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '8-12',
+      restSec: 105,
+      requiredEquipment: ['machine'],
+      mediaIcon: 'pull',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['dumbbell'])) {
+    return militarySupportExercise({
+      id: `mh_pull_support_w${weekIndex}`,
+      canonicalExerciseId: 'one_arm_dumbbell_row',
+      name: 'One-Arm Dumbbell Row',
+      style: 'Compound',
+      pattern: 'Row',
+      primary: 'Back',
+      primaryMuscle: 'Back',
+      muscleTarget: 'Back',
+      subMuscle: 'Upper-back stability',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '8-12/side',
+      restSec: 90,
+      requiredEquipment: ['dumbbell'],
+      mediaIcon: 'pull',
+      militaryIdentityKeep: keep
+    });
+  }
+  return null;
+}
+
+function safeQuadPatternSupport(weekIndex, user, profile, { keep = false } = {}) {
+  if (Number(profile?.kneePain || 0) >= 7 || profile?.squatBlocked) {
+    return safeKneeDominantAccessory(weekIndex, profile);
+  }
+  if (hasEquipment(user, ['machine'])) {
+    return militarySupportExercise({
+      id: `mh_quad_pattern_w${weekIndex}`,
+      canonicalExerciseId: 'leg_press',
+      name: 'Leg Press',
+      style: 'Compound',
+      pattern: 'Squat',
+      primary: 'Legs',
+      primaryMuscle: 'Quads',
+      muscleTarget: 'Legs',
+      subMuscle: 'Quad strength',
+      bodyPart: 'Lower Body',
+      sets: 3,
+      reps: '8-12',
+      restSec: 120,
+      requiredEquipment: ['machine'],
+      mediaIcon: 'legs',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['dumbbell'])) {
+    return militarySupportExercise({
+      id: `mh_quad_pattern_w${weekIndex}`,
+      canonicalExerciseId: 'controlled_step_up',
+      name: 'Controlled Step-Up',
+      style: 'Compound',
+      pattern: 'SingleLeg',
+      primary: 'Legs',
+      primaryMuscle: 'Quads',
+      muscleTarget: 'Legs',
+      subMuscle: 'Single-leg strength',
+      bodyPart: 'Lower Body',
+      sets: 3,
+      reps: '8-12/side',
+      restSec: 90,
+      requiredEquipment: ['dumbbell'],
+      mediaIcon: 'legs',
+      militaryIdentityKeep: keep
+    });
+  }
+  return safeKneeDominantAccessory(weekIndex, profile);
+}
+
+function safeSingleLegLowerSupport(weekIndex, user, profile, { keep = false } = {}) {
+  if (Number(profile?.kneePain || 0) >= 7 || profile?.squatBlocked) {
+    return safeQuadPatternSupport(weekIndex, user, profile, { keep });
+  }
+  if (hasEquipment(user, ['dumbbell'])) {
+    return militarySupportExercise({
+      id: `mh_single_leg_w${weekIndex}`,
+      canonicalExerciseId: 'controlled_step_up',
+      name: 'Controlled Step-Up',
+      style: 'Compound',
+      pattern: 'SingleLeg',
+      primary: 'Legs',
+      primaryMuscle: 'Quads',
+      muscleTarget: 'Legs',
+      subMuscle: 'Single-leg control and quad drive',
+      bodyPart: 'Lower Body',
+      sets: 3,
+      reps: '8-10/side',
+      restSec: 90,
+      requiredEquipment: ['dumbbell'],
+      mediaIcon: 'legs',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['smith'])) {
+    return militarySupportExercise({
+      id: `mh_single_leg_w${weekIndex}`,
+      canonicalExerciseId: 'smith_split_squat',
+      name: 'Smith Split Squat',
+      style: 'Compound',
+      pattern: 'SingleLeg',
+      primary: 'Legs',
+      primaryMuscle: 'Quads',
+      muscleTarget: 'Legs',
+      subMuscle: 'Single-leg control and quad drive',
+      bodyPart: 'Lower Body',
+      sets: 3,
+      reps: '8-10/side',
+      restSec: 105,
+      requiredEquipment: ['smith'],
+      mediaIcon: 'legs',
+      militaryIdentityKeep: keep
+    });
+  }
+  return safeQuadPatternSupport(weekIndex, user, profile, { keep });
+}
+
+function safeLateralDeltSupport(weekIndex, user, { keep = false } = {}) {
+  if (hasEquipment(user, ['cable'])) {
+    return militarySupportExercise({
+      id: `mh_lateral_delt_w${weekIndex}`,
+      canonicalExerciseId: 'cable_lateral_raise',
+      name: 'Cable Lateral Raise',
+      style: 'Isolation',
+      pattern: 'ShoulderAbduction',
+      primary: 'Shoulders',
+      primaryMuscle: 'Shoulders',
+      muscleTarget: 'Shoulders',
+      subMuscle: 'Lateral delts',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '12-20',
+      restSec: 60,
+      requiredEquipment: ['cable'],
+      mediaIcon: 'shoulders',
+      militaryIdentityKeep: keep
+    });
+  }
+  return militarySupportExercise({
+    id: `mh_lateral_delt_w${weekIndex}`,
+    canonicalExerciseId: 'dumbbell_lateral_raise',
+    name: 'Dumbbell Lateral Raise',
+    style: 'Isolation',
+    pattern: 'ShoulderAbduction',
+    primary: 'Shoulders',
+    primaryMuscle: 'Shoulders',
+    muscleTarget: 'Shoulders',
+    subMuscle: 'Lateral delts',
+    bodyPart: 'Upper Body',
+    sets: 3,
+    reps: '12-20',
+    restSec: 60,
+    requiredEquipment: ['dumbbell'],
+    mediaIcon: 'shoulders',
+    militaryIdentityKeep: keep
+  });
+}
+
+function safeUpperBackStabilitySupport(weekIndex, user) {
+  if (hasEquipment(user, ['cable'])) {
+    return militarySupportExercise({
+      id: `mh_upper_back_stability_w${weekIndex}`,
+      canonicalExerciseId: 'face_pull',
+      name: 'Face Pull',
+      style: 'Isolation',
+      pattern: 'UpperBack',
+      primary: 'Shoulders',
+      primaryMuscle: 'Shoulders',
+      muscleTarget: 'Shoulders',
+      subMuscle: 'Rear delt and scapular stability',
+      bodyPart: 'Upper Body',
+      sets: 3,
+      reps: '12-20',
+      restSec: 75,
+      requiredEquipment: ['cable'],
+      mediaIcon: 'shoulders'
+    });
+  }
+  return militarySupportExercise({
+    id: `mh_upper_back_stability_w${weekIndex}`,
+    canonicalExerciseId: 'rear_delt_raise',
+    name: 'Rear Delt Raise',
+    style: 'Isolation',
+    pattern: 'UpperBack',
+    primary: 'Shoulders',
+    primaryMuscle: 'Shoulders',
+    muscleTarget: 'Shoulders',
+    subMuscle: 'Rear delt and scapular stability',
+    bodyPart: 'Upper Body',
+    sets: 3,
+    reps: '12-20',
+    restSec: 75,
+    mediaIcon: 'shoulders'
+  });
+}
+
+function safeCoreSupport(weekIndex, user, { bracing = false, keep = false } = {}) {
+  if (bracing) {
+    return militarySupportExercise({
+      id: `mh_core_bracing_w${weekIndex}`,
+      canonicalExerciseId: 'dead_bug_hold',
+      name: 'Dead Bug Hold',
+      style: 'Isolation',
+      pattern: 'CoreStability',
+      primary: 'Core',
+      primaryMuscle: 'Core',
+      muscleTarget: 'Core',
+      subMuscle: 'Bracing endurance',
+      bodyPart: 'Core',
+      sets: 3,
+      reps: '20-30 sec/side',
+      restSec: 60,
+      mediaIcon: 'core',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasPullupBar(user)) {
+    return militarySupportExercise({
+      id: `mh_core_support_w${weekIndex}`,
+      canonicalExerciseId: 'hanging_knee_raise',
+      name: 'Hanging Knee Raise',
+      style: 'Isolation',
+      pattern: 'CoreStability',
+      primary: 'Core',
+      primaryMuscle: 'Core',
+      muscleTarget: 'Core',
+      subMuscle: 'Anterior core',
+      bodyPart: 'Core',
+      sets: 3,
+      reps: '8-15',
+      restSec: 60,
+      requiredEquipment: ['pull-up bar'],
+      mediaIcon: 'core',
+      militaryIdentityKeep: keep
+    });
+  }
+  if (hasEquipment(user, ['cable'])) {
+    return militarySupportExercise({
+      id: `mh_core_support_w${weekIndex}`,
+      canonicalExerciseId: 'cable_crunch',
+      name: 'Cable Crunch',
+      style: 'Isolation',
+      pattern: 'CoreStability',
+      primary: 'Core',
+      primaryMuscle: 'Core',
+      muscleTarget: 'Core',
+      subMuscle: 'Anterior core',
+      bodyPart: 'Core',
+      sets: 3,
+      reps: '10-15',
+      restSec: 60,
+      requiredEquipment: ['cable'],
+      mediaIcon: 'core',
+      militaryIdentityKeep: keep
+    });
+  }
+  return plankTask(weekIndex);
+}
+
 function isStrengthAnchor(exercise) {
   return String(exercise?.slotId || '').startsWith('mh_')
     || /readiness progression/i.test(String(exercise?.progressionRule || ''))
@@ -653,6 +1053,39 @@ function isHypertrophySupport(exercise) {
 function isPriorityAccessory(exercise, profile) {
   const primary = canonicalPriority(exercise?.muscleTarget || exercise?.primary || '');
   return Number(profile?.priorityRanks?.[primary] || 99) <= 3;
+}
+
+function insertExerciseAt(list, exercise, index = null) {
+  const next = Array.isArray(list) ? list.slice() : [];
+  const target = Math.max(0, Math.min(next.length, Number.isFinite(Number(index)) ? Number(index) : next.length));
+  next.splice(target, 0, exercise);
+  return next;
+}
+
+function addSupportExercise(list, exercise, user, {
+  hasMatch = null,
+  insertIndex = null,
+  replacePredicate = null
+} = {}) {
+  if (!exercise) return Array.isArray(list) ? list.slice() : [];
+  const next = Array.isArray(list) ? list.slice() : [];
+  const matcher = typeof hasMatch === 'function'
+    ? hasMatch
+    : ((entry) => normalizeText(entry?.name) === normalizeText(exercise?.name));
+  if (next.some(matcher)) return next;
+  const profile = user?.profile?.military;
+  const cap = Number(profile?.maxTasksPerSession || 6);
+  if (next.length < cap) return insertExerciseAt(next, exercise, insertIndex);
+  const replacementIndex = next.findIndex(replacePredicate || ((entry) => (
+    !entry?.taskType
+    && !isStrengthAnchor(entry)
+    && !entry?.militaryIdentityKeep
+    && !isPriorityAccessory(entry, profile)
+  )));
+  if (replacementIndex >= 0) {
+    next.splice(replacementIndex, 1, exercise);
+  }
+  return next;
 }
 
 function trimForSession(exercises, additions, user) {
@@ -712,9 +1145,220 @@ function preserveMilitaryDayIdentityLift(exercises, baseDayType) {
   return list;
 }
 
+function reduceFrontDeltOverlap(exercises) {
+  const source = Array.isArray(exercises) ? exercises.slice() : [];
+  let keptFrontDelt = false;
+  return source.filter((exercise) => {
+    const name = normalizeText(exercise?.name);
+    const frontDelt = /\b(shoulder press|overhead press|arnold press|upright row|front raise)\b/.test(name);
+    if (!frontDelt) return true;
+    if (isStrengthAnchor(exercise)) return true;
+    if (keptFrontDelt) return false;
+    keptFrontDelt = true;
+    return false;
+  });
+}
+
+function liftTasksFirst(list) {
+  const source = Array.isArray(list) ? list.slice() : [];
+  const intervalIndex = source.findIndex((exercise) => exercise?.militaryRole === 'Running speed endurance');
+  if (intervalIndex < 0) return source;
+  const [interval] = source.splice(intervalIndex, 1);
+  return [interval, ...source];
+}
+
+function enrichMilitaryDayStructure(exercises, baseDayType, weekIndex, user) {
+  const profile = user?.profile?.military;
+  let list = Array.isArray(exercises) ? exercises.slice() : [];
+  const base = String(baseDayType || '').trim();
+
+  if (base === 'Upper') {
+    list = reduceFrontDeltOverlap(list);
+    list = addSupportExercise(list, safeVerticalPullSupport(weekIndex, user), user, {
+      hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'vertical_pull',
+      insertIndex: 3
+    });
+    if (Number(profile?.priorityRanks?.Shoulders || 99) <= 3) {
+      list = addSupportExercise(list, safeUpperBackStabilitySupport(weekIndex, user), user, {
+        hasMatch: (exercise) => /\b(face pull|rear delt)\b/i.test(String(exercise?.name || '')),
+        insertIndex: 4
+      });
+    }
+  }
+
+  if (base === 'LowerFocus') {
+    list = addSupportExercise(list, safeQuadPatternSupport(weekIndex, user, profile, { keep: true }), user, {
+      hasMatch: (exercise) => {
+        const family = militaryExerciseFamily(exercise);
+        if (family !== 'knee_dominant') return false;
+        return !/\bleg extension\b/i.test(String(exercise?.name || ''));
+      },
+      insertIndex: 2,
+      replacePredicate: (exercise) => /\bleg extension\b/i.test(String(exercise?.name || ''))
+    });
+  }
+
+  if (base === 'Pull') {
+    list = addSupportExercise(list, safeVerticalPullSupport(weekIndex, user, { keep: true }), user, {
+      hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'vertical_pull',
+      insertIndex: 1
+    });
+    list = addSupportExercise(list, safeCoreSupport(weekIndex, user, { bracing: true }), user, {
+      hasMatch: (exercise) => /\b(plank|dead bug|hanging knee raise|cable crunch|leg raise)\b/i.test(String(exercise?.name || '')),
+      insertIndex: list.findIndex((exercise) => exercise?.militaryRole === 'Bodyweight endurance'),
+      replacePredicate: (exercise) => militaryExerciseFamily(exercise) === 'core' && /\bpallof\b/i.test(String(exercise?.name || ''))
+    });
+  }
+
+  if (base === 'FullBodyA') {
+    list = reduceFrontDeltOverlap(list);
+    list = list.map((exercise) => {
+      if (!isStrengthAnchor(exercise)) return exercise;
+      if (militaryExerciseFamily(exercise) !== 'horizontal_press') return exercise;
+      return {
+        ...demoteAnchorExercise(exercise),
+        sets: 3,
+        reps: '6-10',
+        restSec: 105
+      };
+    });
+    if (Number(user?.daysPerWeek || 0) >= 5) {
+      const pressIndex = list.findIndex((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press');
+      if (pressIndex >= 0) {
+        const hasRearDeltOrStability = list.some((exercise) => /\b(face pull|rear delt)\b/i.test(String(exercise?.name || '')));
+        const hasLateralDelt = list.some((exercise) => /\blateral raise\b/i.test(String(exercise?.name || '')));
+        const replacement = !hasLateralDelt && Number(profile?.priorityRanks?.Shoulders || 99) <= 3
+          ? safeLateralDeltSupport(weekIndex, user, { keep: true })
+          : !hasRearDeltOrStability
+            ? safeUpperBackStabilitySupport(weekIndex, user)
+            : null;
+        if (replacement) list.splice(pressIndex, 1, replacement);
+      }
+      const lowerCompoundIndex = list.findIndex((exercise) => {
+        const family = militaryExerciseFamily(exercise);
+        if (!['posterior', 'knee_dominant'].includes(family)) return false;
+        return String(exercise?.style || '') === 'Compound';
+      });
+      if (lowerCompoundIndex >= 0) {
+        const replacement = !list.some((exercise) => /\b(face pull|rear delt)\b/i.test(String(exercise?.name || '')))
+          ? safeUpperBackStabilitySupport(weekIndex, user)
+          : !list.some((exercise) => /\blateral raise\b/i.test(String(exercise?.name || '')))
+            ? safeLateralDeltSupport(weekIndex, user, { keep: true })
+            : null;
+        if (replacement) list.splice(lowerCompoundIndex, 1, replacement);
+      }
+    }
+    list = liftTasksFirst(orderMilitaryDay(list));
+  }
+
+  if (base === 'Lower') {
+    const lowerAccessory = String(user?.sessionLengthMin || '') === '75+' && profile?.recoveryTier !== 'low'
+      ? safeSingleLegLowerSupport(weekIndex, user, profile, { keep: true })
+      : safeQuadPatternSupport(weekIndex, user, profile, { keep: true });
+    list = addSupportExercise(list, lowerAccessory, user, {
+      hasMatch: (exercise) => {
+        const family = militaryExerciseFamily(exercise);
+        if (family !== 'knee_dominant') return false;
+        return !/\bleg extension\b/i.test(String(exercise?.name || ''));
+      },
+      insertIndex: 2,
+      replacePredicate: (exercise) => /\bleg extension\b/i.test(String(exercise?.name || ''))
+    });
+    if (String(user?.sessionLengthMin || '') === '75+' && profile?.recoveryTier !== 'low') {
+      list = addSupportExercise(list, safePullSupport(weekIndex, user, { keep: true }), user, {
+        hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'vertical_pull' || militaryExerciseFamily(exercise) === 'row',
+        insertIndex: 3
+      });
+      list = addSupportExercise(list, safeCoreSupport(weekIndex, user, { keep: true }), user, {
+        hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'core',
+        insertIndex: 4
+      });
+    }
+  }
+
+  return orderMilitaryDay(list);
+}
+
+function ensureWeeklyMilitaryCoverage(week, user) {
+  const days = Array.isArray(week?.days) ? week.days : [];
+  const weekIndex = Number(week?.weekIndex || 1);
+  const hasVerticalPull = days.some((day) => (Array.isArray(day?.exercises) ? day.exercises : []).some((exercise) => militaryExerciseFamily(exercise) === 'vertical_pull'));
+  const hasRealQuadPattern = days.some((day) => (Array.isArray(day?.exercises) ? day.exercises : []).some((exercise) => {
+    const family = militaryExerciseFamily(exercise);
+    if (family !== 'knee_dominant') return false;
+    return !/\bleg extension\b/i.test(String(exercise?.name || ''));
+  }));
+
+  if (!hasVerticalPull) {
+    const targetDay = days.find((day) => ['Pull', 'Upper'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
+    if (targetDay) {
+      targetDay.exercises = addSupportExercise(targetDay.exercises, safeVerticalPullSupport(weekIndex, user, { keep: true }), user, {
+        hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'vertical_pull',
+        insertIndex: 1
+      });
+      targetDay.exercises = orderMilitaryDay(targetDay.exercises);
+    }
+  }
+
+  if (!hasRealQuadPattern) {
+    const targetDay = days.find((day) => ['LowerFocus', 'Lower'].includes(String(day?.militaryBaseDayType || day?.dayType || '')));
+    if (targetDay) {
+      targetDay.exercises = addSupportExercise(targetDay.exercises, safeQuadPatternSupport(weekIndex, user, user?.profile?.military, { keep: true }), user, {
+        hasMatch: (exercise) => {
+          const family = militaryExerciseFamily(exercise);
+          if (family !== 'knee_dominant') return false;
+          return !/\bleg extension\b/i.test(String(exercise?.name || ''));
+        },
+        insertIndex: 2,
+        replacePredicate: (exercise) => /\bleg extension\b/i.test(String(exercise?.name || ''))
+      });
+      targetDay.exercises = orderMilitaryDay(targetDay.exercises);
+    }
+  }
+
+  const lowerCarryDay = days.find((day) => String(day?.militaryBaseDayType || day?.dayType || '') === 'Lower');
+  if (lowerCarryDay && String(user?.sessionLengthMin || '') === '75+' && user?.profile?.military?.recoveryTier !== 'low') {
+    lowerCarryDay.exercises = addSupportExercise(lowerCarryDay.exercises, safePullSupport(weekIndex, user, { keep: true }), user, {
+      hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'vertical_pull' || militaryExerciseFamily(exercise) === 'row',
+      insertIndex: 2
+    });
+    lowerCarryDay.exercises = addSupportExercise(lowerCarryDay.exercises, safeCoreSupport(weekIndex, user, { keep: true }), user, {
+      hasMatch: (exercise) => militaryExerciseFamily(exercise) === 'core',
+      insertIndex: 3
+    });
+  }
+
+  const intervalUpperDay = days.find((day) => String(day?.militaryBaseDayType || day?.dayType || '') === 'FullBodyA');
+  if (intervalUpperDay && Number(user?.daysPerWeek || 0) >= 5) {
+    const next = Array.isArray(intervalUpperDay.exercises) ? intervalUpperDay.exercises.slice() : [];
+    const lowerCompoundIndex = next.findIndex((exercise) => {
+      const family = militaryExerciseFamily(exercise);
+      if (!['posterior', 'knee_dominant'].includes(family)) return false;
+      return String(exercise?.style || '') === 'Compound';
+    });
+    if (lowerCompoundIndex >= 0) {
+      const replacement = !next.some((exercise) => /\b(face pull|rear delt)\b/i.test(String(exercise?.name || '')))
+        ? safeUpperBackStabilitySupport(weekIndex, user)
+        : !next.some((exercise) => /\blateral raise\b/i.test(String(exercise?.name || '')))
+          ? safeLateralDeltSupport(weekIndex, user, { keep: true })
+          : safePullSupport(weekIndex, user, { keep: true });
+      if (replacement) next.splice(lowerCompoundIndex, 1, replacement);
+    }
+    intervalUpperDay.exercises = liftTasksFirst(orderMilitaryDay(reduceFrontDeltOverlap(next)));
+  }
+
+  for (const day of days) {
+    const baseDayType = String(day?.militaryBaseDayType || day?.dayType || '');
+    if (baseDayType === 'FullBodyA' && Number(user?.daysPerWeek || 0) >= 5) day.exercises = liftTasksFirst(day.exercises);
+  }
+
+  return week;
+}
+
 function ensureMilitaryUpperPressPresence(exercises, baseDayType, weekIndex, user) {
   const list = Array.isArray(exercises) ? exercises.slice() : [];
   const base = String(baseDayType || '').trim();
+  if (base === 'FullBodyA' && Number(user?.daysPerWeek || 0) >= 5) return list;
   if (!['Upper', 'FullBodyA'].includes(base)) return list;
   if (list.some((exercise) => militaryExerciseFamily(exercise) === 'horizontal_press')) return list;
   const replacement = safeUpperPressAnchor(weekIndex, user);
@@ -1206,18 +1850,18 @@ function buildWeeklyTaskAssignments(user, weekIndex, days) {
 function militaryDayLabel(baseDayType, exercises, fallback) {
   const list = Array.isArray(exercises) ? exercises : [];
   const base = String(baseDayType || fallback || '').trim();
-  if (base === 'Upper' && list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Armor';
-  if (base === 'LowerFocus' && list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Zone 2 + Durability';
-  if (base === 'Pull' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
-  if (base === 'UpperFocus' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
-  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals / SDC';
-  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Intervals / SDC';
-  if (base === 'Lower' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Lower + Carry';
+  if (base === 'Upper' && list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Power + Upper Strength';
+  if (base === 'LowerFocus' && list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Lower + Zone 2';
+  if (base === 'Pull' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Back/Arms + Push-Up Endurance';
+  if (base === 'UpperFocus' && list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Back/Arms + Push-Up Endurance';
+  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals + Upper Hypertrophy';
+  if (base === 'FullBodyA' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Intervals + Upper Hypertrophy';
+  if (base === 'Lower' && list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Deadlift + SDC/Carry';
   if (list.some((exercise) => exercise?.militaryRole === 'Sprint-drag-carry qualities')) return 'Work Capacity';
-  if (list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals / SDC';
-  if (list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Zone 2 + Durability';
-  if (list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Upper + Push-Up Endurance';
-  if (list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Strength + Armor';
+  if (list.some((exercise) => exercise?.militaryRole === 'Running speed endurance')) return 'Intervals + Upper Hypertrophy';
+  if (list.some((exercise) => exercise?.militaryRole === 'Aerobic base')) return 'Lower + Zone 2';
+  if (list.some((exercise) => exercise?.militaryRole === 'Bodyweight endurance')) return 'Back/Arms + Push-Up Endurance';
+  if (list.some((exercise) => exercise?.militaryRole === 'Explosive power')) return 'Power + Upper Strength';
   return String(fallback || 'Military Hybrid');
 }
 
@@ -1260,7 +1904,7 @@ function finalizeMilitaryPlan(plan, user) {
           };
         });
         const combined = ensureMilitaryUpperPressPresence(
-          orderMilitaryDay([...lifting, ...additions]),
+          enrichMilitaryDayStructure(orderMilitaryDay([...lifting, ...additions]), baseDayType, Number(week?.weekIndex || weekArrayIndex + 1), user),
           baseDayType,
           Number(week?.weekIndex || weekArrayIndex + 1),
           user
@@ -1269,11 +1913,11 @@ function finalizeMilitaryPlan(plan, user) {
           ...day,
           dayType: militaryDayLabel(baseDayType, combined, day?.dayType),
           militaryBaseDayType: day?.dayType,
-          exercises: combined
+          exercises: (baseDayType === 'FullBodyA' && Number(user?.daysPerWeek || 0) >= 5) ? liftTasksFirst(combined) : combined
         };
       })
     };
-    return pruneWeeklyAccessorySpam(
+    return ensureWeeklyMilitaryCoverage(pruneWeeklyAccessorySpam(
       rebalanceConditioningDays(
         enforceDayIdentityAnchors(
           enforceTrueHingeAnchor(
@@ -1283,12 +1927,13 @@ function finalizeMilitaryPlan(plan, user) {
         )
       ),
       user
-    );
+    ), user);
   });
   const schedule = weeks[0]?.days?.map((day, index) => ({
     day: plan?.schedule?.[index]?.day || user?.preferredDays?.[index] || WEEKDAY_DEFAULT_ORDER[index],
     dayType: day?.dayType || 'Military Hybrid'
   })) || plan?.schedule || [];
+  const resolvedPreferredDays = schedule.map((entry) => String(entry?.day || '').trim()).filter(Boolean);
   return {
     ...plan,
     discipline: 'military',
@@ -1307,7 +1952,8 @@ function finalizeMilitaryPlan(plan, user) {
         zone2Target: profile.zone2Target,
         runningBlocked: profile.runningBlocked,
         impactRestricted: profile.impactRestricted,
-        hingeBlocked: profile.hingeBlocked
+        hingeBlocked: profile.hingeBlocked,
+        preferredDaysResolved: resolvedPreferredDays
       }
     },
     schedule,

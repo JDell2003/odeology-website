@@ -52,8 +52,11 @@
         const message = String(err?.message || '').toLowerCase();
         const stack = String(err?.stack || '').toLowerCase();
         const sourceText = String(source || '').toLowerCase();
+        const readsLength = message.includes("reading 'length'") || message.includes('reading "length"');
+        const keydownStack = stack.includes('handlekeydown') || stack.includes('keydown');
         if (stack.includes('page-events.js') || sourceText.includes('page-events.js')) return true;
-        return message.includes("reading 'length'") && stack.includes('handlekeydown');
+        if (readsLength && (keydownStack || sourceText.includes('page-events'))) return true;
+        return false;
     }
 
     function buildWrappedListener(listener) {
@@ -122,12 +125,20 @@
     originalAddEventListener.call(window, 'keydown', sanitizeKeydownEvent, true);
     originalAddEventListener.call(document, 'keydown', sanitizeKeydownEvent, true);
     originalAddEventListener.call(window, 'error', (event) => {
-        if (!shouldSuppressExternalKeydownError(event?.error, event?.filename)) return;
+        const source = event?.filename || event?.message || '';
+        if (!shouldSuppressExternalKeydownError(event?.error, source)) return;
         event.preventDefault();
         event.stopImmediatePropagation?.();
     }, true);
     originalAddEventListener.call(document, 'error', (event) => {
-        if (!shouldSuppressExternalKeydownError(event?.error, event?.filename)) return;
+        const source = event?.filename || event?.message || '';
+        if (!shouldSuppressExternalKeydownError(event?.error, source)) return;
+        event.preventDefault?.();
+        event.stopImmediatePropagation?.();
+    }, true);
+    originalAddEventListener.call(window, 'unhandledrejection', (event) => {
+        const reason = event?.reason;
+        if (!shouldSuppressExternalKeydownError(reason, reason?.stack || reason?.message || '')) return;
         event.preventDefault?.();
         event.stopImmediatePropagation?.();
     }, true);

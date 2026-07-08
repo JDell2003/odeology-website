@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trainer Profile - RiseForIt</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-03-26-riseforit-17">
-  <script src="js/external-keydown-shield.js?v=2026-03-28-keydown-shield-2"></script>
+  <link rel="stylesheet" href="/css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+  <script src="/js/external-keydown-shield.js?v=2026-03-28-keydown-shield-2"></script>
   <style>
     body.trainer-profile-page {
       background:
@@ -58,6 +58,16 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 10px;
+    }
+    .trainer-profile-viewport-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 10px 24px rgba(11, 30, 45, 0.06);
     }
     .trainer-profile-share-toggle {
       display: inline-flex;
@@ -141,41 +151,104 @@
       display: none;
     }
     .trainer-profile-edit-toolbar {
-      display: inline-flex;
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
       gap: 10px;
-      padding: 10px 12px;
-      border-radius: 999px;
+      width: min(100%, 1120px);
+      padding: 12px 14px;
+      border-radius: 24px;
       border: 1px solid rgba(10, 31, 47, 0.12);
-      background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 14px 28px rgba(9, 25, 37, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 252, 0.92)),
+        radial-gradient(circle at top right, rgba(110, 195, 255, 0.08), transparent 28%);
+      box-shadow: 0 18px 38px rgba(9, 25, 37, 0.08);
+      backdrop-filter: blur(12px);
     }
     .trainer-profile-edit-toolbar.is-active {
       gap: 12px;
     }
     .trainer-profile-edit-toggle,
-    .trainer-profile-edit-action {
-      border: 0;
+    .trainer-profile-edit-action,
+    .trainer-profile-edit-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.72rem 0.96rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      color: #17354c;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      box-shadow: 0 10px 20px rgba(9, 25, 37, 0.06);
       cursor: pointer;
-      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .trainer-profile-edit-action-icon {
+      min-width: 42px;
+      min-height: 42px;
+      padding: 0;
+      letter-spacing: 0;
+    }
+    a.trainer-profile-standalone-back-link {
+      text-decoration: none;
+    }
+    body.trainer-public-standalone-route .trainer-profile-share-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trainer-profile-edit-action-icon span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .trainer-profile-edit-action-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
     }
     .trainer-profile-edit-toggle {
-      padding: 0.82rem 1.05rem;
-      border-radius: 999px;
       background: linear-gradient(135deg, #10283c, #183a58);
+      border-color: rgba(16, 40, 60, 0.18);
       color: #f8f1e4;
-      font-size: 0.76rem;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
       box-shadow: 0 16px 30px rgba(10, 31, 47, 0.18);
     }
+    .trainer-profile-edit-secondary {
+      background: rgba(255, 255, 255, 0.96);
+      color: #17354c;
+      border-color: rgba(10, 31, 47, 0.12);
+      box-shadow: 0 10px 20px rgba(9, 25, 37, 0.06);
+    }
     .trainer-profile-edit-toggle:hover,
+    .trainer-profile-edit-secondary:hover,
     .trainer-profile-edit-action:hover,
     .trainer-profile-edit-btn:hover {
       transform: translateY(-1px);
     }
+    .trainer-profile-edit-secondary:hover {
+      border-color: rgba(16, 40, 60, 0.16);
+      color: #10283c;
+      box-shadow: 0 14px 28px rgba(9, 25, 37, 0.08);
+    }
+    .trainer-profile-edit-action:hover {
+      border-color: rgba(16, 40, 60, 0.16);
+      color: #10283c;
+      box-shadow: 0 14px 28px rgba(9, 25, 37, 0.08);
+    }
     .trainer-profile-edit-note {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0.58rem 0.86rem;
+      border-radius: 999px;
+      background: rgba(255, 248, 234, 0.92);
+      border: 1px solid rgba(183, 122, 32, 0.12);
       color: rgba(16, 36, 52, 0.72);
       font-size: 0.74rem;
       font-weight: 900;
@@ -191,24 +264,29 @@
       gap: 8px;
     }
     .trainer-profile-edit-action {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.02rem;
-      font-weight: 900;
-      box-shadow: 0 12px 22px rgba(9, 25, 37, 0.12);
+      appearance: none;
+      -webkit-appearance: none;
     }
     .trainer-profile-edit-action.danger {
-      background: #fff;
+      background: rgba(255, 255, 255, 0.98);
       color: #17354c;
       border: 1px solid rgba(10, 31, 47, 0.12);
     }
     .trainer-profile-edit-action.confirm {
       background: linear-gradient(135deg, #10283c, #183a58);
+      border-color: rgba(16, 40, 60, 0.18);
       color: #f8f1e4;
+    }
+    .trainer-profile-edit-action.is-active,
+    .trainer-profile-edit-action[aria-pressed="true"] {
+      background: linear-gradient(135deg, rgba(16, 40, 60, 0.1), rgba(229, 239, 247, 0.96));
+      border-color: rgba(16, 40, 60, 0.18);
+      color: #10283c;
+      box-shadow: 0 14px 28px rgba(9, 25, 37, 0.08);
+    }
+    .trainer-profile-edit-toolbar select.trainer-profile-edit-action {
+      padding-right: 2.2rem;
+      text-align: left;
     }
     .trainer-profile-edit-target {
       position: relative;
@@ -256,54 +334,6 @@
       width: 42px;
       height: 42px;
       padding: 0;
-    }
-    .trainer-profile-editor-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 12000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(8, 18, 29, 0.48);
-      backdrop-filter: blur(8px);
-    }
-    .trainer-profile-editor-backdrop.is-hidden {
-      display: none;
-    }
-    .trainer-profile-editor-modal {
-      width: min(100%, 780px);
-      max-height: min(86vh, 920px);
-      overflow: auto;
-      border-radius: 28px;
-      border: 1px solid rgba(10, 31, 47, 0.12);
-      background:
-        radial-gradient(circle at top right, rgba(109, 179, 255, 0.09), transparent 28%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 248, 251, 0.98));
-      box-shadow: 0 34px 70px rgba(9, 25, 37, 0.2);
-      padding: 24px;
-      display: grid;
-      gap: 18px;
-    }
-    .trainer-profile-editor-head {
-      display: grid;
-      gap: 6px;
-    }
-    .trainer-profile-editor-title {
-      color: #10283c;
-      font-size: clamp(1.4rem, 2vw, 1.85rem);
-      font-weight: 900;
-      line-height: 1.1;
-    }
-    .trainer-profile-editor-subtitle {
-      color: rgba(16, 36, 52, 0.68);
-      font-size: 0.98rem;
-      font-weight: 700;
-      line-height: 1.55;
-    }
-    .trainer-profile-editor-body {
-      display: grid;
-      gap: 16px;
     }
     .trainer-profile-inline-editor {
       display: grid;
@@ -862,6 +892,969 @@
       font-weight: 700;
       line-height: 1.62;
       max-width: 44rem;
+    }
+    .trainer-builder-public-shell {
+      display: grid;
+      gap: 28px;
+    }
+    .trainer-builder-public-header {
+      display: block;
+      padding: 4px 0 0;
+    }
+    .trainer-builder-public-brand {
+      color: rgba(16, 36, 52, 0.58);
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-public-main {
+      display: grid;
+      gap: 34px;
+    }
+    .trainer-builder-gallery-card,
+    .trainer-builder-column-card,
+    .trainer-builder-embed-card,
+    .trainer-builder-video-screen {
+      border-radius: 24px;
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 239, 231, 0.94));
+      padding: 20px;
+      min-height: 120px;
+    }
+    .trainer-builder-gallery-count {
+      color: rgba(16, 36, 52, 0.34);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .trainer-builder-video-stage,
+    .trainer-builder-bullet-stack {
+      display: grid;
+      gap: 14px;
+    }
+    .trainer-builder-video-screen {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      color: rgba(16, 36, 52, 0.48);
+      font-weight: 800;
+    }
+    .trainer-builder-bullet-row {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+    }
+    .trainer-builder-bullet-row span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #17354c;
+      margin-top: 0.38rem;
+    }
+    .trainer-builder-inline-media {
+      color: rgba(16, 36, 52, 0.56);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .trainer-builder-public-main.is-gated {
+      position: relative;
+      min-height: 72vh;
+      overflow: hidden;
+    }
+    .trainer-builder-public-main.is-gated::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(180deg, rgba(247, 244, 238, 0.18), rgba(247, 244, 238, 0.64));
+      backdrop-filter: blur(14px);
+      pointer-events: none;
+    }
+    .trainer-builder-public-main.is-gated > * {
+      filter: blur(10px);
+      transform: scale(1.01);
+      pointer-events: none;
+      user-select: none;
+    }
+    .trainer-builder-public-brand-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .trainer-builder-public-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0.4rem 0.82rem;
+      border-radius: 999px;
+      background: rgba(16, 40, 60, 0.08);
+      color: #17354c;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-public-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+      gap: 22px;
+      align-items: end;
+      margin-top: 18px;
+    }
+    .trainer-builder-public-kicker {
+      color: rgba(16, 36, 52, 0.56);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .trainer-builder-public-copy h1 {
+      margin: 0;
+      color: #10283c;
+      font-size: clamp(2.7rem, 5.2vw, 5rem);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      max-width: 12ch;
+    }
+    .trainer-builder-public-copy p {
+      margin: 14px 0 0;
+      max-width: 58ch;
+      color: rgba(16, 36, 52, 0.78);
+      font-size: 1rem;
+      line-height: 1.72;
+      font-weight: 650;
+    }
+    .trainer-builder-public-summary {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 240, 230, 0.94));
+      border: 1px solid rgba(15, 35, 50, 0.08);
+      box-shadow: 0 24px 46px rgba(13, 31, 45, 0.1);
+    }
+    .trainer-builder-public-summary div {
+      display: grid;
+      gap: 4px;
+    }
+    .trainer-builder-public-summary strong {
+      color: rgba(16, 36, 52, 0.52);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-public-summary span {
+      color: #10283c;
+      font-size: 0.98rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .trainer-builder-public-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 26px 0 8px;
+      color: rgba(16, 36, 52, 0.56);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 26px;
+      align-items: start;
+    }
+    .trainer-builder-workspace-rail,
+    .trainer-builder-workspace-canvas {
+      min-width: 0;
+    }
+    .trainer-builder-workspace-canvas {
+      display: grid;
+      gap: 14px;
+    }
+    .trainer-builder-workspace-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 4px 0;
+    }
+    .trainer-builder-workspace-kicker {
+      color: rgba(16, 36, 52, 0.5);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .trainer-builder-workspace-head h2 {
+      margin: 0;
+      color: #10283c;
+      font-size: clamp(1.4rem, 2.2vw, 1.92rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .trainer-builder-workspace-meta {
+      color: rgba(16, 36, 52, 0.56);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-editor-shell {
+      display: grid;
+      gap: 14px;
+    }
+    .trainer-builder-editor-sticky {
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 16px);
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 24px 48px rgba(9, 25, 37, 0.1);
+      backdrop-filter: blur(14px);
+    }
+    .trainer-builder-editor-kicker {
+      color: rgba(16, 36, 52, 0.5);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-editor-title {
+      color: #10283c;
+      font-size: 1.52rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .trainer-builder-editor-sub {
+      color: rgba(16, 36, 52, 0.7);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+    .trainer-builder-editor-panels {
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-builder-editor-panel {
+      border-radius: 18px;
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      background: rgba(248, 244, 236, 0.92);
+      overflow: hidden;
+    }
+    .trainer-builder-editor-panel > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      color: #10283c;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-editor-panel > summary::-webkit-details-marker {
+      display: none;
+    }
+    .trainer-builder-editor-panel > summary::after {
+      content: '+';
+      float: right;
+      color: rgba(16, 36, 52, 0.62);
+    }
+    .trainer-builder-editor-panel[open] > summary::after {
+      content: '−';
+    }
+    .trainer-builder-editor-panel .trainer-profile-card {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+      padding: 0 16px 16px;
+    }
+    .trainer-builder-preview-canvas {
+      padding: 14px;
+      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(242, 236, 226, 0.94));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 26px 56px rgba(10, 31, 47, 0.12);
+    }
+    .trainer-qualification-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 16000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(8, 17, 26, 0.48);
+      backdrop-filter: blur(16px);
+    }
+    .trainer-qualification-modal {
+      position: relative;
+      width: min(100%, 720px);
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(112, 183, 255, 0.14), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 242, 235, 0.98));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 34px 78px rgba(9, 25, 37, 0.24);
+    }
+    .trainer-qualification-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 2;
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(16, 36, 52, 0.1);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      color: rgba(16, 36, 52, 0.72);
+      font-size: 1.4rem;
+      line-height: 1;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(9, 25, 37, 0.1);
+    }
+    .trainer-qualification-close:hover {
+      color: #10283c;
+      border-color: rgba(16, 36, 52, 0.16);
+      transform: translateY(-1px);
+    }
+    .trainer-qualification-progress {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(16, 36, 52, 0.08);
+      overflow: hidden;
+    }
+    .trainer-qualification-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #17354c, #2f6fa2);
+    }
+    .trainer-qualification-step {
+      color: rgba(16, 36, 52, 0.52);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-modal h2 {
+      margin: 0;
+      color: #10283c;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      max-width: 12ch;
+    }
+    .trainer-qualification-sub,
+    .trainer-qualification-helper {
+      color: rgba(16, 36, 52, 0.72);
+      font-size: 0.98rem;
+      line-height: 1.7;
+      font-weight: 650;
+    }
+    .trainer-qualification-question {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(16, 36, 52, 0.06);
+    }
+    .trainer-qualification-label {
+      color: #10283c;
+      font-size: clamp(1.2rem, 2vw, 1.5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .trainer-qualification-input-wrap {
+      display: grid;
+      gap: 12px;
+    }
+    .trainer-qualification-option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .trainer-qualification-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 62px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      background: rgba(248, 245, 239, 0.96);
+      color: #10283c;
+      font-size: 0.96rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+    .trainer-qualification-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: #17354c;
+      flex: 0 0 auto;
+    }
+    .trainer-qualification-option.is-selected {
+      border-color: rgba(23, 53, 76, 0.28);
+      background: rgba(228, 238, 247, 0.96);
+      box-shadow: 0 14px 28px rgba(17, 44, 63, 0.08);
+      transform: translateY(-1px);
+    }
+    .trainer-qualification-field {
+      display: grid;
+      gap: 8px;
+    }
+    .trainer-qualification-field span {
+      color: rgba(16, 36, 52, 0.56);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-field input {
+      min-height: 54px;
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(16, 36, 52, 0.12);
+      background: rgba(255, 255, 255, 0.98);
+      color: #10283c;
+      padding: 0.9rem 1rem;
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+    .trainer-qualification-contact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .trainer-qualification-error {
+      color: #9a3d2e;
+      font-size: 0.88rem;
+      font-weight: 800;
+      min-height: 1.2em;
+    }
+    .trainer-qualification-error[hidden] {
+      display: none;
+    }
+    .trainer-qualification-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .trainer-qualification-btn {
+      min-height: 52px;
+      padding: 0.9rem 1.1rem;
+      border-radius: 999px;
+      border: 0;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .trainer-qualification-btn.ghost {
+      background: rgba(16, 36, 52, 0.08);
+      color: #17354c;
+    }
+    .trainer-qualification-btn.primary {
+      background: linear-gradient(135deg, #10283c, #183a58);
+      color: #f8f1e4;
+      box-shadow: 0 16px 30px rgba(10, 31, 47, 0.18);
+    }
+    .trainer-qualification-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .trainer-builder-preview-card {
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+    .trainer-builder-preview-canvas {
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    .trainer-builder-preview-canvas.is-mobile {
+      padding: 0;
+      border-radius: 0;
+    }
+    body.trainer-builder-public-page {
+      background:
+        radial-gradient(circle at top, rgba(230, 204, 163, 0.12), transparent 36%),
+        linear-gradient(180deg, #f5efe6 0%, #f8f3eb 32%, #fcfaf6 100%);
+    }
+    body.trainer-builder-public-page:not(.trainer-public-standalone-route) .grain,
+    body.trainer-builder-public-page:not(.trainer-public-standalone-route) .trainer-profile-back,
+    body.trainer-builder-public-page:not(.trainer-public-standalone-route) .trainer-profile-share-wrap {
+      display: none !important;
+    }
+    body.trainer-builder-public-page:not(.trainer-public-standalone-route) .trainer-profile-top-actions {
+      display: none !important;
+    }
+    body.trainer-builder-public-page .trainer-profile-status {
+      min-height: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-main {
+      padding: calc(var(--navbar-height, 72px) + 18px) 24px 54px;
+    }
+    body.trainer-builder-public-page .trainer-profile-shell {
+      width: min(100%, 1180px);
+      gap: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-shell > section {
+      padding: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-card {
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-nav {
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 14px);
+      z-index: 4;
+      padding: 12px 0 10px;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(180deg, rgba(248, 243, 235, 0.94), rgba(248, 243, 235, 0.72), rgba(248, 243, 235, 0));
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-nav .trainer-profile-chip-row {
+      gap: 10px;
+    }
+    body.trainer-builder-public-page .trainer-profile-chip {
+      min-height: 0;
+      padding: 0.2rem 0 0.4rem;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(13, 34, 50, 0.58);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-chip.soft {
+      background: transparent;
+      color: rgba(13, 34, 50, 0.58);
+      border-bottom-color: transparent;
+    }
+    body.trainer-builder-public-page .trainer-profile-chip:hover,
+    body.trainer-builder-public-page .trainer-profile-chip[aria-current="page"] {
+      color: #102434;
+      border-bottom-color: rgba(16, 36, 52, 0.46);
+    }
+    body.trainer-builder-public-page .trainer-profile-sales-hero {
+      display: block;
+    }
+    body.trainer-builder-public-page .trainer-profile-hero-card,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form,
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code {
+      border-radius: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-hero-card {
+      padding: clamp(18px, 4vw, 42px) 0 clamp(16px, 4vw, 30px);
+      gap: 16px;
+    }
+    body.trainer-builder-public-page .trainer-profile-offer-title {
+      font-size: clamp(2.7rem, 6vw, 5.5rem);
+      letter-spacing: -0.07em;
+      line-height: 0.9;
+      max-width: 10ch;
+    }
+    body.trainer-builder-public-page .trainer-profile-offer-sub {
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+      line-height: 1.65;
+      max-width: 46rem;
+      color: rgba(13, 34, 50, 0.7);
+    }
+    body.trainer-builder-public-page .trainer-profile-microcopy {
+      color: rgba(13, 34, 50, 0.48);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form,
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code {
+      padding: 0;
+      border-top: 1px solid rgba(16, 36, 52, 0.1);
+      padding-top: 26px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-actions {
+      justify-content: flex-start;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-section-kicker,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-section-title,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-muted {
+      max-width: 46rem;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-grid {
+      gap: 18px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field {
+      gap: 10px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field > span {
+      color: rgba(16, 36, 52, 0.44);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field input,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field textarea,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field select {
+      padding: 0.9rem 0;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid rgba(16, 36, 52, 0.16);
+      background: transparent;
+      box-shadow: none;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field input:focus,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field textarea:focus,
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-field select:focus {
+      border-bottom-color: rgba(16, 36, 52, 0.58);
+      box-shadow: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-btn {
+      justify-self: start;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-btn {
+      width: auto;
+      min-width: 180px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code {
+      display: grid;
+      gap: 16px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code iframe {
+      min-height: 680px !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body.trainer-builder-public-page .trainer-builder-gallery-card,
+    body.trainer-builder-public-page .trainer-builder-column-card,
+    body.trainer-builder-public-page .trainer-builder-embed-card,
+    body.trainer-builder-public-page .trainer-builder-video-screen {
+      background: rgba(255, 255, 255, 0.68);
+      box-shadow: none;
+    }
+    .trainer-builder-workspace {
+      grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+      gap: 30px;
+    }
+    .trainer-builder-workspace-head {
+      align-items: start;
+      padding: 0 0 6px;
+    }
+    .trainer-builder-workspace-sub {
+      margin-top: 8px;
+      max-width: 44rem;
+      color: rgba(16, 36, 52, 0.66);
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.65;
+    }
+    .trainer-builder-workspace-meta {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .trainer-builder-workspace-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(16, 36, 52, 0.08);
+    }
+    .trainer-builder-preview-canvas {
+      padding: 18px;
+      border-radius: 32px;
+      background:
+        radial-gradient(circle at top right, rgba(110, 195, 255, 0.11), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 239, 230, 0.92));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 30px 60px rgba(10, 31, 47, 0.12);
+    }
+    .trainer-builder-preview-canvas.is-mobile {
+      border-radius: 34px;
+    }
+    .trainer-builder-editor-sticky {
+      border-radius: 28px;
+      padding: 20px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 235, 0.92));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 24px 52px rgba(10, 31, 47, 0.12);
+    }
+    .trainer-builder-public-shell {
+      gap: 34px;
+    }
+    .trainer-builder-public-header {
+      padding: 10px 0 0;
+    }
+    .trainer-builder-public-intro {
+      gap: 18px;
+      align-items: stretch;
+    }
+    .trainer-builder-public-summary {
+      align-self: stretch;
+    }
+    .trainer-builder-public-frame {
+      display: grid;
+      gap: 0;
+    }
+    .trainer-builder-site-sections {
+      display: grid;
+      gap: 24px;
+    }
+    .trainer-builder-site-band {
+      display: grid;
+      gap: 16px;
+      padding: 28px 30px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 24px 46px rgba(10, 31, 47, 0.08);
+    }
+    .trainer-builder-site-band-split {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .trainer-builder-site-band h2 {
+      margin: 0;
+      color: #10283c;
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+    }
+    .trainer-builder-site-kicker {
+      color: rgba(16, 36, 52, 0.5);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-site-panel,
+    .trainer-builder-site-feature,
+    .trainer-builder-site-proof-card {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(244, 239, 231, 0.92));
+      border: 1px solid rgba(16, 36, 52, 0.07);
+    }
+    .trainer-builder-site-panel p,
+    .trainer-builder-site-feature p,
+    .trainer-builder-site-proof-copy p,
+    .trainer-builder-site-faq-item p {
+      margin: 0;
+      color: rgba(16, 36, 52, 0.74);
+      font-size: 0.98rem;
+      line-height: 1.72;
+      font-weight: 700;
+    }
+    .trainer-builder-site-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .trainer-builder-site-chip-row span,
+    .trainer-builder-site-anchor {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.6rem 0.92rem;
+      border-radius: 999px;
+      background: rgba(16, 40, 60, 0.08);
+      color: #17354c;
+      font-size: 0.78rem;
+      font-weight: 900;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-site-feature-grid,
+    .trainer-builder-site-proof-grid,
+    .trainer-builder-lead-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .trainer-builder-site-proof-card {
+      padding: 0;
+      overflow: hidden;
+    }
+    .trainer-builder-site-proof-images {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      min-height: 190px;
+    }
+    .trainer-builder-site-proof-images img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #e7ebf0;
+    }
+    .trainer-builder-site-proof-copy {
+      display: grid;
+      gap: 8px;
+      padding: 18px 20px 20px;
+    }
+    .trainer-builder-site-proof-copy strong {
+      color: #10283c;
+      font-size: 1rem;
+    }
+    .trainer-builder-site-proof-copy div {
+      color: #17354c;
+      font-size: 1.08rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .trainer-builder-site-faq-list {
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-builder-site-faq-item {
+      border-radius: 18px;
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      background: rgba(255, 255, 255, 0.72);
+      padding: 16px 18px;
+    }
+    .trainer-builder-site-faq-item summary {
+      cursor: pointer;
+      color: #10283c;
+      font-size: 0.98rem;
+      font-weight: 900;
+      list-style: none;
+    }
+    .trainer-builder-site-faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+    .trainer-builder-site-panel-accent {
+      background: linear-gradient(135deg, #10283c, #1b4463);
+      color: #f8f1e4;
+    }
+    .trainer-builder-site-panel-accent h2,
+    .trainer-builder-site-panel-accent p,
+    .trainer-builder-site-panel-accent .trainer-builder-site-kicker {
+      color: inherit;
+    }
+    .trainer-builder-site-band-lead {
+      gap: 18px;
+    }
+    .trainer-builder-lead-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .trainer-builder-site-band-lead .trainer-profile-builder-public-form {
+      padding: 24px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 242, 235, 0.92));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: none;
+    }
+    .trainer-builder-public-footer {
+      margin-top: 4px;
+      padding: 6px 0 0;
+    }
+    .trainer-qualification-modal {
+      width: min(100%, 980px);
+      padding: 0;
+      overflow: hidden;
+    }
+    .trainer-qualification-shell {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.92fr) minmax(0, 1.08fr);
+    }
+    .trainer-qualification-aside {
+      display: grid;
+      gap: 14px;
+      padding: 30px;
+      background: linear-gradient(160deg, #10283c, #1b4463);
+      color: #f8f1e4;
+    }
+    .trainer-qualification-aside .trainer-qualification-step,
+    .trainer-qualification-aside .trainer-qualification-sub {
+      color: rgba(248, 241, 228, 0.78);
+    }
+    .trainer-qualification-aside-meta {
+      display: grid;
+      gap: 12px;
+      margin-top: auto;
+    }
+    .trainer-qualification-aside-meta div {
+      display: grid;
+      gap: 4px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .trainer-qualification-aside-meta strong {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-main {
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+    }
+    .trainer-qualification-option-grid {
+      grid-template-columns: 1fr;
+    }
+    .trainer-qualification-option {
+      min-height: 58px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 240, 232, 0.92));
     }
     .trainer-profile-cta-row {
       display: flex;
@@ -1484,6 +2477,47 @@
       background-size: 100% 1px, 100% 1px;
       background-repeat: no-repeat;
       background-position: top center, bottom center;
+    }
+    body.trainer-builder-public-page .trainer-profile-shell {
+      width: min(100%, 1280px);
+      gap: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-card,
+    body.trainer-builder-public-page .trainer-profile-card:hover {
+      transform: none;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-hero {
+      display: block;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-hero-card {
+      overflow: visible;
+    }
+    body.trainer-builder-public-page .trainer-profile-hero-card::before,
+    body.trainer-builder-public-page .trainer-profile-offer-card::before,
+    body.trainer-builder-public-page .trainer-profile-inline-booking::before {
+      display: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-offer-card {
+      background: transparent;
+      border: none;
+      padding-inline: 0;
+    }
+    body.trainer-builder-public-page .trainer-profile-offer-card .trainer-profile-kicker,
+    body.trainer-builder-public-page .trainer-profile-offer-card .trainer-profile-offer-title,
+    body.trainer-builder-public-page .trainer-profile-offer-card .trainer-profile-offer-sub,
+    body.trainer-builder-public-page .trainer-profile-offer-card .trainer-profile-microcopy {
+      color: inherit;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-public-form,
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code {
+      max-width: 54rem;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code iframe {
+      width: 100%;
     }
     .trainer-profile-inline-booking-head {
       display: flex;
@@ -2649,7 +3683,7 @@
       }
       .trainer-profile-edit-toolbar {
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
       }
       .trainer-profile-editor-grid.two,
       .trainer-profile-editor-grid.three,
@@ -2670,6 +3704,90 @@
       }
     }
     @media (max-width: 760px) {
+      .trainer-builder-public-header {
+        padding-top: 0;
+      }
+      .trainer-builder-public-intro,
+      .trainer-builder-workspace,
+      .trainer-builder-site-band-split,
+      .trainer-builder-site-feature-grid,
+      .trainer-builder-site-proof-grid,
+      .trainer-builder-lead-grid,
+      .trainer-qualification-shell,
+      .trainer-qualification-option-grid,
+      .trainer-qualification-contact-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-builder-preview-card {
+        padding: 0;
+      }
+      .trainer-builder-preview-canvas {
+        padding: 0;
+        border-radius: 0;
+      }
+      .trainer-builder-workspace-head {
+        padding: 0;
+      }
+      .trainer-builder-workspace-meta {
+        justify-content: flex-start;
+      }
+      .trainer-builder-preview-canvas {
+        padding: 12px;
+        border-radius: 24px;
+      }
+      body.trainer-builder-public-page .trainer-profile-top-actions {
+        display: none;
+      }
+      body.trainer-builder-public-page .trainer-profile-main {
+        padding: calc(var(--navbar-height, 72px) + 10px) 16px 34px;
+      }
+      body.trainer-builder-public-page .trainer-profile-shell {
+        width: 100%;
+      }
+      body.trainer-builder-public-page .trainer-profile-builder-nav {
+        top: calc(var(--navbar-height, 72px) + 6px);
+        padding: 8px 0 10px;
+        border-radius: 0;
+      }
+      body.trainer-builder-public-page .trainer-profile-builder-nav .trainer-profile-chip-row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+      body.trainer-builder-public-page .trainer-profile-chip {
+        flex: 0 0 auto;
+        padding: 0.18rem 0 0.38rem;
+      }
+      body.trainer-builder-public-page .trainer-profile-offer-title {
+        font-size: clamp(2.15rem, 10vw, 3.2rem);
+        max-width: none;
+      }
+      body.trainer-builder-public-page .trainer-profile-builder-public-form,
+      body.trainer-builder-public-page .trainer-profile-builder-custom-code {
+        padding-top: 20px;
+      }
+      body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-grid.two,
+      body.trainer-builder-public-page .trainer-profile-builder-public-form .trainer-profile-editor-grid.three {
+        grid-template-columns: 1fr;
+      }
+      body.trainer-builder-public-page .trainer-profile-builder-custom-code iframe {
+        min-height: 540px !important;
+      }
+      .trainer-builder-site-band {
+        padding: 20px 18px;
+        border-radius: 22px;
+      }
+      .trainer-builder-site-panel,
+      .trainer-builder-site-feature {
+        padding: 18px;
+      }
+      .trainer-builder-site-proof-images {
+        min-height: 150px;
+      }
+      .trainer-qualification-aside,
+      .trainer-qualification-main {
+        padding: 22px 18px;
+      }
       .trainer-profile-main {
         padding: calc(var(--navbar-height, 72px) - 14px) 14px 24px;
       }
@@ -2684,13 +3802,19 @@
       }
       .trainer-profile-edit-toolbar {
         width: 100%;
+        padding: 10px;
+        border-radius: 18px;
       }
       .trainer-profile-edit-note {
         font-size: 0.68rem;
+        width: 100%;
+        justify-content: center;
       }
       .trainer-profile-edit-action {
-        width: 38px;
-        height: 38px;
+        min-height: 38px;
+        padding: 0.66rem 0.82rem;
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
       }
       .trainer-profile-hero-card.trainer-profile-edit-target,
       .trainer-profile-results-strip.trainer-profile-edit-target,
@@ -2703,13 +3827,6 @@
         right: 14px;
         width: 38px;
         height: 38px;
-      }
-      .trainer-profile-editor-backdrop {
-        padding: 16px;
-      }
-      .trainer-profile-editor-modal {
-        padding: 18px;
-        border-radius: 24px;
       }
       .trainer-profile-editor-actions {
         flex-direction: column-reverse;
@@ -2728,6 +3845,24 @@
       }
       .trainer-profile-hero {
         gap: 6px;
+      }
+      .trainer-builder-editor-sticky {
+        position: static;
+      }
+      .trainer-builder-workspace-head {
+        padding-inline: 0;
+      }
+      .trainer-qualification-modal {
+        border-radius: 22px;
+      }
+      .trainer-qualification-modal h2 {
+        max-width: none;
+      }
+      .trainer-qualification-actions {
+        flex-direction: column-reverse;
+      }
+      .trainer-qualification-btn {
+        width: 100%;
       }
       .trainer-profile-sales-hero {
         display: flex;
@@ -2839,9 +3974,1322 @@
         min-height: 220px;
       }
     }
+    body.trainer-builder-editor-page .trainer-profile-main,
+    body.trainer-builder-public-page .trainer-profile-main {
+      padding-inline: clamp(14px, 2.4vw, 30px);
+    }
+    body.trainer-builder-editor-page {
+      background:
+        radial-gradient(circle at top left, rgba(109, 175, 255, 0.08), transparent 22%),
+        linear-gradient(180deg, #f3ede3 0%, #f7f3ec 30%, #fbfaf7 100%);
+    }
+    body.trainer-builder-editor-page .trainer-profile-shell,
+    body.trainer-builder-public-page .trainer-profile-shell {
+      width: min(100%, 1380px);
+      gap: 14px;
+    }
+    .trainer-builder-public-shell {
+      display: grid;
+      gap: 18px;
+    }
+    .trainer-builder-nav-label {
+      margin-bottom: 10px;
+      color: rgba(16, 36, 52, 0.52);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-public-frame {
+      min-width: 0;
+    }
+    body.trainer-builder-public-page .trainer-builder-public-main {
+      padding: 0;
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at top left, rgba(110, 195, 255, 0.08), transparent 22%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.98));
+      box-shadow: 0 34px 90px rgba(9, 25, 37, 0.1);
+      overflow: clip;
+    }
+    body.trainer-builder-public-page .trainer-builder-public-frame {
+      padding: clamp(10px, 1.5vw, 16px);
+    }
+    .trainer-builder-public-shell-unavailable .trainer-builder-public-frame {
+      padding: clamp(24px, 4vw, 44px);
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at top right, rgba(110, 195, 255, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 251, 0.95));
+      box-shadow: 0 28px 70px rgba(9, 25, 37, 0.08);
+    }
+    .trainer-builder-unavailable {
+      display: grid;
+      gap: 14px;
+      min-height: min(58vh, 560px);
+      align-content: center;
+      justify-items: start;
+      padding: clamp(18px, 3vw, 32px);
+      border-radius: 28px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(255, 210, 131, 0.18), transparent 26%),
+        linear-gradient(145deg, #10283c, #173b5a 58%, #21567e);
+      color: #fffaf2;
+    }
+    .trainer-builder-unavailable-kicker,
+    .trainer-builder-unavailable-handle {
+      color: rgba(255, 250, 242, 0.72);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-unavailable h1 {
+      margin: 0;
+      font-size: clamp(2.6rem, 5vw, 5rem);
+      font-weight: 900;
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      max-width: 10ch;
+    }
+    .trainer-builder-unavailable p {
+      margin: 0;
+      max-width: 56ch;
+      color: rgba(255, 250, 242, 0.84);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.75;
+    }
+    .trainer-builder-unavailable-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 0.82rem 1.3rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 250, 242, 0.24);
+      background: rgba(255, 250, 242, 0.94);
+      color: #10283c;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 14px 30px rgba(9, 25, 37, 0.22);
+      transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+    .trainer-builder-unavailable-link:hover,
+    .trainer-builder-unavailable-link:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 40px rgba(9, 25, 37, 0.28);
+    }
+    .trainer-builder-workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .trainer-builder-workspace-rail,
+    .trainer-builder-workspace-canvas {
+      min-width: 0;
+    }
+    .trainer-builder-editor-sticky {
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 18px);
+      border-radius: 28px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+        radial-gradient(circle at top right, rgba(110, 195, 255, 0.12), transparent 32%);
+      box-shadow: 0 26px 70px rgba(9, 25, 37, 0.1);
+      padding: 18px;
+      gap: 18px;
+    }
+    .trainer-builder-editor-kicker {
+      color: rgba(16, 36, 52, 0.48);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-editor-title {
+      color: #0d2232;
+      font-size: clamp(1.35rem, 2vw, 1.75rem);
+      font-weight: 900;
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+    }
+    .trainer-builder-editor-sub {
+      color: rgba(13, 34, 50, 0.7);
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.65;
+    }
+    .trainer-builder-editor-shortcuts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .trainer-builder-editor-shortcuts span,
+    .trainer-builder-code-summary span,
+    .trainer-builder-workspace-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0.48rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      color: #17354c;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-code-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 2px;
+    }
+    .trainer-builder-editor-panels {
+      gap: 12px;
+    }
+    .trainer-builder-editor-panel {
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.72);
+      overflow: hidden;
+    }
+    .trainer-builder-editor-panel > summary {
+      padding: 12px 14px;
+      color: #17354c;
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-editor-panel .trainer-profile-card,
+    .trainer-profile-builder-nav {
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    .trainer-builder-code-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 10px;
+    }
+    .trainer-builder-code-tab {
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.86);
+      color: rgba(13, 34, 50, 0.7);
+      min-height: 36px;
+      padding: 0.55rem 0.82rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+    .trainer-builder-code-tab:hover {
+      transform: translateY(-1px);
+      border-color: rgba(16, 40, 60, 0.12);
+      color: #10283c;
+    }
+    .trainer-builder-code-tab.is-active {
+      border-color: rgba(16, 40, 60, 0.16);
+      background: linear-gradient(135deg, #10283c, #1c4468);
+      color: #f8f1e4;
+      box-shadow: 0 14px 30px rgba(10, 31, 47, 0.14);
+    }
+    .trainer-builder-code-pane {
+      display: none;
+      gap: 10px;
+    }
+    .trainer-builder-code-pane.is-active {
+      display: grid;
+    }
+    .trainer-builder-code-pane textarea {
+      min-height: 220px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      tab-size: 2;
+      white-space: pre;
+    }
+    .trainer-builder-code-pane[data-builder-code-pane="html"] textarea:first-of-type {
+      min-height: 280px;
+    }
+    .trainer-builder-code-pane span + textarea {
+      min-height: 112px;
+    }
+    #trainer-page-meta-form .trainer-profile-note {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0.85rem 0.95rem;
+      border-radius: 16px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(246, 249, 252, 0.88);
+      color: rgba(16, 36, 52, 0.74);
+      font-weight: 800;
+      word-break: break-word;
+    }
+    .trainer-builder-workspace-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      padding: 0 4px;
+      margin-bottom: 14px;
+    }
+    .trainer-builder-workspace-head h2 {
+      margin: 4px 0 0;
+      color: #0d2232;
+      font-size: clamp(1.8rem, 2.5vw, 2.35rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+    .trainer-builder-workspace-kicker {
+      color: rgba(16, 36, 52, 0.46);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-workspace-sub {
+      max-width: 58rem;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+    .trainer-builder-workspace-banner {
+      display: grid;
+      gap: 6px;
+      margin: 0 4px 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #10283c, #1c4468);
+      color: #f4efe5;
+      box-shadow: 0 24px 48px rgba(10, 31, 47, 0.16);
+    }
+    .trainer-builder-workspace-banner strong {
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-workspace-banner span {
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-builder-canvas-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 4px 16px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 18px 36px rgba(9, 25, 37, 0.06);
+    }
+    .trainer-builder-canvas-toolbar-copy {
+      display: grid;
+      gap: 4px;
+    }
+    .trainer-builder-canvas-toolbar-copy strong {
+      color: #10283c;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .trainer-builder-canvas-toolbar-copy span {
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-builder-canvas-toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .trainer-builder-preview-canvas {
+      padding: 14px;
+      border-radius: 30px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(110, 195, 255, 0.1), transparent 22%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 247, 250, 0.98));
+      box-shadow: 0 34px 90px rgba(9, 25, 37, 0.1);
+    }
+    .trainer-profile-builder-custom-code {
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      background: #fcf8f1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+    .trainer-builder-browser-chrome {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(16, 36, 52, 0.08);
+      background: linear-gradient(180deg, rgba(244, 239, 231, 0.98), rgba(251, 249, 245, 0.98));
+    }
+    .trainer-builder-browser-dots {
+      display: inline-flex;
+      gap: 6px;
+    }
+    .trainer-builder-browser-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(16, 36, 52, 0.18);
+    }
+    .trainer-builder-browser-url {
+      min-width: 0;
+      padding: 0.55rem 0.82rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      color: rgba(16, 36, 52, 0.6);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .trainer-profile-builder-custom-code.is-editor-preview iframe {
+      border-radius: 20px;
+      box-shadow: 0 24px 54px rgba(9, 25, 37, 0.08);
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-nav {
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 12px);
+      z-index: 8;
+      padding: 14px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 36px rgba(9, 25, 37, 0.08);
+    }
+    body.trainer-builder-public-page .trainer-profile-chip {
+      text-decoration: none;
+    }
+    .trainer-qualification-overlay {
+      padding: 24px;
+      background: rgba(6, 14, 22, 0.52);
+      backdrop-filter: blur(18px);
+    }
+    .trainer-qualification-modal {
+      width: min(100%, 1120px);
+      border-radius: 34px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background:
+        radial-gradient(circle at top left, rgba(113, 173, 255, 0.18), transparent 28%),
+        linear-gradient(135deg, rgba(253, 251, 248, 0.98), rgba(245, 248, 251, 0.98));
+      box-shadow: 0 40px 110px rgba(2, 8, 15, 0.32);
+    }
+    .trainer-qualification-shell {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    }
+    .trainer-qualification-aside {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      padding: 32px 28px;
+      background: linear-gradient(160deg, #10283c, #173b5a 55%, #21567e);
+      color: #f4efe5;
+    }
+    .trainer-qualification-aside .trainer-qualification-step {
+      color: rgba(244, 239, 229, 0.68);
+    }
+    .trainer-qualification-aside h2 {
+      margin: 0;
+      color: #fffaf2;
+      font-size: clamp(2rem, 3vw, 2.7rem);
+      font-weight: 900;
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+    }
+    .trainer-qualification-aside .trainer-qualification-sub {
+      color: rgba(244, 239, 229, 0.78);
+      font-size: 0.98rem;
+      line-height: 1.65;
+    }
+    .trainer-qualification-dot-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .trainer-qualification-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(244, 239, 229, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(244, 239, 229, 0.12);
+    }
+    .trainer-qualification-dot.is-current {
+      background: #ffd283;
+      transform: scale(1.16);
+    }
+    .trainer-qualification-dot.is-complete {
+      background: rgba(255, 255, 255, 0.78);
+    }
+    .trainer-qualification-aside-meta {
+      display: grid;
+      gap: 10px;
+    }
+    .trainer-qualification-aside-meta div {
+      display: grid;
+      gap: 3px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .trainer-qualification-aside-meta strong {
+      color: rgba(244, 239, 229, 0.68);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-aside-meta span {
+      color: #fffaf2;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .trainer-qualification-trust {
+      display: grid;
+      gap: 10px;
+      color: rgba(244, 239, 229, 0.78);
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .trainer-qualification-main {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      padding: 32px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.85));
+    }
+    .trainer-qualification-progress {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(16, 36, 52, 0.08);
+      overflow: hidden;
+    }
+    .trainer-qualification-progress span {
+      background: linear-gradient(90deg, #10283c, #2d6a95, #edb55e);
+    }
+    .trainer-qualification-question {
+      display: grid;
+      gap: 14px;
+      padding: 26px;
+      border-radius: 28px;
+      border: 1px solid rgba(10, 31, 47, 0.08);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 24px 56px rgba(9, 25, 37, 0.06);
+    }
+    .trainer-qualification-label {
+      color: #0d2232;
+      font-size: clamp(1.45rem, 2vw, 1.85rem);
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+    }
+    .trainer-qualification-helper {
+      color: rgba(13, 34, 50, 0.68);
+      font-size: 0.94rem;
+      font-weight: 700;
+      line-height: 1.58;
+    }
+    .trainer-qualification-answer-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 36px;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(16, 40, 60, 0.06);
+      color: rgba(16, 36, 52, 0.72);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-option-grid {
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .trainer-qualification-option {
+      min-height: 72px;
+      padding: 18px 18px 18px 44px;
+      border-radius: 22px;
+      border: 1px solid rgba(10, 31, 47, 0.1);
+      background: rgba(248, 250, 253, 0.9);
+      box-shadow: 0 16px 34px rgba(9, 25, 37, 0.04);
+    }
+    .trainer-qualification-option.is-selected {
+      border-color: rgba(16, 40, 60, 0.18);
+      background: linear-gradient(180deg, rgba(16, 40, 60, 0.08), rgba(234, 242, 248, 0.96));
+    }
+    .trainer-qualification-field input {
+      min-height: 56px;
+      border-radius: 18px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .trainer-qualification-contact-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .trainer-qualification-actions {
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .trainer-qualification-btn {
+      min-width: 150px;
+      min-height: 54px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .trainer-qualification-btn.primary {
+      background: linear-gradient(135deg, #10283c, #173b5a);
+      box-shadow: 0 18px 36px rgba(10, 31, 47, 0.16);
+    }
+    body.trainer-builder-public-page .trainer-profile-shell {
+      width: min(100%, 1240px);
+      gap: 20px;
+    }
+    body.trainer-builder-public-page .trainer-builder-public-shell {
+      gap: 14px;
+    }
+    body.trainer-builder-public-page .trainer-builder-public-frame {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code.is-public-site {
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-custom-code.is-public-site iframe {
+      min-height: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.trainer-builder-public-page .trainer-builder-browser-chrome {
+      display: none;
+    }
+    body.trainer-public-standalone-route .navbar,
+    body.trainer-public-standalone-route .control-panel,
+    body.trainer-public-standalone-route #trainer-profile-status {
+      display: none !important;
+    }
+    body.trainer-public-standalone-route.trainer-profile-page {
+      background: #ffffff;
+      margin: 0;
+      padding-top: 0 !important;
+      padding-left: 0 !important;
+    }
+    body.trainer-public-standalone-route .trainer-profile-main {
+      margin-left: 0;
+      padding: 0 !important;
+      min-height: 100vh;
+      display: block;
+    }
+    body.trainer-public-standalone-route .trainer-profile-shell {
+      width: 100%;
+      max-width: none;
+      display: block;
+      gap: 0;
+    }
+    body.trainer-public-standalone-route #trainer-profile-hero,
+    body.trainer-public-standalone-route #trainer-profile-content {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body.trainer-public-standalone-route .trainer-profile-top-actions {
+      position: fixed;
+      top: 12px;
+      left: 24px;
+      right: 24px;
+      z-index: 40;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      height: 0;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      pointer-events: none;
+    }
+    body.trainer-public-standalone-route .trainer-profile-top-actions > * {
+      pointer-events: auto;
+    }
+    body.trainer-public-standalone-route .trainer-profile-back {
+      display: none !important;
+    }
+    body.trainer-public-standalone-route .trainer-profile-share-wrap.is-hidden {
+      display: none !important;
+    }
+    body.trainer-public-standalone-route.trainer-public-standalone-editing .trainer-profile-share-wrap {
+      margin-left: auto;
+    }
+    body.trainer-public-standalone-route .trainer-builder-public-shell {
+      gap: 0;
+    }
+    body.trainer-public-standalone-route .trainer-builder-public-shell-unavailable {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      background:
+        radial-gradient(circle at top left, rgba(110, 195, 255, 0.14), transparent 26%),
+        radial-gradient(circle at top right, rgba(255, 207, 118, 0.13), transparent 24%),
+        #f7f4ee;
+    }
+    body.trainer-public-standalone-route .trainer-builder-public-shell-unavailable .trainer-builder-public-frame {
+      width: min(100%, 760px);
+    }
+    body.trainer-public-standalone-route .trainer-builder-public-main {
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.trainer-public-standalone-route .trainer-builder-public-frame {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.trainer-public-standalone-route .trainer-builder-browser-chrome {
+      display: none;
+    }
+    body.trainer-public-standalone-route .trainer-profile-card.trainer-profile-builder-custom-code,
+    body.trainer-public-standalone-route .trainer-profile-builder-custom-code.is-public-site,
+    body.trainer-public-standalone-route .trainer-profile-builder-custom-code.is-editor-preview {
+      width: 100%;
+      max-width: none;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      border-radius: 0;
+      border: 0;
+      background: #ffffff;
+      box-shadow: none;
+    }
+    body.trainer-public-standalone-route .trainer-profile-builder-custom-code.is-public-site iframe,
+    body.trainer-public-standalone-route .trainer-profile-builder-custom-code.is-editor-preview iframe {
+      display: block;
+      width: 100%;
+      min-height: 100vh !important;
+      border: 0;
+      border-radius: 0;
+      background: #ffffff;
+      box-shadow: none;
+    }
+    .trainer-builder-setup-shell {
+      position: relative;
+      width: 100%;
+      min-height: calc(100vh - 120px);
+      margin: 0 auto;
+      display: block;
+      padding: 0 0 180px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .trainer-builder-setup-preview {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: #ffffff;
+    }
+    .trainer-builder-setup-preview iframe {
+      width: 100%;
+      min-height: 100%;
+      height: 100%;
+      border: 0;
+      background: #ffffff;
+    }
+    .trainer-builder-setup-preview.is-mobile {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 0 16px;
+      background: linear-gradient(180deg, #eef3fb 0%, #ffffff 24%);
+    }
+    .trainer-builder-setup-preview.is-mobile iframe {
+      width: min(430px, 100%);
+      max-width: 100%;
+      border-radius: 28px 28px 0 0;
+      box-shadow: 0 30px 70px rgba(9, 25, 37, 0.18);
+    }
+    .trainer-standalone-inspector {
+      position: fixed;
+      left: 24px;
+      right: auto;
+      bottom: 196px;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      box-shadow: 0 18px 36px rgba(9, 25, 37, 0.16);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+    }
+    .trainer-standalone-inspector.is-active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .trainer-standalone-inspector input,
+    .trainer-standalone-inspector select {
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: #ffffff;
+      color: #111827;
+      padding: 0 12px;
+      font: 600 0.9rem/1 system-ui, sans-serif;
+    }
+    .trainer-standalone-inspector input[type="text"] {
+      width: 200px;
+    }
+    .trainer-standalone-inspector input[type="color"] {
+      width: 42px;
+      padding: 4px;
+    }
+    @media (max-width: 767px) {
+      body.trainer-public-standalone-route .trainer-profile-top-actions {
+        top: auto;
+        left: 12px;
+        right: auto;
+        bottom: 12px;
+        justify-content: flex-start;
+        align-items: flex-end;
+        height: auto;
+        min-height: 44px;
+        z-index: 45;
+      }
+      .trainer-standalone-inspector {
+        left: 12px;
+        right: 12px;
+        bottom: 188px;
+        gap: 6px;
+        padding: 8px 10px;
+      }
+      .trainer-standalone-inspector #trainer-standalone-text,
+      .trainer-standalone-inspector #trainer-standalone-weight,
+      .trainer-standalone-inspector #trainer-standalone-style {
+        display: none !important;
+      }
+      .trainer-standalone-inspector input[type="text"] {
+        width: 96px;
+      }
+      .trainer-standalone-inspector input,
+      .trainer-standalone-inspector select {
+        min-width: 0;
+        flex: 1 1 0;
+      }
+      .trainer-standalone-inspector input[type="color"] {
+        flex: 0 0 42px;
+      }
+    }
+    .trainer-builder-setup-input {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 44;
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      padding: 0 18px 18px;
+    }
+    .trainer-builder-setup-input-head {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .trainer-builder-setup-input-head .trainer-profile-edit-toggle,
+    .trainer-builder-setup-input-head .trainer-profile-edit-secondary {
+      pointer-events: auto;
+    }
+    .trainer-builder-setup-input-head .trainer-profile-edit-toggle[disabled],
+    .trainer-builder-setup-input-head .trainer-profile-edit-toggle[data-loading="1"] {
+      opacity: 0.88;
+      cursor: progress;
+      transform: none;
+    }
+    .trainer-builder-setup-input textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 22px 24px;
+      border-radius: 22px 22px 0 0;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      background: rgba(255, 255, 255, 0.94);
+      color: #111827;
+      font: 500 1rem/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+      box-shadow: 0 -12px 36px rgba(9, 25, 37, 0.18);
+      backdrop-filter: blur(10px);
+      outline: none;
+    }
+    .trainer-builder-setup-input textarea:focus {
+      border-color: rgba(16, 40, 60, 0.22);
+      box-shadow: 0 28px 56px rgba(9, 25, 37, 0.12);
+    }
+    .trainer-builder-standalone-notice {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 46;
+      min-width: 240px;
+      max-width: min(90vw, 420px);
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(16, 40, 60, 0.08);
+      border: 1px solid rgba(16, 40, 60, 0.12);
+      color: #10283c;
+      font-size: 0.95rem;
+      font-weight: 700;
+      box-shadow: 0 18px 36px rgba(9, 25, 37, 0.14);
+      backdrop-filter: blur(10px);
+    }
+    .trainer-builder-standalone-notice.is-auto-hide {
+      animation: trainer-standalone-toast-fade 2.2s ease forwards;
+    }
+    .trainer-builder-standalone-notice.is-success {
+      background: rgba(237, 248, 241, 0.96);
+      border-color: rgba(38, 133, 78, 0.18);
+      color: #14532d;
+    }
+    .trainer-builder-standalone-notice.is-error {
+      background: rgba(255, 241, 241, 0.98);
+      border-color: rgba(185, 58, 58, 0.18);
+      color: #9b2f2f;
+    }
+    @keyframes trainer-standalone-toast-fade {
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+      }
+      12%,
+      72% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+      }
+    }
+    .trainer-builder-unavailable-plain {
+      min-height: calc(100vh - 120px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: rgba(16, 36, 52, 0.62);
+      font-size: 1rem;
+      font-weight: 700;
+      background: transparent;
+      box-shadow: none;
+      border: 0;
+    }
+    .trainer-standalone-public-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      background: #ffffff;
+    }
+    .trainer-standalone-public-name {
+      margin: 0;
+      color: #111111;
+      font-size: clamp(2.4rem, 7vw, 5.8rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      text-align: center;
+    }
+    @media (max-width: 1100px) {
+      .trainer-builder-workspace {
+        grid-template-columns: 1fr;
+      }
+      .trainer-builder-workspace-canvas {
+        order: 1;
+      }
+      .trainer-builder-workspace-rail {
+        order: 2;
+      }
+      .trainer-builder-editor-sticky,
+      body.trainer-builder-public-page .trainer-profile-builder-nav {
+        position: static;
+      }
+      body.trainer-builder-public-page .trainer-profile-main {
+        padding: calc(var(--navbar-height, 72px) + 12px) 16px 30px;
+      }
+      body.trainer-builder-public-page .trainer-profile-shell {
+        width: 100%;
+      }
+      .trainer-qualification-shell {
+        grid-template-columns: 1fr;
+      }
+      .trainer-builder-canvas-toolbar {
+        flex-direction: column;
+        align-items: start;
+      }
+      .trainer-builder-canvas-toolbar-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 720px) {
+      .trainer-builder-preview-canvas,
+      .trainer-qualification-main,
+      .trainer-qualification-aside {
+        padding: 18px;
+      }
+      .trainer-builder-canvas-toolbar {
+        flex-direction: column;
+        align-items: start;
+      }
+      .trainer-builder-workspace-head {
+        align-items: start;
+        flex-direction: column;
+      }
+      .trainer-qualification-option-grid,
+      .trainer-qualification-contact-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-qualification-option {
+        min-height: 64px;
+      }
+      .trainer-builder-code-tabs {
+        gap: 6px;
+      }
+      .trainer-builder-code-tab {
+        flex: 1 1 calc(33.333% - 6px);
+        justify-content: center;
+        text-align: center;
+      }
+      .trainer-builder-code-pane textarea,
+      .trainer-builder-code-pane[data-builder-code-pane="html"] textarea:first-of-type {
+        min-height: 190px;
+      }
+      .trainer-qualification-actions {
+        flex-direction: column-reverse;
+      }
+      .trainer-qualification-btn {
+        width: 100%;
+      }
+    }
+    body.trainer-builder-editor-page,
+    body.trainer-builder-public-page {
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 145, 0.18), transparent 20%),
+        linear-gradient(180deg, #f3ede3 0%, #f7f3ec 28%, #f4f6f8 100%);
+    }
+    body.trainer-builder-editor-page .trainer-profile-main,
+    body.trainer-builder-public-page .trainer-profile-main {
+      padding-top: calc(var(--navbar-height, 72px) + 22px);
+    }
+    body.trainer-builder-editor-page .trainer-profile-shell,
+    body.trainer-builder-public-page .trainer-profile-shell {
+      width: min(100%, 1380px);
+      gap: 18px;
+    }
+    body.trainer-builder-editor-page .trainer-profile-top-actions,
+    body.trainer-builder-public-page .trainer-profile-top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 2px;
+    }
+    body.trainer-builder-editor-page .trainer-profile-status,
+    body.trainer-builder-public-page .trainer-profile-status {
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .trainer-builder-workspace {
+      grid-template-columns: minmax(320px, 370px) minmax(0, 1fr);
+      gap: 26px;
+      align-items: start;
+    }
+    .trainer-builder-editor-sticky {
+      display: grid;
+      gap: 16px;
+      border-radius: 30px;
+      padding: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,249,251,.96)),
+        radial-gradient(circle at top right, rgba(118,185,255,.12), transparent 32%);
+      box-shadow: 0 30px 70px rgba(10,31,47,.12);
+    }
+    .trainer-builder-editor-shortcuts {
+      gap: 6px;
+    }
+    .trainer-builder-editor-shortcuts span {
+      font-size: .67rem;
+      min-height: 32px;
+      padding: .45rem .75rem;
+    }
+    .trainer-builder-editor-panels {
+      display: grid;
+      gap: 0;
+    }
+    .trainer-builder-editor-panels > .trainer-profile-card {
+      padding: 0;
+      border-radius: 24px;
+      border: 1px solid rgba(10,31,47,.08);
+      background: rgba(255,255,255,.78);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+      overflow: hidden;
+    }
+    .trainer-builder-editor-panels > .trainer-profile-card > * {
+      margin-left: 18px;
+      margin-right: 18px;
+    }
+    .trainer-builder-editor-panels > .trainer-profile-card > .trainer-profile-section-kicker {
+      margin-top: 18px;
+    }
+    .trainer-builder-editor-panels > .trainer-profile-card > .trainer-profile-section-title {
+      margin-top: 6px;
+    }
+    .trainer-builder-editor-panels > .trainer-profile-card > .trainer-profile-editor-help {
+      margin-top: 10px;
+      margin-bottom: 18px;
+    }
+    .trainer-builder-workspace-head {
+      margin-bottom: 16px;
+    }
+    .trainer-builder-workspace-head h2 {
+      font-size: clamp(2rem, 2.8vw, 2.8rem);
+    }
+    .trainer-builder-workspace-sub {
+      max-width: 62rem;
+    }
+    .trainer-builder-workspace-banner {
+      border-radius: 22px;
+      background: linear-gradient(135deg, #10283c, #1b4768 62%, #2a6b98);
+      box-shadow: 0 28px 56px rgba(10,31,47,.16);
+    }
+    .trainer-builder-canvas-toolbar {
+      border-radius: 22px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 22px 44px rgba(9,25,37,.07);
+    }
+    .trainer-builder-preview-canvas {
+      padding: 18px;
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at top left, rgba(118,185,255,.12), transparent 22%),
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,247,250,.98));
+      box-shadow: 0 40px 100px rgba(9,25,37,.12);
+    }
+    .trainer-profile-builder-custom-code {
+      border-radius: 28px;
+      border-color: rgba(16,36,52,.08);
+      background: #f7f1e8;
+      box-shadow: 0 24px 50px rgba(9,25,37,.08), inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .trainer-builder-browser-chrome {
+      padding: 16px 18px;
+      background: linear-gradient(180deg, rgba(244,239,231,.98), rgba(251,249,245,.98));
+    }
+    body.trainer-builder-public-page .trainer-builder-public-shell {
+      display: grid;
+      gap: 18px;
+    }
+    body.trainer-builder-public-page .trainer-profile-builder-nav {
+      padding: 10px 14px;
+      border-radius: 999px;
+      width: fit-content;
+      max-width: 100%;
+      background: rgba(255,255,255,.84);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 36px rgba(9,25,37,.08);
+    }
+    body.trainer-builder-public-page .trainer-builder-public-main {
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at top left, rgba(118,185,255,.1), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,247,250,.98));
+      box-shadow: 0 38px 90px rgba(9,25,37,.12);
+      overflow: clip;
+    }
+    body.trainer-builder-public-page .trainer-builder-public-frame {
+      padding: 0;
+    }
+    .trainer-builder-public-main.is-gated::after {
+      background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.48));
+      backdrop-filter: blur(8px);
+    }
+    .trainer-qualification-overlay {
+      padding: 28px;
+      background: rgba(8,14,24,.48);
+      backdrop-filter: blur(18px);
+    }
+    .trainer-qualification-modal {
+      width: min(100%, 1160px);
+      border-radius: 36px;
+      border: 1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(circle at top left, rgba(113,173,255,.14), transparent 26%),
+        linear-gradient(135deg, rgba(253,251,248,.98), rgba(245,248,251,.98));
+      box-shadow: 0 44px 120px rgba(2,8,15,.34);
+    }
+    .trainer-qualification-aside {
+      padding: 34px 30px;
+      gap: 20px;
+      background: linear-gradient(160deg, #0f2130, #173852 58%, #23597e);
+    }
+    .trainer-qualification-main {
+      padding: 34px;
+      gap: 20px;
+    }
+    .trainer-qualification-question {
+      padding: 28px;
+      border-radius: 30px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 28px 60px rgba(9,25,37,.07);
+    }
+    .trainer-qualification-progress {
+      height: 12px;
+      background: rgba(16,36,52,.08);
+    }
+    .trainer-qualification-progress span {
+      background: linear-gradient(90deg, #10283c, #2d6a95, #edb55e);
+    }
+    .trainer-qualification-option-grid {
+      gap: 14px;
+    }
+    .trainer-qualification-option {
+      min-height: 78px;
+      padding: 18px 18px 18px 46px;
+      border-radius: 22px;
+      background: rgba(248,250,253,.96);
+      box-shadow: 0 18px 34px rgba(9,25,37,.05);
+    }
+    .trainer-qualification-field input {
+      min-height: 58px;
+      border-radius: 18px;
+    }
+    .trainer-qualification-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .trainer-qualification-btn {
+      min-height: 56px;
+      min-width: 154px;
+      border-radius: 999px;
+      box-shadow: none;
+    }
+    .trainer-qualification-btn.primary {
+      box-shadow: 0 18px 36px rgba(10,31,47,.16);
+    }
+    @media (max-width: 1100px) {
+      .trainer-builder-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 760px) {
+      body.trainer-builder-editor-page .trainer-profile-shell,
+      body.trainer-builder-public-page .trainer-profile-shell {
+        gap: 14px;
+      }
+      .trainer-builder-editor-sticky,
+      .trainer-builder-preview-canvas,
+      .trainer-qualification-main,
+      .trainer-qualification-aside {
+        padding: 18px;
+      }
+      .trainer-qualification-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trainer-qualification-btn {
+        width: 100%;
+      }
+    }
+    body.trainer-public-standalone-route.trainer-builder-public-page .trainer-profile-main,
+    body.trainer-public-standalone-route.trainer-builder-editor-page .trainer-profile-main {
+      padding-top: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    body.trainer-public-standalone-route.trainer-builder-public-page .trainer-profile-shell,
+    body.trainer-public-standalone-route.trainer-builder-editor-page .trainer-profile-shell {
+      width: 100% !important;
+      max-width: none !important;
+      gap: 0 !important;
+    }
+    body.trainer-public-standalone-route.trainer-builder-public-page .trainer-profile-top-actions,
+    body.trainer-public-standalone-route.trainer-builder-editor-page .trainer-profile-top-actions {
+      width: auto;
+      max-width: none;
+      padding: 0;
+    }
   </style>
 </head>
-<body class="trainer-profile-page" data-require-auth="1">
+<body class="trainer-profile-page">
   <div class="grain"></div>
 
   <svg aria-hidden="true" class="icon-sprite">
@@ -2883,10 +5331,10 @@
         <span></span>
       </button>
       <ul class="nav-menu" id="nav-menu">
-        <li><a href="index.html#resources">Home</a></li>
-        <li><a href="overview.html">Overview</a></li>
-        <li><a href="training.html">Training</a></li>
-        <li><a href="forum.html">FORUM</a></li>
+        <li><a href="/index.html#resources">Home</a></li>
+        <li><a href="/overview.html">Overview</a></li>
+        <li><a href="/training.html">Training</a></li>
+        <li><a href="/forum.html">FORUM</a></li>
       </ul>
       <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
         <span class="theme-icon">&#x1F319;</span>
@@ -2925,27 +5373,28 @@
     </div>
     <div class="control-section">
       <p class="section-label">TRAINING PORTAL</p>
-      <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
-      <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
-      <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+      <a class="control-link" href="/overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
+      <a class="control-link" href="/training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+      <a class="control-link" href="/grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
+      <a class="control-link" id="control-trainer-coaches-link" href="/coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a>
     </div>
     <div class="control-section">
       <p class="section-label">COMMUNITY</p>
-      <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
-      <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
-      <a class="control-link active" href="coaches.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
-      <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
+      <a class="control-link" href="/leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
+      <a class="control-link" href="/friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+      <a class="control-link active" href="/coaches.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
+      <a class="control-link" href="/coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
     </div>
     <div class="control-section hidden" id="control-trainer-section">
       <p class="section-label">TRAINER</p>
-      <a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a>
+      <a class="control-link" id="control-trainer-dashboard-link" href="/trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a>
     </div>
     <div class="control-section hidden" id="control-owner-section">
       <p class="section-label">OWNER</p>
-      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
-      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
-      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
-      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <a class="control-link" id="control-workout-db-link" href="/workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="/owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="/owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="/owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
       <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
     </div>
   </aside>
@@ -2953,7 +5402,7 @@
   <main class="trainer-profile-main">
     <div class="trainer-profile-shell">
       <div class="trainer-profile-top-actions">
-        <a class="trainer-profile-back" href="coaches.html">Back to coaches</a>
+        <a class="trainer-profile-back" href="/coaches.html">Back to coaches</a>
         <div class="trainer-profile-share-wrap">
           <button type="button" class="trainer-profile-share-toggle" id="trainer-profile-share-toggle">Share coach</button>
           <div class="trainer-profile-share-actions" id="trainer-profile-share-actions">
@@ -2970,23 +5419,8 @@
     </div>
   </main>
 
-  <div id="trainer-profile-editor-backdrop" class="trainer-profile-editor-backdrop is-hidden" hidden>
-    <div class="trainer-profile-editor-modal" role="dialog" aria-modal="true" aria-labelledby="trainer-profile-editor-title">
-      <div class="trainer-profile-editor-head">
-        <div id="trainer-profile-editor-title" class="trainer-profile-editor-title">Edit page</div>
-        <div id="trainer-profile-editor-subtitle" class="trainer-profile-editor-subtitle"></div>
-      </div>
-      <div id="trainer-profile-editor-body" class="trainer-profile-editor-body"></div>
-      <div id="trainer-profile-editor-error" class="trainer-profile-editor-error"></div>
-      <div class="trainer-profile-editor-actions">
-        <button type="button" class="trainer-profile-editor-btn" id="trainer-profile-editor-cancel">Cancel</button>
-        <button type="button" class="trainer-profile-editor-btn primary" id="trainer-profile-editor-apply">Apply changes</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/main.js?v=2026-03-29-owner-demo-42"></script>
-  <script src="js/avatar-cropper.js"></script>
-  <script src="js/trainer-profile.js?v=2026-03-29-trainer-profile-62"></script>
+  <script src="/js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
+  <script src="/js/avatar-cropper.js"></script>
+  <script src="/js/trainer-profile.js?v=2026-07-06-trainer-profile-slug-guard-1"></script>
 </body>
 </html>

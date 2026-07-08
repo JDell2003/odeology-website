@@ -84,3 +84,12 @@ test('shared payload builder carries military through existing fields', () => {
   assert.match(source, /lowerMovement/);
   assert.match(source, /hingeMovement/);
 });
+
+test('training summary uses resolved preferred days and no mojibake placeholder', () => {
+  const source = readTrainingSource();
+  assert.match(source, /preferredDaysResolved/);
+  assert.match(source, /resolvedPreferredDays = Array\.isArray\(plan\?\.schedule\)/);
+  assert.doesNotMatch(source, /Discipline', v: discipline \|\| 'â€”'/);
+  assert.doesNotMatch(source, /Skill level', v: experience \|\| 'â€”'/);
+  assert.doesNotMatch(source, /Sleep', v: .*'â€”'/);
+});

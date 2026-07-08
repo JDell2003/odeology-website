@@ -5,6 +5,17 @@
   const MANAGER_DIRECTORY_KEY = 'ode_manager_directory_v1';
   const TEST_MANAGER_DIRECTORY_KEY = 'ode_test_manager_directory_v1';
   const TEST_WORKSPACE_DIRECTORY_KEY = 'ode_test_workspace_directory_v1';
+  const LEAD_STAGES = [
+    'New Lead',
+    'Contacted',
+    'Qualified',
+    'Appointment Booked',
+    'Showed',
+    'Offer Sent',
+    'Won',
+    'Lost',
+    'Waitlist'
+  ];
   const DEFAULT_WORKSPACE_DIRECTORY = [
     {
       id: 'ws-max-fitness-augusta',
@@ -1068,6 +1079,238 @@
     `;
   }
 
+  function normalizeLeadStage(raw) {
+    const stage = String(raw || '').trim();
+    return LEAD_STAGES.includes(stage) ? stage : 'New Lead';
+  }
+
+  function matchLeadTag(lead, tagFilter = '') {
+    const filter = normalizeLookupText(tagFilter);
+    if (!filter) return true;
+    const tags = Array.isArray(lead?.tags) ? lead.tags : [];
+    return tags.some((tag) => normalizeLookupText(tag).includes(filter));
+  }
+
+  function leadAnswerLabel(rawKey = '') {
+    const key = String(rawKey || '').trim();
+    if (!key) return '';
+    return key
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function normalizeLeadAnswerValue(rawValue) {
+    if (Array.isArray(rawValue)) {
+      return rawValue
+        .map((entry) => String(entry || '').trim())
+        .filter(Boolean)
+        .join(', ');
+    }
+    if (rawValue && typeof rawValue === 'object') {
+      try {
+        return JSON.stringify(rawValue);
+      } catch {
+        return '';
+      }
+    }
+    return String(rawValue || '').trim();
+  }
+
+  function renderLeadCustomAnswers(answers = {}) {
+    const hiddenKeys = new Set([
+      'name',
+      'fullName',
+      'full_name',
+      'email',
+      'phone',
+      'goal',
+      'budget',
+      'location',
+      'coachingType',
+      'coaching_type',
+      'availability',
+      'injuries'
+    ]);
+    const rows = Object.entries(answers || {})
+      .filter(([key, value]) => !hiddenKeys.has(String(key || '').trim()) && normalizeLeadAnswerValue(value))
+      .map(([key, value]) => ({
+        label: leadAnswerLabel(key),
+        value: normalizeLeadAnswerValue(value)
+      }));
+    if (!rows.length) return '<div class="account-trainer-muted">No extra custom answers on this submission.</div>';
+    return `
+      <div class="trainer-dashboard-plus-grid" data-lead-custom-answers="1">
+        ${rows.map((row) => `
+          <div>
+            <strong>${escapeHtml(row.label || 'Answer')}</strong>
+            <div class="account-trainer-muted">${escapeHtml(row.value || '—')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderLeadUploadDetails(uploads = []) {
+    const items = [];
+    (Array.isArray(uploads) ? uploads : []).forEach((entry) => {
+      const groupKey = leadAnswerLabel(entry?.key || entry?.field || entry?.name || 'Upload');
+      (Array.isArray(entry?.files) ? entry.files : []).forEach((file) => {
+        const fileName = String(file?.name || 'upload').trim() || 'upload';
+        const fileType = String(file?.type || '').trim();
+        items.push({
+          groupKey,
+          fileName,
+          fileType
+        });
+      });
+    });
+    if (!items.length) return '<div class="account-trainer-muted">No files uploaded on this submission.</div>';
+    return `
+      <div class="account-trainer-list account-trainer-list-compact" data-lead-upload-list="1">
+        ${items.map((item) => `
+          <div class="account-trainer-list-item">
+            <strong>${escapeHtml(item.groupKey || 'Upload')}</strong>
+            <div class="account-trainer-muted">${escapeHtml(item.fileName || 'upload')}</div>
+            <div class="account-trainer-muted">${escapeHtml(item.fileType || 'File')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function formatLeadEventSummary(event = {}) {
+    const details = event && typeof event.details === 'object' && event.details
+      ? event.details
+      : {};
+    const tags = Array.isArray(details.tags) ? details.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [];
+    const notifications = Array.isArray(details.notifications) ? details.notifications.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    const emails = Array.isArray(details.emails) ? details.emails.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    const webhooks = Array.isArray(details.webhooks) ? details.webhooks.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    const delays = Array.isArray(details.delays) ? details.delays.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    const integrations = Array.isArray(details.integrations) ? details.integrations : [];
+
+    if (String(details.notes || '').trim()) return String(details.notes).trim();
+    if (String(details.status || '').trim()) return `Stage: ${String(details.status).trim()}`;
+    if (tags.length) return `Tags: ${tags.join(', ')}`;
+    if (String(details.offer || '').trim()) return `Offer: ${String(details.offer).trim()}`;
+    if (String(details.target || '').trim()) return `Target: ${String(details.target).trim()}`;
+    if (String(details.formId || '').trim()) return `Form: ${String(details.formId).trim()}`;
+    if (notifications.length) return `Notify trainer: ${notifications.join(', ')}`;
+    if (emails.length) return `Email: ${emails.join(', ')}`;
+    if (webhooks.length) return `Webhook: ${webhooks.join(', ')}`;
+    if (delays.length) return `Delay: ${delays.join(', ')}`;
+    if (integrations.length) {
+      return integrations.map((item) => {
+        const type = String(item?.type || 'integration').trim();
+        const target = String(item?.target || '').trim();
+        return target ? `${type}: ${target}` : type;
+      }).join(', ');
+    }
+    return 'Lead activity recorded.';
+  }
+
+  function renderPotentialLeads(leads, ui = {}) {
+    const search = normalizeLookupText(ui?.search || '');
+    const stageFilter = String(ui?.stage || '').trim();
+    const tagFilter = String(ui?.tag || '').trim();
+    const filtered = (Array.isArray(leads) ? leads : []).filter((lead) => {
+      const haystack = [
+        lead?.fullName,
+        lead?.email,
+        lead?.phone,
+        lead?.goal,
+        lead?.location,
+        lead?.coachingType,
+        lead?.sourcePageName
+      ].map(normalizeLookupText).join(' ');
+      if (search && !haystack.includes(search)) return false;
+      if (stageFilter && normalizeLeadStage(lead?.status) !== stageFilter) return false;
+      if (!matchLeadTag(lead, tagFilter)) return false;
+      return true;
+    });
+    return `
+      <div class="trainer-dashboard-manager-tools" style="margin-bottom:16px;">
+        <input id="trainer-leads-search" type="text" placeholder="Search leads" value="${escapeHtml(String(ui?.search || '').trim())}">
+        <select id="trainer-leads-stage-filter">
+          <option value="">All stages</option>
+          ${LEAD_STAGES.map((stage) => `<option value="${escapeHtml(stage)}"${stageFilter === stage ? ' selected' : ''}>${escapeHtml(stage)}</option>`).join('')}
+        </select>
+        <input id="trainer-leads-tag-filter" type="text" placeholder="Filter by tag" value="${escapeHtml(tagFilter)}">
+      </div>
+      ${filtered.length ? filtered.map((lead) => {
+        const tags = Array.isArray(lead?.tags) ? lead.tags : [];
+        const answers = lead?.answers && typeof lead.answers === 'object' ? lead.answers : {};
+        const recentEvents = Array.isArray(lead?.recentEvents) ? lead.recentEvents : [];
+        const uploads = Array.isArray(lead?.uploads) ? lead.uploads : [];
+        const uploadCount = uploads.reduce((count, entry) => count + (Array.isArray(entry?.files) ? entry.files.length : 0), 0);
+        return `
+          <article class="account-trainer-roster-card" data-lead-id="${escapeHtml(String(lead?.id || '').trim())}">
+            <div class="account-trainer-roster-top">
+              <div>
+                <strong>${escapeHtml(String(lead?.fullName || 'Unnamed lead').trim() || 'Unnamed lead')}</strong>
+                <div class="account-trainer-muted">${escapeHtml(String(lead?.email || '').trim() || 'No email')}${lead?.phone ? ` • ${escapeHtml(String(lead.phone).trim())}` : ''}</div>
+              </div>
+              <span class="account-trainer-roster-pill amount">${escapeHtml(normalizeLeadStage(lead?.status))}</span>
+            </div>
+            <div class="account-trainer-muted">${escapeHtml(String(lead?.sourcePageName || 'Coach page').trim() || 'Coach page')} • ${escapeHtml(formatShortDate(lead?.createdAt) || 'Recently')}</div>
+            <div class="trainer-profile-chip-row trainer-profile-detail-chip-row trainer-profile-simple-chips" style="margin:10px 0;">
+              ${tags.length ? tags.map((tag) => `<span class="trainer-profile-chip soft">${escapeHtml(tag)}</span>`).join('') : '<span class="trainer-profile-chip soft">No tags</span>'}
+            </div>
+            <div class="trainer-dashboard-plus-grid" style="margin-top:10px;">
+              <div><strong>Goal</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.goal || answers.goal || '').trim() || '—')}</div></div>
+              <div><strong>Budget</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.budget || answers.budget || '').trim() || '—')}</div></div>
+              <div><strong>Location</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.location || answers.location || '').trim() || '—')}</div></div>
+              <div><strong>Coaching</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.coachingType || answers.coachingType || '').trim() || '—')}</div></div>
+            </div>
+            <div class="trainer-dashboard-plus-grid" style="margin-top:10px;">
+              <div><strong>Availability</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.availability || answers.availability || '').trim() || '—')}</div></div>
+              <div><strong>Injuries</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.injuries || answers.injuries || '').trim() || '—')}</div></div>
+              <div><strong>Uploads</strong><div class="account-trainer-muted">${escapeHtml(String(uploadCount || 0))}</div></div>
+              <div><strong>Form</strong><div class="account-trainer-muted">${escapeHtml(String(lead?.formId || '').trim() || 'Default form')}</div></div>
+            </div>
+            <div class="trainer-dashboard-manager-card" style="margin-top:14px;padding:14px 16px;">
+              <div class="trainer-dashboard-manager-kicker">Custom answers</div>
+              ${renderLeadCustomAnswers(answers)}
+            </div>
+            <div class="trainer-dashboard-manager-card" style="margin-top:14px;padding:14px 16px;">
+              <div class="trainer-dashboard-manager-kicker">Uploaded files</div>
+              ${renderLeadUploadDetails(uploads)}
+            </div>
+            <div class="trainer-dashboard-manager-card" style="margin-top:14px;padding:14px 16px;">
+              <div class="trainer-dashboard-manager-kicker">Submission history</div>
+              ${recentEvents.length ? `
+                <div class="account-trainer-list account-trainer-list-compact" data-lead-history="1">
+                  ${recentEvents.map((event) => `
+                    <div class="account-trainer-list-item">
+                      <strong>${escapeHtml(String(event?.eventType || 'event').trim() || 'event')}</strong>
+                      <div class="account-trainer-muted">${escapeHtml(formatShortDate(event?.createdAt) || 'Recently')}</div>
+                      <div class="account-trainer-muted">${escapeHtml(formatLeadEventSummary(event))}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div class="account-trainer-muted">No activity yet beyond the current submission.</div>'}
+            </div>
+            <div class="trainer-dashboard-manager-tools" style="margin-top:14px;">
+              <select data-lead-stage="${escapeHtml(String(lead?.id || '').trim())}">
+                ${LEAD_STAGES.map((stage) => `<option value="${escapeHtml(stage)}"${normalizeLeadStage(lead?.status) === stage ? ' selected' : ''}>${escapeHtml(stage)}</option>`).join('')}
+              </select>
+              <input type="text" data-lead-tags="${escapeHtml(String(lead?.id || '').trim())}" value="${escapeHtml(tags.join(', '))}" placeholder="Tags, comma separated">
+            </div>
+            <label class="trainer-profile-editor-field" style="margin-top:12px;">
+              <span>Notes</span>
+              <textarea data-lead-notes="${escapeHtml(String(lead?.id || '').trim())}" placeholder="Notes">${escapeHtml(String(lead?.notes || '').trim())}</textarea>
+            </label>
+            <div class="trainer-dashboard-plus-actions">
+              <button type="button" class="trainer-dashboard-plus-submit" data-lead-save="${escapeHtml(String(lead?.id || '').trim())}">Save lead</button>
+            </div>
+          </article>
+        `;
+      }).join('') : renderEmpty('No potential clients match these filters.')}
+    `;
+  }
+
   function renderTrainerDashboard(data) {
     const managerContext = getManagerDashboardContext();
     const trainer = data?.trainer || {};
@@ -1077,12 +1320,14 @@
     const pendingWorkoutApprovals = Array.isArray(growth?.pendingWorkoutApprovals) ? growth.pendingWorkoutApprovals : [];
     const trainingRequests = Array.isArray(data?.trainingRequests) ? data.trainingRequests : [];
     const incomingManagerRequests = getIncomingManagerRequests(data?.trainerManagerReviews);
+    const leads = Array.isArray(data?.pageLeads) ? data.pageLeads : [];
     const feedItems = buildClientActionFeed(trainingRequests, clientActions, clientRoster, pendingWorkoutApprovals);
     const currentCount = clientRoster.length;
     const pendingCount = trainingRequests.length;
     const workoutApproveCount = pendingWorkoutApprovals.length;
     const actionsCount = feedItems.length;
     const requestsCount = incomingManagerRequests.length;
+    const potentialCount = leads.length;
 
     if (!managerContext.isManager && !data?.isTrainer && !trainer?.onboarded) {
       return `
@@ -1104,6 +1349,7 @@
           <button type="button" class="account-trainer-pill${pendingCount > 0 ? ' has-alert' : ''}" data-clients-view="pending" aria-pressed="false">Pending <span>${pendingCount}</span></button>
           <button type="button" class="account-trainer-pill${workoutApproveCount > 0 ? ' has-alert' : ''}" data-clients-view="workout-approve" aria-pressed="false">Workout Approve <span>${workoutApproveCount}</span></button>
           <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false">Actions <span>${actionsCount}</span></button>
+          <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="potential-clients" aria-pressed="false">Potential Clients <span>${potentialCount}</span></button>
           <button type="button" class="account-trainer-pill${requestsCount > 0 ? ' has-alert' : ''}" data-clients-view="requests" aria-pressed="false">Requests <span>${requestsCount}</span></button>
         </div>
         <section class="account-trainer-panel" data-clients-panel="current">
@@ -1125,6 +1371,11 @@
           <h3>Actions</h3>
           <div class="account-trainer-muted">Newest client work, approvals, and follow-ups land here in one chronological feed.</div>
           ${renderTrainerActionFeed(feedItems)}
+        </section>
+        <section class="account-trainer-panel" data-clients-panel="potential-clients">
+          <h3>Potential Clients</h3>
+          <div class="account-trainer-muted">Public trainer page leads land here and stay scoped to your account only.</div>
+          ${renderPotentialLeads(leads, data?.leadUi || {})}
         </section>
         <section class="account-trainer-panel" data-clients-panel="requests">
           <h3>Requests</h3>
@@ -1195,6 +1446,9 @@
     let managerSwitchLocationId = '';
     let managerReviewPollTimer = null;
     let lastIncomingManagerRequestCount = 0;
+    let leadSearchTerm = '';
+    let leadStageFilter = '';
+    let leadTagFilter = '';
 
     const isStripeReady = () => String(currentData?.growth?.stripe?.state || '').trim() === 'ready';
     const hasPendingManagerReview = () => Array.isArray(currentData?.trainerManagerReviews)
@@ -1506,6 +1760,14 @@
     const renderDashboardShell = () => {
       if (managerHost) managerHost.innerHTML = renderTrainerManagerCard(currentData);
       shell.innerHTML = renderTrainerDashboard(currentData);
+      const requestedTab = String(pageParams.get('tab') || '').trim();
+      if (requestedTab) {
+        shell.querySelectorAll('[data-clients-view]').forEach((button) => {
+          const matches = String(button.getAttribute('data-clients-view') || '').trim() === requestedTab;
+          button.classList.toggle('active', matches);
+          button.setAttribute('aria-pressed', matches ? 'true' : 'false');
+        });
+      }
       syncClientsPanels();
       bindTrainerPageChooser(meUser, currentData);
       fillInvitePanel();
@@ -1602,11 +1864,12 @@
     };
 
     const loadDashboard = async () => {
-      const [dashboardResp, managerDirResp, managerReviewsResp, workspaceResp] = await Promise.all([
+      const [dashboardResp, managerDirResp, managerReviewsResp, workspaceResp, leadsResp] = await Promise.all([
         api('/api/auth/trainer/dashboard'),
         api('/api/auth/trainer/manager-directory'),
         api('/api/auth/trainer/manager-review-requests'),
-        api('/api/auth/workspace-requests/public')
+        api('/api/auth/workspace-requests/public'),
+        api('/api/auth/trainer/leads')
       ]);
       if (!dashboardResp.ok || !dashboardResp.json?.ok) {
         const managerContext = getManagerDashboardContext();
@@ -1629,6 +1892,12 @@
         Array.isArray(workspaceResp?.json?.workspaces) ? workspaceResp.json.workspaces : [],
         Array.isArray(workspaceResp?.json?.locationRequests) ? workspaceResp.json.locationRequests : []
       );
+      currentData.pageLeads = Array.isArray(leadsResp?.json?.leads) ? leadsResp.json.leads : [];
+      currentData.leadUi = {
+        search: leadSearchTerm,
+        stage: leadStageFilter,
+        tag: leadTagFilter
+      };
       currentData.managerSearchTerm = managerSearchTerm;
       const stripeError = String(pageParams.get('stripe_error') || '').trim();
       setStatus(stripeError || (currentData?.isTrainer
@@ -1752,6 +2021,37 @@
         clientViewBtn.classList.toggle('active', nextActive);
         clientViewBtn.setAttribute('aria-pressed', nextActive ? 'true' : 'false');
         syncClientsPanels();
+        return;
+      }
+      const leadSaveBtn = target.closest('[data-lead-save]');
+      if (leadSaveBtn instanceof Element) {
+        const leadId = String(leadSaveBtn.getAttribute('data-lead-save') || '').trim();
+        if (!leadId) return;
+        const stageValue = String(shell.querySelector(`[data-lead-stage="${leadId}"]`)?.value || '').trim();
+        const noteValue = String(shell.querySelector(`[data-lead-notes="${leadId}"]`)?.value || '').trim();
+        const tagsValue = String(shell.querySelector(`[data-lead-tags="${leadId}"]`)?.value || '').trim();
+        setStatus('Saving lead...');
+        const resp = await api('/api/auth/trainer/lead', {
+          method: 'POST',
+          body: JSON.stringify({
+            leadId,
+            status: stageValue,
+            notes: noteValue,
+            tags: tagsValue.split(',').map((item) => String(item || '').trim()).filter(Boolean)
+          })
+        });
+        if (!resp.ok || !resp.json?.ok) {
+          setStatus(resp.json?.error || 'Could not save lead.');
+          return;
+        }
+        currentData.pageLeads = (Array.isArray(currentData.pageLeads) ? currentData.pageLeads : []).map((lead) => (
+          String(lead?.id || '').trim() === leadId
+            ? { ...lead, ...resp.json.lead }
+            : lead
+        ));
+        currentData.leadUi = { search: leadSearchTerm, stage: leadStageFilter, tag: leadTagFilter };
+        renderDashboardShell();
+        setStatus('Lead updated.');
         return;
       }
       const clientAccountTrigger = target.closest('[data-view-client-account]');
@@ -1923,6 +2223,33 @@
         } catch {
           setStatus('Could not copy referral link.');
         }
+      }
+    });
+
+    shell.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.id === 'trainer-leads-search') {
+        leadSearchTerm = String(target.value || '').trim();
+      }
+      if (target.id === 'trainer-leads-tag-filter') {
+        leadTagFilter = String(target.value || '').trim();
+      }
+      if (target.id === 'trainer-leads-stage-filter') {
+        leadStageFilter = String(target.value || '').trim();
+      }
+      if (!['trainer-leads-search', 'trainer-leads-tag-filter', 'trainer-leads-stage-filter'].includes(target.id)) return;
+      currentData.leadUi = { search: leadSearchTerm, stage: leadStageFilter, tag: leadTagFilter };
+      renderDashboardShell();
+    });
+
+    shell.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.id === 'trainer-leads-stage-filter') {
+        leadStageFilter = String(target.value || '').trim();
+        currentData.leadUi = { search: leadSearchTerm, stage: leadStageFilter, tag: leadTagFilter };
+        renderDashboardShell();
       }
     });
 

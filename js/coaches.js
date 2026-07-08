@@ -152,7 +152,7 @@
       || slugify(trainer?.displayName)
       || String(trainer?.id || '').trim()
       || 'trainer';
-    return `trainer-profile.html?trainer=${encodeURIComponent(key)}`;
+    return `/coach/${encodeURIComponent(key)}`;
   }
 
   function canModerateTrainerReviews(user) {

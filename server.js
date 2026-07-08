@@ -1856,6 +1856,10 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res, '/training.html');
     }
 
+    if (/^\/coach\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/i.test(url.pathname) && req.method === 'GET') {
+        return serveStatic(req, res, '/trainer-profile.html');
+    }
+
     if ((url.pathname === '/chat-widget' || url.pathname === '/chat-widget/' || url.pathname === '/chat-widget-verification' || url.pathname === '/chat-widget-verification.html') && req.method === 'GET') {
         return serveStatic(req, res, '/chat-widget-verification.html');
     }

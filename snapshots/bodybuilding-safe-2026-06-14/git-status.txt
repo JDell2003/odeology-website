@@ -1,0 +1,34 @@
+﻿ M account.html
+ M coaches.html
+ M core/trainingRoutes.js
+ M css/main.css
+ M dashboard.html
+ M data/serpapi-cache.json
+ M data/serpapi-walmart-product-cache.json
+ M data/usda-cache.json
+ M friends.html
+ M grocery-calendar.html
+ M index.html
+ M js/main.js
+ M js/overview.js
+ M js/ownerAccounts.js
+ M js/ownerMessaging.js
+ M js/training.js
+ M leaderboard.html
+ M manager-trainers.html
+ M overview.html
+ M owner-accounts.html
+ M owner-doors.html
+ M owner-messaging.html
+ M payment-settings.html
+ M tests/trainingEngine.oblueprint.test.js
+ M trainer-dashboard.html
+ M trainer-profile.html
+ M training-custom-builder.html
+ M training-status.html
+ M training.html
+ M workout-database.html
+ M workout-test.html
+?? full-training-test.log
+?? powerbuilding-test.log
+?? snapshots/
