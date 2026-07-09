@@ -1921,8 +1921,16 @@
       let blob = null;
       let mime = String(data?.mime || '').trim().toLowerCase();
       if (data?.file instanceof Blob) {
-        blob = data.file;
         mime = mime || String(data.file.type || '').toLowerCase();
+        // Copy the bytes NOW: the File handle belongs to the preview iframe,
+        // and if that iframe re-renders while the thumbnail picker is open the
+        // handle is revoked and every upload attempt dies with ACCESS_DENIED.
+        try {
+          const snapshot = await data.file.arrayBuffer();
+          blob = new Blob([snapshot], { type: mime || 'application/octet-stream' });
+        } catch {
+          blob = data.file;
+        }
       } else if (typeof data?.dataUrl === 'string' && data.dataUrl.startsWith('data:')) {
         const fetched = await fetch(data.dataUrl);
         blob = await fetched.blob();
