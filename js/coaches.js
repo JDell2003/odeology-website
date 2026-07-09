@@ -255,6 +255,48 @@
     style.textContent = `
       .coaches-filters-toggle{display:none}
       .coaches-toolbar-done{display:none}
+      .coach-match-card-info{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;flex:1 1 auto;min-height:0;width:100%}
+      /* Match celebration overlay */
+      #coach-match-celebration{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;
+        padding:20px;background:rgba(2,6,23,.72);backdrop-filter:blur(8px);animation:coachCelebFade .25s ease}
+      @keyframes coachCelebFade{from{opacity:0}to{opacity:1}}
+      .coach-celeb-card{position:relative;width:min(400px,94vw);border-radius:26px;padding:34px 22px 22px;text-align:center;
+        background:linear-gradient(170deg,#101b30 0%,#0e1626 100%);border:1px solid rgba(255,255,255,.08);
+        box-shadow:0 40px 90px rgba(2,6,23,.6);overflow:hidden;animation:coachCelebPop .35s cubic-bezier(.2,.9,.3,1.2)}
+      @keyframes coachCelebPop{from{transform:scale(.82);opacity:0}to{transform:none;opacity:1}}
+      .coach-celeb-title{font:900 30px/1.1 system-ui,sans-serif;color:#fff;letter-spacing:-.01em;margin:14px 0 4px}
+      .coach-celeb-title em{font-style:normal;background:linear-gradient(90deg,#ff2d55,#ff7854);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+      .coach-celeb-sub{font:500 13.5px/1.5 system-ui,sans-serif;color:rgba(255,255,255,.72);margin:0 auto 18px;max-width:280px}
+      .coach-celeb-avatars{display:flex;justify-content:center;margin-top:6px}
+      .coach-celeb-avatars img{width:92px;height:92px;border-radius:999px;object-fit:cover;border:3.5px solid #fff;
+        box-shadow:0 14px 30px rgba(2,6,23,.5);background:#1e293b}
+      .coach-celeb-avatars img:first-child{transform:rotate(-8deg) translateX(10px);z-index:1}
+      .coach-celeb-avatars img:last-child{transform:rotate(8deg) translateX(-10px)}
+      .coach-celeb-actions{display:grid;gap:9px;margin-top:6px}
+      .coach-celeb-btn{display:flex;align-items:center;justify-content:center;min-height:48px;border:0;border-radius:999px;
+        font:800 14px/1 system-ui,sans-serif;cursor:pointer;text-decoration:none;transition:transform .14s ease,filter .14s ease}
+      .coach-celeb-btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+      .coach-celeb-btn.is-primary{background:linear-gradient(135deg,#ff2d55,#e11d48);color:#fff;box-shadow:0 16px 34px rgba(225,29,72,.35)}
+      .coach-celeb-btn.is-ghost{background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.18)}
+      .coach-celeb-sent{margin:0 0 12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.07);
+        border:1px solid rgba(255,255,255,.12);text-align:left}
+      .coach-celeb-sent-label{font:800 9.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#4ade80;margin-bottom:6px}
+      .coach-celeb-sent-body{font:500 13px/1.5 system-ui,sans-serif;color:rgba(255,255,255,.88)}
+      .coach-celeb-quick{display:grid;gap:8px;margin-bottom:12px}
+      .coach-celeb-quick-title{font:800 9.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);text-align:left}
+      .coach-celeb-quick button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:8px 14px;
+        border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:rgba(255,255,255,.9);
+        font:600 12.5px/1.35 system-ui,sans-serif;text-align:left;cursor:pointer;transition:background .14s ease}
+      .coach-celeb-quick button:hover{background:rgba(255,255,255,.11)}
+      .coach-celeb-quick button[data-sent="1"]{border-color:rgba(74,222,128,.4);color:#4ade80;cursor:default}
+      .coach-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+      .coach-confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;opacity:.95;
+        animation:coachConfettiFall linear forwards}
+      @keyframes coachConfettiFall{
+        0%{transform:translateY(0) rotate(0deg)}
+        100%{transform:translateY(560px) rotate(540deg);opacity:0}
+      }
+      @media (prefers-reduced-motion: reduce){.coach-confetti{display:none}.coach-celeb-card{animation:none}}
       @media (max-width: 767px){
         /* One-screen mobile layout: tuck the filters behind a button and
            compact the deck so Pass & Match fits without scrolling. */
@@ -296,24 +338,26 @@
         .coach-match-counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;margin:0;
           padding:5px 12px;border-radius:999px;background:rgba(2,6,23,.45);color:#fff;font-size:10px;
           letter-spacing:.14em;backdrop-filter:blur(6px)}
-        .coach-match-stage{height:350px;margin-bottom:0}
-        .coach-match-card{padding:0;gap:5px;border-radius:24px;overflow:hidden;justify-content:flex-end;text-align:left;align-items:stretch;background:#0e1626;border:0}
-        .coach-match-card::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
-          background:linear-gradient(180deg,rgba(2,6,23,0) 38%,rgba(2,6,23,.55) 62%,rgba(2,6,23,.92) 100%)}
-        .coach-match-card-avatar{position:absolute;top:0;left:0;right:0;width:100%;height:62%;border:0;border-radius:0;margin:0;box-shadow:none;z-index:0}
-        .coach-match-card-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top}
+        .coach-match-stage{height:clamp(320px, calc(100vh - 500px), 500px);margin-bottom:0}
+        .coach-match-card{display:flex;flex-direction:column;padding:0;gap:0;border-radius:24px;overflow:hidden;text-align:left;align-items:stretch;background:#0e1626;border:0}
+        .coach-match-card::after{display:none}
+        .coach-match-card-avatar{position:relative;flex:1 1 auto;min-height:0;width:100%;border:0;border-radius:0;margin:0;box-shadow:none}
+        .coach-match-card-avatar img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
+        .coach-match-card-avatar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:64px;
+          background:linear-gradient(180deg,rgba(14,22,38,0),#0e1626)}
         .coach-match-card-stamp{z-index:5;top:34px}
-        .coach-match-card-name,.coach-match-card-handle,.coach-match-card-chips,
-        .coach-match-card-overview,.coach-match-card-mode{position:relative;z-index:2;margin-left:18px;margin-right:18px}
-        .coach-match-card-name{color:#fff;font-size:24px;text-shadow:0 2px 12px rgba(0,0,0,.45)}
-        .coach-match-card-handle{color:rgba(255,255,255,.72);font-size:11px}
-        .coach-match-card-chips{justify-content:flex-start;margin-top:4px}
-        .coach-match-card-chips span{padding:4px 11px;font-size:9.5px;background:rgba(255,255,255,.16);color:#fff;
-          border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
-        .coach-match-card-overview{color:rgba(255,255,255,.82);font-size:12.5px;line-height:1.5;-webkit-line-clamp:2;max-width:none;text-align:left}
-        .coach-match-card-mode{color:rgba(255,255,255,.6);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-        .coach-match-card a.coach-match-card-view{position:relative;z-index:2;margin:10px 18px 44px;min-height:42px;
-          font-size:12.5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px)}
+        .coach-match-card-info{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;
+          padding:0 18px 46px;background:#0e1626;position:relative;z-index:2;width:100%}
+        .coach-match-card-name{color:#fff;font-size:22px;margin-top:-8px}
+        .coach-match-card-handle{color:rgba(255,255,255,.6);font-size:11px}
+        .coach-match-card-chips{justify-content:flex-start;margin-top:5px}
+        .coach-match-card-chips span{padding:4px 11px;font-size:9.5px;background:rgba(255,255,255,.12);color:#fff;
+          border:1px solid rgba(255,255,255,.18)}
+        .coach-match-card-overview{color:rgba(255,255,255,.8);font-size:12.5px;line-height:1.5;-webkit-line-clamp:2;max-width:none;text-align:left;margin-top:3px}
+        .coach-match-card-mode{color:rgba(255,255,255,.55);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+        .coach-match-card .coach-match-card-info a.coach-match-card-view{display:flex;align-items:center;justify-content:center;text-align:center;
+          width:100%;margin:10px 0 0;min-height:42px;padding:0;font-size:12.5px;
+          background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;text-decoration:none;font-weight:800}
         /* Action buttons float over the card bottom */
         .coach-match-actions{position:relative;z-index:6;gap:22px;margin-top:-31px}
         .coach-match-btn{width:60px;height:60px;font-size:24px;border-width:0;box-shadow:0 14px 30px rgba(2,6,23,.3)}
@@ -644,17 +688,143 @@
           <span class="coach-match-card-stamp is-match" aria-hidden="true">MATCH</span>
           <span class="coach-match-card-stamp is-pass" aria-hidden="true">PASS</span>
           <div class="coach-match-card-avatar"><img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(fullName)}" draggable="false"></div>
-          <div class="coach-match-card-name">${escapeHtml(fullName)}</div>
-          <div class="coach-match-card-handle">@${escapeHtml(username)}</div>
-          <div class="coach-match-card-chips">
-            <span>${escapeHtml(tierName)}</span>
-            <span>${escapeHtml(experienceLevel)}</span>
+          <div class="coach-match-card-info">
+            <div class="coach-match-card-name">${escapeHtml(fullName)}</div>
+            <div class="coach-match-card-handle">@${escapeHtml(username)}</div>
+            <div class="coach-match-card-chips">
+              <span>${escapeHtml(tierName)}</span>
+              <span>${escapeHtml(experienceLevel)}</span>
+            </div>
+            <div class="coach-match-card-overview">${escapeHtml(overview)}</div>
+            <div class="coach-match-card-mode">${escapeHtml(buildModeText(trainer))}</div>
+            <a class="coach-pill coach-match-card-view" href="${escapeHtml(buildTrainerProfileHref(trainer))}">Visit their website</a>
           </div>
-          <div class="coach-match-card-overview">${escapeHtml(overview)}</div>
-          <div class="coach-match-card-mode">${escapeHtml(buildModeText(trainer))}</div>
-          <a class="coach-pill coach-match-card-view" href="${escapeHtml(buildTrainerProfileHref(trainer))}">Visit their website</a>
         </article>
       `;
+    };
+
+    const MATCH_INTRO_VARIANTS = [
+      (coach, me) => `Hey ${coach}! My name is ${me} - your profile caught my eye. Are you up for a chat?`,
+      (coach, me) => `Hi ${coach}, I'm ${me}. Your coaching style looks like what I've been searching for. Up for a chat?`,
+      (coach, me) => `Hey! ${me} here - I just came across your profile and it seems really interesting. Open to chatting?`,
+      (coach, me) => `Hi ${coach} - my name's ${me}. I like what I saw on your profile and I'd love to hear more. Got time for a quick chat?`,
+      (coach, me) => `Hey ${coach}, ${me} here. Your profile stood out to me - are you up for a chat about coaching?`
+    ];
+    const MATCH_QUICK_FOLLOWUPS = [
+      'What does your coaching usually cost per month?',
+      'What kind of results do your clients usually see?',
+      'How does your program work week to week?'
+    ];
+
+    const closeMatchCelebration = () => document.getElementById('coach-match-celebration')?.remove();
+
+    const buildConfetti = () => {
+      const colors = ['#ff2d55', '#ffb020', '#4ade80', '#60a5fa', '#e879f9', '#facc15'];
+      let pieces = '';
+      for (let i = 0; i < 26; i += 1) {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.7;
+        const duration = 1.6 + Math.random() * 1.4;
+        const color = colors[i % colors.length];
+        pieces += `<i style="left:${left.toFixed(1)}%;background:${color};animation-duration:${duration.toFixed(2)}s;animation-delay:${delay.toFixed(2)}s"></i>`;
+      }
+      return `<div class="coach-confetti" aria-hidden="true">${pieces}</div>`;
+    };
+
+    const showMatchCelebration = (trainer) => {
+      if (!trainer) return;
+      closeMatchCelebration();
+      const coachName = String(trainer.fullName || trainer.displayName || 'this coach').trim();
+      const coachFirst = coachName.split(/\s+/)[0] || 'coach';
+      const coachAvatar = trainer.photoDataUrl || 'assets/images/placeholders/profile-placeholder.jpg';
+      const myAvatar = currentUser?.photoDataUrl || 'assets/images/placeholders/profile-placeholder.jpg';
+      const overlay = document.createElement('div');
+      overlay.id = 'coach-match-celebration';
+      overlay.innerHTML = `
+        ${buildConfetti()}
+        <div class="coach-celeb-card">
+          ${buildConfetti()}
+          <div class="coach-celeb-avatars">
+            <img src="${escapeHtml(myAvatar)}" alt="You">
+            <img src="${escapeHtml(coachAvatar)}" alt="${escapeHtml(coachName)}">
+          </div>
+          <div class="coach-celeb-title">It's a <em>match!</em></div>
+          <p class="coach-celeb-sub">You and ${escapeHtml(coachFirst)} could be a great fit. Start the conversation while it's hot.</p>
+          <div class="coach-celeb-actions">
+            <button type="button" class="coach-celeb-btn is-primary" data-celeb-message>Message ${escapeHtml(coachFirst)}</button>
+            <button type="button" class="coach-celeb-btn is-ghost" data-celeb-close>Keep swiping</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay) closeMatchCelebration();
+      });
+      overlay.querySelector('[data-celeb-close]')?.addEventListener('click', closeMatchCelebration);
+      overlay.querySelector('[data-celeb-message]')?.addEventListener('click', async (event) => {
+        if (!hasAccountAccess()) {
+          closeMatchCelebration();
+          openAccessModal();
+          return;
+        }
+        const button = event.currentTarget;
+        button.disabled = true;
+        button.textContent = 'Sending...';
+        const myName = String(currentUser?.displayName || currentUser?.username || 'a RiseForIt member').trim();
+        const variantIndex = Math.floor(Math.random() * MATCH_INTRO_VARIANTS.length);
+        const intro = MATCH_INTRO_VARIANTS[variantIndex](coachFirst, myName);
+        const resp = await api('/api/messages/send', {
+          method: 'POST',
+          body: JSON.stringify({ toUserId: String(trainer.id || ''), body: intro })
+        });
+        if (!resp.ok || !resp.json?.ok) {
+          button.disabled = false;
+          button.textContent = `Message ${coachFirst}`;
+          const sub = overlay.querySelector('.coach-celeb-sub');
+          if (sub) sub.textContent = resp.json?.error || 'Could not send right now - try again.';
+          return;
+        }
+        const card = overlay.querySelector('.coach-celeb-card');
+        if (!card) return;
+        card.innerHTML = `
+          <div class="coach-celeb-avatars">
+            <img src="${escapeHtml(myAvatar)}" alt="You">
+            <img src="${escapeHtml(coachAvatar)}" alt="${escapeHtml(coachName)}">
+          </div>
+          <div class="coach-celeb-title">Message <em>sent!</em></div>
+          <div class="coach-celeb-sent">
+            <div class="coach-celeb-sent-label">Delivered to ${escapeHtml(coachFirst)}</div>
+            <div class="coach-celeb-sent-body">${escapeHtml(intro)}</div>
+          </div>
+          <div class="coach-celeb-quick">
+            <div class="coach-celeb-quick-title">Keep it going - tap to send</div>
+            ${MATCH_QUICK_FOLLOWUPS.map((text, index) => `
+              <button type="button" data-celeb-quick="${index}"><span>${escapeHtml(text)}</span><span aria-hidden="true">&#10148;</span></button>
+            `).join('')}
+          </div>
+          <div class="coach-celeb-actions">
+            <a class="coach-celeb-btn is-primary" href="friends.html">Open Messages</a>
+            <button type="button" class="coach-celeb-btn is-ghost" data-celeb-close>Keep swiping</button>
+          </div>
+        `;
+        card.querySelector('[data-celeb-close]')?.addEventListener('click', closeMatchCelebration);
+        card.querySelectorAll('[data-celeb-quick]').forEach((quickButton) => {
+          quickButton.addEventListener('click', async () => {
+            if (quickButton.dataset.sent === '1' || quickButton.dataset.busy === '1') return;
+            quickButton.dataset.busy = '1';
+            const text = String(quickButton.querySelector('span')?.textContent || '').trim();
+            const quickResp = await api('/api/messages/send', {
+              method: 'POST',
+              body: JSON.stringify({ toUserId: String(trainer.id || ''), body: text })
+            });
+            delete quickButton.dataset.busy;
+            if (quickResp.ok && quickResp.json?.ok) {
+              quickButton.dataset.sent = '1';
+              quickButton.innerHTML = `<span>${escapeHtml(text)}</span><span aria-hidden="true">&#10003; Sent</span>`;
+            }
+          });
+        });
+      });
     };
 
     const deckFilteredList = (filters) => cards.filter((trainer) => (
@@ -738,6 +908,9 @@
           }
         }
         topCard.classList.add(action === 'match' ? 'is-leaving-right' : 'is-leaving-left');
+        if (action === 'match') {
+          window.setTimeout(() => showMatchCelebration(trainer), 300);
+        }
         window.setTimeout(() => {
           deckIndex += 1;
           renderCoachMatchBrowser(filters);

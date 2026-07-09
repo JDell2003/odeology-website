@@ -1114,7 +1114,19 @@ async function socialRoutes(req, res, url) {
       'SELECT 1 FROM app_friends WHERE user_id = $1 AND friend_id = $2 LIMIT 1;',
       [user.id, toUserId]
     );
-    if (!friendCheck.rows?.length) return sendJson(res, 403, { ok: false, error: 'Not friends yet.' });
+    if (!friendCheck.rows?.length) {
+      // Prospects can always open a conversation with a listed coach: the
+      // first message auto-connects both sides so the coach can reply.
+      const coachCheck = await db.query(
+        'SELECT 1 FROM app_trainer_profiles WHERE user_id = $1 LIMIT 1;',
+        [toUserId]
+      );
+      if (!coachCheck.rows?.length) return sendJson(res, 403, { ok: false, error: 'Not friends yet.' });
+      await db.query(
+        'INSERT INTO app_friends (user_id, friend_id) VALUES ($1, $2), ($2, $1) ON CONFLICT DO NOTHING;',
+        [user.id, toUserId]
+      );
+    }
 
     const [a, b] = orderPair(user.id, toUserId);
     let threadId = null;
