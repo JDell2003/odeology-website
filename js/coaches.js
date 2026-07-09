@@ -246,6 +246,53 @@
     `;
   }
 
+  const COACHES_PAGE_SIZE = 10;
+
+  function ensureCoachesPagerStyle() {
+    if (document.getElementById('coaches-pager-style')) return;
+    const style = document.createElement('style');
+    style.id = 'coaches-pager-style';
+    style.textContent = `
+      .coaches-pager{grid-column:1 / -1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 0 8px}
+      .coaches-pager-info{font:700 12px/1.2 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(13,34,50,.5)}
+      .coaches-pager-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+      .coaches-pager-btn{min-width:40px;min-height:40px;padding:0 10px;border-radius:12px;border:1px solid rgba(10,31,47,.12);background:rgba(255,255,255,.92);color:rgba(13,34,50,.78);font:800 13px/1 system-ui,sans-serif;cursor:pointer;transition:all .14s ease}
+      .coaches-pager-btn:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(10,31,47,.28)}
+      .coaches-pager-btn:disabled{opacity:.35;cursor:default}
+      .coaches-pager-btn.is-current{background:#16344d;border-color:#16344d;color:#fff}
+      .coaches-pager-gap{color:rgba(13,34,50,.4);font:800 13px/1 system-ui,sans-serif;padding:0 2px}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildCoachesPager(page, totalPages, totalCount, startIndex, shownCount) {
+    const info = `Showing ${startIndex + 1}-${startIndex + shownCount} of ${totalCount} trainer${totalCount === 1 ? '' : 's'}`;
+    if (totalPages <= 1) {
+      return `<nav class="coaches-pager" aria-label="Trainer pages"><div class="coaches-pager-info">${info}</div></nav>`;
+    }
+    // Windowed page numbers: 1 ... p-1 p p+1 ... last
+    const numbers = new Set([1, totalPages, page - 1, page, page + 1]);
+    if (totalPages <= 7) for (let n = 1; n <= totalPages; n += 1) numbers.add(n);
+    const ordered = Array.from(numbers).filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+    let numbersMarkup = '';
+    let previous = 0;
+    ordered.forEach((n) => {
+      if (previous && n - previous > 1) numbersMarkup += '<span class="coaches-pager-gap" aria-hidden="true">&hellip;</span>';
+      numbersMarkup += `<button type="button" class="coaches-pager-btn${n === page ? ' is-current' : ''}" data-coaches-page="${n}" aria-label="Page ${n}"${n === page ? ' aria-current="page"' : ''}>${n}</button>`;
+      previous = n;
+    });
+    return `
+      <nav class="coaches-pager" aria-label="Trainer pages">
+        <div class="coaches-pager-info">${info}</div>
+        <div class="coaches-pager-controls">
+          <button type="button" class="coaches-pager-btn" data-coaches-page="${page - 1}" aria-label="Previous page"${page <= 1 ? ' disabled' : ''}>&larr;</button>
+          ${numbersMarkup}
+          <button type="button" class="coaches-pager-btn" data-coaches-page="${page + 1}" aria-label="Next page"${page >= totalPages ? ' disabled' : ''}>&rarr;</button>
+        </div>
+      </nav>
+    `;
+  }
+
   function renderTrainerGrid(gridEl, trainers, filters = {}, options = {}) {
     const activeTab = String(options.activeTab || 'all').trim().toLowerCase();
     const filtered = trainers.filter((trainer) => {
@@ -259,7 +306,13 @@
         : '<div class="coaches-empty">No trainers match that search yet.</div>';
       return;
     }
-    gridEl.innerHTML = filtered.map((trainer) => buildCoachCard(trainer, options)).join('');
+    ensureCoachesPagerStyle();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / COACHES_PAGE_SIZE));
+    const page = Math.min(Math.max(1, Number(options.page) || 1), totalPages);
+    const startIndex = (page - 1) * COACHES_PAGE_SIZE;
+    const visible = filtered.slice(startIndex, startIndex + COACHES_PAGE_SIZE);
+    gridEl.innerHTML = visible.map((trainer) => buildCoachCard(trainer, options)).join('')
+      + buildCoachesPager(page, totalPages, filtered.length, startIndex, visible.length);
   }
 
   function renderCoachesLoadingDeck(gridEl) {
@@ -413,6 +466,8 @@
     let deckIndex = 0;
     let deckListSignature = '';
     let deckMatches = [];
+    let cardsPage = 1;
+    let cardsFilterSignature = '';
     try {
       const storedMatches = JSON.parse(sessionStorage.getItem('coaches-deck-matches') || 'null');
       if (Array.isArray(storedMatches)) deckMatches = storedMatches.map((id) => String(id)).filter(Boolean);
@@ -624,12 +679,31 @@
         renderCoachMatchBrowser(filters);
         return;
       }
+      // New search or tab -> back to the first page.
+      const filterSignature = JSON.stringify([filters, activeReviewTab]);
+      if (filterSignature !== cardsFilterSignature) {
+        cardsFilterSignature = filterSignature;
+        cardsPage = 1;
+      }
       renderTrainerGrid(gridEl, cards, filters, {
         canModerate,
-        activeTab: activeReviewTab
+        activeTab: activeReviewTab,
+        page: cardsPage
       });
     };
     applyFiltersRef = applyFilters;
+
+    gridEl.addEventListener('click', (event) => {
+      const pageButton = event.target instanceof Element ? event.target.closest('[data-coaches-page]') : null;
+      if (!(pageButton instanceof HTMLButtonElement) || pageButton.disabled) return;
+      const nextPage = Number(pageButton.getAttribute('data-coaches-page'));
+      if (!Number.isFinite(nextPage) || nextPage < 1 || nextPage === cardsPage) return;
+      cardsPage = nextPage;
+      applyFilters();
+      try {
+        gridEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {}
+    });
 
     gridEl.addEventListener('click', async (event) => {
       const coachLink = event.target instanceof Element ? event.target.closest('.coach-pill') : null;
