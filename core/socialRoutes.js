@@ -822,6 +822,36 @@ async function socialRoutes(req, res, url) {
     }
   }
 
+  if (url.pathname === '/api/friends/find' && req.method === 'GET') {
+    // Exact-username lookup so people can add a friend from the leaderboard.
+    const username = String(url.searchParams.get('username') || '').trim().toLowerCase().replace(/^@/, '');
+    if (!username || username.length < 3) return sendJson(res, 400, { ok: false, error: 'Enter a username (at least 3 characters).' });
+    const result = await db.query(
+      `
+        SELECT u.id, u.username, u.display_name, tp.profile_image,
+               EXISTS (SELECT 1 FROM app_friends f WHERE f.user_id = $1 AND f.friend_id = u.id) AS is_friend
+        FROM app_users u
+        LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+        WHERE LOWER(u.username) = $2
+        LIMIT 1;
+      `,
+      [user.id, username]
+    );
+    const row = result.rows?.[0] || null;
+    if (!row) return sendJson(res, 404, { ok: false, error: 'No account with that username.' });
+    if (String(row.id) === String(user.id)) return sendJson(res, 400, { ok: false, error: 'That is you.' });
+    return sendJson(res, 200, {
+      ok: true,
+      user: {
+        id: row.id,
+        username: row.username || '',
+        displayName: row.display_name || row.username || 'Member',
+        avatarUrl: row.profile_image || '',
+        isFriend: row.is_friend === true
+      }
+    });
+  }
+
   if (url.pathname === '/api/friends/request' && req.method === 'POST') {
     let payload;
     try {

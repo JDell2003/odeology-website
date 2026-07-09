@@ -201,17 +201,27 @@
                         ${(() => {
                             const base = normalizeBadges(r.badges);
                             if (Number(r.streakDays || 0) > 1) base.push({ id: 'streak', label: `${FIRE} ${Number(r.streakDays)}d`, tone: 'amber', desc: 'Daily logging streak.' });
-                            base.push({ id: 'who', label: r.isBot ? 'Community' : 'You', tone: r.isBot ? 'slate' : 'teal', desc: '' });
+                            base.push({ id: 'who', label: r.isBot ? 'Community' : (r.isFriend ? 'Friend' : 'You'), tone: r.isBot ? 'slate' : (r.isFriend ? 'violet' : 'teal'), desc: '' });
                             base.push({ id: 'joined', label: `Joined ${fmtJoin(r.joinedAt)}`, tone: 'slate', desc: '' });
                             const max = 7;
                             const shown = base.slice(0, max);
                             const extra = base.length > max ? base.length - max : 0;
-                            const pills = shown.map(badgePill).join('');
+                            const pills = castePill(pickCaste(casteStatsFromRow(r))) + shown.map(badgePill).join('');
                             const more = extra ? `<span class="lb-pill" data-tone="slate" title="${extra} more badges">+${extra}</span>` : '';
                             return pills + more;
                         })()}
                     </div>
                     ${trainerMetricLine(r)}
+                    ${(() => {
+                        if (!r.isTrainerClient) return '';
+                        const stats = casteStatsFromRow(r);
+                        const caste = pickCaste(stats);
+                        const next = pickNextCaste(stats, caste);
+                        if (!next) return `<div class="lb-caste-rowhint">${caste.emblem} Holds the crown - every stat 75+.</div>`;
+                        if (!next.reqs.length) return `<div class="lb-caste-rowhint">${caste.emblem} Ready to rank up to <strong>${next.caste.name}</strong>.</div>`;
+                        const biggest = next.reqs.slice().sort((a, b) => (b.target - stats[b.key]) - (a.target - stats[a.key]))[0];
+                        return `<div class="lb-caste-rowhint">Next: <strong>${next.caste.emblem} ${next.caste.name}</strong> — needs ${CASTE_LABELS[biggest.key]} ${stats[biggest.key]}&rarr;${biggest.target}. ${AXIS_ADVICE[biggest.key]}</div>`;
+                    })()}
                     ${r.bio ? `<div class="lb-bio">${escapeAttr(String(r.bio))}</div>` : ''}
                 </div>
                 <div class="lb-right">
@@ -353,6 +363,346 @@
     ]);
 
     const AWARD_MAP = Object.freeze(Object.fromEntries(AWARDS.map((a) => [a.id, a])));
+
+    /* ================================================================
+       MEDIEVAL CASTE LAYER
+       Mirrors the character system in js/overview-identity.js (owned by
+       the overview/onboarding work - that file is a closed IIFE, so the
+       checks are duplicated here; keep them in sync with its
+       CHARACTER_TYPES). Stats are six 0-100 axes. For the signed-in
+       user we prefer the same localStorage stats the overview page
+       uses ('ovIdentityStats'); for everyone else the axes are
+       approximated from their leaderboard breakdown.
+       ================================================================ */
+    const CASTE_AXES = ['strength', 'cardio', 'consistency', 'nutrition', 'recovery', 'progress'];
+    const CASTE_LABELS = {
+        strength: 'Strength', cardio: 'Cardio', consistency: 'Consistency',
+        nutrition: 'Nutrition', recovery: 'Recovery', progress: 'Progress'
+    };
+    const CASTES = [
+        {
+            id: 'king', name: 'King', emblem: '♛', prestige: 5, tone: 'amber',
+            blurb: 'Everything high and balanced. You have mastered all of it.',
+            check: (s, avg, min, max, spread) => min >= 75 && spread <= 22,
+            requirements: (s) => CASTE_AXES.filter(k => s[k] < 75).map(k => ({ key: k, target: 75 }))
+        },
+        {
+            id: 'ghost', name: 'Ghost', emblem: '◌', prestige: 1, tone: 'slate',
+            blurb: 'Some real numbers in there, but you barely ever show up.',
+            check: (s, avg, min, max) => s.consistency <= 25 && max >= 50,
+            requirements: null
+        },
+        {
+            id: 'berserker', name: 'Berserker', emblem: '⚔', prestige: 3, tone: 'rose',
+            blurb: 'Huge power, zero brakes. All strength, no recovery plan.',
+            check: (s) => s.strength >= 78 && s.recovery <= 45 && s.consistency <= 60,
+            requirements: null
+        },
+        {
+            id: 'knight', name: 'Knight', emblem: '♞', prestige: 4, tone: 'indigo',
+            blurb: 'Strong and disciplined. You show up and you lift.',
+            check: (s) => s.strength >= 62 && s.consistency >= 70,
+            requirements: () => [{ key: 'strength', target: 62 }, { key: 'consistency', target: 70 }]
+        },
+        {
+            id: 'ranger', name: 'Ranger', emblem: '➳', prestige: 3, tone: 'emerald',
+            blurb: 'Engine-first athlete. Endurance is your weapon.',
+            check: (s) => s.cardio >= 68 && s.cardio >= s.strength + 10,
+            requirements: () => [{ key: 'cardio', target: 68 }]
+        },
+        {
+            id: 'monk', name: 'Monk', emblem: '☯', prestige: 3, tone: 'teal',
+            blurb: 'Clean living, full recovery, total discipline. The lifts will come.',
+            check: (s) => (s.recovery + s.nutrition + s.consistency) / 3 >= 65 && s.strength < 62,
+            requirements: () => [{ key: 'recovery', target: 65 }, { key: 'nutrition', target: 65 }, { key: 'consistency', target: 65 }]
+        },
+        {
+            id: 'mage', name: 'Mage', emblem: '✦', prestige: 3, tone: 'violet',
+            blurb: 'You win with the mind - smart programming and dialed nutrition.',
+            check: (s) => s.nutrition >= 70 && s.progress >= 58 && s.strength < 58,
+            requirements: () => [{ key: 'nutrition', target: 70 }, { key: 'progress', target: 58 }]
+        },
+        {
+            id: 'peasant', name: 'Peasant', emblem: '⚒', prestige: 0, tone: 'slate',
+            blurb: 'Early days. Not an insult - it is where everyone starts. You climb out.',
+            check: (s, avg) => avg < 42,
+            requirements: null
+        },
+        {
+            id: 'squire', name: 'Squire', emblem: '⚑', prestige: 2, tone: 'sky',
+            blurb: 'Decent across the board and still developing. On the path.',
+            check: () => true,
+            requirements: (s) => {
+                const sorted = CASTE_AXES.map(k => ({ key: k, value: s[k] })).sort((a, b) => a.value - b.value);
+                return sorted.slice(0, 2).map(e => ({ key: e.key, target: 45 }));
+            }
+        }
+    ];
+    const CASTE_MAP = Object.fromEntries(CASTES.map(c => [c.id, c]));
+
+    const HIGH_PHRASES = {
+        strength: 'moves serious weight',
+        cardio: 'can go for miles without folding',
+        consistency: 'shows up no matter what',
+        nutrition: 'keeps the diet honest',
+        recovery: 'respects rest and comes back sharp',
+        progress: 'gets measurably better every month'
+    };
+    const LOW_PHRASES = {
+        strength: 'still avoids the heavy barbell',
+        cardio: 'dodges anything that spikes the heart rate',
+        consistency: 'disappears for stretches at a time',
+        nutrition: 'wings it at mealtime',
+        recovery: 'runs on fumes',
+        progress: 'has not logged proof of progress yet'
+    };
+    const AXIS_ADVICE = {
+        strength: 'Log more strength workouts - heavier sessions move this fastest.',
+        cardio: 'Add cardio each week - runs, bike, or intervals all count.',
+        consistency: 'Be more consistent - daily check-ins and never skip a planned workout.',
+        nutrition: 'Keep meals on plan and actually log them.',
+        recovery: 'Protect recovery - sleep, rest days, and readiness check-ins.',
+        progress: 'Log measurements so your progress is provable.'
+    };
+
+    const clampStat = (v) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+
+    const casteStatsFromRow = (row) => {
+        const b = row?.breakdown && typeof row.breakdown === 'object' ? row.breakdown : {};
+        const streak = Number(row?.streakDays || 0);
+        if (row?.isTrainerClient) {
+            const mealTracked = Number(b.mealTrackedDays || 0);
+            const mealsOnPlan = Number(b.mealsOnPlanDays || 0);
+            const nutritionPct = mealTracked > 0 ? (mealsOnPlan / mealTracked) * 100 : mealsOnPlan * 6;
+            return {
+                strength: clampStat(Number(b.approvedReviews || 0) * 16 + Number(b.workoutRate || 0) * 9),
+                cardio: clampStat(Number(b.workoutRate || 0) * 15),
+                consistency: clampStat(Number(b.workoutAdherence || 0)),
+                nutrition: clampStat(nutritionPct),
+                recovery: clampStat(b.avgReadiness == null ? Number(b.waterDays || 0) * 5 + 25 : Number(b.avgReadiness) * 10),
+                progress: clampStat(Number(b.measurementDays || 0) * 9 + Number(b.approvedReviews || 0) * 5)
+            };
+        }
+        const workouts = Number(b.workouts || 0);
+        const checkins = Number(b.checkins || 0);
+        return {
+            strength: clampStat(workouts * 5),
+            cardio: clampStat(workouts * 2.5 + streak * 1.5),
+            consistency: clampStat(streak * 3.5 + checkins * 2.4),
+            nutrition: clampStat(Number(b.mealsOnPlanDays || 0) * 5 + Number(b.mealPrepDays || 0) * 2.5 + Number(b.groceryPlans || 0) * 3),
+            recovery: clampStat(25 + streak * 1.6 + Number(b.mealPrepDays || 0) * 1.4),
+            progress: clampStat(Number(b.measurementDays || 0) * 8 + Number(b.measurementBonus || 0) * 1.4)
+        };
+    };
+
+    const readIdentityStats = () => {
+        try {
+            const raw = JSON.parse(localStorage.getItem('ovIdentityStats') || 'null');
+            if (!raw || typeof raw !== 'object') return null;
+            const clean = {};
+            for (const key of CASTE_AXES) {
+                const v = Number(raw[key]);
+                if (!Number.isFinite(v)) return null;
+                clean[key] = clampStat(v);
+            }
+            return clean;
+        } catch {
+            return null;
+        }
+    };
+
+    const pickCaste = (stats) => {
+        const values = CASTE_AXES.map(k => stats[k]);
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        return CASTES.find(c => c.check(stats, avg, min, max, max - min)) || CASTE_MAP.squire;
+    };
+
+    const pickNextCaste = (stats, current) => {
+        if (current.id === 'king') return null;
+        const candidates = CASTES.filter(c => (
+            c.prestige > current.prestige && typeof c.requirements === 'function'
+        ));
+        let best = null;
+        for (const candidate of candidates) {
+            const reqs = candidate.requirements(stats).filter(r => stats[r.key] < r.target);
+            const gap = reqs.reduce((sum, r) => sum + (r.target - stats[r.key]), 0);
+            if (!best
+                || candidate.prestige < best.caste.prestige
+                || (candidate.prestige === best.caste.prestige && gap < best.gap)) {
+                best = { caste: candidate, reqs, gap };
+            }
+        }
+        return best;
+    };
+
+    const personSentence = (stats, { secondPerson = true } = {}) => {
+        const entries = CASTE_AXES.map(k => ({ key: k, value: stats[k] })).sort((a, b) => b.value - a.value);
+        const subject = secondPerson ? 'You are the type of person who' : 'The type who';
+        const highs = entries.filter(e => e.value >= 55).slice(0, 2);
+        const low = entries[entries.length - 1];
+        if (!highs.length) {
+            return `${subject} is still writing chapter one - every stat is up for grabs.`;
+        }
+        const highText = highs.map(e => HIGH_PHRASES[e.key]).join(' and ');
+        if (low.value <= 50 && !highs.some(h => h.key === low.key)) {
+            return `${subject} ${highText}, but ${LOW_PHRASES[low.key]}.`;
+        }
+        return `${subject} ${highText}.`;
+    };
+
+    const castePill = (caste) => `<span class="lb-pill lb-caste-pill" data-tone="${caste.tone}" title="${escapeAttr(caste.blurb)}">${caste.emblem} ${caste.name}</span>`;
+
+    const ensureCasteStyle = () => {
+        if (document.getElementById('lb-caste-style')) return;
+        const style = document.createElement('style');
+        style.id = 'lb-caste-style';
+        style.textContent = `
+            .lb-caste-pill{font-weight:800}
+            .lb-caste-rowhint{margin-top:6px;font-size:11.5px;color:rgba(120,113,108,.95);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+            .lb-caste-rowhint strong{color:inherit}
+            .lb-caste-hero{position:relative;display:grid;grid-template-columns:auto 1fr;gap:16px 18px;margin:14px 0 18px;padding:20px 22px;
+                border-radius:20px;overflow:hidden;color:#f5efe4;
+                background:linear-gradient(160deg,#1a1610 0%,#241d13 55%,#2d2416 100%);
+                border:1px solid rgba(212,175,55,.35);box-shadow:0 24px 54px rgba(20,14,4,.35);
+                animation:lbHeroIn .5s cubic-bezier(.2,.8,.3,1) backwards}
+            @keyframes lbHeroIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+            .lb-caste-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+                background:radial-gradient(120% 90% at 90% -10%,rgba(212,175,55,.18),transparent 55%)}
+            .lb-caste-emblem{width:76px;height:76px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+                font-size:42px;line-height:1;color:#e8c766;background:rgba(212,175,55,.1);
+                border:1.5px solid rgba(212,175,55,.45);box-shadow:inset 0 0 22px rgba(212,175,55,.15);
+                animation:lbEmblemFloat 4.5s ease-in-out infinite}
+            @keyframes lbEmblemFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+            .lb-caste-eyebrow{font:800 10px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(232,199,102,.85);margin-bottom:6px}
+            .lb-caste-hero h2{margin:0;font:800 24px/1.15 'Space Grotesk',system-ui,sans-serif;color:#fff}
+            .lb-caste-title-line{display:block;margin-top:3px;font:700 13px/1.35 system-ui,sans-serif;color:#e8c766}
+            .lb-caste-why{margin:9px 0 0;font:500 13.5px/1.55 system-ui,sans-serif;color:rgba(245,239,228,.82);max-width:560px}
+            .lb-caste-next{grid-column:1 / -1;padding:15px 16px 13px;border-radius:14px;background:rgba(0,0,0,.28);
+                border:1px solid rgba(212,175,55,.22)}
+            .lb-caste-next-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font:800 13px/1.2 'Space Grotesk',system-ui,sans-serif;color:#fff;margin-bottom:12px}
+            .lb-caste-next-head .next-emblem{color:#e8c766}
+            .lb-caste-next-head .next-count{font:600 11px/1.2 system-ui,sans-serif;color:rgba(245,239,228,.6)}
+            .lb-caste-req{display:grid;gap:5px;margin-bottom:12px}
+            .lb-caste-req:last-child{margin-bottom:2px}
+            .lb-caste-req-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+            .lb-caste-req-label{font:800 12px/1.2 system-ui,sans-serif;color:#f5efe4}
+            .lb-caste-req-nums{font:700 11.5px/1 ui-monospace,monospace;color:#e8c766}
+            .lb-caste-req-advice{font:500 11.5px/1.45 system-ui,sans-serif;color:rgba(245,239,228,.66)}
+            .lb-caste-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+            .lb-caste-bar i{display:block;height:100%;width:0;border-radius:999px;
+                background:linear-gradient(90deg,#b98a2b,#e8c766);
+                transition:width 1.1s cubic-bezier(.2,.8,.3,1)}
+            .lb-caste-crowned{font:600 12.5px/1.5 system-ui,sans-serif;color:rgba(245,239,228,.8)}
+            .lb-friends-btn{display:inline-flex;align-items:center;gap:6px}
+            .lb-friends-pop{position:fixed;z-index:120;width:min(340px,92vw);padding:16px;border-radius:16px;
+                background:#fffdf7;border:1px solid rgba(10,31,47,.14);box-shadow:0 26px 60px rgba(7,20,31,.28)}
+            .lb-friends-pop h3{margin:0 0 4px;font:800 15px/1.2 'Space Grotesk',system-ui,sans-serif}
+            .lb-friends-pop p{margin:0 0 10px;font:500 12px/1.5 system-ui,sans-serif;color:rgba(13,34,50,.6)}
+            .lb-friends-row{display:flex;gap:8px}
+            .lb-friends-row input{flex:1 1 auto;min-width:0;min-height:40px;padding:0 12px;border-radius:10px;
+                border:1px solid rgba(10,31,47,.16);font:600 13px/1 system-ui,sans-serif;outline:none}
+            .lb-friends-row button{min-height:40px;padding:0 14px;border:0;border-radius:10px;background:#16344d;color:#fff;
+                font:800 12.5px/1 system-ui,sans-serif;cursor:pointer}
+            .lb-friends-result{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px;border-radius:12px;
+                background:rgba(22,52,77,.05);border:1px solid rgba(10,31,47,.08)}
+            .lb-friends-result img{width:38px;height:38px;border-radius:999px;object-fit:cover;background:#e2e8f0}
+            .lb-friends-result .who{flex:1 1 auto;min-width:0}
+            .lb-friends-result .who strong{display:block;font:800 13px/1.2 system-ui,sans-serif}
+            .lb-friends-result .who span{font:600 11px/1.2 system-ui,sans-serif;color:rgba(13,34,50,.55)}
+            .lb-friends-status{margin-top:9px;font:700 12px/1.4 system-ui,sans-serif;color:#16344d;min-height:16px}
+            .lb-filter-chips{display:flex;gap:6px;margin:0 0 12px}
+            .lb-filter-chips button{min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(10,31,47,.14);
+                background:rgba(255,255,255,.9);color:rgba(13,34,50,.7);font:800 12px/1 system-ui,sans-serif;cursor:pointer}
+            .lb-filter-chips button.is-active{background:#16344d;border-color:#16344d;color:#fff}
+            @media (prefers-reduced-motion: reduce){
+                .lb-caste-emblem{animation:none}
+                .lb-caste-hero{animation:none}
+                .lb-caste-bar i{transition:none}
+            }
+            @media (max-width:640px){
+                .lb-caste-hero{grid-template-columns:1fr;padding:16px}
+                .lb-caste-emblem{width:60px;height:60px;font-size:32px}
+                .lb-caste-hero h2{font-size:20px}
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const animateCount = (el, target, { duration = 900, prefix = '', suffix = '' } = {}) => {
+        if (!el) return;
+        const start = performance.now();
+        const from = 0;
+        const step = (now) => {
+            const t = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = `${prefix}${Math.round(from + (target - from) * eased).toLocaleString()}${suffix}`;
+            if (t < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    };
+
+    const renderCasteHero = (data) => {
+        ensureCasteStyle();
+        document.getElementById('lb-caste-hero')?.remove();
+        const you = data?.you || null;
+        if (!you || !listEl) return;
+        const stats = readIdentityStats() || casteStatsFromRow(you);
+        const caste = pickCaste(stats);
+        const next = pickNextCaste(stats, caste);
+        const hero = document.createElement('section');
+        hero.id = 'lb-caste-hero';
+        hero.className = 'lb-caste-hero';
+        hero.setAttribute('aria-label', 'Your caste and next level');
+        const reqsMarkup = next && next.reqs.length
+            ? next.reqs.slice(0, 3).map(r => `
+                <div class="lb-caste-req" data-req-key="${r.key}">
+                    <div class="lb-caste-req-top">
+                        <span class="lb-caste-req-label">${CASTE_LABELS[r.key]}</span>
+                        <span class="lb-caste-req-nums"><span data-req-now>0</span> / ${r.target}</span>
+                    </div>
+                    <div class="lb-caste-bar"><i data-req-bar data-now="${stats[r.key]}" data-target="${r.target}"></i></div>
+                    <div class="lb-caste-req-advice">${AXIS_ADVICE[r.key]}</div>
+                </div>
+            `).join('')
+            : '';
+        const nextBlock = !next
+            ? `<div class="lb-caste-next"><div class="lb-caste-next-head"><span class="next-emblem">${CASTE_MAP.king.emblem}</span> You hold the crown</div><div class="lb-caste-crowned">There is no caste above King - keep every stat at 75+ or the court will notice.</div></div>`
+            : (next.reqs.length
+                ? `<div class="lb-caste-next">
+                       <div class="lb-caste-next-head">
+                           <span>Next level:</span>
+                           <span class="next-emblem">${next.caste.emblem}</span>
+                           <strong>${next.caste.name}</strong>
+                           <span class="next-count">${next.reqs.length} requirement${next.reqs.length === 1 ? '' : 's'} to go</span>
+                       </div>
+                       ${reqsMarkup}
+                   </div>`
+                : `<div class="lb-caste-next"><div class="lb-caste-next-head"><span>Next level:</span> <span class="next-emblem">${next.caste.emblem}</span> <strong>${next.caste.name}</strong></div><div class="lb-caste-crowned">You already meet the requirements - your caste updates as your stats refresh.</div></div>`);
+        hero.innerHTML = `
+            <div class="lb-caste-emblem" aria-hidden="true"><span>${caste.emblem}</span></div>
+            <div class="lb-caste-main">
+                <div class="lb-caste-eyebrow">Your caste</div>
+                <h2>${caste.name}<span class="lb-caste-title-line">${personSentence(stats)}</span></h2>
+                <p class="lb-caste-why">${caste.blurb}</p>
+            </div>
+            ${nextBlock}
+        `;
+        listEl.parentElement?.insertBefore(hero, listEl);
+        // Animate: bars sweep to their value, numbers count up.
+        requestAnimationFrame(() => {
+            hero.querySelectorAll('[data-req-bar]').forEach((bar) => {
+                const now = Number(bar.getAttribute('data-now')) || 0;
+                const target = Number(bar.getAttribute('data-target')) || 100;
+                requestAnimationFrame(() => {
+                    bar.style.width = `${Math.min(100, (now / target) * 100).toFixed(1)}%`;
+                });
+                const numEl = bar.closest('.lb-caste-req')?.querySelector('[data-req-now]');
+                animateCount(numEl, now);
+            });
+        });
+    };
 
     const renderAwards = () => {
         if (!modalBody) return;
@@ -591,6 +941,135 @@
         return withBadges;
     };
 
+    /* Add-friends: exact-username lookup + friend request, right from the
+       leaderboard. Accepted friends then appear as real rows on the
+       community board. */
+    let friendsPopEl = null;
+    const closeFriendsPop = () => {
+        friendsPopEl?.remove();
+        friendsPopEl = null;
+    };
+    const setupFriendsButton = () => {
+        ensureCasteStyle();
+        if (document.getElementById('lb-friends-btn')) return;
+        const host = openRulesBtn?.parentElement;
+        if (!host) return;
+        const button = document.createElement('button');
+        button.id = 'lb-friends-btn';
+        button.type = 'button';
+        button.className = `${openRulesBtn.className || ''} lb-friends-btn`.trim();
+        button.innerHTML = '&#9876; Add friends';
+        host.insertBefore(button, openRulesBtn);
+        button.addEventListener('click', () => {
+            if (friendsPopEl) {
+                closeFriendsPop();
+                return;
+            }
+            const rect = button.getBoundingClientRect();
+            friendsPopEl = document.createElement('div');
+            friendsPopEl.className = 'lb-friends-pop';
+            friendsPopEl.style.top = `${Math.round(rect.bottom + 8)}px`;
+            friendsPopEl.style.right = `${Math.max(10, Math.round(window.innerWidth - rect.right))}px`;
+            friendsPopEl.innerHTML = `
+                <h3>Add a friend to the board</h3>
+                <p>Find them by username. Once they accept, they show up on your community leaderboard.</p>
+                <div class="lb-friends-row">
+                    <input type="text" placeholder="@username" aria-label="Friend username" data-friends-input>
+                    <button type="button" data-friends-find>Find</button>
+                </div>
+                <div data-friends-result></div>
+                <div class="lb-friends-status" data-friends-status></div>
+            `;
+            document.body.appendChild(friendsPopEl);
+            const input = friendsPopEl.querySelector('[data-friends-input]');
+            const statusEl = friendsPopEl.querySelector('[data-friends-status]');
+            const resultEl = friendsPopEl.querySelector('[data-friends-result]');
+            input?.focus();
+            const runFind = async () => {
+                const username = String(input?.value || '').trim();
+                if (!username) return;
+                statusEl.textContent = 'Searching...';
+                resultEl.innerHTML = '';
+                try {
+                    const resp = await fetch(`/api/friends/find?username=${encodeURIComponent(username)}`, { credentials: 'include' });
+                    const json = await resp.json().catch(() => ({}));
+                    if (!resp.ok || !json?.ok) {
+                        statusEl.textContent = json?.error || 'Could not search right now.';
+                        return;
+                    }
+                    statusEl.textContent = '';
+                    const found = json.user;
+                    resultEl.innerHTML = `
+                        <div class="lb-friends-result">
+                            ${found.avatarUrl ? `<img src="${escapeAttr(found.avatarUrl)}" alt="">` : `<img alt="" style="display:none"><div class="lb-avatar-fallback" style="width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#e2e8f0;font:800 13px/1 system-ui">${initialsFromName(found.displayName)}</div>`}
+                            <div class="who"><strong>${escapeAttr(found.displayName)}</strong><span>@${escapeAttr(found.username)}</span></div>
+                            <button type="button" data-friends-add ${found.isFriend ? 'disabled' : ''}>${found.isFriend ? 'Friends ✓' : 'Add'}</button>
+                        </div>
+                    `;
+                    resultEl.querySelector('[data-friends-add]')?.addEventListener('click', async (event) => {
+                        const addButton = event.currentTarget;
+                        addButton.disabled = true;
+                        addButton.textContent = 'Sending...';
+                        const addResp = await fetch('/api/friends/request', {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ targetUserId: found.id })
+                        });
+                        const addJson = await addResp.json().catch(() => ({}));
+                        if (!addResp.ok || !addJson?.ok) {
+                            addButton.disabled = false;
+                            addButton.textContent = 'Add';
+                            statusEl.textContent = addJson?.error || 'Could not send the request.';
+                            return;
+                        }
+                        addButton.textContent = 'Request sent ✓';
+                        statusEl.textContent = `They'll appear on your board once they accept.`;
+                    });
+                } catch {
+                    statusEl.textContent = 'Could not search right now.';
+                }
+            };
+            friendsPopEl.querySelector('[data-friends-find]')?.addEventListener('click', runFind);
+            input?.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') runFind();
+                event.stopPropagation();
+            });
+            window.setTimeout(() => {
+                document.addEventListener('pointerdown', function dismiss(event) {
+                    if (friendsPopEl && !friendsPopEl.contains(event.target) && event.target !== button) {
+                        document.removeEventListener('pointerdown', dismiss, true);
+                        closeFriendsPop();
+                    }
+                }, true);
+            }, 0);
+        });
+    };
+
+    /* Everyone / Friends filter for the community board. */
+    const setupFriendFilter = (data, entries) => {
+        document.getElementById('lb-filter-chips')?.remove();
+        const mode = String(data?.mode || 'community');
+        if (mode !== 'community' || !listEl) return;
+        const hasFriends = entries.some((r) => r.isFriend) || entries.some((r) => !r.isBot);
+        if (!hasFriends) return;
+        const chips = document.createElement('div');
+        chips.id = 'lb-filter-chips';
+        chips.className = 'lb-filter-chips';
+        chips.innerHTML = `
+            <button type="button" data-filter="all" class="is-active">Everyone</button>
+            <button type="button" data-filter="friends">Friends &amp; you</button>
+        `;
+        listEl.parentElement?.insertBefore(chips, listEl);
+        chips.addEventListener('click', (event) => {
+            const chip = event.target instanceof Element ? event.target.closest('[data-filter]') : null;
+            if (!chip) return;
+            chips.querySelectorAll('[data-filter]').forEach((el) => el.classList.toggle('is-active', el === chip));
+            const filter = chip.getAttribute('data-filter');
+            renderList(filter === 'friends' ? entries.filter((r) => !r.isBot) : entries);
+        });
+    };
+
     const load = async () => {
         try {
             const params = new URLSearchParams(window.location.search || '');
@@ -618,7 +1097,10 @@
 
             renderRules(data?.rules);
             setLeaderboardMode(data);
+            setupFriendsButton();
             const entries = Array.isArray(data?.entries) ? data.entries : [];
+            renderCasteHero(data);
+            setupFriendFilter(data, entries);
             if (entries.length) {
                 renderList(entries);
             } else if (listEl && String(data?.mode || '') === 'trainer_clients') {

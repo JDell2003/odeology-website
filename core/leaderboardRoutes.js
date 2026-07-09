@@ -1359,7 +1359,57 @@ module.exports = async function leaderboardRoutes(req, res, url) {
       }
     }
 
-    const combined = userEntry ? [...bots, userEntry] : bots;
+    // Friends compete on the same board: score each accepted friend the same
+    // way the signed-in user is scored (capped so one request stays cheap).
+    let friendEntries = [];
+    if (userEntry && db.isConfigured()) {
+      try {
+        const friendRows = await db.query(
+          `
+            SELECT u.id, u.username, u.display_name, u.created_at, tp.profile_image, tp.bio
+            FROM app_friends f
+            JOIN app_users u ON u.id = f.friend_id
+            LEFT JOIN app_training_profiles tp ON tp.user_id = u.id
+            WHERE f.user_id = $1
+            ORDER BY f.created_at DESC
+            LIMIT 20;
+          `,
+          [user.id]
+        );
+        friendEntries = await Promise.all((friendRows.rows || []).map(async (row) => {
+          try {
+            const score = await scoreUserForMonth(row.id, { monthStart: monthStartIso(now) });
+            const streakDays = await scoreUserStreakDays(row.id, { todayIso: day });
+            const initials = String(row.display_name || row.username || '?')
+              .split(' ')
+              .map(s => s.slice(0, 1))
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            return {
+              id: String(row.id),
+              displayName: row.display_name || row.username || 'Friend',
+              handle: row.username ? `@${row.username}` : '',
+              avatarUrl: row.profile_image || encodeSvgDataUrl(avatarSvg({ initials, a: '#a78bfa', b: '#f472b6' })),
+              joinedAt: row.created_at,
+              points: Number(score.points) || 0,
+              breakdown: score.breakdown || {},
+              bio: row.bio || '',
+              streakDays,
+              isBot: false,
+              isFriend: true
+            };
+          } catch {
+            return null;
+          }
+        }));
+        friendEntries = friendEntries.filter(Boolean);
+      } catch {
+        friendEntries = [];
+      }
+    }
+
+    const combined = userEntry ? [...bots, userEntry, ...friendEntries] : bots;
     const { entries, you } = buildLeaderboard({ entries: combined, userEntry, month, day });
     return sendJson(res, 200, { month, day, rules: rules(), entries, you });
   }
