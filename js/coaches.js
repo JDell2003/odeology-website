@@ -248,6 +248,71 @@
 
   const COACHES_PAGE_SIZE = 10;
 
+  function ensureCoachesMobileStyle() {
+    if (document.getElementById('coaches-mobile-style')) return;
+    const style = document.createElement('style');
+    style.id = 'coaches-mobile-style';
+    style.textContent = `
+      .coaches-filters-toggle{display:none}
+      .coaches-toolbar-done{display:none}
+      @media (max-width: 767px){
+        /* One-screen mobile layout: tuck the filters behind a button and
+           compact the deck so Pass & Match fits without scrolling. */
+        .coaches-heading-sub{display:none}
+        .coaches-heading-title{font-size:1.7rem;margin:0}
+        .coaches-heading{margin:0 0 10px}
+        .coaches-main{min-height:auto;padding-bottom:8px}
+        .coaches-section-label{display:none}
+        .coaches-toolbar{display:none}
+        body.coaches-filters-open .coaches-toolbar{
+          display:grid;gap:8px;position:fixed;left:12px;right:12px;top:64px;z-index:80;
+          padding:14px;border-radius:18px;background:#ffffff;
+          box-shadow:0 24px 60px rgba(7,20,31,.25);border:1px solid rgba(10,31,47,.1)
+        }
+        body.coaches-filters-open .coaches-toolbar-done{
+          display:inline-flex;align-items:center;justify-content:center;min-height:42px;
+          border:0;border-radius:12px;background:#16344d;color:#fff;
+          font:800 13px/1 system-ui,sans-serif;cursor:pointer
+        }
+        .coaches-filters-backdrop{display:none;position:fixed;inset:0;z-index:70;background:rgba(2,6,23,.4)}
+        body.coaches-filters-open .coaches-filters-backdrop{display:block}
+        .coaches-filters-toggle{
+          display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;
+          border:1px solid rgba(15,23,42,.12);background:rgba(255,255,255,.92);color:#475569;
+          font:800 13px/1 system-ui,sans-serif;cursor:pointer;position:relative
+        }
+        .coaches-filters-toggle[data-active="1"]::after{
+          content:'';position:absolute;top:6px;right:8px;width:7px;height:7px;border-radius:999px;background:#e11d48
+        }
+        .coaches-view-toggle{margin:0 0 10px}
+        .coaches-controls-row{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 10px}
+        .coaches-controls-row .coaches-view-toggle{margin:0}
+        /* Compact deck */
+        .coach-match-browser{gap:10px;padding:0 0 10px}
+        .coach-match-counter{font-size:11px}
+        .coach-match-stage{height:335px}
+        .coach-match-card{padding:16px 16px 14px;gap:5px;border-radius:20px}
+        .coach-match-card-avatar{width:92px;height:92px;border-width:3px;margin-bottom:2px}
+        .coach-match-card-name{font-size:19px}
+        .coach-match-card-handle{font-size:11px}
+        .coach-match-card-chips span{padding:4px 10px;font-size:10px}
+        .coach-match-card-overview{font-size:12.5px;-webkit-line-clamp:2;max-width:260px}
+        .coach-match-card-mode{font-size:10.5px}
+        .coach-match-card a.coach-match-card-view{min-height:38px;padding:0 18px;font-size:12px}
+        .coach-match-actions{gap:20px}
+        .coach-match-btn{width:52px;height:52px;font-size:21px}
+        .coach-match-help{display:none}
+        .coach-match-strip{padding:10px 14px;border-radius:16px}
+        .coach-match-strip-title{margin-bottom:6px;font-size:10px}
+        .coach-match-strip-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+        .coach-match-strip-row::-webkit-scrollbar{display:none}
+        .coach-match-strip-hint{font-size:11.5px}
+        .coach-match-empty{padding:30px 18px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function ensureCoachesPagerStyle() {
     if (document.getElementById('coaches-pager-style')) return;
     const style = document.createElement('style');
@@ -476,11 +541,15 @@
       try { sessionStorage.setItem('coaches-deck-matches', JSON.stringify(deckMatches)); } catch {}
     };
 
+    ensureCoachesMobileStyle();
     if (!document.getElementById('coaches-view-toggle')) {
       gridEl.insertAdjacentHTML('beforebegin', `
-        <div class="coaches-view-toggle" id="coaches-view-toggle" role="tablist" aria-label="Browse style">
-          <button type="button" data-view-mode="deck" role="tab">&#10084;&#65039; Pass &amp; Match</button>
-          <button type="button" data-view-mode="cards" role="tab">&#9783; Cards</button>
+        <div class="coaches-controls-row" id="coaches-controls-row">
+          <div class="coaches-view-toggle" id="coaches-view-toggle" role="tablist" aria-label="Browse style">
+            <button type="button" data-view-mode="deck" role="tab">&#10084;&#65039; Pass &amp; Match</button>
+            <button type="button" data-view-mode="cards" role="tab">&#9783; Cards</button>
+          </div>
+          <button type="button" class="coaches-filters-toggle" id="coaches-filters-toggle" aria-label="Search and location filters">&#9881; Filters</button>
         </div>
       `);
       document.getElementById('coaches-view-toggle')?.addEventListener('click', (event) => {
@@ -490,6 +559,38 @@
         try { localStorage.setItem('coaches-view-mode', viewMode); } catch {}
         applyFilters();
       });
+      // Mobile: the search/city/state/zip inputs live behind the Filters
+      // button so Pass & Match fits on one screen.
+      const toolbarEl = document.querySelector('.coaches-toolbar');
+      const filtersToggleEl = document.getElementById('coaches-filters-toggle');
+      if (toolbarEl && filtersToggleEl) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'coaches-filters-backdrop';
+        document.body.appendChild(backdrop);
+        const doneButton = document.createElement('button');
+        doneButton.type = 'button';
+        doneButton.className = 'coaches-toolbar-done';
+        doneButton.textContent = 'Show trainers';
+        toolbarEl.appendChild(doneButton);
+        const closeFilters = () => document.body.classList.remove('coaches-filters-open');
+        filtersToggleEl.addEventListener('click', () => {
+          document.body.classList.toggle('coaches-filters-open');
+          if (document.body.classList.contains('coaches-filters-open')) {
+            toolbarEl.querySelector('input')?.focus();
+          }
+        });
+        backdrop.addEventListener('click', closeFilters);
+        doneButton.addEventListener('click', closeFilters);
+        const syncFilterDot = () => {
+          const hasValue = [searchInput, cityInput, stateInput, zipInput]
+            .some((input) => input && String(input.value || '').trim());
+          filtersToggleEl.setAttribute('data-active', hasValue ? '1' : '0');
+        };
+        [searchInput, cityInput, stateInput, zipInput].forEach((input) => {
+          input?.addEventListener('input', syncFilterDot);
+        });
+        syncFilterDot();
+      }
     }
     const syncViewToggle = () => {
       document.querySelectorAll('#coaches-view-toggle [data-view-mode]').forEach((button) => {
