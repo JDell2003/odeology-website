@@ -2095,6 +2095,23 @@
 
   const standalonePreviewNavWatchdogs = new WeakMap();
 
+  function forwardInspectorPressToPreview(event) {
+    const frame = document.querySelector('iframe[data-standalone-live-preview="1"]');
+    if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) return;
+    const rect = frame.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const scaleX = rect.width / Math.max(1, frame.clientWidth || rect.width);
+    const scaleY = rect.height / Math.max(1, frame.clientHeight || rect.height);
+    try {
+      frame.contentWindow.postMessage({
+        type: 'trainer_standalone_pointer_forward',
+        x: (Number(event.clientX) - rect.left) / (scaleX || 1),
+        y: (Number(event.clientY) - rect.top) / (scaleY || 1),
+        button: Number(event.button) || 0
+      }, '*');
+    } catch {}
+  }
+
   function postStandalonePreviewViewportInsets() {
     document.querySelectorAll('iframe[data-standalone-live-preview="1"]').forEach((frame) => {
       if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) return;
@@ -2604,8 +2621,10 @@
     standaloneCodeHighlightRange = match;
     syncStandaloneCodeHighlightUi();
     if (!match) return;
-    input.focus({ preventScroll: true });
-    input.setSelectionRange(match.start, match.end);
+    // Never focus the textarea here: stealing focus from the preview iframe
+    // blurs the element the trainer just clicked and instantly cancels
+    // inline editing. The overlay highlight + scroll show the match fine.
+    try { input.setSelectionRange(match.start, match.end); } catch {}
     const targetTop = standaloneCodeMatchScrollTop();
     animateStandaloneCodeScroll(input, targetTop == null ? 0 : targetTop);
   }
@@ -5041,6 +5060,20 @@
             if (d.type === 'trainer_standalone_viewport_insets') {
               parentVisibleTop = Math.max(0, Number(d.visibleTop) || 0);
               parentVisibleBottom = Math.max(0, Number(d.visibleBottom) || 0);
+              return;
+            }
+            if (d.type === 'trainer_standalone_pointer_forward') {
+              const px = Number(d.x) || 0;
+              const py = Number(d.y) || 0;
+              const under = document.elementFromPoint(px, py);
+              const target = resolveSelectionTarget(under, { clientX: px, clientY: py });
+              if (!isEditableTarget(target)) return;
+              selectNode(target, {});
+              if (Number(d.button) === 2) {
+                showContextMenu(px, py);
+              } else if (hasInlineText(target) && !isBlockContainerNode(target) && !isSectionLikeNode(target)) {
+                beginInlineEdit(target);
+              }
               return;
             }
             if (d.type === 'trainer_standalone_consult_fields_get') {
@@ -8394,9 +8427,24 @@
         if (!standaloneInspectorState.selected) return;
         const target = event.target;
         if (!(target instanceof Element)) return;
-        if (target.closest('#trainer-standalone-inspector-shell')) return;
+        if (target.closest('#trainer-standalone-inspector-shell')) {
+          // Left presses on the panel's controls stay on the panel; right
+          // presses (and presses on the background) fall through to whatever
+          // page element the panel happens to cover.
+          if (Number(event.button) !== 2 && target.closest('input,select,textarea,button,label')) return;
+          event.preventDefault();
+          clearStandaloneInspectorSelection();
+          forwardInspectorPressToPreview(event);
+          return;
+        }
         if (target.closest('iframe[data-standalone-live-preview="1"]')) return;
         clearStandaloneInspectorSelection();
+      }, true);
+      document.addEventListener('contextmenu', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (!target.closest('#trainer-standalone-inspector-shell')) return;
+        event.preventDefault();
       }, true);
       window.addEventListener('resize', () => {
         if (standaloneInspectorState.selected) syncStandaloneInspectorUi();
