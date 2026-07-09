@@ -5499,8 +5499,9 @@ function buildAuthUserFromRow(row) {
   const isTech = isTechUser(row);
   const owner = isOwnerUser(row);
   const isTrainer = notesHasFlag(adminNotes, 'trainer') || owner;
-  const isManager = notesHasFlag(adminNotes, 'manager');
-  const isClient = notesHasFlag(adminNotes, 'client');
+  // Owners are the master accounts: every role tag is active for them.
+  const isManager = notesHasFlag(adminNotes, 'manager') || owner;
+  const isClient = notesHasFlag(adminNotes, 'client') || owner;
   return {
     id: row.id,
     username: row.username || null,
