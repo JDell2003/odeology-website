@@ -259,9 +259,9 @@
         /* One-screen mobile layout: tuck the filters behind a button and
            compact the deck so Pass & Match fits without scrolling. */
         .coaches-heading-sub{display:none}
-        .coaches-heading-title{font-size:1.7rem;margin:0}
-        .coaches-heading{margin:0 0 10px}
-        .coaches-main{min-height:auto;padding-bottom:8px}
+        .coaches-heading-title{font-size:1.5rem;margin:0}
+        .coaches-heading{margin:0 0 8px}
+        .coaches-main{min-height:auto;padding-bottom:4px}
         .coaches-section-label{display:none}
         .coaches-toolbar{display:none}
         body.coaches-filters-open .coaches-toolbar{
@@ -285,29 +285,54 @@
           content:'';position:absolute;top:6px;right:8px;width:7px;height:7px;border-radius:999px;background:#e11d48
         }
         .coaches-view-toggle{margin:0 0 10px}
-        .coaches-controls-row{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 10px}
+        .coaches-controls-row{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 8px}
         .coaches-controls-row .coaches-view-toggle{margin:0}
-        /* Compact deck */
-        .coach-match-browser{gap:10px;padding:0 0 10px}
-        .coach-match-counter{font-size:11px}
-        .coach-match-stage{height:335px}
-        .coach-match-card{padding:16px 16px 14px;gap:5px;border-radius:20px}
-        .coach-match-card-avatar{width:92px;height:92px;border-width:3px;margin-bottom:2px}
-        .coach-match-card-name{font-size:19px}
-        .coach-match-card-handle{font-size:11px}
-        .coach-match-card-chips span{padding:4px 10px;font-size:10px}
-        .coach-match-card-overview{font-size:12.5px;-webkit-line-clamp:2;max-width:260px}
-        .coach-match-card-mode{font-size:10.5px}
-        .coach-match-card a.coach-match-card-view{min-height:38px;padding:0 18px;font-size:12px}
-        .coach-match-actions{gap:20px}
-        .coach-match-btn{width:52px;height:52px;font-size:21px}
+        /* Moderator tabs: align and compact to match the rest of the page */
+        .coaches-review-tabs.is-visible{justify-content:center;gap:6px;margin:0 0 8px;max-width:none}
+        .coaches-review-tab{min-height:34px;padding:0 12px;font-size:.7rem;border-radius:999px}
+        .coaches-review-summary{width:100%;text-align:center;font-size:.66rem;order:3}
+        /* Photo-forward swipe card (Tinder-style) */
+        .coach-match-browser{gap:0;padding:0 0 8px;position:relative}
+        .coach-match-counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;margin:0;
+          padding:5px 12px;border-radius:999px;background:rgba(2,6,23,.45);color:#fff;font-size:10px;
+          letter-spacing:.14em;backdrop-filter:blur(6px)}
+        .coach-match-stage{height:350px;margin-bottom:0}
+        .coach-match-card{padding:0;gap:4px;border-radius:24px;overflow:hidden;justify-content:flex-end;text-align:left;align-items:stretch}
+        .coach-match-card::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+          background:linear-gradient(180deg,rgba(2,6,23,0) 38%,rgba(2,6,23,.55) 62%,rgba(2,6,23,.92) 100%)}
+        .coach-match-card-avatar{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;margin:0;box-shadow:none;z-index:0}
+        .coach-match-card-avatar img{width:100%;height:100%;object-fit:cover}
+        .coach-match-card-stamp{z-index:5;top:34px}
+        .coach-match-card-name,.coach-match-card-handle,.coach-match-card-chips,
+        .coach-match-card-overview,.coach-match-card-mode{position:relative;z-index:2;margin-left:18px;margin-right:18px}
+        .coach-match-card-name{color:#fff;font-size:24px;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+        .coach-match-card-handle{color:rgba(255,255,255,.72);font-size:11px}
+        .coach-match-card-chips{justify-content:flex-start;margin-top:4px}
+        .coach-match-card-chips span{padding:4px 11px;font-size:9.5px;background:rgba(255,255,255,.16);color:#fff;
+          border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
+        .coach-match-card-overview{color:rgba(255,255,255,.88);font-size:12.5px;line-height:1.45;-webkit-line-clamp:2;max-width:none;text-align:left}
+        .coach-match-card-mode{color:rgba(255,255,255,.6);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+        .coach-match-card a.coach-match-card-view{position:relative;z-index:2;margin:10px 18px 44px;min-height:42px;
+          font-size:12.5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px)}
+        /* Action buttons float over the card bottom */
+        .coach-match-actions{position:relative;z-index:6;gap:22px;margin-top:-31px}
+        .coach-match-btn{width:60px;height:60px;font-size:24px;border-width:0;box-shadow:0 14px 30px rgba(2,6,23,.3)}
+        .coach-match-btn.is-pass{background:#ffffff;color:#64748b}
+        .coach-match-btn.is-match{background:linear-gradient(135deg,#ff2d55,#e11d48);color:#fff;animation:coachHeartBeat 2.6s ease-in-out infinite}
+        @keyframes coachHeartBeat{0%,100%{transform:scale(1)}12%{transform:scale(1.07)}24%{transform:scale(1)}}
         .coach-match-help{display:none}
-        .coach-match-strip{padding:10px 14px;border-radius:16px}
-        .coach-match-strip-title{margin-bottom:6px;font-size:10px}
-        .coach-match-strip-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+        /* Matches: story-style avatar bubbles */
+        .coach-match-strip{margin-top:10px;padding:10px 14px 8px;border-radius:18px;background:rgba(255,255,255,.75);
+          border:1px solid rgba(10,31,47,.07);box-shadow:none;backdrop-filter:blur(8px)}
+        .coach-match-strip-title{margin-bottom:8px;font-size:9.5px;text-align:center}
+        .coach-match-strip-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:14px;justify-content:flex-start}
         .coach-match-strip-row::-webkit-scrollbar{display:none}
-        .coach-match-strip-hint{font-size:11.5px}
+        .coach-match-chip{flex-direction:column;gap:4px;padding:0;background:transparent;border:0;flex:0 0 auto;max-width:58px}
+        .coach-match-chip img{width:46px;height:46px;border:2.5px solid #16a34a;padding:1.5px;background:#fff}
+        .coach-match-chip span{font-size:9.5px;max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155}
+        .coach-match-strip-hint{font-size:11px;text-align:center}
         .coach-match-empty{padding:30px 18px}
+        @media (prefers-reduced-motion: reduce){.coach-match-btn.is-match{animation:none}}
       }
     `;
     document.head.appendChild(style);
