@@ -278,6 +278,12 @@
       .coach-celeb-btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
       .coach-celeb-btn.is-primary{background:linear-gradient(135deg,#ff2d55,#e11d48);color:#fff;box-shadow:0 16px 34px rgba(225,29,72,.35)}
       .coach-celeb-btn.is-ghost{background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.18)}
+      .coach-celeb-btn.is-sending{pointer-events:none;filter:none;transform:none;gap:10px}
+      .coach-celeb-spinner{width:17px;height:17px;border-radius:999px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+        animation:coachCelebSpin .7s linear infinite;flex:0 0 auto}
+      @keyframes coachCelebSpin{to{transform:rotate(360deg)}}
+      .coach-celeb-dots::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:coachCelebDots 1.2s steps(4) infinite}
+      @keyframes coachCelebDots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
       .coach-celeb-sent{margin:0 0 12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.07);
         border:1px solid rgba(255,255,255,.12);text-align:left}
       .coach-celeb-sent-label{font:800 9.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#4ade80;margin-bottom:6px}
@@ -769,7 +775,8 @@
         }
         const button = event.currentTarget;
         button.disabled = true;
-        button.textContent = 'Sending...';
+        button.classList.add('is-sending');
+        button.innerHTML = '<span class="coach-celeb-spinner" aria-hidden="true"></span><span>Sending<span class="coach-celeb-dots"></span></span>';
         const myName = String(currentUser?.displayName || currentUser?.username || 'a RiseForIt member').trim();
         const variantIndex = Math.floor(Math.random() * MATCH_INTRO_VARIANTS.length);
         const intro = MATCH_INTRO_VARIANTS[variantIndex](coachFirst, myName);
@@ -779,6 +786,7 @@
         });
         if (!resp.ok || !resp.json?.ok) {
           button.disabled = false;
+          button.classList.remove('is-sending');
           button.textContent = `Message ${coachFirst}`;
           const sub = overlay.querySelector('.coach-celeb-sub');
           if (sub) sub.textContent = resp.json?.error || 'Could not send right now - try again.';
@@ -813,6 +821,7 @@
             if (quickButton.dataset.sent === '1' || quickButton.dataset.busy === '1') return;
             quickButton.dataset.busy = '1';
             const text = String(quickButton.querySelector('span')?.textContent || '').trim();
+            quickButton.innerHTML = `<span>${escapeHtml(text)}</span><span class="coach-celeb-spinner" aria-hidden="true"></span>`;
             const quickResp = await api('/api/messages/send', {
               method: 'POST',
               body: JSON.stringify({ toUserId: String(trainer.id || ''), body: text })
@@ -821,6 +830,8 @@
             if (quickResp.ok && quickResp.json?.ok) {
               quickButton.dataset.sent = '1';
               quickButton.innerHTML = `<span>${escapeHtml(text)}</span><span aria-hidden="true">&#10003; Sent</span>`;
+            } else {
+              quickButton.innerHTML = `<span>${escapeHtml(text)}</span><span aria-hidden="true">&#10148;</span>`;
             }
           });
         });
