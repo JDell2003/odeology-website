@@ -297,11 +297,11 @@
           padding:5px 12px;border-radius:999px;background:rgba(2,6,23,.45);color:#fff;font-size:10px;
           letter-spacing:.14em;backdrop-filter:blur(6px)}
         .coach-match-stage{height:350px;margin-bottom:0}
-        .coach-match-card{padding:0;gap:4px;border-radius:24px;overflow:hidden;justify-content:flex-end;text-align:left;align-items:stretch}
+        .coach-match-card{padding:0;gap:5px;border-radius:24px;overflow:hidden;justify-content:flex-end;text-align:left;align-items:stretch;background:#0e1626;border:0}
         .coach-match-card::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
           background:linear-gradient(180deg,rgba(2,6,23,0) 38%,rgba(2,6,23,.55) 62%,rgba(2,6,23,.92) 100%)}
-        .coach-match-card-avatar{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;margin:0;box-shadow:none;z-index:0}
-        .coach-match-card-avatar img{width:100%;height:100%;object-fit:cover}
+        .coach-match-card-avatar{position:absolute;top:0;left:0;right:0;width:100%;height:62%;border:0;border-radius:0;margin:0;box-shadow:none;z-index:0}
+        .coach-match-card-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top}
         .coach-match-card-stamp{z-index:5;top:34px}
         .coach-match-card-name,.coach-match-card-handle,.coach-match-card-chips,
         .coach-match-card-overview,.coach-match-card-mode{position:relative;z-index:2;margin-left:18px;margin-right:18px}
@@ -310,7 +310,7 @@
         .coach-match-card-chips{justify-content:flex-start;margin-top:4px}
         .coach-match-card-chips span{padding:4px 11px;font-size:9.5px;background:rgba(255,255,255,.16);color:#fff;
           border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
-        .coach-match-card-overview{color:rgba(255,255,255,.88);font-size:12.5px;line-height:1.45;-webkit-line-clamp:2;max-width:none;text-align:left}
+        .coach-match-card-overview{color:rgba(255,255,255,.82);font-size:12.5px;line-height:1.5;-webkit-line-clamp:2;max-width:none;text-align:left}
         .coach-match-card-mode{color:rgba(255,255,255,.6);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
         .coach-match-card a.coach-match-card-view{position:relative;z-index:2;margin:10px 18px 44px;min-height:42px;
           font-size:12.5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px)}
