@@ -163,13 +163,14 @@
         const cadence = String(src?.cadence || 'Leaderboard resets monthly.');
 
         setModalHead({
-            title: 'Rules',
-            sub: 'Points are based on actions you can take on this website.',
+            title: 'Rules of the Arena',
+            sub: 'Points come from real actions. Points decide your rank. Rank decides your caste.',
             ariaLabel: 'Leaderboard rules'
         });
 
         modalBody.innerHTML = `
-            <div class="ns-muted" style="font-size:12px;">${cadence}</div>
+            <div class="ns-muted" style="font-size:12px;">${cadence} Ranks reshuffle every day.</div>
+            ${pts.length ? `<div class="lb-rule-section">Earning points</div>` : ''}
             ${pts.map(r => `
                 <div class="lb-rule">
                     <div>
@@ -179,19 +180,63 @@
                     <div class="lb-rule-points">+${r.points}</div>
                 </div>
             `).join('')}
+            <div class="lb-rule-section">The castes</div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Every stat 75+, nothing neglected. Thrones only open when a King slips.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Strength 62+ and consistency 70+. Show up and lift, week after week.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ☯ Monk · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">The class tier - each rewards a different way of training. Your stats decide which one claims you.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant &nbsp;·&nbsp; ◌ Ghost</div><div class="lb-rule-note">The proving grounds. Consistency is the fastest way out.</div></div></div>
+            <div class="lb-rule-section">Daily shifts</div>
+            <div class="lb-rule"><div><div class="lb-rule-title">The ranks move every day</div><div class="lb-rule-note">Miss a day and someone passes you. Your ▲/▼ arrow shows what happened overnight. Slots up top are limited - climbing means someone else falls.</div></div></div>
         `;
+    };
+
+    const miniRadarSvg = (stats) => {
+        const cx = 46;
+        const cy = 46;
+        const R = 36;
+        const point = (i, v) => {
+            const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+            const r = R * (Math.max(4, v) / 100);
+            return `${(cx + Math.cos(angle) * r).toFixed(1)},${(cy + Math.sin(angle) * r).toFixed(1)}`;
+        };
+        const ring = (v) => CASTE_AXES.map((k, i) => point(i, v)).join(' ');
+        const shape = CASTE_AXES.map((k, i) => point(i, stats[k])).join(' ');
+        const spokes = CASTE_AXES.map((k, i) => {
+            const [x, y] = point(i, 100).split(',');
+            return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="spoke"/>`;
+        }).join('');
+        return `<svg class="lb-mini-radar" viewBox="0 0 92 92" aria-label="Stat spider chart">
+            <polygon points="${ring(100)}" class="ring"/>
+            <polygon points="${ring(62)}" class="ring"/>
+            <polygon points="${ring(28)}" class="ring"/>
+            ${spokes}
+            <polygon points="${shape}" class="shape"/>
+        </svg>`;
+    };
+
+    const deltaBadge = (delta) => {
+        if (delta == null || !Number.isFinite(Number(delta))) return '';
+        const d = Number(delta);
+        if (d > 0) return `<div class="lb-delta is-up" title="Climbed ${d} places since yesterday">▲${d}</div>`;
+        if (d < 0) return `<div class="lb-delta is-down" title="Dropped ${Math.abs(d)} places since yesterday">▼${Math.abs(d)}</div>`;
+        return '<div class="lb-delta is-flat" title="Held position">—</div>';
     };
 
     const renderList = (rows) => {
         if (!listEl) return;
-        listEl.innerHTML = rows.map(r => r.__gap ? `
+        listEl.innerHTML = rows.map((r, rowIndex) => r.__gap ? `
             <div class="lb-gaprow" aria-hidden="true"><span></span><em>${Number(r.count || 0).toLocaleString()} more athletes</em><span></span></div>
-        ` : `
-            <div class="lb-row ${Number(r.rank) === 1 ? 'is-gold' : ''} ${Number(r.rank) === 2 ? 'is-silver' : ''} ${Number(r.rank) === 3 ? 'is-bronze' : ''}">
+        ` : (() => {
+            const stats = r.__stats || casteStatsFromRow(r);
+            const rowCaste = r.__caste && CASTE_MAP[r.__caste] ? CASTE_MAP[r.__caste] : pickCaste(stats);
+            const isYou = !r.isBot && !r.isFriend && !r.isTrainerClient && !r.isManagerTrainer;
+            return `
+            <div class="lb-row ${Number(r.rank) === 1 ? 'is-gold' : ''} ${Number(r.rank) === 2 ? 'is-silver' : ''} ${Number(r.rank) === 3 ? 'is-bronze' : ''} ${isYou ? 'is-you-row' : ''}" style="animation-delay:${Math.min(rowIndex, 14) * 45}ms">
                 <div class="lb-rankbox" aria-label="Rank ${r.rank}">
                     <div class="lb-ranknum">#${r.rank}</div>
+                    ${deltaBadge(r.delta)}
                     <div class="lb-avatar ${r.avatarUrl ? '' : 'noimg'}">
-                        ${r.avatarUrl ? `<img src="${r.avatarUrl}" alt="${escapeAttr(r.displayName)}" onerror="this.parentElement.classList.add('noimg'); this.remove();">` : `<div class="lb-avatar-fallback" aria-hidden="true">${initialsFromName(r.displayName)}</div>`}
+                        ${r.avatarUrl ? `<img src="${r.avatarUrl}" alt="${escapeAttr(r.displayName)}" loading="lazy" onerror="this.parentElement.classList.add('noimg'); this.remove();">` : `<div class="lb-avatar-fallback" aria-hidden="true">${initialsFromName(r.displayName)}</div>`}
                     </div>
                 </div>
                 <div class="lb-main">
@@ -203,22 +248,18 @@
                         ${(() => {
                             const base = normalizeBadges(r.badges);
                             if (Number(r.streakDays || 0) > 1) base.push({ id: 'streak', label: `${FIRE} ${Number(r.streakDays)}d`, tone: 'amber', desc: 'Daily logging streak.' });
-                            base.push({ id: 'who', label: r.isBot ? 'Community' : (r.isFriend ? 'Friend' : 'You'), tone: r.isBot ? 'slate' : (r.isFriend ? 'violet' : 'teal'), desc: '' });
+                            if (r.isFriend) base.push({ id: 'who', label: 'Friend', tone: 'violet', desc: '' });
+                            if (isYou) base.push({ id: 'who', label: 'You', tone: 'teal', desc: '' });
                             base.push({ id: 'joined', label: `Joined ${fmtJoin(r.joinedAt)}`, tone: 'slate', desc: '' });
-                            const max = 7;
-                            const shown = base.slice(0, max);
-                            const extra = base.length > max ? base.length - max : 0;
-                            const rowCaste = r.__caste && CASTE_MAP[r.__caste] ? CASTE_MAP[r.__caste] : pickCaste(casteStatsFromRow(r));
+                            const shown = base.slice(0, 3);
                             const pills = castePill(rowCaste) + shown.map(badgePill).join('');
-                            const more = extra ? `<span class="lb-pill" data-tone="slate" title="${extra} more badges">+${extra}</span>` : '';
-                            return pills + more;
+                            return pills;
                         })()}
                     </div>
                     ${trainerMetricLine(r)}
                     ${(() => {
                         if (!r.isTrainerClient) return '';
-                        const stats = casteStatsFromRow(r);
-                        const caste = pickCaste(stats);
+                        const caste = rowCaste;
                         const next = pickNextCaste(stats, caste);
                         if (!next) return `<div class="lb-caste-rowhint">${caste.emblem} Holds the crown - every stat 75+.</div>`;
                         if (!next.reqs.length) return `<div class="lb-caste-rowhint">${caste.emblem} Ready to rank up to <strong>${next.caste.name}</strong>.</div>`;
@@ -227,13 +268,15 @@
                     })()}
                     ${r.bio ? `<div class="lb-bio">${escapeAttr(String(r.bio))}</div>` : ''}
                 </div>
+                <div class="lb-spider" aria-hidden="true">${miniRadarSvg(stats)}</div>
                 <div class="lb-right">
-                    <div class="lb-points">${Number(r.points || 0).toLocaleString()} pts</div>
-                    ${r.isTrainerClient ? '<div class="ns-muted" style="font-size:11px;text-align:right;">client score</div>' : ''}
-                    ${r.isManagerTrainer ? '<div class="ns-muted" style="font-size:11px;text-align:right;">trainer score</div>' : ''}
+                    <div class="lb-points">${Number(r.points || 0).toLocaleString()}<span class="lb-points-unit">pts</span></div>
+                    ${r.isTrainerClient ? '<div class="lb-points-note">client score</div>' : ''}
+                    ${r.isManagerTrainer ? '<div class="lb-points-note">trainer score</div>' : ''}
                 </div>
             </div>
-        `).join('');
+        `;
+        })()).join('');
     };
 
     const setLeaderboardMode = (data) => {
@@ -619,6 +662,9 @@
             .lb-filter-chips button{min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(10,31,47,.14);
                 background:rgba(255,255,255,.9);color:rgba(13,34,50,.7);font:800 12px/1 system-ui,sans-serif;cursor:pointer}
             .lb-filter-chips button.is-active{background:#16344d;border-color:#16344d;color:#fff}
+            .lb-rule-section{margin:16px 0 6px;font:800 10.5px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#e8c766}
+            body.leaderboard-page .lb-gaprow{color:rgba(232,199,102,.6)}
+            body.leaderboard-page .lb-gaprow span{background:repeating-linear-gradient(90deg,rgba(232,199,102,.3) 0 6px,transparent 6px 12px)}
             .lb-gaprow{display:flex;align-items:center;gap:12px;padding:10px 4px;color:rgba(120,113,108,.75)}
             .lb-gaprow span{flex:1 1 auto;height:1px;background:repeating-linear-gradient(90deg,rgba(120,113,108,.35) 0 6px,transparent 6px 12px)}
             .lb-gaprow em{font:700 11px/1 system-ui,sans-serif;font-style:normal;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
@@ -1016,36 +1062,46 @@
     const GAME_FIRST_NAMES = ['Marcus', 'Lena', 'Diego', 'Priya', 'Cole', 'Amara', 'Felix', 'Nadia', 'Owen', 'Zara', 'Bruno', 'Ivy', 'Dante', 'Freya', 'Silas', 'Mara', 'Theo', 'Alina', 'Rocco', 'Wren', 'Kai', 'Esme', 'Jonas', 'Talia', 'Ezra', 'Nova', 'Luca', 'Sage', 'Mateo', 'Iris', 'Axel', 'Remy', 'Nash', 'Vera', 'Otto', 'Lyra', 'Enzo', 'Cleo', 'Hugo', 'Isla'];
     const GAME_LAST_NAMES = ['Steele', 'Varga', 'Okafor', 'Lindqvist', 'Moreau', 'Castillo', 'Novak', 'Ferrer', 'Haas', 'Iversen', 'Kowalski', 'Tanaka', 'Reyes', 'Bishop', 'Drummond', 'Ashford', 'Vance', 'Holt', 'Mercer', 'Quinn', 'Sato', 'Lombardi', 'Petrov', 'Nyström', 'Delacroix', 'Barros', 'Kessler', 'Whitlock', 'Aldana', 'Brandt', 'Falk', 'Grimaldi', 'Hale', 'Ibarra', 'Joric', 'Katz', 'Larkin', 'Madsen', 'North', 'Pryor', 'Roan', 'Sylvan', 'Thorne', 'Ulrich', 'Voss', 'Winters', 'Yates', 'Zamora', 'Bergström', 'Calloway', 'Duval', 'Eastwood', 'Farrow', 'Giannis', 'Hollis', 'Ingram', 'Juno', 'Kirby', 'Lowe', 'Marsh'];
 
-    const gameFakeIdentity = (index, day) => {
-        const rnd = syncSeed(`lb_fake_${index}`);
+    /* Each athlete is a stable PERSON (index) with a stable base score and a
+       join date proportional to that score - veterans have the points to show
+       for it. Daily jitter reshuffles ranks each day, and evaluating
+       yesterday's points gives every athlete a real rise/drop delta. */
+    const yesterdayKey = (day) => {
+        const d = new Date(`${day}T00:00:00Z`);
+        d.setUTCDate(d.getUTCDate() - 1);
+        return d.toISOString().slice(0, 10);
+    };
+
+    const gamePersonBase = (index) => {
+        const rnd = syncSeed(`lb_person_${index}`);
+        const bell = (rnd() + rnd() + rnd()) / 3;
+        const skewed = Math.pow(bell, 0.82);
+        return Math.round(40 + skewed * 1460);
+    };
+
+    const gamePersonPoints = (index, base, day) => {
+        const rnd = syncSeed(`lb_daily_${day}_${index}`);
+        return Math.max(10, Math.round(base + rnd() * 170 - 85));
+    };
+
+    const gamePersonIdentity = (index, day) => {
+        const rnd = syncSeed(`lb_person_id_${index}`);
         const first = GAME_FIRST_NAMES[Math.floor(rnd() * GAME_FIRST_NAMES.length)];
         const last = GAME_LAST_NAMES[Math.floor(rnd() * GAME_LAST_NAMES.length)];
         const displayName = `${first} ${last}`;
         const handle = `@${first}${last}`.toLowerCase().replace(/[^a-z0-9@]/g, '').slice(0, 18);
-        const palette = [['#22c55e', '#06b6d4'], ['#a78bfa', '#f472b6'], ['#f97316', '#facc15'], ['#60a5fa', '#34d399'], ['#fb7185', '#f59e0b'], ['#38bdf8', '#a3e635']];
+        const palette = [['#e8c766', '#b98a2b'], ['#a78bfa', '#f472b6'], ['#f97316', '#facc15'], ['#60a5fa', '#34d399'], ['#fb7185', '#f59e0b'], ['#38bdf8', '#a3e635']];
         const [a, b] = palette[index % palette.length];
+        // Realistic tenure: the more points an athlete accrues, the longer
+        // they have been around. Top scorers joined many months ago.
+        const base = gamePersonBase(index);
+        const daysAgo = Math.round(12 + (base / 1500) * 330 + rnd() * 30);
         const joined = new Date(`${day}T00:00:00Z`);
-        joined.setUTCDate(joined.getUTCDate() - Math.floor(rnd() * 200) - 3);
-        return { displayName, handle, avatarSeed: Math.floor(rnd() * 100), gender: rnd() > 0.5 ? 'women' : 'men', colors: [a, b], joinedAt: joined.toISOString() };
+        joined.setUTCDate(joined.getUTCDate() - daysAgo);
+        return { displayName, handle, colors: [a, b], joinedAt: joined.toISOString() };
     };
 
-    const buildGamePopulation = (day) => {
-        const rnd = syncSeed(`lb_population_${day}`);
-        const points = [];
-        for (let i = 0; i < GAME_POPULATION_SIZE; i += 1) {
-            // Bell curve (sum of uniforms) nudged upward: most athletes sit in
-            // the middle-upper band, thin tails at the bottom and the crown.
-            const bell = (rnd() + rnd() + rnd()) / 3;
-            const skewed = Math.pow(bell, 0.82);
-            points.push(Math.round(40 + skewed * 1460));
-        }
-        points.sort((a, b) => b - a);
-        return points;
-    };
-
-    // Caste is positional in the game: the crown has 15 thrones, knighthood
-    // 150 seats, and everyone else fills the pyramid below.
-    const casteForGameRank = (rank, total, rnd) => {
+    const casteForGameRank = (rank, rnd) => {
         if (rank <= 12) return 'king';
         if (rank <= 12 + 138) return 'knight';
         if (rank <= 12 + 138 + 640) {
@@ -1056,21 +1112,21 @@
         return rnd() < 0.16 ? 'ghost' : 'peasant';
     };
 
-    const gameFakeRow = (rank, pts, day) => {
-        const identity = gameFakeIdentity(rank, day);
-        const rowRnd = syncSeed(`lb_fake_row_${day}_${rank}`);
-        const casteId = casteForGameRank(rank, GAME_POPULATION_SIZE, rowRnd);
+    const gameFakeRow = (personIndex, rank, pts, delta, day) => {
+        const identity = gamePersonIdentity(personIndex, day);
+        const rowRnd = syncSeed(`lb_fake_row_${day}_${personIndex}`);
+        const casteId = casteForGameRank(rank, rowRnd);
         const streakDays = casteId === 'ghost' ? 0 : Math.max(0, Math.round(pts / 90) + Math.floor(rowRnd() * 6) - 2);
         const workouts = Math.max(0, Math.round(pts / 80) + Math.floor(rowRnd() * 4) - 1);
         const checkins = Math.max(streakDays, Math.round(pts / 45));
         return {
-            id: `game_${rank}`,
+            id: `game_p${personIndex}`,
             rank,
+            delta,
             displayName: identity.displayName,
             handle: identity.handle,
-            avatarUrl: rank <= 40
-                ? portraitUrl({ seed: identity.avatarSeed, gender: identity.gender })
-                : encodeSvgDataUrl(avatarSvg({ initials: initialsFromName(identity.displayName), a: identity.colors[0], b: identity.colors[1] })),
+            // Local SVG avatars only: remote portrait services made the page slow.
+            avatarUrl: encodeSvgDataUrl(avatarSvg({ initials: initialsFromName(identity.displayName), a: identity.colors[0], b: identity.colors[1] })),
             joinedAt: identity.joinedAt,
             points: pts,
             breakdown: {
@@ -1091,32 +1147,45 @@
     };
 
     const buildGameBoard = (serverEntries, day) => {
-        const population = buildGamePopulation(day);
-        const real = (Array.isArray(serverEntries) ? serverEntries : []).filter((r) => !r.isBot);
-        // Slot the real people into the population by points.
-        const merged = [];
-        let realQueue = real.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
-        let fakeIndex = 0;
-        while (fakeIndex < population.length || realQueue.length) {
-            const nextFake = fakeIndex < population.length ? population[fakeIndex] : -1;
-            const nextReal = realQueue.length ? Number(realQueue[0].points || 0) : -1;
-            if (nextReal >= nextFake && realQueue.length) {
-                merged.push({ src: 'real', row: realQueue.shift() });
-            } else {
-                merged.push({ src: 'fake', pts: nextFake });
-                fakeIndex += 1;
-            }
+        const prevDay = yesterdayKey(day);
+        const people = [];
+        for (let i = 0; i < GAME_POPULATION_SIZE; i += 1) {
+            const base = gamePersonBase(i);
+            people.push({
+                index: i,
+                points: gamePersonPoints(i, base, day),
+                prevPoints: gamePersonPoints(i, base, prevDay)
+            });
         }
-        const total = merged.length;
+        // Yesterday's ranks by yesterday's points.
+        const prevOrder = people.slice().sort((a, b) => b.prevPoints - a.prevPoints);
+        const prevRankByIndex = new Map();
+        prevOrder.forEach((p, i) => prevRankByIndex.set(p.index, i + 1));
+
+        const real = (Array.isArray(serverEntries) ? serverEntries : []).filter((r) => !r.isBot);
+        const todaySorted = people.slice().sort((a, b) => b.points - a.points);
+        const merged = [];
+        const realQueue = real.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
+        let fakeCursor = 0;
+        while (fakeCursor < todaySorted.length || realQueue.length) {
+            const nextFake = fakeCursor < todaySorted.length ? todaySorted[fakeCursor].points : -1;
+            const nextReal = realQueue.length ? Number(realQueue[0].points || 0) : -1;
+            if (nextReal >= nextFake && realQueue.length) merged.push({ src: 'real', row: realQueue.shift() });
+            else { merged.push({ src: 'fake', person: todaySorted[fakeCursor] }); fakeCursor += 1; }
+        }
         const rows = merged.map((slot, i) => {
             const rank = i + 1;
             if (slot.src === 'real') {
-                const stats = String(slot.row.id) === String(real.find(r => !r.isFriend)?.id) ? (readIdentityStats() || casteStatsFromRow(slot.row)) : casteStatsFromRow(slot.row);
-                return { ...slot.row, rank, __caste: pickCaste(stats).id };
+                const stats = slot.row.isFriend ? casteStatsFromRow(slot.row) : (readIdentityStats() || casteStatsFromRow(slot.row));
+                // Real people's delta: where yesterday's points would have
+                // landed them in yesterday's population.
+                const prevWouldRank = 1 + prevOrder.filter((p) => p.prevPoints > Number(slot.row.points || 0)).length;
+                return { ...slot.row, rank, delta: prevWouldRank - rank, __caste: pickCaste(stats).id, __stats: stats };
             }
-            return gameFakeRow(rank, slot.pts, day);
+            const prevRank = prevRankByIndex.get(slot.person.index) || rank;
+            return gameFakeRow(slot.person.index, rank, slot.person.points, prevRank - rank, day);
         });
-        return { rows, total };
+        return { rows, total: rows.length };
     };
 
     const buildGameWindow = (rows, youId) => {
@@ -1134,6 +1203,148 @@
         const remaining = rows.length - (youIndex + 4);
         if (remaining > 0) visible.push({ __gap: true, count: remaining });
         return visible;
+    };
+
+    /* ================================================================
+       ARENA RESKIN - the whole page becomes a tournament hall: dark ink,
+       gold trim, medal glows. Injected here so the page shell (owned by
+       concurrent onboarding work) stays untouched.
+       ================================================================ */
+    const ensureArenaStyle = () => {
+        if (document.getElementById('lb-arena-style')) return;
+        const style = document.createElement('style');
+        style.id = 'lb-arena-style';
+        style.textContent = `
+            body.leaderboard-page{background:#141109 !important;
+                background-image:radial-gradient(120% 70% at 50% -10%,rgba(212,175,55,.13),transparent 60%),
+                    radial-gradient(80% 50% at 100% 100%,rgba(120,80,20,.12),transparent 55%) !important;
+                color:#f5efe4}
+            body.leaderboard-page .lb-header .eyebrow{color:#e8c766 !important;letter-spacing:.26em}
+            body.leaderboard-page .lb-header h1{color:#fff !important;text-shadow:0 2px 18px rgba(212,175,55,.25)}
+            body.leaderboard-page .lb-header .ns-muted{color:rgba(245,239,228,.55) !important}
+            body.leaderboard-page .lb-header button,
+            body.leaderboard-page .lb-header .lb-friends-btn{background:rgba(212,175,55,.1) !important;
+                border:1px solid rgba(212,175,55,.4) !important;color:#e8c766 !important;border-radius:999px}
+            body.leaderboard-page .lb-header button:hover{background:rgba(212,175,55,.2) !important}
+            body.leaderboard-page .lb-you{background:linear-gradient(160deg,#241d13,#1a1610) !important;
+                border:1px solid rgba(212,175,55,.4) !important;color:#f5efe4 !important;border-radius:16px;
+                box-shadow:0 14px 34px rgba(0,0,0,.35)}
+            body.leaderboard-page .lb-you *{color:#f5efe4}
+            body.leaderboard-page .lb-you #lb-you-sub,body.leaderboard-page .lb-you #lb-you-right{color:#e8c766 !important;font-weight:800}
+            body.leaderboard-page .lb-row{display:flex;align-items:center;gap:14px;margin-bottom:10px;padding:14px 16px;
+                border-radius:16px;background:linear-gradient(165deg,rgba(36,29,19,.94),rgba(26,22,16,.96)) !important;
+                border:1px solid rgba(212,175,55,.16) !important;color:#f5efe4;
+                box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .16s ease,border-color .16s ease;
+                animation:lbRowIn .45s cubic-bezier(.2,.8,.3,1) backwards}
+            @keyframes lbRowIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+            body.leaderboard-page .lb-row:hover{transform:translateY(-2px);border-color:rgba(212,175,55,.4) !important}
+            body.leaderboard-page .lb-row.is-gold{border-color:rgba(255,209,84,.75) !important;box-shadow:0 0 0 1px rgba(255,209,84,.35),0 14px 36px rgba(212,175,55,.22)}
+            body.leaderboard-page .lb-row.is-silver{border-color:rgba(203,213,225,.55) !important}
+            body.leaderboard-page .lb-row.is-bronze{border-color:rgba(217,119,6,.55) !important}
+            body.leaderboard-page .lb-row.is-you-row{border-color:#e8c766 !important;
+                box-shadow:0 0 0 1.5px rgba(232,199,102,.55),0 16px 40px rgba(212,175,55,.25);position:relative}
+            body.leaderboard-page .lb-row.is-you-row::before{content:'YOU';position:absolute;top:-9px;left:16px;
+                padding:3px 9px;border-radius:999px;background:#e8c766;color:#1a1610;font:900 9px/1 system-ui,sans-serif;letter-spacing:.14em}
+            body.leaderboard-page .lb-rankbox{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 64px}
+            body.leaderboard-page .lb-ranknum{font:900 15px/1 'Space Grotesk',ui-monospace,monospace;color:#e8c766}
+            body.leaderboard-page .lb-row.is-gold .lb-ranknum{font-size:19px;color:#ffd154}
+            body.leaderboard-page .lb-avatar{width:44px;height:44px;border-radius:999px;overflow:hidden;border:2px solid rgba(212,175,55,.4)}
+            body.leaderboard-page .lb-avatar img{width:100%;height:100%;object-fit:cover}
+            body.leaderboard-page .lb-avatar-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                background:rgba(212,175,55,.14);color:#e8c766;font:800 14px/1 system-ui,sans-serif}
+            body.leaderboard-page .lb-name{color:#fff !important;font-weight:800}
+            body.leaderboard-page .lb-handle{color:rgba(245,239,228,.45) !important}
+            body.leaderboard-page .lb-bio{color:rgba(245,239,228,.55) !important}
+            body.leaderboard-page .lb-client-metrics,body.leaderboard-page .lb-client-metrics span{color:rgba(245,239,228,.6) !important}
+            body.leaderboard-page .lb-client-metrics strong{color:#e8c766 !important}
+            body.leaderboard-page .lb-caste-rowhint{color:rgba(232,199,102,.8) !important}
+            body.leaderboard-page .lb-pill{background:rgba(255,255,255,.07) !important;border:1px solid rgba(255,255,255,.14) !important;color:rgba(245,239,228,.85) !important}
+            body.leaderboard-page .lb-pill.lb-caste-pill{background:rgba(212,175,55,.14) !important;border-color:rgba(212,175,55,.45) !important;color:#e8c766 !important}
+            body.leaderboard-page .lb-points{font:900 17px/1 'Space Grotesk',ui-monospace,monospace;color:#fff;text-align:right}
+            body.leaderboard-page .lb-points-unit{margin-left:4px;font:700 10px/1 system-ui,sans-serif;color:rgba(232,199,102,.8)}
+            body.leaderboard-page .lb-points-note{font:600 10px/1.3 system-ui,sans-serif;color:rgba(245,239,228,.45);text-align:right;margin-top:3px}
+            body.leaderboard-page .lb-right{flex:0 0 auto;margin-left:auto}
+            .lb-delta{font:900 10.5px/1 ui-monospace,monospace;padding:2px 7px;border-radius:999px}
+            .lb-delta.is-up{color:#4ade80;background:rgba(74,222,128,.12)}
+            .lb-delta.is-down{color:#f87171;background:rgba(248,113,113,.1)}
+            .lb-delta.is-flat{color:rgba(245,239,228,.4)}
+            .lb-spider{flex:0 0 92px;display:flex;align-items:center;justify-content:center}
+            .lb-mini-radar{width:88px;height:88px}
+            .lb-mini-radar .ring{fill:none;stroke:rgba(232,199,102,.16)}
+            .lb-mini-radar .spoke{stroke:rgba(232,199,102,.1)}
+            .lb-mini-radar .shape{fill:rgba(232,199,102,.28);stroke:#e8c766;stroke-width:1.6;stroke-linejoin:round;
+                filter:drop-shadow(0 0 5px rgba(232,199,102,.4))}
+            body.leaderboard-page .lb-modal-card,body.leaderboard-page #lb-modal .lb-card,body.leaderboard-page #lb-modal [class*="card"]{
+                background:linear-gradient(165deg,#241d13,#1a1610) !important;color:#f5efe4 !important;border:1px solid rgba(212,175,55,.4) !important}
+            body.leaderboard-page #lb-modal h3,body.leaderboard-page #lb-modal .lb-rule-title{color:#fff !important}
+            body.leaderboard-page #lb-modal .ns-muted,body.leaderboard-page #lb-modal .lb-rule-note{color:rgba(245,239,228,.55) !important}
+            body.leaderboard-page #lb-modal .lb-rule-points{color:#e8c766 !important}
+            body.leaderboard-page #lb-modal .lb-rule{border-color:rgba(212,175,55,.16) !important}
+            /* Arrival intro - plays on every visit, fast and cinematic. */
+            #lb-arena-intro{position:fixed;inset:0;z-index:190;display:flex;align-items:center;justify-content:center;
+                background:#141109;pointer-events:none;animation:lbIntroLift .5s ease 1.35s forwards}
+            @keyframes lbIntroLift{to{opacity:0;visibility:hidden}}
+            .lb-intro-inner{text-align:center;animation:lbIntroPop .6s cubic-bezier(.2,.9,.3,1.2)}
+            @keyframes lbIntroPop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+            .lb-intro-crest{font-size:44px;color:#e8c766;margin-bottom:10px;display:block;animation:lbYouPulse 1.4s ease-in-out infinite}
+            .lb-intro-title{font:900 30px/1.1 'Space Grotesk',system-ui,sans-serif;color:#fff;letter-spacing:.06em}
+            .lb-intro-sub{margin-top:8px;font:700 11px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#e8c766}
+            /* Movers ticker */
+            .lb-ticker{display:flex;overflow:hidden;margin:0 0 14px;padding:9px 0;border-radius:12px;
+                background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2)}
+            .lb-ticker-track{display:flex;gap:34px;white-space:nowrap;animation:lbTicker 36s linear infinite;padding-left:100%}
+            @keyframes lbTicker{to{transform:translateX(-100%)}}
+            .lb-ticker span{font:700 12px/1 system-ui,sans-serif;color:rgba(245,239,228,.8)}
+            .lb-ticker b.up{color:#4ade80}
+            .lb-ticker b.down{color:#f87171}
+            @media (prefers-reduced-motion: reduce){
+                #lb-arena-intro{display:none}
+                .lb-ticker-track{animation:none;padding-left:0}
+                body.leaderboard-page .lb-row{animation:none}
+            }
+            @media (max-width:720px){
+                .lb-spider{display:none}
+                body.leaderboard-page .lb-rankbox{flex-basis:52px}
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const playArenaIntro = () => {
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+        if (document.getElementById('lb-arena-intro')) return;
+        const intro = document.createElement('div');
+        intro.id = 'lb-arena-intro';
+        const dayName = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        intro.innerHTML = `
+            <div class="lb-intro-inner">
+                <span class="lb-intro-crest">⚔</span>
+                <div class="lb-intro-title">THE ARENA</div>
+                <div class="lb-intro-sub">${dayName}</div>
+            </div>
+        `;
+        document.body.appendChild(intro);
+        window.setTimeout(() => intro.remove(), 2100);
+    };
+
+    const renderMoversTicker = (rows) => {
+        document.getElementById('lb-ticker')?.remove();
+        if (!listEl) return;
+        const movers = rows
+            .filter((r) => !r.__gap && Number.isFinite(Number(r.delta)) && Math.abs(Number(r.delta)) >= 3 && Number(r.rank) <= 400)
+            .sort((a, b) => Math.abs(Number(b.delta)) - Math.abs(Number(a.delta)))
+            .slice(0, 10);
+        if (movers.length < 4) return;
+        const items = movers.map((r) => {
+            const d = Number(r.delta);
+            return `<span>${escapeAttr(r.displayName)} <b class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</b></span>`;
+        }).join('');
+        const ticker = document.createElement('div');
+        ticker.id = 'lb-ticker';
+        ticker.className = 'lb-ticker';
+        ticker.setAttribute('aria-label', "Today's biggest movers");
+        ticker.innerHTML = `<div class="lb-ticker-track">${items}${items}</div>`;
+        listEl.parentElement?.insertBefore(ticker, listEl);
     };
 
     const gameTierCounts = (day) => {
@@ -1392,6 +1603,19 @@
             const view = String(params.get('view') || params.get('scope') || '').trim().toLowerCase();
             const scopedView = ['trainer', 'manager'].includes(view) ? view : '';
             const endpoint = scopedView ? `/api/leaderboard?view=${encodeURIComponent(scopedView)}` : '/api/leaderboard';
+            // Paint the arena instantly - the population is client-side, so the
+            // tournament appears before the network answers; the signed-in
+            // user and friends merge in when the API returns.
+            ensureArenaStyle();
+            ensureCasteStyle();
+            playArenaIntro();
+            if (!scopedView && listEl) {
+                const day = todayKey(new Date());
+                const instantBoard = buildGameBoard([], day);
+                renderMoversTicker(instantBoard.rows);
+                renderCastePyramid(instantBoard.rows, instantBoard.total, '', 'community');
+                renderList(buildGameWindow(instantBoard.rows, null));
+            }
             const resp = await fetch(endpoint, { credentials: 'include' });
             if (resp.status === 404) {
                 const month = monthKey(new Date());
@@ -1427,6 +1651,7 @@
                 entries = buildGameWindow(board.rows, data?.you?.id);
                 renderCasteHero(data);
                 decorateHeroWithSlots(youRow, day);
+                renderMoversTicker(board.rows);
                 renderCastePyramid(board.rows, board.total, youRow?.__caste || '', 'community');
                 maybePlayDailyShift('community');
             } else {
