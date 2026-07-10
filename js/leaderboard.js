@@ -840,6 +840,45 @@
             .lb-champion-cap span:first-child{font:700 11.5px/1.4 system-ui,sans-serif;color:#6b4a12}
             .lb-champion-streak{flex:0 0 auto;padding:4px 10px;border-radius:999px;background:rgba(212,175,55,.2);
                 border:1px solid rgba(185,138,43,.45);font:800 10.5px/1 system-ui,sans-serif;color:#a1751f}
+            /* Champion state layer: video slots + per-state tints. */
+            .lb-champion-stage{position:relative}
+            .lb-champion-stage svg{display:block;width:100%;height:clamp(170px,24vw,250px)}
+            .lb-champion-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+            .lb-champ-state{font:900 10px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;
+                padding:3px 8px;border-radius:999px;background:rgba(120,90,20,.12);color:#6b4a12;margin-right:6px}
+            .lb-champion[data-state="dominant"] .lb-champ-state{background:rgba(212,160,30,.28);color:#8a6318}
+            .lb-champion[data-state="thriving"] .lb-champ-state{background:rgba(34,197,94,.16);color:#15803d}
+            .lb-champion[data-state="struggling"] .lb-champ-state{background:rgba(234,140,50,.18);color:#b45309}
+            .lb-champion[data-state="critical"] .lb-champ-state{background:rgba(239,68,68,.16);color:#b91c1c}
+            .lb-champion[data-state="dominant"] .lb-champion-stage svg{filter:saturate(1.18) brightness(1.05)}
+            .lb-champion[data-state="thriving"] .lb-champion-stage svg{filter:saturate(1.08)}
+            .lb-champion[data-state="struggling"] .lb-champion-stage svg{filter:saturate(.62) brightness(.93) sepia(.12)}
+            .lb-champion[data-state="critical"] .lb-champion-stage svg{filter:saturate(.35) brightness(.8) sepia(.28)}
+            .lb-champion[data-state="critical"]{border-color:rgba(190,70,45,.55)}
+            /* Rank-change takeover */
+            #lb-champ-trans{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+                padding:18px;background:rgba(43,34,20,.55);backdrop-filter:blur(7px);animation:lbShiftFade .3s ease}
+            .lb-champ-trans-card{width:min(480px,94vw);border-radius:24px;overflow:hidden;text-align:center;
+                background:linear-gradient(165deg,#fffaf0,#f5e8cd);border:1.5px solid rgba(185,138,43,.55);
+                box-shadow:0 40px 90px rgba(60,45,15,.35);animation:lbIntroPop .5s cubic-bezier(.2,.9,.3,1.15)}
+            .lb-champ-trans-stage{position:relative}
+            .lb-champ-trans-stage .lb-champion{border:0;border-radius:0;margin:0}
+            .lb-champ-trans-stage .lb-champion-cap{display:none}
+            .lb-champ-trans-stage .lb-champion-stage svg{height:220px}
+            .lb-champ-trans-body{padding:16px 20px 20px}
+            .lb-champ-trans-kicker{font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#a1751f;margin-bottom:8px}
+            #lb-champ-trans[data-kind="demote"] .lb-champ-trans-kicker{color:#b45309}
+            .lb-champ-trans-title{font:900 24px/1.15 'Space Grotesk',system-ui,sans-serif;color:#241b0e;margin-bottom:8px}
+            .lb-champ-trans-line{font:600 13px/1.5 system-ui,sans-serif;color:rgba(60,48,28,.8);margin-bottom:14px}
+            .lb-champ-trans-cta{min-height:44px;padding:0 22px;border-radius:999px;border:0;cursor:pointer;
+                background:linear-gradient(135deg,#b98a2b,#d9a93c);color:#fff;font:900 13.5px/1 system-ui,sans-serif}
+            /* Dev preview panel (?champdev=1) */
+            #lb-champ-dev{position:fixed;right:14px;bottom:14px;z-index:210;display:flex;flex-direction:column;gap:8px;
+                padding:12px;border-radius:14px;background:#241b0e;color:#f2ddaa;font:700 12px/1 system-ui,sans-serif;
+                box-shadow:0 14px 40px rgba(0,0,0,.4)}
+            #lb-champ-dev .row{display:flex;gap:6px}
+            #lb-champ-dev select,#lb-champ-dev button{flex:1;font:700 11.5px/1.2 system-ui,sans-serif;padding:7px 8px;
+                border-radius:8px;border:1px solid rgba(224,179,74,.4);background:#3a2c12;color:#f2ddaa;cursor:pointer}
             /* Cinematic gate intro - overrides the plain fade version. */
             #lb-arena-intro{position:fixed;inset:0;z-index:190;display:flex;align-items:center;justify-content:center;overflow:hidden;
                 background:radial-gradient(130% 100% at 50% 115%,#3a2a10,#191307 62%);pointer-events:none;
@@ -886,7 +925,7 @@
 
     const championStage = (casteId) => (CHAMPION_CAPTIONS[casteId] ? casteId : 'base');
 
-    const championScene = (caste, streak) => {
+    const championScene = (caste, streak, state = 'steady') => {
         const stage = championStage(caste.id);
         const skies = {
             base: ['#eee1c2', '#e0cea6'], squire: ['#f4e8ca', '#eadab2'],
@@ -1007,28 +1046,303 @@
             ? `${FIRE} ${streak}d streak keeps him fighting`
             : 'Log today to wake him up';
         return `
-            <div class="lb-champion" data-stage="${stage}" aria-label="Your champion">
-                <svg viewBox="0 0 360 190" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-                    <defs><linearGradient id="chSky" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stop-color="${s1}"/><stop offset="1" stop-color="${s2}"/>
-                    </linearGradient></defs>
-                    <rect class="ch-sky" width="360" height="190" rx="0"/>
-                    <ellipse class="ch-ground" cx="180" cy="184" rx="205" ry="20"/>
-                    <g class="ch-banner" transform="translate(26,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
-                    <g class="ch-banner ch-banner2" transform="translate(316,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
-                    ${embers}
-                    ${scenes[stage] || scenes.base}
-                </svg>
+            <div class="lb-champion" data-stage="${stage}" data-state="${state}" aria-label="Your champion">
+                <div class="lb-champion-stage">
+                    <svg viewBox="0 0 360 190" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+                        <defs><linearGradient id="chSky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="${s1}"/><stop offset="1" stop-color="${s2}"/>
+                        </linearGradient></defs>
+                        <rect class="ch-sky" width="360" height="190" rx="0"/>
+                        <ellipse class="ch-ground" cx="180" cy="184" rx="205" ry="20"/>
+                        <g class="ch-banner" transform="translate(26,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
+                        <g class="ch-banner ch-banner2" transform="translate(316,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
+                        ${embers}
+                        ${scenes[stage] || scenes.base}
+                    </svg>
+                </div>
                 <div class="lb-champion-cap">
-                    <span>${CHAMPION_CAPTIONS[stage]}</span>
-                    <span class="lb-champion-streak">${streakLine}</span>
+                    <span><b class="lb-champ-state">${CHAMP_STATE_LABELS[state] || 'Steady'}</b> ${CHAMP_STATE_CAPTIONS[state] || CHAMPION_CAPTIONS[stage]}</span>
+                    <span class="lb-champion-streak" title="${CHAMPION_CAPTIONS[stage]}">${streakLine}</span>
                 </div>
             </div>`;
+    };
+
+    /* ================================================================
+       CHAMPION STATE ENGINE + MEDIA SLOTS (approved spec 2026-07-10)
+       Every caste maps to 7 clip slots: 5 trajectory-state loops
+       (dominant/thriving/steady/struggling/critical) + 2 one-shot
+       transitions (promote/demote, owned by the caste you ARRIVE in).
+       Files follow `<caste>_<slot>.mp4` under CHAMP_MEDIA.base. A null
+       slot falls back to the built-in SVG scene, tinted per state, so
+       the system is complete before a single MP4 exists.
+       ================================================================ */
+    const CHAMP_STATES = ['dominant', 'thriving', 'steady', 'struggling', 'critical'];
+    const CHAMP_TUNING = {
+        criticalMargin: 3,        // pts above the caste's demotion line -> critical
+        strugglingMargin: 8,
+        strugglingRankDrop: 12,   // overnight rank fall
+        strugglingTrendDown: -6,  // summed 6-stat day-over-day drop
+        dominantPromoGap: 5,      // worst promotion requirement within N pts
+        dominantMargin: 12,
+        dominantStreak: 3,
+        thrivingRankClimb: 12,
+        thrivingStreak: 7,
+        thrivingTrendUp: 4,
+        thrivingPromoProgress: 0.8,
+        kingDominantMin: 82,      // king has no promotion: dominant = untouchable
+        kingDominantSpread: 16,
+        videoTimeoutMs: 2500      // slow clip -> SVG fallback
+    };
+    const CHAMP_MEDIA = {
+        base: 'media/arena/',
+        // null = not generated yet (SVG fallback). Set to true once the file
+        // matching the naming convention exists, or to a full URL string.
+        clips: {
+            king: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            knight: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            berserker: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            ranger: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            monk: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            mage: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            squire: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            ghost: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            peasant: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null }
+        }
+    };
+    const champClipUrl = (casteId, slot) => {
+        const v = CHAMP_MEDIA.clips[casteId]?.[slot];
+        if (!v) return null;
+        return typeof v === 'string' ? v : `${CHAMP_MEDIA.base}${casteId}_${slot}.mp4`;
+    };
+
+    const CHAMP_STATE_LABELS = { dominant: 'Dominant', thriving: 'Thriving', steady: 'Steady', struggling: 'Struggling', critical: 'Critical' };
+    const CHAMP_STATE_CAPTIONS = {
+        dominant: 'Untouchable today. The next rank is already in sight.',
+        thriving: 'Momentum is with you - keep pushing.',
+        steady: 'Holding your ground in the ranks.',
+        struggling: 'You slipped. Claw it back - one session turns this around.',
+        critical: 'One bad week from losing this rank. Defend it today.'
+    };
+
+    // Points above the line where the current caste's check() would fail.
+    // Peasant/ghost have no floor - their decline is a trend problem.
+    const casteHoldMargin = (casteId, s) => {
+        const vals = CASTE_AXES.map((k) => Number(s[k]) || 0);
+        const min = Math.min(...vals);
+        const max = Math.max(...vals);
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        const spread = max - min;
+        switch (casteId) {
+            case 'king': return Math.min(min - 75, 22 - spread);
+            case 'knight': return Math.min(s.strength - 62, s.consistency - 70);
+            case 'ranger': return Math.min(s.cardio - 68, s.cardio - (s.strength + 10));
+            case 'monk': return (s.recovery + s.nutrition + s.consistency) / 3 - 65;
+            case 'mage': return Math.min(s.nutrition - 70, s.progress - 58);
+            case 'berserker': return s.strength - 78;
+            case 'squire': return avg - 42;
+            default: return Infinity;
+        }
+    };
+
+    // meta.trend is null on cold start (no yesterday snapshot): trend and
+    // streak-broken clauses are disabled so new users fall through honestly.
+    const championState = (caste, stats, meta) => {
+        const T = CHAMP_TUNING;
+        const margin = casteHoldMargin(caste.id, stats);
+        const streak = Number(meta.streak || 0);
+        const rankDelta = Number(meta.rankDelta || 0);
+        const hasTrend = Number.isFinite(meta.trend);
+        const trend = hasTrend ? Number(meta.trend) : 0;
+        const next = pickNextCaste(stats, caste);
+        let promoGap = Infinity;
+        let promoProgress = 0;
+        if (!next) {
+            const vals = CASTE_AXES.map((k) => Number(stats[k]) || 0);
+            const min = Math.min(...vals);
+            const spread = Math.max(...vals) - min;
+            promoGap = (min >= T.kingDominantMin && spread <= T.kingDominantSpread) ? 0 : Infinity;
+            promoProgress = min / 100;
+        } else if (next.reqs.length) {
+            promoGap = Math.max(0, ...next.reqs.map((r) => r.target - (Number(stats[r.key]) || 0)));
+            promoProgress = next.reqs.reduce((a, r) => a + Math.min(1, (Number(stats[r.key]) || 0) / r.target), 0) / next.reqs.length;
+        } else {
+            promoGap = 0;
+            promoProgress = 1;
+        }
+        if (margin <= T.criticalMargin) return 'critical';
+        if (margin <= T.strugglingMargin
+            || rankDelta <= -T.strugglingRankDrop
+            || (hasTrend && trend <= T.strugglingTrendDown)
+            || (hasTrend && streak === 0 && trend <= 0)) return 'struggling';
+        if (promoGap <= T.dominantPromoGap
+            && (margin >= T.dominantMargin || caste.id === 'king')
+            && streak >= T.dominantStreak) return 'dominant';
+        if (rankDelta >= T.thrivingRankClimb
+            || streak >= T.thrivingStreak
+            || (hasTrend && trend >= T.thrivingTrendUp)
+            || promoProgress >= T.thrivingPromoProgress) return 'thriving';
+        return 'steady';
+    };
+
+    // Daily snapshot: {today, prev} so revisits within a day keep comparing
+    // against yesterday rather than five minutes ago.
+    const champUpdateSnapshot = (casteId, stats, rank) => {
+        const day = todayKey(new Date());
+        let cur = null;
+        try { cur = JSON.parse(localStorage.getItem('lbChampSnap') || 'null'); } catch {}
+        let prev = cur?.prev || null;
+        if (cur?.today && cur.today.day !== day) prev = cur.today;
+        try {
+            localStorage.setItem('lbChampSnap', JSON.stringify({ today: { day, casteId, stats, rank }, prev }));
+        } catch {}
+        return prev;
+    };
+
+    const champMaybeTransition = (caste, prev) => {
+        const from = prev?.casteId ? CASTE_MAP[prev.casteId] : null;
+        if (!from || from.id === caste.id || from.prestige === caste.prestige) return null;
+        const kind = caste.prestige > from.prestige ? 'promote' : 'demote';
+        const seenKey = `${todayKey(new Date())}:${caste.id}:${kind}`;
+        try {
+            if (localStorage.getItem('lbChampTransSeen') === seenKey) return null;
+            localStorage.setItem('lbChampTransSeen', seenKey);
+        } catch {}
+        return { kind, from, to: caste };
+    };
+
+    // Try a clip; only reveal it once it can actually play, otherwise the
+    // SVG scene underneath simply stays. Never fights reduced-motion.
+    const champTryVideo = (container, url, { loop } = {}) => {
+        if (!url || !container) return;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+        const v = document.createElement('video');
+        v.className = 'lb-champion-video';
+        v.muted = true;
+        v.playsInline = true;
+        v.autoplay = true;
+        v.loop = !!loop;
+        v.preload = 'auto';
+        v.setAttribute('muted', '');
+        v.setAttribute('playsinline', '');
+        let settled = false;
+        const timer = window.setTimeout(() => { settled = true; v.remove(); }, CHAMP_TUNING.videoTimeoutMs);
+        v.addEventListener('error', () => { if (!settled) { settled = true; window.clearTimeout(timer); v.remove(); } });
+        v.addEventListener('canplay', () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            container.appendChild(v);
+            v.play().catch(() => {});
+        });
+        v.src = url;
+    };
+
+    const playChampionTransition = (trans) => {
+        ensureChampionStyle();
+        if (!trans || document.getElementById('lb-champ-trans')) return;
+        const { kind, from, to } = trans;
+        const overlay = document.createElement('div');
+        overlay.id = 'lb-champ-trans';
+        overlay.dataset.kind = kind;
+        const title = kind === 'promote' ? `You rose to ${to.name}` : `You fell to ${to.name}`;
+        const line = kind === 'promote'
+            ? `${from.name} no more. The realm watched you climb - now hold the new ground.`
+            : `The ${from.name} rank slipped away. Weary, not beaten - claw it back.`;
+        overlay.innerHTML = `
+            <div class="lb-champ-trans-card" role="dialog" aria-label="Rank change">
+                <div class="lb-champ-trans-stage">${championScene(to, 0, kind === 'promote' ? 'dominant' : 'struggling')}</div>
+                <div class="lb-champ-trans-body">
+                    <div class="lb-champ-trans-kicker">${kind === 'promote' ? '☆ Rank up' : 'Rank lost'}</div>
+                    <div class="lb-champ-trans-title">${to.emblem} ${title}</div>
+                    <div class="lb-champ-trans-line">${line}</div>
+                    <button type="button" class="lb-champ-trans-cta" data-champ-trans-close>${kind === 'promote' ? 'Claim it' : 'Back to the fight'}</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        champTryVideo(overlay.querySelector('.lb-champ-trans-stage'), champClipUrl(to.id, kind), { loop: false });
+        overlay.querySelector('[data-champ-trans-close]')?.addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    };
+
+    /* Dev preview: ?champdev=1 shows a picker to force any caste+state and
+       fire promote/demote overlays; ?champ=king.critical is a quick force;
+       ?champdev=0 clears everything. Hidden from normal users. */
+    let lastHeroData = null;
+    const champForce = () => {
+        try {
+            const raw = localStorage.getItem('lbChampForce');
+            const f = raw ? JSON.parse(raw) : null;
+            return f && CASTE_MAP[f.caste] && CHAMP_STATES.includes(f.state) ? f : null;
+        } catch { return null; }
+    };
+    // Runs before the first render so ?champ= and ?champdev= take effect on
+    // the initial paint, not the next one.
+    const champApplyUrlFlags = () => {
+        const params = new URLSearchParams(window.location.search || '');
+        if (params.get('champdev') === '0') {
+            try { localStorage.removeItem('lbChampDev'); localStorage.removeItem('lbChampForce'); } catch {}
+            return;
+        }
+        const quick = String(params.get('champ') || '');
+        if (quick.includes('.')) {
+            const [c, st] = quick.split('.');
+            if (CASTE_MAP[c] && CHAMP_STATES.includes(st)) {
+                try { localStorage.setItem('lbChampForce', JSON.stringify({ caste: c, state: st })); } catch {}
+            }
+        }
+        if (params.get('champdev') === '1') { try { localStorage.setItem('lbChampDev', '1'); } catch {} }
+    };
+    const setupChampDevPanel = () => {
+        if (new URLSearchParams(window.location.search || '').get('champdev') === '0') {
+            document.getElementById('lb-champ-dev')?.remove();
+            return;
+        }
+        let on = false;
+        try { on = localStorage.getItem('lbChampDev') === '1'; } catch {}
+        if (!on || document.getElementById('lb-champ-dev')) return;
+        const panel = document.createElement('div');
+        panel.id = 'lb-champ-dev';
+        const casteOpts = CASTES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+        const stateOpts = CHAMP_STATES.map((s) => `<option value="${s}">${CHAMP_STATE_LABELS[s]}</option>`).join('');
+        panel.innerHTML = `
+            <span>Champion preview</span>
+            <div class="row"><select data-dev-caste>${casteOpts}</select><select data-dev-state>${stateOpts}</select></div>
+            <div class="row"><button data-dev-apply>Apply</button><button data-dev-promote>Promote</button><button data-dev-demote>Demote</button></div>
+            <div class="row"><button data-dev-clear>Clear force</button><button data-dev-off>Hide panel</button></div>`;
+        document.body.appendChild(panel);
+        const sel = () => ({
+            caste: panel.querySelector('[data-dev-caste]').value,
+            state: panel.querySelector('[data-dev-state]').value
+        });
+        const rerender = () => { if (lastHeroData) renderCasteHero(lastHeroData); };
+        panel.querySelector('[data-dev-apply]').addEventListener('click', () => {
+            try { localStorage.setItem('lbChampForce', JSON.stringify(sel())); } catch {}
+            rerender();
+        });
+        panel.querySelector('[data-dev-promote]').addEventListener('click', () => {
+            const to = CASTE_MAP[sel().caste];
+            const from = CASTES.find((c) => c.prestige < to.prestige) || CASTE_MAP.peasant;
+            playChampionTransition({ kind: 'promote', from, to });
+        });
+        panel.querySelector('[data-dev-demote]').addEventListener('click', () => {
+            const to = CASTE_MAP[sel().caste];
+            const from = CASTES.find((c) => c.prestige > to.prestige) || CASTE_MAP.king;
+            playChampionTransition({ kind: 'demote', from, to });
+        });
+        panel.querySelector('[data-dev-clear]').addEventListener('click', () => {
+            try { localStorage.removeItem('lbChampForce'); } catch {}
+            rerender();
+        });
+        panel.querySelector('[data-dev-off]').addEventListener('click', () => {
+            try { localStorage.removeItem('lbChampDev'); } catch {}
+            panel.remove();
+        });
     };
 
     const renderCasteHero = (data) => {
         ensureCasteStyle();
         ensureChampionStyle();
+        lastHeroData = data;
         document.getElementById('lb-caste-hero')?.remove();
         const you = data?.you || null;
         if (!you || !listEl) return;
@@ -1072,9 +1386,31 @@
                 <p class="lb-caste-why">${caste.blurb}</p>
             </div>
             ${nextBlock}
-            ${championScene(caste, Number(you.streakDays || 0))}
+            ${(() => {
+                const streak = Number(you.streakDays || 0);
+                const prev = champUpdateSnapshot(caste.id, stats, Number(you.rank || 0));
+                const trend = prev?.stats
+                    ? CASTE_AXES.reduce((a, k) => a + ((Number(stats[k]) || 0) - (Number(prev.stats[k]) || 0)), 0)
+                    : null;
+                let champCaste = caste;
+                let champState = championState(caste, stats, { streak, rankDelta: Number(you.__rankDelta || 0), trend });
+                const forced = champForce();
+                if (forced) { champCaste = CASTE_MAP[forced.caste]; champState = forced.state; }
+                hero.dataset.champCaste = champCaste.id;
+                hero.dataset.champState = champState;
+                if (!forced) {
+                    const trans = champMaybeTransition(caste, prev);
+                    if (trans) window.setTimeout(() => playChampionTransition(trans), 400);
+                }
+                return championScene(champCaste, streak, champState);
+            })()}
         `;
         listEl.parentElement?.insertBefore(hero, listEl);
+        champTryVideo(
+            hero.querySelector('.lb-champion-stage'),
+            champClipUrl(hero.dataset.champCaste, hero.dataset.champState),
+            { loop: true }
+        );
         // Animate: bars sweep to their value, numbers count up.
         requestAnimationFrame(() => {
             hero.querySelectorAll('[data-req-bar]').forEach((bar) => {
@@ -1952,6 +2288,7 @@
             ensureArenaStyle();
             ensureCasteStyle();
             ensureChampionStyle();
+            champApplyUrlFlags();
             playArenaIntro();
             renameControlPanelLinks();
             if (!scopedView && listEl) {
@@ -1991,7 +2328,10 @@
                 const day = todayKey(new Date());
                 const board = buildGameBoard(rawEntries, day);
                 const youRow = data?.you ? board.rows.find((r) => String(r.id) === String(data.you.id)) : null;
-                if (youRow && data?.you) data.you.rank = youRow.rank;
+                if (youRow && data?.you) {
+                    data.you.rank = youRow.rank;
+                    data.you.__rankDelta = Number(youRow.delta || 0);
+                }
                 friendRows = board.rows.filter((r) => !r.isBot);
                 entries = buildGameWindow(board.rows, data?.you?.id);
                 renderCasteHero(data);
@@ -2003,6 +2343,7 @@
                 renderCasteHero(data);
                 if (rawEntries.length) renderCastePyramid(rawEntries, rawEntries.length, '', 'trainer');
             }
+            setupChampDevPanel();
             setupFriendFilter(data, friendRows, entries);
             if (entries.length) {
                 renderList(entries);
