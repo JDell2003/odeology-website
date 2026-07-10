@@ -184,7 +184,9 @@
 
     const renderList = (rows) => {
         if (!listEl) return;
-        listEl.innerHTML = rows.map(r => `
+        listEl.innerHTML = rows.map(r => r.__gap ? `
+            <div class="lb-gaprow" aria-hidden="true"><span></span><em>${Number(r.count || 0).toLocaleString()} more athletes</em><span></span></div>
+        ` : `
             <div class="lb-row ${Number(r.rank) === 1 ? 'is-gold' : ''} ${Number(r.rank) === 2 ? 'is-silver' : ''} ${Number(r.rank) === 3 ? 'is-bronze' : ''}">
                 <div class="lb-rankbox" aria-label="Rank ${r.rank}">
                     <div class="lb-ranknum">#${r.rank}</div>
@@ -206,7 +208,8 @@
                             const max = 7;
                             const shown = base.slice(0, max);
                             const extra = base.length > max ? base.length - max : 0;
-                            const pills = castePill(pickCaste(casteStatsFromRow(r))) + shown.map(badgePill).join('');
+                            const rowCaste = r.__caste && CASTE_MAP[r.__caste] ? CASTE_MAP[r.__caste] : pickCaste(casteStatsFromRow(r));
+                            const pills = castePill(rowCaste) + shown.map(badgePill).join('');
                             const more = extra ? `<span class="lb-pill" data-tone="slate" title="${extra} more badges">+${extra}</span>` : '';
                             return pills + more;
                         })()}
@@ -616,10 +619,55 @@
             .lb-filter-chips button{min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(10,31,47,.14);
                 background:rgba(255,255,255,.9);color:rgba(13,34,50,.7);font:800 12px/1 system-ui,sans-serif;cursor:pointer}
             .lb-filter-chips button.is-active{background:#16344d;border-color:#16344d;color:#fff}
+            .lb-gaprow{display:flex;align-items:center;gap:12px;padding:10px 4px;color:rgba(120,113,108,.75)}
+            .lb-gaprow span{flex:1 1 auto;height:1px;background:repeating-linear-gradient(90deg,rgba(120,113,108,.35) 0 6px,transparent 6px 12px)}
+            .lb-gaprow em{font:700 11px/1 system-ui,sans-serif;font-style:normal;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+            .lb-caste-pyramid{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0 0 18px;padding:18px 14px 16px;
+                border-radius:20px;background:linear-gradient(160deg,#1a1610,#241d13);border:1px solid rgba(212,175,55,.3);overflow:hidden}
+            .lb-pyramid-title{font:800 10.5px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(232,199,102,.85);margin-bottom:8px}
+            .lb-pyramid-tier{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 12px;
+                border-radius:10px;background:rgba(212,175,55,.09);border:1px solid rgba(212,175,55,.22);color:#f5efe4;
+                animation:lbTierIn .5s cubic-bezier(.2,.8,.3,1) backwards;transition:background .15s ease}
+            .lb-pyramid-tier:hover{background:rgba(212,175,55,.16)}
+            @keyframes lbTierIn{from{opacity:0;transform:translateY(-10px) scaleX(.7)}to{opacity:1;transform:none}}
+            .lb-pyramid-tier.is-you{background:rgba(212,175,55,.2);border-color:#e8c766;box-shadow:0 0 22px rgba(212,175,55,.25)}
+            .lb-pyramid-emblem{color:#e8c766;font-size:15px}
+            .lb-pyramid-label{font:800 11.5px/1.2 system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .lb-pyramid-count{font:700 10.5px/1 ui-monospace,monospace;color:rgba(232,199,102,.9);white-space:nowrap}
+            .lb-pyramid-you{position:absolute;right:-6px;top:50%;transform:translate(100%,-50%);padding:3px 8px;border-radius:999px;
+                background:#e8c766;color:#1a1610;font:900 9px/1 system-ui,sans-serif;letter-spacing:.12em;
+                animation:lbYouPulse 2s ease-in-out infinite}
+            @keyframes lbYouPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,199,102,.5)}50%{box-shadow:0 0 0 7px rgba(232,199,102,0)}}
+            .lb-caste-slots-chip{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:5px 11px;border-radius:999px;
+                background:rgba(232,199,102,.14);border:1px solid rgba(232,199,102,.4);color:#e8c766;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em}
+            #lb-shift-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+                background:rgba(10,8,4,.78);backdrop-filter:blur(7px);animation:lbShiftFade .3s ease}
+            @keyframes lbShiftFade{from{opacity:0}to{opacity:1}}
+            .lb-shift-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+            .lb-shift-particles i{position:absolute;top:-16px;width:5px;height:12px;border-radius:2px;background:#e8c766;opacity:.9;
+                animation:lbShiftFall linear forwards}
+            @keyframes lbShiftFall{to{transform:translateY(110vh) rotate(400deg);opacity:0}}
+            .lb-shift-card{position:relative;width:min(380px,92vw);padding:30px 24px 22px;border-radius:24px;text-align:center;color:#f5efe4;
+                background:linear-gradient(165deg,#241d13,#1a1610);border:1.5px solid rgba(212,175,55,.5);
+                box-shadow:0 40px 90px rgba(0,0,0,.6);animation:lbShiftPop .45s cubic-bezier(.2,.9,.3,1.25)}
+            @keyframes lbShiftPop{from{transform:scale(.8) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+            .lb-shift-crest{width:64px;height:64px;margin:0 auto 12px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+                font-size:30px;color:#e8c766;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.5);
+                animation:lbYouPulse 2.4s ease-in-out infinite}
+            .lb-shift-title{font:900 24px/1.15 'Space Grotesk',system-ui,sans-serif;color:#fff;margin-bottom:14px}
+            .lb-shift-lines{display:grid;gap:8px;margin-bottom:18px}
+            .lb-shift-line{font:600 13.5px/1.4 system-ui,sans-serif;color:rgba(245,239,228,.85);
+                animation:lbShiftLine .5s cubic-bezier(.2,.8,.3,1) backwards}
+            .lb-shift-line strong{color:#e8c766}
+            @keyframes lbShiftLine{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+            .lb-shift-cta{min-height:46px;padding:0 22px;border:0;border-radius:999px;cursor:pointer;
+                background:linear-gradient(135deg,#b98a2b,#e8c766);color:#1a1610;font:900 13.5px/1 system-ui,sans-serif}
             @media (prefers-reduced-motion: reduce){
                 .lb-caste-emblem{animation:none}
                 .lb-caste-hero{animation:none}
                 .lb-caste-bar i{transition:none}
+                .lb-pyramid-tier{animation:none}
+                .lb-pyramid-you{animation:none}
             }
             @media (max-width:640px){
                 .lb-caste-hero{grid-template-columns:1fr;padding:16px}
@@ -941,6 +989,256 @@
         return withBadges;
     };
 
+    /* ================================================================
+       THE GAME POPULATION
+       ~2,400 deterministic community athletes so the board feels like a
+       living game. Points skew toward the middle-upper ranks, the top
+       castes have hard slot caps (only so many thrones), and the whole
+       population reshuffles every day - same seed for everyone, so all
+       players see the same world.
+       ================================================================ */
+    const GAME_POPULATION_SIZE = 2400;
+    const CASTE_SLOTS = { king: 15, knight: 150 };
+
+    const syncSeed = (str) => {
+        let h = 1779033703 ^ String(str).length;
+        for (let i = 0; i < String(str).length; i += 1) {
+            h = Math.imul(h ^ String(str).charCodeAt(i), 3432918353);
+            h = (h << 13) | (h >>> 19);
+        }
+        return () => {
+            h = Math.imul(h ^ (h >>> 16), 2246822507);
+            h = Math.imul(h ^ (h >>> 13), 3266489909);
+            return ((h ^= h >>> 16) >>> 0) / 4294967296;
+        };
+    };
+
+    const GAME_FIRST_NAMES = ['Marcus', 'Lena', 'Diego', 'Priya', 'Cole', 'Amara', 'Felix', 'Nadia', 'Owen', 'Zara', 'Bruno', 'Ivy', 'Dante', 'Freya', 'Silas', 'Mara', 'Theo', 'Alina', 'Rocco', 'Wren', 'Kai', 'Esme', 'Jonas', 'Talia', 'Ezra', 'Nova', 'Luca', 'Sage', 'Mateo', 'Iris', 'Axel', 'Remy', 'Nash', 'Vera', 'Otto', 'Lyra', 'Enzo', 'Cleo', 'Hugo', 'Isla'];
+    const GAME_LAST_NAMES = ['Steele', 'Varga', 'Okafor', 'Lindqvist', 'Moreau', 'Castillo', 'Novak', 'Ferrer', 'Haas', 'Iversen', 'Kowalski', 'Tanaka', 'Reyes', 'Bishop', 'Drummond', 'Ashford', 'Vance', 'Holt', 'Mercer', 'Quinn', 'Sato', 'Lombardi', 'Petrov', 'Nyström', 'Delacroix', 'Barros', 'Kessler', 'Whitlock', 'Aldana', 'Brandt', 'Falk', 'Grimaldi', 'Hale', 'Ibarra', 'Joric', 'Katz', 'Larkin', 'Madsen', 'North', 'Pryor', 'Roan', 'Sylvan', 'Thorne', 'Ulrich', 'Voss', 'Winters', 'Yates', 'Zamora', 'Bergström', 'Calloway', 'Duval', 'Eastwood', 'Farrow', 'Giannis', 'Hollis', 'Ingram', 'Juno', 'Kirby', 'Lowe', 'Marsh'];
+
+    const gameFakeIdentity = (index, day) => {
+        const rnd = syncSeed(`lb_fake_${index}`);
+        const first = GAME_FIRST_NAMES[Math.floor(rnd() * GAME_FIRST_NAMES.length)];
+        const last = GAME_LAST_NAMES[Math.floor(rnd() * GAME_LAST_NAMES.length)];
+        const displayName = `${first} ${last}`;
+        const handle = `@${first}${last}`.toLowerCase().replace(/[^a-z0-9@]/g, '').slice(0, 18);
+        const palette = [['#22c55e', '#06b6d4'], ['#a78bfa', '#f472b6'], ['#f97316', '#facc15'], ['#60a5fa', '#34d399'], ['#fb7185', '#f59e0b'], ['#38bdf8', '#a3e635']];
+        const [a, b] = palette[index % palette.length];
+        const joined = new Date(`${day}T00:00:00Z`);
+        joined.setUTCDate(joined.getUTCDate() - Math.floor(rnd() * 200) - 3);
+        return { displayName, handle, avatarSeed: Math.floor(rnd() * 100), gender: rnd() > 0.5 ? 'women' : 'men', colors: [a, b], joinedAt: joined.toISOString() };
+    };
+
+    const buildGamePopulation = (day) => {
+        const rnd = syncSeed(`lb_population_${day}`);
+        const points = [];
+        for (let i = 0; i < GAME_POPULATION_SIZE; i += 1) {
+            // Bell curve (sum of uniforms) nudged upward: most athletes sit in
+            // the middle-upper band, thin tails at the bottom and the crown.
+            const bell = (rnd() + rnd() + rnd()) / 3;
+            const skewed = Math.pow(bell, 0.82);
+            points.push(Math.round(40 + skewed * 1460));
+        }
+        points.sort((a, b) => b - a);
+        return points;
+    };
+
+    // Caste is positional in the game: the crown has 15 thrones, knighthood
+    // 150 seats, and everyone else fills the pyramid below.
+    const casteForGameRank = (rank, total, rnd) => {
+        if (rank <= 12) return 'king';
+        if (rank <= 12 + 138) return 'knight';
+        if (rank <= 12 + 138 + 640) {
+            const classes = ['ranger', 'monk', 'mage', 'berserker'];
+            return classes[Math.floor(rnd() * classes.length)];
+        }
+        if (rank <= 12 + 138 + 640 + 1020) return 'squire';
+        return rnd() < 0.16 ? 'ghost' : 'peasant';
+    };
+
+    const gameFakeRow = (rank, pts, day) => {
+        const identity = gameFakeIdentity(rank, day);
+        const rowRnd = syncSeed(`lb_fake_row_${day}_${rank}`);
+        const casteId = casteForGameRank(rank, GAME_POPULATION_SIZE, rowRnd);
+        const streakDays = casteId === 'ghost' ? 0 : Math.max(0, Math.round(pts / 90) + Math.floor(rowRnd() * 6) - 2);
+        const workouts = Math.max(0, Math.round(pts / 80) + Math.floor(rowRnd() * 4) - 1);
+        const checkins = Math.max(streakDays, Math.round(pts / 45));
+        return {
+            id: `game_${rank}`,
+            rank,
+            displayName: identity.displayName,
+            handle: identity.handle,
+            avatarUrl: rank <= 40
+                ? portraitUrl({ seed: identity.avatarSeed, gender: identity.gender })
+                : encodeSvgDataUrl(avatarSvg({ initials: initialsFromName(identity.displayName), a: identity.colors[0], b: identity.colors[1] })),
+            joinedAt: identity.joinedAt,
+            points: pts,
+            breakdown: {
+                workouts,
+                checkins,
+                groceryPlans: Math.floor(rowRnd() * 6),
+                mealPrepDays: Math.floor(checkins * rowRnd() * 0.6),
+                mealsOnPlanDays: Math.floor(checkins * rowRnd() * 0.7),
+                measurementDays: Math.floor(rowRnd() * 8),
+                measurementBonus: Math.floor(rowRnd() * 10)
+            },
+            bio: '',
+            streakDays,
+            isBot: true,
+            badges: [],
+            __caste: casteId
+        };
+    };
+
+    const buildGameBoard = (serverEntries, day) => {
+        const population = buildGamePopulation(day);
+        const real = (Array.isArray(serverEntries) ? serverEntries : []).filter((r) => !r.isBot);
+        // Slot the real people into the population by points.
+        const merged = [];
+        let realQueue = real.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
+        let fakeIndex = 0;
+        while (fakeIndex < population.length || realQueue.length) {
+            const nextFake = fakeIndex < population.length ? population[fakeIndex] : -1;
+            const nextReal = realQueue.length ? Number(realQueue[0].points || 0) : -1;
+            if (nextReal >= nextFake && realQueue.length) {
+                merged.push({ src: 'real', row: realQueue.shift() });
+            } else {
+                merged.push({ src: 'fake', pts: nextFake });
+                fakeIndex += 1;
+            }
+        }
+        const total = merged.length;
+        const rows = merged.map((slot, i) => {
+            const rank = i + 1;
+            if (slot.src === 'real') {
+                const stats = String(slot.row.id) === String(real.find(r => !r.isFriend)?.id) ? (readIdentityStats() || casteStatsFromRow(slot.row)) : casteStatsFromRow(slot.row);
+                return { ...slot.row, rank, __caste: pickCaste(stats).id };
+            }
+            return gameFakeRow(rank, slot.pts, day);
+        });
+        return { rows, total };
+    };
+
+    const buildGameWindow = (rows, youId) => {
+        const youIndex = rows.findIndex((r) => String(r.id) === String(youId));
+        const TOP = 20;
+        if (youIndex < 0 || youIndex < TOP + 4) {
+            const upper = Math.max(TOP, youIndex + 4);
+            const visible = rows.slice(0, Math.min(rows.length, upper + 1));
+            if (rows.length > visible.length) visible.push({ __gap: true, count: rows.length - visible.length });
+            return visible;
+        }
+        const visible = rows.slice(0, TOP);
+        visible.push({ __gap: true, count: youIndex - 3 - TOP });
+        visible.push(...rows.slice(youIndex - 3, Math.min(rows.length, youIndex + 4)));
+        const remaining = rows.length - (youIndex + 4);
+        if (remaining > 0) visible.push({ __gap: true, count: remaining });
+        return visible;
+    };
+
+    const gameTierCounts = (day) => {
+        const tierRnd = syncSeed(`lb_tiers_${day}`);
+        const king = 11 + Math.floor(tierRnd() * 4); // 11-14 of 15 thrones taken
+        const knight = 136 + Math.floor(tierRnd() * 12); // 136-147 of 150 seats
+        return {
+            king,
+            knight,
+            class: 640,
+            squire: 1020,
+            base: GAME_POPULATION_SIZE - king - knight - 640 - 1020
+        };
+    };
+
+    /* Caste pyramid - the shape of the realm, with slot caps up top. */
+    const renderCastePyramid = (rows, total, youCasteId, mode) => {
+        ensureCasteStyle();
+        document.getElementById('lb-caste-pyramid')?.remove();
+        if (!listEl) return;
+        const counts = {};
+        rows.forEach((r) => {
+            if (r.__gap) return;
+            const id = r.__caste || pickCaste(casteStatsFromRow(r)).id;
+            counts[id] = (counts[id] || 0) + 1;
+        });
+        // For the community game the tier counts come from the full population
+        // model, not just the rendered window.
+        const communityCounts = gameTierCounts(todayKey(new Date()));
+        const tiers = mode === 'community'
+            ? [
+                { id: 'king', label: 'King', emblem: '♛', width: 24, count: communityCounts.king, cap: CASTE_SLOTS.king },
+                { id: 'knight', label: 'Knight', emblem: '♞', width: 42, count: communityCounts.knight, cap: CASTE_SLOTS.knight },
+                { id: 'class', label: 'Ranger · Monk · Mage · Berserker', emblem: '➳', width: 62, count: communityCounts.class, matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'squire', label: 'Squire', emblem: '⚑', width: 82, count: communityCounts.squire },
+                { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 100, count: communityCounts.base, matches: ['peasant', 'ghost'] }
+            ]
+            : [
+                { id: 'king', label: 'King', emblem: '♛', width: 24, count: counts.king || 0 },
+                { id: 'knight', label: 'Knight', emblem: '♞', width: 42, count: counts.knight || 0 },
+                { id: 'class', label: 'Ranger · Monk · Mage · Berserker', emblem: '➳', width: 62, count: (counts.ranger || 0) + (counts.monk || 0) + (counts.mage || 0) + (counts.berserker || 0), matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'squire', label: 'Squire', emblem: '⚑', width: 82, count: counts.squire || 0 },
+                { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 100, count: (counts.peasant || 0) + (counts.ghost || 0), matches: ['peasant', 'ghost'] }
+            ];
+        const youTier = tiers.find((t) => (t.matches ? t.matches.includes(youCasteId) : t.id === youCasteId));
+        const pyramid = document.createElement('section');
+        pyramid.id = 'lb-caste-pyramid';
+        pyramid.className = 'lb-caste-pyramid';
+        pyramid.setAttribute('aria-label', 'Caste pyramid');
+        pyramid.innerHTML = `
+            <div class="lb-pyramid-title">The Realm${mode === 'community' ? ` · ${total.toLocaleString()} athletes` : ''}</div>
+            ${tiers.map((t, i) => `
+                <div class="lb-pyramid-tier${youTier && t.id === youTier.id ? ' is-you' : ''}" style="width:${t.width}%;animation-delay:${i * 90}ms" data-tier="${t.id}">
+                    <span class="lb-pyramid-emblem">${t.emblem}</span>
+                    <span class="lb-pyramid-label">${t.label}</span>
+                    <span class="lb-pyramid-count">${t.cap ? `${Math.min(t.count, t.cap)}/${t.cap} slots` : t.count.toLocaleString()}</span>
+                    ${youTier && t.id === youTier.id ? '<span class="lb-pyramid-you">YOU</span>' : ''}
+                </div>
+            `).join('')}
+        `;
+        listEl.parentElement?.insertBefore(pyramid, listEl);
+    };
+
+    /* Daily shift event - plays once per day, everyone sees the same story. */
+    const maybePlayDailyShift = (mode) => {
+        if (mode !== 'community') return;
+        const day = todayKey(new Date());
+        try {
+            if (localStorage.getItem('lbShiftSeen') === day) return;
+            localStorage.setItem('lbShiftSeen', day);
+        } catch {}
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+        const rnd = syncSeed(`lb_shift_${day}`);
+        const climbed = 160 + Math.floor(rnd() * 220);
+        const fell = 140 + Math.floor(rnd() * 200);
+        const crowned = 1 + Math.floor(rnd() * 3);
+        const thronesOpen = Math.max(0, CASTE_SLOTS.king - gameTierCounts(day).king);
+        const overlay = document.createElement('div');
+        overlay.id = 'lb-shift-overlay';
+        let particles = '';
+        for (let i = 0; i < 30; i += 1) {
+            particles += `<i style="left:${(rnd() * 100).toFixed(1)}%;animation-duration:${(1.8 + rnd() * 1.6).toFixed(2)}s;animation-delay:${(rnd() * 0.9).toFixed(2)}s"></i>`;
+        }
+        overlay.innerHTML = `
+            <div class="lb-shift-particles" aria-hidden="true">${particles}</div>
+            <div class="lb-shift-card" role="status">
+                <div class="lb-shift-crest">⚔</div>
+                <div class="lb-shift-title">The ranks have shifted</div>
+                <div class="lb-shift-lines">
+                    <div class="lb-shift-line" style="animation-delay:.25s">▲ <strong>${climbed}</strong> athletes climbed overnight</div>
+                    <div class="lb-shift-line" style="animation-delay:.55s">▼ <strong>${fell}</strong> slipped down the pyramid</div>
+                    <div class="lb-shift-line" style="animation-delay:.85s">♛ <strong>${crowned}</strong> new King${crowned === 1 ? '' : 's'} crowned — ${thronesOpen} throne${thronesOpen === 1 ? '' : 's'} open</div>
+                </div>
+                <button type="button" class="lb-shift-cta">See where you stand</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        const dismiss = () => overlay.remove();
+        overlay.querySelector('.lb-shift-cta')?.addEventListener('click', dismiss);
+        overlay.addEventListener('mousedown', (event) => {
+            if (event.target === overlay) dismiss();
+        });
+        window.setTimeout(dismiss, 7000);
+    };
+
     /* Add-friends: exact-username lookup + friend request, right from the
        leaderboard. Accepted friends then appear as real rows on the
        community board. */
@@ -1047,12 +1345,11 @@
     };
 
     /* Everyone / Friends filter for the community board. */
-    const setupFriendFilter = (data, entries) => {
+    const setupFriendFilter = (data, friendRows, everyoneRows) => {
         document.getElementById('lb-filter-chips')?.remove();
         const mode = String(data?.mode || 'community');
         if (mode !== 'community' || !listEl) return;
-        const hasFriends = entries.some((r) => r.isFriend) || entries.some((r) => !r.isBot);
-        if (!hasFriends) return;
+        if (!friendRows.length) return;
         const chips = document.createElement('div');
         chips.id = 'lb-filter-chips';
         chips.className = 'lb-filter-chips';
@@ -1066,8 +1363,27 @@
             if (!chip) return;
             chips.querySelectorAll('[data-filter]').forEach((el) => el.classList.toggle('is-active', el === chip));
             const filter = chip.getAttribute('data-filter');
-            renderList(filter === 'friends' ? entries.filter((r) => !r.isBot) : entries);
+            renderList(filter === 'friends' ? friendRows : everyoneRows);
         });
+    };
+
+    /* Scarcity chip in the hero: how many slots are open in the next caste. */
+    const decorateHeroWithSlots = (youRow, day) => {
+        const head = document.querySelector('#lb-caste-hero .lb-caste-next-head');
+        if (!head || !youRow) return;
+        const stats = readIdentityStats() || casteStatsFromRow(youRow);
+        const next = pickNextCaste(stats, CASTE_MAP[youRow.__caste] || pickCaste(stats));
+        if (!next || !CASTE_SLOTS[next.caste.id]) return;
+        const counts = gameTierCounts(day);
+        const cap = CASTE_SLOTS[next.caste.id];
+        const taken = Math.min(cap, Number(counts[next.caste.id]) || 0);
+        const open = Math.max(0, cap - taken);
+        const chip = document.createElement('span');
+        chip.className = 'lb-caste-slots-chip';
+        chip.textContent = open > 0
+            ? `${open} of ${cap} ${next.caste.id === 'king' ? 'thrones' : 'seats'} open today`
+            : `All ${cap} ${next.caste.id === 'king' ? 'thrones' : 'seats'} taken — someone must fall first`;
+        head.appendChild(chip);
     };
 
     const load = async () => {
@@ -1098,9 +1414,26 @@
             renderRules(data?.rules);
             setLeaderboardMode(data);
             setupFriendsButton();
-            const entries = Array.isArray(data?.entries) ? data.entries : [];
-            renderCasteHero(data);
-            setupFriendFilter(data, entries);
+            const mode = String(data?.mode || 'community');
+            const rawEntries = Array.isArray(data?.entries) ? data.entries : [];
+            let entries = rawEntries;
+            let friendRows = rawEntries.filter((r) => !r.isBot);
+            if (mode === 'community') {
+                const day = todayKey(new Date());
+                const board = buildGameBoard(rawEntries, day);
+                const youRow = data?.you ? board.rows.find((r) => String(r.id) === String(data.you.id)) : null;
+                if (youRow && data?.you) data.you.rank = youRow.rank;
+                friendRows = board.rows.filter((r) => !r.isBot);
+                entries = buildGameWindow(board.rows, data?.you?.id);
+                renderCasteHero(data);
+                decorateHeroWithSlots(youRow, day);
+                renderCastePyramid(board.rows, board.total, youRow?.__caste || '', 'community');
+                maybePlayDailyShift('community');
+            } else {
+                renderCasteHero(data);
+                if (rawEntries.length) renderCastePyramid(rawEntries, rawEntries.length, '', 'trainer');
+            }
+            setupFriendFilter(data, friendRows, entries);
             if (entries.length) {
                 renderList(entries);
             } else if (listEl && String(data?.mode || '') === 'trainer_clients') {
