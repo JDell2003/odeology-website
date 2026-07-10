@@ -758,8 +758,277 @@
         requestAnimationFrame(step);
     };
 
+    /* ================================================================
+       LIVING CHAMPION - the "keep the flower alive" idea, medieval
+       edition. An animated SVG vignette of your fighter that loops
+       forever like a tiny movie and gets more glorious as your caste
+       climbs: peasant digs in the mud, squire drills on a dummy, the
+       class tiers get their weapon, the knight duels a shadow, the
+       king sits a throne. Pure SVG/CSS - no assets, no requests.
+       ================================================================ */
+    const ensureChampionStyle = () => {
+        if (document.getElementById('lb-champion-style')) return;
+        const style = document.createElement('style');
+        style.id = 'lb-champion-style';
+        style.textContent = `
+            /* Phone overflow guards: the hero and you-strip are grid/flex
+               items whose min-width:auto lets long lines force the panel
+               wider than the card on small screens. */
+            body.leaderboard-page .plan-card.lb-card>*{min-width:0;max-width:100%}
+            body.leaderboard-page .lb-row .lb-main{min-width:0}
+            .lb-pyramid-tier{min-width:max-content}
+            @media (max-width:720px){
+                .lb-podium{gap:8px}
+                .lb-podium-card{min-width:0;padding:12px 6px 10px}
+                .lb-podium-avatar{width:44px;height:44px}
+                .lb-podium-card.place-1 .lb-podium-avatar{width:54px;height:54px}
+                .lb-podium-name{font-size:12px}
+                .lb-podium-pts{font-size:13px}
+                body.leaderboard-page .lb-row{flex-wrap:wrap;gap:10px 12px;padding:12px}
+                body.leaderboard-page .lb-row .lb-badges,body.leaderboard-page .lb-row .lb-topline{flex-wrap:wrap}
+                body.leaderboard-page .lb-points{font-size:15px}
+            }
+            #lb-caste-hero.lb-caste-hero{min-width:0;max-width:100%}
+            .lb-caste-hero *{min-width:0}
+            body.leaderboard-page .lb-you{flex-wrap:wrap;min-width:0;max-width:100%}
+            body.leaderboard-page .lb-you #lb-you-right{margin-left:auto}
+            .lb-champion{grid-column:1/-1;position:relative;margin-top:6px;border-radius:16px;overflow:hidden;
+                border:1px solid rgba(185,138,43,.35);background:#f8edd2;box-shadow:inset 0 0 30px rgba(185,138,43,.1)}
+            .lb-champion svg{display:block;width:100%;height:clamp(170px,24vw,250px)}
+            .ch-sky{fill:url(#chSky)}
+            .ch-ground{fill:rgba(120,90,20,.16)}
+            .ch-head{fill:#2b2214}
+            .ch-body,.ch-limb{stroke:#2b2214;stroke-width:7;stroke-linecap:round;fill:none}
+            .ch-tool{stroke:#6b4a12;stroke-width:4;stroke-linecap:round;fill:none}
+            .ch-weapon{stroke:#8a6318;stroke-width:4;stroke-linecap:round;fill:none}
+            .ch-blade{stroke:#b5b0a3}
+            .ch-shadow{fill:rgba(60,45,15,.16)}
+            .ch-mud{fill:rgba(90,66,20,.3)}
+            .ch-banner path{fill:#b98a2b;opacity:.7;animation:chBanner 3.4s ease-in-out infinite;transform-origin:top center}
+            .ch-banner2 path{animation-delay:1.1s}
+            @keyframes chBanner{50%{transform:skewX(7deg)}}
+            .ch-ember{fill:#d9a93c;opacity:0;animation:chEmber var(--t,3s) linear var(--d,0s) infinite}
+            @keyframes chEmber{0%{opacity:0;transform:translateY(0)}14%{opacity:.85}100%{opacity:0;transform:translateY(-130px)}}
+            .ch-swing{animation:chSwing 1.9s ease-in-out infinite}
+            .ch-swing-slow{animation-duration:2.8s}
+            .ch-swing-fast{animation-duration:1.1s}
+            @keyframes chSwing{0%,100%{transform:rotate(-16deg)}42%{transform:rotate(30deg)}55%{transform:rotate(26deg)}}
+            .ch-dust circle{fill:rgba(120,90,20,.55);opacity:0;animation:chDust 2.8s ease-in-out infinite}
+            @keyframes chDust{0%,40%{opacity:0}48%{opacity:.7}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+            .ch-dummy{animation:chWobble 1.9s ease-in-out infinite;transform-origin:bottom center}
+            @keyframes chWobble{0%,38%,100%{transform:rotate(0)}46%{transform:rotate(6deg)}58%{transform:rotate(-3deg)}}
+            .ch-spark path{fill:#e0b34a;opacity:0;animation:chSpark 1.9s linear infinite}
+            @keyframes chSpark{0%,42%{opacity:0;transform:scale(.4)}47%{opacity:1;transform:scale(1.15)}56%{opacity:0;transform:scale(.5)}100%{opacity:0}}
+            .ch-duel-hero{animation:chLunge 2.4s ease-in-out infinite}
+            @keyframes chLunge{0%,100%{transform:translate(128px,172px)}38%{transform:translate(150px,172px)}52%{transform:translate(146px,172px)}}
+            .ch-duel-foe{opacity:.5;animation:chRecoil 2.4s ease-in-out infinite}
+            @keyframes chRecoil{0%,34%,100%{transform:translate(244px,172px) scale(-1,1)}44%{transform:translate(258px,170px) scale(-1,1)}60%{transform:translate(250px,172px) scale(-1,1)}}
+            .ch-clash path{fill:#f2ddaa;stroke:#c8931b;stroke-width:1;opacity:0;animation:chClash 2.4s linear infinite}
+            @keyframes chClash{0%,38%{opacity:0;transform:scale(.3)}43%{opacity:1;transform:scale(1.3)}52%{opacity:0;transform:scale(.4)}100%{opacity:0}}
+            .ch-orb{fill:#e0b34a;animation:chOrb 2.2s ease-in-out infinite}
+            @keyframes chOrb{0%,100%{opacity:.55;r:4}50%{opacity:1;r:5.5}}
+            .ch-glow{fill:rgba(224,179,74,.35);animation:chGlow 2.6s ease-in-out infinite}
+            @keyframes chGlow{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.8;transform:scale(1.25)}}
+            .ch-hover{animation:chHover 3s ease-in-out infinite}
+            @keyframes chHover{0%,100%{transform:translate(180px,166px)}50%{transform:translate(180px,160px)}}
+            .ch-arrow{stroke:#8a6318;stroke-width:2.5;stroke-linecap:round;opacity:0;animation:chArrow 2.6s linear infinite}
+            @keyframes chArrow{0%,54%{opacity:0;transform:translateX(0)}58%{opacity:1}80%{opacity:0;transform:translateX(90px)}100%{opacity:0}}
+            .ch-crown{fill:#e0b34a;stroke:#a1751f;stroke-width:1}
+            .ch-throne{fill:#8a6318;opacity:.85}
+            .lb-champion-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+                padding:9px 14px;background:rgba(120,90,20,.08);border-top:1px solid rgba(185,138,43,.25)}
+            .lb-champion-cap span:first-child{font:700 11.5px/1.4 system-ui,sans-serif;color:#6b4a12}
+            .lb-champion-streak{flex:0 0 auto;padding:4px 10px;border-radius:999px;background:rgba(212,175,55,.2);
+                border:1px solid rgba(185,138,43,.45);font:800 10.5px/1 system-ui,sans-serif;color:#a1751f}
+            /* Cinematic gate intro - overrides the plain fade version. */
+            #lb-arena-intro{position:fixed;inset:0;z-index:190;display:flex;align-items:center;justify-content:center;overflow:hidden;
+                background:radial-gradient(130% 100% at 50% 115%,#3a2a10,#191307 62%);pointer-events:none;
+                animation:lbIntroLift .6s ease 2.6s forwards}
+            .lb-intro-gate{position:absolute;top:0;bottom:0;width:51%;z-index:3;
+                background:linear-gradient(90deg,#241a0c,#2e2110);box-shadow:inset 0 0 46px rgba(0,0,0,.55)}
+            .lb-intro-gate.is-left{left:0;border-right:2px solid rgba(224,179,74,.5);animation:lbGateL .9s cubic-bezier(.7,0,.3,1) .55s forwards}
+            .lb-intro-gate.is-right{right:0;border-left:2px solid rgba(224,179,74,.5);animation:lbGateR .9s cubic-bezier(.7,0,.3,1) .55s forwards}
+            @keyframes lbGateL{to{transform:translateX(-102%)}}
+            @keyframes lbGateR{to{transform:translateX(102%)}}
+            .lb-intro-embers i{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#e0b34a;opacity:0;
+                animation-name:lbEmberUp;animation-iteration-count:infinite;animation-timing-function:linear}
+            @keyframes lbEmberUp{0%{opacity:0;transform:translateY(0) scale(1)}12%{opacity:.9}100%{opacity:0;transform:translateY(-72vh) scale(.35)}}
+            .lb-intro-inner{position:relative;z-index:2;text-align:center;animation:lbIntroPop .7s cubic-bezier(.2,.9,.3,1.15) .15s backwards}
+            .lb-intro-shield{width:86px;height:auto;display:block;margin:0 auto 14px;filter:drop-shadow(0 0 26px rgba(224,179,74,.35))}
+            .lb-intro-shield .shield{fill:#241b0e;stroke:#e0b34a;stroke-width:2.5}
+            .lb-intro-shield .swords{stroke:#e0b34a;stroke-width:3.5;stroke-linecap:round}
+            .lb-intro-shield .shine{fill:rgba(255,240,200,.3);animation:lbShine 1.7s ease .8s infinite}
+            @keyframes lbShine{0%{transform:skewX(-18deg) translateX(-20px)}55%,100%{transform:skewX(-18deg) translateX(120px)}}
+            .lb-intro-title{font:900 34px/1.05 'Space Grotesk',system-ui,sans-serif;color:#f2ddaa;letter-spacing:.14em;
+                animation:lbTitleSpread 1.1s ease .35s backwards}
+            @keyframes lbTitleSpread{from{letter-spacing:.42em;opacity:0}to{letter-spacing:.14em;opacity:1}}
+            .lb-intro-sub{margin-top:8px;font:700 11px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#c9a24a}
+            .lb-intro-tag{margin-top:14px;font:700 11.5px/1 system-ui,sans-serif;color:rgba(242,221,170,.6)}
+            @media (max-width:720px){.lb-intro-title{font-size:26px}}
+            @media (prefers-reduced-motion: reduce){
+                .lb-champion [class^="ch-"],.lb-champion [class*=" ch-"]{animation:none !important}
+                #lb-arena-intro,.lb-intro-gate,.lb-intro-embers i{animation:none !important;display:none}
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const CHAMPION_CAPTIONS = {
+        base: 'Every legend starts in the mud. Show up today and he stands a little taller.',
+        squire: 'He drills while you train. Skip a week and the dummy starts winning.',
+        ranger: 'Eyes sharp from your cardio. Keep the miles coming and the arrows fly true.',
+        monk: 'Balanced and unbothered - your recovery keeps his mind clear.',
+        mage: 'Your nutrition feeds the spellwork. Keep the orb burning.',
+        berserker: 'All fury, no rest. He fights harder than he recovers - careful.',
+        knight: 'Your knight holds the line. Every workout is another parry.',
+        king: 'The crown is rented, never owned. 75+ everywhere keeps him on the throne.'
+    };
+
+    const championStage = (casteId) => (CHAMPION_CAPTIONS[casteId] ? casteId : 'base');
+
+    const championScene = (caste, streak) => {
+        const stage = championStage(caste.id);
+        const skies = {
+            base: ['#eee1c2', '#e0cea6'], squire: ['#f4e8ca', '#eadab2'],
+            knight: ['#f8edd2', '#eeddb6'], king: ['#fdf3d2', '#f3e2ae']
+        };
+        const [s1, s2] = skies[stage] || ['#f6ebcd', '#ecdcb4'];
+        const emberCount = stage === 'base' ? 4 : stage === 'king' ? 14 : 9;
+        const embers = Array.from({ length: emberCount }, (_, i) =>
+            `<circle class="ch-ember" cx="${18 + ((i * 41) % 330)}" cy="${170 - (i % 3) * 9}" r="${(1.5 + (i % 3) * 0.7).toFixed(1)}" style="--t:${(2.5 + (i % 5) * 0.5).toFixed(1)}s;--d:${(i * 0.37).toFixed(2)}s"/>`).join('');
+        const baseFig = (extra) => `
+            <ellipse class="ch-shadow" cx="8" cy="4" rx="30" ry="6"/>
+            <path class="ch-limb" d="M0,0 L4,-30"/><path class="ch-limb" d="M16,0 L12,-30"/>
+            <path class="ch-body" d="M8,-30 L8,-52"/>
+            <circle class="ch-head" cx="8" cy="-62" r="9"/>${extra}`;
+        const scenes = {
+            base: `
+                <g transform="translate(168,172)">
+                    <ellipse class="ch-shadow" cx="8" cy="4" rx="30" ry="6"/>
+                    <path class="ch-limb" d="M0,0 L-2,-28"/><path class="ch-limb" d="M14,0 L12,-28"/>
+                    <path class="ch-body" d="M5,-28 Q6,-46 18,-52"/>
+                    <circle class="ch-head" cx="24" cy="-58" r="9"/>
+                    <g class="ch-swing ch-swing-slow" style="transform-origin:14px -46px">
+                        <path class="ch-limb" d="M14,-46 L38,-32"/>
+                        <path class="ch-tool" d="M38,-32 L58,4"/><path class="ch-tool" d="M58,4 l13,-6"/>
+                    </g>
+                    <g class="ch-dust"><circle cx="64" cy="0" r="3"/><circle cx="72" cy="-6" r="2"/><circle cx="58" cy="-8" r="1.6"/></g>
+                    <ellipse class="ch-mud" cx="68" cy="6" rx="17" ry="3.5"/>
+                </g>`,
+            squire: `
+                <g class="ch-dummy" transform="translate(248,174)">
+                    <path class="ch-tool" d="M0,0 L0,-52"/><path class="ch-tool" d="M-16,-40 L16,-40"/>
+                    <circle class="ch-head" cx="0" cy="-60" r="8" opacity=".75"/>
+                </g>
+                <g transform="translate(150,172)">
+                    ${baseFig(`
+                    <g class="ch-swing" style="transform-origin:8px -48px">
+                        <path class="ch-limb" d="M8,-48 L34,-40"/>
+                        <path class="ch-weapon" d="M34,-40 L66,-54"/>
+                    </g>`)}
+                </g>
+                <g class="ch-spark" transform="translate(242,122)"><path d="M0,-8 L2,-2 L8,0 L2,2 L0,8 L-2,2 L-8,0 L-2,-2 Z"/></g>`,
+            ranger: `
+                <g transform="translate(160,172)">
+                    ${baseFig(`
+                    <path class="ch-limb" d="M8,-48 L36,-50"/>
+                    <path class="ch-weapon" d="M40,-72 q20,24 0,46"/>
+                    <path class="ch-weapon" d="M40,-72 L40,-26" stroke-width="1.6"/>
+                    <path class="ch-arrow" d="M42,-50 h28 m-5,-4 l5,4 l-5,4"/>`)}
+                </g>`,
+            monk: `
+                <ellipse class="ch-glow" cx="180" cy="172" rx="42" ry="8" style="transform-origin:180px 172px"/>
+                <g class="ch-hover">
+                    <path class="ch-limb" d="M-22,4 Q0,14 22,4"/>
+                    <path class="ch-body" d="M0,6 L0,-20"/>
+                    <circle class="ch-head" cx="0" cy="-30" r="9"/>
+                    <path class="ch-limb" d="M-4,-14 Q-18,-4 -12,6"/><path class="ch-limb" d="M4,-14 Q18,-4 12,6"/>
+                </g>`,
+            mage: `
+                <g transform="translate(162,172)">
+                    ${baseFig(`
+                    <path class="ch-limb" d="M8,-48 L34,-46"/>
+                    <path class="ch-weapon" d="M38,-76 L38,-24"/>
+                    <circle class="ch-orb" cx="38" cy="-80" r="4"/>
+                    <circle class="ch-glow" cx="38" cy="-80" r="10" style="transform-origin:200px 92px"/>`)}
+                </g>`,
+            berserker: `
+                <g transform="translate(166,172)">
+                    ${baseFig(`
+                    <g class="ch-swing ch-swing-fast" style="transform-origin:8px -48px">
+                        <path class="ch-limb" d="M8,-48 L32,-40"/>
+                        <path class="ch-weapon" d="M32,-40 L54,-56"/><path class="ch-weapon" d="M48,-62 q10,6 2,14" stroke-width="6"/>
+                    </g>
+                    <g class="ch-swing ch-swing-fast" style="transform-origin:8px -48px;animation-delay:.55s">
+                        <path class="ch-limb" d="M8,-48 L-16,-38"/>
+                        <path class="ch-weapon" d="M-16,-38 L-38,-52"/><path class="ch-weapon" d="M-32,-58 q-10,6 -2,14" stroke-width="6"/>
+                    </g>`)}
+                </g>
+                <path class="ch-tool" d="M120,176 l14,-3 m8,4 l12,-2" stroke-width="2" opacity=".5"/>`,
+            knight: `
+                <g class="ch-duel-hero">
+                    <ellipse class="ch-shadow" cx="9" cy="4" rx="30" ry="6"/>
+                    <path class="ch-limb" d="M0,0 L6,-30"/><path class="ch-limb" d="M18,0 L12,-30"/>
+                    <path class="ch-body" d="M9,-30 L9,-54"/>
+                    <circle class="ch-head" cx="9" cy="-64" r="9"/>
+                    <path class="ch-weapon" d="M9,-73 q10,-6 17,-2" stroke-width="3"/>
+                    <path class="ch-limb" d="M9,-50 L-12,-44"/>
+                    <path class="ch-crown" d="M-22,-52 q-10,4 -8,16 q7,5 12,0 q4,-10 -4,-16 Z"/>
+                    <g class="ch-swing" style="transform-origin:9px -50px">
+                        <path class="ch-limb" d="M9,-50 L36,-46"/>
+                        <path class="ch-weapon ch-blade" d="M36,-46 L72,-62"/>
+                    </g>
+                </g>
+                <g class="ch-duel-foe">
+                    <ellipse class="ch-shadow" cx="9" cy="4" rx="28" ry="6"/>
+                    <path class="ch-limb" d="M0,0 L6,-30"/><path class="ch-limb" d="M18,0 L12,-30"/>
+                    <path class="ch-body" d="M9,-30 L9,-54"/>
+                    <circle class="ch-head" cx="9" cy="-64" r="9"/>
+                    <g class="ch-swing ch-swing-slow" style="transform-origin:9px -50px">
+                        <path class="ch-limb" d="M9,-50 L36,-44"/>
+                        <path class="ch-weapon ch-blade" d="M36,-44 L68,-58"/>
+                    </g>
+                </g>
+                <g class="ch-clash" transform="translate(188,106)"><path d="M0,-11 L3,-3 L11,0 L3,3 L0,11 L-3,3 L-11,0 L-3,-3 Z"/></g>`,
+            king: `
+                <g transform="translate(180,176)">
+                    <path class="ch-throne" d="M-36,0 L-36,-78 L-24,-66 L-24,-32 L24,-32 L24,-66 L36,-78 L36,0 Z"/>
+                    <ellipse class="ch-shadow" cx="0" cy="4" rx="44" ry="6"/>
+                    <path class="ch-limb" d="M-9,-32 L-9,-6"/><path class="ch-limb" d="M9,-32 L9,-6"/>
+                    <path class="ch-body" d="M0,-32 L0,-58"/>
+                    <circle class="ch-head" cx="0" cy="-68" r="9"/>
+                    <circle class="ch-glow" cx="0" cy="-82" r="14" style="transform-origin:180px 94px"/>
+                    <path class="ch-crown" d="M-9,-78 L-9,-86 L-4,-80 L0,-88 L4,-80 L9,-86 L9,-78 Z"/>
+                    <path class="ch-limb" d="M0,-52 L22,-46"/>
+                    <path class="ch-weapon" d="M25,-72 L25,-40"/><circle class="ch-orb" cx="25" cy="-75" r="4"/>
+                </g>`
+        };
+        const streakLine = streak > 0
+            ? `${FIRE} ${streak}d streak keeps him fighting`
+            : 'Log today to wake him up';
+        return `
+            <div class="lb-champion" data-stage="${stage}" aria-label="Your champion">
+                <svg viewBox="0 0 360 190" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+                    <defs><linearGradient id="chSky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="${s1}"/><stop offset="1" stop-color="${s2}"/>
+                    </linearGradient></defs>
+                    <rect class="ch-sky" width="360" height="190" rx="0"/>
+                    <ellipse class="ch-ground" cx="180" cy="184" rx="205" ry="20"/>
+                    <g class="ch-banner" transform="translate(26,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
+                    <g class="ch-banner ch-banner2" transform="translate(316,14)"><path d="M0,0 h18 v32 l-9,-7 l-9,7 Z"/></g>
+                    ${embers}
+                    ${scenes[stage] || scenes.base}
+                </svg>
+                <div class="lb-champion-cap">
+                    <span>${CHAMPION_CAPTIONS[stage]}</span>
+                    <span class="lb-champion-streak">${streakLine}</span>
+                </div>
+            </div>`;
+    };
+
     const renderCasteHero = (data) => {
         ensureCasteStyle();
+        ensureChampionStyle();
         document.getElementById('lb-caste-hero')?.remove();
         const you = data?.you || null;
         if (!you || !listEl) return;
@@ -803,6 +1072,7 @@
                 <p class="lb-caste-why">${caste.blurb}</p>
             </div>
             ${nextBlock}
+            ${championScene(caste, Number(you.streakDays || 0))}
         `;
         listEl.parentElement?.insertBefore(hero, listEl);
         // Animate: bars sweep to their value, numbers count up.
@@ -1357,18 +1627,30 @@
     const playArenaIntro = () => {
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
         if (document.getElementById('lb-arena-intro')) return;
+        ensureChampionStyle();
         const intro = document.createElement('div');
         intro.id = 'lb-arena-intro';
         const dayName = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        const embers = Array.from({ length: 16 }, (_, i) =>
+            `<i style="left:${(i * 6.3 + 2).toFixed(1)}%;animation-duration:${(1.6 + (i % 5) * 0.4).toFixed(1)}s;animation-delay:${(i * 0.13).toFixed(2)}s"></i>`).join('');
         intro.innerHTML = `
+            <div class="lb-intro-gate is-left"></div>
+            <div class="lb-intro-gate is-right"></div>
+            <div class="lb-intro-embers" aria-hidden="true">${embers}</div>
             <div class="lb-intro-inner">
-                <span class="lb-intro-crest">⚔</span>
+                <svg class="lb-intro-shield" viewBox="0 0 64 72" aria-hidden="true">
+                    <defs><clipPath id="lbShieldClip"><path d="M32 2 L60 12 V38 Q60 58 32 70 Q4 58 4 38 V12 Z"/></clipPath></defs>
+                    <path class="shield" d="M32 2 L60 12 V38 Q60 58 32 70 Q4 58 4 38 V12 Z"/>
+                    <path class="swords" d="M20 24 L44 48 M44 24 L20 48"/>
+                    <rect class="shine" x="-26" y="-2" width="18" height="78" clip-path="url(#lbShieldClip)"/>
+                </svg>
                 <div class="lb-intro-title">THE ARENA</div>
                 <div class="lb-intro-sub">${dayName}</div>
+                <div class="lb-intro-tag">${GAME_POPULATION_SIZE.toLocaleString()} fighters · the gates open</div>
             </div>
         `;
         document.body.appendChild(intro);
-        window.setTimeout(() => intro.remove(), 2100);
+        window.setTimeout(() => intro.remove(), 3300);
     };
 
     const renderMoversTicker = (rows) => {
@@ -1422,14 +1704,14 @@
             ? [
                 { id: 'king', label: 'King', emblem: '♛', width: 22, count: communityCounts.king, cap: CASTE_SLOTS.king },
                 { id: 'knight', label: 'Knight', emblem: '♞', width: 36, count: communityCounts.knight, cap: CASTE_SLOTS.knight },
-                { id: 'class', label: 'Ranger · Monk · Mage · Berserker', emblem: '➳', width: 50, count: communityCounts.class, matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'class', label: 'Adventurers', emblem: '➳', width: 50, count: communityCounts.class, matches: ['ranger', 'monk', 'mage', 'berserker'] },
                 { id: 'squire', label: 'Squire', emblem: '⚑', width: 62, count: communityCounts.squire },
                 { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 72, count: communityCounts.base, matches: ['peasant', 'ghost'] }
             ]
             : [
                 { id: 'king', label: 'King', emblem: '♛', width: 22, count: counts.king || 0 },
                 { id: 'knight', label: 'Knight', emblem: '♞', width: 36, count: counts.knight || 0 },
-                { id: 'class', label: 'Ranger · Monk · Mage · Berserker', emblem: '➳', width: 50, count: (counts.ranger || 0) + (counts.monk || 0) + (counts.mage || 0) + (counts.berserker || 0), matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'class', label: 'Adventurers', emblem: '➳', width: 50, count: (counts.ranger || 0) + (counts.monk || 0) + (counts.mage || 0) + (counts.berserker || 0), matches: ['ranger', 'monk', 'mage', 'berserker'] },
                 { id: 'squire', label: 'Squire', emblem: '⚑', width: 62, count: counts.squire || 0 },
                 { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 72, count: (counts.peasant || 0) + (counts.ghost || 0), matches: ['peasant', 'ghost'] }
             ];
@@ -1669,6 +1951,7 @@
             // user and friends merge in when the API returns.
             ensureArenaStyle();
             ensureCasteStyle();
+            ensureChampionStyle();
             playArenaIntro();
             renameControlPanelLinks();
             if (!scopedView && listEl) {
