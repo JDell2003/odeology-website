@@ -181,10 +181,11 @@
                 </div>
             `).join('')}
             <div class="lb-rule-section">The castes</div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Every stat 75+, nothing neglected. Thrones only open when a King slips.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Strength 62+ and consistency 70+. Show up and lift, week after week.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">The specialist tier - one level, three shapes. Your stats decide which one claims you; switching between them is a sidestep, not a climb.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant</div><div class="lb-rule-note">The proving grounds. Everyone starts as a Peasant. Consistency is the fastest way out.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">Your spider graph is your rank</div><div class="lb-rule-note">Each tier is a ring on your radar. Claim it by covering the ring — your whole web reaching past it — or by piercing it with one world-class stat. Balanced or specialist, both roads climb.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Web average 80+, or a single stat at 95+. Thrones only open when a King slips.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Web average 65+, or one stat pierced to 90.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">Web average 50+ or one stat at 78. One level, three shapes — your graph's shape decides which claims you, and switching between them is a sidestep, not a climb.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant</div><div class="lb-rule-note">Everyone starts as a Peasant. Web average 35 or one stat at 60 makes you a Squire. Consistency is the fastest way out.</div></div></div>
             <div class="lb-rule-section">Daily shifts</div>
             <div class="lb-rule"><div><div class="lb-rule-title">The ranks move every day</div><div class="lb-rule-note">Miss a day and someone passes you. Your ▲/▼ arrow shows what happened overnight. Slots up top are limited - climbing means someone else falls.</div></div></div>
         `;
@@ -288,7 +289,7 @@
                     })()}
                     ${r.bio ? `<div class="lb-bio">${escapeAttr(String(r.bio))}</div>` : ''}
                 </div>
-                <div class="lb-spider" aria-hidden="true">${miniRadarSvg(stats)}</div>
+                <div class="lb-spider" data-caste="${rowCaste.id}" aria-hidden="true">${miniRadarSvg(stats)}</div>
                 <div class="lb-right">
                     <div class="lb-points">${Number(r.points || 0).toLocaleString()}<span class="lb-points-unit">pts</span></div>
                     ${r.isTrainerClient ? '<div class="lb-points-note">client score</div>' : ''}
@@ -566,30 +567,70 @@
         }
     };
 
-    const pickCaste = (stats) => {
-        const values = CASTE_AXES.map(k => stats[k]);
-        const avg = values.reduce((a, b) => a + b, 0) / values.length;
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        return CASTES.find(c => c.check(stats, avg, min, max, max - min)) || CASTE_MAP.squire;
+    /* ================================================================
+       RADAR-TIER CLASSIFICATION - the spider graph IS the rank.
+       Each tier is a ring on the radar. You claim a tier by either
+       COVERING its ring (your web's average reach passes it) or
+       PIERCING it (one world-class axis punches far beyond it). So a
+       balanced athlete and a one-lift monster can both climb - the
+       graph decides, not a formula the user can't see.
+       Spike margins count double when holding a tier so a pierced-in
+       King isn't permanently "critical".
+       ================================================================ */
+    const TIER_RINGS = [
+        { id: 'squire', avg: 35, spike: 60 },
+        { id: 'specialist', avg: 50, spike: 78 },
+        { id: 'knight', avg: 65, spike: 90 },
+        { id: 'king', avg: 80, spike: 95 }
+    ];
+    const TIER_ORDER = ['peasant', 'squire', 'specialist', 'knight', 'king'];
+
+    const radarReach = (stats) => {
+        const vals = CASTE_AXES.map((k) => Number(stats[k]) || 0);
+        return {
+            avg: vals.reduce((a, b) => a + b, 0) / vals.length,
+            spike: Math.max(...vals)
+        };
     };
 
-    const pickNextCaste = (stats, current) => {
-        if (current.id === 'king') return null;
-        const candidates = CASTES.filter(c => (
-            c.prestige > current.prestige && typeof c.requirements === 'function'
-        ));
-        let best = null;
-        for (const candidate of candidates) {
-            const reqs = candidate.requirements(stats).filter(r => stats[r.key] < r.target);
-            const gap = reqs.reduce((sum, r) => sum + (r.target - stats[r.key]), 0);
-            if (!best
-                || candidate.prestige < best.caste.prestige
-                || (candidate.prestige === best.caste.prestige && gap < best.gap)) {
-                best = { caste: candidate, reqs, gap };
-            }
+    const radarTierId = (stats) => {
+        const { avg, spike } = radarReach(stats);
+        let tier = 'peasant';
+        for (const ring of TIER_RINGS) {
+            if (avg >= ring.avg || spike >= ring.spike) tier = ring.id;
         }
-        return best;
+        return tier;
+    };
+
+    const pickCaste = (stats) => {
+        const tier = radarTierId(stats);
+        if (tier === 'specialist') return champSpecialistFor(stats);
+        return CASTE_MAP[tier];
+    };
+
+    // Next level = the next ring out. Requirements show the CHEAPER path:
+    // pierce the ring with your best axis, or lift your weakest axes until
+    // the web covers it.
+    const pickNextCaste = (stats, current) => {
+        const curTier = TIER_ORDER.includes(current.id) ? current.id : 'specialist';
+        const idx = TIER_ORDER.indexOf(curTier);
+        if (idx >= TIER_ORDER.length - 1) return null;
+        const ring = TIER_RINGS.find((r) => r.id === TIER_ORDER[idx + 1]);
+        const target = ring.id === 'specialist' ? champSpecialistFor(stats) : CASTE_MAP[ring.id];
+        const { avg, spike } = radarReach(stats);
+        const entries = CASTE_AXES.map((k) => ({ key: k, value: Number(stats[k]) || 0 })).sort((a, b) => a.value - b.value);
+        const spikeCost = Math.max(0, ring.spike - spike);
+        const avgCost = Math.max(0, (ring.avg - avg) * CASTE_AXES.length);
+        if (spikeCost <= 0 || avgCost <= 0) return { caste: target, reqs: [], gap: 0 };
+        if (spikeCost * 3 <= avgCost) {
+            const best = entries[entries.length - 1];
+            return { caste: target, reqs: [{ key: best.key, target: ring.spike }], gap: spikeCost };
+        }
+        const reqs = entries.slice(0, 3)
+            .filter((e) => e.value < ring.avg)
+            .slice(0, 2)
+            .map((e) => ({ key: e.key, target: ring.avg }));
+        return { caste: target, reqs, gap: avgCost };
     };
 
     const personSentence = (stats, { secondPerson = true } = {}) => {
@@ -828,6 +869,19 @@
             .lb-champion-cap span:first-child{font:700 11.5px/1.4 system-ui,sans-serif;color:#6b4a12}
             .lb-champion-streak{flex:0 0 auto;padding:4px 10px;border-radius:999px;background:rgba(212,175,55,.2);
                 border:1px solid rgba(185,138,43,.45);font:800 10.5px/1 system-ui,sans-serif;color:#a1751f}
+            /* The web grows with the tier: higher ranks get bigger, richer
+               radars. King's web is gold. */
+            body.leaderboard-page .lb-spider{flex:0 0 auto;min-width:70px}
+            .lb-spider .lb-mini-radar{width:70px;height:70px;transition:width .2s,height .2s}
+            .lb-spider[data-caste="squire"] .lb-mini-radar{width:78px;height:78px}
+            .lb-spider[data-caste="ranger"] .lb-mini-radar,
+            .lb-spider[data-caste="mage"] .lb-mini-radar,
+            .lb-spider[data-caste="berserker"] .lb-mini-radar{width:86px;height:86px}
+            .lb-spider[data-caste="knight"] .lb-mini-radar{width:94px;height:94px}
+            .lb-spider[data-caste="king"] .lb-mini-radar{width:104px;height:104px}
+            .lb-spider[data-caste="king"] .lb-mini-radar .shape{fill:rgba(212,160,30,.32);stroke:#c8931b;stroke-width:2}
+            .lb-spider[data-caste="king"] .lb-mini-radar .ring{stroke:rgba(200,147,27,.35)}
+            .lb-spider[data-caste="knight"] .lb-mini-radar .shape{stroke-width:1.9}
             /* Champion state layer: video slots + per-state tints. */
             .lb-champion-stage{position:relative}
             .lb-champion-stage svg{display:block;width:100%;height:clamp(170px,24vw,250px)}
@@ -1115,23 +1169,15 @@
         critical: 'One bad week from losing this rank. Defend it today.'
     };
 
-    // Points above the line where the current caste's check() would fail.
-    // Peasant has no floor - it IS the floor.
+    // Points above your tier's ring - the better of the two ways you can
+    // hold it (web coverage, or a spike counted double so pierced-in
+    // holders aren't permanently on the edge). Peasant IS the floor.
     const casteHoldMargin = (casteId, s) => {
-        const vals = CASTE_AXES.map((k) => Number(s[k]) || 0);
-        const min = Math.min(...vals);
-        const max = Math.max(...vals);
-        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        const spread = max - min;
-        switch (casteId) {
-            case 'king': return Math.min(min - 75, 22 - spread);
-            case 'knight': return Math.min(s.strength - 62, s.consistency - 70);
-            case 'ranger': return Math.min(s.cardio - 68, s.cardio - (s.strength + 10));
-            case 'mage': return Math.min(s.nutrition - 70, s.progress - 58);
-            case 'berserker': return s.strength - 78;
-            case 'squire': return avg - 42;
-            default: return Infinity;
-        }
+        const tierId = CHAMP_SPECIALISTS.includes(casteId) ? 'specialist' : casteId;
+        const ring = TIER_RINGS.find((r) => r.id === tierId);
+        if (!ring) return Infinity;
+        const { avg, spike } = radarReach(s);
+        return Math.max(avg - ring.avg, (spike - ring.spike) * 2);
     };
 
     const CHAMP_SPECIALISTS = ['ranger', 'mage', 'berserker'];
