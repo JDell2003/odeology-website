@@ -183,8 +183,8 @@
             <div class="lb-rule-section">The castes</div>
             <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Every stat 75+, nothing neglected. Thrones only open when a King slips.</div></div></div>
             <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Strength 62+ and consistency 70+. Show up and lift, week after week.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ☯ Monk · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">The class tier - each rewards a different way of training. Your stats decide which one claims you.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant &nbsp;·&nbsp; ◌ Ghost</div><div class="lb-rule-note">The proving grounds. Consistency is the fastest way out.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">The specialist tier - one level, three shapes. Your stats decide which one claims you; switching between them is a sidestep, not a climb.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant</div><div class="lb-rule-note">The proving grounds. Everyone starts as a Peasant. Consistency is the fastest way out.</div></div></div>
             <div class="lb-rule-section">Daily shifts</div>
             <div class="lb-rule"><div><div class="lb-rule-title">The ranks move every day</div><div class="lb-rule-note">Miss a day and someone passes you. Your ▲/▼ arrow shows what happened overnight. Slots up top are limited - climbing means someone else falls.</div></div></div>
         `;
@@ -448,43 +448,31 @@
     };
     const CASTES = [
         {
-            id: 'king', name: 'King', emblem: '♛', prestige: 5, tone: 'amber',
+            id: 'king', name: 'King', emblem: '♛', prestige: 4, tone: 'amber',
             blurb: 'Everything high and balanced. You have mastered all of it.',
             check: (s, avg, min, max, spread) => min >= 75 && spread <= 22,
             requirements: (s) => CASTE_AXES.filter(k => s[k] < 75).map(k => ({ key: k, target: 75 }))
         },
         {
-            id: 'ghost', name: 'Ghost', emblem: '◌', prestige: 1, tone: 'slate',
-            blurb: 'Some real numbers in there, but you barely ever show up.',
-            check: (s, avg, min, max) => s.consistency <= 25 && max >= 50,
-            requirements: null
-        },
-        {
-            id: 'berserker', name: 'Berserker', emblem: '⚔', prestige: 3, tone: 'rose',
+            id: 'berserker', name: 'Berserker', emblem: '⚔', prestige: 2, tone: 'rose',
             blurb: 'Huge power, zero brakes. All strength, no recovery plan.',
             check: (s) => s.strength >= 78 && s.recovery <= 45 && s.consistency <= 60,
             requirements: null
         },
         {
-            id: 'knight', name: 'Knight', emblem: '♞', prestige: 4, tone: 'indigo',
+            id: 'knight', name: 'Knight', emblem: '♞', prestige: 3, tone: 'indigo',
             blurb: 'Strong and disciplined. You show up and you lift.',
             check: (s) => s.strength >= 62 && s.consistency >= 70,
             requirements: () => [{ key: 'strength', target: 62 }, { key: 'consistency', target: 70 }]
         },
         {
-            id: 'ranger', name: 'Ranger', emblem: '➳', prestige: 3, tone: 'emerald',
+            id: 'ranger', name: 'Ranger', emblem: '➳', prestige: 2, tone: 'emerald',
             blurb: 'Engine-first athlete. Endurance is your weapon.',
             check: (s) => s.cardio >= 68 && s.cardio >= s.strength + 10,
             requirements: () => [{ key: 'cardio', target: 68 }]
         },
         {
-            id: 'monk', name: 'Monk', emblem: '☯', prestige: 3, tone: 'teal',
-            blurb: 'Clean living, full recovery, total discipline. The lifts will come.',
-            check: (s) => (s.recovery + s.nutrition + s.consistency) / 3 >= 65 && s.strength < 62,
-            requirements: () => [{ key: 'recovery', target: 65 }, { key: 'nutrition', target: 65 }, { key: 'consistency', target: 65 }]
-        },
-        {
-            id: 'mage', name: 'Mage', emblem: '✦', prestige: 3, tone: 'violet',
+            id: 'mage', name: 'Mage', emblem: '✦', prestige: 2, tone: 'violet',
             blurb: 'You win with the mind - smart programming and dialed nutrition.',
             check: (s) => s.nutrition >= 70 && s.progress >= 58 && s.strength < 58,
             requirements: () => [{ key: 'nutrition', target: 70 }, { key: 'progress', target: 58 }]
@@ -496,7 +484,7 @@
             requirements: null
         },
         {
-            id: 'squire', name: 'Squire', emblem: '⚑', prestige: 2, tone: 'sky',
+            id: 'squire', name: 'Squire', emblem: '⚑', prestige: 1, tone: 'sky',
             blurb: 'Decent across the board and still developing. On the path.',
             check: () => true,
             requirements: (s) => {
@@ -843,7 +831,11 @@
             /* Champion state layer: video slots + per-state tints. */
             .lb-champion-stage{position:relative}
             .lb-champion-stage svg{display:block;width:100%;height:clamp(170px,24vw,250px)}
-            .lb-champion-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+            /* Clips are 9:16 vertical, character centered: letterbox them on
+               a dark stage instead of stretching to the landscape strip. */
+            .lb-champion-stage.has-video{display:flex;justify-content:center;background:#1c150a}
+            .lb-champion-stage.has-video svg{visibility:hidden;position:absolute;inset:0}
+            .lb-champion-video{display:block;aspect-ratio:9/16;height:clamp(240px,52vw,440px);width:auto;max-width:100%;object-fit:cover}
             .lb-champ-state{font:900 10px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;
                 padding:3px 8px;border-radius:999px;background:rgba(120,90,20,.12);color:#6b4a12;margin-right:6px}
             .lb-champion[data-state="dominant"] .lb-champ-state{background:rgba(212,160,30,.28);color:#8a6318}
@@ -916,7 +908,6 @@
         base: 'Every legend starts in the mud. Show up today and he stands a little taller.',
         squire: 'He drills while you train. Skip a week and the dummy starts winning.',
         ranger: 'Eyes sharp from your cardio. Keep the miles coming and the arrows fly true.',
-        monk: 'Balanced and unbothered - your recovery keeps his mind clear.',
         mage: 'Your nutrition feeds the spellwork. Keep the orb burning.',
         berserker: 'All fury, no rest. He fights harder than he recovers - careful.',
         knight: 'Your knight holds the line. Every workout is another parry.',
@@ -974,14 +965,6 @@
                     <path class="ch-weapon" d="M40,-72 q20,24 0,46"/>
                     <path class="ch-weapon" d="M40,-72 L40,-26" stroke-width="1.6"/>
                     <path class="ch-arrow" d="M42,-50 h28 m-5,-4 l5,4 l-5,4"/>`)}
-                </g>`,
-            monk: `
-                <ellipse class="ch-glow" cx="180" cy="172" rx="42" ry="8" style="transform-origin:180px 172px"/>
-                <g class="ch-hover">
-                    <path class="ch-limb" d="M-22,4 Q0,14 22,4"/>
-                    <path class="ch-body" d="M0,6 L0,-20"/>
-                    <circle class="ch-head" cx="0" cy="-30" r="9"/>
-                    <path class="ch-limb" d="M-4,-14 Q-18,-4 -12,6"/><path class="ch-limb" d="M4,-14 Q18,-4 12,6"/>
                 </g>`,
             mage: `
                 <g transform="translate(162,172)">
@@ -1095,18 +1078,26 @@
     };
     const CHAMP_MEDIA = {
         base: 'media/arena/',
-        // null = not generated yet (SVG fallback). Set to true once the file
-        // matching the naming convention exists, or to a full URL string.
+        // Conventions (2026-07-10 ladder):
+        //  - idle loops: `<caste>_<state>.mp4`
+        //  - promote one-shots belong to the tier you ARRIVE in
+        //    (squire_promote, specialist_promote shared by all three,
+        //    knight_promote, king_promote)
+        //  - demote one-shots belong to the tier you FALL FROM
+        //    (squire_demote, knight_demote, king_demote; specialists
+        //    demote with a message only, no clip)
+        //  - peasant_reveal plays once for every new user
+        // null = file not present yet (SVG fallback). Set to true once the
+        // file exists on disk, or to a full URL string.
         clips: {
             king: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
             knight: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            berserker: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            ranger: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            monk: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            mage: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
+            berserker: { thriving: null, struggling: null },
+            ranger: { thriving: null, struggling: null },
+            mage: { thriving: null, struggling: null },
+            specialist: { promote: null },
             squire: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            ghost: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null },
-            peasant: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, promote: null, demote: null }
+            peasant: { dominant: null, thriving: null, steady: null, struggling: null, critical: null, reveal: null }
         }
     };
     const champClipUrl = (casteId, slot) => {
@@ -1125,7 +1116,7 @@
     };
 
     // Points above the line where the current caste's check() would fail.
-    // Peasant/ghost have no floor - their decline is a trend problem.
+    // Peasant has no floor - it IS the floor.
     const casteHoldMargin = (casteId, s) => {
         const vals = CASTE_AXES.map((k) => Number(s[k]) || 0);
         const min = Math.min(...vals);
@@ -1136,12 +1127,19 @@
             case 'king': return Math.min(min - 75, 22 - spread);
             case 'knight': return Math.min(s.strength - 62, s.consistency - 70);
             case 'ranger': return Math.min(s.cardio - 68, s.cardio - (s.strength + 10));
-            case 'monk': return (s.recovery + s.nutrition + s.consistency) / 3 - 65;
             case 'mage': return Math.min(s.nutrition - 70, s.progress - 58);
             case 'berserker': return s.strength - 78;
             case 'squire': return avg - 42;
             default: return Infinity;
         }
+    };
+
+    const CHAMP_SPECIALISTS = ['ranger', 'mage', 'berserker'];
+    // Specialists only have a good and a bad state - collapse the 5-state
+    // read into thriving/struggling for them.
+    const champEffectiveState = (casteId, state) => {
+        if (!CHAMP_SPECIALISTS.includes(casteId)) return state;
+        return (state === 'struggling' || state === 'critical') ? 'struggling' : 'thriving';
     };
 
     // meta.trend is null on cold start (no yesterday snapshot): trend and
@@ -1198,16 +1196,52 @@
         return prev;
     };
 
-    const champMaybeTransition = (caste, prev) => {
-        const from = prev?.casteId ? CASTE_MAP[prev.casteId] : null;
-        if (!from || from.id === caste.id || from.prestige === caste.prestige) return null;
-        const kind = caste.prestige > from.prestige ? 'promote' : 'demote';
-        const seenKey = `${todayKey(new Date())}:${caste.id}:${kind}`;
-        try {
-            if (localStorage.getItem('lbChampTransSeen') === seenKey) return null;
-            localStorage.setItem('lbChampTransSeen', seenKey);
-        } catch {}
-        return { kind, from, to: caste };
+    // Which specialist shape fits these stats (they're one level, three shapes).
+    const champSpecialistFor = (stats) => {
+        if (Number(stats.cardio) >= Number(stats.strength) + 10) return CASTE_MAP.ranger;
+        if (Number(stats.strength) >= Math.max(Number(stats.nutrition), Number(stats.cardio))) return CASTE_MAP.berserker;
+        return CASTE_MAP.mage;
+    };
+
+    /* Held-tier engine. The tier you HOLD is sticky:
+       - brand-new user -> Peasant + one-time reveal, then the grind
+       - stats above your tier -> promote one tier per day (cutscene each)
+       - same prestige, different shape -> lateral specialist swap, silent
+       - stats below your tier for 3+ active days -> demote straight to
+         whatever the stats now match */
+    const champResolveTier = (matched, stats) => {
+        const day = todayKey(new Date());
+        let held = null;
+        try { held = JSON.parse(localStorage.getItem('lbChampHeld') || 'null'); } catch {}
+        const save = (h) => { try { localStorage.setItem('lbChampHeld', JSON.stringify(h)); } catch {} };
+        if (!held?.casteId || !CASTE_MAP[held.casteId]) {
+            save({ casteId: 'peasant', dropDays: 0, dropDay: '' });
+            let revealSeen = false;
+            try { revealSeen = localStorage.getItem('lbChampRevealSeen') === '1'; localStorage.setItem('lbChampRevealSeen', '1'); } catch {}
+            return { caste: CASTE_MAP.peasant, event: revealSeen ? null : { kind: 'reveal', from: CASTE_MAP.peasant, to: CASTE_MAP.peasant } };
+        }
+        const heldCaste = CASTE_MAP[held.casteId];
+        if (matched.prestige > heldCaste.prestige) {
+            const nextPrestige = heldCaste.prestige + 1;
+            const to = matched.prestige === nextPrestige
+                ? matched
+                : (nextPrestige === 2 ? champSpecialistFor(stats) : CASTES.find((c) => c.prestige === nextPrestige) || matched);
+            save({ casteId: to.id, dropDays: 0, dropDay: '' });
+            return { caste: to, event: { kind: 'promote', from: heldCaste, to } };
+        }
+        if (matched.prestige === heldCaste.prestige) {
+            if (matched.id !== heldCaste.id || held.dropDays) save({ casteId: matched.id, dropDays: 0, dropDay: '' });
+            return { caste: matched, event: null };
+        }
+        // Below the line: count active days, demote on the third.
+        let dropDays = Number(held.dropDays || 0);
+        if (held.dropDay !== day) dropDays += 1;
+        if (dropDays >= 3) {
+            save({ casteId: matched.id, dropDays: 0, dropDay: '' });
+            return { caste: matched, event: { kind: 'demote', from: heldCaste, to: matched } };
+        }
+        save({ ...held, dropDays, dropDay: day });
+        return { caste: heldCaste, event: null };
     };
 
     // Try a clip; only reveal it once it can actually play, otherwise the
@@ -1231,6 +1265,7 @@
             if (settled) return;
             settled = true;
             window.clearTimeout(timer);
+            container.classList.add('has-video');
             container.appendChild(v);
             v.play().catch(() => {});
         });
@@ -1244,22 +1279,45 @@
         const overlay = document.createElement('div');
         overlay.id = 'lb-champ-trans';
         overlay.dataset.kind = kind;
-        const title = kind === 'promote' ? `You rose to ${to.name}` : `You fell to ${to.name}`;
-        const line = kind === 'promote'
-            ? `${from.name} no more. The realm watched you climb - now hold the new ground.`
-            : `The ${from.name} rank slipped away. Weary, not beaten - claw it back.`;
+        const copy = kind === 'reveal' ? {
+            kicker: '⚒ Your story begins',
+            title: 'You enter the Arena as a Peasant',
+            line: 'Everyone starts in the mud. Train, log, and climb - the realm is watching.',
+            cta: 'Begin the climb',
+            sceneState: 'steady'
+        } : kind === 'promote' ? {
+            kicker: '☆ Rank up',
+            title: `You rose to ${to.name}`,
+            line: `${from.name} no more. The realm watched you climb - now hold the new ground.`,
+            cta: 'Claim it',
+            sceneState: 'dominant'
+        } : {
+            kicker: 'Rank lost',
+            title: `You fell to ${to.name}`,
+            line: `The ${from.name} rank slipped away. Weary, not beaten - claw it back.`,
+            cta: 'Back to the fight',
+            sceneState: 'struggling'
+        };
         overlay.innerHTML = `
             <div class="lb-champ-trans-card" role="dialog" aria-label="Rank change">
-                <div class="lb-champ-trans-stage">${championScene(to, 0, kind === 'promote' ? 'dominant' : 'struggling')}</div>
+                <div class="lb-champ-trans-stage">${championScene(to, 0, champEffectiveState(to.id, copy.sceneState))}</div>
                 <div class="lb-champ-trans-body">
-                    <div class="lb-champ-trans-kicker">${kind === 'promote' ? '☆ Rank up' : 'Rank lost'}</div>
-                    <div class="lb-champ-trans-title">${to.emblem} ${title}</div>
-                    <div class="lb-champ-trans-line">${line}</div>
-                    <button type="button" class="lb-champ-trans-cta" data-champ-trans-close>${kind === 'promote' ? 'Claim it' : 'Back to the fight'}</button>
+                    <div class="lb-champ-trans-kicker">${copy.kicker}</div>
+                    <div class="lb-champ-trans-title">${to.emblem} ${copy.title}</div>
+                    <div class="lb-champ-trans-line">${copy.line}</div>
+                    <button type="button" class="lb-champ-trans-cta" data-champ-trans-close>${copy.cta}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
-        champTryVideo(overlay.querySelector('.lb-champ-trans-stage'), champClipUrl(to.id, kind), { loop: false });
+        // Clip ownership: promote = the tier you arrive in (specialists share
+        // one), demote = the tier you fall FROM (specialists have none),
+        // reveal = peasant only.
+        const clipUrl = kind === 'promote'
+            ? champClipUrl(CHAMP_SPECIALISTS.includes(to.id) ? 'specialist' : to.id, 'promote')
+            : kind === 'demote'
+                ? champClipUrl(from.id, 'demote')
+                : champClipUrl('peasant', 'reveal');
+        champTryVideo(overlay.querySelector('.lb-champ-trans-stage'), clipUrl, { loop: false });
         overlay.querySelector('[data-champ-trans-close]')?.addEventListener('click', () => overlay.remove());
         overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     };
@@ -1308,7 +1366,7 @@
             <span>Champion preview</span>
             <div class="row"><select data-dev-caste>${casteOpts}</select><select data-dev-state>${stateOpts}</select></div>
             <div class="row"><button data-dev-apply>Apply</button><button data-dev-promote>Promote</button><button data-dev-demote>Demote</button></div>
-            <div class="row"><button data-dev-clear>Clear force</button><button data-dev-off>Hide panel</button></div>`;
+            <div class="row"><button data-dev-reveal>Reveal</button><button data-dev-clear>Clear force</button><button data-dev-off>Hide panel</button></div>`;
         document.body.appendChild(panel);
         const sel = () => ({
             caste: panel.querySelector('[data-dev-caste]').value,
@@ -1320,14 +1378,19 @@
             rerender();
         });
         panel.querySelector('[data-dev-promote]').addEventListener('click', () => {
+            // Promotes arrive INTO the selected tier.
             const to = CASTE_MAP[sel().caste];
-            const from = CASTES.find((c) => c.prestige < to.prestige) || CASTE_MAP.peasant;
+            const from = CASTES.find((c) => c.prestige === to.prestige - 1) || CASTE_MAP.peasant;
             playChampionTransition({ kind: 'promote', from, to });
         });
         panel.querySelector('[data-dev-demote]').addEventListener('click', () => {
-            const to = CASTE_MAP[sel().caste];
-            const from = CASTES.find((c) => c.prestige > to.prestige) || CASTE_MAP.king;
+            // Demotes fall FROM the selected tier (that caste owns the clip).
+            const from = CASTE_MAP[sel().caste];
+            const to = CASTES.find((c) => c.prestige === from.prestige - 1) || CASTE_MAP.peasant;
             playChampionTransition({ kind: 'demote', from, to });
+        });
+        panel.querySelector('[data-dev-reveal]').addEventListener('click', () => {
+            playChampionTransition({ kind: 'reveal', from: CASTE_MAP.peasant, to: CASTE_MAP.peasant });
         });
         panel.querySelector('[data-dev-clear]').addEventListener('click', () => {
             try { localStorage.removeItem('lbChampForce'); } catch {}
@@ -1347,7 +1410,11 @@
         const you = data?.you || null;
         if (!you || !listEl) return;
         const stats = readIdentityStats() || casteStatsFromRow(you);
-        const caste = pickCaste(stats);
+        const matched = pickCaste(stats);
+        // The tier you hold is sticky (3-day demotion grace, one-tier-per-day
+        // climbs); the hero shows the held tier, not the raw stat match.
+        const resolved = champResolveTier(matched, stats);
+        const caste = resolved.caste;
         const next = pickNextCaste(stats, caste);
         const hero = document.createElement('section');
         hero.id = 'lb-caste-hero';
@@ -1388,19 +1455,18 @@
             ${nextBlock}
             ${(() => {
                 const streak = Number(you.streakDays || 0);
-                const prev = champUpdateSnapshot(caste.id, stats, Number(you.rank || 0));
+                const prev = champUpdateSnapshot(matched.id, stats, Number(you.rank || 0));
                 const trend = prev?.stats
                     ? CASTE_AXES.reduce((a, k) => a + ((Number(stats[k]) || 0) - (Number(prev.stats[k]) || 0)), 0)
                     : null;
                 let champCaste = caste;
-                let champState = championState(caste, stats, { streak, rankDelta: Number(you.__rankDelta || 0), trend });
+                let champState = champEffectiveState(caste.id, championState(caste, stats, { streak, rankDelta: Number(you.__rankDelta || 0), trend }));
                 const forced = champForce();
-                if (forced) { champCaste = CASTE_MAP[forced.caste]; champState = forced.state; }
+                if (forced) { champCaste = CASTE_MAP[forced.caste]; champState = champEffectiveState(champCaste.id, forced.state); }
                 hero.dataset.champCaste = champCaste.id;
                 hero.dataset.champState = champState;
-                if (!forced) {
-                    const trans = champMaybeTransition(caste, prev);
-                    if (trans) window.setTimeout(() => playChampionTransition(trans), 400);
+                if (!forced && resolved.event) {
+                    window.setTimeout(() => playChampionTransition(resolved.event), 400);
                 }
                 return championScene(champCaste, streak, champState);
             })()}
@@ -1732,18 +1798,18 @@
         if (rank <= 12) return 'king';
         if (rank <= 12 + 138) return 'knight';
         if (rank <= 12 + 138 + 640) {
-            const classes = ['ranger', 'monk', 'mage', 'berserker'];
+            const classes = ['ranger', 'mage', 'berserker'];
             return classes[Math.floor(rnd() * classes.length)];
         }
         if (rank <= 12 + 138 + 640 + 1020) return 'squire';
-        return rnd() < 0.16 ? 'ghost' : 'peasant';
+        return 'peasant';
     };
 
     const gameFakeRow = (personIndex, rank, pts, delta, day) => {
         const identity = gamePersonIdentity(personIndex, day);
         const rowRnd = syncSeed(`lb_fake_row_${day}_${personIndex}`);
         const casteId = casteForGameRank(rank, rowRnd);
-        const streakDays = casteId === 'ghost' ? 0 : Math.max(0, Math.round(pts / 90) + Math.floor(rowRnd() * 6) - 2);
+        const streakDays = Math.max(0, Math.round(pts / 90) + Math.floor(rowRnd() * 6) - 2);
         const workouts = Math.max(0, Math.round(pts / 80) + Math.floor(rowRnd() * 4) - 1);
         const checkins = Math.max(streakDays, Math.round(pts / 45));
         return {
@@ -2040,16 +2106,16 @@
             ? [
                 { id: 'king', label: 'King', emblem: '♛', width: 22, count: communityCounts.king, cap: CASTE_SLOTS.king },
                 { id: 'knight', label: 'Knight', emblem: '♞', width: 36, count: communityCounts.knight, cap: CASTE_SLOTS.knight },
-                { id: 'class', label: 'Adventurers', emblem: '➳', width: 50, count: communityCounts.class, matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'class', label: 'Specialists', emblem: '➳', width: 50, count: communityCounts.class, matches: ['ranger', 'mage', 'berserker'] },
                 { id: 'squire', label: 'Squire', emblem: '⚑', width: 62, count: communityCounts.squire },
-                { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 72, count: communityCounts.base, matches: ['peasant', 'ghost'] }
+                { id: 'base', label: 'Peasant', emblem: '⚒', width: 72, count: communityCounts.base, matches: ['peasant'] }
             ]
             : [
                 { id: 'king', label: 'King', emblem: '♛', width: 22, count: counts.king || 0 },
                 { id: 'knight', label: 'Knight', emblem: '♞', width: 36, count: counts.knight || 0 },
-                { id: 'class', label: 'Adventurers', emblem: '➳', width: 50, count: (counts.ranger || 0) + (counts.monk || 0) + (counts.mage || 0) + (counts.berserker || 0), matches: ['ranger', 'monk', 'mage', 'berserker'] },
+                { id: 'class', label: 'Specialists', emblem: '➳', width: 50, count: (counts.ranger || 0) + (counts.mage || 0) + (counts.berserker || 0), matches: ['ranger', 'mage', 'berserker'] },
                 { id: 'squire', label: 'Squire', emblem: '⚑', width: 62, count: counts.squire || 0 },
-                { id: 'base', label: 'Peasant · Ghost', emblem: '⚒', width: 72, count: (counts.peasant || 0) + (counts.ghost || 0), matches: ['peasant', 'ghost'] }
+                { id: 'base', label: 'Peasant', emblem: '⚒', width: 72, count: counts.peasant || 0, matches: ['peasant'] }
             ];
         const youTier = tiers.find((t) => (t.matches ? t.matches.includes(youCasteId) : t.id === youCasteId));
         const pyramid = document.createElement('section');
