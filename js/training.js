@@ -4158,6 +4158,10 @@
         reason,
         events: workoutTimer.events.slice(0, 300)
       });
+      // Feed the identity engine: a finished workout is an activity signal.
+      // Resistance sessions credit the strength axis explicitly; a generic
+      // 'workouts' tick also counts toward showing up.
+      try { window.RiseActivity?.log('workouts'); window.RiseActivity?.log('strengthWorkouts'); } catch { /* ignore */ }
     }
     resetWorkoutTimerState({ removePersisted: true });
     resetWorkoutRestTimerState({ removePersisted: true });

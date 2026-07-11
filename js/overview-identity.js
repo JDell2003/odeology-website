@@ -383,6 +383,216 @@
     };
 
     /* ================================================================
+       NEXT-LEVEL EXPLAINER — "here's exactly what to do to climb"
+       Turns the abstract tier rings into concrete, personalized targets:
+       not "get strength to 55" but "bench ~155, squat ~210, deadlift
+       ~250 for your 175 lb bodyweight". A rank slider walks every tier
+       so the user always has something to aim at, and both the balanced
+       (cover the ring) and spike (pierce it) paths are spelled out.
+       Ring numbers mirror js/leaderboard.js TIER_RINGS.
+       ================================================================ */
+    const NEXT_TIERS = [
+        { id: 'peasant', name: 'Peasant', emblem: '⚒' },
+        { id: 'squire', name: 'Squire', emblem: '⚑', avg: 35, floor: 12, spike: 60, pierce: true },
+        { id: 'specialist', name: 'Specialist', emblem: '➳', avg: 50, floor: 20, spike: 78, pierce: true },
+        { id: 'knight', name: 'Knight', emblem: '♞', avg: 68, floor: 45, pierce: false },
+        { id: 'king', name: 'King', emblem: '♛', avg: 82, floor: 60, pierce: false }
+    ];
+
+    const interp = (anchors, x) => {
+        if (x <= anchors[0][0]) return anchors[0][1];
+        for (let i = 1; i < anchors.length; i++) {
+            const [x0, y0] = anchors[i - 1];
+            const [x1, y1] = anchors[i];
+            if (x <= x1) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+        }
+        return anchors[anchors.length - 1][1];
+    };
+    const nearest = (rows, target) => rows.reduce((best, r) => (Math.abs(r[0] - target) < Math.abs(best[0] - target) ? r : best), rows[0]);
+    const round5 = (n) => Math.round(n / 5) * 5;
+
+    const readUserCtx = () => {
+        let a = {};
+        try { const p = JSON.parse(localStorage.getItem('ode_identity_profile_v1') || 'null'); if (p && p.answers) a = p.answers; } catch (e) { /* ignore */ }
+        let bw = Number(a.weightValue) > 0 ? (a.weightUnit === 'kg' ? Number(a.weightValue) * 2.20462 : Number(a.weightValue)) : null;
+        if (!bw) { const w = Number(localStorage.getItem('ode_ts_current_weight_lb')); if (w > 0) bw = w; }
+        let hin = null;
+        if (a.heightUnit === 'cm' && Number(a.heightCm) > 0) hin = Number(a.heightCm) / 2.54;
+        else if (Number(a.heightFt) > 0) hin = Number(a.heightFt) * 12 + Number(a.heightIn || 0);
+        const sex = String(a.gender || '').toLowerCase().charAt(0) === 'f' ? 'female' : 'male';
+        return { bw: bw || null, hin: hin || null, sex };
+    };
+
+    // Bench multiple of bodyweight by strength stat; squat ~1.35x, DL ~1.6x.
+    const BENCH_MULT = [[20, 0.4], [40, 0.7], [55, 0.95], [70, 1.2], [85, 1.5], [100, 1.8]];
+    const CARDIO = [[20, 45, 'a brisk 15-min walk without getting winded'], [40, 90, 'jogging 1 mile nonstop'], [55, 120, 'running 1.5 miles nonstop (~12-min mile)'], [70, 150, 'running 3 miles (~10-min mile)'], [85, 200, 'running 5 miles or a sub-9-min mile'], [100, 250, 'running a 10K comfortably']];
+    const CONSIST = [[20, 'log 2 days a week'], [40, 'log 3 days a week for a couple weeks'], [55, 'log 4 days a week for 3 weeks straight'], [70, 'log 5 days a week, most weeks'], [85, 'log 6 days a week, month after month'], [100, 'a near-daily streak that never breaks']];
+    const NUTR = [[20, 2, 0.5], [40, 4, 0.6], [55, 5, 0.7], [70, 6, 0.85], [85, 6, 1.0], [100, 7, 1.0]];
+    const RECOV = [[20, '6 h sleep, hit or miss'], [40, '7 h sleep 4 nights a week'], [55, '7 h sleep 5 nights a week + 1 real rest day'], [70, '7.5 h sleep 6 nights + 2 planned rest days'], [85, '8 h nightly plus active recovery'], [100, '8+ h locked in every night']];
+    const PROG = [[20, 'log your weight once a week'], [40, 'log weight weekly plus one measurement'], [55, 'weekly weigh-ins + a measurement — enough to see a 3-week trend'], [70, 'weekly weigh-ins, monthly photos + measurements with a clear trend'], [85, 'full tracking plus logged progressive overload on your lifts'], [100, 'complete data with a steady trend toward your goal']];
+
+    const axisTargetText = (axis, target, ctx) => {
+        target = Math.round(target);
+        if (axis === 'strength') {
+            let mult = interp(BENCH_MULT, target);
+            if (ctx.sex === 'female') mult *= 0.72;
+            if (ctx.bw) return `bench ~${round5(ctx.bw * mult)} lb, squat ~${round5(ctx.bw * mult * 1.35)} lb, deadlift ~${round5(ctx.bw * mult * 1.6)} lb (for your ${Math.round(ctx.bw)} lb bodyweight)`;
+            return `bench ~${mult.toFixed(2)}× bodyweight, squat ~${(mult * 1.35).toFixed(2)}×, deadlift ~${(mult * 1.6).toFixed(2)}× — add your weight in onboarding for exact numbers`;
+        }
+        if (axis === 'cardio') {
+            const mark = nearest(CARDIO, target)[2];
+            const mins = Math.round(interp(CARDIO.map((r) => [r[0], r[1]]), target) / 5) * 5;
+            return `about ${mins} cardio min/week — think ${mark}`;
+        }
+        if (axis === 'consistency') return nearest(CONSIST, target)[1];
+        if (axis === 'nutrition') {
+            const row = nearest(NUTR, target);
+            const days = row[1]; const perLb = row[2];
+            const pro = ctx.bw ? ` (~${Math.round(ctx.bw * perLb)}g protein/day, about ${perLb.toFixed(2)}g per lb)` : ` (~${perLb.toFixed(2)}g protein per lb of bodyweight)`;
+            return `hit your macros ${days} day${days === 1 ? '' : 's'}/week${pro}`;
+        }
+        if (axis === 'recovery') return nearest(RECOV, target)[1];
+        if (axis === 'progress') return nearest(PROG, target)[1];
+        return '';
+    };
+
+    const tierRadarSvg = (targetVal, curStats, pierceAxis) => {
+        const size = 168; const c = size / 2; const rr = size / 2 - 22;
+        const pt = (i, v) => {
+            const ang = (Math.PI * 2 * i) / AXES.length - Math.PI / 2;
+            const r = rr * (v / 100);
+            return [(c + Math.cos(ang) * r).toFixed(1), (c + Math.sin(ang) * r).toFixed(1)].join(',');
+        };
+        const rings = [25, 50, 75, 100].map((g) => `<polygon points="${AXES.map((a, i) => pt(i, g)).join(' ')}" class="nl-ring"/>`).join('');
+        const spokes = AXES.map((a, i) => { const [x, y] = pt(i, 100).split(','); return `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" class="nl-spoke"/>`; }).join('');
+        const targetPoly = AXES.map((a, i) => pt(i, pierceAxis ? (a.key === pierceAxis ? Math.max(targetVal, 78) : Math.max(curStats[a.key], 20)) : targetVal)).join(' ');
+        const curPoly = AXES.map((a, i) => pt(i, curStats[a.key])).join(' ');
+        const labels = AXES.map((a, i) => { const [x, y] = pt(i, 122).split(','); return `<text x="${x}" y="${y}" class="nl-axis-label">${a.label.slice(0, 4)}</text>`; }).join('');
+        return `<svg viewBox="0 0 ${size} ${size}" class="nl-radar" aria-hidden="true">${rings}${spokes}
+            <polygon points="${targetPoly}" class="nl-target"/>
+            <polygon points="${curPoly}" class="nl-current"/>${labels}</svg>`;
+    };
+
+    const injectNextLevelStyle = () => {
+        if (document.getElementById('ov-nextlevel-style')) return;
+        const s = document.createElement('style');
+        s.id = 'ov-nextlevel-style';
+        s.textContent = `
+            .ov-nl-btn{margin-left:8px}
+            #ov-nl-modal{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;padding:18px;
+                background:rgba(30,22,8,.5);backdrop-filter:blur(6px)}
+            #ov-nl-modal[hidden]{display:none}
+            .ov-nl-card{width:min(760px,96vw);max-height:92vh;overflow:auto;border-radius:20px;background:#fffdf7;
+                border:1px solid rgba(185,138,43,.4);box-shadow:0 40px 90px rgba(60,45,15,.35);color:#241b0e}
+            .ov-nl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(185,138,43,.2)}
+            .ov-nl-head h3{margin:0;font:800 18px/1.2 'Space Grotesk',system-ui,sans-serif}
+            .ov-nl-head p{margin:2px 0 0;font:500 12px/1.4 system-ui,sans-serif;color:rgba(60,48,28,.6)}
+            .ov-nl-close{border:0;background:rgba(120,90,20,.1);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:16px;color:#6b4a12}
+            .ov-nl-slider{padding:14px 20px 4px}
+            .ov-nl-ticks{display:flex;justify-content:space-between;margin-top:6px}
+            .ov-nl-ticks button{border:0;background:none;cursor:pointer;font:700 11px/1.2 system-ui,sans-serif;color:rgba(60,48,28,.5);padding:2px 4px}
+            .ov-nl-ticks button.is-on{color:#a1751f}
+            .ov-nl-slider input[type=range]{width:100%;accent-color:#b98a2b}
+            .ov-nl-body{display:grid;grid-template-columns:190px 1fr;gap:16px;padding:8px 20px 20px}
+            .nl-radar{width:100%;height:auto}
+            .nl-ring{fill:none;stroke:rgba(150,110,35,.16)}
+            .nl-spoke{stroke:rgba(150,110,35,.12)}
+            .nl-target{fill:rgba(185,138,43,.16);stroke:#b98a2b;stroke-width:2;stroke-dasharray:4 3}
+            .nl-current{fill:rgba(120,90,20,.14);stroke:#6b4a12;stroke-width:1.6}
+            .nl-axis-label{fill:rgba(60,48,28,.6);font:700 8px/1 system-ui,sans-serif;text-anchor:middle;dominant-baseline:middle}
+            .ov-nl-target-title{font:800 16px/1.2 'Space Grotesk',system-ui,sans-serif;margin:0 0 2px}
+            .ov-nl-legend{display:flex;gap:14px;margin:6px 0 12px;font:600 10.5px/1 system-ui,sans-serif;color:rgba(60,48,28,.6)}
+            .ov-nl-legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+            .ov-nl-legend .t{border-color:#b98a2b;border-top-style:dashed}
+            .ov-nl-legend .c{border-color:#6b4a12}
+            .ov-nl-path{border:1px solid rgba(185,138,43,.3);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:rgba(212,175,55,.06)}
+            .ov-nl-path h5{margin:0 0 6px;font:800 12px/1.2 system-ui,sans-serif;color:#a1751f}
+            .ov-nl-path.locked{opacity:.72}
+            .ov-nl-req{display:flex;gap:8px;padding:5px 0;border-top:1px dashed rgba(150,110,35,.18);font:500 12px/1.45 system-ui,sans-serif}
+            .ov-nl-req:first-of-type{border-top:0}
+            .ov-nl-req .k{flex:0 0 78px;font-weight:800;color:#241b0e}
+            .ov-nl-req .k.done{color:#15803d}
+            .ov-nl-req .v{color:rgba(60,48,28,.82)}
+            .ov-nl-req .n{color:#a1751f;font-weight:700;white-space:nowrap}
+            @media (max-width:640px){.ov-nl-body{grid-template-columns:1fr}.nl-radar{max-width:200px;margin:0 auto;display:block}}
+        `;
+        document.head.appendChild(s);
+    };
+
+    const openNextLevel = (curStats) => {
+        injectNextLevelStyle();
+        const ctx = readUserCtx();
+        const curAvg = AXES.reduce((s, a) => s + curStats[a.key], 0) / AXES.length;
+        // Which tier are they in now? The first climbable target is the next one up.
+        let curIdx = 0;
+        NEXT_TIERS.forEach((t, i) => {
+            if (!t.avg) return;
+            const min = Math.min(...AXES.map((a) => curStats[a.key]));
+            const coversAvg = curAvg >= t.avg && min >= (t.floor || 0);
+            const coversPierce = t.pierce && Math.max(...AXES.map((a) => curStats[a.key])) >= t.spike;
+            if (coversAvg || coversPierce) curIdx = i;
+        });
+        const firstTarget = Math.min(curIdx + 1, NEXT_TIERS.length - 1);
+
+        let modal = document.getElementById('ov-nl-modal');
+        if (modal) modal.remove();
+        modal = document.createElement('div');
+        modal.id = 'ov-nl-modal';
+        modal.innerHTML = `
+            <div class="ov-nl-card" role="dialog" aria-label="Your climb to the next level">
+                <div class="ov-nl-head">
+                    <div><h3>Your climb</h3><p>Slide through the ranks to see exactly what each one takes.</p></div>
+                    <button type="button" class="ov-nl-close" data-nl-close aria-label="Close">✕</button>
+                </div>
+                <div class="ov-nl-slider">
+                    <input type="range" min="1" max="${NEXT_TIERS.length - 1}" value="${firstTarget}" step="1" data-nl-range aria-label="Target rank">
+                    <div class="ov-nl-ticks">${NEXT_TIERS.slice(1).map((t, i) => `<button type="button" data-nl-tick="${i + 1}">${t.emblem} ${t.name}</button>`).join('')}</div>
+                </div>
+                <div class="ov-nl-body" data-nl-body></div>
+            </div>`;
+        document.body.appendChild(modal);
+
+        const renderTarget = (idx) => {
+            const tier = NEXT_TIERS[idx];
+            const A = tier.avg;
+            const belowFloor = AXES.filter((a) => curStats[a.key] < (tier.floor || 0));
+            const pierceAxis = tier.pierce ? AXES.slice().sort((x, y) => curStats[y.key] - curStats[x.key])[0].key : null;
+            const balancedReqs = AXES.map((a) => {
+                const done = curStats[a.key] >= A;
+                return `<div class="ov-nl-req"><span class="k ${done ? 'done' : ''}">${a.label}${done ? ' ✓' : ''}</span>
+                    <span class="v">${done ? 'already there' : `<span class="n">${curStats[a.key]} → ${A}</span> — ${axisTargetText(a.key, A, ctx)}`}</span></div>`;
+            }).join('');
+            const spikeBlock = tier.pierce
+                ? `<div class="ov-nl-path"><h5>Spike path — go elite at one thing</h5>
+                       <div class="ov-nl-req"><span class="k">${AXES.find((a) => a.key === pierceAxis).label}</span>
+                       <span class="v">Push your strongest stat to <span class="n">${tier.spike}</span> — ${axisTargetText(pierceAxis, tier.spike, ctx)}. One world-class stat pierces this rank even if the rest lag.</span></div></div>`
+                : `<div class="ov-nl-path locked"><h5>No shortcut here</h5><div class="ov-nl-req"><span class="v">${tier.name} is a breadth rank — a single big stat won't cut it. Every axis has to clear ${tier.floor}, and your whole web has to average ${A}. This is the wall that makes the top mean something.</span></div></div>`;
+            const floorNote = (tier.floor && belowFloor.length)
+                ? `<div class="ov-nl-req"><span class="k">Floor</span><span class="v">No axis below <span class="n">${tier.floor}</span>. Lagging: ${belowFloor.map((a) => a.label).join(', ')}.</span></div>`
+                : '';
+            const body = modal.querySelector('[data-nl-body]');
+            body.innerHTML = `
+                <div>
+                    ${tierRadarSvg(A, curStats, null)}
+                    <div class="ov-nl-legend"><span><i class="t"></i>target</span><span><i class="c"></i>you now</span></div>
+                </div>
+                <div>
+                    <div class="ov-nl-target-title">${tier.emblem} Reach ${tier.name}</div>
+                    <div class="ov-nl-path"><h5>Balanced path — cover the ring (avg ${A})</h5>${balancedReqs}${floorNote}</div>
+                    ${spikeBlock}
+                </div>`;
+            modal.querySelectorAll('[data-nl-tick]').forEach((b) => b.classList.toggle('is-on', Number(b.getAttribute('data-nl-tick')) === idx));
+        };
+
+        const range = modal.querySelector('[data-nl-range]');
+        range.addEventListener('input', () => renderTarget(Number(range.value)));
+        modal.querySelectorAll('[data-nl-tick]').forEach((b) => b.addEventListener('click', () => { range.value = b.getAttribute('data-nl-tick'); renderTarget(Number(range.value)); }));
+        modal.querySelector('[data-nl-close]').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        renderTarget(firstTarget);
+    };
+
+    /* ================================================================
        WIRE IT UP
        ================================================================ */
     const init = () => {
@@ -428,8 +638,19 @@
         const radar = buildRadar(host, stats, prevStats);
         animate(radar.setShape);
 
-        // Compare toggle: overlays last month; default view is the current snapshot only.
+        // "Next level" — concrete, personalized targets for every rank.
         const compareBtn = $('#ov-compare-btn');
+        if (compareBtn && !$('#ov-nl-btn')) {
+            const nlBtn = document.createElement('button');
+            nlBtn.id = 'ov-nl-btn';
+            nlBtn.type = 'button';
+            nlBtn.className = (compareBtn.className || '') + ' ov-nl-btn';
+            nlBtn.textContent = 'Next level ›';
+            nlBtn.addEventListener('click', () => openNextLevel(stats));
+            compareBtn.insertAdjacentElement('afterend', nlBtn);
+        }
+
+        // Compare toggle: overlays last month; default view is the current snapshot only.
         const legend = $('#ov-radar-legend');
         if (compareBtn) {
             compareBtn.addEventListener('click', () => {
