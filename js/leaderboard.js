@@ -577,11 +577,17 @@
        Spike margins count double when holding a tier so a pierced-in
        King isn't permanently "critical".
        ================================================================ */
+    /* A single elite stat can PIERCE into the low tiers (that is what a
+       specialist IS - one huge axis). But Knight and King are breadth
+       gates: they demand a high average AND a floor under every axis, and
+       there is NO single-spike path. So five trash stats and one 100 can
+       never be King - the top is earned across the whole web. Each ring is
+       also meaningfully higher than the last, so climbing gets steeper. */
     const TIER_RINGS = [
-        { id: 'squire', avg: 35, spike: 60 },
-        { id: 'specialist', avg: 50, spike: 78 },
-        { id: 'knight', avg: 70, spike: 92 },   // hard but possible
-        { id: 'king', avg: 85, spike: 98 }      // really hard
+        { id: 'squire', avg: 35, spike: 60, floor: 0 },
+        { id: 'specialist', avg: 50, spike: 78, floor: 0 },
+        { id: 'knight', avg: 68, floor: 45, noPierce: true },
+        { id: 'king', avg: 82, floor: 60, noPierce: true }
     ];
     const TIER_ORDER = ['peasant', 'squire', 'specialist', 'knight', 'king'];
 
@@ -589,15 +595,18 @@
         const vals = CASTE_AXES.map((k) => Number(stats[k]) || 0);
         return {
             avg: vals.reduce((a, b) => a + b, 0) / vals.length,
-            spike: Math.max(...vals)
+            spike: Math.max(...vals),
+            min: Math.min(...vals)
         };
     };
 
     const radarTierId = (stats) => {
-        const { avg, spike } = radarReach(stats);
+        const { avg, spike, min } = radarReach(stats);
         let tier = 'peasant';
         for (const ring of TIER_RINGS) {
-            if (avg >= ring.avg || spike >= ring.spike) tier = ring.id;
+            const coversByAvg = avg >= ring.avg && min >= (ring.floor || 0);
+            const coversByPierce = !ring.noPierce && spike >= ring.spike;
+            if (coversByAvg || coversByPierce) tier = ring.id;
         }
         return tier;
     };
@@ -608,9 +617,10 @@
         return CASTE_MAP[tier];
     };
 
-    // Next level = the next ring out. Requirements show the CHEAPER path:
-    // pierce the ring with your best axis, or lift your weakest axes until
-    // the web covers it.
+    // Next level = the next ring out. For pierce-able low tiers the
+    // requirement can be a single big axis; for the breadth gates
+    // (knight/king) it is always "lift your weakest axes to clear the
+    // floor and raise the average" - no single stat gets you there.
     const pickNextCaste = (stats, current) => {
         const curTier = TIER_ORDER.includes(current.id) ? current.id : 'specialist';
         const idx = TIER_ORDER.indexOf(curTier);
@@ -619,6 +629,17 @@
         const target = ring.id === 'specialist' ? champSpecialistFor(stats) : CASTE_MAP[ring.id];
         const { avg, spike } = radarReach(stats);
         const entries = CASTE_AXES.map((k) => ({ key: k, value: Number(stats[k]) || 0 })).sort((a, b) => a.value - b.value);
+        if (ring.noPierce) {
+            // Breadth gate: show the weakest axes that still sit under the
+            // floor or the average target - those are what hold you back.
+            const bar = Math.max(ring.floor || 0, ring.avg);
+            const reqs = entries
+                .filter((e) => e.value < bar)
+                .slice(0, 2)
+                .map((e) => ({ key: e.key, target: e.value < (ring.floor || 0) ? ring.floor : ring.avg }));
+            const gap = Math.max(0, (ring.avg - avg) * CASTE_AXES.length);
+            return { caste: target, reqs, gap };
+        }
         const spikeCost = Math.max(0, ring.spike - spike);
         const avgCost = Math.max(0, (ring.avg - avg) * CASTE_AXES.length);
         if (spikeCost <= 0 || avgCost <= 0) return { caste: target, reqs: [], gap: 0 };
@@ -1176,7 +1197,11 @@
         const tierId = CHAMP_SPECIALISTS.includes(casteId) ? 'specialist' : casteId;
         const ring = TIER_RINGS.find((r) => r.id === tierId);
         if (!ring) return Infinity;
-        const { avg, spike } = radarReach(s);
+        const { avg, spike, min } = radarReach(s);
+        // Breadth gates are held by average AND floor - the margin is
+        // whichever is closest to failing. Pierce-able tiers keep the
+        // spike path (counted double so a specialist isn't always critical).
+        if (ring.noPierce) return Math.min(avg - ring.avg, min - (ring.floor || 0));
         return Math.max(avg - ring.avg, (spike - ring.spike) * 2);
     };
 
@@ -2396,8 +2421,26 @@
         new MutationObserver(() => sweep()).observe(document.body, { childList: true, subtree: false });
     };
 
+    // The identity engine turns the user's real onboarding + activity into
+    // the six spider stats (ovIdentityStats). Load it before the first
+    // render so the champion/hero reflect real data, not the old demo
+    // fallback. Injected here because leaderboard.html is the other bot's
+    // file; the module is idempotent and safe to run every visit.
+    const ensureIdentityEngine = () => new Promise((resolve) => {
+        try {
+            if (window.RiseIdentityEngine) { try { window.RiseIdentityEngine.refresh(); } catch {} return resolve(); }
+            const s = document.createElement('script');
+            s.src = 'js/identity-engine.js';
+            s.async = false;
+            s.onload = () => resolve();
+            s.onerror = () => resolve(); // engine optional; page still works
+            document.head.appendChild(s);
+        } catch { resolve(); }
+    });
+
     const load = async () => {
         try {
+            await ensureIdentityEngine();
             const params = new URLSearchParams(window.location.search || '');
             const view = String(params.get('view') || params.get('scope') || '').trim().toLowerCase();
             const scopedView = ['trainer', 'manager'].includes(view) ? view : '';

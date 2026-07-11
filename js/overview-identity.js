@@ -458,9 +458,27 @@
         readStoredStats
     };
 
+    // Ensure the identity engine has turned the user's real onboarding +
+    // activity into ovIdentityStats BEFORE we read it, so the radar shows
+    // real numbers instead of the DEMO_STATS fallback. The engine lives in
+    // js/identity-engine.js; inject it if the host page didn't include it.
+    // Fully defensive: if it can't load, init() still runs on the fallback.
+    const bootWithEngine = () => {
+        const go = () => { try { init(); } catch (e) { /* keep page alive */ } };
+        try {
+            if (window.RiseIdentityEngine) { try { window.RiseIdentityEngine.refresh(); } catch (e) {} return go(); }
+            const s = document.createElement('script');
+            s.src = 'js/identity-engine.js';
+            s.async = false;
+            s.onload = go;      // engine auto-runs refresh() on load
+            s.onerror = go;     // missing engine -> demo fallback, page still works
+            document.head.appendChild(s);
+        } catch (e) { go(); }
+    };
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', bootWithEngine);
     } else {
-        init();
+        bootWithEngine();
     }
 })();
