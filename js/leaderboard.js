@@ -182,9 +182,9 @@
             `).join('')}
             <div class="lb-rule-section">The castes</div>
             <div class="lb-rule"><div><div class="lb-rule-title">Your spider graph is your rank</div><div class="lb-rule-note">Each tier is a ring on your radar. Claim it by covering the ring — your whole web reaching past it — or by piercing it with one world-class stat. Balanced or specialist, both roads climb.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Web average 80+, or a single stat at 95+. Thrones only open when a King slips.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Web average 65+, or one stat pierced to 90.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">Web average 50+ or one stat at 78. One level, three shapes — your graph's shape decides which claims you, and switching between them is a sidestep, not a climb.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Web average 85+, or a single stat at 98. Thrones only open when a King slips.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Web average 70+, or one stat pierced to 92. Hard - as it should be.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">Web average 50+ or one stat at 78. One level, three shapes: Ranger runs on cardio and recovery, Mage is the balanced discipline build, Berserker is all strength and progress — your graph's shape decides which claims you, and switching between them is a sidestep, not a climb.</div></div></div>
             <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant</div><div class="lb-rule-note">Everyone starts as a Peasant. Web average 35 or one stat at 60 makes you a Squire. Consistency is the fastest way out.</div></div></div>
             <div class="lb-rule-section">Daily shifts</div>
             <div class="lb-rule"><div><div class="lb-rule-title">The ranks move every day</div><div class="lb-rule-note">Miss a day and someone passes you. Your ▲/▼ arrow shows what happened overnight. Slots up top are limited - climbing means someone else falls.</div></div></div>
@@ -450,31 +450,31 @@
     const CASTES = [
         {
             id: 'king', name: 'King', emblem: '♛', prestige: 4, tone: 'amber',
-            blurb: 'Everything high and balanced. You have mastered all of it.',
+            blurb: 'Everything high and balanced - or one stat the realm has never seen. You have mastered it.',
             check: (s, avg, min, max, spread) => min >= 75 && spread <= 22,
             requirements: (s) => CASTE_AXES.filter(k => s[k] < 75).map(k => ({ key: k, target: 75 }))
         },
         {
             id: 'berserker', name: 'Berserker', emblem: '⚔', prestige: 2, tone: 'rose',
-            blurb: 'Huge power, zero brakes. All strength, no recovery plan.',
+            blurb: 'Strength and progress surge ahead - cardio, consistency and nutrition left behind.',
             check: (s) => s.strength >= 78 && s.recovery <= 45 && s.consistency <= 60,
             requirements: null
         },
         {
             id: 'knight', name: 'Knight', emblem: '♞', prestige: 3, tone: 'indigo',
-            blurb: 'Strong and disciplined. You show up and you lift.',
+            blurb: 'Strong everywhere and it shows. You show up and you deliver.',
             check: (s) => s.strength >= 62 && s.consistency >= 70,
             requirements: () => [{ key: 'strength', target: 62 }, { key: 'consistency', target: 70 }]
         },
         {
             id: 'ranger', name: 'Ranger', emblem: '➳', prestige: 2, tone: 'emerald',
-            blurb: 'Engine-first athlete. Endurance is your weapon.',
+            blurb: 'Cardio and recovery lead the way. Strength is the missing piece.',
             check: (s) => s.cardio >= 68 && s.cardio >= s.strength + 10,
             requirements: () => [{ key: 'cardio', target: 68 }]
         },
         {
             id: 'mage', name: 'Mage', emblem: '✦', prestige: 2, tone: 'violet',
-            blurb: 'You win with the mind - smart programming and dialed nutrition.',
+            blurb: 'Balanced and disciplined - consistency and nutrition steer the build. The road to Knight.',
             check: (s) => s.nutrition >= 70 && s.progress >= 58 && s.strength < 58,
             requirements: () => [{ key: 'nutrition', target: 70 }, { key: 'progress', target: 58 }]
         },
@@ -580,8 +580,8 @@
     const TIER_RINGS = [
         { id: 'squire', avg: 35, spike: 60 },
         { id: 'specialist', avg: 50, spike: 78 },
-        { id: 'knight', avg: 65, spike: 90 },
-        { id: 'king', avg: 80, spike: 95 }
+        { id: 'knight', avg: 70, spike: 92 },   // hard but possible
+        { id: 'king', avg: 85, spike: 98 }      // really hard
     ];
     const TIER_ORDER = ['peasant', 'squire', 'specialist', 'knight', 'king'];
 
@@ -1126,7 +1126,7 @@
         thrivingStreak: 7,
         thrivingTrendUp: 4,
         thrivingPromoProgress: 0.8,
-        kingDominantMin: 82,      // king has no promotion: dominant = untouchable
+        kingDominantMin: 88,      // king has no promotion: dominant = untouchable
         kingDominantSpread: 16,
         videoTimeoutMs: 2500      // slow clip -> SVG fallback
     };
@@ -1242,10 +1242,18 @@
         return prev;
     };
 
-    // Which specialist shape fits these stats (they're one level, three shapes).
+    /* Which specialist shape fits these stats (one level, three shapes):
+       Berserker - strength/progress surge, cardio+consistency+nutrition
+       way off the pace. Ranger - cardio/recovery engine without the
+       strength. Mage - the balanced consistency+nutrition build, the
+       road to Knight. Synced with js/overview-identity.js. */
     const champSpecialistFor = (stats) => {
-        if (Number(stats.cardio) >= Number(stats.strength) + 10) return CASTE_MAP.ranger;
-        if (Number(stats.strength) >= Math.max(Number(stats.nutrition), Number(stats.cardio))) return CASTE_MAP.berserker;
+        const s = (k) => Number(stats[k]) || 0;
+        const fury = (s('strength') + s('progress')) / 2;
+        const engine = (s('cardio') + s('recovery')) / 2;
+        const trio = (s('cardio') + s('consistency') + s('nutrition')) / 3;
+        if (fury >= engine && fury - trio >= 18) return CASTE_MAP.berserker;
+        if (engine >= 58 && s('strength') <= engine - 12) return CASTE_MAP.ranger;
         return CASTE_MAP.mage;
     };
 
