@@ -695,6 +695,31 @@ function writeWorkoutDatabase(list) {
   invalidateDatasetCache();
 }
 
+// User-submitted exercises (e.g. from the onboarding workout import) are
+// stored as pending suggestions for the owner to review. `shareToGlobal`
+// records whether the submitter granted permission to publish it to the
+// shared database; either way they keep a personal copy client-side.
+const WORKOUT_DB_SUGGESTIONS_PATH = path.join(__dirname, '..', 'data', 'workout-database-suggestions.json');
+
+function readWorkoutDbSuggestions() {
+  try {
+    if (!fs.existsSync(WORKOUT_DB_SUGGESTIONS_PATH)) return [];
+    const json = JSON.parse(fs.readFileSync(WORKOUT_DB_SUGGESTIONS_PATH, 'utf8'));
+    return Array.isArray(json) ? json : [];
+  } catch (err) {
+    console.error('[workout-db] Could not parse suggestions:', err?.message || err);
+    return [];
+  }
+}
+
+function writeWorkoutDbSuggestions(list) {
+  const normalized = Array.isArray(list) ? list.slice(-2000) : [];
+  fs.mkdirSync(path.dirname(WORKOUT_DB_SUGGESTIONS_PATH), { recursive: true });
+  const tmpPath = `${WORKOUT_DB_SUGGESTIONS_PATH}.tmp`;
+  fs.writeFileSync(tmpPath, JSON.stringify(normalized, null, 2), 'utf8');
+  fs.renameSync(tmpPath, WORKOUT_DB_SUGGESTIONS_PATH);
+}
+
 function sanitizeWorkoutImagePath(raw) {
   const src = String(raw || '').trim();
   if (!src || src.startsWith('data:')) return null;
@@ -11160,6 +11185,375 @@ async function trainingRoutes(req, res, url) {
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to add workout' });
     }
+  }
+
+  // Any signed-in user can SUGGEST an exercise the database doesn't know.
+  // Suggestions are pending until the owner reviews them; shareToGlobal is
+  // the submitter's permission to publish beyond their own account.
+  if (pathname === '/api/training/workout-database/suggestions' && req.method === 'POST') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.workout-database.suggest',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    const items = Array.isArray(payload?.items) ? payload.items : [payload];
+    const cleaned = items
+      .map((item) => ({
+        name: String(item?.name || '').trim().slice(0, 80),
+        primaryMuscle: String(item?.primaryMuscle || '').trim().slice(0, 40),
+        equipment: String(item?.equipment || '').trim().slice(0, 40),
+        level: String(item?.level || '').trim().slice(0, 20),
+        category: String(item?.category || 'strength').trim().slice(0, 20),
+        notes: String(item?.notes || '').trim().slice(0, 400),
+        shareToGlobal: Boolean(item?.shareToGlobal)
+      }))
+      .filter((item) => item.name.length >= 3);
+    if (!cleaned.length) return sendJson(res, 400, { error: 'No valid exercises to suggest' });
+    try {
+      const rows = readWorkoutDbSuggestions();
+      const now = new Date().toISOString();
+      const added = cleaned.map((item) => ({
+        id: `sugg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+        ...item,
+        status: 'pending',
+        submittedBy: {
+          id: String(user.id || ''),
+          username: String(user.username || ''),
+          displayName: String(user.displayName || '')
+        },
+        createdAt: now
+      }));
+      writeWorkoutDbSuggestions([...rows, ...added]);
+      return sendJson(res, 201, { ok: true, added: added.length });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to save suggestions' });
+    }
+  }
+
+  // Cutscene edit layer: non-destructive edits (segment cuts, text overlays,
+  // audio cues, tracker nodes) stored per video file. Read is public (every
+  // player applies it); write is owner-only from the cutscene editor.
+  if (pathname === '/api/training/cutscene-meta' && req.method === 'GET') {
+    try {
+      const metaPath = path.join(__dirname, '..', 'data', 'cutscene-meta.json');
+      const meta = fs.existsSync(metaPath) ? JSON.parse(fs.readFileSync(metaPath, 'utf8')) : {};
+      return sendJson(res, 200, { ok: true, meta });
+    } catch (err) {
+      return sendJson(res, 200, { ok: true, meta: {} });
+    }
+  }
+
+  if (pathname === '/api/training/cutscene-meta' && req.method === 'POST') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.cutscene-meta.save',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    const file = String(payload?.file || '').trim();
+    if (!/^[a-z0-9._-]+\.mp4$/i.test(file)) return sendJson(res, 400, { error: 'Invalid video file name' });
+    try {
+      const metaPath = path.join(__dirname, '..', 'data', 'cutscene-meta.json');
+      const meta = fs.existsSync(metaPath) ? JSON.parse(fs.readFileSync(metaPath, 'utf8')) : {};
+      if (payload.meta === null) delete meta[file];
+      else meta[file] = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
+      fs.mkdirSync(path.dirname(metaPath), { recursive: true });
+      const tmp = `${metaPath}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(meta, null, 2), 'utf8');
+      fs.renameSync(tmp, metaPath);
+      return sendJson(res, 200, { ok: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to save cutscene meta' });
+    }
+  }
+
+  // Owner asset upload: replace a cutscene video or add an audio track.
+  // Raw body streamed straight to /videos (atomic tmp+rename), 200MB cap.
+  if (pathname === '/api/training/cutscene-asset' && req.method === 'PUT') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.cutscene-asset.put',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
+    const assetName = String(url.searchParams.get('name') || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]+\.(mp4|webm|mp3|m4a|wav|ogg)$/.test(assetName) || assetName.includes('..')) {
+      return sendJson(res, 400, { error: 'Invalid asset name' });
+    }
+    const videosDir = path.join(__dirname, '..', 'videos');
+    const targetPath = path.join(videosDir, assetName);
+    const tmpPath = `${targetPath}.upload.tmp`;
+    try {
+      fs.mkdirSync(videosDir, { recursive: true });
+      await new Promise((resolve, reject) => {
+        const MAX_BYTES = 200 * 1024 * 1024;
+        let written = 0;
+        const out = fs.createWriteStream(tmpPath);
+        req.on('data', (chunk) => {
+          written += chunk.length;
+          if (written > MAX_BYTES) {
+            req.destroy();
+            out.destroy();
+            reject(new Error('Asset too large'));
+          }
+        });
+        req.pipe(out);
+        out.on('finish', resolve);
+        out.on('error', reject);
+        req.on('error', reject);
+      });
+      fs.renameSync(tmpPath, targetPath);
+      return sendJson(res, 200, { ok: true, file: assetName });
+    } catch (err) {
+      try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (cleanupErr) { /* ignore */ }
+      return sendJson(res, 500, { error: err?.message || 'Upload failed' });
+    }
+  }
+
+  if (pathname === '/api/training/workout-database/suggestions' && req.method === 'GET') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.workout-database.suggestions.get',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
+    return sendJson(res, 200, { ok: true, items: readWorkoutDbSuggestions() });
+  }
+
+  // Onboarding insights: why each client/trainer joined (heard-from source,
+  // most-expected feature, results they came for). One record per user,
+  // written at onboarding completion; read is owner-only for the Analytics
+  // dashboard (owner-analytics.html).
+  const insightsPath = path.join(__dirname, '..', 'data', 'onboarding-insights.json');
+  const readInsights = () => {
+    try { return fs.existsSync(insightsPath) ? JSON.parse(fs.readFileSync(insightsPath, 'utf8')) : []; }
+    catch (err) { return []; }
+  };
+  const writeInsights = (rows) => {
+    const tmp = `${insightsPath}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(rows, null, 1));
+    fs.renameSync(tmp, insightsPath);
+  };
+
+  if (pathname === '/api/training/onboarding-insights' && req.method === 'POST') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.onboarding-insights.post',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    const role = String(payload?.role || '').trim().toLowerCase() === 'trainer' ? 'trainer' : 'client';
+    const record = {
+      userId: String(user.id || ''),
+      username: String(user.username || ''),
+      displayName: String(user.displayName || user.username || 'Member'),
+      role,
+      source: String(payload?.source || '').trim().slice(0, 60),
+      expectedFeature: String(payload?.expectedFeature || '').trim().slice(0, 80),
+      results: (Array.isArray(payload?.results) ? payload.results : [payload?.results])
+        .map((r) => String(r || '').trim().slice(0, 80))
+        .filter(Boolean)
+        .slice(0, 6),
+      joinedAt: new Date().toISOString()
+    };
+    try {
+      const rows = readInsights().filter((r) => String(r.userId) !== record.userId);
+      rows.push(record);
+      writeInsights(rows);
+      return sendJson(res, 201, { ok: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to save onboarding insights' });
+    }
+  }
+
+  if (pathname === '/api/training/onboarding-insights' && req.method === 'GET') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.onboarding-insights.get',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
+    return sendJson(res, 200, { ok: true, entries: readInsights() });
+  }
+
+  // ---- Trainer website hub: funnel config, public funnel fetch, visitor
+  // events, and the trainer-facing insights feed (trainer-website.html /
+  // trainer-analytics.html / visit.html). Config is keyed by trainer userId
+  // and looked up publicly by username (the handle in the shareable link).
+  const websitesPath = path.join(__dirname, '..', 'data', 'trainer-websites.json');
+  const funnelEventsPath = path.join(__dirname, '..', 'data', 'funnel-events.json');
+  const FUNNEL_EVENTS_CAP = 50000;
+  const readJsonFile = (file, fallback) => {
+    try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback; }
+    catch (err) { return fallback; }
+  };
+  const writeJsonFile = (file, value) => {
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(value, null, 1));
+    fs.renameSync(tmp, file);
+  };
+  const sanitizeVariants = (input) => {
+    const variants = (Array.isArray(input) ? input : []).slice(0, 6).map((v, i) => ({
+      id: String(v?.id || `v${i + 1}`).trim().slice(0, 24) || `v${i + 1}`,
+      label: String(v?.label || `Version ${String.fromCharCode(65 + i)}`).trim().slice(0, 60),
+      weight: Math.max(0, Math.min(100, Math.round(Number(v?.weight) || 0))),
+      questions: (Array.isArray(v?.questions) ? v.questions : [])
+        .map((q) => String(q || '').trim().slice(0, 200))
+        .filter(Boolean)
+        .slice(0, 12)
+    }));
+    if (!variants.length) return variants;
+    const total = variants.reduce((s, v) => s + v.weight, 0);
+    if (total <= 0) variants.forEach((v) => { v.weight = Math.round(100 / variants.length); });
+    return variants;
+  };
+  const findWebsiteByHandle = (handle) => {
+    const key = String(handle || '').trim().toLowerCase();
+    if (!key) return null;
+    const all = readJsonFile(websitesPath, {});
+    const entry = Object.values(all).find((row) => String(row?.username || '').toLowerCase() === key);
+    return entry || null;
+  };
+
+  if (pathname === '/api/training/website-config' && (req.method === 'GET' || req.method === 'POST')) {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.website-config',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isTrainer && !user.isOwner) return sendJson(res, 403, { error: 'Trainer access required' });
+    const all = readJsonFile(websitesPath, {});
+    const key = String(user.id || '');
+    if (req.method === 'GET') {
+      const cfg = all[key] || null;
+      return sendJson(res, 200, {
+        ok: true,
+        config: cfg || { siteUrl: '', variants: [] },
+        handle: String(user.username || '')
+      });
+    }
+    let payload;
+    try { payload = await readJsonBody(req); }
+    catch (err) { return sendJson(res, 400, { error: err.message }); }
+    let siteUrl = String(payload?.siteUrl || '').trim().slice(0, 300);
+    if (siteUrl && !/^https?:\/\//i.test(siteUrl)) siteUrl = `https://${siteUrl}`;
+    const record = {
+      userId: key,
+      username: String(user.username || ''),
+      displayName: String(user.displayName || user.username || 'Coach'),
+      siteUrl,
+      variants: sanitizeVariants(payload?.variants),
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      all[key] = record;
+      writeJsonFile(websitesPath, all);
+      return sendJson(res, 200, { ok: true, config: record });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to save website config' });
+    }
+  }
+
+  if (pathname === '/api/training/website-funnel' && req.method === 'GET') {
+    // PUBLIC: visitors clicking a trainer link have no account.
+    const entry = findWebsiteByHandle(url.searchParams.get('t'));
+    if (!entry) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    return sendJson(res, 200, {
+      ok: true,
+      displayName: entry.displayName || 'Coach',
+      siteUrl: entry.siteUrl || '',
+      variants: (entry.variants || []).filter((v) => (v.questions || []).length && v.weight > 0)
+    });
+  }
+
+  if (pathname === '/api/training/funnel-event' && req.method === 'POST') {
+    // PUBLIC: tracking beacon from visit.html.
+    let payload;
+    try { payload = await readJsonBody(req); }
+    catch (err) { return sendJson(res, 400, { error: err.message }); }
+    const handle = String(payload?.handle || '').trim().toLowerCase().slice(0, 60);
+    const type = String(payload?.type || '').trim().toLowerCase();
+    if (!handle || !['start', 'answer', 'complete', 'exit'].includes(type)) {
+      return sendJson(res, 400, { error: 'Bad funnel event' });
+    }
+    if (!findWebsiteByHandle(handle)) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    const event = {
+      handle,
+      visitorId: String(payload?.visitorId || '').trim().slice(0, 48),
+      variantId: String(payload?.variantId || '').trim().slice(0, 24),
+      type,
+      stepIndex: Math.max(0, Math.min(50, Number(payload?.stepIndex) || 0)),
+      question: String(payload?.question || '').trim().slice(0, 200),
+      answer: String(payload?.answer || '').trim().slice(0, 500),
+      answers: type === 'complete'
+        ? (Array.isArray(payload?.answers) ? payload.answers : [])
+          .map((a) => ({
+            question: String(a?.question || '').trim().slice(0, 200),
+            answer: String(a?.answer || '').trim().slice(0, 500)
+          }))
+          .filter((a) => a.question)
+          .slice(0, 12)
+        : undefined,
+      ms: Math.max(0, Math.min(3_600_000, Number(payload?.ms) || 0)),
+      ua: String(req.headers['user-agent'] || '').slice(0, 120),
+      ts: new Date().toISOString()
+    };
+    try {
+      let events = readJsonFile(funnelEventsPath, []);
+      events.push(event);
+      if (events.length > FUNNEL_EVENTS_CAP) events = events.slice(events.length - FUNNEL_EVENTS_CAP);
+      writeJsonFile(funnelEventsPath, events);
+      return sendJson(res, 201, { ok: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to record event' });
+    }
+  }
+
+  if (pathname === '/api/training/website-insights' && req.method === 'GET') {
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.website-insights.get',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (!user.isTrainer && !user.isOwner) return sendJson(res, 403, { error: 'Trainer access required' });
+    const handle = String(user.username || '').toLowerCase();
+    const all = readJsonFile(websitesPath, {});
+    const cfg = all[String(user.id || '')] || null;
+    const events = readJsonFile(funnelEventsPath, []).filter((e) => e.handle === handle);
+    return sendJson(res, 200, { ok: true, handle, config: cfg, events });
   }
 
   if (workoutDbItemMatch && req.method === 'PATCH') {

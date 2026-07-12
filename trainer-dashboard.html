@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trainer Dashboard · RiseForIt</title>
   <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-3"></script>
-  <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+  <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
   <style>
   body.trainer-dashboard-page {
     overflow: auto !important;
@@ -1654,8 +1654,10 @@
     <div class="control-section hidden" id="control-trainer-section">
       <p class="section-label">TRAINER</p>
       <a class="control-link active" id="control-trainer-clients-link" href="trainer-dashboard.html" aria-current="true"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Clients</span></a>
-      <a class="control-link" id="control-trainer-potential-clients-link" href="trainer-dashboard.html?tab=potential-clients"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Potential Clients</span></a>
       <a class="control-link" id="control-trainer-consult-hits-link" href="trainer-dashboard.html?tab=consult-form-hits"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Consult Form Hits</span></a>
+      <a class="control-link" id="control-trainer-payments-link" href="payment-settings.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Payments</span></a>
+      <a class="control-link" id="control-trainer-calendar-link" href="trainer-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span></a>
+      <a class="control-link" id="control-trainer-website-link" href="trainer-profile.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Your Landing Page</span></a>
     </div>
     <div class="control-section hidden" id="control-owner-section">
       <p class="section-label">OWNER</p>
@@ -1768,7 +1770,42 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
-  <script src="js/account-trainer.js?v=2026-03-29-account-trainer-25"></script>
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script src="js/account-trainer.js?v=2026-07-12-account-trainer-26"></script>
+  <script>
+    /* "Your Landing Page": trainers jump straight to their live coach site
+       (builder if nothing is published yet); the owner instead gets the
+       searchable list of every trainer's website. */
+    (function () {
+      'use strict';
+      var link = document.getElementById('control-trainer-website-link');
+      if (!link) return;
+      var OWNER_NAMES = ['riseforit', 'riseforitowner', 'jason', 'odeology', 'odeology_'];
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (me) {
+          var user = me && me.user;
+          var uname = String((user && user.username) || '').trim().toLowerCase();
+          if (user && (user.isOwner || OWNER_NAMES.indexOf(uname) >= 0)) {
+            link.href = 'owner-websites.html';
+            var txt = link.querySelector('.text');
+            if (txt) txt.textContent = 'Trainer Websites';
+            return;
+          }
+          link.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            fetch('/api/auth/trainer/pages', { credentials: 'include' })
+              .then(function (r) { return r.json(); })
+              .then(function (json) {
+                var pages = (json && json.pages) || [];
+                var home = pages.filter(function (p) { return p && p.isHome; })[0] || pages[0];
+                window.location.href = (home && home.publicPath) ? home.publicPath : 'trainer-profile.html';
+              })
+              .catch(function () { window.location.href = 'trainer-profile.html'; });
+          });
+        })
+        .catch(function () { /* leave the default builder link */ });
+    })();
+  </script>
 </body>
 </html>

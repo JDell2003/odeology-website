@@ -103,7 +103,15 @@
       // ignore
     }
     try {
-      return sessionStorage.getItem('ode_training_force_autostart') === '1';
+      if (sessionStorage.getItem('ode_training_force_autostart') === '1') return true;
+    } catch {
+      // ignore
+    }
+    // Onboarding finished but they exited to the overview instead of the
+    // builder: the workout is still owed. This durable flag survives until
+    // their first training visit, then the plan builds itself.
+    try {
+      return localStorage.getItem('ode_training_autobuild_v1') === '1';
     } catch {
       return false;
     }
@@ -1061,7 +1069,11 @@
 
   async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
-    if (hasRenderablePlanRow(state.planRow)) return false;
+    if (hasRenderablePlanRow(state.planRow)) {
+      // A plan already exists — any owed-build flag from onboarding is stale.
+      try { localStorage.removeItem('ode_training_autobuild_v1'); } catch {}
+      return false;
+    }
     if (!force && isAutoRetryPaused()) return false;
     if (!force && shouldOpenWizardOnly()) return false;
     const intake = await loadSavedIntake();
@@ -1085,6 +1097,7 @@
       return false;
     }
     autoOnboardInFlight = true;
+    try { localStorage.removeItem('ode_training_autobuild_v1'); } catch {}
     try {
       await submitOnboarding(payload);
     } finally {
@@ -16433,6 +16446,28 @@ function toggleSharePopover(force) {
     clearConstructingBootFlag();
     setView('wizard');
   });
+
+  // Navbar "+" → "Add friends to workout" lands here with ?share=friends:
+  // pop the Share Workout flow open once the plan UI has rendered.
+  (() => {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('share') !== 'friends') return;
+    } catch {
+      return;
+    }
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      const btn = document.querySelector('[data-share-workout]');
+      if (btn) {
+        window.clearInterval(timer);
+        btn.click();
+      } else if (tries > 40) {
+        window.clearInterval(timer);
+      }
+    }, 500);
+  })();
 })();
 
 

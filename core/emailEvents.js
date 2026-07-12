@@ -5,7 +5,15 @@ const {
   createKlaviyoEvent
 } = require('./klaviyoClient');
 const { buildKlaviyoEmailTemplate } = require('./klaviyoEmailTemplates');
+const { isMailerLiteConfigured, recordMailerLiteEvent } = require('./mailerLiteClient');
+const { applyOwnerEmailOverride } = require('./emailTemplateOverrides');
 
+/* Default send list = the emails that matter, none of the daily-volume ones.
+   Deactivated by default (they'd burn the send quota and annoy people):
+   Message Received, Daily Check-In Saved, Weekly Weigh-In Logged, Workout
+   Logged, Pain Report Submitted, Pain Follow-Up Submitted, and everything
+   else not listed. Re-enable any of them with the KLAVIYO_ENABLED_EVENTS
+   env var (comma-separated event names) or KLAVIYO_EVENT_PROFILE=all. */
 const FREE_PLAN_EVENT_ALLOWLIST = new Set([
   'Account Created',
   'Lead Submitted',
@@ -14,14 +22,8 @@ const FREE_PLAN_EVENT_ALLOWLIST = new Set([
   'Password Reset Requested',
   'Password Reset Completed',
   'Friend Request Received',
-  'Message Received',
   'Workout Share Invite Received',
-  'Daily Check-In Saved',
-  'Weekly Weigh-In Logged',
-  'Workout Logged',
-  'Pain Report Submitted',
-  'High Pain Report Submitted',
-  'Pain Follow-Up Submitted'
+  'High Pain Report Submitted'
 ]);
 
 function parseEventList(raw) {
@@ -118,7 +120,11 @@ async function emitKlaviyoEvent({
   eventProps = {},
   profileProps = {}
 } = {}) {
-  if (!isKlaviyoConfigured()) return { ok: false, skipped: 'not_configured' };
+  // "Klaviyo" by name for legacy call sites — this is the shared email-event
+  // pipe. It fans out to every configured provider (Klaviyo, MailerLite).
+  if (!isKlaviyoConfigured() && !isMailerLiteConfigured()) {
+    return { ok: false, skipped: 'not_configured' };
+  }
   const safeEmail = normalizeEmail(email);
   const safePhone = normalizePhone(phone);
   if (!safeEmail && !safePhone) return { ok: false, skipped: 'no_identity' };
@@ -135,6 +141,47 @@ async function emitKlaviyoEvent({
     displayName: fullDisplayName,
     baseEventProps: eventProps
   });
+
+  // Owner-edited version (and A/B split) replaces the built-in template.
+  let emailVariant = '';
+  try {
+    emailVariant = await applyOwnerEmailOverride({
+      db,
+      eventName: metric,
+      displayName: fullDisplayName,
+      eventProps,
+      props: finalEventProps
+    }) || '';
+  } catch (err) {
+    logEmailEventError(err, `${metric}:override`);
+  }
+
+  // MailerLite: upsert subscriber + per-event group join (fires their
+  // automation). One provider failing never blocks the other.
+  let mailerLiteOk = false;
+  if (isMailerLiteConfigured() && safeEmail) {
+    try {
+      const mlResult = await recordMailerLiteEvent({
+        email: safeEmail,
+        phone: safePhone,
+        firstName: fName,
+        lastName: lName,
+        eventName: metric,
+        subject: finalEventProps.ode_email_subject || '',
+        preheader: finalEventProps.ode_email_preheader || '',
+        ctaLabel: finalEventProps.ode_email_cta_label || '',
+        ctaUrl: finalEventProps.ode_email_cta_url || '',
+        variant: emailVariant
+      });
+      mailerLiteOk = Boolean(mlResult?.ok);
+    } catch (err) {
+      logEmailEventError(err, `${metric}:mailerlite`);
+    }
+  }
+
+  if (!isKlaviyoConfigured()) {
+    return mailerLiteOk ? { ok: true, provider: 'mailerlite' } : { ok: false, error: 'mailerlite_failed' };
+  }
 
   try {
     await createOrUpdateKlaviyoProfile({
@@ -156,9 +203,10 @@ async function emitKlaviyoEvent({
       properties: finalEventProps,
       time: new Date().toISOString()
     });
-    return { ok: true };
+    return { ok: true, provider: mailerLiteOk ? 'klaviyo+mailerlite' : 'klaviyo' };
   } catch (err) {
     logEmailEventError(err, `${metric}:event`);
+    if (mailerLiteOk) return { ok: true, provider: 'mailerlite', klaviyoError: err?.message || 'event_failed' };
     return { ok: false, error: err?.message || 'event_failed' };
   }
 }
@@ -171,7 +219,7 @@ async function emitUserEvent({
 } = {}) {
   const id = String(userId || '').trim();
   if (!id) return { ok: false, skipped: 'no_user_id' };
-  if (!isKlaviyoConfigured()) return { ok: false, skipped: 'not_configured' };
+  if (!isKlaviyoConfigured() && !isMailerLiteConfigured()) return { ok: false, skipped: 'not_configured' };
   try {
     const result = await db.query(
       `

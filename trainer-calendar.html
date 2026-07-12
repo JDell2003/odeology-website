@@ -1,0 +1,521 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar — RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-12-websites-1">
+  <style>
+    body.trainer-calendar-page { overflow: auto !important; background: #f6f8fb; }
+
+    .tcal-wrap {
+      max-width: 1280px;
+      margin: calc(var(--navbar-height, 72px) + 18px) auto 40px;
+      padding: 0 14px 24px;
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .tcal-side {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      position: sticky;
+      top: calc(var(--navbar-height, 72px) + 14px);
+    }
+    .tcal-side h2 { margin: 0 0 4px; font-size: 15px; }
+    .tcal-side .tcal-muted { color: #67707a; font-size: 12px; }
+    .tcal-filters { margin-top: 12px; display: grid; gap: 8px; }
+    .tcal-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #24313d;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tcal-filter i {
+      width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+    }
+    .tcal-filter[data-kind="appointment"] i { background: #1fb0ff; }
+    .tcal-filter[data-kind="group"] i { background: #9a6bff; }
+    .tcal-filter[data-kind="personal"] i { background: #37c978; }
+
+    .tcal-main {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .tcal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tcal-nav { display: flex; align-items: center; gap: 6px; }
+    .tcal-nav button {
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      border-radius: 8px;
+      min-width: 34px;
+      min-height: 34px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .tcal-nav .tcal-title { font-size: 17px; font-weight: 900; margin: 0 8px; white-space: nowrap; }
+    .tcal-views { display: flex; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }
+    .tcal-views button {
+      border: 0; background: #fff; padding: 8px 14px;
+      font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+      color: #4a5560; cursor: pointer;
+    }
+    .tcal-views button.active { background: #1fb0ff; color: #fff; }
+    .tcal-add {
+      border: 0; border-radius: 8px; background: #1fb0ff; color: #fff;
+      font-weight: 800; font-size: 13px; padding: 9px 16px; cursor: pointer;
+    }
+    .tcal-add:hover { filter: brightness(1.06); }
+
+    /* month grid */
+    .tcal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-left: 1px solid rgba(0,0,0,0.07); border-top: 1px solid rgba(0,0,0,0.07); }
+    .tcal-dow {
+      padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      color: #67707a; text-align: center; border-right: 1px solid rgba(0,0,0,0.07); border-bottom: 1px solid rgba(0,0,0,0.07);
+      background: #fafcfe;
+    }
+    .tcal-cell {
+      min-height: 96px; padding: 6px; border-right: 1px solid rgba(0,0,0,0.07); border-bottom: 1px solid rgba(0,0,0,0.07);
+      display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0;
+    }
+    .tcal-cell:hover { background: #f6fbff; }
+    .tcal-cell .d { font-size: 11.5px; font-weight: 800; color: #46525e; align-self: flex-end; }
+    .tcal-cell.is-other .d { color: #c0c8cf; }
+    .tcal-cell.is-today .d {
+      background: #1fb0ff; color: #fff; border-radius: 999px;
+      min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 4px;
+    }
+    .tcal-evt {
+      border-radius: 5px; padding: 3px 6px; font-size: 11px; font-weight: 700; color: #fff;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+    }
+    .tcal-evt[data-kind="appointment"] { background: #1fb0ff; }
+    .tcal-evt[data-kind="group"] { background: #9a6bff; }
+    .tcal-evt[data-kind="personal"] { background: #37c978; }
+    .tcal-more { font-size: 10.5px; font-weight: 800; color: #1fb0ff; }
+
+    /* day/week list views */
+    .tcal-list { display: grid; gap: 8px; }
+    .tcal-list-day h4 { margin: 10px 0 6px; font-size: 13px; color: #24313d; }
+    .tcal-list-item {
+      display: flex; align-items: center; gap: 10px;
+      border: 1px solid rgba(0,0,0,0.08); border-left-width: 4px; border-radius: 8px;
+      padding: 9px 12px; background: #fff;
+    }
+    .tcal-list-item[data-kind="appointment"] { border-left-color: #1fb0ff; }
+    .tcal-list-item[data-kind="group"] { border-left-color: #9a6bff; }
+    .tcal-list-item[data-kind="personal"] { border-left-color: #37c978; }
+    .tcal-list-item b { font-size: 13.5px; }
+    .tcal-list-item .t { color: #67707a; font-size: 12px; white-space: nowrap; }
+    .tcal-list-item .del {
+      margin-left: auto; border: 1px solid rgba(214,69,69,.3); color: #d64545; background: #fff;
+      border-radius: 6px; font-size: 11px; font-weight: 800; padding: 4px 9px; cursor: pointer;
+    }
+    .tcal-empty { color: #7a838c; font-size: 13px; padding: 18px 4px; text-align: center; }
+
+    /* add/detail modal */
+    .tcal-modal { position: fixed; inset: 0; z-index: 320; background: rgba(8,22,34,.45); display: grid; place-items: center; padding: 14px; }
+    .tcal-modal[hidden] { display: none; }
+    .tcal-dialog {
+      background: #fff; border-radius: 12px; padding: 20px 18px;
+      width: min(420px, 94vw); display: grid; gap: 11px;
+      box-shadow: 0 30px 70px rgba(0,0,0,.35);
+      max-height: 88vh; overflow: auto;
+    }
+    .tcal-dialog h2 { margin: 0; font-size: 17px; }
+    .tcal-dialog label { display: grid; gap: 4px; font-size: 12px; font-weight: 800; color: #46525e; }
+    .tcal-dialog input, .tcal-dialog select, .tcal-dialog textarea {
+      border: 1px solid rgba(0,0,0,0.16); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: inherit;
+    }
+    .tcal-dialog textarea { min-height: 64px; resize: vertical; }
+    .tcal-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+    .tcal-btn-ghost { border: 1px solid rgba(0,0,0,0.14); background: #fff; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; }
+    .tcal-btn-primary { border: 0; background: #1fb0ff; color: #fff; border-radius: 8px; padding: 8px 16px; font-weight: 800; cursor: pointer; }
+    .tcal-modal-status { font-size: 12px; color: #d64545; min-height: 1em; }
+    .tcal-locked { max-width: 560px; margin: 40px auto; text-align: center; color: #4a5560; display: none; }
+
+    @media (max-width: 860px) {
+      .tcal-wrap { grid-template-columns: 1fr; }
+      .tcal-side { position: static; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+      .tcal-filters { margin-top: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+      .tcal-cell { min-height: 62px; padding: 4px; }
+      .tcal-evt { font-size: 0; padding: 0; height: 6px; border-radius: 999px; }
+      .tcal-nav .tcal-title { font-size: 14.5px; }
+      .tcal-views button { padding: 7px 10px; font-size: 10.5px; }
+    }
+  </style>
+</head>
+<body class="trainer-calendar-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24"><path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path><path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path><path d="M15.5 12H7.5"></path><path d="m12 9.5 3.5 2.5-3.5 2.5"></path></symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24"><rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect><path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="10" cy="9" r="2.5"></circle><path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path><circle cx="16.5" cy="10.5" r="2"></circle><path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path></symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path></symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a><a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section">
+      <p class="section-label">TRAINER</p>
+      <a class="control-link" id="control-trainer-clients-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Clients</span></a>
+      <a class="control-link" id="control-trainer-consult-hits-link" href="trainer-dashboard.html?tab=consult-form-hits"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Consult Form Hits</span></a>
+      <a class="control-link" id="control-trainer-payments-link" href="payment-settings.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Payments</span></a>
+      <a class="control-link active" id="control-trainer-calendar-link" href="trainer-calendar.html" aria-current="true"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span></a>
+      <a class="control-link" id="control-trainer-website-link" href="trainer-profile.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Your Landing Page</span></a>
+    </div>
+    <div class="control-section hidden" id="control-owner-section"><p class="section-label">OWNER</p></div>
+  </aside>
+
+  <main>
+    <div class="tcal-locked" id="tcal-locked">The Calendar is a trainer tool. Sign in with a trainer account to schedule sessions.</div>
+    <div class="tcal-wrap" id="tcal-wrap">
+      <aside class="tcal-side">
+        <div>
+          <h2>Calendar</h2>
+          <div class="tcal-muted">Sessions, classes and personal time.</div>
+        </div>
+        <div class="tcal-filters" id="tcal-filters">
+          <label class="tcal-filter" data-kind="appointment"><input type="checkbox" checked data-kind-toggle="appointment"><i></i> 1 on 1 Appointment</label>
+          <label class="tcal-filter" data-kind="group"><input type="checkbox" checked data-kind-toggle="group"><i></i> Group / Class</label>
+          <label class="tcal-filter" data-kind="personal"><input type="checkbox" checked data-kind-toggle="personal"><i></i> Personal Events</label>
+        </div>
+      </aside>
+
+      <section class="tcal-main">
+        <div class="tcal-toolbar">
+          <div class="tcal-nav">
+            <button type="button" id="tcal-today" title="Jump to today">&#8863;</button>
+            <button type="button" id="tcal-prev" aria-label="Previous">&lsaquo;</button>
+            <button type="button" id="tcal-next" aria-label="Next">&rsaquo;</button>
+            <span class="tcal-title" id="tcal-title">July 2026</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="tcal-views" role="tablist" aria-label="Calendar views">
+              <button type="button" data-view="daily">Daily</button>
+              <button type="button" data-view="weekly">Weekly</button>
+              <button type="button" data-view="monthly" class="active">Monthly</button>
+            </div>
+            <button type="button" class="tcal-add" id="tcal-add">&#128197; Add</button>
+          </div>
+        </div>
+        <div id="tcal-body"></div>
+        <div class="tcal-muted" style="margin-top:10px;font-size:12px;color:#7a838c;">Tap a day to add an event there. Tap an event to see details or remove it.</div>
+      </section>
+    </div>
+  </main>
+
+  <div class="tcal-modal" id="tcal-modal" hidden>
+    <div class="tcal-dialog" role="dialog" aria-modal="true">
+      <h2 id="tcal-modal-title">Add event</h2>
+      <label>Type
+        <select id="tcal-f-kind">
+          <option value="appointment">1 on 1 Appointment</option>
+          <option value="group">Group / Class</option>
+          <option value="personal">Personal Event</option>
+        </select>
+      </label>
+      <label>Title
+        <input type="text" id="tcal-f-title" maxlength="160" placeholder="Session with Alex">
+      </label>
+      <label>With (optional)
+        <input type="text" id="tcal-f-who" maxlength="160" placeholder="Client or group name">
+      </label>
+      <label>Date
+        <input type="date" id="tcal-f-date">
+      </label>
+      <label>Start time
+        <input type="time" id="tcal-f-start" value="09:00">
+      </label>
+      <label>End time (optional)
+        <input type="time" id="tcal-f-end">
+      </label>
+      <label>Notes (optional)
+        <textarea id="tcal-f-notes" maxlength="600"></textarea>
+      </label>
+      <div class="tcal-dialog-actions">
+        <button type="button" class="tcal-btn-ghost" id="tcal-f-cancel">Cancel</button>
+        <button type="button" class="tcal-btn-primary" id="tcal-f-save">Add event</button>
+      </div>
+      <div class="tcal-modal-status" id="tcal-modal-status"></div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script>
+    (function () {
+      'use strict';
+      var body = document.getElementById('tcal-body');
+      var titleEl = document.getElementById('tcal-title');
+      var wrap = document.getElementById('tcal-wrap');
+      var locked = document.getElementById('tcal-locked');
+      var modal = document.getElementById('tcal-modal');
+      var modalStatus = document.getElementById('tcal-modal-status');
+      var view = 'monthly';
+      var cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+      var events = [];
+      var kindOn = { appointment: true, group: true, personal: true };
+      var KIND_LABEL = { appointment: '1 on 1 Appointment', group: 'Group / Class', personal: 'Personal Event' };
+
+      var esc = function (v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      };
+      var ymd = function (d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      };
+      var sameDay = function (a, b) { return ymd(a) === ymd(b); };
+      var fmtTime = function (iso) {
+        try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; }
+      };
+
+      function rangeFor() {
+        var from = new Date(cursor);
+        var to = new Date(cursor);
+        if (view === 'monthly') {
+          from = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+          to = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+          // grid shows leading/trailing days too
+          from.setDate(from.getDate() - 7);
+          to.setDate(to.getDate() + 7);
+        } else if (view === 'weekly') {
+          var dow = (cursor.getDay() + 6) % 7; // monday-first
+          from.setDate(cursor.getDate() - dow);
+          to = new Date(from);
+          to.setDate(from.getDate() + 6);
+        }
+        return { from: ymd(from), to: ymd(to) };
+      }
+
+      async function load() {
+        var r = rangeFor();
+        try {
+          var resp = await fetch('/api/auth/trainer/calendar?from=' + r.from + '&to=' + r.to, { credentials: 'include' });
+          if (resp.status === 401 || resp.status === 403) {
+            wrap.style.display = 'none';
+            locked.style.display = 'block';
+            return;
+          }
+          var json = await resp.json();
+          events = (json && json.events) || [];
+        } catch (e) { events = []; }
+        render();
+      }
+
+      function visibleEvents() {
+        return events.filter(function (ev) { return kindOn[ev.kind] !== false; });
+      }
+      function eventsOn(day) {
+        return visibleEvents().filter(function (ev) { return ev.startsAt && sameDay(new Date(ev.startsAt), day); });
+      }
+
+      function renderMonth() {
+        titleEl.textContent = cursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        var first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        var lead = (first.getDay() + 6) % 7;
+        var start = new Date(first);
+        start.setDate(first.getDate() - lead);
+        var today = new Date();
+        var html = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d) { return '<div class="tcal-dow">' + d + '</div>'; }).join('');
+        for (var i = 0; i < 42; i++) {
+          var day = new Date(start);
+          day.setDate(start.getDate() + i);
+          var evs = eventsOn(day);
+          var cls = 'tcal-cell' + (day.getMonth() !== cursor.getMonth() ? ' is-other' : '') + (sameDay(day, today) ? ' is-today' : '');
+          var chips = evs.slice(0, 3).map(function (ev) {
+            return '<span class="tcal-evt" data-kind="' + esc(ev.kind) + '" data-evt="' + esc(ev.id) + '" title="' + esc(ev.title) + '">' + esc(fmtTime(ev.startsAt) + ' ' + ev.title) + '</span>';
+          }).join('');
+          if (evs.length > 3) chips += '<span class="tcal-more">+' + (evs.length - 3) + ' more</span>';
+          html += '<div class="' + cls + '" data-day="' + ymd(day) + '"><span class="d">' + day.getDate() + '</span>' + chips + '</div>';
+        }
+        body.innerHTML = '<div class="tcal-grid">' + html + '</div>';
+      }
+
+      function renderList(days) {
+        var out = '';
+        var any = false;
+        days.forEach(function (day) {
+          var evs = eventsOn(day);
+          out += '<div class="tcal-list-day"><h4>' + day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + '</h4>';
+          if (!evs.length) {
+            out += '<div class="tcal-empty" style="padding:6px 4px;text-align:left;">Nothing scheduled.</div>';
+          } else {
+            any = true;
+            out += evs.map(function (ev) {
+              return '<div class="tcal-list-item" data-kind="' + esc(ev.kind) + '">' +
+                '<span class="t">' + esc(fmtTime(ev.startsAt)) + (ev.endsAt ? ' – ' + esc(fmtTime(ev.endsAt)) : '') + '</span>' +
+                '<div><b>' + esc(ev.title) + '</b>' + (ev.withWho ? ' <span class="t">with ' + esc(ev.withWho) + '</span>' : '') +
+                (ev.notes ? '<div class="t">' + esc(ev.notes) + '</div>' : '') + '</div>' +
+                '<span class="t">' + esc(KIND_LABEL[ev.kind] || '') + '</span>' +
+                '<button type="button" class="del" data-evt-del="' + esc(ev.id) + '">Remove</button>' +
+                '</div>';
+            }).join('');
+          }
+          out += '</div>';
+        });
+        body.innerHTML = '<div class="tcal-list">' + out + '</div>';
+      }
+
+      function render() {
+        if (view === 'monthly') { renderMonth(); return; }
+        if (view === 'weekly') {
+          var dow = (cursor.getDay() + 6) % 7;
+          var monday = new Date(cursor);
+          monday.setDate(cursor.getDate() - dow);
+          var days = [];
+          for (var i = 0; i < 7; i++) { var d = new Date(monday); d.setDate(monday.getDate() + i); days.push(d); }
+          var sunday = days[6];
+          titleEl.textContent = monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          renderList(days);
+          return;
+        }
+        titleEl.textContent = cursor.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        renderList([new Date(cursor)]);
+      }
+
+      /* toolbar */
+      document.getElementById('tcal-prev').addEventListener('click', function () {
+        if (view === 'monthly') cursor.setMonth(cursor.getMonth() - 1);
+        else cursor.setDate(cursor.getDate() - (view === 'weekly' ? 7 : 1));
+        load();
+      });
+      document.getElementById('tcal-next').addEventListener('click', function () {
+        if (view === 'monthly') cursor.setMonth(cursor.getMonth() + 1);
+        else cursor.setDate(cursor.getDate() + (view === 'weekly' ? 7 : 1));
+        load();
+      });
+      document.getElementById('tcal-today').addEventListener('click', function () {
+        cursor = new Date(); cursor.setHours(0, 0, 0, 0); load();
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-view]'), function (btn) {
+        btn.addEventListener('click', function () {
+          view = btn.getAttribute('data-view');
+          Array.prototype.forEach.call(document.querySelectorAll('[data-view]'), function (b) { b.classList.toggle('active', b === btn); });
+          load();
+        });
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-kind-toggle]'), function (cb) {
+        cb.addEventListener('change', function () {
+          kindOn[cb.getAttribute('data-kind-toggle')] = cb.checked;
+          render();
+        });
+      });
+
+      /* add modal */
+      function openModal(dateStr) {
+        modalStatus.textContent = '';
+        document.getElementById('tcal-f-title').value = '';
+        document.getElementById('tcal-f-who').value = '';
+        document.getElementById('tcal-f-notes').value = '';
+        document.getElementById('tcal-f-date').value = dateStr || ymd(cursor);
+        document.getElementById('tcal-f-start').value = '09:00';
+        document.getElementById('tcal-f-end').value = '';
+        modal.hidden = false;
+        document.getElementById('tcal-f-title').focus();
+      }
+      document.getElementById('tcal-add').addEventListener('click', function () { openModal(ymd(new Date())); });
+      document.getElementById('tcal-f-cancel').addEventListener('click', function () { modal.hidden = true; });
+      modal.addEventListener('click', function (ev) { if (ev.target === modal) modal.hidden = true; });
+
+      document.getElementById('tcal-f-save').addEventListener('click', async function () {
+        var date = document.getElementById('tcal-f-date').value;
+        var start = document.getElementById('tcal-f-start').value || '09:00';
+        var end = document.getElementById('tcal-f-end').value;
+        var title = document.getElementById('tcal-f-title').value.trim();
+        if (!title) { modalStatus.textContent = 'Give the event a title.'; return; }
+        if (!date) { modalStatus.textContent = 'Pick a date.'; return; }
+        modalStatus.textContent = '';
+        var payload = {
+          kind: document.getElementById('tcal-f-kind').value,
+          title: title,
+          withWho: document.getElementById('tcal-f-who').value.trim(),
+          notes: document.getElementById('tcal-f-notes').value.trim(),
+          startsAt: date + 'T' + start,
+          endsAt: end ? date + 'T' + end : null
+        };
+        var resp = await fetch('/api/auth/trainer/calendar', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var json = await resp.json().catch(function () { return null; });
+        if (!resp.ok || !json || json.ok !== true) {
+          modalStatus.textContent = (json && json.error) || 'Could not save the event.';
+          return;
+        }
+        modal.hidden = true;
+        load();
+      });
+
+      /* grid interactions: tap a day = add there; tap event chip = manage */
+      body.addEventListener('click', async function (ev) {
+        var del = ev.target.closest ? ev.target.closest('[data-evt-del]') : null;
+        if (del) {
+          del.disabled = true;
+          await fetch('/api/auth/trainer/calendar/delete', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: del.getAttribute('data-evt-del') })
+          }).catch(function () {});
+          load();
+          return;
+        }
+        var chip = ev.target.closest ? ev.target.closest('[data-evt]') : null;
+        if (chip) {
+          // jump into that day's list view for details + remove
+          var cell = chip.closest('[data-day]');
+          if (cell) {
+            cursor = new Date(cell.getAttribute('data-day') + 'T00:00:00');
+            view = 'daily';
+            Array.prototype.forEach.call(document.querySelectorAll('[data-view]'), function (b) { b.classList.toggle('active', b.getAttribute('data-view') === 'daily'); });
+            load();
+          }
+          return;
+        }
+        var day = ev.target.closest ? ev.target.closest('[data-day]') : null;
+        if (day) openModal(day.getAttribute('data-day'));
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

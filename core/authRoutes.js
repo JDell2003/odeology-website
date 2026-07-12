@@ -4,9 +4,11 @@ const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const {
   emitKlaviyoEvent,
-  buildOnboardingEmailPayload
+  buildOnboardingEmailPayload,
+  isEventAllowedByPlan
 } = require('./emailEvents');
 const trainerPages = require('./trainerPages');
+const emailTemplateOverrides = require('./emailTemplateOverrides');
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
 const OWNER_BACKUP_COOKIE_NAME = process.env.OWNER_BACKUP_COOKIE_NAME || `${COOKIE_NAME}_owner_backup`;
@@ -7336,6 +7338,170 @@ async function handleTrainerSales(req, res) {
   }
 }
 
+async function handleTrainerDiscountCodesList(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  try {
+    const result = await db.query(
+      `SELECT id, code, percent, one_per_client, redeem_by, redemptions, created_at
+       FROM app_trainer_discount_codes
+       WHERE trainer_user_id = $1
+       ORDER BY created_at DESC;`,
+      [actor.id]
+    );
+    return sendJson(res, 200, {
+      ok: true,
+      codes: (result.rows || []).map((row) => ({
+        id: row.id,
+        code: row.code || '',
+        percent: Number(row.percent) || 0,
+        onePerClient: row.one_per_client === true,
+        redeemBy: row.redeem_by || null,
+        redemptions: Number(row.redemptions) || 0,
+        createdAt: row.created_at || null
+      }))
+    });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:GET:/api/auth/trainer/discount-codes');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleTrainerDiscountCodeCreate(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const code = cleanShortText(String(payload?.code || '').trim().toUpperCase().replace(/\s+/g, ''), 24);
+  const percent = Math.max(1, Math.min(100, Math.round(Number(payload?.percent) || 0)));
+  if (!code) return sendJson(res, 400, { ok: false, error: 'Enter a code name.' });
+  if (!/^[A-Z0-9_-]+$/.test(code)) return sendJson(res, 400, { ok: false, error: 'Codes can use letters, numbers, dashes and underscores.' });
+  const redeemByRaw = String(payload?.redeemBy || '').trim();
+  const redeemBy = /^\d{4}-\d{2}-\d{2}$/.test(redeemByRaw) ? redeemByRaw : null;
+  try {
+    const result = await db.query(
+      `INSERT INTO app_trainer_discount_codes (trainer_user_id, code, percent, one_per_client, redeem_by)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id;`,
+      [actor.id, code, percent, payload?.onePerClient === true, redeemBy]
+    );
+    return sendJson(res, 200, { ok: true, id: result.rows?.[0]?.id || null });
+  } catch (err) {
+    if (String(err?.message || '').includes('idx_app_trainer_discount_codes_code')) {
+      return sendJson(res, 409, { ok: false, error: 'You already have a code with that name.' });
+    }
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/trainer/discount-codes');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleTrainerDiscountCodeDelete(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const id = String(payload?.id || '').trim();
+  if (!id) return sendJson(res, 400, { ok: false, error: 'Code id is required.' });
+  try {
+    await db.query(
+      'DELETE FROM app_trainer_discount_codes WHERE id = $1 AND trainer_user_id = $2;',
+      [id, actor.id]
+    );
+    return sendJson(res, 200, { ok: true });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/trainer/discount-codes/delete');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+const TRAINER_CALENDAR_KINDS = ['appointment', 'group', 'personal'];
+
+async function handleTrainerCalendarList(req, res, url) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const values = [actor.id];
+  let rangeSql = '';
+  const from = String(url.searchParams.get('from') || '').trim();
+  const to = String(url.searchParams.get('to') || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(from)) {
+    rangeSql += ` AND starts_at >= $${values.push(from)}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(to)) {
+    rangeSql += ` AND starts_at <= $${values.push(to + 'T23:59:59Z')}`;
+  }
+  try {
+    const result = await db.query(
+      `SELECT id, kind, title, with_who, starts_at, ends_at, notes
+       FROM app_trainer_calendar_events
+       WHERE trainer_user_id = $1${rangeSql}
+       ORDER BY starts_at ASC
+       LIMIT 1000;`,
+      values
+    );
+    return sendJson(res, 200, {
+      ok: true,
+      events: (result.rows || []).map((row) => ({
+        id: row.id,
+        kind: TRAINER_CALENDAR_KINDS.includes(row.kind) ? row.kind : 'personal',
+        title: row.title || '',
+        withWho: row.with_who || '',
+        startsAt: row.starts_at || null,
+        endsAt: row.ends_at || null,
+        notes: row.notes || ''
+      }))
+    });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:GET:/api/auth/trainer/calendar');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleTrainerCalendarCreate(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const kind = TRAINER_CALENDAR_KINDS.includes(String(payload?.kind || '').trim()) ? String(payload.kind).trim() : 'personal';
+  const title = cleanShortText(payload?.title, 160);
+  const withWho = cleanShortText(payload?.withWho, 160);
+  const notes = cleanShortText(payload?.notes, 600);
+  const startsAt = new Date(String(payload?.startsAt || ''));
+  if (!title) return sendJson(res, 400, { ok: false, error: 'Give the event a title.' });
+  if (Number.isNaN(startsAt.getTime())) return sendJson(res, 400, { ok: false, error: 'Pick a valid start time.' });
+  let endsAt = null;
+  if (payload?.endsAt) {
+    const parsed = new Date(String(payload.endsAt));
+    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() > startsAt.getTime()) endsAt = parsed.toISOString();
+  }
+  try {
+    const result = await db.query(
+      `INSERT INTO app_trainer_calendar_events (trainer_user_id, kind, title, with_who, starts_at, ends_at, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id;`,
+      [actor.id, kind, title, withWho, startsAt.toISOString(), endsAt, notes]
+    );
+    return sendJson(res, 200, { ok: true, id: result.rows?.[0]?.id || null });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/trainer/calendar');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleTrainerCalendarDelete(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const id = String(payload?.id || '').trim();
+  if (!id) return sendJson(res, 400, { ok: false, error: 'Event id is required.' });
+  try {
+    await db.query(
+      'DELETE FROM app_trainer_calendar_events WHERE id = $1 AND trainer_user_id = $2;',
+      [id, actor.id]
+    );
+    return sendJson(res, 200, { ok: true });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/trainer/calendar/delete');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
 async function handleTrainerStripeConnect(req, res, url) {
   const actor = await requireTrainerActor(req, res);
   if (!actor) return true;
@@ -8018,6 +8184,197 @@ async function handleStripeWebhook(req, res) {
   }
   await handleStripeWebhookEvent(event);
   return sendJson(res, 200, { ok: true, received: true });
+}
+
+async function handleOwnerTrainerWebsitesList(req, res, url) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  const q = String(url.searchParams.get('q') || '').trim();
+  const values = [];
+  let searchSql = '';
+  if (q) {
+    const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+    const qIndex = values.push(like);
+    searchSql = `
+      WHERE (
+        u.username ILIKE $${qIndex}
+        OR u.display_name ILIKE $${qIndex}
+        OR COALESCE(u.phone, '') ILIKE $${qIndex}
+        OR COALESCE(tp.full_name, '') ILIKE $${qIndex}
+        OR COALESCE(tp.meta->>'phone', '') ILIKE $${qIndex}
+        OR COALESCE(tp.contact_email, u.email, '') ILIKE $${qIndex}
+      )`;
+  }
+
+  let result;
+  try {
+    result = await db.query(
+      `
+        SELECT u.id,
+               u.username,
+               u.display_name,
+               u.phone AS user_phone,
+               COALESCE(tp.full_name, u.display_name, u.username, 'Trainer') AS full_name,
+               COALESCE(tp.contact_email, u.email, '') AS contact_email,
+               COALESCE(tp.meta->>'phone', '') AS trainer_phone,
+               p.profile->'profile'->>'photoDataUrl' AS photo,
+               sites.site_slug,
+               sites.page_count,
+               sites.published_count,
+               sites.updated_at AS site_updated_at
+        FROM (
+          SELECT trainer_user_id,
+                 MIN(site_slug) AS site_slug,
+                 COUNT(*)::int AS page_count,
+                 COUNT(*) FILTER (WHERE is_published = true)::int AS published_count,
+                 MAX(updated_at) AS updated_at
+          FROM app_trainer_pages
+          GROUP BY trainer_user_id
+        ) sites
+        JOIN app_users u ON u.id = sites.trainer_user_id
+        LEFT JOIN app_trainer_profiles tp ON tp.user_id = u.id
+        LEFT JOIN app_user_profiles p ON p.user_id = u.id
+        ${searchSql}
+        ORDER BY sites.updated_at DESC NULLS LAST
+        LIMIT 300;
+      `,
+      values
+    );
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:GET:/api/auth/owner/trainer-websites');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+
+  const sites = (result.rows || []).map((row) => ({
+    userId: row.id,
+    username: row.username || '',
+    displayName: row.display_name || '',
+    fullName: row.full_name || '',
+    phone: row.trainer_phone || row.user_phone || '',
+    email: row.contact_email || '',
+    photo: row.photo || null,
+    siteSlug: row.site_slug || '',
+    publicPath: trainerPages.buildPublicPath(row.site_slug || '', ''),
+    pageCount: Number(row.page_count) || 0,
+    publishedCount: Number(row.published_count) || 0,
+    updatedAt: row.site_updated_at || null
+  }));
+  return sendJson(res, 200, { ok: true, sites });
+}
+
+async function handleOwnerEmailTemplatesList(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  let rows = [];
+  try {
+    const result = await db.query(
+      'SELECT event_name, enabled, variant_a, variant_b, split_percent, updated_at FROM app_email_template_overrides;'
+    );
+    rows = result.rows || [];
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:GET:/api/auth/owner/email-templates');
+  }
+  const byEvent = new Map(rows.map((row) => [row.event_name, row]));
+  const events = emailTemplateOverrides.EMAIL_EVENT_NAMES.map((eventName) => {
+    const sampleProps = emailTemplateOverrides.samplePropsFor(eventName);
+    const def = emailTemplateOverrides.renderVariant({
+      eventName,
+      displayName: 'Jordan Fields',
+      eventProps: sampleProps,
+      variant: null
+    });
+    const row = byEvent.get(eventName) || null;
+    return {
+      eventName,
+      active: isEventAllowedByPlan(eventName),
+      default: def,
+      override: row ? {
+        enabled: row.enabled === true,
+        variantA: emailTemplateOverrides.sanitizeVariant(row.variant_a),
+        variantB: emailTemplateOverrides.sanitizeVariant(row.variant_b),
+        splitPercent: Math.max(1, Math.min(99, Number(row.split_percent) || 50)),
+        updatedAt: row.updated_at || null
+      } : null
+    };
+  });
+  return sendJson(res, 200, { ok: true, events });
+}
+
+async function handleOwnerEmailTemplateSave(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const eventName = String(payload?.eventName || '').trim();
+  if (!emailTemplateOverrides.EMAIL_EVENT_NAMES.includes(eventName)) {
+    return sendJson(res, 400, { ok: false, error: 'Unknown email event.' });
+  }
+  const variantA = emailTemplateOverrides.sanitizeVariant(payload?.variantA);
+  const variantB = emailTemplateOverrides.sanitizeVariant(payload?.variantB);
+  if (!variantA && !variantB) {
+    return sendJson(res, 400, { ok: false, error: 'Nothing to save — the version is empty.' });
+  }
+  const splitPercent = variantB
+    ? Math.max(1, Math.min(99, Math.round(Number(payload?.splitPercent) || 50)))
+    : 100;
+  try {
+    await db.query(
+      `INSERT INTO app_email_template_overrides (event_name, enabled, variant_a, variant_b, split_percent, updated_at)
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5, now())
+       ON CONFLICT (event_name) DO UPDATE SET
+         enabled = EXCLUDED.enabled,
+         variant_a = EXCLUDED.variant_a,
+         variant_b = EXCLUDED.variant_b,
+         split_percent = EXCLUDED.split_percent,
+         updated_at = now();`,
+      [
+        eventName,
+        payload?.enabled !== false,
+        JSON.stringify(variantA || {}),
+        variantB ? JSON.stringify(variantB) : null,
+        splitPercent
+      ]
+    );
+    emailTemplateOverrides.invalidateOverrideCache(eventName);
+    return sendJson(res, 200, { ok: true });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/owner/email-templates');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleOwnerEmailTemplateDelete(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const eventName = String(payload?.eventName || '').trim();
+  if (!eventName) return sendJson(res, 400, { ok: false, error: 'Event name is required.' });
+  try {
+    await db.query('DELETE FROM app_email_template_overrides WHERE event_name = $1;', [eventName]);
+    emailTemplateOverrides.invalidateOverrideCache(eventName);
+    return sendJson(res, 200, { ok: true });
+  } catch (err) {
+    logTransientDbError(err, 'authRoutes:POST:/api/auth/owner/email-templates/delete');
+    return sendJson(res, 503, { ok: false, error: 'DB_UNAVAILABLE' });
+  }
+}
+
+async function handleOwnerEmailTemplatePreview(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const payload = await readJsonBody(req);
+  const eventName = String(payload?.eventName || '').trim();
+  if (!emailTemplateOverrides.EMAIL_EVENT_NAMES.includes(eventName)) {
+    return sendJson(res, 400, { ok: false, error: 'Unknown email event.' });
+  }
+  const variant = emailTemplateOverrides.sanitizeVariant(payload?.variant);
+  const rendered = emailTemplateOverrides.renderVariant({
+    eventName,
+    displayName: 'Jordan Fields',
+    eventProps: emailTemplateOverrides.samplePropsFor(eventName),
+    variant
+  });
+  return sendJson(res, 200, { ok: true, rendered });
 }
 
 async function handleOwnerAccountsList(req, res, url) {
@@ -9109,6 +9466,7 @@ async function ensureSchema(options = {}) {
     `ALTER TABLE app_trainer_profiles ADD COLUMN IF NOT EXISTS stripe_requirements_past_due jsonb NOT NULL DEFAULT '[]'::jsonb;`,
     `ALTER TABLE app_trainer_profiles ADD COLUMN IF NOT EXISTS stripe_last_sync_at timestamptz;`,
     ...trainerPages.TRAINER_PAGE_SCHEMA_SQL,
+    ...emailTemplateOverrides.OVERRIDE_SCHEMA_SQL,
     `
     CREATE TABLE IF NOT EXISTS app_trainer_products (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -9182,6 +9540,33 @@ async function ensureSchema(options = {}) {
     );
   `,
     `CREATE INDEX IF NOT EXISTS idx_app_trainer_product_subscriptions_trainer_user_id ON app_trainer_product_subscriptions(trainer_user_id);`,
+    `
+    CREATE TABLE IF NOT EXISTS app_trainer_discount_codes (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      trainer_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      code text NOT NULL,
+      percent int NOT NULL DEFAULT 10,
+      one_per_client boolean NOT NULL DEFAULT false,
+      redeem_by date,
+      redemptions int NOT NULL DEFAULT 0,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_app_trainer_discount_codes_code ON app_trainer_discount_codes(trainer_user_id, code);`,
+    `
+    CREATE TABLE IF NOT EXISTS app_trainer_calendar_events (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      trainer_user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      kind text NOT NULL DEFAULT 'personal',
+      title text NOT NULL DEFAULT '',
+      with_who text NOT NULL DEFAULT '',
+      starts_at timestamptz NOT NULL,
+      ends_at timestamptz,
+      notes text NOT NULL DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `,
+    `CREATE INDEX IF NOT EXISTS idx_app_trainer_calendar_events_trainer ON app_trainer_calendar_events(trainer_user_id, starts_at);`,
     `
     CREATE TABLE IF NOT EXISTS app_trainer_clients (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -10218,6 +10603,30 @@ const authRoutes = async function authRoutes(req, res, url) {
       return await handleStripeInvoices(req, res);
     }
 
+    if (url.pathname === '/api/auth/trainer/discount-codes' && req.method === 'GET') {
+      return await handleTrainerDiscountCodesList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/discount-codes' && req.method === 'POST') {
+      return await handleTrainerDiscountCodeCreate(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/discount-codes/delete' && req.method === 'POST') {
+      return await handleTrainerDiscountCodeDelete(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/calendar' && req.method === 'GET') {
+      return await handleTrainerCalendarList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/trainer/calendar' && req.method === 'POST') {
+      return await handleTrainerCalendarCreate(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/calendar/delete' && req.method === 'POST') {
+      return await handleTrainerCalendarDelete(req, res);
+    }
+
     if (url.pathname === '/api/trainer/sales' && req.method === 'GET') {
       return await handleTrainerSales(req, res);
     }
@@ -10352,6 +10761,26 @@ const authRoutes = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/owner/accounts' && req.method === 'GET') {
       return await handleOwnerAccountsList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/owner/trainer-websites' && req.method === 'GET') {
+      return await handleOwnerTrainerWebsitesList(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/owner/email-templates' && req.method === 'GET') {
+      return await handleOwnerEmailTemplatesList(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/email-templates' && req.method === 'POST') {
+      return await handleOwnerEmailTemplateSave(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/email-templates/delete' && req.method === 'POST') {
+      return await handleOwnerEmailTemplateDelete(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/email-templates/preview' && req.method === 'POST') {
+      return await handleOwnerEmailTemplatePreview(req, res);
     }
 
     if (url.pathname === '/api/auth/manager/accounts' && req.method === 'GET') {

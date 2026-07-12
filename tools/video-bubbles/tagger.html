@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bubble Tagger</title>
+<style>
+  body { margin: 0; background: #0b0f18; color: #fff; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 18px; display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+  h1 { grid-column: 1 / -1; margin: 0 0 4px; font-size: 20px; }
+  h1 small { color: #8b96a8; font-weight: 400; font-size: 13px; display: block; }
+  .stage { position: relative; background: #000; border-radius: 12px; overflow: hidden; align-self: start; }
+  video { display: block; width: 100%; }
+  #clickzone { position: absolute; inset: 0; cursor: crosshair; }
+  .ping { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid #e5b070;
+          border-radius: 50%; pointer-events: none; animation: ping 0.6s ease-out forwards; }
+  @keyframes ping { from { transform: scale(0.4); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+  .dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+         background: #e5b070; border: 2px solid #131313; pointer-events: none; opacity: 0.9; }
+  .panel { display: grid; gap: 10px; align-content: start; }
+  select, button, input { font: inherit; border-radius: 8px; border: 1px solid #2a3446; background: #141b27; color: #fff; padding: 7px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: #d9a15c; border-color: #b9782d; color: #14100a; font-weight: 700; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row label { color: #8b96a8; font-size: 13px; }
+  #nodes { display: grid; gap: 6px; max-height: 46vh; overflow: auto; }
+  .node { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
+          background: #141b27; border: 1px solid #2a3446; border-radius: 8px; padding: 6px 8px; font-size: 13px; }
+  .node b { color: #e5b070; font-variant-numeric: tabular-nums; }
+  .node input { padding: 4px 6px; font-size: 12.5px; }
+  .node .del { background: none; border: 0; color: #ff9d7d; font-size: 15px; padding: 2px 6px; }
+  #status { min-height: 1.4em; color: #65c786; font-size: 13px; }
+  #status.err { color: #ff9d7d; }
+  .hint { color: #8b96a8; font-size: 12.5px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bubble Tagger
+    <small>Click anywhere on the video to drop a tracking node — the video keeps playing. Preview runs at 50% speed; saved times are real-timeline, so the bake is unaffected.</small>
+  </h1>
+
+  <div class="stage">
+    <video id="vid" muted loop autoplay playsinline></video>
+    <div id="clickzone"></div>
+  </div>
+
+  <div class="panel">
+    <select id="pick"></select>
+    <div class="row">
+      <button id="playpause">Pause</button>
+      <button id="back2">-2s</button>
+      <button id="fwd2">+2s</button>
+      <label>Speed
+        <select id="rate">
+          <option value="0.25">25%</option>
+          <option value="0.5" selected>50%</option>
+          <option value="1">100%</option>
+        </select>
+      </label>
+      <span id="clock" style="color:#8b96a8;font-variant-numeric:tabular-nums">0.0s</span>
+    </div>
+    <div id="nodes"></div>
+    <button class="primary" id="save">Save nodes for this video</button>
+    <div id="status"></div>
+    <div class="hint">Leave a node's text empty to use the default one-liner for that video (in click order). After saving, bake with:<br><code>node tools/video-bubbles/render-bubbles.js</code></div>
+  </div>
+</div>
+
+<script>
+  const vid = document.getElementById('vid');
+  const pick = document.getElementById('pick');
+  const zone = document.getElementById('clickzone');
+  const nodesEl = document.getElementById('nodes');
+  const statusEl = document.getElementById('status');
+  let nodes = [];
+  let anchors = {};
+
+  const setStatus = (msg, err) => { statusEl.textContent = msg; statusEl.className = err ? 'err' : ''; };
+  const base = () => pick.value.replace(/\.mp4$/, '');
+
+  const renderNodes = () => {
+    nodesEl.innerHTML = '';
+    document.querySelectorAll('.dot').forEach((d) => d.remove());
+    nodes.sort((a, b) => a.t - b.t).forEach((n, i) => {
+      const row = document.createElement('div');
+      row.className = 'node';
+      row.innerHTML = '<b>' + n.t.toFixed(2) + 's</b>' +
+        '<input placeholder="default line ' + (i + 1) + '" value="' + (n.text || '').replace(/"/g, '&quot;') + '">' +
+        '<button class="del" title="Delete">✕</button>';
+      row.querySelector('input').addEventListener('input', (e) => { n.text = e.target.value; });
+      row.querySelector('.del').addEventListener('click', () => { nodes = nodes.filter((x) => x !== n); renderNodes(); });
+      nodesEl.appendChild(row);
+      // marker dot on the frame for each placed node
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.left = (n.x * 100) + '%';
+      dot.style.top = (n.y * 100) + '%';
+      zone.appendChild(dot);
+    });
+  };
+
+  // Clicking NEVER pauses the video: the zone swallows the click, records
+  // the node at the current (real-timeline) time, and playback continues.
+  zone.addEventListener('click', (e) => {
+    const r = zone.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    nodes.push({ t: vid.currentTime, x, y, text: '' });
+    const ping = document.createElement('div');
+    ping.className = 'ping';
+    ping.style.left = (x * 100) + '%';
+    ping.style.top = (y * 100) + '%';
+    zone.appendChild(ping);
+    setTimeout(() => ping.remove(), 650);
+    renderNodes();
+    setStatus(nodes.length + ' node' + (nodes.length === 1 ? '' : 's') + ' placed');
+  });
+
+  const loadVideo = () => {
+    vid.src = '/video/' + pick.value;
+    vid.playbackRate = Number(document.getElementById('rate').value);
+    nodes = (anchors[base()] || []).map((n) => ({ ...n }));
+    renderNodes();
+    setStatus(nodes.length ? nodes.length + ' saved node(s) loaded' : '');
+    vid.play().catch(() => {});
+  };
+
+  document.getElementById('rate').addEventListener('change', (e) => { vid.playbackRate = Number(e.target.value); });
+  document.getElementById('playpause').addEventListener('click', (e) => {
+    if (vid.paused) { vid.play(); e.target.textContent = 'Pause'; }
+    else { vid.pause(); e.target.textContent = 'Play'; }
+  });
+  document.getElementById('back2').addEventListener('click', () => { vid.currentTime = Math.max(0, vid.currentTime - 2); });
+  document.getElementById('fwd2').addEventListener('click', () => { vid.currentTime += 2; });
+  vid.addEventListener('timeupdate', () => { document.getElementById('clock').textContent = vid.currentTime.toFixed(1) + 's'; });
+  // Speed changes reset on new sources in some browsers; reassert.
+  vid.addEventListener('loadedmetadata', () => { vid.playbackRate = Number(document.getElementById('rate').value); });
+
+  document.getElementById('save').addEventListener('click', async () => {
+    const resp = await fetch('/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video: pick.value, nodes })
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok) { anchors[base()] = nodes.map((n) => ({ ...n })); setStatus('Saved ' + data.saved + ' node(s) ✓'); }
+    else setStatus(data.error || 'Save failed', true);
+  });
+
+  (async () => {
+    const [videos, saved] = await Promise.all([
+      fetch('/videos.json').then((r) => r.json()),
+      fetch('/anchors.json').then((r) => r.json())
+    ]);
+    anchors = saved || {};
+    pick.innerHTML = videos.map((v) => '<option>' + v + '</option>').join('');
+    pick.addEventListener('change', loadVideo);
+    loadVideo();
+  })();
+</script>
+</body>
+</html>

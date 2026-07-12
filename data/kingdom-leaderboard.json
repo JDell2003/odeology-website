@@ -1,0 +1,337 @@
+[
+ {
+  "name": "Darian the Bold",
+  "score": 9800,
+  "tier": "king"
+ },
+ {
+  "name": "Katarin the Young",
+  "score": 9763,
+  "tier": "king"
+ },
+ {
+  "name": "Rosalind the Swift",
+  "score": 9713,
+  "tier": "king"
+ },
+ {
+  "name": "Zorich the Bright",
+  "score": 9650,
+  "tier": "king"
+ },
+ {
+  "name": "Berenice the Stern",
+  "score": 9574,
+  "tier": "king"
+ },
+ {
+  "name": "Isolde the Iron",
+  "score": 9526,
+  "tier": "king"
+ },
+ {
+  "name": "Percival the Grim",
+  "score": 9465,
+  "tier": "king"
+ },
+ {
+  "name": "Wendell the Quiet",
+  "score": 9391,
+  "tier": "king"
+ },
+ {
+  "name": "Freya the Bold",
+  "score": 9345,
+  "tier": "king"
+ },
+ {
+  "name": "Gisela the Young",
+  "score": 9286,
+  "tier": "king"
+ },
+ {
+  "name": "Nikolas the Swift",
+  "score": 9214,
+  "tier": "king"
+ },
+ {
+  "name": "Ulric the Bright",
+  "score": 9170,
+  "tier": "king"
+ },
+ {
+  "name": "Delphine the Stern",
+  "score": 9113,
+  "tier": "king"
+ },
+ {
+  "name": "Elowen the Iron",
+  "score": 9043,
+  "tier": "king"
+ },
+ {
+  "name": "Leofric the Grim",
+  "score": 9001,
+  "tier": "king"
+ },
+ {
+  "name": "Sigmund the Quiet",
+  "score": 8946,
+  "tier": "knight"
+ },
+ {
+  "name": "Branwen the Bold",
+  "score": 8878,
+  "tier": "knight"
+ },
+ {
+  "name": "Cassian the Young",
+  "score": 8838,
+  "tier": "knight"
+ },
+ {
+  "name": "Jorund the Swift",
+  "score": 8785,
+  "tier": "knight"
+ },
+ {
+  "name": "Quinlan the Bright",
+  "score": 8719,
+  "tier": "knight"
+ },
+ {
+  "name": "Ysabel the Stern",
+  "score": 8681,
+  "tier": "knight"
+ },
+ {
+  "name": "Aldric the Iron",
+  "score": 8630,
+  "tier": "knight"
+ },
+ {
+  "name": "Hadrian the Grim",
+  "score": 8566,
+  "tier": "knight"
+ },
+ {
+  "name": "Odalys the Quiet",
+  "score": 8489,
+  "tier": "knight"
+ },
+ {
+  "name": "Vivienne the Bold",
+  "score": 8440,
+  "tier": "knight"
+ },
+ {
+  "name": "Edmund the Young",
+  "score": 8378,
+  "tier": "knight"
+ },
+ {
+  "name": "Fenwick the Swift",
+  "score": 8303,
+  "tier": "knight"
+ },
+ {
+  "name": "Maren the Bright",
+  "score": 8256,
+  "tier": "arena"
+ },
+ {
+  "name": "Theodric the Stern",
+  "score": 8196,
+  "tier": "arena"
+ },
+ {
+  "name": "Corbin the Iron",
+  "score": 8123,
+  "tier": "arena"
+ },
+ {
+  "name": "Darian the Grim",
+  "score": 8078,
+  "tier": "arena"
+ },
+ {
+  "name": "Katarin the Quiet",
+  "score": 8020,
+  "tier": "arena"
+ },
+ {
+  "name": "Rosalind the Bold",
+  "score": 7949,
+  "tier": "arena"
+ },
+ {
+  "name": "Zorich the Young",
+  "score": 7906,
+  "tier": "arena"
+ },
+ {
+  "name": "Berenice the Swift",
+  "score": 7850,
+  "tier": "arena"
+ },
+ {
+  "name": "Isolde the Bright",
+  "score": 7781,
+  "tier": "arena"
+ },
+ {
+  "name": "Percival the Stern",
+  "score": 7740,
+  "tier": "arena"
+ },
+ {
+  "name": "Wendell the Iron",
+  "score": 7686,
+  "tier": "arena"
+ },
+ {
+  "name": "Freya the Grim",
+  "score": 7619,
+  "tier": "arena"
+ },
+ {
+  "name": "Gisela the Quiet",
+  "score": 7580,
+  "tier": "squire"
+ },
+ {
+  "name": "Nikolas the Bold",
+  "score": 7528,
+  "tier": "squire"
+ },
+ {
+  "name": "Ulric the Young",
+  "score": 7463,
+  "tier": "squire"
+ },
+ {
+  "name": "Delphine the Swift",
+  "score": 7426,
+  "tier": "squire"
+ },
+ {
+  "name": "Elowen the Bright",
+  "score": 7376,
+  "tier": "squire"
+ },
+ {
+  "name": "Leofric the Stern",
+  "score": 7313,
+  "tier": "squire"
+ },
+ {
+  "name": "Sigmund the Iron",
+  "score": 7237,
+  "tier": "squire"
+ },
+ {
+  "name": "Branwen the Grim",
+  "score": 7189,
+  "tier": "squire"
+ },
+ {
+  "name": "Cassian the Quiet",
+  "score": 7128,
+  "tier": "squire"
+ },
+ {
+  "name": "Jorund the Bold",
+  "score": 7054,
+  "tier": "squire"
+ },
+ {
+  "name": "Quinlan the Young",
+  "score": 7008,
+  "tier": "squire"
+ },
+ {
+  "name": "Ysabel the Swift",
+  "score": 6949,
+  "tier": "squire"
+ },
+ {
+  "name": "Aldric the Bright",
+  "score": 6877,
+  "tier": "peasant"
+ },
+ {
+  "name": "Hadrian the Stern",
+  "score": 6833,
+  "tier": "peasant"
+ },
+ {
+  "name": "Odalys the Iron",
+  "score": 6776,
+  "tier": "peasant"
+ },
+ {
+  "name": "Vivienne the Grim",
+  "score": 6706,
+  "tier": "peasant"
+ },
+ {
+  "name": "Edmund the Quiet",
+  "score": 6664,
+  "tier": "peasant"
+ },
+ {
+  "name": "Fenwick the Bold",
+  "score": 6609,
+  "tier": "peasant"
+ },
+ {
+  "name": "Maren the Young",
+  "score": 6541,
+  "tier": "peasant"
+ },
+ {
+  "name": "Theodric the Swift",
+  "score": 6501,
+  "tier": "peasant"
+ },
+ {
+  "name": "Corbin the Bright",
+  "score": 6448,
+  "tier": "peasant"
+ },
+ {
+  "name": "Darian the Stern",
+  "score": 6382,
+  "tier": "peasant"
+ },
+ {
+  "name": "Katarin the Iron",
+  "score": 6344,
+  "tier": "peasant"
+ },
+ {
+  "name": "Rosalind the Grim",
+  "score": 6293,
+  "tier": "peasant"
+ },
+ {
+  "name": "Zorich the Quiet",
+  "score": 6229,
+  "tier": "peasant"
+ },
+ {
+  "name": "Berenice the Bold",
+  "score": 6152,
+  "tier": "peasant"
+ },
+ {
+  "name": "Isolde the Young",
+  "score": 6103,
+  "tier": "peasant"
+ },
+ {
+  "name": "Percival the Swift",
+  "score": 6041,
+  "tier": "peasant"
+ }
+]

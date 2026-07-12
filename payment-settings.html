@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Settings · RiseForIt</title>
   <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-5"></script>
-  <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+  <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
   <style>
     html,
     body.payment-settings-page {
@@ -2330,6 +2330,158 @@
       background: #fff;
       color: rgba(13, 34, 50, 0.76);
     }
+    /* ---- Discount Codes ---- */
+    .payment-discount-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.14);
+      border-radius: 8px;
+      overflow: hidden;
+      width: fit-content;
+      max-width: 100%;
+    }
+    .payment-discount-tab {
+      border: 0;
+      background: #fff;
+      color: rgba(13, 34, 50, 0.72);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.7rem 1.1rem;
+      cursor: pointer;
+    }
+    .payment-discount-tab.selected {
+      background: #1fb0ff;
+      color: #fff;
+    }
+    .payment-discount-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .payment-discount-new {
+      border: 0;
+      border-radius: 6px;
+      background: #1fb0ff;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.8rem;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+    }
+    .payment-discount-new:hover { filter: brightness(1.06); }
+    .payment-discount-count { color: rgba(13, 34, 50, 0.55); font-size: 0.8rem; }
+    .payment-discount-delete {
+      border: 1px solid rgba(214, 69, 69, 0.35);
+      border-radius: 6px;
+      background: transparent;
+      color: #d64545;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.35rem 0.7rem;
+      cursor: pointer;
+    }
+    .payment-discount-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(8, 22, 34, 0.45);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+    .payment-discount-modal[hidden] { display: none; }
+    .payment-discount-dialog {
+      background: #fff;
+      border-radius: 12px;
+      padding: 22px 20px;
+      width: min(400px, 94vw);
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+    }
+    .payment-discount-dialog h2 { margin: 0; font-size: 1.15rem; }
+    .payment-discount-dialog label {
+      display: grid;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: rgba(13, 34, 50, 0.75);
+    }
+    .payment-discount-dialog input[type="text"],
+    .payment-discount-dialog input[type="number"],
+    .payment-discount-dialog input[type="date"] {
+      border: 1px solid rgba(10, 31, 47, 0.18);
+      border-radius: 8px;
+      padding: 0.6rem 0.7rem;
+      font-size: 0.9rem;
+    }
+    .payment-discount-checkrow {
+      display: flex !important;
+      align-items: center;
+      gap: 8px;
+    }
+    .payment-discount-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .payment-discount-cancel {
+      border: 1px solid rgba(10, 31, 47, 0.16);
+      border-radius: 8px;
+      background: #fff;
+      padding: 0.55rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .payment-discount-save {
+      border: 0;
+      border-radius: 8px;
+      background: #1fb0ff;
+      color: #fff;
+      padding: 0.55rem 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .payment-discount-modal-status { font-size: 0.78rem; color: #d64545; min-height: 1em; }
+    /* ---- Sales Channels ---- */
+    .payment-channels { max-width: 760px; margin: 0 auto; }
+    .payment-channels-title {
+      text-align: center;
+      font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+      margin: 4px 0 18px;
+    }
+    .payment-channels-list { display: grid; gap: 12px; }
+    .payment-channel-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border: 1px solid rgba(10, 31, 47, 0.12);
+      border-radius: 10px;
+      background: #fff;
+      padding: 16px 18px;
+    }
+    .payment-channel-copy h3 { margin: 0 0 6px; font-size: 1.02rem; }
+    .payment-channel-copy p { margin: 0; font-size: 0.85rem; color: rgba(13, 34, 50, 0.65); line-height: 1.5; }
+    .payment-channel-btn {
+      flex: 0 0 auto;
+      border: 1px solid rgba(10, 31, 47, 0.2);
+      border-radius: 6px;
+      background: #fff;
+      color: #0f2435;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.55rem 0.95rem;
+    }
+    .payment-channel-btn:hover { background: #f3f8fd; }
     @media (max-width: 920px) {
       .payment-settings-shell,
       .payment-graph-card {
@@ -2770,6 +2922,8 @@
           <li><a href="payment-settings.html#invoices">Invoices</a></li>
           <li><a href="payment-settings.html#transactions">Transactions</a></li>
           <li><a href="payment-settings.html#disputes">Disputes</a></li>
+          <li><a href="payment-settings.html#discounts">Discount Codes</a></li>
+          <li><a href="payment-settings.html#channels">Sales Channels</a></li>
           <li><a href="payment-settings.html#setup">Payment Processing</a></li>
         </ul>
       </aside>
@@ -3251,6 +3405,114 @@
           </div>
         </section>
 
+        <section class="payment-panel" data-panel="discounts" hidden>
+          <div class="payment-disputes">
+            <div class="payment-discount-tabs" role="tablist" aria-label="Discount views">
+              <button type="button" class="payment-discount-tab selected" data-discount-tab="codes">Discount Codes</button>
+              <button type="button" class="payment-discount-tab" data-discount-tab="history">Redemption History</button>
+            </div>
+            <div data-discount-view="codes">
+              <div class="payment-disputes-toolbar payment-discount-toolbar">
+                <button type="button" class="payment-discount-new" id="payment-discount-new">+ New</button>
+                <span class="payment-discount-count" id="payment-discount-count"></span>
+              </div>
+              <div class="payment-disputes-card">
+                <table class="payment-disputes-table" aria-label="Discount codes table">
+                  <thead>
+                    <tr>
+                      <th>Discount Code</th>
+                      <th>Terms</th>
+                      <th>Applies To</th>
+                      <th>Redemptions</th>
+                      <th>One Per Client</th>
+                      <th>Redeem By</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="payment-discounts-body"></tbody>
+                </table>
+                <div class="payment-disputes-empty" id="payment-discounts-empty" hidden>No discount codes yet — create your first one with + New.</div>
+              </div>
+              <div class="payment-disputes-footer">
+                <div>Create a code here, then use <strong>Products &rarr; link menu &rarr; Create discount link</strong> to share any product at that percent off.</div>
+              </div>
+            </div>
+            <div data-discount-view="history" hidden>
+              <div class="payment-disputes-card">
+                <div class="payment-disputes-empty" id="payment-discount-history-empty">No redemptions yet. When a client checks out through a discounted link, it lands here.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-discount-modal" id="payment-discount-modal" hidden>
+            <div class="payment-discount-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-discount-modal-title">
+              <h2 id="payment-discount-modal-title">New discount code</h2>
+              <label>Code
+                <input type="text" id="payment-discount-code" maxlength="24" placeholder="SUMMER20" autocomplete="off">
+              </label>
+              <label>Percent off
+                <input type="number" id="payment-discount-percent" min="1" max="100" value="10">
+              </label>
+              <label>Redeem by (optional)
+                <input type="date" id="payment-discount-redeemby">
+              </label>
+              <label class="payment-discount-checkrow">
+                <input type="checkbox" id="payment-discount-oneper"> One per client
+              </label>
+              <div class="payment-discount-modal-actions">
+                <button type="button" class="payment-discount-cancel" id="payment-discount-cancel">Cancel</button>
+                <button type="button" class="payment-discount-save" id="payment-discount-save">Create code</button>
+              </div>
+              <div class="payment-discount-modal-status" id="payment-discount-modal-status"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="payment-panel" data-panel="channels" hidden>
+          <div class="payment-channels">
+            <h1 class="payment-channels-title">Learn how to sell your coaching everywhere</h1>
+            <div class="payment-channels-list">
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Your coach page</h3>
+                  <p>Every RiseForIt trainer gets a landing page builder. List your products, collect consult form hits, and take payments straight from your own site.</p>
+                </div>
+                <a class="payment-channel-btn" href="trainer-profile.html">Set up</a>
+              </article>
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Instagram</h3>
+                  <p>Drop your product checkout links in your bio and stories. Pair a link with a discount code from the Discount Codes tab to run campaigns.</p>
+                </div>
+              </article>
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Facebook Business Page</h3>
+                  <p>Add your coach page and product checkout links to your Facebook page so clients can buy your coaching in seconds.</p>
+                </div>
+              </article>
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Wordpress</h3>
+                  <p>Promote your products through your Wordpress site using checkout links — a seamless buying experience, no coding required.</p>
+                </div>
+              </article>
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Squarespace</h3>
+                  <p>Embed your checkout links on your Squarespace site and let visitors buy without ever leaving your page flow.</p>
+                </div>
+              </article>
+              <article class="payment-channel-card">
+                <div class="payment-channel-copy">
+                  <h3>Wix</h3>
+                  <p>Use checkout links on your Wix website to sell your coaching products with a clean, no-code buying experience.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
         <section class="payment-panel" data-panel="placeholder" hidden>
           <div class="payment-placeholder-head">
             <h1 id="payment-placeholder-title">Sales</h1>
@@ -3418,7 +3680,7 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
   <script>
     (async () => {
       try {
@@ -3445,6 +3707,8 @@
         invoices: 'Invoices',
         transactions: 'Transactions',
         disputes: 'Disputes',
+        discounts: 'Discount Codes',
+        channels: 'Sales Channels',
         setup: 'Payment Processing'
       };
       const navLinks = Array.from(document.querySelectorAll('.payment-settings-nav a'));
@@ -3455,6 +3719,8 @@
         invoices: document.querySelector('[data-panel="invoices"]'),
         transactions: document.querySelector('[data-panel="transactions"]'),
         disputes: document.querySelector('[data-panel="disputes"]'),
+        discounts: document.querySelector('[data-panel="discounts"]'),
+        channels: document.querySelector('[data-panel="channels"]'),
         setup: document.querySelector('[data-panel="setup"]'),
         placeholder: document.querySelector('[data-panel="placeholder"]')
       };
@@ -3484,8 +3750,10 @@
         if (panels.invoices) panels.invoices.hidden = section !== 'invoices';
         if (panels.transactions) panels.transactions.hidden = section !== 'transactions';
         if (panels.disputes) panels.disputes.hidden = section !== 'disputes';
+        if (panels.discounts) panels.discounts.hidden = section !== 'discounts';
+        if (panels.channels) panels.channels.hidden = section !== 'channels';
         if (panels.setup) panels.setup.hidden = section !== 'setup';
-        if (panels.placeholder) panels.placeholder.hidden = section === 'summary' || section === 'sales' || section === 'products' || section === 'invoices' || section === 'transactions' || section === 'setup' || section === 'disputes';
+        if (panels.placeholder) panels.placeholder.hidden = Boolean(sectionLabels[section]);
         if (panels.placeholder && !panels.placeholder.hidden) {
           if (placeholderTitle) placeholderTitle.textContent = sectionLabels[section] || 'Payments';
           if (placeholderCopy) placeholderCopy.textContent = `${sectionLabels[section] || 'This section'} is not built out yet in this demo shell. The sidebar state and overall payment settings frame are wired so this view can be expanded next.`;
@@ -3501,6 +3769,9 @@
         }
         if (section === 'sales' && typeof window.__refreshTrainerSales === 'function') {
           window.__refreshTrainerSales().catch(() => {});
+        }
+        if (section === 'discounts' && typeof window.__refreshTrainerDiscounts === 'function') {
+          window.__refreshTrainerDiscounts().catch(() => {});
         }
       };
 
@@ -5169,6 +5440,118 @@
         emptyState.hidden = false;
         emptyState.textContent = err?.message || 'Could not load products.';
       });
+    })();
+
+    /* ---- Discount Codes panel ---- */
+    (() => {
+      const body = document.getElementById('payment-discounts-body');
+      const empty = document.getElementById('payment-discounts-empty');
+      const countEl = document.getElementById('payment-discount-count');
+      const modal = document.getElementById('payment-discount-modal');
+      const modalStatus = document.getElementById('payment-discount-modal-status');
+      const codeInput = document.getElementById('payment-discount-code');
+      const pctInput = document.getElementById('payment-discount-percent');
+      const redeemInput = document.getElementById('payment-discount-redeemby');
+      const onePerInput = document.getElementById('payment-discount-oneper');
+      if (!body) return;
+
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const fmtDate = (v) => {
+        if (!v) return '—';
+        try { return new Date(v).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; }
+      };
+
+      const render = (codes) => {
+        countEl.textContent = codes.length ? `${codes.length} code${codes.length === 1 ? '' : 's'}` : '';
+        empty.hidden = codes.length > 0;
+        body.innerHTML = codes.map((c) => `
+          <tr>
+            <td style="color:#1fb0ff;font-weight:700;">${esc(c.code)}</td>
+            <td>${Number(c.percent) || 0}% off</td>
+            <td>All Products</td>
+            <td>${Number(c.redemptions) || 0}</td>
+            <td>${c.onePerClient ? 'Yes' : 'No'}</td>
+            <td>${fmtDate(c.redeemBy)}</td>
+            <td style="text-align:right;"><button type="button" class="payment-discount-delete" data-discount-delete="${esc(c.id)}">Delete</button></td>
+          </tr>
+        `).join('');
+      };
+
+      window.__refreshTrainerDiscounts = async () => {
+        const resp = await fetch('/api/auth/trainer/discount-codes', { credentials: 'include' });
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json?.ok) {
+          empty.hidden = false;
+          empty.textContent = 'Could not load discount codes.';
+          return;
+        }
+        render(Array.isArray(json.codes) ? json.codes : []);
+      };
+      // The section switcher runs before this block exists — if the page
+      // opened straight on #discounts, load the codes now.
+      if (String(window.location.hash || '').toLowerCase() === '#discounts') {
+        window.__refreshTrainerDiscounts().catch(() => {});
+      }
+
+      document.getElementById('payment-discount-new')?.addEventListener('click', () => {
+        modalStatus.textContent = '';
+        codeInput.value = '';
+        pctInput.value = '10';
+        redeemInput.value = '';
+        onePerInput.checked = false;
+        modal.hidden = false;
+        codeInput.focus();
+      });
+      document.getElementById('payment-discount-cancel')?.addEventListener('click', () => { modal.hidden = true; });
+      modal?.addEventListener('click', (ev) => { if (ev.target === modal) modal.hidden = true; });
+
+      document.getElementById('payment-discount-save')?.addEventListener('click', async () => {
+        const code = String(codeInput.value || '').trim().toUpperCase().replace(/\s+/g, '');
+        const percent = Math.max(1, Math.min(100, Number(pctInput.value) || 0));
+        if (!code) { modalStatus.textContent = 'Enter a code name.'; return; }
+        modalStatus.textContent = '';
+        const resp = await fetch('/api/auth/trainer/discount-codes', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            percent,
+            redeemBy: redeemInput.value || null,
+            onePerClient: Boolean(onePerInput.checked)
+          })
+        });
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json?.ok) {
+          modalStatus.textContent = json?.error || 'Could not create the code.';
+          return;
+        }
+        modal.hidden = true;
+        window.__refreshTrainerDiscounts().catch(() => {});
+      });
+
+      body.addEventListener('click', async (ev) => {
+        const btn = ev.target.closest('[data-discount-delete]');
+        if (!btn) return;
+        btn.disabled = true;
+        await fetch('/api/auth/trainer/discount-codes/delete', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: btn.getAttribute('data-discount-delete') })
+        }).catch(() => {});
+        window.__refreshTrainerDiscounts().catch(() => {});
+      });
+
+      // Codes / Redemption History tabs
+      const tabs = Array.from(document.querySelectorAll('[data-discount-tab]'));
+      const views = Array.from(document.querySelectorAll('[data-discount-view]'));
+      tabs.forEach((tab) => tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-discount-tab');
+        tabs.forEach((t) => t.classList.toggle('selected', t === tab));
+        views.forEach((v) => { v.hidden = v.getAttribute('data-discount-view') !== target; });
+      }));
     })();
   </script>
 </body>

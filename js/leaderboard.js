@@ -1297,6 +1297,9 @@
             save({ casteId: 'peasant', dropDays: 0, dropDay: '' });
             let revealSeen = false;
             try { revealSeen = localStorage.getItem('lbChampRevealSeen') === '1'; localStorage.setItem('lbChampRevealSeen', '1'); } catch {}
+            // The Kingdom's entry cinematic IS the reveal — never stack the
+            // reveal modal on top of the auto-descent.
+            if (document.getElementById('kingdom-track')) revealSeen = true;
             return { caste: CASTE_MAP.peasant, event: revealSeen ? null : { kind: 'reveal', from: CASTE_MAP.peasant, to: CASTE_MAP.peasant } };
         }
         const heldCaste = CASTE_MAP[held.casteId];
@@ -1556,6 +1559,17 @@
             champClipUrl(hero.dataset.champCaste, hero.dataset.champState),
             { loop: true }
         );
+        // Kingdom tier backdrop: instead of the stick-figure scene, show the
+        // place their rank actually lives (still from the descent video) —
+        // same container, same spacing. Champ clips still win if present.
+        if (document.getElementById('kingdom-track')) {
+            const kdZone = { king: 'kings', knight: 'knights', berserker: 'arena', ranger: 'arena', mage: 'arena', squire: 'squires', peasant: 'peasants' }[hero.dataset.champCaste] || 'peasants';
+            const stage = hero.querySelector('.lb-champion-stage');
+            if (stage && !stage.classList.contains('has-video')) {
+                stage.classList.add('kd-tier');
+                stage.style.backgroundImage = `url(media/arena/world/tier-${kdZone}.jpg)`;
+            }
+        }
         // Animate: bars sweep to their value, numbers count up.
         requestAnimationFrame(() => {
             hero.querySelectorAll('[data-req-bar]').forEach((bar) => {
@@ -1816,6 +1830,7 @@
        players see the same world.
        ================================================================ */
     const GAME_POPULATION_SIZE = 2400;
+    const REALM_POPULATION = 32848; // the realm the ranks are stretched into (matches the Kingdom zone pops)
     const CASTE_SLOTS = { king: 15, knight: 150 };
 
     const syncSeed = (str) => {
@@ -1884,6 +1899,22 @@
         return 'peasant';
     };
 
+    /* Stats that actually MATCH the caste — a King's radar must be a big
+       balanced web, a Berserker a strength spike, a Peasant a small blob.
+       Without this the row radars fell back to name-seeded noise. */
+    const gameStatsForCaste = (casteId, rnd) => {
+        const between = (lo, hi) => Math.round(lo + rnd() * (hi - lo));
+        switch (casteId) {
+            case 'king': return { strength: between(82, 96), cardio: between(80, 94), consistency: between(84, 97), nutrition: between(82, 95), recovery: between(80, 94), progress: between(80, 95) };
+            case 'knight': return { strength: between(70, 88), cardio: between(64, 82), consistency: between(72, 88), nutrition: between(64, 84), recovery: between(62, 82), progress: between(64, 84) };
+            case 'berserker': return { strength: between(80, 95), cardio: between(24, 44), consistency: between(36, 56), nutrition: between(30, 54), recovery: between(24, 44), progress: between(64, 84) };
+            case 'ranger': return { strength: between(24, 44), cardio: between(76, 92), consistency: between(56, 74), nutrition: between(40, 60), recovery: between(66, 84), progress: between(44, 64) };
+            case 'mage': return { strength: between(34, 54), cardio: between(40, 60), consistency: between(66, 84), nutrition: between(66, 86), recovery: between(60, 80), progress: between(50, 70) };
+            case 'squire': return { strength: between(36, 56), cardio: between(34, 54), consistency: between(38, 58), nutrition: between(34, 54), recovery: between(34, 54), progress: between(34, 54) };
+            default: return { strength: between(10, 32), cardio: between(8, 30), consistency: between(12, 34), nutrition: between(10, 32), recovery: between(10, 32), progress: between(8, 28) };
+        }
+    };
+
     const gameFakeRow = (personIndex, rank, pts, delta, day) => {
         const identity = gamePersonIdentity(personIndex, day);
         const rowRnd = syncSeed(`lb_fake_row_${day}_${personIndex}`);
@@ -1914,7 +1945,8 @@
             streakDays,
             isBot: true,
             badges: [],
-            __caste: casteId
+            __caste: casteId,
+            __stats: gameStatsForCaste(casteId, rowRnd)
         };
     };
 
@@ -1957,7 +1989,27 @@
             const prevRank = prevRankByIndex.get(slot.person.index) || rank;
             return gameFakeRow(slot.person.index, rank, slot.person.points, prevRank - rank, day);
         });
-        return { rows, total: rows.length };
+        // The realm is 32,848 citizens; the pool simulates a representative
+        // 2,400 of them. Stretch displayed ranks into each caste's real
+        // population band so a rock-bottom peasant reads #32,8xx — not #2,401.
+        const REALM_BANDS = { king: [1, 15], knight: [16, 164], mid: [165, 2595], squire: [2596, 10449], peasant: [10450, REALM_POPULATION] };
+        const bandOf = (c) => (c === 'king' || c === 'knight' || c === 'squire' || c === 'peasant') ? c : 'mid';
+        const buckets = {};
+        rows.forEach((r) => { const b = bandOf(r.__caste); (buckets[b] = buckets[b] || []).push(r); });
+        Object.keys(buckets).forEach((b) => {
+            const list = buckets[b];
+            const lo = REALM_BANDS[b][0];
+            const hi = REALM_BANDS[b][1];
+            const span = hi - lo;
+            const scale = (span + 1) / Math.max(1, list.length);
+            list.forEach((r, j) => {
+                r.delta = Math.round((Number(r.delta) || 0) * scale);
+                r.rank = (b === 'king' || b === 'knight')
+                    ? Math.min(hi, lo + j)
+                    : lo + Math.round((list.length > 1 ? j / (list.length - 1) : 0) * span);
+            });
+        });
+        return { rows, total: REALM_POPULATION };
     };
 
     // Curated window: the top 3 become podium cards, only ranks 4-10 get
@@ -1966,17 +2018,20 @@
     const buildGameWindow = (rows, youId) => {
         const youIndex = rows.findIndex((r) => String(r.id) === String(youId));
         const LIST_END = 10;
+        // gap labels speak in REALM ranks (stretched), not pool row counts
+        const rankOf = (i) => Number(rows[Math.max(0, Math.min(rows.length - 1, i))]?.rank) || 0;
+        const lastRank = rankOf(rows.length - 1);
         const visible = rows.slice(0, 3).map((r) => ({ ...r, __podium: true }));
         if (youIndex >= LIST_END + 3) {
             visible.push(...rows.slice(3, LIST_END));
-            visible.push({ __gap: true, count: youIndex - 2 - LIST_END });
+            visible.push({ __gap: true, count: Math.max(1, rankOf(youIndex - 2) - rankOf(LIST_END - 1) - 1) });
             visible.push(...rows.slice(youIndex - 2, Math.min(rows.length, youIndex + 3)));
-            const remaining = rows.length - (youIndex + 3);
+            const remaining = lastRank - rankOf(Math.min(rows.length, youIndex + 3) - 1);
             if (remaining > 0) visible.push({ __gap: true, count: remaining });
         } else {
             const upper = Math.min(rows.length, Math.max(LIST_END, youIndex + 3));
             visible.push(...rows.slice(3, upper));
-            if (rows.length > upper) visible.push({ __gap: true, count: rows.length - upper });
+            if (rows.length > upper) visible.push({ __gap: true, count: Math.max(1, lastRank - rankOf(upper - 1)) });
         }
         return visible;
     };
@@ -2127,7 +2182,7 @@
                 </svg>
                 <div class="lb-intro-title">THE ARENA</div>
                 <div class="lb-intro-sub">${dayName}</div>
-                <div class="lb-intro-tag">${GAME_POPULATION_SIZE.toLocaleString()} fighters · the gates open</div>
+                <div class="lb-intro-tag">${REALM_POPULATION.toLocaleString()} fighters · the gates open</div>
             </div>
         `;
         document.body.appendChild(intro);
@@ -2138,7 +2193,7 @@
         document.getElementById('lb-ticker')?.remove();
         if (!listEl) return;
         const movers = rows
-            .filter((r) => !r.__gap && Number.isFinite(Number(r.delta)) && Math.abs(Number(r.delta)) >= 3 && Number(r.rank) <= 400)
+            .filter((r) => !r.__gap && Number.isFinite(Number(r.delta)) && Math.abs(Number(r.delta)) >= 3 && Number(r.rank) <= 2600)
             .sort((a, b) => Math.abs(Number(b.delta)) - Math.abs(Number(a.delta)))
             .slice(0, 10);
         if (movers.length < 4) return;
@@ -2161,9 +2216,9 @@
         return {
             king,
             knight,
-            class: 640,
-            squire: 1020,
-            base: GAME_POPULATION_SIZE - king - knight - 640 - 1020
+            class: 2431,
+            squire: 7854,
+            base: REALM_POPULATION - king - knight - 2431 - 7854
         };
     };
 
@@ -2213,6 +2268,396 @@
             `).join('')}
         `;
         listEl.parentElement?.insertBefore(pyramid, listEl);
+    };
+
+    /* ================================================================
+       THE ARENA WORLD — the realm rendered as a scroll journey.
+       Top: fifteen thrones (claimed or waiting). Scroll down: the
+       knights' line facing the thrones, then the specialist melee
+       (berserkers / rangers / mages at war), the squires' yard, and
+       finally the peasant fields. The thrones are sticky, so the kings
+       linger above you and recede out of reach as you descend.
+       ================================================================ */
+    /* Character art comes straight from Jason's cutscene videos —
+       frames captured and cropped into media/arena/world/ so the realm is
+       built from the same characters the player already knows. */
+    const WORLD_IMG_BASE = 'media/arena/world/';
+    const WORLD_IMG = {
+        king: 'king-throne.jpg',
+        empty: 'empty-throne.jpg',
+        knight: 'knight.jpg',
+        berserker: 'berserker.jpg',
+        ranger: 'ranger.jpg',
+        mage: 'mage.jpg',
+        squire: 'squire.jpg',
+        peasant: 'peasant.jpg'
+    };
+    const worldTile = (type) =>
+        '<span class="lbw-tile lbw-tile-' + type + '"><img loading="lazy" alt="" src="' + WORLD_IMG_BASE + (WORLD_IMG[type] || WORLD_IMG.peasant) + '"></span>';
+
+    /* Zone backdrops: full frames from the videos, so the scroll literally
+       descends through real places — throne hall, the castle gate, the war
+       camp, the drill yard, the village street. DROP-IN SLOT for custom
+       art: replace these files (tall ~1600x2200 panels look best; keep the
+       middle third relatively clear for the character niches). */
+    const WORLD_ZONE_ART = {
+        thrones: 'zone-throne.jpg',
+        knights: 'zone-knights.jpg',
+        melee: 'zone-melee.jpg',
+        yard: 'zone-yard.jpg',
+        fields: 'zone-city.jpg'
+    };
+    const zoneBg = (zone) =>
+        `<div class="lbw-bg"><img alt="" src="${WORLD_IMG_BASE}${WORLD_ZONE_ART[zone]}"></div><div class="lbw-scrim"></div>`;
+
+    const ensureWorldStyle = () => {
+        if (document.getElementById('lb-world-style')) return;
+        if (!document.getElementById('rf-cine-font')) {
+            const font = document.createElement('link');
+            font.id = 'rf-cine-font';
+            font.rel = 'stylesheet';
+            font.href = 'https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&display=swap';
+            document.head.appendChild(font);
+        }
+        const style = document.createElement('style');
+        style.id = 'lb-world-style';
+        style.textContent = `
+            .lbw{position:relative;margin:6px 0 26px;border-radius:26px;overflow:hidden;
+                border:1px solid rgba(150,110,35,.3);box-shadow:0 30px 80px rgba(60,40,10,.22)}
+            .lbw-zone{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}
+            /* real scene backdrops from the videos, stitched with dark bands
+               so the descent reads as one continuous journey */
+            .lbw-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+            .lbw-bg img{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block}
+            .lbw-scrim{position:absolute;inset:0;pointer-events:none;background:
+                linear-gradient(180deg,rgba(15,9,17,.92) 0%,rgba(15,9,17,.3) 16%,rgba(15,9,17,.18) 52%,rgba(15,9,17,.55) 84%,rgba(15,9,17,.95) 100%)}
+            @supports (animation-timeline: view()){
+                .lbw-bg img{animation:lbwKen linear both;animation-timeline:view();animation-range:cover 0% cover 100%}
+                @keyframes lbwKen{from{transform:scale(1.14) translateY(-2.5%)}to{transform:scale(1.02)}}
+            }
+            .lbw-zh{position:relative;z-index:2;padding:30px 26px 12px;max-width:min(94%,640px);
+                background:radial-gradient(65% 130% at 50% 42%,rgba(12,7,14,.62),transparent 74%);border-radius:24px}
+            .lbw-zh .lbw-eyebrow{font:800 10.5px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#d9a93c;margin:0 0 8px}
+            .lbw-zh h3{margin:0;font:900 clamp(24px,4.4vw,44px)/1.05 'Cinzel Decorative','Playfair Display',Georgia,serif;color:#f4e4bd;text-shadow:0 3px 18px rgba(0,0,0,.55)}
+            .lbw-zh .lbw-lore{margin:8px 0 0;font:600 12.5px/1.5 'Space Grotesk',system-ui,sans-serif;color:rgba(255,248,232,.72)}
+            /* portrait niches: real frames captured from the cutscene videos */
+            .lbw-tile{display:block;width:100%;aspect-ratio:3/4.35;border-radius:999px 999px 12px 12px;
+                overflow:hidden;border:1.5px solid rgba(217,169,60,.55);background:#171018;
+                box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 0 26px rgba(0,0,0,.35)}
+            .lbw-tile img{width:100%;height:100%;object-fit:cover;display:block}
+            .lbw-tile-empty img{filter:saturate(.35) brightness(.5)}
+            .lbw-tile-king{box-shadow:0 0 0 1px rgba(224,179,74,.35),0 16px 40px rgba(0,0,0,.55),0 0 30px rgba(224,179,74,.22)}
+            /* keep faces in frame on the tall source crops */
+            .lbw-tile-peasant img,.lbw-tile-mage img{object-position:center top}
+            .lbw-tile-berserker img{object-position:center 22%}
+            .lbw-tile-ranger img{object-position:center 30%}
+            .lbw-unit{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;
+                opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.3,1);
+                transition-delay:calc(var(--i,0)*70ms)}
+            .lbw-zone.is-in .lbw-unit{opacity:1;transform:none;transition:transform .22s ease;transition-delay:0ms}
+            .lbw-zone.is-in .lbw-unit:hover{transform:translateY(-7px)}
+            .lbw-unit:hover .lbw-tile{border-color:#e0b34a;box-shadow:0 18px 44px rgba(0,0,0,.6),0 0 26px rgba(224,179,74,.45)}
+            .lbw-unit:hover .lbw-name{border-color:rgba(224,179,74,.8);color:#ffe9bd}
+            .lbw-name{max-width:110px;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.42);
+                border:1px solid rgba(217,169,60,.35);color:#f4e4bd;font:700 10px/1.2 'Space Grotesk',system-ui,sans-serif;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .lbw-name b{color:#d9a93c;font-weight:900}
+            .lbw-more{position:relative;z-index:2;margin:16px 0 30px;padding:6px 14px;border-radius:999px;background:rgba(12,7,14,.5);
+                font:800 11px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.16em;
+                text-transform:uppercase;color:rgba(255,244,220,.85)}
+            /* click card: who is this figure */
+            .lbw-pop{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:6800;width:min(92vw,340px);
+                background:linear-gradient(165deg,#fffdf5,#f7ecd6);border:1.5px solid rgba(185,138,43,.6);border-radius:18px;
+                padding:16px 18px;box-shadow:0 26px 60px rgba(30,18,4,.45);opacity:0;transition:opacity .25s ease,transform .25s ease;
+                text-align:left;color:#2b2214;font-family:'Space Grotesk',system-ui,sans-serif}
+            .lbw-pop.is-on{opacity:1;transform:translate(-50%,0)}
+            .lbw-pop .lbw-pop-kicker{font:800 9.5px/1 system-ui,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#a1751f}
+            .lbw-pop .lbw-pop-name{margin-top:4px;font:900 20px/1.2 'Playfair Display',Georgia,serif;color:#241b0e}
+            .lbw-pop .lbw-pop-sub{margin-top:4px;font-size:12.5px;color:rgba(60,48,28,.75);font-weight:600}
+            .lbw-pop .lbw-pop-you{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;background:#b98a2b;color:#fff;font:900 10px/1.4 system-ui,sans-serif;letter-spacing:.12em}
+            .lbw-pop .lbw-pop-close{position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:18px;color:#6f6257;cursor:pointer;line-height:1}
+            .lbw-pop .lbw-pop-spider{display:flex;justify-content:center;margin:10px 0 4px}
+            .lbw-pop .lbw-pop-spider .lb-mini-radar{width:128px;height:128px}
+            .lbw-unit.is-you .lbw-name{background:#b98a2b;border-color:#e0b34a;color:#fff;box-shadow:0 0 18px rgba(224,179,74,.65)}
+            .lbw-unit.is-you::after{content:'YOU';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+                padding:2px 8px;border-radius:999px;background:#e0b34a;color:#241b0e;font:900 8.5px/1.4 system-ui,sans-serif;letter-spacing:.14em}
+            .lbw-unit.is-you::before{content:'';position:absolute;inset:-8px -6px;border-radius:16px;
+                border:1.5px solid rgba(224,179,74,.7);box-shadow:0 0 24px rgba(224,179,74,.4);animation:lbwYou 2.2s ease-in-out infinite}
+            @keyframes lbwYou{50%{box-shadow:0 0 38px rgba(224,179,74,.7)}}
+            /* ---- zone 1: the thrones (sticky — kings recede out of reach) ---- */
+            .lbw-thrones{height:172vh;background:linear-gradient(180deg,#120c1c 0%,#1c1226 42%,#2c1a2c 78%,#3b2430 100%)}
+            .lbw-thrones-sticky{position:sticky;top:0;min-height:100vh;width:100%;display:flex;flex-direction:column;
+                align-items:center;justify-content:flex-start;overflow:hidden}
+            .lbw-rays{position:absolute;inset:0;background:
+                radial-gradient(60% 46% at 50% 10%,rgba(224,179,74,.24),transparent 65%),
+                radial-gradient(28% 30% at 50% 4%,rgba(255,226,150,.28),transparent 70%);pointer-events:none}
+            .lbw-dust{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+            .lbw-dust i{position:absolute;width:3px;height:3px;border-radius:999px;background:rgba(255,220,140,.5);
+                animation:lbwDust 9s linear infinite}
+            @keyframes lbwDust{from{transform:translateY(12vh)}to{transform:translateY(-70vh);opacity:0}}
+            .lbw-throne-rows{position:relative;z-index:2;width:min(94%,860px);display:flex;flex-direction:column;gap:0;margin-top:8px}
+            .lbw-throne-row{display:flex;justify-content:center;gap:2.2%}
+            .lbw-throne-row .lbw-unit{width:15%}
+            .lbw-throne-row.r-back{transform:scale(.6);opacity:.8;filter:brightness(.75);z-index:1}
+            .lbw-throne-row.r-back .lbw-name{opacity:.6}
+            .lbw-throne-row.r-mid{transform:scale(.8);margin-top:-4.5%;filter:brightness(.9);position:relative;z-index:2}
+            .lbw-throne-row.r-front{margin-top:-2.5%;position:relative;z-index:3}
+            .lbw-throne-row.r-front::after{content:'';position:absolute;left:6%;right:6%;bottom:-16px;height:26px;
+                border-radius:50%;background:radial-gradient(50% 100% at 50% 50%,rgba(224,179,74,.28),transparent 70%);pointer-events:none}
+            .lbw-throne-empty .lbw-name{opacity:.55;font-style:italic}
+            @supports (animation-timeline: view()) {
+                .lbw-thrones-sticky{animation:lbwRecede linear both;animation-timeline:view();animation-range:exit 0% exit 100%}
+                @keyframes lbwRecede{to{transform:scale(.84) translateY(-9%);opacity:.28;filter:blur(2px)}}
+            }
+            /* ---- zone 2: the knights' line (facing the thrones) ---- */
+            .lbw-knights{min-height:74vh;background:linear-gradient(180deg,#3b2430 0%,#4a2d31 60%,#59382f 100%)}
+            .lbw-knight-rows{width:min(94%,760px);display:flex;flex-direction:column;margin:6px 0 10px}
+            .lbw-knight-row{display:flex;justify-content:center;gap:3%}
+            .lbw-knight-row .lbw-unit{width:11%}
+            .lbw-knight-row.r-back{transform:scale(.78);opacity:.8}
+            .lbw-knight-row.r-front{margin-top:-4.5%}
+            /* ---- zone 3: the melee ---- */
+            .lbw-melee{min-height:84vh;background:linear-gradient(180deg,#59382f 0%,#6d452f 55%,#8a5c33 100%)}
+            .lbw-battle{position:relative;width:min(96%,860px);display:flex;justify-content:space-between;align-items:flex-end;margin:10px 0 6px}
+            .lbw-band{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:31%}
+            .lbw-band .lbw-unit{width:44%}
+            .lbw-band.b-ranger .lbw-tile img{transform:scaleX(-1)}
+            .lbw-band .lbw-unit:nth-child(odd) .lbw-tile{animation:lbwBob 2.8s ease-in-out infinite}
+            .lbw-band .lbw-unit:nth-child(even) .lbw-tile{animation:lbwBob 3.4s .5s ease-in-out infinite}
+            @keyframes lbwBob{50%{transform:translateY(-4px)}}
+            .lbw-clash{position:absolute;left:50%;top:30%;transform:translateX(-50%);font-size:30px;color:#ffd98f;
+                text-shadow:0 0 18px rgba(255,200,90,.9);animation:lbwClash 1.9s ease-in-out infinite;pointer-events:none}
+            @keyframes lbwClash{0%,100%{opacity:.25;transform:translateX(-50%) scale(.8) rotate(-8deg)}
+                12%{opacity:1;transform:translateX(-50%) scale(1.25) rotate(6deg)}30%{opacity:.4}}
+            .lbw-band-label{margin-top:8px;font:900 10px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.22em;
+                text-transform:uppercase;color:rgba(255,240,210,.75)}
+            /* ---- zone 4: the squires' yard ---- */
+            .lbw-yard{min-height:62vh;background:linear-gradient(180deg,#8a5c33 0%,#b98a4a 55%,#dcb87c 100%)}
+            .lbw-yard-row{width:min(94%,700px);display:flex;flex-wrap:wrap;justify-content:center;gap:10px 3%;margin:8px 0}
+            .lbw-yard-row .lbw-unit{width:10.5%;min-width:56px}
+            /* ---- zone 5: the peasant fields ---- */
+            .lbw-fields{min-height:74vh;background:linear-gradient(180deg,#dcb87c 0%,#efdcae 40%,#faf5ea 100%)}
+            .lbw-field-row{position:relative;z-index:2;width:min(94%,720px);display:flex;flex-wrap:wrap;justify-content:center;gap:10px 2.5%;margin:8px 0}
+            .lbw-field-row .lbw-unit{width:9%;min-width:48px}
+            .lbw-field-row .lbw-unit:nth-child(3n){transform:translateY(14px)}
+            .lbw-field-row .lbw-unit:nth-child(4n+1){transform:translateY(6px)}
+            .lbw-zone.is-in .lbw-field-row .lbw-unit:nth-child(3n){opacity:1;transform:translateY(14px)}
+            .lbw-zone.is-in .lbw-field-row .lbw-unit:nth-child(4n+1){opacity:1;transform:translateY(6px)}
+            .lbw-desc{position:relative;z-index:2;margin:2px 0 0;padding:8px 16px;border-radius:14px;background:rgba(12,7,14,.5);font:600 12px/1.5 'Space Grotesk',system-ui,sans-serif;color:rgba(255,244,220,.85);max-width:52ch}
+            @media (max-width:700px){
+                .lbw-throne-rows{width:98%}
+                .lbw-name{max-width:64px;font-size:8.5px;padding:2px 6px}
+                .lbw-knight-row .lbw-unit{width:14%}
+                .lbw-band .lbw-unit{width:47%}
+                .lbw-yard-row .lbw-unit,.lbw-field-row .lbw-unit{min-width:40px}
+                .lbw-thrones{height:150vh}
+            }
+            @media (prefers-reduced-motion: reduce){
+                .lbw *{animation:none !important;transition:none !important}
+                .lbw-unit{opacity:1;transform:none}
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const worldUnit = (type, r, youId, i, extraClass) => {
+        const isYou = r && youId != null && String(r.id) === String(youId);
+        const label = r
+            ? `<span class="lbw-name"><b>#${r.rank}</b> ${escapeAttr(shortName(r))}</span>`
+            : '<span class="lbw-name">Unclaimed</span>';
+        const st = r ? (r.__stats || casteStatsFromRow(r)) : null;
+        const statsAttr = st ? ` data-lbw-stats="${CASTE_AXES.map((k) => Math.round(Number(st[k]) || 0)).join(',')}"` : '';
+        const data = r
+            ? ` role="button" tabindex="0" data-lbw-rank="${Number(r.rank) || 0}" data-lbw-name="${escapeAttr(String(r.name || r.username || 'Athlete'))}"` +
+              ` data-lbw-caste="${escapeAttr(String(r.__caste || type))}" data-lbw-pts="${Number(r.points) || 0}" data-lbw-delta="${Number(r.delta) || 0}"${statsAttr}${isYou ? ' data-lbw-you="1"' : ''}`
+            : ' data-lbw-empty="1"';
+        return `<div class="lbw-unit${isYou ? ' is-you' : ''}${extraClass ? ' ' + extraClass : ''}" style="--i:${i}"${data}>${worldTile(type)}${label}</div>`;
+    };
+    const shortName = (r) => String(r.name || r.username || 'Athlete').split(/\s+/)[0].slice(0, 12);
+
+    const renderArenaWorld = (rows, total, youCasteId, youId) => {
+        ensureWorldStyle();
+        document.getElementById('lb-arena-world')?.remove();
+        document.getElementById('lb-caste-pyramid')?.remove();
+        const card = document.querySelector('.lb-card');
+        if (!card) return;
+        const by = { king: [], knight: [], berserker: [], ranger: [], mage: [], squire: [], peasant: [] };
+        rows.forEach((r) => {
+            if (r.__gap) return;
+            const id = r.__caste || pickCaste(casteStatsFromRow(r)).id;
+            (by[id] || by.peasant).push(r);
+        });
+        const counts = gameTierCounts(todayKey(new Date()));
+        const kings = by.king.slice(0, 15);
+        // Throne order: rank 1 sits front-center, flanked outward; higher
+        // rows sit farther back and smaller — the court recedes upward.
+        const centerOut = (list) => {
+            const out = [];
+            list.forEach((r, i) => { if (i % 2 === 0) out.unshift(r); else out.push(r); });
+            return out;
+        };
+        const seat = (i) => (i < kings.length ? kings[i] : null);
+        const throneRow = (idxs, cls) =>
+            `<div class="lbw-throne-row ${cls}">` +
+            centerOut(idxs.map(seat)).map((r, i) =>
+                worldUnit(r ? 'king' : 'empty', r, youId, i, r ? '' : 'lbw-throne-empty')).join('') +
+            '</div>';
+        const dust = Array.from({ length: 14 }, (_, i) =>
+            `<i style="left:${(i * 7.3 + 4) % 96}%;bottom:${(i * 11) % 60}%;animation-delay:${(i * 0.7).toFixed(1)}s"></i>`).join('');
+
+        const knights = by.knight.slice(0, 14);
+        const knightRow = (list, cls) =>
+            `<div class="lbw-knight-row ${cls}">` + list.map((r, i) => worldUnit('knight', r, youId, i)).join('') + '</div>';
+
+        const band = (list, type, cls, label, max) => {
+            const shown = list.slice(0, max);
+            return `<div class="lbw-band ${cls}">` +
+                shown.map((r, i) => worldUnit(type, r, youId, i)).join('') +
+                `<div class="lbw-band-label">${label}${list.length > shown.length ? ` +${list.length - shown.length}` : ''}</div></div>`;
+        };
+        const squires = by.squire.slice(0, 12);
+        const peasants = by.peasant.slice(0, 14);
+        const peasantsMore = Math.max(0, (counts.base || by.peasant.length) - peasants.length);
+
+        const world = document.createElement('section');
+        world.id = 'lb-arena-world';
+        world.className = 'lbw';
+        world.setAttribute('aria-label', 'The Arena — the realm from thrones to fields');
+        world.innerHTML = `
+            <div class="lbw-zone lbw-thrones" data-zone="thrones">
+              <div class="lbw-thrones-sticky">
+                ${zoneBg('thrones')}
+                <div class="lbw-rays"></div>
+                <div class="lbw-dust">${dust}</div>
+                <div class="lbw-zh">
+                    <p class="lbw-eyebrow">The Arena · ${Number(total || 0).toLocaleString()} athletes</p>
+                    <h3>The Thrones</h3>
+                    <p class="lbw-lore">Fifteen seats above the realm. ${kings.length ? `${kings.length} claimed — ${15 - kings.length} wait.` : 'All fifteen sit empty. The realm waits.'}</p>
+                </div>
+                <div class="lbw-throne-rows">
+                    ${throneRow([10, 11, 12, 13, 14], 'r-back')}
+                    ${throneRow([5, 6, 7, 8, 9], 'r-mid')}
+                    ${throneRow([0, 1, 2, 3, 4], 'r-front')}
+                </div>
+              </div>
+            </div>
+            <div class="lbw-zone lbw-knights" data-zone="knights">
+                ${zoneBg('knights')}
+                <div class="lbw-zh">
+                    <p class="lbw-eyebrow">One step below</p>
+                    <h3>The Knights' Line</h3>
+                    <p class="lbw-lore">${(counts.knight || knights.length).toLocaleString()} knights stand at attention, eyes on the thrones.</p>
+                </div>
+                <div class="lbw-knight-rows">
+                    ${knightRow(knights.slice(7, 14), 'r-back')}
+                    ${knightRow(knights.slice(0, 7), 'r-front')}
+                </div>
+                <div class="lbw-more">Every one of them is watching a seat.</div>
+            </div>
+            <div class="lbw-zone lbw-melee" data-zone="melee">
+                ${zoneBg('melee')}
+                <div class="lbw-zh">
+                    <p class="lbw-eyebrow">The proving grounds</p>
+                    <h3>The Melee</h3>
+                    <p class="lbw-lore">${(counts.class || 0).toLocaleString()} specialists war for a knighthood — strength against speed against mind.</p>
+                </div>
+                <div class="lbw-battle">
+                    <span class="lbw-clash">⚔</span>
+                    ${band(by.berserker, 'berserker', 'b-berserker', 'Berserkers', 4)}
+                    ${band(by.mage, 'mage', 'b-mage', 'Mages', 4)}
+                    ${band(by.ranger, 'ranger', 'b-ranger', 'Rangers', 4)}
+                </div>
+            </div>
+            <div class="lbw-zone lbw-yard" data-zone="yard">
+                ${zoneBg('yard')}
+                <div class="lbw-zh">
+                    <p class="lbw-eyebrow">Learning the blade</p>
+                    <h3>The Squires' Yard</h3>
+                    <p class="lbw-lore">${(counts.squire || squires.length).toLocaleString()} squires drill until a path chooses them.</p>
+                </div>
+                <div class="lbw-yard-row">
+                    ${squires.map((r, i) => worldUnit('squire', r, youId, i)).join('')}
+                </div>
+            </div>
+            <div class="lbw-zone lbw-fields" data-zone="fields">
+                ${zoneBg('fields')}
+                <div class="lbw-zh">
+                    <p class="lbw-eyebrow">Where everyone begins</p>
+                    <h3>The City Streets</h3>
+                    <p class="lbw-lore">Down from the castle, into the crowd. Every king above once walked here.</p>
+                </div>
+                <div class="lbw-field-row">
+                    ${peasants.map((r, i) => worldUnit('peasant', r, youId, i)).join('')}
+                </div>
+                ${peasantsMore > 0 ? `<div class="lbw-more">+ ${peasantsMore.toLocaleString()} more toil here</div>` : ''}
+                <p class="lbw-desc" style="margin-bottom:30px">The climb starts with one logged session. Scroll back up when you need a reason.</p>
+            </div>
+        `;
+        card.insertAdjacentElement('beforebegin', world);
+        // Zone reveal: figures rise into place as each zone scrolls in.
+        try {
+            const io = new IntersectionObserver((es) => {
+                es.forEach((e) => { if (e.isIntersecting) e.target.classList.add('is-in'); });
+            }, { threshold: 0.18 });
+            world.querySelectorAll('.lbw-zone').forEach((z) => io.observe(z));
+        } catch { world.querySelectorAll('.lbw-zone').forEach((z) => z.classList.add('is-in')); }
+
+        // Tap a figure -> who they are (rank, class, points, momentum).
+        const closePop = () => {
+            const p = document.querySelector('.lbw-pop');
+            if (!p) return;
+            p.classList.remove('is-on');
+            window.setTimeout(() => p.remove(), 260);
+        };
+        world.addEventListener('click', (ev) => {
+            const unit = ev.target.closest ? ev.target.closest('.lbw-unit') : null;
+            if (!unit) return;
+            closePop();
+            if (unit.hasAttribute('data-lbw-empty')) {
+                const pop0 = document.createElement('div');
+                pop0.className = 'lbw-pop';
+                pop0.innerHTML = '<button type="button" class="lbw-pop-close" aria-label="Close">×</button>' +
+                    '<div class="lbw-pop-kicker">Unclaimed throne</div>' +
+                    '<div class="lbw-pop-name">The seat is open</div>' +
+                    '<div class="lbw-pop-sub">Fifteen thrones. Nobody is owed one. Cover every stat the realm demands and it’s yours.</div>';
+                document.body.appendChild(pop0);
+                requestAnimationFrame(() => pop0.classList.add('is-on'));
+                return;
+            }
+            const caste = CASTE_MAP[unit.getAttribute('data-lbw-caste')] || null;
+            const pts = Number(unit.getAttribute('data-lbw-pts')) || 0;
+            const delta = Number(unit.getAttribute('data-lbw-delta')) || 0;
+            const isYou = unit.hasAttribute('data-lbw-you');
+            // Desktop: the character card carries their spider graph too.
+            let spiderHtml = '';
+            const rawStats = unit.getAttribute('data-lbw-stats');
+            if (rawStats && window.innerWidth > 640) {
+                const vals = rawStats.split(',').map((n) => Number(n) || 0);
+                const stats = {};
+                CASTE_AXES.forEach((k, i2) => { stats[k] = Math.max(0, Math.min(100, vals[i2] || 0)); });
+                spiderHtml = `<div class="lbw-pop-spider" data-caste="${escapeAttr(String(unit.getAttribute('data-lbw-caste') || ''))}">${miniRadarSvg(stats)}</div>`;
+            }
+            const pop = document.createElement('div');
+            pop.className = 'lbw-pop';
+            pop.innerHTML = '<button type="button" class="lbw-pop-close" aria-label="Close">×</button>' +
+                `<div class="lbw-pop-kicker">${caste ? caste.emblem + ' ' + caste.name : 'Athlete'} · Rank #${Number(unit.getAttribute('data-lbw-rank')).toLocaleString()}</div>` +
+                `<div class="lbw-pop-name">${unit.getAttribute('data-lbw-name')}</div>` +
+                spiderHtml +
+                `<div class="lbw-pop-sub">${pts ? pts.toLocaleString() + ' pts · ' : ''}${delta > 0 ? '▲ up ' + delta + ' overnight' : delta < 0 ? '▼ down ' + Math.abs(delta) + ' overnight' : 'holding position'}</div>` +
+                (isYou ? '<span class="lbw-pop-you">THIS IS YOU</span>' : '');
+            document.body.appendChild(pop);
+            requestAnimationFrame(() => pop.classList.add('is-on'));
+        });
+        world.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Enter' && ev.key !== ' ') return;
+            const unit = ev.target.closest ? ev.target.closest('.lbw-unit') : null;
+            if (unit) { ev.preventDefault(); unit.click(); }
+        });
+        document.addEventListener('click', (ev) => {
+            const p = document.querySelector('.lbw-pop');
+            if (!p) return;
+            if (ev.target.closest && (ev.target.closest('.lbw-pop-close') || (!ev.target.closest('.lbw-pop') && !ev.target.closest('.lbw-unit')))) closePop();
+        });
     };
 
     /* Daily shift event - plays once per day, everyone sees the same story. */
@@ -2411,9 +2856,17 @@
         let tries = 0;
         const sweep = () => {
             document.querySelectorAll('a[href*="leaderboard"]').forEach((a) => {
-                const label = (a.textContent || '').trim();
-                if (/leaderboard/i.test(label)) a.textContent = label.replace(/leaderboard/ig, 'The Arena');
+                // Rename only the label span — setting textContent on the
+                // anchor destroys the icon markup inside it.
+                const t = a.querySelector('.text') || a;
+                const label = (t.textContent || '').trim();
+                if (/leaderboard/i.test(label)) t.textContent = label.replace(/leaderboard/ig, 'The Arena');
             });
+            const h1 = document.querySelector('.lb-header h1');
+            if (h1 && /leaderboard/i.test(h1.textContent)) h1.textContent = 'The Arena';
+            const eyebrow = document.querySelector('.lb-header .eyebrow');
+            if (eyebrow && /community/i.test(eyebrow.textContent)) eyebrow.textContent = 'Training Portal';
+            if (/leaderboard/i.test(document.title)) document.title = 'The Arena · RiseForIt';
             tries += 1;
             if (tries < 12) setTimeout(sweep, 400);
         };
@@ -2452,14 +2905,22 @@
             ensureCasteStyle();
             ensureChampionStyle();
             champApplyUrlFlags();
-            playArenaIntro();
+            // The Kingdom (js/kingdom.js scroll-scrub video) owns the top of
+            // the page when its track exists — the descent IS the intro and
+            // the world, so both are skipped in its favor.
+            const kingdomActive = Boolean(document.getElementById('kingdom-track'));
+            if (!kingdomActive) playArenaIntro();
             renameControlPanelLinks();
             if (!scopedView && listEl) {
                 const day = todayKey(new Date());
                 const instantBoard = buildGameBoard([], day);
                 renderMoversTicker(instantBoard.rows);
-                renderCastePyramid(instantBoard.rows, instantBoard.total, '', 'community');
+                if (!kingdomActive) renderArenaWorld(instantBoard.rows, instantBoard.total, '', null);
                 renderList(buildGameWindow(instantBoard.rows, null));
+                // The Kingdom (js/kingdom.js) renders these rows as the
+                // living world; hand it the same population.
+                window.__kingdomBoard = instantBoard.rows;
+                window.dispatchEvent(new CustomEvent('kingdom:data'));
             }
             const resp = await fetch(endpoint, { credentials: 'include' });
             if (resp.status === 404) {
@@ -2500,7 +2961,12 @@
                 renderCasteHero(data);
                 decorateHeroWithSlots(youRow, day);
                 renderMoversTicker(board.rows);
-                renderCastePyramid(board.rows, board.total, youRow?.__caste || '', 'community');
+                if (!kingdomActive) renderArenaWorld(board.rows, board.total, youRow?.__caste || '', data?.you?.id ?? null);
+                window.__kingdomBoard = board.rows;
+                window.__kingdomYou = youRow
+                    ? { name: data?.you?.displayName || data?.you?.name || 'You', rank: youRow.rank, caste: youRow.__caste, stats: youRow.__stats, score: youRow.points || 0 }
+                    : null;
+                window.dispatchEvent(new CustomEvent('kingdom:data'));
                 maybePlayDailyShift('community');
             } else {
                 renderCasteHero(data);

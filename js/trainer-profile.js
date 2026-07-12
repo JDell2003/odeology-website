@@ -114,6 +114,7 @@
     finalizingStandaloneSave: false,
     versionLoading: false,
     editorCodeTab: 'html',
+    setupPanelMode: 'custom',
     original: null,
     draft: null,
     autosaveTimer: 0,
@@ -136,6 +137,31 @@
     bounds: null
   };
   let standaloneCodeHighlightRange = null;
+  // Draft inputs for the "Template" tab of the standalone edit-website panel.
+  // Lives at module scope so switching between Custom and Template (or a
+  // re-render after an upload) never loses what the coach already filled in.
+  const templateBuilderState = {
+    templateId: 'apex',
+    colorMode: 'default',
+    accentPrimary: '',
+    accentSecondary: '',
+    brandName: '',
+    coachName: '',
+    headline: '',
+    subheadline: '',
+    aboutBio: '',
+    media: {
+      vslVideo: null,
+      coachPhoto: null,
+      progress1: null,
+      progress2: null,
+      progress3: null
+    },
+    uploading: {},
+    consultQuestions: [],
+    panelWidth: 0,
+    panelHeight: 0
+  };
   const TRAINER_PAGE_AUTOSAVE_MS = 1400;
   const TRAINER_ROUTE_LOADER_ACCENT = '#2563eb';
   const QUALIFICATION_PROGRESS_KEY = 'trainer-page-qualification-v1';
@@ -2180,6 +2206,7 @@
     editorState.enabled = true;
     editorState.previewMode = false;
     editorState.previewDevice = 'desktop';
+    editorState.setupPanelMode = 'custom';
     editorState.draft = cloneJson(target);
     editorState.original = cloneJson(target);
     editorState.dirty = false;
@@ -6351,7 +6378,906 @@
     `;
   }
 
+  // --- Template mode for the standalone edit-website panel ---
+  function trainerSiteTemplates() {
+    return [
+      {
+        id: 'apex',
+        name: 'Apex',
+        blurb: 'Dark, bold, high-energy. Sharp edges and loud type.',
+        accent: '#3b82f6',
+        accent2: '#a3e635',
+        swatches: ['#070b16', '#3b82f6', '#a3e635']
+      },
+      {
+        id: 'lumen',
+        name: 'Lumen',
+        blurb: 'Bright, clean, editorial. Soft cards and calm type.',
+        accent: '#1e3a5f',
+        accent2: '#f59e0b',
+        swatches: ['#faf8f4', '#1e3a5f', '#f59e0b']
+      }
+    ];
+  }
+
+  function trainerTemplateApexCss(accent, accent2) {
+    return `:root{--bg:#070b16;--panel:#101a2e;--ink:#eef2ff;--muted:rgba(238,242,255,.62);--line:rgba(238,242,255,.09);--accent:${accent};--accent2:${accent2};}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.65;overflow-x:hidden;}
+h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.01em;line-height:1.08;}
+a{color:inherit;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,22,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:70px;}
+.brand{font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.08em;}
+.brand span{color:var(--accent2);}
+.nav-links{display:flex;gap:2px;list-style:none;}
+.nav-links a{text-decoration:none;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:9px 14px;opacity:.65;border-bottom:2px solid transparent;transition:all .2s ease;display:block;}
+.nav-links a:hover{opacity:1;border-bottom-color:var(--accent2);}
+.nav-cta{background:var(--accent);color:#ffffff;padding:12px 20px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:6px;text-decoration:none;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{width:24px;height:2px;background:var(--ink);}
+.mobile-menu{display:none;flex-direction:column;gap:4px;padding:16px 22px 22px;border-bottom:1px solid var(--line);background:var(--bg);}
+.mobile-menu.open{display:flex;}
+.mobile-menu a{color:var(--ink);text-decoration:none;padding:12px 4px;font-weight:600;text-transform:uppercase;font-size:14px;border-bottom:1px solid var(--line);}
+.hero{padding:76px 0 54px;position:relative;}
+.hero::after{content:'';position:absolute;top:-120px;right:-160px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,var(--accent) 0%,transparent 62%);opacity:.16;pointer-events:none;}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.show{opacity:1;transform:translateY(0);}
+.eyebrow{display:inline-block;color:var(--accent2);border:1.5px solid var(--accent2);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:6px;margin-bottom:20px;}
+.hero h1{font-size:clamp(36px,6vw,66px);max-width:840px;margin-bottom:18px;}
+.hero h1 .hit{color:var(--accent);}
+.hero p.sub{max-width:540px;color:var(--muted);font-size:17px;margin-bottom:30px;}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+.btn-primary{background:var(--accent);color:#ffffff;border:none;padding:16px 28px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:14px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block;}
+.btn-ghost{background:transparent;border:1.5px solid var(--ink);color:var(--ink);padding:15px 26px;font-weight:700;text-transform:uppercase;font-size:14px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block;}
+.vsl-frame{max-width:880px;margin:44px auto 0;border-radius:10px;overflow:hidden;background:var(--panel);border:1px solid var(--line);}
+.vsl-frame video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#01040c;}
+.vsl-caption{display:flex;justify-content:space-between;padding:14px 20px;font-size:14px;}
+.vsl-caption .note{color:var(--muted);}
+section{padding:78px 0;border-top:1px solid var(--line);}
+.sec-head{max-width:620px;margin-bottom:42px;}
+.sec-head .kicker{color:var(--accent2);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;}
+.sec-head h2{font-size:clamp(28px,3.6vw,42px);margin:10px 0 12px;}
+.sec-head p{color:var(--muted);}
+.about-grid{display:grid;grid-template-columns:300px 1fr;gap:46px;align-items:start;}
+.about-grid.no-photo{grid-template-columns:1fr;}
+.photo-frame{aspect-ratio:4/5;border-radius:10px;background:linear-gradient(160deg,#16213a,#0a1120);position:relative;overflow:hidden;border:1px solid var(--line);}
+.photo-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.photo-frame .tag{position:absolute;bottom:14px;left:14px;right:14px;background:rgba(7,11,22,.88);border:1px solid var(--line);padding:9px 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;z-index:2;}
+.about-copy p{color:var(--muted);margin-bottom:16px;}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;}
+.result-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.result-card img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;}
+.result-card .lbl{padding:12px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2);}
+.faq-item{border-bottom:1px solid var(--line);}
+.faq-q{width:100%;background:none;border:none;color:var(--ink);text-align:left;padding:20px 0;font-size:16px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;font-family:'Inter',sans-serif;}
+.faq-q .plus{transition:transform .2s ease;color:var(--accent);font-size:20px;flex:none;}
+.faq-item.open .faq-q .plus{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.faq-a p{color:var(--muted);padding-bottom:20px;max-width:620px;}
+.consult{background:var(--panel);}
+.consult-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:start;}
+.consult-note{color:var(--muted);}
+.reason-chip{display:inline-block;margin-top:18px;background:var(--accent2);color:#0b1020;padding:10px 16px;border-radius:6px;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;}
+form{display:flex;flex-direction:column;gap:16px;}
+.field label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:6px;}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:13px 14px;border-radius:6px;font-size:15px;font-family:inherit;}
+input:focus,select:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+.error-msg{display:none;color:#f87171;font-size:12px;margin-top:5px;}
+.field.invalid input,.field.invalid select{border-color:#f87171;}
+.field.invalid .error-msg{display:block;}
+.submit-btn{margin-top:6px;background:var(--accent);color:#ffffff;border:none;padding:17px 20px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:6px;font-size:15px;cursor:pointer;}
+.form-note{font-size:13px;color:var(--muted);margin-top:6px;}
+.confirm-msg{display:none;margin-top:14px;font-size:14px;color:var(--accent2);font-weight:600;}
+footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line);}
+@media (max-width:820px){.nav-links{display:none;}.nav-cta{display:none;}.hamburger{display:flex;}.about-grid,.about-grid.no-photo,.consult-grid{grid-template-columns:1fr;}}`;
+  }
+
+  function trainerTemplateLumenCss(accent, accent2) {
+    return `:root{--bg:#faf8f4;--panel:#ffffff;--ink:#1c1917;--muted:#6b6560;--line:rgba(28,25,23,.1);--accent:${accent};--accent2:${accent2};}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.7;overflow-x:hidden;}
+h1,h2,h3{font-family:'Playfair Display',serif;line-height:1.12;font-weight:700;}
+a{color:inherit;}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px;}
+nav{position:sticky;top:0;z-index:100;background:rgba(250,248,244,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:76px;}
+.brand{font-family:'Playfair Display',serif;font-weight:700;font-size:20px;}
+.brand span{color:var(--accent2);}
+.nav-links{display:flex;gap:6px;list-style:none;}
+.nav-links a{text-decoration:none;font-size:14px;font-weight:600;padding:8px 14px;border-radius:999px;color:var(--muted);transition:all .2s ease;display:block;}
+.nav-links a:hover{color:var(--ink);background:rgba(28,25,23,.05);}
+.nav-cta{background:var(--accent);color:#ffffff;padding:12px 22px;font-size:14px;font-weight:700;border-radius:999px;text-decoration:none;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{width:24px;height:2px;background:var(--ink);}
+.mobile-menu{display:none;flex-direction:column;gap:4px;padding:16px 24px 22px;border-bottom:1px solid var(--line);background:var(--bg);}
+.mobile-menu.open{display:flex;}
+.mobile-menu a{color:var(--ink);text-decoration:none;padding:12px 4px;font-weight:600;font-size:15px;border-bottom:1px solid var(--line);}
+.hero{padding:84px 0 56px;text-align:center;}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.show{opacity:1;transform:translateY(0);}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 18px rgba(28,25,23,.06);color:var(--ink);font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;margin-bottom:22px;}
+.eyebrow::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent2);}
+.hero h1{font-size:clamp(34px,5.6vw,60px);max-width:780px;margin:0 auto 18px;}
+.hero h1 .hit{color:var(--accent);font-style:italic;}
+.hero p.sub{max-width:540px;margin:0 auto 30px;color:var(--muted);font-size:17px;}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.btn-primary{background:var(--accent);color:#ffffff;border:none;padding:16px 30px;font-weight:700;font-size:15px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-block;}
+.btn-ghost{background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:15px 28px;font-weight:700;font-size:15px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-block;box-shadow:0 6px 18px rgba(28,25,23,.06);}
+.vsl-frame{max-width:860px;margin:46px auto 0;border-radius:22px;overflow:hidden;background:var(--panel);border:1px solid var(--line);box-shadow:0 26px 60px rgba(28,25,23,.12);}
+.vsl-frame video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#171412;}
+.vsl-caption{display:flex;justify-content:space-between;padding:14px 22px;font-size:14px;}
+.vsl-caption .note{color:var(--muted);}
+section{padding:80px 0;}
+.sec-head{max-width:640px;margin:0 auto 44px;text-align:center;}
+.sec-head .kicker{color:var(--accent2);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;}
+.sec-head h2{font-size:clamp(28px,3.4vw,40px);margin:10px 0 12px;}
+.sec-head p{color:var(--muted);}
+.about-grid{display:grid;grid-template-columns:300px 1fr;gap:48px;align-items:start;text-align:left;}
+.about-grid.no-photo{grid-template-columns:1fr;max-width:680px;margin:0 auto;}
+.photo-frame{aspect-ratio:4/5;border-radius:22px;background:#efe9df;position:relative;overflow:hidden;box-shadow:0 22px 50px rgba(28,25,23,.14);}
+.photo-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.photo-frame .tag{position:absolute;bottom:14px;left:14px;right:14px;background:rgba(255,255,255,.92);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700;letter-spacing:.04em;z-index:2;}
+.about-copy p{color:var(--muted);margin-bottom:16px;}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;}
+.result-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 14px 36px rgba(28,25,23,.08);}
+.result-card img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;}
+.result-card .lbl{padding:12px 16px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);}
+.faq-list{max-width:680px;margin:0 auto;}
+.faq-item{border-bottom:1px solid var(--line);}
+.faq-q{width:100%;background:none;border:none;color:var(--ink);text-align:left;padding:20px 0;font-size:16px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;font-family:'Inter',sans-serif;}
+.faq-q .plus{transition:transform .2s ease;color:var(--accent2);font-size:20px;flex:none;}
+.faq-item.open .faq-q .plus{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.faq-a p{color:var(--muted);padding-bottom:20px;}
+.consult{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.consult-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:start;text-align:left;}
+.consult-note{color:var(--muted);}
+.reason-chip{display:inline-block;margin-top:18px;background:var(--accent2);color:#ffffff;padding:10px 18px;border-radius:999px;font-weight:700;font-size:13px;}
+form{display:flex;flex-direction:column;gap:16px;}
+.field label{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:13px 14px;border-radius:12px;font-size:15px;font-family:inherit;}
+input:focus,select:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+.error-msg{display:none;color:#b91c1c;font-size:12px;margin-top:5px;}
+.field.invalid input,.field.invalid select{border-color:#b91c1c;}
+.field.invalid .error-msg{display:block;}
+.submit-btn{margin-top:6px;background:var(--accent);color:#ffffff;border:none;padding:17px 20px;font-weight:700;border-radius:999px;font-size:15px;cursor:pointer;}
+.form-note{font-size:13px;color:var(--muted);margin-top:6px;}
+.confirm-msg{display:none;margin-top:14px;font-size:14px;color:var(--accent2);font-weight:700;}
+footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
+@media (max-width:820px){.nav-links{display:none;}.nav-cta{display:none;}.hamburger{display:flex;}.about-grid,.about-grid.no-photo,.consult-grid{grid-template-columns:1fr;}}`;
+  }
+
+  function buildTrainerTemplateSiteCode() {
+    const state = templateBuilderState;
+    const templates = trainerSiteTemplates();
+    const tpl = templates.find((entry) => entry.id === state.templateId) || templates[0];
+    const accent = state.colorMode === 'custom' && state.accentPrimary ? state.accentPrimary : tpl.accent;
+    const accent2 = state.colorMode === 'custom' && state.accentSecondary ? state.accentSecondary : tpl.accent2;
+    const trainerName = String(pageState.trainer?.displayName || pageState.trainer?.name || pageState.trainer?.username || '').trim();
+    const coachName = String(state.coachName || '').trim() || trainerName || 'Your Coach';
+    const brandName = String(state.brandName || '').trim() || coachName;
+    const headlineRaw = String(state.headline || '').trim() || 'Coaching built around you, not a copy-paste plan';
+    const sub = String(state.subheadline || '').trim();
+    const bio = String(state.aboutBio || '').trim();
+    const vsl = state.media.vslVideo && state.media.vslVideo.url ? state.media.vslVideo : null;
+    const coachPhoto = state.media.coachPhoto && state.media.coachPhoto.url ? state.media.coachPhoto.url : '';
+    const gallery = ['progress1', 'progress2', 'progress3']
+      .map((key) => (state.media[key] && state.media[key].url ? state.media[key].url : ''))
+      .filter(Boolean);
+    const questions = (Array.isArray(state.consultQuestions) ? state.consultQuestions : [])
+      .map((entry) => ({
+        label: String(entry?.label || '').trim(),
+        options: String(entry?.options || '').split(',').map((option) => option.trim()).filter(Boolean)
+      }))
+      .filter((entry) => entry.label);
+    const hasAbout = Boolean(coachPhoto || bio);
+    const hasGallery = gallery.length > 0;
+
+    const headlineWords = headlineRaw.split(/\s+/);
+    const headlineHtml = headlineWords.length > 2
+      ? `${escapeHtml(headlineWords.slice(0, -2).join(' '))} <span class="hit">${escapeHtml(headlineWords.slice(-2).join(' '))}</span>`
+      : escapeHtml(headlineRaw);
+    const brandWords = brandName.split(/\s+/);
+    const brandHtml = brandWords.length > 1
+      ? `${escapeHtml(brandWords[0])} <span>${escapeHtml(brandWords.slice(1).join(' '))}</span>`
+      : escapeHtml(brandName);
+
+    const navLinks = [
+      { href: '#home', label: 'Home' },
+      hasAbout ? { href: '#about', label: 'Coach' } : null,
+      hasGallery ? { href: '#results', label: 'Results' } : null,
+      { href: '#faq', label: 'FAQ' }
+    ].filter(Boolean);
+
+    const isLumen = tpl.id === 'lumen';
+    const fontsHref = isLumen
+      ? 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap'
+      : 'https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+    const css = isLumen ? trainerTemplateLumenCss(accent, accent2) : trainerTemplateApexCss(accent, accent2);
+
+    const navHtml = `<nav>
+  <div class="wrap">
+    <div class="brand">${brandHtml}</div>
+    <ul class="nav-links">
+      ${navLinks.map((link) => `<li><a href="${link.href}">${escapeHtml(link.label)}</a></li>`).join('\n      ')}
+    </ul>
+    <a href="#consult" class="nav-cta">Book Consult</a>
+    <button class="hamburger" id="hamBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    ${navLinks.map((link) => `<a href="${link.href}">${escapeHtml(link.label)}</a>`).join('\n    ')}
+    <a href="#consult">Book Consult</a>
+  </div>
+</nav>`;
+
+    const heroHtml = `<section class="hero" id="home">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">1-on-1 Coaching with ${escapeHtml(coachName)}</div>
+      <h1>${headlineHtml}</h1>
+      ${sub ? `<p class="sub">${escapeHtml(sub)}</p>` : ''}
+      <div class="hero-actions">
+        <a href="#consult" class="btn-primary">Book a Free Consult</a>
+        ${hasGallery ? '<a href="#results" class="btn-ghost">See Results</a>' : (hasAbout ? '<a href="#about" class="btn-ghost">Meet Your Coach</a>' : '')}
+      </div>
+    </div>
+    ${vsl ? `<div class="vsl-frame reveal">
+      <video src="${escapeHtml(vsl.url)}#t=0.001"${vsl.poster ? ` poster="${escapeHtml(vsl.poster)}"` : ''} controls playsinline preload="metadata"></video>
+      <div class="vsl-caption"><span>Watch this before you book</span><span class="note">${escapeHtml(coachName)}</span></div>
+    </div>` : ''}
+  </div>
+</section>`;
+
+    const bioParagraphs = bio
+      ? bio.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('\n        ')
+      : `<p>${escapeHtml(coachName)} works with a small roster of clients so every plan gets real attention.</p>`;
+    const aboutHtml = hasAbout ? `<section id="about">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Your Coach</div>
+      <h2>Meet ${escapeHtml(coachName)}</h2>
+    </div>
+    <div class="about-grid${coachPhoto ? '' : ' no-photo'} reveal">
+      ${coachPhoto ? `<div class="photo-frame">
+        <img src="${escapeHtml(coachPhoto)}" alt="${escapeHtml(coachName)}">
+        <div class="tag">${escapeHtml(coachName)}</div>
+      </div>` : ''}
+      <div class="about-copy">
+        ${bioParagraphs}
+      </div>
+    </div>
+  </div>
+</section>` : '';
+
+    const resultsHtml = hasGallery ? `<section id="results">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Results</div>
+      <h2>Real client progress</h2>
+      <p>Progress pictures from people who put the work in.</p>
+    </div>
+    <div class="results-grid reveal">
+      ${gallery.map((url, index) => `<div class="result-card">
+        <img src="${escapeHtml(url)}" alt="Client progress photo ${index + 1}">
+        <div class="lbl">Client progress</div>
+      </div>`).join('\n      ')}
+    </div>
+  </div>
+</section>` : '';
+
+    const faqEntries = [
+      ['Do I need experience to start?', 'No. Everything is built around your current level, whether you are brand new or years in.'],
+      ['How is this different from a workout app?', 'You get a real coach - a plan built for you, adjustments when life happens, and someone actually watching your progress.'],
+      ['What happens after I book a consult?', `${coachName} will reach out to set up a short call, hear your goals, and give you a straight answer on whether this is the right fit. No pressure either way.`]
+    ];
+    const faqHtml = `<section id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">FAQ</div>
+      <h2>Before you book</h2>
+    </div>
+    <div class="faq-list reveal">
+      ${faqEntries.map(([question, answer]) => `<div class="faq-item">
+        <button class="faq-q">${escapeHtml(question)} <span class="plus">+</span></button>
+        <div class="faq-a"><p>${escapeHtml(answer)}</p></div>
+      </div>`).join('\n      ')}
+    </div>
+  </div>
+</section>`;
+
+    const questionFieldsHtml = questions.map((entry, index) => {
+      const fieldId = `q${index + 1}`;
+      const nameAttr = slugify(entry.label) || fieldId;
+      if (entry.options.length >= 2) {
+        return `<div class="field" id="f-${fieldId}">
+          <label for="${fieldId}">${escapeHtml(entry.label)}</label>
+          <select id="${fieldId}" name="${escapeHtml(nameAttr)}">
+            <option value="" disabled selected>${escapeHtml(entry.label)}</option>
+            ${entry.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join('\n            ')}
+          </select>
+        </div>`;
+      }
+      return `<div class="field" id="f-${fieldId}">
+          <label for="${fieldId}">${escapeHtml(entry.label)}</label>
+          <input id="${fieldId}" type="text" name="${escapeHtml(nameAttr)}" placeholder="${escapeHtml(entry.label)}">
+        </div>`;
+    }).join('\n        ');
+
+    const consultHtml = `<section id="consult" class="consult">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Next Step</div>
+      <h2>Book your free consult</h2>
+      <p>A short, no-pressure call about your goals and whether this coaching is the right fit.</p>
+    </div>
+    <div class="consult-grid reveal">
+      <div>
+        <p class="consult-note">Fill this out and ${escapeHtml(coachName)} will follow up within 24 hours to find a time.</p>
+        <div class="reason-chip">Free - no cost, no obligation</div>
+      </div>
+      <form id="consultForm" novalidate data-standalone-consult-form="1">
+        <div class="field" id="f-name">
+          <label for="name">Name</label>
+          <input id="name" type="text" name="name" placeholder="Name">
+          <div class="error-msg">Enter your name</div>
+        </div>
+        <div class="field" id="f-email">
+          <label for="email">Email</label>
+          <input id="email" type="email" name="email" placeholder="Email">
+          <div class="error-msg">Enter a valid email</div>
+        </div>
+        <div class="field" id="f-phone">
+          <label for="phone">Phone</label>
+          <input id="phone" type="tel" name="phone" placeholder="Phone">
+          <div class="error-msg">Enter your phone number</div>
+        </div>
+        ${questionFieldsHtml}
+        <button type="submit" class="submit-btn">Book My Free Consult</button>
+        <div class="form-note">No cost, no obligation.</div>
+        <div class="confirm-msg" id="confirmMsg">Got it. ${escapeHtml(coachName)} will reach out within 24 hours.</div>
+      </form>
+    </div>
+  </div>
+</section>`;
+
+    const footerHtml = `<footer>
+  <div class="wrap">&copy; ${escapeHtml(brandName)}${brandName !== coachName ? ` - Coach ${escapeHtml(coachName)}` : ''}</div>
+</footer>`;
+
+    const scriptHtml = `<script>
+(function() {
+  var hamBtn = document.getElementById('hamBtn');
+  var mobileMenu = document.getElementById('mobileMenu');
+  if (hamBtn && mobileMenu) {
+    hamBtn.addEventListener('click', function() { mobileMenu.classList.toggle('open'); });
+    mobileMenu.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() { mobileMenu.classList.remove('open'); });
+    });
+  }
+  var reveals = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach(function(el) { revealObserver.observe(el); });
+  } else {
+    reveals.forEach(function(el) { el.classList.add('show'); });
+  }
+  document.querySelectorAll('.faq-item').forEach(function(item) {
+    var q = item.querySelector('.faq-q');
+    var a = item.querySelector('.faq-a');
+    if (!q || !a) return;
+    q.addEventListener('click', function() {
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(function(other) {
+        other.classList.remove('open');
+        var otherA = other.querySelector('.faq-a');
+        if (otherA) otherA.style.maxHeight = null;
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        a.style.maxHeight = a.scrollHeight + 'px';
+      }
+    });
+  });
+  var form = document.getElementById('consultForm');
+  if (form) {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      var valid = true;
+      var checks = [
+        ['f-name', 'name', function(v) { return v.trim().length > 0; }],
+        ['f-email', 'email', function(v) { var at = v.indexOf('@'); return at > 0 && v.indexOf('.', at) > at + 1; }],
+        ['f-phone', 'phone', function(v) { return v.trim().length >= 7; }]
+      ];
+      checks.forEach(function(check) {
+        var field = document.getElementById(check[0]);
+        var inputEl = document.getElementById(check[1]);
+        if (!field || !inputEl) return;
+        if (!check[2](String(inputEl.value || ''))) {
+          field.classList.add('invalid');
+          valid = false;
+        } else {
+          field.classList.remove('invalid');
+        }
+      });
+      if (!valid) return;
+      var confirmEl = document.getElementById('confirmMsg');
+      if (confirmEl) confirmEl.style.display = 'block';
+      form.reset();
+    });
+  }
+})();
+<\/script>`;
+
+    return [
+      `<style>${css}</style>`,
+      `<link href="${fontsHref}" rel="stylesheet">`,
+      navHtml,
+      heroHtml,
+      aboutHtml,
+      resultsHtml,
+      faqHtml,
+      consultHtml,
+      footerHtml,
+      scriptHtml
+    ].filter(Boolean).join('\n\n').trim();
+  }
+
+  function renderTemplateMediaSlot({ key, title, sub, recommended = false, isVideo = false }) {
+    const entry = templateBuilderState.media[key];
+    const filled = Boolean(entry && entry.url);
+    const uploading = templateBuilderState.uploading[key] === true;
+    const thumbUrl = filled ? (isVideo ? String(entry.poster || '') : String(entry.url || '')) : '';
+    const thumb = thumbUrl
+      ? `<div class="tplb-media-thumb" style="background-image:url('${escapeHtml(thumbUrl)}')"></div>`
+      : `<div class="tplb-media-thumb">${isVideo ? '&#127916;' : '&#128247;'}</div>`;
+    return `
+      <div class="tplb-media-slot${filled ? ' is-filled' : ''}" data-tpl-slot="${key}">
+        ${thumb}
+        <div class="tplb-media-main">
+          <div class="tplb-media-name">${escapeHtml(title)}${recommended ? ' <span class="tplb-rec">Recommended</span>' : ''}</div>
+          <div class="tplb-media-sub">${filled ? 'Uploaded - this will be used in your site.' : escapeHtml(sub)}</div>
+        </div>
+        <label class="tplb-media-btn"><span data-tpl-upload-label="${key}">${uploading ? 'Uploading...' : (filled ? 'Replace' : 'Upload')}</span><input type="file" accept="${isVideo ? 'video/*' : 'image/*'}" data-tpl-upload="${key}"></label>
+        ${filled ? `<button type="button" class="tplb-media-remove" data-tpl-media-remove="${key}">Remove</button>` : ''}
+      </div>`;
+  }
+
+  function renderStandaloneTemplatePanel(trainer) {
+    const state = templateBuilderState;
+    const templates = trainerSiteTemplates();
+    const activeTpl = templates.find((entry) => entry.id === state.templateId) || templates[0];
+    const trainerName = String(trainer?.displayName || trainer?.name || trainer?.username || '').trim();
+    const accentPrimary = state.accentPrimary || activeTpl.accent;
+    const accentSecondary = state.accentSecondary || activeTpl.accent2;
+    const questionRows = state.consultQuestions.map((entry, index) => `
+        <div class="tplb-question-row">
+          <input class="tplb-input" type="text" value="${escapeHtml(String(entry?.label || ''))}" placeholder="e.g. What is your main goal?" data-tpl-qfield="label" data-tpl-qindex="${index}">
+          <input class="tplb-input" type="text" value="${escapeHtml(String(entry?.options || ''))}" placeholder="Choices (optional): Lose fat, Build muscle" data-tpl-qfield="options" data-tpl-qindex="${index}">
+          <button type="button" class="tplb-qremove" data-tpl-qremove="${index}" aria-label="Remove question">&times;</button>
+        </div>`).join('');
+    const narrowPanelViewport = window.matchMedia('(max-width: 767px)').matches;
+    const panelMaxWidth = Math.max(320, window.innerWidth - 36);
+    const panelMaxHeight = Math.max(220, window.innerHeight - (narrowPanelViewport ? 68 : 76));
+    const panelSizeStyle = [
+      state.panelWidth > 0 && !narrowPanelViewport ? `width:${Math.min(state.panelWidth, panelMaxWidth)}px;` : '',
+      state.panelHeight > 0 ? `height:${Math.min(state.panelHeight, panelMaxHeight)}px;` : ''
+    ].join('');
+    return `
+      <div class="trainer-builder-setup-template-shell" data-template-builder="1"${panelSizeStyle ? ` style="${panelSizeStyle}"` : ''}>
+        <style>
+          .trainer-builder-setup-template-shell{position:relative;justify-self:start;width:min(100%,780px);height:min(620px,calc(100vh - 96px));display:flex;flex-direction:column;border-radius:22px 22px 0 0;border:2px solid #111111;background:#ffffff;box-shadow:0 -12px 36px rgba(9,25,37,.18);overflow:hidden;pointer-events:auto;}
+          .tplb-scroll{flex:1;overflow-y:auto;padding:20px 22px 16px;display:grid;gap:20px;align-content:start;}
+          .tplb-section{display:grid;gap:10px;}
+          .tplb-kicker{font:800 11px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#64748b;}
+          .tplb-title{font:800 16px/1.3 system-ui,sans-serif;color:#0f172a;}
+          .tplb-help{font:500 12.5px/1.5 system-ui,sans-serif;color:#64748b;}
+          .tplb-rec{display:inline-flex;vertical-align:middle;padding:3px 8px;border-radius:999px;background:#fef3c7;color:#92400e;font:700 10px/1 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;}
+          .tplb-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+          .tplb-card{position:relative;text-align:left;border:2px solid rgba(148,163,184,.4);border-radius:14px;padding:12px;background:#ffffff;cursor:pointer;display:grid;gap:7px;}
+          .tplb-card.is-active{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+          .tplb-card-name{font:800 14px/1 system-ui,sans-serif;color:#0f172a;}
+          .tplb-card-sub{font:500 12px/1.45 system-ui,sans-serif;color:#64748b;}
+          .tplb-swatches{display:flex;gap:6px;}
+          .tplb-swatch{width:22px;height:22px;border-radius:7px;border:1px solid rgba(15,23,42,.12);}
+          .tplb-choice-row{display:flex;gap:8px;flex-wrap:wrap;}
+          .tplb-choice{border:1.5px solid rgba(148,163,184,.5);border-radius:999px;padding:8px 16px;background:#ffffff;font:700 12.5px/1 system-ui,sans-serif;color:#334155;cursor:pointer;}
+          .tplb-choice.is-active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;}
+          .tplb-colors{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+          .tplb-color{display:inline-flex;align-items:center;gap:8px;font:700 12.5px/1 system-ui,sans-serif;color:#334155;cursor:pointer;}
+          .tplb-color input[type="color"]{width:42px;height:42px;padding:2px;border:1.5px solid rgba(148,163,184,.5);border-radius:12px;background:#ffffff;cursor:pointer;}
+          .tplb-note{font:600 12px/1.5 system-ui,sans-serif;color:#1d4ed8;background:#eff6ff;border-radius:10px;padding:8px 12px;}
+          .tplb-input{width:100%;min-height:40px;padding:8px 12px;border:1.5px solid rgba(148,163,184,.5);border-radius:10px;font:500 14px/1.4 system-ui,sans-serif;color:#0f172a;background:#ffffff;}
+          .tplb-input:focus{outline:2px solid #2563eb;border-color:#2563eb;}
+          textarea.tplb-input{min-height:88px;resize:vertical;}
+          .tplb-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+          .tplb-field{display:block;}
+          .tplb-field > span{display:block;font:700 12px/1.3 system-ui,sans-serif;color:#334155;margin-bottom:6px;}
+          .tplb-media-slot{display:flex;align-items:center;gap:12px;border:1.5px dashed rgba(148,163,184,.55);border-radius:12px;padding:10px 12px;}
+          .tplb-media-slot.is-filled{border-style:solid;border-color:rgba(22,163,74,.5);background:rgba(22,163,74,.05);}
+          .tplb-media-thumb{width:52px;height:52px;border-radius:10px;background-color:#f1f5f9;background-size:cover;background-position:center;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;}
+          .tplb-media-main{flex:1;min-width:0;}
+          .tplb-media-name{font:700 13px/1.4 system-ui,sans-serif;color:#0f172a;}
+          .tplb-media-sub{font:500 11.5px/1.4 system-ui,sans-serif;color:#64748b;}
+          .tplb-media-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 14px;border-radius:999px;background:#0f172a;color:#ffffff;font:700 12px/1 system-ui,sans-serif;cursor:pointer;flex:none;}
+          .tplb-media-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+          .tplb-media-remove{border:0;background:transparent;color:#dc2626;font:700 12px/1 system-ui,sans-serif;cursor:pointer;flex:none;}
+          .tplb-questions{display:grid;gap:8px;}
+          .tplb-question-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;}
+          .tplb-qremove{width:36px;height:36px;border-radius:10px;border:1.5px solid rgba(220,38,38,.4);background:#ffffff;color:#dc2626;font:800 16px/1 system-ui,sans-serif;cursor:pointer;}
+          .tplb-add{justify-self:start;border:1.5px dashed rgba(37,99,235,.5);background:#ffffff;color:#1d4ed8;border-radius:999px;min-height:36px;padding:0 16px;font:700 12.5px/1 system-ui,sans-serif;cursor:pointer;}
+          .tplb-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid rgba(148,163,184,.3);background:#f8fafc;}
+          .tplb-footer-note{margin-right:auto;font:500 11.5px/1.4 system-ui,sans-serif;color:#64748b;}
+          .tplb-btn{border:0;border-radius:999px;min-height:42px;padding:0 22px;font:800 13px/1 system-ui,sans-serif;cursor:pointer;}
+          .tplb-btn-preview{background:#e2e8f0;color:#0f172a;}
+          .tplb-btn-publish{background:#16a34a;color:#ffffff;box-shadow:0 10px 22px rgba(22,163,74,.3);}
+          .tplb-btn[disabled]{opacity:.6;cursor:default;}
+          @media (max-width:767px){
+            .trainer-builder-setup-template-shell{height:min(74vh,calc(100vh - 84px));}
+            .tplb-grid2{grid-template-columns:1fr;}
+            .tplb-question-row{grid-template-columns:1fr auto;}
+            .tplb-question-row input[data-tpl-qfield="options"]{grid-column:1 / -1;}
+            .tplb-footer{flex-wrap:wrap;}
+            .tplb-footer-note{flex-basis:100%;margin:0 0 4px;}
+          }
+        </style>
+        <button type="button" class="trainer-builder-setup-resize-handle" data-tpl-resize="1" aria-label="Resize template panel"></button>
+        <div class="tplb-scroll">
+          <div class="tplb-section">
+            <div class="tplb-title">Build from a template</div>
+            <div class="tplb-help">Pick a look, drop in your content, then hit Preview or Publish. Anything you leave blank is simply left out of the site - but every section below is recommended for the best-converting page.</div>
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">1 &middot; Template</div>
+            <div class="tplb-cards">
+              ${templates.map((entry) => `
+              <button type="button" class="tplb-card${entry.id === state.templateId ? ' is-active' : ''}" data-tpl-pick="${entry.id}">
+                <div class="tplb-swatches">${entry.swatches.map((color) => `<span class="tplb-swatch" style="background:${color}"></span>`).join('')}</div>
+                <div class="tplb-card-name">${escapeHtml(entry.name)}</div>
+                <div class="tplb-card-sub">${escapeHtml(entry.blurb)}</div>
+              </button>`).join('')}
+            </div>
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">2 &middot; Colors</div>
+            <div class="tplb-choice-row">
+              <button type="button" class="tplb-choice${state.colorMode === 'default' ? ' is-active' : ''}" data-tpl-colormode="default">Default (template colors)</button>
+              <button type="button" class="tplb-choice${state.colorMode === 'custom' ? ' is-active' : ''}" data-tpl-colormode="custom">My accent colors</button>
+            </div>
+            ${state.colorMode === 'custom' ? `
+            <div class="tplb-colors">
+              <label class="tplb-color"><input type="color" value="${escapeHtml(accentPrimary)}" data-tpl-color="accentPrimary"><span>Main accent</span></label>
+              <label class="tplb-color"><input type="color" value="${escapeHtml(accentSecondary)}" data-tpl-color="accentSecondary"><span>Second accent</span></label>
+            </div>` : ''}
+            <div class="tplb-note">You can change colors anytime - re-open Template and publish again, or tweak the code over in Custom.</div>
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">3 &middot; Brand and headline</div>
+            <div class="tplb-grid2">
+              <label class="tplb-field"><span>Brand / business name</span><input class="tplb-input" type="text" value="${escapeHtml(state.brandName)}" placeholder="${escapeHtml(trainerName ? `${trainerName} Coaching` : 'e.g. Forge Athletics')}" data-tpl-field="brandName"></label>
+              <label class="tplb-field"><span>Coach name</span><input class="tplb-input" type="text" value="${escapeHtml(state.coachName)}" placeholder="${escapeHtml(trainerName || 'e.g. Alex Stone')}" data-tpl-field="coachName"></label>
+            </div>
+            <label class="tplb-field"><span>Headline <span class="tplb-rec">Recommended</span></span><input class="tplb-input" type="text" value="${escapeHtml(state.headline)}" placeholder="e.g. Stop guessing. Start seeing real progress" data-tpl-field="headline"></label>
+            <label class="tplb-field"><span>Subheadline</span><input class="tplb-input" type="text" value="${escapeHtml(state.subheadline)}" placeholder="One or two sentences on who you help and how" data-tpl-field="subheadline"></label>
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">4 &middot; Sales video (VSL)</div>
+            <div class="tplb-help">Plays front and center at the top of your site. Skip it and the video section is left out.</div>
+            ${renderTemplateMediaSlot({ key: 'vslVideo', title: 'VSL video', sub: 'MP4, WebM, OGG, or MOV - up to 80MB.', recommended: true, isVideo: true })}
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">5 &middot; Photos</div>
+            <div class="tplb-help">A coach photo builds trust, and client progress pictures sell results. Empty slots are left out.</div>
+            ${renderTemplateMediaSlot({ key: 'coachPhoto', title: 'Coach photo', sub: 'A clear photo of you.', recommended: true })}
+            ${renderTemplateMediaSlot({ key: 'progress1', title: 'Progress picture 1', sub: 'Client before/after or progress shot.', recommended: true })}
+            ${renderTemplateMediaSlot({ key: 'progress2', title: 'Progress picture 2', sub: 'Client before/after or progress shot.' })}
+            ${renderTemplateMediaSlot({ key: 'progress3', title: 'Progress picture 3', sub: 'Client before/after or progress shot.' })}
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">6 &middot; About you</div>
+            <label class="tplb-field"><span>Short bio <span class="tplb-rec">Recommended</span></span><textarea class="tplb-input" rows="3" placeholder="Who you are, how you coach, and who you help. Blank lines start a new paragraph." data-tpl-field="aboutBio">${escapeHtml(state.aboutBio)}</textarea></label>
+          </div>
+          <div class="tplb-section">
+            <div class="tplb-kicker">7 &middot; Consult form questions <span class="tplb-rec">Recommended</span></div>
+            <div class="tplb-help">Name, email, and phone are always included. Add your own questions below - give a question comma-separated choices to turn it into a dropdown.</div>
+            <div class="tplb-questions">${questionRows || '<div class="tplb-help">No custom questions yet.</div>'}</div>
+            <button type="button" class="tplb-add" data-tpl-qadd="1">+ Add question</button>
+          </div>
+        </div>
+        <div class="tplb-footer">
+          <span class="tplb-footer-note">Preview loads the site into Custom without publishing. Publish puts it live right away.</span>
+          <button type="button" class="tplb-btn tplb-btn-preview" data-tpl-preview-btn="1">Preview</button>
+          <button type="button" class="tplb-btn tplb-btn-publish" data-tpl-publish-btn="1">Publish</button>
+        </div>
+      </div>`;
+  }
+
+  async function handleTemplateBuilderUpload(inputEl) {
+    const key = String(inputEl?.getAttribute('data-tpl-upload') || '').trim();
+    const file = inputEl?.files?.[0] || null;
+    if (!key || !file || !(key in templateBuilderState.media)) return;
+    const isVideo = key === 'vslVideo';
+    const mime = String(file.type || '').toLowerCase();
+    const allowedMimeTypes = isVideo
+      ? ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']
+      : ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'];
+    const maxBytes = isVideo ? 80_000_000 : 10_000_000;
+    if (!allowedMimeTypes.includes(mime)) {
+      showStandaloneTransientToast(
+        isVideo
+          ? `That video format (${mime || 'unknown'}) isn't supported. Use MP4, WebM, OGG, or MOV.`
+          : `That image format (${mime || 'unknown'}) isn't supported. Use PNG, JPG, WebP, GIF, or AVIF.`,
+        'error',
+        { autoHideMs: 6000 }
+      );
+      inputEl.value = '';
+      return;
+    }
+    if (file.size > maxBytes) {
+      showStandaloneTransientToast(
+        `That ${isVideo ? 'video' : 'image'} is too large (${Math.round(file.size / 1_000_000)}MB). The limit is ${isVideo ? '80MB' : '10MB'}.`,
+        'error',
+        { autoHideMs: 6000 }
+      );
+      inputEl.value = '';
+      return;
+    }
+    const labelEl = document.querySelector(`[data-tpl-upload-label="${key}"]`);
+    templateBuilderState.uploading[key] = true;
+    if (labelEl) labelEl.textContent = 'Uploading...';
+    try {
+      let blob = file;
+      try {
+        const snapshot = await file.arrayBuffer();
+        blob = new Blob([snapshot], { type: mime });
+      } catch {}
+      const result = await uploadTrainerMediaBlob(blob, {
+        kind: isVideo ? 'video' : 'image',
+        mime,
+        fileName: String(file.name || ''),
+        onProgress: (percent) => {
+          const liveLabel = document.querySelector(`[data-tpl-upload-label="${key}"]`);
+          if (liveLabel) liveLabel.textContent = `Uploading ${percent}%`;
+        }
+      });
+      const url = String(result?.json?.media?.url || '').trim();
+      if (!result?.json?.ok || !url) {
+        const status = Number(result?.status) || 0;
+        showStandaloneTransientToast(
+          String(result?.json?.error || '').trim()
+            || (status === 401 ? 'You are signed out - sign in again and retry.' : `Upload failed (server responded ${status}).`),
+          'error',
+          { autoHideMs: 6000 }
+        );
+        return;
+      }
+      let poster = '';
+      if (isVideo) {
+        try {
+          const posterBlob = await captureVideoPosterBlob(blob);
+          if (posterBlob) {
+            const posterResult = await uploadTrainerMediaBlob(posterBlob, {
+              kind: 'image',
+              mime: 'image/jpeg',
+              fileName: `${String(file.name || 'vsl').replace(/\.[^.]+$/, '')}-poster.jpg`
+            });
+            poster = String(posterResult?.json?.media?.url || '').trim();
+          }
+        } catch {}
+      }
+      templateBuilderState.media[key] = { url, poster };
+      showStandaloneTransientToast(isVideo ? 'Video uploaded.' : 'Image uploaded.', 'success', { autoHideMs: 2200 });
+    } catch {
+      showStandaloneTransientToast('Upload failed before reaching the server - check your connection and try again.', 'error', { autoHideMs: 6000 });
+    } finally {
+      delete templateBuilderState.uploading[key];
+      renderCurrentProfile();
+    }
+  }
+
+  let templateBuilderApplying = false;
+  async function applyTemplateBuilderSite({ publish = false } = {}) {
+    if (templateBuilderApplying || !editorState.draft) return;
+    templateBuilderApplying = true;
+    try {
+      const code = buildTrainerTemplateSiteCode();
+      // Hand the generated site to the Custom editor - from there the normal
+      // flow (live preview, edits, Done) takes over.
+      editorState.setupPanelMode = 'custom';
+      standaloneCodeHighlightRange = null;
+      updateBuilderDraft((draft) => {
+        draft.mode = 'custom_code';
+        draft.draftContent = draft.draftContent && typeof draft.draftContent === 'object' ? draft.draftContent : {};
+        draft.draftContent.mode = 'custom_code';
+        draft.draftContent.customCode = draft.draftContent.customCode && typeof draft.draftContent.customCode === 'object'
+          ? draft.draftContent.customCode
+          : {};
+        draft.draftContent.customCode.html = code;
+        draft.draftContent.customCode.css = '';
+        draft.draftContent.customCode.javascript = '';
+        draft.draftContent.customCode.iframes = [];
+        draft.draftContent.customCode.embedScripts = [];
+      });
+      if (publish) {
+        await waitForBuilderSaveIdle();
+        const saved = await persistBuilderPage({ autosave: false, exitEdit: false, publish: true });
+        if (saved?.id) {
+          showStandaloneTransientToast('Template published - your site is live. Fine-tune it here in Custom anytime.', 'success', { autoHideMs: 4200 });
+        } else {
+          showStandaloneTransientToast('Template loaded into Custom, but publishing failed. Press Done to try again.', 'error', { autoHideMs: 4600 });
+        }
+      } else {
+        showStandaloneTransientToast('Template loaded into Custom as a preview - nothing is published yet. Press Done when it looks right.', 'success', { autoHideMs: 4200 });
+      }
+    } finally {
+      templateBuilderApplying = false;
+    }
+  }
+
+  function bindTemplateBuilderControls() {
+    document.querySelectorAll('[data-standalone-mode]').forEach((button) => {
+      button.onclick = () => {
+        const nextMode = String(button.getAttribute('data-standalone-mode') || 'custom').trim() === 'template' ? 'template' : 'custom';
+        if (editorState.setupPanelMode === nextMode) return;
+        editorState.setupPanelMode = nextMode;
+        renderCurrentProfile();
+      };
+    });
+    if (typeof window.__trainerTemplatePanelResizeCleanup === 'function') {
+      window.__trainerTemplatePanelResizeCleanup();
+      window.__trainerTemplatePanelResizeCleanup = null;
+    }
+    const panel = document.querySelector('[data-template-builder="1"]');
+    if (!panel) return;
+    const templateResizeHandle = panel.querySelector('[data-tpl-resize="1"]');
+    if (templateResizeHandle instanceof HTMLElement) {
+      const minWidth = 320;
+      const minHeight = 220;
+      let activePointerId = null;
+      let startX = 0;
+      let startY = 0;
+      let startWidth = 0;
+      let startHeight = 0;
+      const isMobileResize = () => window.matchMedia('(max-width: 767px)').matches;
+      const onPointerMove = (event) => {
+        if (activePointerId == null || event.pointerId !== activePointerId) return;
+        const dx = Number(event.clientX || 0) - startX;
+        const dy = Number(event.clientY || 0) - startY;
+        const viewportPadding = isMobileResize() ? 24 : 36;
+        const maxWidth = Math.max(minWidth, window.innerWidth - viewportPadding);
+        const maxHeight = Math.max(minHeight, window.innerHeight - (isMobileResize() ? 68 : 76));
+        const nextHeight = Math.min(maxHeight, Math.max(minHeight, Math.round(startHeight - dy)));
+        panel.style.height = `${nextHeight}px`;
+        templateBuilderState.panelHeight = nextHeight;
+        if (!isMobileResize()) {
+          const nextWidth = Math.max(minWidth, Math.min(maxWidth, Math.round(startWidth + dx)));
+          panel.style.width = `${nextWidth}px`;
+          templateBuilderState.panelWidth = nextWidth;
+        } else {
+          panel.style.width = '';
+        }
+        event.preventDefault();
+      };
+      const onPointerUp = (event) => {
+        if (activePointerId == null || event.pointerId !== activePointerId) return;
+        const pointerId = activePointerId;
+        activePointerId = null;
+        templateResizeHandle.releasePointerCapture?.(pointerId);
+      };
+      const onPointerDown = (event) => {
+        activePointerId = event.pointerId;
+        startX = Number(event.clientX || 0);
+        startY = Number(event.clientY || 0);
+        const bounds = panel.getBoundingClientRect();
+        startWidth = Math.round(bounds.width || panel.offsetWidth || 0);
+        startHeight = Math.round(bounds.height || panel.offsetHeight || 0);
+        templateResizeHandle.setPointerCapture?.(activePointerId);
+        event.stopPropagation();
+        event.preventDefault();
+      };
+      templateResizeHandle.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+      window.__trainerTemplatePanelResizeCleanup = () => {
+        templateResizeHandle.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+      };
+    }
+    panel.querySelectorAll('[data-tpl-pick]').forEach((button) => {
+      button.onclick = () => {
+        templateBuilderState.templateId = String(button.getAttribute('data-tpl-pick') || 'apex').trim() || 'apex';
+        renderCurrentProfile();
+      };
+    });
+    panel.querySelectorAll('[data-tpl-colormode]').forEach((button) => {
+      button.onclick = () => {
+        const next = String(button.getAttribute('data-tpl-colormode') || 'default').trim() === 'custom' ? 'custom' : 'default';
+        if (templateBuilderState.colorMode === next) return;
+        templateBuilderState.colorMode = next;
+        if (next === 'custom') {
+          const activeTpl = trainerSiteTemplates().find((entry) => entry.id === templateBuilderState.templateId) || trainerSiteTemplates()[0];
+          if (!templateBuilderState.accentPrimary) templateBuilderState.accentPrimary = activeTpl.accent;
+          if (!templateBuilderState.accentSecondary) templateBuilderState.accentSecondary = activeTpl.accent2;
+        }
+        renderCurrentProfile();
+      };
+    });
+    panel.querySelectorAll('[data-tpl-color]').forEach((input) => {
+      input.oninput = () => {
+        const key = String(input.getAttribute('data-tpl-color') || '');
+        if (key === 'accentPrimary' || key === 'accentSecondary') templateBuilderState[key] = String(input.value || '');
+      };
+    });
+    panel.querySelectorAll('[data-tpl-field]').forEach((input) => {
+      input.oninput = () => {
+        const key = String(input.getAttribute('data-tpl-field') || '');
+        if (['brandName', 'coachName', 'headline', 'subheadline', 'aboutBio'].includes(key)) {
+          templateBuilderState[key] = String(input.value || '');
+        }
+      };
+    });
+    panel.querySelectorAll('[data-tpl-qfield]').forEach((input) => {
+      input.oninput = () => {
+        const index = Number(input.getAttribute('data-tpl-qindex'));
+        const field = String(input.getAttribute('data-tpl-qfield') || '');
+        const entry = templateBuilderState.consultQuestions[index];
+        if (entry && (field === 'label' || field === 'options')) entry[field] = String(input.value || '');
+      };
+    });
+    panel.querySelectorAll('[data-tpl-qremove]').forEach((button) => {
+      button.onclick = () => {
+        const index = Number(button.getAttribute('data-tpl-qremove'));
+        if (Number.isInteger(index)) templateBuilderState.consultQuestions.splice(index, 1);
+        renderCurrentProfile();
+      };
+    });
+    const addQuestionBtn = panel.querySelector('[data-tpl-qadd]');
+    if (addQuestionBtn) {
+      addQuestionBtn.onclick = () => {
+        templateBuilderState.consultQuestions.push({ label: '', options: '' });
+        renderCurrentProfile();
+        const labelInputs = document.querySelectorAll('[data-tpl-qfield="label"]');
+        const lastLabelInput = labelInputs[labelInputs.length - 1];
+        if (lastLabelInput) try { lastLabelInput.focus(); } catch {}
+      };
+    }
+    panel.querySelectorAll('[data-tpl-upload]').forEach((input) => {
+      input.onchange = () => { void handleTemplateBuilderUpload(input); };
+    });
+    panel.querySelectorAll('[data-tpl-media-remove]').forEach((button) => {
+      button.onclick = () => {
+        const key = String(button.getAttribute('data-tpl-media-remove') || '');
+        if (key in templateBuilderState.media) templateBuilderState.media[key] = null;
+        renderCurrentProfile();
+      };
+    });
+    const templatePreviewBtn = panel.querySelector('[data-tpl-preview-btn]');
+    if (templatePreviewBtn) templatePreviewBtn.onclick = () => { void applyTemplateBuilderSite({ publish: false }); };
+    const templatePublishBtn = panel.querySelector('[data-tpl-publish-btn]');
+    if (templatePublishBtn) {
+      templatePublishBtn.onclick = () => {
+        templatePublishBtn.disabled = true;
+        templatePublishBtn.textContent = 'Publishing...';
+        void applyTemplateBuilderSite({ publish: true });
+      };
+    }
+  }
+
   function renderStandaloneBuilderSetup(page, trainer) {
+    const templatePanelActive = editorState.setupPanelMode === 'template';
     const codeBlock = serializeSimpleCodeBlock(page, { publicView: false });
     const previewCodeBlock = sanitizeStandaloneEditorMarkup(codeBlock);
     const narrowViewport = window.matchMedia('(max-width: 767px)').matches;
@@ -6434,6 +7360,32 @@
             box-shadow: none;
             border: 0;
             pointer-events: auto;
+          }
+          .trainer-builder-setup-mode-tabs {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.95);
+            border: 1px solid rgba(148,163,184,.25);
+            box-shadow: 0 10px 24px rgba(2,6,23,.18);
+            margin-right: auto;
+            pointer-events: auto;
+          }
+          .trainer-builder-setup-mode-tab {
+            border: 0;
+            border-radius: 999px;
+            min-height: 34px;
+            padding: 0 16px;
+            font: 800 12.5px/1 system-ui,sans-serif;
+            color: #334155;
+            background: transparent;
+            cursor: pointer;
+          }
+          .trainer-builder-setup-mode-tab.is-active {
+            background: #0f172a;
+            color: #ffffff;
+            box-shadow: 0 6px 14px rgba(2,6,23,.25);
           }
           .trainer-builder-setup-textarea-shell {
             position: relative;
@@ -6814,12 +7766,18 @@
           ${previewFrameMarkup}
         </div>
         ${renderStandaloneInspectorControls()}
-        <div class="trainer-builder-setup-input" aria-label="Paste website code">
+        <div class="trainer-builder-setup-input" aria-label="Website editor panel">
           <div class="trainer-builder-setup-code-toolbar">
+            <div class="trainer-builder-setup-mode-tabs" role="tablist" aria-label="Editor mode">
+              <button type="button" class="trainer-builder-setup-mode-tab${templatePanelActive ? ' is-active' : ''}" data-standalone-mode="template">Template</button>
+              <button type="button" class="trainer-builder-setup-mode-tab${templatePanelActive ? '' : ' is-active'}" data-standalone-mode="custom">Custom</button>
+            </div>
+            ${templatePanelActive ? '' : `
             <button type="button" class="trainer-profile-edit-toggle" data-standalone-done="1">Done</button>
-            <button type="button" class="trainer-profile-edit-secondary" data-standalone-undo="1">Undo</button>
+            <button type="button" class="trainer-profile-edit-secondary" data-standalone-undo="1">Undo</button>`}
             <button type="button" class="trainer-profile-edit-secondary" data-standalone-cancel="1">Cancel</button>
           </div>
+          ${templatePanelActive ? renderStandaloneTemplatePanel(trainer) : `
           <div class="trainer-builder-setup-textarea-shell">
             <button type="button" class="trainer-builder-setup-resize-handle" data-standalone-code-resize="1" aria-label="Resize code editor"></button>
             <button type="button" class="trainer-builder-setup-clear" data-standalone-code-clear="1" aria-label="Clear the code">Clear</button>
@@ -6827,7 +7785,7 @@
               <pre id="trainer-page-code-highlight" class="trainer-builder-setup-code-highlight" aria-hidden="true">${renderStandaloneCodeHighlight(codeBlock)}</pre>
               <textarea id="trainer-page-code-html" class="trainer-builder-setup-textarea" spellcheck="false" placeholder="Paste your custom website code here...">${escapeHtml(codeBlock)}</textarea>
             </div>
-          </div>
+          </div>`}
         </div>
       </section>
     `;
@@ -8136,6 +9094,7 @@
         void stepStandaloneBuilderHistory('undo');
       };
     });
+    bindTemplateBuilderControls();
     document.querySelectorAll('[data-standalone-cancel]').forEach((button) => {
       button.onclick = () => {
         const okay = window.confirm('Discard changes and go back?');

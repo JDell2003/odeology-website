@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Account · RiseForIt</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+  <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
   <style>
     body.account-page {
       overflow: auto !important;
@@ -1221,6 +1221,311 @@
         flex-direction: column;
       }
     }
+
+    /* ===== Account redesign: hero, health snapshot, devices ===== */
+    .account-card {
+      border-radius: 18px;
+      border: 1px solid rgba(13, 34, 50, 0.08);
+      box-shadow: 0 14px 34px rgba(13, 34, 50, 0.06);
+    }
+    .account-hero {
+      position: relative;
+      overflow: hidden;
+      padding: 22px 20px;
+      background:
+        radial-gradient(circle at 82% 0%, rgba(217, 161, 92, 0.22), transparent 46%),
+        linear-gradient(135deg, #0b0f18 0%, #101a2a 55%, #0a1320 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .account-hero-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 18% 110%, rgba(59, 74, 102, 0.4), transparent 52%);
+    }
+    .account-hero .account-row { position: relative; }
+    .account-hero .account-avatar {
+      width: 76px;
+      height: 76px;
+      flex: 0 0 76px;
+      border: 2px solid rgba(217, 161, 92, 0.65);
+      background: linear-gradient(135deg, #d9a15c, #8e5d1f);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+    }
+    .account-hero .account-fallback { color: #0c1119; font-size: 1.35rem; }
+    .account-hero .account-name { color: #fff; font-size: 1.35rem; letter-spacing: -0.01em; }
+    .account-hero-meta {
+      margin-top: 4px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.55);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+    }
+    .account-hero-chips {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .account-hero-chip {
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(217, 161, 92, 0.45);
+      background: rgba(217, 161, 92, 0.14);
+      color: #e5b070;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .account-hero .account-friends { color: rgba(255, 255, 255, 0.6); }
+    .account-hero .account-status { color: rgba(255, 255, 255, 0.55); }
+    .account-hero .account-requests-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+    .account-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .account-stat-tile {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(13, 34, 50, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 10px 24px rgba(13, 34, 50, 0.05);
+      padding: 14px 14px 12px;
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+    .account-stat-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.55);
+    }
+    .account-stat-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #102334;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .account-stat-value small { font-size: 0.8rem; color: rgba(13, 34, 50, 0.5); font-weight: 700; }
+    .account-stat-sub { font-size: 0.76rem; font-weight: 600; color: rgba(13, 34, 50, 0.5); }
+    .account-stat-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 30px;
+      margin-top: 2px;
+    }
+    .account-stat-bars span {
+      flex: 1;
+      min-height: 3px;
+      border-radius: 3px 3px 1px 1px;
+      background: linear-gradient(180deg, #d9a15c, #b9782d);
+      opacity: 0.85;
+    }
+    .account-stat-bars span.is-empty { background: rgba(13, 34, 50, 0.1); }
+    .account-stat-bars.is-sleep span { background: linear-gradient(180deg, #5c86d9, #3a5ea8); }
+    .account-stat-bars.is-sleep span.is-empty { background: rgba(13, 34, 50, 0.1); }
+    .account-section-head h2 { margin: 0; font-size: 1.05rem; color: #102334; }
+    .account-section-copy { margin-top: 4px; font-size: 0.84rem; color: rgba(13, 34, 50, 0.55); }
+    .account-health-status {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1d6f4c;
+      min-height: 1em;
+    }
+    .account-health-status.is-error { color: #a33b23; }
+    .account-launch-row {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .account-launch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(217, 161, 92, 0.4);
+      background: linear-gradient(135deg, rgba(217, 161, 92, 0.12), rgba(217, 161, 92, 0.04));
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .account-launch:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(184, 111, 21, 0.16); }
+    .account-launch-icon {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #d9a15c, #b9782d);
+      color: #0c1119;
+    }
+    .account-launch-icon svg { width: 22px; height: 22px; }
+    .account-launch b { display: block; font-size: 0.92rem; color: #102334; }
+    .account-launch small { display: block; margin-top: 2px; font-size: 0.76rem; color: rgba(13, 34, 50, 0.55); }
+    .account-provider-list { margin-top: 12px; display: grid; gap: 10px; }
+    .account-provider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(13, 34, 50, 0.08);
+      background: rgba(247, 250, 253, 0.8);
+    }
+    .account-provider-row.is-connected { border-color: rgba(29, 111, 76, 0.35); background: rgba(29, 111, 76, 0.05); }
+    .account-provider-mark {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+    }
+    .account-provider-mark svg { width: 22px; height: 22px; }
+    .account-provider-mark.is-strava { background: rgba(252, 82, 0, 0.12); color: #fc5200; }
+    .account-provider-mark.is-fitbit { background: rgba(0, 176, 185, 0.12); color: #00b0b9; }
+    .account-provider-mark.is-apple { background: rgba(13, 34, 50, 0.08); color: #102334; }
+    .account-provider-copy { flex: 1; min-width: 0; }
+    .account-provider-copy b { display: block; font-size: 0.95rem; color: #102334; }
+    .account-provider-copy small { display: block; margin-top: 2px; font-size: 0.78rem; color: rgba(13, 34, 50, 0.55); line-height: 1.4; }
+    .account-provider-copy small.is-error { color: #a33b23; }
+    .account-provider-btn {
+      flex: none;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(13, 34, 50, 0.75);
+      background: #fff;
+      color: #102334;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .account-provider-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(13, 34, 50, 0.12); }
+    .account-provider-btn.is-primary,
+    .account-provider-btn.is-connect {
+      border-color: #b9782d;
+      background: linear-gradient(180deg, #d9a15c, #b9782d);
+      color: #0c1119;
+    }
+    .account-provider-btn.is-disconnect { border-color: rgba(163, 59, 35, 0.5); color: #a33b23; }
+    .account-provider-btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    .account-manual { margin-top: 14px; border-top: 1px dashed rgba(13, 34, 50, 0.14); padding-top: 12px; }
+    .account-manual-toggle {
+      border: 0;
+      background: none;
+      padding: 0;
+      color: #b9782d;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .account-manual-form {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .account-manual-form label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(13, 34, 50, 0.55);
+    }
+    .account-manual-form input {
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(13, 34, 50, 0.16);
+      padding: 0 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #102334;
+      background: #fff;
+    }
+    .account-manual-form input:focus { outline: none; border-color: #b9782d; box-shadow: 0 0 0 3px rgba(217, 161, 92, 0.18); }
+    @media (max-width: 860px) {
+      .account-stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .account-manual-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .account-manual-form .account-provider-btn { grid-column: span 2; }
+    }
+    /* ===== Mobile restructure ===== */
+    @media (max-width: 640px) {
+      .account-main {
+        margin-top: calc(var(--navbar-height, 72px) + 12px);
+        padding: 0 12px 24px;
+      }
+      .account-grid { gap: 12px; }
+      .account-card { padding: 15px 14px; border-radius: 16px; }
+      /* Hero: centered identity, actions as a full-width row below */
+      .account-hero { padding: 22px 16px 18px; }
+      .account-hero .account-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .account-hero .account-row-main {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        width: 100%;
+      }
+      .account-hero .account-avatar { width: 84px; height: 84px; flex: 0 0 84px; }
+      .account-hero-id { display: grid; justify-items: center; }
+      .account-hero-meta { justify-content: center; text-align: center; }
+      .account-hero-chips { justify-content: center; }
+      .account-hero .account-row-actions {
+        margin: 0 auto;
+        width: 100%;
+        justify-content: center;
+        align-self: auto;
+      }
+      .account-hero .account-requests-btn {
+        flex: 1;
+        max-width: 170px;
+        justify-content: center;
+        min-height: 42px;
+      }
+      /* Stats: tight 2x2 */
+      .account-stats-row { gap: 10px; }
+      .account-stat-tile { padding: 12px 12px 10px; border-radius: 14px; gap: 4px; }
+      .account-stat-value { font-size: 1.3rem; }
+      .account-stat-label { font-size: 0.66rem; }
+      .account-stat-sub { font-size: 0.7rem; }
+      .account-stat-bars { height: 24px; }
+      /* Launchers stack full width */
+      .account-launch-row { grid-template-columns: 1fr; }
+      /* Provider rows: keep the button reachable, let text breathe */
+      .account-provider-row { padding: 11px 12px; }
+      .account-provider-copy small { font-size: 0.74rem; }
+      .account-provider-btn { padding: 7px 13px; font-size: 0.78rem; }
+      .account-provider-row.is-info { flex-wrap: wrap; }
+      /* Manual form: date+steps / cardio+sleep, save full width */
+      .account-manual-form { gap: 8px; }
+      .account-manual-form input { min-height: 42px; }
+      /* Settings / invite launchers feel like list items */
+      .account-settings-link { padding: 14px 0; }
+    }
   </style>
 </head>
 <body class="account-page" data-require-auth="1">
@@ -1333,12 +1638,15 @@
 
   <main class="account-main">
     <div class="account-grid">
-      <section class="account-card">
+      <section class="account-card account-hero">
+        <div class="account-hero-glow" aria-hidden="true"></div>
         <div class="account-row">
           <div class="account-row-main">
             <div class="account-avatar" id="account-avatar"></div>
-            <div>
+            <div class="account-hero-id">
               <div class="account-name" id="account-name">Account</div>
+              <div class="account-hero-meta" id="account-hero-meta"></div>
+              <div class="account-hero-chips" id="account-hero-chips"></div>
               <div class="account-friends" id="account-friends">0 friends</div>
             </div>
           </div>
@@ -1361,6 +1669,94 @@
           <div class="account-req-list" id="account-req-list"></div>
         </div>
         <div class="account-status" id="account-status"></div>
+      </section>
+
+      <section class="account-stats-row" id="account-health-stats" aria-label="Health snapshot">
+        <div class="account-stat-tile">
+          <div class="account-stat-label">Steps today</div>
+          <div class="account-stat-value" id="health-steps-today">—</div>
+          <div class="account-stat-bars" id="health-steps-bars" aria-hidden="true"></div>
+        </div>
+        <div class="account-stat-tile">
+          <div class="account-stat-label">Active minutes</div>
+          <div class="account-stat-value" id="health-active-today">—</div>
+          <div class="account-stat-sub" id="health-active-week">this week: —</div>
+        </div>
+        <div class="account-stat-tile">
+          <div class="account-stat-label">Sleep last night</div>
+          <div class="account-stat-value" id="health-sleep-today">—</div>
+          <div class="account-stat-bars is-sleep" id="health-sleep-bars" aria-hidden="true"></div>
+        </div>
+        <div class="account-stat-tile">
+          <div class="account-stat-label">7-day avg steps</div>
+          <div class="account-stat-value" id="health-steps-avg">—</div>
+          <div class="account-stat-sub" id="health-sync-note">connect a device to auto-track</div>
+        </div>
+      </section>
+
+      <section class="account-card" id="account-health-card">
+        <div class="account-section-head">
+          <div>
+            <h2>Health &amp; Devices</h2>
+            <div class="account-section-copy">Link a tracker to auto-sync your steps, cardio, and sleep — or log them yourself.</div>
+          </div>
+        </div>
+        <div class="account-health-status" id="health-status"></div>
+        <div class="account-launch-row">
+          <a class="account-launch" href="activity.html">
+            <span class="account-launch-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l4 3-3 4 3 5-2 4"/><path d="M10 8 6 9l-2 4"/><path d="M13 11l-4 2-3 7"/><circle cx="15" cy="3.5" r="1.6"/></svg>
+            </span>
+            <span><b>Track a walk / run</b><small>Live GPS distance · gym check-in</small></span>
+          </a>
+          <a class="account-launch" href="alarm.html">
+            <span class="account-launch-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2"/><path d="M5 4 3 6M19 4l2 2"/></svg>
+            </span>
+            <span><b>Rise alarm</b><small>Sleep log · voice wake mission</small></span>
+          </a>
+        </div>
+        <div class="account-provider-list" id="health-providers">
+          <div class="account-provider-row" data-provider="strava">
+            <span class="account-provider-mark is-strava" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M10.5 2 4.5 13.5h3.8l2.2-4.2 2.2 4.2h3.8L10.5 2Z" fill="currentColor"/><path d="M14.7 13.5l1.7 3.4 1.7-3.4h2.6L16.4 22l-4.3-8.5h2.6Z" fill="currentColor" opacity="0.65"/></svg>
+            </span>
+            <div class="account-provider-copy">
+              <b>Strava</b>
+              <small data-provider-status>Runs, rides, and cardio sessions</small>
+            </div>
+            <button type="button" class="account-provider-btn" data-provider-action>Connect</button>
+          </div>
+          <div class="account-provider-row" data-provider="fitbit">
+            <span class="account-provider-mark is-fitbit" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="17" cy="12" r="2.4" fill="currentColor"/><circle cx="12.2" cy="12" r="1.9" fill="currentColor"/><circle cx="12.2" cy="7" r="1.7" fill="currentColor"/><circle cx="12.2" cy="17" r="1.7" fill="currentColor"/><circle cx="7.8" cy="12" r="1.5" fill="currentColor"/><circle cx="7.8" cy="7.2" r="1.3" fill="currentColor"/><circle cx="7.8" cy="16.8" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.1" fill="currentColor"/></svg>
+            </span>
+            <div class="account-provider-copy">
+              <b>Fitbit</b>
+              <small data-provider-status>Steps, active minutes, and sleep</small>
+            </div>
+            <button type="button" class="account-provider-btn" data-provider-action>Connect</button>
+          </div>
+          <div class="account-provider-row is-info" data-provider="apple">
+            <span class="account-provider-mark is-apple" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.2 1.8-3.3 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.5-.7 2.9-.7s1.7.7 2.9.7c1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.4 1.2-2.5 0 0-2.3-.9-2.3-3.8Z" fill="currentColor"/><path d="M14.4 5.9c.6-.8 1-1.8.9-2.9-.9 0-1.9.6-2.6 1.3-.6.7-1 1.7-.9 2.8 1 .1 2-.5 2.6-1.2Z" fill="currentColor"/></svg>
+            </span>
+            <div class="account-provider-copy">
+              <b>Apple Health / Google</b>
+              <small>No web access — connect Strava or Fitbit (both sync from your phone), or log manually below.</small>
+            </div>
+          </div>
+        </div>
+        <div class="account-manual">
+          <button type="button" class="account-manual-toggle" id="health-manual-toggle">Log today manually</button>
+          <form class="account-manual-form hidden" id="health-manual-form">
+            <label>Date <input type="date" id="health-manual-day"></label>
+            <label>Steps <input type="number" id="health-manual-steps" min="0" max="200000" placeholder="8,000"></label>
+            <label>Cardio min <input type="number" id="health-manual-active" min="0" max="1440" placeholder="30"></label>
+            <label>Sleep hrs <input type="number" id="health-manual-sleep" min="0" max="24" step="0.5" placeholder="7.5"></label>
+            <button type="submit" class="account-provider-btn is-primary" id="health-manual-save">Save</button>
+          </form>
+        </div>
       </section>
 
       <div class="account-pr-modal hidden" id="account-pr-modal" role="dialog" aria-modal="true" aria-labelledby="account-pr-title">
@@ -1421,7 +1817,7 @@
       window.location.replace('trainer-dashboard.html');
     }
   </script>
-  <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
-  <script src="js/account.js?v=2026-03-26-account-pr-2"></script>
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script src="js/account.js?v=2026-07-10-usermenu-1"></script>
 </body>
 </html>

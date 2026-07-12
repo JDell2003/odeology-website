@@ -261,18 +261,32 @@
         }
 
         var lastActive = activity && activity.lastActiveDay ? activity.lastActiveDay : null;
+        var dayBuckets = (activity && activity.days) || {};
         var stats = {};
         AXES.forEach(function (a) { stats[a] = state.stats[a]; });
 
-        // Walk each elapsed day: active if it falls on/just after the last
-        // logged activity, otherwise it's an idle (decay) day.
+        // Walk every day that has fully ENDED since the last refresh:
+        // [state.day .. today-1]. A day's logged activity is folded in on
+        // the first refresh AFTER that day (yesterday moves today's graph),
+        // judged by that day's own activity bucket. Days with no bucket
+        // are idle and decay once past the grace window. (The old walk
+        // started at state.day+1, so for daily visitors the day they
+        // actually logged on was never revisited — activity never grew
+        // the stats at all.)
+        var dayHasSignal = function (d) {
+            var bucket = dayBuckets[d];
+            if (!bucket) return false;
+            for (var k in bucket) { if (Number(bucket[k]) > 0) return true; }
+            return false;
+        };
+        var lastActiveSeen = (lastActive && daysBetween(lastActive, state.day) >= 0) ? lastActive : null;
         for (var i = 0; i < gap; i++) {
-            var theDay = new Date(Date.parse(state.day + 'T00:00:00Z') + (i + 1) * 86400000).toISOString().slice(0, 10);
-            var isActive = lastActive ? daysBetween(theDay, lastActive) >= 0 : false;
-            if (isActive) {
+            var theDay = new Date(Date.parse(state.day + 'T00:00:00Z') + i * 86400000).toISOString().slice(0, 10);
+            if (dayHasSignal(theDay)) {
                 advanceOneDay(stats, seed, (profile && profile.goals) || [], activity);
+                lastActiveSeen = theDay;
             } else {
-                var idleSoFar = lastActive ? daysBetween(lastActive, theDay) : (i + 1);
+                var idleSoFar = lastActiveSeen ? daysBetween(lastActiveSeen, theDay) : (i + 1);
                 AXES.forEach(function (a) {
                     var grace = a === 'consistency' ? CONFIG.consistGrace : CONFIG.otherGrace;
                     if (idleSoFar <= grace) return;

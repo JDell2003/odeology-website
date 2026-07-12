@@ -37,6 +37,7 @@ const forumRoutes = require('./core/forumRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
+const healthRoutes = require('./core/healthRoutes');
 const studiesRoutes = require('./core/studiesRoutes');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
@@ -1655,6 +1656,52 @@ const serveStatic = (req, res, pathname) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = mime[ext] || 'application/octet-stream';
 
+    // Media files stream with HTTP Range support — without it Chrome treats
+    // <video> sources as unseekable (empty seekable range), which breaks
+    // timeline scrubbing and programmatic currentTime seeks everywhere.
+    const MEDIA_MIME = {
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.mov': 'video/quicktime',
+        '.m4a': 'audio/mp4',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav'
+    };
+    if (MEDIA_MIME[ext]) {
+        return fs.stat(filePath, (statErr, stat) => {
+            if (res.headersSent || res.writableEnded) return;
+            if (statErr || !stat.isFile()) {
+                res.writeHead(404);
+                return res.end('Not found');
+            }
+            const type = MEDIA_MIME[ext];
+            const baseHeaders = {
+                'Content-Type': type,
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': cacheControlForStatic(filePath, ext)
+            };
+            const range = /bytes=(\d*)-(\d*)/.exec(String(req.headers.range || ''));
+            if (range) {
+                let start = range[1] ? parseInt(range[1], 10) : 0;
+                let end = range[2] ? parseInt(range[2], 10) : stat.size - 1;
+                if (!Number.isFinite(start) || start < 0) start = 0;
+                if (!Number.isFinite(end) || end >= stat.size) end = stat.size - 1;
+                if (start > end || start >= stat.size) {
+                    res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+                    return res.end();
+                }
+                res.writeHead(206, {
+                    ...baseHeaders,
+                    'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+                    'Content-Length': end - start + 1
+                });
+                return fs.createReadStream(filePath, { start, end }).pipe(res);
+            }
+            res.writeHead(200, { ...baseHeaders, 'Content-Length': stat.size });
+            fs.createReadStream(filePath).pipe(res);
+        });
+    }
+
     fs.readFile(filePath, (err, content) => {
         if (res.headersSent || res.writableEnded) {
             return;
@@ -1730,6 +1777,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await profileRoutes(req, res, url)) {
+      return;
+    }
+
+    if (await healthRoutes(req, res, url)) {
       return;
     }
 

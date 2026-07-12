@@ -1,0 +1,623 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Events — RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-12-plus-1">
+  <style>
+    body.owner-emails-page { overflow: auto !important; }
+
+    .oe-wrap {
+      max-width: 1240px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      gap: 12px;
+    }
+    .oe-head h1 { margin: 0; }
+    .oe-muted { color: #666; font-size: 13px; }
+
+    .oe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+    }
+    .oe-card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .oe-card-preview {
+      height: 170px;
+      overflow: hidden;
+      background: #f4f4f6;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      pointer-events: none;
+      position: relative;
+    }
+    .oe-card-preview iframe {
+      width: 640px;
+      height: 560px;
+      border: 0;
+      transform: scale(0.47);
+      transform-origin: top left;
+    }
+    .oe-card-body { padding: 12px 14px 14px; display: grid; gap: 6px; }
+    .oe-card-body h3 { margin: 0; font-size: 14.5px; color: #0f2435; }
+    .oe-card-sub { font-size: 12px; color: #67707a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .oe-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+    .oe-chip {
+      font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+      border-radius: 999px; padding: 4px 10px;
+      background: rgba(15,36,53,.07); color: #46525e;
+    }
+    .oe-chip.is-custom { background: rgba(31,176,255,.14); color: #0b7fc0; }
+    .oe-chip.is-split { background: rgba(122,68,255,.12); color: #6c3fd8; }
+    .oe-chip.is-off { background: rgba(214,69,69,.1); color: #c04343; }
+    .oe-card.is-off { opacity: .62; }
+    .oe-edit-btn {
+      border: 0; border-radius: 999px; padding: 8px 18px; cursor: pointer;
+      background: linear-gradient(135deg, rgba(15,36,53,.95), rgba(34,71,98,.95));
+      color: #f7fbff; font-weight: 900; font-size: 12px;
+    }
+    .oe-status { font-size: 13px; color: #666; }
+
+    /* ---------- editor ---------- */
+    .oe-modal { position: fixed; inset: 0; z-index: 400; background: rgba(8,22,34,.55); display: grid; place-items: center; padding: 12px; }
+    .oe-modal[hidden] { display: none; }
+    .oe-dialog {
+      background: #f7f9fc; border-radius: 16px; width: min(1180px, 97vw); height: min(820px, 94vh);
+      display: grid; grid-template-rows: auto minmax(0,1fr) auto;
+      box-shadow: 0 40px 90px rgba(0,0,0,.45); overflow: hidden;
+    }
+    .oe-dialog-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 14px 18px; background: #fff; border-bottom: 1px solid rgba(0,0,0,.07);
+    }
+    .oe-dialog-head h2 { margin: 0; font-size: 17px; }
+    .oe-close { border: 0; background: transparent; font-size: 22px; cursor: pointer; color: #67707a; line-height: 1; }
+
+    .oe-dialog-body { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); min-height: 0; }
+    .oe-form { padding: 14px 16px; overflow: auto; display: grid; gap: 12px; align-content: start; }
+
+    .oe-row-label { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #67707a; }
+    .oe-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .oe-tab {
+      border: 1px solid rgba(0,0,0,.14); background: #fff; border-radius: 999px;
+      padding: 7px 16px; font-weight: 800; font-size: 12.5px; cursor: pointer; color: #46525e;
+    }
+    .oe-tab.active { background: #1fb0ff; border-color: #1fb0ff; color: #fff; }
+    .oe-tab.is-add { border-style: dashed; color: #0b7fc0; }
+
+    .oe-split {
+      border: 1px solid rgba(122,68,255,.25); background: rgba(122,68,255,.05);
+      border-radius: 12px; padding: 12px; display: grid; gap: 8px;
+    }
+    .oe-split-labels { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 800; }
+    .oe-split-labels .a { color: #0b7fc0; }
+    .oe-split-labels .b { color: #6c3fd8; }
+    .oe-split input[type="range"] { width: 100%; }
+    .oe-split-hint { font-size: 11.5px; color: #67707a; }
+    .oe-remove-b { border: 1px solid rgba(214,69,69,.3); color: #d64545; background: #fff; border-radius: 8px; font-size: 11px; font-weight: 800; padding: 5px 10px; cursor: pointer; justify-self: start; }
+
+    .oe-mode { display: flex; border: 1px solid rgba(0,0,0,.14); border-radius: 9px; overflow: hidden; width: fit-content; }
+    .oe-mode button { border: 0; background: #fff; padding: 8px 14px; font-size: 12px; font-weight: 800; cursor: pointer; color: #46525e; }
+    .oe-mode button.active { background: #0f2435; color: #fff; }
+
+    .oe-field { display: grid; gap: 4px; }
+    .oe-field label { font-size: 12px; font-weight: 800; color: #46525e; }
+    .oe-field input, .oe-field textarea {
+      border: 1px solid rgba(0,0,0,.16); border-radius: 8px; padding: 9px 10px;
+      font-size: 13.5px; font-family: inherit; background: #fff;
+    }
+    .oe-field textarea { min-height: 70px; resize: vertical; }
+    .oe-field .hint { font-size: 11px; color: #8a939c; }
+    textarea.oe-code { font-family: Consolas, Menlo, monospace; font-size: 12px; min-height: 260px; white-space: pre; }
+
+    .oe-bullets { display: grid; gap: 6px; }
+    .oe-bullet-row { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; padding: 4px 6px; }
+    .oe-bullet-row.dragging { opacity: .4; }
+    .oe-bullet-row .grab { cursor: grab; color: #9aa3ac; font-size: 15px; padding: 0 4px; user-select: none; }
+    .oe-bullet-row input { flex: 1; border: 0; font-size: 13px; padding: 6px 4px; background: transparent; }
+    .oe-bullet-row input:focus { outline: none; }
+    .oe-bullet-row .rm { border: 0; background: transparent; color: #d64545; font-weight: 900; cursor: pointer; }
+    .oe-add-bullet { border: 1px dashed rgba(0,0,0,.25); background: transparent; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #46525e; cursor: pointer; }
+
+    .oe-preview { background: #e9edf2; border-left: 1px solid rgba(0,0,0,.07); display: grid; grid-template-rows: auto minmax(0,1fr); min-width: 0; }
+    .oe-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; }
+    .oe-preview-subject { font-size: 13px; font-weight: 800; color: #24313d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .oe-preview iframe { width: 100%; height: 100%; border: 0; background: #f4f4f6; }
+
+    .oe-dialog-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 18px; background: #fff; border-top: 1px solid rgba(0,0,0,.07); flex-wrap: wrap;
+    }
+    .oe-foot-status { font-size: 12.5px; color: #0b7fc0; min-height: 1em; }
+    .oe-btn-ghost { border: 1px solid rgba(0,0,0,.15); background: #fff; border-radius: 9px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
+    .oe-btn-danger { border: 1px solid rgba(214,69,69,.35); background: #fff; color: #d64545; border-radius: 9px; padding: 9px 16px; font-weight: 800; cursor: pointer; }
+    .oe-btn-primary { border: 0; background: #1fb0ff; color: #fff; border-radius: 9px; padding: 9px 22px; font-weight: 900; cursor: pointer; }
+    .oe-btn-primary:disabled { opacity: .55; cursor: default; }
+    .oe-placeholders { font-size: 11px; color: #8a939c; line-height: 1.7; }
+    .oe-placeholders code { background: rgba(15,36,53,.07); border-radius: 5px; padding: 1px 6px; font-size: 10.5px; }
+
+    @media (max-width: 900px) {
+      .oe-dialog { height: 96vh; }
+      .oe-dialog-body { grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) 300px; }
+      .oe-preview { border-left: 0; border-top: 1px solid rgba(0,0,0,.07); }
+    }
+  </style>
+</head>
+<body class="owner-emails-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24"><path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path><path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path><path d="M15.5 12H7.5"></path><path d="m12 9.5 3.5 2.5-3.5 2.5"></path></symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24"><rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect><path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="10" cy="9" r="2.5"></circle><path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path><circle cx="16.5" cy="10.5" r="2"></circle><path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path></symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path></symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a><a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="oe-wrap">
+    <header class="oe-head">
+      <h1>Email Events</h1>
+      <div class="oe-muted">Every email the app can send. Edit a version, hit Save, and that version goes out instead of the default. Add a Version B to split test.</div>
+    </header>
+    <div class="oe-status" id="oe-status">Loading email events…</div>
+    <div class="oe-grid" id="oe-grid"></div>
+  </main>
+
+  <div class="oe-modal" id="oe-modal" hidden>
+    <div class="oe-dialog" role="dialog" aria-modal="true">
+      <div class="oe-dialog-head">
+        <h2 id="oe-dialog-title">Edit email</h2>
+        <button type="button" class="oe-close" id="oe-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="oe-dialog-body">
+        <div class="oe-form">
+          <div>
+            <div class="oe-row-label">Versions</div>
+            <div class="oe-tabs" id="oe-tabs" style="margin-top:6px;"></div>
+          </div>
+          <div class="oe-split" id="oe-split" hidden>
+            <div class="oe-row-label" style="color:#6c3fd8;">Split test</div>
+            <div class="oe-split-labels"><span class="a" id="oe-split-a">Version A — 50% of sends</span><span class="b" id="oe-split-b">Version B — 50% of sends</span></div>
+            <input type="range" min="1" max="99" value="50" id="oe-split-range" aria-label="Percent of sends that get Version A">
+            <div class="oe-split-hint">Drag to decide the split. Each send rolls the dice at these odds, and the version used is stamped on the event (field <code>ode_email_variant</code>) so you can compare results.</div>
+            <button type="button" class="oe-remove-b" id="oe-remove-b">Remove Version B (stop split test)</button>
+          </div>
+          <div>
+            <div class="oe-row-label">Editor mode</div>
+            <div class="oe-mode" style="margin-top:6px;">
+              <button type="button" data-mode="blocks" class="active">Layout blocks</button>
+              <button type="button" data-mode="code">Custom code</button>
+            </div>
+          </div>
+          <div id="oe-blocks-form">
+            <div class="oe-field"><label>Subject line</label><input type="text" id="oe-f-subject" maxlength="200"><div class="hint">Leave a field empty to keep the default copy for it.</div></div>
+            <div class="oe-field"><label>Preview text</label><input type="text" id="oe-f-preheader" maxlength="250"></div>
+            <div class="oe-field"><label>Greeting</label><input type="text" id="oe-f-greeting" maxlength="300" placeholder="Hey {{first_name}},"></div>
+            <div class="oe-field"><label>Intro paragraph</label><textarea id="oe-f-intro" maxlength="1200"></textarea></div>
+            <div class="oe-field">
+              <label>Bullet points <span style="font-weight:400;color:#8a939c;">(drag to reorder)</span></label>
+              <div class="oe-bullets" id="oe-bullets"></div>
+              <button type="button" class="oe-add-bullet" id="oe-add-bullet">+ Add bullet</button>
+            </div>
+            <div class="oe-field"><label>Button label</label><input type="text" id="oe-f-cta" maxlength="120"></div>
+          </div>
+          <div id="oe-code-form" hidden>
+            <div class="oe-field">
+              <label>Email HTML</label>
+              <textarea class="oe-code" id="oe-f-html" spellcheck="false"></textarea>
+            </div>
+          </div>
+          <div class="oe-placeholders">
+            Placeholders you can use anywhere: <code>{{first_name}}</code> <code>{{display_name}}</code> <code>{{cta_url}}</code> <code>{{cta_label}}</code> <code>{{subject}}</code> <code>{{greeting}}</code> <code>{{event_name}}</code>
+          </div>
+        </div>
+        <div class="oe-preview">
+          <div class="oe-preview-head">
+            <div class="oe-preview-subject" id="oe-preview-subject"></div>
+            <span class="oe-muted" style="white-space:nowrap;">Live preview</span>
+          </div>
+          <iframe id="oe-preview-frame" sandbox=""></iframe>
+        </div>
+      </div>
+      <div class="oe-dialog-foot">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="oe-btn-danger" id="oe-reset">Reset to default</button>
+        </div>
+        <div class="oe-foot-status" id="oe-foot-status"></div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="oe-btn-ghost" id="oe-cancel">Cancel</button>
+          <button type="button" class="oe-btn-primary" id="oe-save">Save — send this version</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script>
+    (function () {
+      'use strict';
+      var grid = document.getElementById('oe-grid');
+      var statusEl = document.getElementById('oe-status');
+      var modal = document.getElementById('oe-modal');
+      var events = [];
+      var ed = null; // editing state
+
+      var esc = function (v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      };
+
+      function emptyVariant() {
+        return { mode: 'blocks', subject: '', preheader: '', greeting: '', intro: '', bullets: [], ctaLabel: '', html: '' };
+      }
+
+      /* ---------- cards ---------- */
+      function chipFor(ev) {
+        var chips = '';
+        if (ev.active === false) chips += '<span class="oe-chip is-off">Off — not sending</span> ';
+        if (!ev.override || ev.override.enabled === false) return chips + '<span class="oe-chip">Default</span>';
+        if (ev.override.variantB) {
+          var pct = ev.override.splitPercent;
+          return chips + '<span class="oe-chip is-split">Split ' + pct + ' / ' + (100 - pct) + '</span>';
+        }
+        return chips + '<span class="oe-chip is-custom">Custom</span>';
+      }
+
+      function renderCards() {
+        statusEl.textContent = '';
+        grid.innerHTML = events.map(function (ev, i) {
+          return '<article class="oe-card' + (ev.active === false ? ' is-off' : '') + '">' +
+            '<div class="oe-card-preview"><iframe data-preview="' + i + '" sandbox=""></iframe></div>' +
+            '<div class="oe-card-body">' +
+            '  <h3>' + esc(ev.eventName) + '</h3>' +
+            '  <div class="oe-card-sub">' + esc(ev.activeSubject) + '</div>' +
+            '  <div class="oe-card-foot">' + chipFor(ev) +
+            '    <button type="button" class="oe-edit-btn" data-edit="' + i + '">Edit</button>' +
+            '  </div>' +
+            '</div></article>';
+        }).join('');
+        events.forEach(function (ev, i) {
+          var frame = grid.querySelector('iframe[data-preview="' + i + '"]');
+          if (frame) frame.srcdoc = ev.activeHtml;
+        });
+      }
+
+      async function load() {
+        try {
+          var resp = await fetch('/api/auth/owner/email-templates', { credentials: 'include' });
+          if (resp.status === 401 || resp.status === 403) {
+            statusEl.textContent = 'Owner access only — this page is not available on your account.';
+            return;
+          }
+          var json = await resp.json();
+          if (!json || json.ok !== true) { statusEl.textContent = 'Could not load email events.'; return; }
+          events = (json.events || []).map(function (ev) {
+            return Object.assign(ev, {
+              activeSubject: ev.default.subject,
+              activeHtml: ev.default.html
+            });
+          });
+          renderCards();
+          // custom cards: render the live version for their card preview
+          events.forEach(function (ev, i) {
+            var live = ev.override && ev.override.enabled !== false
+              ? (ev.override.variantA || ev.override.variantB)
+              : null;
+            if (live) {
+              previewFetch(ev.eventName, live).then(function (r) {
+                if (!r) return;
+                ev.activeHtml = r.html;
+                ev.activeSubject = r.subject;
+                var frame = grid.querySelector('iframe[data-preview="' + i + '"]');
+                if (frame) frame.srcdoc = r.html;
+                var sub = grid.querySelectorAll('.oe-card-sub')[i];
+                if (sub) sub.textContent = r.subject;
+              });
+            }
+          });
+        } catch (e) {
+          statusEl.textContent = 'Could not load email events.';
+        }
+      }
+
+      async function previewFetch(eventName, variant) {
+        try {
+          var resp = await fetch('/api/auth/owner/email-templates/preview', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventName: eventName, variant: variant })
+          });
+          var json = await resp.json();
+          return json && json.ok ? json.rendered : null;
+        } catch (e) { return null; }
+      }
+
+      /* ---------- editor ---------- */
+      function openEditor(ev) {
+        var o = ev.override;
+        ed = {
+          eventName: ev.eventName,
+          def: ev.default,
+          variants: {
+            A: (o && o.variantA) ? JSON.parse(JSON.stringify(o.variantA)) : emptyVariant(),
+            B: (o && o.variantB) ? JSON.parse(JSON.stringify(o.variantB)) : null
+          },
+          splitPercent: o ? o.splitPercent : 50,
+          tab: 'A'
+        };
+        document.getElementById('oe-dialog-title').textContent = ev.eventName;
+        document.getElementById('oe-foot-status').textContent = '';
+        renderTabs();
+        fillForm();
+        modal.hidden = false;
+        schedulePreview(0);
+      }
+
+      function currentVariant() { return ed.variants[ed.tab]; }
+
+      function renderTabs() {
+        var tabs = document.getElementById('oe-tabs');
+        var html = '<button type="button" class="oe-tab' + (ed.tab === 'A' ? ' active' : '') + '" data-tab="A">Version A</button>';
+        if (ed.variants.B) {
+          html += '<button type="button" class="oe-tab' + (ed.tab === 'B' ? ' active' : '') + '" data-tab="B">Version B</button>';
+        } else {
+          html += '<button type="button" class="oe-tab is-add" data-add-b="1">+ Add split test (Version B)</button>';
+        }
+        tabs.innerHTML = html;
+        var split = document.getElementById('oe-split');
+        split.hidden = !ed.variants.B;
+        if (ed.variants.B) syncSplitLabels();
+      }
+
+      function syncSplitLabels() {
+        var pct = Number(document.getElementById('oe-split-range').value) || 50;
+        ed.splitPercent = pct;
+        document.getElementById('oe-split-a').textContent = 'Version A — ' + pct + '% of sends';
+        document.getElementById('oe-split-b').textContent = 'Version B — ' + (100 - pct) + '% of sends';
+      }
+
+      function fillForm() {
+        var v = currentVariant();
+        document.getElementById('oe-split-range').value = ed.splitPercent;
+        if (ed.variants.B) syncSplitLabels();
+        // mode buttons
+        document.querySelectorAll('.oe-mode button').forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-mode') === v.mode);
+        });
+        document.getElementById('oe-blocks-form').hidden = v.mode !== 'blocks';
+        document.getElementById('oe-code-form').hidden = v.mode !== 'code';
+        document.getElementById('oe-f-subject').value = v.subject;
+        document.getElementById('oe-f-subject').placeholder = ed.def.subject;
+        document.getElementById('oe-f-preheader').value = v.preheader;
+        document.getElementById('oe-f-preheader').placeholder = ed.def.preheader;
+        document.getElementById('oe-f-greeting').value = v.greeting;
+        document.getElementById('oe-f-intro').value = v.intro;
+        document.getElementById('oe-f-cta').value = v.ctaLabel;
+        document.getElementById('oe-f-cta').placeholder = ed.def.ctaLabel;
+        document.getElementById('oe-f-html').value = v.html || ed.def.html;
+        renderBullets();
+      }
+
+      function renderBullets() {
+        var v = currentVariant();
+        var host = document.getElementById('oe-bullets');
+        host.innerHTML = v.bullets.map(function (b, i) {
+          return '<div class="oe-bullet-row" draggable="true" data-bi="' + i + '">' +
+            '<span class="grab">&#8942;&#8942;</span>' +
+            '<input type="text" value="' + esc(b) + '" maxlength="300" data-bullet="' + i + '">' +
+            '<button type="button" class="rm" data-rm-bullet="' + i + '">&times;</button>' +
+            '</div>';
+        }).join('');
+      }
+
+      function readForm() {
+        var v = currentVariant();
+        v.subject = document.getElementById('oe-f-subject').value.trim();
+        v.preheader = document.getElementById('oe-f-preheader').value.trim();
+        v.greeting = document.getElementById('oe-f-greeting').value.trim();
+        v.intro = document.getElementById('oe-f-intro').value.trim();
+        v.ctaLabel = document.getElementById('oe-f-cta').value.trim();
+        if (v.mode === 'code') v.html = document.getElementById('oe-f-html').value;
+        v.bullets = Array.prototype.map.call(document.querySelectorAll('[data-bullet]'), function (inp) {
+          return inp.value.trim();
+        }).filter(Boolean);
+      }
+
+      /* live preview (debounced, server-rendered so it matches sends 1:1) */
+      var previewTimer = 0;
+      var previewSeq = 0;
+      function schedulePreview(delay) {
+        window.clearTimeout(previewTimer);
+        previewTimer = window.setTimeout(async function () {
+          readForm();
+          var seq = ++previewSeq;
+          var r = await previewFetch(ed.eventName, currentVariant());
+          if (!r || seq !== previewSeq || modal.hidden) return;
+          document.getElementById('oe-preview-frame').srcdoc = r.html;
+          document.getElementById('oe-preview-subject').textContent = 'Subject: ' + r.subject;
+        }, delay == null ? 450 : delay);
+      }
+
+      /* ---------- events ---------- */
+      grid.addEventListener('click', function (evn) {
+        var btn = evn.target.closest('[data-edit]');
+        if (btn) openEditor(events[Number(btn.getAttribute('data-edit'))]);
+      });
+
+      document.getElementById('oe-tabs').addEventListener('click', function (evn) {
+        var add = evn.target.closest('[data-add-b]');
+        if (add) {
+          readForm();
+          // Version B starts as a copy of A so you tweak one thing and test it
+          ed.variants.B = JSON.parse(JSON.stringify(ed.variants.A));
+          ed.tab = 'B';
+          renderTabs();
+          fillForm();
+          schedulePreview(0);
+          return;
+        }
+        var tab = evn.target.closest('[data-tab]');
+        if (tab) {
+          readForm();
+          ed.tab = tab.getAttribute('data-tab');
+          renderTabs();
+          fillForm();
+          schedulePreview(0);
+        }
+      });
+
+      document.getElementById('oe-remove-b').addEventListener('click', function () {
+        ed.variants.B = null;
+        ed.tab = 'A';
+        renderTabs();
+        fillForm();
+        schedulePreview(0);
+      });
+
+      document.getElementById('oe-split-range').addEventListener('input', syncSplitLabels);
+
+      document.querySelectorAll('.oe-mode button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          readForm();
+          currentVariant().mode = b.getAttribute('data-mode');
+          if (currentVariant().mode === 'code' && !currentVariant().html) {
+            // start custom code from the current rendered look
+            currentVariant().html = document.getElementById('oe-preview-frame').srcdoc || ed.def.html;
+          }
+          fillForm();
+          schedulePreview(0);
+        });
+      });
+
+      ['oe-f-subject', 'oe-f-preheader', 'oe-f-greeting', 'oe-f-intro', 'oe-f-cta', 'oe-f-html'].forEach(function (id) {
+        document.getElementById(id).addEventListener('input', function () { schedulePreview(); });
+      });
+
+      document.getElementById('oe-add-bullet').addEventListener('click', function () {
+        readForm();
+        currentVariant().bullets.push('');
+        renderBullets();
+      });
+      document.getElementById('oe-bullets').addEventListener('click', function (evn) {
+        var rm = evn.target.closest('[data-rm-bullet]');
+        if (!rm) return;
+        readForm();
+        currentVariant().bullets.splice(Number(rm.getAttribute('data-rm-bullet')), 1);
+        renderBullets();
+        schedulePreview();
+      });
+      document.getElementById('oe-bullets').addEventListener('input', function () { schedulePreview(); });
+
+      /* drag to reorder bullets */
+      var dragIndex = null;
+      document.getElementById('oe-bullets').addEventListener('dragstart', function (evn) {
+        var row = evn.target.closest('.oe-bullet-row');
+        if (!row) return;
+        dragIndex = Number(row.getAttribute('data-bi'));
+        row.classList.add('dragging');
+      });
+      document.getElementById('oe-bullets').addEventListener('dragover', function (evn) { evn.preventDefault(); });
+      document.getElementById('oe-bullets').addEventListener('drop', function (evn) {
+        evn.preventDefault();
+        var row = evn.target.closest('.oe-bullet-row');
+        if (row == null || dragIndex == null) return;
+        var to = Number(row.getAttribute('data-bi'));
+        readForm();
+        var arr = currentVariant().bullets;
+        var moved = arr.splice(dragIndex, 1)[0];
+        arr.splice(to, 0, moved);
+        dragIndex = null;
+        renderBullets();
+        schedulePreview();
+      });
+      document.getElementById('oe-bullets').addEventListener('dragend', function () {
+        dragIndex = null;
+        document.querySelectorAll('.oe-bullet-row.dragging').forEach(function (r) { r.classList.remove('dragging'); });
+      });
+
+      function closeModal() { modal.hidden = true; ed = null; }
+      document.getElementById('oe-close').addEventListener('click', closeModal);
+      document.getElementById('oe-cancel').addEventListener('click', closeModal);
+
+      document.getElementById('oe-save').addEventListener('click', async function () {
+        readForm();
+        var foot = document.getElementById('oe-foot-status');
+        foot.textContent = 'Saving…';
+        var resp = await fetch('/api/auth/owner/email-templates', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventName: ed.eventName,
+            enabled: true,
+            variantA: ed.variants.A,
+            variantB: ed.variants.B,
+            splitPercent: ed.splitPercent
+          })
+        });
+        var json = await resp.json().catch(function () { return null; });
+        if (!resp.ok || !json || json.ok !== true) {
+          foot.textContent = (json && json.error) || 'Could not save.';
+          return;
+        }
+        foot.textContent = ed.variants.B
+          ? 'Saved — sends now split ' + ed.splitPercent + '% / ' + (100 - ed.splitPercent) + '%.'
+          : 'Saved — this version now goes out.';
+        window.setTimeout(function () { closeModal(); load(); }, 700);
+      });
+
+      document.getElementById('oe-reset').addEventListener('click', async function () {
+        var foot = document.getElementById('oe-foot-status');
+        foot.textContent = 'Resetting…';
+        await fetch('/api/auth/owner/email-templates/delete', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventName: ed.eventName })
+        }).catch(function () {});
+        closeModal();
+        load();
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

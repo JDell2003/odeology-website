@@ -1873,6 +1873,14 @@
       syncClientsPanels();
       bindTrainerPageChooser(meUser, currentData);
       fillInvitePanel();
+      // Navbar "+" quick-add lands here with ?action=add-client: open the
+      // invite center immediately (once — not on every rerender).
+      if (String(pageParams.get('action') || '').trim() === 'add-client' && !renderDashboardShell.__addClientOpened) {
+        renderDashboardShell.__addClientOpened = true;
+        window.setTimeout(() => {
+          try { openAddPanel('app', $('#auth-friends-btn') || $('#auth-mobile-friends')); } catch { /* ignore */ }
+        }, 250);
+      }
     };
 
     const stopManagerReviewPolling = () => {

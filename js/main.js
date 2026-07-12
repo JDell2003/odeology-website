@@ -2426,6 +2426,10 @@ function ensureControlMobileFabNav() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
             <span class="control-mobile-fab-link-label">Dashboard</span>
         </a>
+        <a class="control-mobile-fab-link" href="alarm.html" aria-label="Rise Alarm" ${/\/alarm\.html$/i.test(path) ? 'aria-current="page"' : ''}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7"></circle><path d="M12 9.5V13l2.4 1.9"></path><path d="M5.2 4.4 3.4 6.1M18.8 4.4l1.8 1.7"></path></svg>
+            <span class="control-mobile-fab-link-label">Alarm</span>
+        </a>
         <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"></circle><path d="M8.3 12.45 10.75 14.9 15.85 9.65"></path></svg>
             <span class="control-mobile-fab-link-label">Dash</span>
@@ -2519,6 +2523,7 @@ function ensureSharedControlPanel() {
             <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Work Outreach</span></a>
             <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
             <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+            <a class="control-link" id="control-owner-analytics-link" href="owner-analytics.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Analytics</span></a>
             <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
         </div>
     `.trim();
@@ -9509,6 +9514,7 @@ function ensureBasicCheckinModal() {
                     <h3 class="checkin-title">Daily Dash</h3>
                     <p class="checkin-sub">Quick win for today. Log what matters, keep momentum.</p>
                 </div>
+                <button type="button" class="checkin-mode-toggle" id="checkin-mode-toggle">Full form</button>
                 <button type="button" class="checkin-close" data-checkin-close aria-label="Close">&times;</button>
             </div>
             <div class="checkin-alert hidden" id="checkin-alert" role="status" aria-live="polite"></div>
@@ -9534,8 +9540,16 @@ function ensureBasicCheckinModal() {
                 </div>
             </div>
 
+            <div class="checkin-guided" id="checkin-guided" hidden>
+                <div class="cg-rail" id="cg-rail" role="tablist" aria-label="Jump to a question"></div>
+                <div class="cg-stage" id="cg-stage" aria-live="polite"></div>
+            </div>
+
             <div class="checkin-flow checkin-flow-unified" role="group" aria-label="Check-in questions">
                 <input id="checkin-date" type="date" class="checkin-date-hidden" tabindex="-1" aria-hidden="true">
+                <input id="checkin-trained" type="hidden" value="">
+                <input id="checkin-cardio-min" type="hidden" value="">
+                <input id="checkin-steps" type="hidden" value="">
                 <div class="checkin-unified-grid">
                     <section class="checkin-step checkin-unified-block">
                         <h4 class="checkin-step-title">Core daily stats</h4>
@@ -9733,6 +9747,67 @@ function ensureBasicCheckinModal() {
             </div>
         </div>
     `;
+    if (!document.getElementById('dash-guided-styles')) {
+        const style = document.createElement('style');
+        style.id = 'dash-guided-styles';
+        style.textContent = [
+            '.checkin-mode-toggle{margin-left:auto;margin-right:10px;border:1px solid rgba(255,255,255,.22);background:transparent;color:inherit;border-radius:999px;padding:7px 14px;font-size:11.5px;font-weight:800;letter-spacing:.04em;cursor:pointer;white-space:nowrap;}',
+            '.checkin-mode-toggle:hover{border-color:rgba(255,255,255,.45);}',
+            ':root[data-theme="light"] .checkin-mode-toggle{border-color:rgba(0,0,0,.25);}',
+            '.dash-checkin-card.is-guided .checkin-flow{display:none;}',
+            '.dash-checkin-card.is-guided .checkin-guided{display:block;}',
+            /* jump rail */
+            '.cg-rail{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 4px 4px;}',
+            '.cg-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit;border-radius:999px;padding:6px 11px;font-size:10.5px;font-weight:800;letter-spacing:.03em;cursor:pointer;opacity:.75;transition:opacity .15s ease,border-color .15s ease;}',
+            '.cg-chip:hover{opacity:1;}',
+            '.cg-chip .st{width:14px;height:14px;border-radius:999px;display:grid;place-items:center;font-size:9px;line-height:1;background:rgba(255,255,255,.14);}',
+            '.cg-chip.is-done .st{background:#3f9d58;color:#fff;}',
+            '.cg-chip.is-skip .st{background:rgba(255,193,7,.8);color:#20180a;}',
+            '.cg-chip.is-active{opacity:1;border-color:var(--accent,#d9a15c);box-shadow:0 0 0 1px var(--accent,#d9a15c) inset;}',
+            ':root[data-theme="light"] .cg-chip{border-color:rgba(0,0,0,.18);background:rgba(0,0,0,.04);}',
+            ':root[data-theme="light"] .cg-chip .st{background:rgba(0,0,0,.12);}',
+            /* stage */
+            '.cg-stage{min-height:300px;display:grid;place-items:center;padding:10px 8px 18px;}',
+            '.cg-step{width:min(560px,100%);text-align:center;opacity:0;transform:translateY(14px);transition:opacity .28s ease,transform .28s ease;}',
+            '.cg-step.is-in{opacity:1;transform:none;}',
+            '.cg-count{font-size:11px;font-weight:800;letter-spacing:.14em;opacity:.5;margin-bottom:10px;}',
+            '.cg-q{font-size:clamp(1.25rem,3.4vw,1.7rem);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-bottom:6px;}',
+            '.cg-sub{font-size:12.5px;opacity:.6;font-weight:600;margin-bottom:18px;}',
+            '.cg-opts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:6px;}',
+            '.cg-opt{border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:inherit;border-radius:14px;padding:13px 20px;font-size:14px;font-weight:800;cursor:pointer;transition:border-color .15s ease,background .15s ease;}',
+            '.cg-opt:hover{border-color:rgba(255,255,255,.5);}',
+            '.cg-opt.is-selected{border-color:var(--accent,#d9a15c);background:rgba(217,161,92,.16);}',
+            ':root[data-theme="light"] .cg-opt{border-color:rgba(0,0,0,.2);background:rgba(0,0,0,.03);}',
+            '.cg-inputs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:6px;}',
+            '.cg-inputs label{display:grid;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85;text-align:left;}',
+            '.cg-inputs input,.cg-inputs textarea{width:150px;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:inherit;font:600 16px/1.3 inherit;text-align:center;outline:none;}',
+            '.cg-inputs textarea{width:min(420px,86vw);text-align:left;font-size:14px;}',
+            '.cg-inputs input:focus,.cg-inputs textarea:focus{border-color:var(--accent,#d9a15c);}',
+            ':root[data-theme="light"] .cg-inputs input,:root[data-theme="light"] .cg-inputs textarea{border-color:rgba(0,0,0,.22);background:rgba(0,0,0,.03);}',
+            '.cg-status{display:inline-block;padding:16px 26px;border-radius:16px;font-size:clamp(1rem,2.6vw,1.25rem);font-weight:800;letter-spacing:-.01em;}',
+            '.cg-status.is-yes{background:rgba(63,157,88,.16);border:1.5px solid rgba(63,157,88,.55);color:#59c979;}',
+            '.cg-status.is-no{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.2);opacity:.85;}',
+            ':root[data-theme="light"] .cg-status.is-yes{color:#2f7a3d;}',
+            ':root[data-theme="light"] .cg-status.is-no{border-color:rgba(0,0,0,.2);background:rgba(0,0,0,.03);}',
+            '.cg-controls{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:16px;}',
+            '.cg-next{border:0;border-radius:12px;padding:13px 30px;font:800 14px/1 inherit;cursor:pointer;background:var(--accent,#d9a15c);color:#131b28;}',
+            '.cg-next:hover{filter:brightness(1.06);}',
+            '.cg-skip{border:0;background:transparent;color:inherit;opacity:.55;font:700 12.5px/1 inherit;cursor:pointer;padding:12px 8px;text-decoration:underline;}',
+            '.cg-skip:hover{opacity:.9;}',
+            '.cg-open-form{border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;border-radius:12px;padding:12px 18px;font:800 12.5px/1 inherit;cursor:pointer;}',
+            ':root[data-theme="light"] .cg-open-form{border-color:rgba(0,0,0,.25);}',
+            /* summary */
+            '.cg-summary{display:grid;gap:6px;width:min(460px,100%);margin:0 auto 8px;text-align:left;}',
+            '.cg-summary-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.14);border-radius:10px;font-size:13px;font-weight:700;}',
+            '.cg-summary-row .st{width:16px;text-align:center;}',
+            '.cg-summary-row.is-done .st{color:#59c979;}',
+            '.cg-summary-row.is-skip{opacity:.65;}',
+            '.cg-summary-row .jump{margin-left:auto;border:0;background:transparent;color:inherit;opacity:.6;font:700 11.5px/1 inherit;cursor:pointer;text-decoration:underline;}',
+            ':root[data-theme="light"] .cg-summary-row{border-color:rgba(0,0,0,.14);}',
+            '@media (max-width:640px){.cg-stage{min-height:340px;}.cg-inputs input{width:128px;}.cg-rail{gap:4px;}.cg-chip{padding:5px 8px;}.cg-chip .lbl{display:none;}}'
+        ].join('\n');
+        document.head.appendChild(style);
+    }
     document.body.appendChild(modal);
     return modal;
 }
@@ -9968,6 +10043,9 @@ function setupBasicCheckin() {
     const proteinEl = byId('checkin-protein');
     const carbsEl = byId('checkin-carbs');
     const fatsEl = byId('checkin-fats');
+    const trainedEl = byId('checkin-trained');
+    const cardioMinEl = byId('checkin-cardio-min');
+    const stepsEl = byId('checkin-steps');
     const newMealPlanBtn = byId('checkin-new-meal-plan');
     const macroRingEls = {
         kcal: byId('checkin-ring-kcal'),
@@ -10638,6 +10716,12 @@ function setupBasicCheckin() {
             sleepHours,
             stress: stressVal || null,
             waterOz,
+            // Spider-graph training axes: strength (trainedToday) and
+            // endurance (cardioMinutes / steps) — identity-activity.js reads
+            // these off the ode:checkin-saved payload.
+            trainedToday: String(trainedEl?.value || '').trim() || null,
+            cardioMinutes: toNum(cardioMinEl?.value),
+            steps: toNum(stepsEl?.value),
             recovery: {
                 sleepHours,
                 stress: stressVal || null,
@@ -10729,6 +10813,9 @@ function setupBasicCheckin() {
         if (carbsEl) carbsEl.value = d.macros?.carbG ?? '';
         if (fatsEl) fatsEl.value = d.macros?.fatG ?? '';
         if (moodEl) moodEl.value = d.mood ?? '';
+        if (trainedEl) trainedEl.value = d.trainedToday ?? '';
+        if (cardioMinEl) cardioMinEl.value = d.cardioMinutes ?? '';
+        if (stepsEl) stepsEl.value = d.steps ?? '';
         if (mealPrepEl) mealPrepEl.value = d.mealPrep ?? '';
         if (mealPrepNoteEl) mealPrepNoteEl.value = d.mealPrepWhy ?? d.extras?.mealPrepWhy ?? '';
         if (moodNoteEl) moodNoteEl.value = d.moodWhy ?? d.extras?.moodWhy ?? '';
@@ -10797,6 +10884,9 @@ function setupBasicCheckin() {
         proteinEl,
         carbsEl,
         fatsEl,
+        trainedEl,
+        cardioMinEl,
+        stepsEl,
         mealPrepNoteEl,
         moodNoteEl
     ].forEach((field) => {
@@ -11283,6 +11373,326 @@ function setupBasicCheckin() {
         }
     };
 
+    /* ---- Guided mode: one question at a time, BetterMe-style ----
+       Fades each question in/out, lets you skip for later, and the chip
+       rail jumps to any question. Every control writes into the SAME form
+       fields the full form uses, so collect()/autosave/completion/weekbar
+       all keep working untouched. */
+    const cardEl = modal.querySelector('.dash-checkin-card');
+    const guidedWrap = byId('checkin-guided');
+    const railEl = byId('cg-rail');
+    const stageEl = byId('cg-stage');
+    const modeToggleBtn = byId('checkin-mode-toggle');
+    const skippedQs = new Set();
+    let guideIndex = 0;
+    let guideTimer = 0;
+
+    const escG = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const setField = (el, value) => {
+        if (!el) return;
+        el.value = value;
+        el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+    };
+    const chipOpts = (pairs, current) => `
+        <div class="cg-opts">
+            ${pairs.map(([val, label]) => `<button type="button" class="cg-opt ${String(current) === String(val) ? 'is-selected' : ''}" data-cg-opt="${escG(val)}">${escG(label)}</button>`).join('')}
+        </div>`;
+    // Training + cardio are TRACKED BY THE APP (finishing a session in your
+    // training program logs it) — the dash only reports did/didn't.
+    const dayActivityBucket = () => {
+        try {
+            const store = JSON.parse(localStorage.getItem('ode_identity_activity_v1') || '{}');
+            const day = String(dateEl?.value || '').slice(0, 10) || todayIso();
+            return (store.days && store.days[day]) || {};
+        } catch { return {}; }
+    };
+    const numInput = (id, label, value, placeholder) => `
+        <label>${escG(label)}<input id="${id}" type="number" inputmode="decimal" value="${escG(value)}" placeholder="${escG(placeholder)}"></label>`;
+    const hasVal = (el) => String(el?.value || '').trim() !== '';
+
+    const goFullFormAt = (selector) => {
+        setDashMode('form');
+        window.setTimeout(() => {
+            modal.querySelector(selector)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+    };
+
+    const GUIDE_QUESTIONS = [
+        {
+            id: 'train', chip: 'Training', title: 'Did you train today?', tracked: true,
+            pendingLabel: 'No workout yet',
+            render: () => {
+                const b = dayActivityBucket();
+                const trained = Number(b.workouts) > 0 || Number(b.strengthWorkouts) > 0;
+                return `<div class="cg-status ${trained ? 'is-yes' : 'is-no'}">${trained
+                    ? '&#10003; You worked out today'
+                    : 'You didn’t work out today'}</div>
+                <div class="cg-sub" style="margin:10px 0 0;">${trained
+                    ? 'Logged from your training program. Strength on your graph already got it.'
+                    : 'Workouts track themselves — finish a session in your training program and it counts.'}</div>`
+                    + (Number(b.workouts) > 0 ? '' : '<div class="cg-controls" style="margin-top:14px;"><a class="cg-open-form" href="training.html" style="text-decoration:none;display:inline-block;">Go train</a></div>');
+            },
+            bind: () => {},
+            done: () => {
+                const b = dayActivityBucket();
+                return Number(b.workouts) > 0 || Number(b.strengthWorkouts) > 0;
+            },
+            summary: () => 'Session logged'
+        },
+        {
+            id: 'cardio', chip: 'Cardio', title: 'Any cardio today?', tracked: true,
+            pendingLabel: 'No cardio tracked yet',
+            render: () => {
+                const b = dayActivityBucket();
+                const did = Number(b.cardioSessions) > 0 || Number(stepsEl?.value) >= 8000;
+                return `<div class="cg-status ${did ? 'is-yes' : 'is-no'}">${did
+                    ? '&#10003; Cardio in the books'
+                    : 'No cardio tracked yet'}</div>
+                <div class="cg-sub" style="margin:10px 0 14px;">Cardio tracks itself in the app. Steps are the one thing you can drop in by hand:</div>
+                <div class="cg-inputs">${numInput('cg-steps', 'Steps (optional)', stepsEl?.value, 'e.g. 9500')}</div>`;
+            },
+            bind: (el) => {
+                el.querySelector('#cg-steps')?.addEventListener('input', (ev) => { setField(stepsEl, ev.target.value); });
+            },
+            done: () => {
+                const b = dayActivityBucket();
+                return Number(b.cardioSessions) > 0 || Number(stepsEl?.value) > 0;
+            },
+            summary: () => {
+                const b = dayActivityBucket();
+                const bits = [];
+                if (Number(b.cardioSessions) > 0) bits.push('Cardio logged');
+                if (Number(stepsEl?.value) > 0) bits.push(`${stepsEl.value} steps`);
+                return bits.join(' · ');
+            }
+        },
+        {
+            id: 'weight', chip: 'Weight', title: "What's your weight today?",
+            sub: 'Same scale, same time of day beats precision.',
+            render: () => `<div class="cg-inputs">${numInput('cg-weight', 'Weight (lb)', weightEl?.value, 'e.g. 198.4')}</div>`,
+            bind: (el) => el.querySelector('#cg-weight')?.addEventListener('input', (ev) => setField(weightEl, ev.target.value)),
+            done: () => Number(weightEl?.value) > 0,
+            summary: () => (Number(weightEl?.value) > 0 ? `${weightEl.value} lb` : '')
+        },
+        {
+            id: 'sleep', chip: 'Sleep', title: 'How much did you sleep?',
+            sub: 'Recovery on your graph runs on this.',
+            render: () => `<div class="cg-inputs">${numInput('cg-sleep', 'Hours', sleepHoursEl?.value, 'e.g. 7.5')}</div>`,
+            bind: (el) => el.querySelector('#cg-sleep')?.addEventListener('input', (ev) => setField(sleepHoursEl, ev.target.value)),
+            done: () => Number(sleepHoursEl?.value) > 0,
+            summary: () => (Number(sleepHoursEl?.value) > 0 ? `${sleepHoursEl.value}h` : '')
+        },
+        {
+            id: 'water', chip: 'Water', title: 'How much water so far?',
+            render: () => `<div class="cg-inputs">${numInput('cg-water', 'Water (oz)', waterOzEl?.value, 'e.g. 96')}</div>`,
+            bind: (el) => el.querySelector('#cg-water')?.addEventListener('input', (ev) => setField(waterOzEl, ev.target.value)),
+            done: () => Number(waterOzEl?.value) > 0,
+            summary: () => (Number(waterOzEl?.value) > 0 ? `${waterOzEl.value} oz` : '')
+        },
+        {
+            id: 'stress', chip: 'Stress', title: 'How stressed were you today?',
+            render: () => chipOpts([['low', 'Low'], ['medium', 'Medium'], ['high', 'High']], stressEl?.value),
+            bind: (el) => el.querySelectorAll('[data-cg-opt]').forEach((b) => b.addEventListener('click', () => {
+                setField(stressEl, b.dataset.cgOpt); autoAdvance(el, b);
+            })),
+            done: () => hasVal(stressEl),
+            summary: () => stressEl?.value || ''
+        },
+        {
+            id: 'meals', chip: 'Meals', title: 'Did you eat on plan?',
+            sub: 'Nutrition on your graph grows from on-plan days.',
+            render: () => chipOpts([['yes', 'Yes'], ['partial', 'Mostly'], ['no', 'No']], mealsOkEl?.value)
+                + '<div class="cg-controls" style="margin-top:4px;"><button type="button" class="cg-open-form" data-cg-meals>Log meals in detail</button></div>',
+            bind: (el) => {
+                el.querySelectorAll('[data-cg-opt]').forEach((b) => b.addEventListener('click', () => {
+                    setField(mealsOkEl, b.dataset.cgOpt); markDraftDirty(); autoAdvance(el, b);
+                }));
+                el.querySelector('[data-cg-meals]')?.addEventListener('click', () => goFullFormAt('#checkin-meal-buttons'));
+            },
+            done: () => hasVal(mealsOkEl) || Object.keys(mealEntries || {}).length > 0,
+            summary: () => ({ yes: 'On plan', partial: 'Mostly on plan', no: 'Off plan' })[mealsOkEl?.value] || (Object.keys(mealEntries || {}).length ? 'Meals logged' : '')
+        },
+        {
+            id: 'mood', chip: 'Mood', title: 'How was your mood?',
+            render: () => chipOpts([['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']], moodEl?.value)
+                + '<div class="cg-sub" style="margin:2px 0 0;">1 = rough day &middot; 5 = unstoppable</div>',
+            bind: (el) => el.querySelectorAll('[data-cg-opt]').forEach((b) => b.addEventListener('click', () => {
+                setField(moodEl, b.dataset.cgOpt); autoAdvance(el, b);
+            })),
+            done: () => hasVal(moodEl),
+            summary: () => (hasVal(moodEl) ? `${moodEl.value}/5` : '')
+        },
+        {
+            id: 'prep', chip: 'Meal prep', title: 'Did you meal prep?',
+            render: () => chipOpts([['yes', 'Yes'], ['no', 'No']], mealPrepEl?.value)
+                + (String(mealPrepEl?.value) === 'no'
+                    ? `<div class="cg-inputs"><textarea id="cg-prep-why" rows="2" placeholder="What got in the way?">${escG(mealPrepNoteEl?.value)}</textarea></div>`
+                    : ''),
+            bind: (el) => {
+                el.querySelectorAll('[data-cg-opt]').forEach((b) => b.addEventListener('click', () => {
+                    setField(mealPrepEl, b.dataset.cgOpt);
+                    if (b.dataset.cgOpt === 'no') showGuide(guideIndex, { instant: true }); // re-render to reveal the why box
+                    else autoAdvance(el, b);
+                }));
+                el.querySelector('#cg-prep-why')?.addEventListener('input', (ev) => setField(mealPrepNoteEl, ev.target.value));
+            },
+            done: () => hasVal(mealPrepEl),
+            summary: () => ({ yes: 'Prepped', no: 'No prep' })[mealPrepEl?.value] || ''
+        },
+        {
+            id: 'body', chip: 'Body', title: 'Any measurements today?',
+            sub: 'All optional - even one keeps your trend honest.',
+            render: () => `<div class="cg-inputs">
+                ${numInput('cg-bf', 'Body fat %', bodyfatEl?.value, '18.5')}
+                ${numInput('cg-waist', 'Waist (in)', waistEl?.value, '34')}
+                ${numInput('cg-chest', 'Chest (in)', chestEl?.value, '41')}
+                ${numInput('cg-hips', 'Hips (in)', hipsEl?.value, '38')}
+            </div>`,
+            bind: (el) => {
+                [['#cg-bf', bodyfatEl], ['#cg-waist', waistEl], ['#cg-chest', chestEl], ['#cg-hips', hipsEl]].forEach(([sel, field]) => {
+                    el.querySelector(sel)?.addEventListener('input', (ev) => setField(field, ev.target.value));
+                });
+            },
+            done: () => [bodyfatEl, waistEl, chestEl, hipsEl].some((f) => Number(f?.value) > 0),
+            summary: () => [bodyfatEl, waistEl, chestEl, hipsEl].filter((f) => Number(f?.value) > 0).length
+                ? `${[bodyfatEl, waistEl, chestEl, hipsEl].filter((f) => Number(f?.value) > 0).length} logged` : ''
+        },
+        {
+            id: 'photos', chip: 'Photos', title: 'Progress photos?',
+            sub: 'Same lighting, same posture. Your future self says thanks.',
+            render: () => '<div class="cg-controls" style="margin-top:0;"><button type="button" class="cg-open-form" data-cg-photos>Add photos</button></div>',
+            bind: (el) => el.querySelector('[data-cg-photos]')?.addEventListener('click', () => goFullFormAt('.checkin-pp-grid')),
+            done: () => Boolean(modal.querySelector('[data-checkin-pp-img]:not(.hidden)')),
+            summary: () => (modal.querySelectorAll('[data-checkin-pp-img]:not(.hidden)').length ? 'Added' : '')
+        }
+    ];
+    const SUMMARY_INDEX = GUIDE_QUESTIONS.length;
+
+    const qState = (q) => (q.done() ? 'done' : (skippedQs.has(q.id) ? 'skip' : 'todo'));
+    const firstOpenIndex = () => {
+        const i = GUIDE_QUESTIONS.findIndex((q) => qState(q) === 'todo');
+        return i === -1 ? SUMMARY_INDEX : i;
+    };
+
+    function renderGuideRail() {
+        if (!railEl) return;
+        railEl.innerHTML = GUIDE_QUESTIONS.map((q, i) => {
+            const st = qState(q);
+            return `<button type="button" class="cg-chip ${st === 'done' ? 'is-done' : ''} ${st === 'skip' ? 'is-skip' : ''} ${i === guideIndex ? 'is-active' : ''}" data-cg-jump="${i}" title="${escG(q.title)}">
+                <span class="st">${st === 'done' ? '&#10003;' : (st === 'skip' ? '&#8635;' : i + 1)}</span><span class="lbl">${escG(q.chip)}</span>
+            </button>`;
+        }).join('') + `<button type="button" class="cg-chip ${guideIndex === SUMMARY_INDEX ? 'is-active' : ''}" data-cg-jump="${SUMMARY_INDEX}"><span class="st">&#9873;</span><span class="lbl">Finish</span></button>`;
+        railEl.querySelectorAll('[data-cg-jump]').forEach((b) => {
+            b.addEventListener('click', () => showGuide(Number(b.dataset.cgJump)));
+        });
+    }
+
+    function autoAdvance(stepEl, pickedBtn) {
+        stepEl.querySelectorAll('[data-cg-opt]').forEach((b) => b.classList.toggle('is-selected', b === pickedBtn));
+        window.clearTimeout(guideTimer);
+        guideTimer = window.setTimeout(() => showGuide(nextOpenAfter(guideIndex)), 340);
+    }
+    const nextOpenAfter = (from) => {
+        for (let i = from + 1; i < GUIDE_QUESTIONS.length; i++) {
+            if (qState(GUIDE_QUESTIONS[i]) === 'todo') return i;
+        }
+        return from + 1 <= SUMMARY_INDEX ? Math.min(from + 1, SUMMARY_INDEX) : SUMMARY_INDEX;
+    };
+
+    function renderSummaryStep() {
+        const rows = GUIDE_QUESTIONS.map((q, i) => {
+            const st = qState(q);
+            const val = st === 'done'
+                ? (q.summary() || 'Logged')
+                : (q.pendingLabel || (st === 'skip' ? 'Skipped for later' : 'Not answered'));
+            return `<div class="cg-summary-row ${st === 'done' ? 'is-done' : ''} ${st !== 'done' ? 'is-skip' : ''}">
+                <span class="st">${st === 'done' ? '&#10003;' : '&#9675;'}</span>
+                <span>${escG(q.chip)}</span>
+                <span style="opacity:.65;font-weight:600;">${escG(val)}</span>
+                <button type="button" class="jump" data-cg-jump-row="${i}">${st === 'done' ? 'Edit' : (q.tracked ? 'View' : 'Answer')}</button>
+            </div>`;
+        }).join('');
+        const doneCount = GUIDE_QUESTIONS.filter((q) => q.done()).length;
+        return `
+            <div class="cg-count">FINISH</div>
+            <div class="cg-q">${doneCount === GUIDE_QUESTIONS.length ? 'Perfect day - all logged.' : `${doneCount} of ${GUIDE_QUESTIONS.length} logged`}</div>
+            <div class="cg-sub">Every answer feeds your spider graph. Save locks today in.</div>
+            <div class="cg-summary">${rows}</div>
+            <div class="cg-controls">
+                <button type="button" class="cg-open-form" data-cg-fullform>Open full form</button>
+                <button type="button" class="cg-next" data-cg-save>Save check-in</button>
+            </div>`;
+    }
+
+    function showGuide(index, opts = {}) {
+        if (!stageEl) return;
+        guideIndex = Math.max(0, Math.min(Number(index) || 0, SUMMARY_INDEX));
+        renderGuideRail();
+        const paint = () => {
+            let html;
+            if (guideIndex === SUMMARY_INDEX) {
+                html = `<div class="cg-step">${renderSummaryStep()}</div>`;
+            } else {
+                const q = GUIDE_QUESTIONS[guideIndex];
+                html = `<div class="cg-step">
+                    <div class="cg-count">${guideIndex + 1} / ${GUIDE_QUESTIONS.length}</div>
+                    <div class="cg-q">${escG(q.title)}</div>
+                    ${q.sub ? `<div class="cg-sub">${escG(q.sub)}</div>` : ''}
+                    ${q.render()}
+                    <div class="cg-controls">
+                        <button type="button" class="cg-next" data-cg-next>Continue</button>
+                        ${q.tracked ? '' : '<button type="button" class="cg-skip" data-cg-skip>Skip for later</button>'}
+                    </div>
+                </div>`;
+            }
+            stageEl.innerHTML = html;
+            const stepEl = stageEl.querySelector('.cg-step');
+            if (guideIndex === SUMMARY_INDEX) {
+                stageEl.querySelector('[data-cg-save]')?.addEventListener('click', () => byId('checkin-save')?.click());
+                stageEl.querySelector('[data-cg-fullform]')?.addEventListener('click', () => setDashMode('form'));
+                stageEl.querySelectorAll('[data-cg-jump-row]').forEach((b) => {
+                    b.addEventListener('click', () => showGuide(Number(b.dataset.cgJumpRow)));
+                });
+            } else {
+                const q = GUIDE_QUESTIONS[guideIndex];
+                q.bind(stepEl);
+                stageEl.querySelector('[data-cg-next]')?.addEventListener('click', () => {
+                    skippedQs.delete(q.id);
+                    showGuide(nextOpenAfter(guideIndex));
+                });
+                stageEl.querySelector('[data-cg-skip]')?.addEventListener('click', () => {
+                    if (!q.done()) skippedQs.add(q.id);
+                    showGuide(nextOpenAfter(guideIndex));
+                });
+            }
+            requestAnimationFrame(() => requestAnimationFrame(() => stepEl?.classList.add('is-in')));
+        };
+        const current = stageEl.querySelector('.cg-step');
+        window.clearTimeout(guideTimer);
+        if (current && !opts.instant) {
+            current.classList.remove('is-in');
+            guideTimer = window.setTimeout(paint, 230);
+        } else {
+            paint();
+        }
+    }
+
+    // The dash ALWAYS opens one-question-at-a-time; "Full form" is a
+    // temporary view for this open, never a sticky preference.
+    function setDashMode(mode, opts = {}) {
+        const guided = mode !== 'form';
+        cardEl?.classList.toggle('is-guided', guided);
+        if (guidedWrap) guidedWrap.hidden = !guided;
+        if (modeToggleBtn) modeToggleBtn.textContent = guided ? 'Full form' : 'One at a time';
+        if (guided) showGuide(opts.at != null ? opts.at : firstOpenIndex(), { instant: true });
+    }
+    modeToggleBtn?.addEventListener('click', () => {
+        setDashMode(cardEl?.classList.contains('is-guided') ? 'form' : 'guided');
+    });
+    // Keep the jump rail's done/skip states honest whenever any field
+    // changes (day switches refill the whole form).
+    modal.addEventListener('change', () => { if (cardEl?.classList.contains('is-guided')) renderGuideRail(); });
+
     const open = async () => {
         modal.classList.remove('hidden');
         document.body.classList.add('modal-open');
@@ -11290,6 +11700,8 @@ function setupBasicCheckin() {
         setStep(0, { focus: true });
         updateCompletionUI();
         setAutosaveStatus(draftDirty ? 'Unsaved changes' : 'Autosave is on.');
+        skippedQs.clear();
+        setDashMode('guided');
     };
 
     const close = () => {
@@ -12879,6 +13291,81 @@ const AUTH_USER_HINT_KEY = 'ode_auth_user_hint_v1';
 const AUTH_USER_HINT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 let authMeBootstrapPromise = null;
 
+// App pages that require a signed-in user; signed-out visitors are sent to the
+// entry sign-in page. Marketing/SEO pages, legal pages, public coach pages
+// (/coach/...), the forum, the store, and reset-password stay public.
+const ODE_PROTECTED_PAGES = new Set([
+    'overview.html',
+    'dashboard.html',
+    'account.html',
+    'friends.html',
+    'leaderboard.html',
+    'grocery-calendar.html',
+    'grocery-final.html',
+    'grocery-plan.html',
+    'training.html',
+    'training-status.html',
+    'training-custom-builder.html',
+    'workout-database.html',
+    'workout-test.html',
+    'trainer-dashboard.html',
+    'trainer-profile.html',
+    'trainer-website.html',
+    'trainer-analytics.html',
+    'manager-trainers.html',
+    'owner-accounts.html',
+    'owner-analytics.html',
+    'owner-doors.html',
+    'owner-messaging.html',
+    'payment-settings.html',
+    'coaches.html',
+    'activity.html',
+    'alarm.html'
+]);
+
+function odeRequiresSignedInUser() {
+    const path = String(window.location.pathname || '/').toLowerCase();
+    if (path.startsWith('/coach/')) return false;
+    const file = path.split('/').pop();
+    return ODE_PROTECTED_PAGES.has(file);
+}
+
+// Signed-in users must finish onboarding (path chosen + flow completed on the
+// entry page) before app pages unlock. Mirrors index.html's bookkeeping:
+// 'ode_onboarding_done_v1' is set on completion, and trainer/manager accounts
+// whose server flags show a finished flow count as done.
+const ODE_ONBOARDING_DONE_KEY = 'ode_onboarding_done_v1';
+
+function odeOnboardingComplete(user = null) {
+    try {
+        if (localStorage.getItem(ODE_ONBOARDING_DONE_KEY) === '1') return true;
+    } catch {}
+    const u = user || window.__odeCurrentUser || readAuthUserHint() || null;
+    if (!u) return true; // signed-out visitors are the auth gate's problem
+    if (u.isDemo || u?.demo?.active) return true; // demo accounts skip onboarding
+    const trainerOnboarded = Boolean(u?.trainer?.onboarded || u?.trainer?.onboardingCompletedAt);
+    let managerDone = false;
+    try {
+        const id = String(u.id || '').trim();
+        managerDone = Boolean(id) && localStorage.getItem(`ode_manager_onboarding_done_v1:manager:user:${id}`) === '1';
+    } catch {}
+    if (trainerOnboarded || managerDone) {
+        try { localStorage.setItem(ODE_ONBOARDING_DONE_KEY, '1'); } catch {}
+        return true;
+    }
+    return false;
+}
+
+// Returns true when it navigated away (caller should stop rendering signed-in UI).
+function enforceOnboardingCompletionGate(user = null) {
+    const needsOnboarding = !odeOnboardingComplete(user);
+    document.body.classList.toggle('ode-needs-onboarding', needsOnboarding);
+    if (!needsOnboarding) return false;
+    if (!odeRequiresSignedInUser()) return false;
+    window.location.replace('/');
+    return true;
+}
+
 function readAuthUserHint() {
     try {
         const raw = localStorage.getItem(AUTH_USER_HINT_KEY);
@@ -13894,13 +14381,36 @@ function initAuthUi() {
             trainerSection.appendChild(trainerMessagesLink);
         }
 
-        if (!trainerPotentialClientsLink) {
-            trainerPotentialClientsLink = document.createElement('a');
-            trainerPotentialClientsLink.className = 'control-link';
-            trainerPotentialClientsLink.id = 'control-trainer-potential-clients-link';
-            trainerPotentialClientsLink.href = 'trainer-dashboard.html?tab=potential-clients';
-            trainerPotentialClientsLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Potential Clients</span>';
-            trainerSection.appendChild(trainerPotentialClientsLink);
+        // Potential Clients left the sidebar (still reachable from inside
+        // Consult Form Hits) — kill any copy, including static page markup.
+        trainerPotentialClientsLink?.remove();
+        trainerPotentialClientsLink = null;
+
+        // Website hub + link analytics sit right under Messages. NOTE:
+        // #control-trainer-website-link is taken — it's the static
+        // "Your Landing Page" (public coach page) link on trainer-dashboard
+        // and trainer-calendar. The hub gets its own id.
+        let trainerWebsiteLink = panel.querySelector('#control-trainer-website-hub-link');
+        if (!trainerWebsiteLink) {
+            trainerWebsiteLink = document.createElement('a');
+            trainerWebsiteLink.className = 'control-link';
+            trainerWebsiteLink.id = 'control-trainer-website-hub-link';
+            trainerWebsiteLink.href = 'trainer-website.html';
+            trainerWebsiteLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Website</span>';
+        }
+        if (trainerMessagesLink.nextElementSibling !== trainerWebsiteLink) {
+            trainerMessagesLink.insertAdjacentElement('afterend', trainerWebsiteLink);
+        }
+        let trainerAnalyticsLink = panel.querySelector('#control-trainer-analytics-link');
+        if (!trainerAnalyticsLink) {
+            trainerAnalyticsLink = document.createElement('a');
+            trainerAnalyticsLink.className = 'control-link';
+            trainerAnalyticsLink.id = 'control-trainer-analytics-link';
+            trainerAnalyticsLink.href = 'trainer-analytics.html';
+            trainerAnalyticsLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Analytics</span>';
+        }
+        if (trainerWebsiteLink.nextElementSibling !== trainerAnalyticsLink) {
+            trainerWebsiteLink.insertAdjacentElement('afterend', trainerAnalyticsLink);
         }
 
         let trainerConsultHitsLink = panel.querySelector('#control-trainer-consult-hits-link');
@@ -13910,17 +14420,49 @@ function initAuthUi() {
             trainerConsultHitsLink.id = 'control-trainer-consult-hits-link';
             trainerConsultHitsLink.href = 'trainer-dashboard.html?tab=consult-form-hits';
             trainerConsultHitsLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Consult Form Hits</span>';
-            trainerPotentialClientsLink.insertAdjacentElement('afterend', trainerConsultHitsLink);
+        }
+        if (trainerAnalyticsLink.nextElementSibling !== trainerConsultHitsLink) {
+            trainerAnalyticsLink.insertAdjacentElement('afterend', trainerConsultHitsLink);
         }
 
-        if (!trainerLeaderboardLink) {
-            trainerLeaderboardLink = document.createElement('a');
-            trainerLeaderboardLink.className = 'control-link';
-            trainerLeaderboardLink.id = 'control-trainer-leaderboard-link';
-            trainerLeaderboardLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span>';
-            trainerSection.appendChild(trainerLeaderboardLink);
+        // Payments hub sits right under Consult Form Hits, Calendar under it.
+        let trainerPaymentsLink = panel.querySelector('#control-trainer-payments-link');
+        if (!trainerPaymentsLink) {
+            trainerPaymentsLink = document.createElement('a');
+            trainerPaymentsLink.className = 'control-link';
+            trainerPaymentsLink.id = 'control-trainer-payments-link';
+            trainerPaymentsLink.href = 'payment-settings.html';
+            trainerPaymentsLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Payments</span>';
         }
-        if (trainerLeaderboardLink) trainerLeaderboardLink.href = 'leaderboard.html?view=trainer';
+        if (trainerConsultHitsLink.nextElementSibling !== trainerPaymentsLink) {
+            trainerConsultHitsLink.insertAdjacentElement('afterend', trainerPaymentsLink);
+        }
+        let trainerCalendarLink = panel.querySelector('#control-trainer-calendar-link');
+        if (!trainerCalendarLink) {
+            trainerCalendarLink = document.createElement('a');
+            trainerCalendarLink.className = 'control-link';
+            trainerCalendarLink.id = 'control-trainer-calendar-link';
+            trainerCalendarLink.href = 'trainer-calendar.html';
+            trainerCalendarLink.innerHTML = '<span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span>';
+        }
+        if (trainerPaymentsLink.nextElementSibling !== trainerCalendarLink) {
+            trainerPaymentsLink.insertAdjacentElement('afterend', trainerCalendarLink);
+        }
+
+        // The Arena is a Training Portal destination (under Coaches page) —
+        // no duplicated role-tab copy. Pure trainers have the whole client
+        // portal hidden, so for them the single link falls back into their
+        // role section instead of disappearing.
+        trainerLeaderboardLink?.remove();
+        const arenaLink = originalLeaderboardLink || panel.querySelector('#control-arena-link');
+        if (arenaLink) {
+            arenaLink.id = 'control-arena-link';
+            const arenaText = arenaLink.querySelector('.text');
+            if (arenaText) arenaText.textContent = 'The Arena';
+            const portalUsable = canAccessClientTrainingPortal(user, meta);
+            const home = (portalUsable || !trainerMode) ? trainingSection : trainerSection;
+            if (home && arenaLink.parentElement !== home) home.appendChild(arenaLink);
+        }
 
         if (!trainerCoachesLink) {
             trainerCoachesLink = document.createElement('a');
@@ -13943,7 +14485,9 @@ function initAuthUi() {
         if (communitySection) communitySection.classList.toggle('hidden', trainerMode);
 
         if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', trainerMode);
-        if (originalLeaderboardLink) originalLeaderboardLink.classList.toggle('hidden', trainerMode);
+        // The Arena stays visible for every role — it lives in the Training
+        // Portal section now, not Community.
+        if (originalLeaderboardLink) originalLeaderboardLink.classList.remove('hidden');
         if (originalCoachesLink) {
             const textEl = originalCoachesLink.querySelector('.text') || originalCoachesLink;
             if (textEl) textEl.textContent = 'Coaches page';
@@ -13951,9 +14495,79 @@ function initAuthUi() {
         }
     };
 
+    /* Navbar "+" quick-add. Trainers add clients; clients add friends or pull
+       friends into a workout. Messaging goes through the Messages page, which
+       only ever talks to your friends (or your clients as a trainer) — never
+       random accounts. */
+    const syncNavPlusMenu = (user = currentUser) => {
+        const wrapper = document.getElementById('auth-wrap');
+        if (!wrapper) return;
+        let plusWrap = document.getElementById('nav-plus-wrap');
+        if (!user) {
+            plusWrap?.classList.add('hidden');
+            return;
+        }
+        if (!plusWrap) {
+            plusWrap = document.createElement('div');
+            plusWrap.id = 'nav-plus-wrap';
+            plusWrap.className = 'nav-plus-wrap';
+            plusWrap.innerHTML = '<button type="button" class="nav-plus-btn" id="nav-plus-btn" aria-label="Quick add" aria-expanded="false">+</button>'
+                + '<div class="nav-plus-menu hidden" id="nav-plus-menu"></div>';
+            const userBtn = wrapper.querySelector('#auth-user-btn');
+            if (userBtn) wrapper.insertBefore(plusWrap, userBtn);
+            else wrapper.appendChild(plusWrap);
+            if (!document.getElementById('nav-plus-styles')) {
+                const style = document.createElement('style');
+                style.id = 'nav-plus-styles';
+                style.textContent = [
+                    '.nav-plus-wrap{position:relative;display:inline-flex;align-items:center;margin-right:10px;}',
+                    '.nav-plus-btn{width:34px;height:34px;border:0;border-radius:9px;background:#f2b705;color:#1a1a1a;font-size:20px;font-weight:900;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.14);}',
+                    '.nav-plus-btn:hover{filter:brightness(1.05);}',
+                    '.nav-plus-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:6000;min-width:220px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,.18);padding:6px;display:grid;}',
+                    '.nav-plus-menu.hidden{display:none;}',
+                    '.nav-plus-menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:#22303c;font-size:13.5px;font-weight:700;}',
+                    '.nav-plus-menu a:hover{background:rgba(31,176,255,.1);}',
+                    '.nav-plus-menu a span.ic{width:20px;text-align:center;}',
+                    '@media (max-width: 768px){.nav-plus-wrap{margin-right:6px;}.nav-plus-btn{width:30px;height:30px;font-size:18px;}}'
+                ].join('\n');
+                document.head.appendChild(style);
+            }
+            const btn = plusWrap.querySelector('#nav-plus-btn');
+            const menu = plusWrap.querySelector('#nav-plus-menu');
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const open = menu.classList.toggle('hidden');
+                btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            });
+            document.addEventListener('click', (ev) => {
+                if (!plusWrap.contains(ev.target)) menu.classList.add('hidden');
+            });
+        }
+        plusWrap.classList.remove('hidden');
+        const menu = plusWrap.querySelector('#nav-plus-menu');
+        if (!menu) return;
+        const trainerMode = isTrainerClientUser(user);
+        const items = trainerMode
+            ? [
+                { icon: '&#128100;', label: 'Client', href: 'trainer-dashboard.html?action=add-client' },
+                { icon: '&#128172;', label: 'Message', href: 'friends.html' }
+            ]
+            : [
+                { icon: '&#129309;', label: 'Friends', href: 'friends.html' },
+                { icon: '&#127947;', label: 'Add friends to workout', href: 'training.html?share=friends' },
+                { icon: '&#128172;', label: 'Message', href: 'friends.html' }
+            ];
+        menu.innerHTML = items.map((item) => `<a href="${item.href}"><span class="ic">${item.icon}</span>${item.label}</a>`).join('');
+    };
+
     const syncManagerSidebarSection = (user = currentUser) => {
         const panel = document.getElementById('control-panel');
         if (!panel) return;
+        // Managers are retired: no MANAGER section in the control panel.
+        // Manager-tagged accounts just get the standard panel.
+        panel.querySelector('#control-manager-section')?.remove();
+        return;
+        // eslint-disable-next-line no-unreachable -- retired manager plumbing kept below for reference
         let managerSection = panel.querySelector('#control-manager-section');
         let managerTrainersLink = panel.querySelector('#control-manager-trainers-link');
         let managerMessagesLink = panel.querySelector('#control-manager-messages-link');
@@ -14016,14 +14630,15 @@ function initAuthUi() {
             managerSection.appendChild(managerMessagesLink);
         }
 
-        if (!managerLeaderboardLink) {
-            managerLeaderboardLink = document.createElement('a');
-            managerLeaderboardLink.className = 'control-link';
-            managerLeaderboardLink.id = 'control-manager-leaderboard-link';
-            managerLeaderboardLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span>';
-            managerSection.appendChild(managerLeaderboardLink);
+        // The Arena lives in the Training Portal for managers too; pure
+        // managers (client portal hidden) get it in their role section.
+        managerLeaderboardLink?.remove();
+        const managerArenaLink = panel.querySelector('#control-arena-link');
+        if (managerArenaLink && managerSection && isManagerClientUser(user)
+            && !canAccessClientTrainingPortal(user, currentAuthMeta)
+            && managerArenaLink.parentElement !== managerSection) {
+            managerSection.appendChild(managerArenaLink);
         }
-        if (managerLeaderboardLink) managerLeaderboardLink.href = 'leaderboard.html?view=manager';
 
         if (!managerCoachesLink) {
             managerCoachesLink = document.createElement('a');
@@ -14040,7 +14655,9 @@ function initAuthUi() {
         const communityLabel = communitySection?.querySelector('.section-label') || null;
         if (communityLabel) communityLabel.classList.toggle('hidden', managerMode);
         if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', managerMode);
-        if (originalLeaderboardLink) originalLeaderboardLink.classList.toggle('hidden', managerMode);
+        // The Arena link stays visible for every role (it sits in the
+        // Training Portal section now, not Community).
+        if (originalLeaderboardLink) originalLeaderboardLink.classList.remove('hidden');
         if (originalCoachesLink) {
             const textEl = originalCoachesLink.querySelector('.text') || originalCoachesLink;
             if (textEl) textEl.textContent = 'Coaches page';
@@ -14207,6 +14824,18 @@ function initAuthUi() {
             accountsLink.innerHTML = '<span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span>';
             ownerSection.appendChild(accountsLink);
         }
+        let analyticsLink = panel.querySelector('#control-owner-analytics-link');
+        if (!analyticsLink) {
+            analyticsLink = document.createElement('a');
+            analyticsLink.className = 'control-link';
+            analyticsLink.id = 'control-owner-analytics-link';
+            analyticsLink.href = 'owner-analytics.html';
+            analyticsLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Analytics</span>';
+            ownerSection.appendChild(analyticsLink);
+        }
+        if (accountsLink && analyticsLink && accountsLink.nextElementSibling !== analyticsLink) {
+            accountsLink.insertAdjacentElement('afterend', analyticsLink);
+        }
         if (!demoBtn) {
             demoBtn = document.createElement('button');
             demoBtn.type = 'button';
@@ -14229,11 +14858,33 @@ function initAuthUi() {
             testOnboardingLink.href = 'index.html?testOnboarding=1&testPath=user';
             testOnboardingLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Test Onboarding</span>';
         }
+        let websitesLink = panel.querySelector('#control-owner-websites-link');
+        if (!websitesLink) {
+            websitesLink = document.createElement('a');
+            websitesLink.className = 'control-link';
+            websitesLink.id = 'control-owner-websites-link';
+            websitesLink.href = 'owner-websites.html';
+            websitesLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Websites</span>';
+        }
+        let emailEventsLink = panel.querySelector('#control-owner-emails-link');
+        if (!emailEventsLink) {
+            emailEventsLink = document.createElement('a');
+            emailEventsLink.className = 'control-link';
+            emailEventsLink.id = 'control-owner-emails-link';
+            emailEventsLink.href = 'owner-emails.html';
+            emailEventsLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Email Events</span>';
+        }
         if (demoBtn && workoutTestLink && demoBtn.nextElementSibling !== workoutTestLink) {
             demoBtn.insertAdjacentElement('afterend', workoutTestLink);
         }
         if (workoutTestLink && testOnboardingLink && workoutTestLink.nextElementSibling !== testOnboardingLink) {
             workoutTestLink.insertAdjacentElement('afterend', testOnboardingLink);
+        }
+        if (testOnboardingLink && websitesLink && testOnboardingLink.nextElementSibling !== websitesLink) {
+            testOnboardingLink.insertAdjacentElement('afterend', websitesLink);
+        }
+        if (websitesLink && emailEventsLink && websitesLink.nextElementSibling !== emailEventsLink) {
+            websitesLink.insertAdjacentElement('afterend', emailEventsLink);
         }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
@@ -14261,6 +14912,15 @@ function initAuthUi() {
         currentUser = null;
         currentAuthMeta = null;
         window.__odeCurrentUser = null;
+        document.body.classList.add('ode-signed-out');
+        // Clear the cached identity BEFORE any redirect, otherwise the entry
+        // page still sees a "signed in" hint and bounces back here forever.
+        clearAuthUserHint();
+        if (odeRequiresSignedInUser()) {
+            // Signed-out visitors cannot stay on app pages; send them to sign in.
+            window.location.replace('/?authMode=login');
+            return;
+        }
         managerLivePendingReviewIds = [];
         managerLiveReviewWatcherPrimed = false;
         clearAuthUserHint();
@@ -14279,6 +14939,7 @@ function initAuthUi() {
         syncTrainerQuickActionButtons(null);
         syncTrainingPortalSection(null, null);
         syncTrainerSidebarSection(null);
+        syncNavPlusMenu(null);
         syncManagerSidebarSection(null);
         syncOwnerWorkoutDbLink(null, null);
         syncNavbarDashboardLink(null);
@@ -14356,7 +15017,9 @@ function initAuthUi() {
         currentUser = user;
         currentAuthMeta = meta || null;
         window.__odeCurrentUser = user;
+        document.body.classList.remove('ode-signed-out');
         writeAuthUserHint(user);
+        if (enforceOnboardingCompletionGate(user)) return;
         if (enforceSignedInRolePageAccess(user, meta || null)) return;
         const label = user?.displayName || user?.username || 'Account';
         const imp = getImpersonation(meta);
@@ -14378,6 +15041,7 @@ function initAuthUi() {
         syncTrainerQuickActionButtons(user);
         syncTrainingPortalSection(user, meta);
         syncTrainerSidebarSection(user);
+        syncNavPlusMenu(user);
         syncManagerSidebarSection(user);
         reconcileManagerReviewNotifications({ user, allowToast: false });
         reconcileTrainerManagerReviewNotifications({ user, allowToast: false });
@@ -14391,22 +15055,24 @@ function initAuthUi() {
 
         menu.innerHTML = `
             ${imp ? `<a class="auth-menu-item" id="auth-menu-return-owner" href="${buildOwnerExitHref('/owner-accounts.html', user, meta)}">Return to Owner Account</a>` : ''}
-            <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
             <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="${getDashboardNavHref(user)}">Dashboard</a>
+            <a class="auth-menu-item" id="auth-menu-account" href="account.html">Account</a>
+            <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
         `;
-        const dashboardLink = menu.querySelector('#auth-menu-dashboard');
-        dashboardLink?.addEventListener('click', () => {
-            menu.classList.add('hidden');
+        menu.querySelectorAll('a.auth-menu-item').forEach((link) => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
         });
         const logoutBtn = menu.querySelector('#auth-menu-logout');
         logoutBtn?.addEventListener('click', async () => {
-            await authLogout();
-            setSignedOutUi();
-            await redirectToGoogleLogin();
-        });
-        const returnOwnerLink = menu.querySelector('#auth-menu-return-owner');
-        returnOwnerLink?.addEventListener('click', () => {
+            if (logoutBtn.disabled) return;
+            logoutBtn.disabled = true;
             menu.classList.add('hidden');
+            await authLogout();
+            clearAuthUserHint();
+            // One navigation, back to the start (sign-in page).
+            window.location.replace('/?authMode=login');
         });
 
         emitAuthChanged(user);
@@ -14438,6 +15104,16 @@ function initAuthUi() {
     const bootHintUser = readAuthUserHint();
     if (bootHintUser) {
         setSignedInUi(bootHintUser, null);
+    } else {
+        // Hide signed-in-only chrome (e.g. mobile bottom dock) until the
+        // session check confirms the visitor is authenticated.
+        document.body.classList.add('ode-signed-out');
+        if (odeRequiresSignedInUser()) {
+            // No cached session on an app page: bounce to sign-in immediately.
+            // (A valid-cookie user whose cached hint expired gets routed back
+            // by the entry page once the server check recognizes them.)
+            window.location.replace('/?authMode=login');
+        }
     }
 
     const redirectToTrainingAfterAuth = () => {
@@ -14457,11 +15133,15 @@ function initAuthUi() {
         }
     };
 
+    // Shared completion path for any auth UI (modal or inline page flows):
+    // updates navbar/session state, emits 'odeauth', and honors return-to redirects.
+    window.odeApplySignedInUser = (user) => {
+        setSignedInUi(user, null);
+        redirectToTrainingAfterAuth();
+    };
+
     wireAuthModal(modal, {
-        onSignedIn: (user) => {
-            setSignedInUi(user, null);
-            redirectToTrainingAfterAuth();
-        }
+        onSignedIn: (user) => window.odeApplySignedInUser(user)
     });
 
     let friendsAnchor = null;
@@ -15537,10 +16217,8 @@ function initAuthUi() {
     };
 
     const openModal = (mode) => {
-        setAuthModalMode(modal, mode || 'login');
-        modal.classList.remove('hidden');
-        document.body.classList.add('modal-open');
-        window.setTimeout(() => modal.querySelector('input')?.focus(), 40);
+        // Navbar/menu auth buttons route to the entry sign-in page instead of a popup.
+        odeOpenAuthModal(mode || 'login');
     };
 
     const toggleMenu = () => {
@@ -15572,8 +16250,8 @@ function initAuthUi() {
     mobileAuth?.logoutBtn?.addEventListener('click', async (e) => {
         e.preventDefault();
         await authLogout();
-        setSignedOutUi();
-        await redirectToGoogleLogin();
+        clearAuthUserHint();
+        window.location.replace('/?authMode=login');
     });
     mobileAuth?.dashboardLink?.addEventListener('click', () => {
         navMenu?.classList.remove('active');
@@ -20496,12 +21174,18 @@ function setAuthModalMode(modal, mode) {
 }
 
 function odeOpenAuthModal(mode = 'login') {
-    const modal = document.getElementById('auth-modal') || ensureAuthModal();
-    wireAuthModal(modal);
-    setAuthModalMode(modal, mode);
-    modal.classList.remove('hidden');
-    document.body.classList.add('modal-open');
-    window.setTimeout(() => modal.querySelector('input')?.focus(), 40);
+    // The popup modal is retired: auth happens on the entry page (index) inline flow.
+    const normalizedMode = mode === 'signup' ? 'signup' : 'login';
+    const path = String(window.location.pathname || '/').toLowerCase();
+    const onEntryPage = path === '/' || path.endsWith('/index.html');
+    if (!onEntryPage) {
+        window.location.href = `/?authMode=${normalizedMode}`;
+        return;
+    }
+    if (typeof window.odeSetEntryAuthMode === 'function') {
+        window.odeSetEntryAuthMode(normalizedMode);
+    }
+    document.getElementById('entry-auth-stage')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function redirectToGoogleLogin() {
@@ -20530,6 +21214,11 @@ function syncControlPanelLabel(user) {
     if (!user) textEl.textContent = 'Sign in';
     else textEl.textContent = 'Account';
 }
+
+// Exposed for inline page auth flows (index entry screen) that live outside this scope.
+window.odeAuthLogin = (args) => authLogin(args);
+window.odeAuthSignup = (args) => authSignup(args);
+window.odeAuthRequestPasswordReset = (args) => authRequestPasswordReset(args);
 
 async function authLogin({ username, password }) {
     try {
@@ -20624,6 +21313,335 @@ async function authLogout() {
    PRELOADER
    ============================================ */
 
+// Library of gym-themed loader scenes. One is picked at random per page load
+// (never the same twice in a row). Each scene is a self-contained SVG plus a
+// themed ticker readout; all share the dark shell, wordmark and progress bar.
+function odePreloaderScenes() {
+    const DEFS = `<defs>
+        <linearGradient id="plg-bar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f0f4f9"/><stop offset="0.38" stop-color="#b9c2cf"/>
+            <stop offset="0.62" stop-color="#79839a"/><stop offset="1" stop-color="#414a5a"/>
+        </linearGradient>
+        <linearGradient id="plg-sleeve" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#dde3ec"/><stop offset="0.4" stop-color="#9aa4b4"/>
+            <stop offset="0.72" stop-color="#5c6577"/><stop offset="1" stop-color="#303744"/>
+        </linearGradient>
+        <linearGradient id="plg-plate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3d4a66"/><stop offset="0.45" stop-color="#242e44"/>
+            <stop offset="1" stop-color="#0e1420"/>
+        </linearGradient>
+        <linearGradient id="plg-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4c98b"/><stop offset="0.45" stop-color="#d9a15c"/>
+            <stop offset="1" stop-color="#8e5d1f"/>
+        </linearGradient>
+        <linearGradient id="plg-glint" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="rgba(255,255,255,0)"/><stop offset="0.5" stop-color="rgba(255,255,255,0.34)"/>
+            <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+        </linearGradient>
+        <linearGradient id="plg-flame" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#b9782d"/><stop offset="0.5" stop-color="#e5983c"/>
+            <stop offset="1" stop-color="#f6c96b"/>
+        </linearGradient>
+        <radialGradient id="plg-shadow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="rgba(0,0,0,0.6)"/><stop offset="1" stop-color="rgba(0,0,0,0)"/>
+        </radialGradient>
+    </defs>`;
+    const svg = (inner) => `<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">${DEFS}${inner}</svg>`;
+    const floor = (rx = 170, cls = '') => `<ellipse class="${cls}" cx="280" cy="216" rx="${rx}" ry="10" fill="url(#plg-shadow)"/>`;
+
+    const bbPlate = (x, w, y, h, cls) => `
+        <g class="plsvg-drop ${cls}"><g class="plsvg-whip">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(9, w / 2.4)}" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+            <rect x="${x + 3.5}" y="${y + 6}" width="${w - 7}" height="${h - 12}" rx="${Math.min(6, w / 3.2)}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+            <rect x="${x + 3}" y="${y + h / 2 - 4}" width="${w - 6}" height="8" rx="3" fill="rgba(3,6,10,0.85)"/>
+            <rect x="${x + 2.5}" y="${y + 3}" width="${w - 5}" height="3" rx="1.5" fill="rgba(255,255,255,0.16)"/>
+        </g></g>`;
+    const bbCollar = (x) => `<g>
+        <rect x="${x}" y="103" width="11" height="35" rx="3.5" fill="url(#plg-gold)" stroke="rgba(0,0,0,0.35)" stroke-width="0.5"/>
+        <rect x="${x + 2.5}" y="96" width="6" height="9" rx="2" fill="url(#plg-gold)"/>
+        <rect x="${x + 2}" y="108" width="7" height="2.5" rx="1" fill="rgba(255,255,255,0.35)"/>
+    </g>`;
+    const bbKnurl = (x0) => Array.from({ length: 7 }, (_, i) =>
+        `<rect x="${x0 + i * 5}" y="115.5" width="1.6" height="10" fill="rgba(20,26,36,0.4)"/>`).join('');
+    const miniDumbbell = (cx, cy, s = 1) => `<g transform="translate(${cx},${cy}) scale(${s})">
+        <rect x="-26" y="-4" width="52" height="8" rx="4" fill="url(#plg-bar)"/>
+        <rect x="-34" y="-16" width="10" height="32" rx="4" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+        <rect x="-44" y="-12" width="9" height="24" rx="4" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+        <rect x="24" y="-16" width="10" height="32" rx="4" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+        <rect x="35" y="-12" width="9" height="24" rx="4" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+    </g>`;
+    const star = (cx, cy, cls) => `<g transform="translate(${cx},${cy})"><path class="${cls}" d="M0 -14 L3.8 -4.6 L14 -4 L6.4 2.8 L8.6 13 L0 7.4 L-8.6 13 L-6.4 2.8 L-14 -4 L-3.8 -4.6 Z" fill="url(#plg-gold)"/></g>`;
+
+    return [
+    {
+        id: 'barbell',
+        ticker: [[0, '45', 'LB'], [770, '135', 'LB'], [1160, '225', 'LB'], [1550, '315', 'LB']],
+        svg: svg(`
+            ${floor(200, 'plsvg-floorshadow')}
+            <g class="plsvg-bbroot"><g id="plsvg-bb">
+                <rect x="16" y="116" width="528" height="9" rx="4.5" fill="url(#plg-bar)"/>
+                <rect x="16" y="117" width="528" height="2.4" rx="1.2" fill="rgba(255,255,255,0.5)"/>
+                ${bbKnurl(216)}${bbKnurl(316)}
+                <rect x="16" y="111" width="132" height="19" rx="7" fill="url(#plg-sleeve)"/>
+                <rect x="412" y="111" width="132" height="19" rx="7" fill="url(#plg-sleeve)"/>
+                <rect x="18" y="112.5" width="128" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+                <rect x="414" y="112.5" width="128" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+                <rect x="14" y="108" width="7" height="25" rx="3" fill="url(#plg-sleeve)"/>
+                <rect x="539" y="108" width="7" height="25" rx="3" fill="url(#plg-sleeve)"/>
+                ${bbCollar(142)}${bbCollar(407)}
+                ${bbPlate(112, 24, 58, 125, 'plsvg-d1')}${bbPlate(84, 22, 70, 101, 'plsvg-d2')}${bbPlate(58, 20, 82, 77, 'plsvg-d3')}
+                ${bbPlate(424, 24, 58, 125, 'plsvg-d1')}${bbPlate(454, 22, 70, 101, 'plsvg-d2')}${bbPlate(482, 20, 82, 77, 'plsvg-d3')}
+            </g></g>
+            <g class="plsvg-dust">
+                <circle cx="96" cy="196" r="4" fill="rgba(235,240,246,0.5)" style="--dx:-26px;--dy:-30px"/>
+                <circle cx="118" cy="200" r="3" fill="rgba(235,240,246,0.4)" style="--dx:-10px;--dy:-40px"/>
+                <circle cx="464" cy="196" r="4" fill="rgba(235,240,246,0.5)" style="--dx:26px;--dy:-30px"/>
+                <circle cx="442" cy="200" r="3" fill="rgba(235,240,246,0.4)" style="--dx:10px;--dy:-40px"/>
+            </g>`)
+    },
+    {
+        id: 'kettlebell',
+        ticker: [[650, '1', 'REP'], [1250, '2', 'REP'], [1900, '3', 'REP'], [2450, 'POWER', '']],
+        svg: svg(`
+            ${floor(120, 'kb-shadow')}
+            <g class="kb-trails" fill="none" stroke="url(#plg-gold)" stroke-linecap="round">
+                <path class="kb-t1" d="M172 96 A150 150 0 0 1 388 96" stroke-width="3.5" opacity="0"/>
+                <path class="kb-t2" d="M196 120 A118 118 0 0 1 364 120" stroke-width="2.5" opacity="0"/>
+            </g>
+            <g class="kb-swing"><g>
+                <path d="M254 130 q 0 -36 26 -36 q 26 0 26 36" fill="none" stroke="url(#plg-bar)" stroke-width="13" stroke-linecap="round"/>
+                <path d="M247 130 q -12 46 12 61 q 21 12 42 0 q 24 -15 12 -61 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
+                <rect x="249" y="141" width="62" height="9" rx="4.5" fill="url(#plg-gold)" opacity="0.9"/>
+                <ellipse cx="264" cy="158" rx="7" ry="14" fill="rgba(255,255,255,0.09)"/>
+            </g></g>`)
+    },
+    {
+        id: 'dumbbell',
+        ticker: [[600, '1', 'REP'], [1300, '2', 'REP'], [2300, '3', 'REP'], [2650, 'GRIND', '']],
+        svg: svg(`
+            ${floor(150)}
+            <g class="db-arcs" fill="none" stroke="url(#plg-gold)" stroke-linecap="round">
+                <path class="db-a1" d="M150 168 A140 140 0 0 1 236 52" stroke-width="3" opacity="0"/>
+                <path class="db-a2" d="M175 185 A118 118 0 0 1 250 78" stroke-width="2" opacity="0"/>
+            </g>
+            <g class="db-arm">${miniDumbbell(215, 150, 1.5)}</g>`)
+    },
+    {
+        id: 'chart',
+        ticker: [[800, '+10', 'LB'], [1500, '+25', 'LB'], [2250, 'PR', 'NEW']],
+        svg: svg(`
+            <g stroke="rgba(255,255,255,0.06)"><line x1="60" y1="80" x2="500" y2="80"/><line x1="60" y1="124" x2="500" y2="124"/><line x1="60" y1="168" x2="500" y2="168"/></g>
+            <line x1="60" y1="52" x2="60" y2="212" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>
+            <line x1="60" y1="212" x2="500" y2="212" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>
+            <path class="ch-line" d="M60 200 L140 176 L200 188 L280 150 L350 158 L430 108 L468 92" fill="none" stroke="url(#plg-gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#e5b070">
+                <circle class="ch-dot ch-k1" cx="140" cy="176" r="5"/><circle class="ch-dot ch-k2" cx="200" cy="188" r="5"/>
+                <circle class="ch-dot ch-k3" cx="280" cy="150" r="5"/><circle class="ch-dot ch-k4" cx="350" cy="158" r="5"/>
+                <circle class="ch-dot ch-k5" cx="430" cy="108" r="5"/>
+            </g>
+            ${star(486, 78, 'ch-star')}
+            <g class="ch-rays" stroke="url(#plg-gold)" stroke-width="2.5" stroke-linecap="round" opacity="0">
+                <line x1="486" y1="52" x2="486" y2="42"/><line x1="510" y1="60" x2="517" y2="53"/>
+                <line x1="462" y1="60" x2="455" y2="53"/><line x1="514" y1="80" x2="524" y2="80"/>
+            </g>`)
+    },
+    {
+        id: 'timer',
+        ticker: [[300, 'REST', ''], [2550, 'GO', 'TIME']],
+        svg: svg(`
+            <circle class="tm-pulse" cx="280" cy="132" r="74" fill="none" stroke="rgba(217,161,92,0.35)" stroke-width="2"/>
+            <circle cx="280" cy="132" r="74" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10"/>
+            <circle class="tm-arc" cx="280" cy="132" r="74" fill="none" stroke="url(#plg-gold)" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="465" stroke-dashoffset="465" transform="rotate(-90 280 132)"/>
+            <g fill="rgba(255,255,255,0.25)">${Array.from({ length: 12 }, (_, i) => {
+                const a = i * Math.PI / 6; const x1 = 280 + Math.sin(a) * 60, y1 = 132 - Math.cos(a) * 60, x2 = 280 + Math.sin(a) * 66, y2 = 132 - Math.cos(a) * 66;
+                return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>`;
+            }).join('')}</g>
+            <text class="tm-num tm-n3" x="280" y="150" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="52" font-weight="800" fill="#fff">3</text>
+            <text class="tm-num tm-n2" x="280" y="150" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="52" font-weight="800" fill="#fff">2</text>
+            <text class="tm-num tm-n1" x="280" y="150" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="52" font-weight="800" fill="#fff">1</text>
+            <text class="tm-go" x="280" y="148" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="40" font-weight="800" fill="#e5b070">GO</text>`)
+    },
+    {
+        id: 'shaker',
+        ticker: [[400, 'SHAKE', ''], [1500, 'SHAKE', 'HARDER'], [2450, 'SMOOTH', '']],
+        svg: svg(`
+            ${floor(90)}
+            <g class="bt-shake">
+                <defs><clipPath id="bt-clip"><rect x="251" y="95" width="58" height="112" rx="13"/></clipPath></defs>
+                <rect x="248" y="92" width="64" height="118" rx="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+                <g clip-path="url(#bt-clip)">
+                    <path class="bt-liquid" d="M191 150 q 15 -9 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 V 210 H 191 Z" fill="url(#plg-gold)" opacity="0.75"/>
+                    <circle class="bt-b1" cx="268" cy="195" r="4" fill="rgba(255,255,255,0.35)"/>
+                    <circle class="bt-b2" cx="284" cy="200" r="3" fill="rgba(255,255,255,0.3)"/>
+                    <circle class="bt-b3" cx="296" cy="192" r="2.5" fill="rgba(255,255,255,0.3)"/>
+                </g>
+                <g stroke="rgba(255,255,255,0.16)"><line x1="300" y1="130" x2="308" y2="130"/><line x1="300" y1="155" x2="308" y2="155"/><line x1="300" y1="180" x2="308" y2="180"/></g>
+                <rect x="246" y="74" width="68" height="22" rx="9" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.18)"/>
+                <g class="bt-cap"><rect x="266" y="62" width="28" height="14" rx="6" fill="url(#plg-sleeve)"/><circle cx="280" cy="62" r="5" fill="url(#plg-gold)"/></g>
+            </g>
+            ${star(322, 74, 'bt-spark')}`)
+    },
+    {
+        id: 'treadmill',
+        ticker: [[500, '6.0', 'MPH'], [1300, '9.5', 'MPH'], [2100, '12.0', 'MPH']],
+        svg: svg(`
+            ${floor(190)}
+            <g class="td-wind" stroke="rgba(235,240,246,0.35)" stroke-width="3" stroke-linecap="round" opacity="0">
+                <line x1="70" y1="120" x2="130" y2="120"/><line x1="50" y1="145" x2="122" y2="145"/><line x1="82" y1="170" x2="138" y2="170"/>
+            </g>
+            <g class="td-deck">
+                <rect x="120" y="168" width="320" height="22" rx="11" fill="#0d131d" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+                <line class="td-belt" x1="134" y1="179" x2="426" y2="179" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" stroke-dasharray="12 20"/>
+                <circle cx="134" cy="179" r="6" fill="url(#plg-sleeve)"/><circle cx="426" cy="179" r="6" fill="url(#plg-sleeve)"/>
+                <rect x="150" y="86" width="13" height="86" rx="5" fill="url(#plg-sleeve)" transform="rotate(14 156 172)"/>
+                <rect x="128" y="54" width="92" height="38" rx="9" fill="#0a0f18" stroke="rgba(217,161,92,0.5)" stroke-width="1.5"/>
+                <text class="td-s td-s1" x="174" y="80" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="800" fill="#e5b070">6.0</text>
+                <text class="td-s td-s2" x="174" y="80" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="800" fill="#e5b070">9.5</text>
+                <text class="td-s td-s3" x="174" y="80" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="800" fill="#e5b070">12.0</text>
+            </g>`)
+    },
+    {
+        id: 'stack',
+        ticker: [[700, '90', 'LB'], [1400, '180', 'LB'], [2100, '315', 'LB']],
+        svg: svg(`
+            ${floor(150)}
+            <g class="ps-stack">${[
+                [190, 190, 'ps-p1'], [170, 166, 'ps-p2'], [150, 142, 'ps-p3'], [130, 118, 'ps-p4'], [110, 94, 'ps-p5']
+            ].map(([w, y, cls]) => `
+                <g class="ps-p ${cls}">
+                    <rect x="${280 - w / 2}" y="${y}" width="${w}" height="22" rx="10" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+                    <rect x="${280 - w / 2 + 4}" y="${y + 3}" width="${w - 8}" height="3" rx="1.5" fill="rgba(255,255,255,0.14)"/>
+                    <rect x="${280 - 14}" y="${y + 8}" width="28" height="6" rx="3" fill="rgba(3,6,10,0.8)"/>
+                </g>`).join('')}
+            </g>
+            <g class="plsvg-dust">
+                <circle cx="168" cy="206" r="4" fill="rgba(235,240,246,0.45)" style="--dx:-24px;--dy:-22px"/>
+                <circle cx="392" cy="206" r="4" fill="rgba(235,240,246,0.45)" style="--dx:24px;--dy:-22px"/>
+                <circle cx="200" cy="210" r="3" fill="rgba(235,240,246,0.35)" style="--dx:-12px;--dy:-32px"/>
+                <circle cx="360" cy="210" r="3" fill="rgba(235,240,246,0.35)" style="--dx:12px;--dy:-32px"/>
+            </g>`)
+    },
+    {
+        id: 'streak',
+        ticker: [[900, '3', 'DAYS'], [1700, '5', 'DAYS'], [2450, '7', 'DAY STREAK']],
+        svg: svg(`
+            <rect x="158" y="64" width="244" height="140" rx="14" fill="#0d131d" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+            <rect x="158" y="64" width="244" height="30" rx="14" fill="url(#plg-gold)"/>
+            <rect x="158" y="80" width="244" height="14" fill="url(#plg-gold)"/>
+            <text x="280" y="85" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="800" fill="#0c1119" letter-spacing="2">THIS WEEK</text>
+            ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) =>
+                `<text x="${186 + i * 32}" y="118" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.4)">${d}</text>`).join('')}
+            ${Array.from({ length: 7 }, (_, i) =>
+                `<rect x="${174 + i * 32}" y="126" width="24" height="24" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>`).join('')}
+            ${Array.from({ length: 7 }, (_, i) => i === 4
+                ? `<path class="cal-moon" d="M${186 + i * 32} 131 a7 7 0 1 0 5 12 a8.6 8.6 0 0 1 -5 -12 Z" fill="rgba(160,175,200,0.75)"/>`
+                : `<path class="cal-check cal-c${i}" d="M${179 + i * 32} 138 l4.5 4.5 l8 -9" fill="none" stroke="url(#plg-gold)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
+            <g class="cal-flame">
+                <path d="M400 46 q 10 12 4 22 q 12 -4 10 -16 q 14 22 -2 36 q -14 12 -28 0 q -16 -15 2 -34 q 6 -6 14 -8 Z" fill="url(#plg-flame)"/>
+                <path d="M398 76 q 6 8 0 14 q -8 -2 -6 -10 q 2 -4 6 -4 Z" fill="#f6e3b4" opacity="0.9"/>
+            </g>
+            <text x="280" y="186" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="12" font-weight="700" fill="rgba(255,255,255,0.45)" letter-spacing="1.5">SHOW UP. EVERY DAY.</text>`)
+    },
+    {
+        id: 'balance',
+        ticker: [[600, 'DONUT', '?'], [1800, 'GAINS', '!'], [2500, 'DISCIPLINE', '']],
+        svg: svg(`
+            ${floor(120)}
+            <rect x="274" y="120" width="12" height="88" rx="5" fill="url(#plg-sleeve)"/>
+            <rect x="240" y="204" width="80" height="10" rx="5" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.12)"/>
+            <g class="bl-beam">
+                <rect x="150" y="112" width="260" height="9" rx="4.5" fill="url(#plg-bar)"/>
+                <circle cx="280" cy="116" r="9" fill="url(#plg-gold)"/>
+                <g class="bl-pan bl-pan-l">
+                    <line x1="165" y1="118" x2="150" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <line x1="165" y1="118" x2="180" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <path d="M138 152 h54 q-4 14 -27 14 q-23 0 -27 -14 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
+                    <g class="bl-donut">
+                        <circle cx="165" cy="140" r="17" fill="#caa06a"/>
+                        <path d="M148 140 a17 17 0 0 1 34 0 a17 17 0 0 1 -6 12 q -11 6 -22 0 a17 17 0 0 1 -6 -12" fill="#d97a9e"/>
+                        <circle cx="165" cy="140" r="6" fill="#0a0f18"/>
+                        <rect x="156" y="132" width="4" height="1.8" rx="0.9" fill="#fff" transform="rotate(20 158 133)"/>
+                        <rect x="170" y="129" width="4" height="1.8" rx="0.9" fill="#8fe0c0" transform="rotate(-15 172 130)"/>
+                        <rect x="163" y="146" width="4" height="1.8" rx="0.9" fill="#f6e3b4" transform="rotate(10 165 147)"/>
+                    </g>
+                </g>
+                <g class="bl-pan bl-pan-r">
+                    <line x1="395" y1="118" x2="380" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <line x1="395" y1="118" x2="410" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <path d="M368 152 h54 q-4 14 -27 14 q-23 0 -27 -14 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
+                    ${miniDumbbell(395, 142, 0.8)}
+                </g>
+            </g>`)
+    },
+    {
+        id: 'alarm',
+        ticker: [[300, '4:59', 'AM'], [1050, '5:00', 'AM'], [2500, 'NO', 'EXCUSES']],
+        svg: svg(`
+            ${floor(90)}
+            <g class="al-rings" fill="none" stroke="url(#plg-gold)" stroke-width="3" stroke-linecap="round" opacity="0">
+                <path d="M176 92 a 110 110 0 0 0 -18 42"/><path d="M384 92 a 110 110 0 0 1 18 42"/>
+                <path d="M192 76 a 130 130 0 0 0 -14 26"/><path d="M368 76 a 130 130 0 0 1 14 26"/>
+            </g>
+            <g class="al-clock">
+                <line x1="240" y1="192" x2="222" y2="212" stroke="url(#plg-sleeve)" stroke-width="7" stroke-linecap="round"/>
+                <line x1="320" y1="192" x2="338" y2="212" stroke="url(#plg-sleeve)" stroke-width="7" stroke-linecap="round"/>
+                <path d="M232 66 a 30 30 0 0 1 44 -8" fill="none" stroke="url(#plg-gold)" stroke-width="12" stroke-linecap="round"/>
+                <path d="M328 66 a 30 30 0 0 0 -44 -8" fill="none" stroke="url(#plg-gold)" stroke-width="12" stroke-linecap="round"/>
+                <rect x="276" y="44" width="8" height="14" rx="3" fill="url(#plg-sleeve)"/>
+                <circle cx="280" cy="132" r="66" fill="#0d131d" stroke="url(#plg-bar)" stroke-width="6"/>
+                <circle cx="280" cy="132" r="56" fill="none" stroke="rgba(255,255,255,0.08)"/>
+                <text x="280" y="92" text-anchor="middle" font-size="13" font-weight="800" font-family="Space Grotesk, sans-serif" fill="rgba(255,255,255,0.5)">12</text>
+                <text x="322" y="137" text-anchor="middle" font-size="13" font-weight="800" font-family="Space Grotesk, sans-serif" fill="rgba(255,255,255,0.5)">3</text>
+                <text x="280" y="180" text-anchor="middle" font-size="13" font-weight="800" font-family="Space Grotesk, sans-serif" fill="rgba(255,255,255,0.5)">6</text>
+                <text x="238" y="137" text-anchor="middle" font-size="13" font-weight="800" font-family="Space Grotesk, sans-serif" fill="rgba(255,255,255,0.5)">9</text>
+                <line class="al-hour" x1="280" y1="132" x2="280" y2="100" stroke="#e8edf4" stroke-width="5" stroke-linecap="round" transform="rotate(150 280 132)"/>
+                <g class="al-min"><line x1="280" y1="132" x2="280" y2="86" stroke="#e5b070" stroke-width="3.5" stroke-linecap="round"/></g>
+                <circle cx="280" cy="132" r="5" fill="url(#plg-gold)"/>
+            </g>`)
+    },
+    {
+        id: 'prbell',
+        ticker: [[400, 'PR', 'SET'], [1300, 'RING', 'IT'], [2350, 'DING', '!']],
+        svg: svg(`
+            <rect x="216" y="34" width="128" height="26" rx="8" fill="#0d131d" stroke="rgba(255,255,255,0.14)"/>
+            <text x="280" y="52" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="800" fill="#e5b070" letter-spacing="2">PR BELL</text>
+            <line x1="280" y1="60" x2="280" y2="74" stroke="url(#plg-sleeve)" stroke-width="5"/>
+            <g class="pb-rings" fill="none" stroke="url(#plg-gold)" stroke-width="3" stroke-linecap="round" opacity="0">
+                <path d="M204 106 a 92 92 0 0 0 -14 38"/><path d="M356 106 a 92 92 0 0 1 14 38"/>
+                <path d="M218 92 a 112 112 0 0 0 -11 22"/><path d="M342 92 a 112 112 0 0 1 11 22"/>
+            </g>
+            <g class="pb-bell">
+                <circle cx="280" cy="78" r="6" fill="url(#plg-gold)"/>
+                <path d="M280 76 q -40 6 -42 54 q -1 14 -9 22 h 102 q -8 -8 -9 -22 q -2 -48 -42 -54 Z" fill="url(#plg-gold)" stroke="rgba(0,0,0,0.3)"/>
+                <path d="M252 92 q -10 14 -10 38" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round"/>
+                <rect x="226" y="150" width="108" height="9" rx="4.5" fill="url(#plg-gold)" stroke="rgba(0,0,0,0.25)"/>
+                <g class="pb-clapper">
+                    <line x1="280" y1="130" x2="280" y2="168" stroke="url(#plg-sleeve)" stroke-width="4"/>
+                    <circle cx="280" cy="172" r="8" fill="url(#plg-sleeve)"/>
+                    <line x1="280" y1="180" x2="280" y2="196" stroke="rgba(210,190,160,0.65)" stroke-width="3" stroke-dasharray="2 3"/>
+                    <circle cx="280" cy="201" r="4" fill="rgba(210,190,160,0.75)"/>
+                </g>
+            </g>
+            ${star(348, 70, 'pb-spark')}`)
+    }];
+}
+
+function odePickPreloaderScene() {
+    const scenes = odePreloaderScenes();
+    try {
+        const forced = new URL(window.location.href).searchParams.get('loader');
+        const match = forced && scenes.find((s) => s.id === forced);
+        if (match) return match;
+    } catch { /* ignore */ }
+    let last = '';
+    try { last = sessionStorage.getItem('ode_loader_last') || ''; } catch { /* ignore */ }
+    const pool = scenes.filter((s) => s.id !== last);
+    const scene = pool[Math.floor(Math.random() * pool.length)] || scenes[0];
+    try { sessionStorage.setItem('ode_loader_last', scene.id); } catch { /* ignore */ }
+    return scene;
+}
+
 function setupPreloader() {
     let preloader = document.getElementById('preloader');
     const word = document.getElementById('preloader-word');
@@ -20682,33 +21700,45 @@ function setupPreloader() {
         sessionStorage.setItem(KEY, '1');
     }
 
-    const moveToBrand = () => {
-        if (!brand) return;
-        const brandRect = brand.getBoundingClientRect();
-        const targetX = brandRect.left + brandRect.width / 2;
-        const targetY = brandRect.top + brandRect.height / 2;
-        word.style.animation = 'none'; // stop the pop-in so transitions apply cleanly
-        // force reflow
-        void word.offsetWidth;
-        word.style.left = `${targetX}px`;
-        word.style.top = `${targetY}px`;
-        word.style.transform = `translate(-50%, -50%) scale(0.3)`;
-        word.style.filter = 'drop-shadow(0 10px 22px rgba(0,0,0,0.22))';
-    };
+    // Pick a random gym scene (never the same twice in a row) and build it
+    // inside the existing overlay. Each scene brings its own SVG animation
+    // and a themed ticker readout under the wordmark.
+    const scene = odePickPreloaderScene();
+    if (!preloader.querySelector('.preloader-lift')) {
+        const lift = document.createElement('div');
+        lift.className = 'preloader-lift';
+        lift.dataset.scene = scene.id;
+        lift.setAttribute('aria-hidden', 'true');
+        lift.innerHTML = scene.svg;
+        preloader.insertBefore(lift, preloader.firstChild);
+    }
 
-    // move after bar fills (slightly slower)
-    setTimeout(moveToBrand, 2600);
+    // Themed ticker under the wordmark (weight, reps, speed, streak...).
+    if (scene.ticker && scene.ticker.length && !preloader.querySelector('.preloader-weight')) {
+        const weight = document.createElement('div');
+        weight.className = 'preloader-weight';
+        weight.setAttribute('aria-hidden', 'true');
+        weight.innerHTML = '<span class="pl-weight-num"></span><b></b>';
+        word.insertAdjacentElement('afterend', weight);
+        const num = weight.querySelector('.pl-weight-num');
+        const suffix = weight.querySelector('b');
+        scene.ticker.forEach(([at, main, extra]) => {
+            setTimeout(() => {
+                num.textContent = main;
+                suffix.textContent = extra || '';
+                num.classList.remove('bump');
+                void num.offsetWidth;
+                num.classList.add('bump');
+            }, at);
+        });
+    }
 
-    // fade bar as move begins
+    // Fade the overlay after the scene finishes.
     setTimeout(() => {
         bar?.classList.add('fade');
-    }, 2600);
-
-    // fade overlay after move completes
-    setTimeout(() => {
         preloader.classList.add('hidden');
-        setTimeout(() => preloader.remove(), 600);
-    }, 4200);
+        setTimeout(() => preloader.remove(), 500);
+    }, 3080);
 }
 
 function setupForumPreloaderNavigation() {

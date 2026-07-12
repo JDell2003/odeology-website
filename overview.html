@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview · RiseForIt</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
-    <link rel="stylesheet" href="css/overview.css?v=2026-02-16-31">
+    <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
+    <link rel="stylesheet" href="css/overview.css?v=2026-07-11-showcase-7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -148,6 +148,35 @@
                 <button class="btn btn-ghost" type="button" id="overview-tour-btn" aria-label="Start quick tour">Tour</button>
             </div>
         </header>
+
+        <!-- Athlete identity hero: radar chart + character type / title / rank (js/overview-identity.js) -->
+        <section class="plan-card ov-identity" id="overview-identity" aria-label="Your athlete identity">
+            <div class="ov-identity-chart">
+                <div class="ov-radar" id="ov-radar">
+                    <div class="ov-radar-tip hidden" id="ov-radar-tip" role="status"></div>
+                </div>
+                <div class="ov-radar-legend hidden" id="ov-radar-legend">
+                    <span class="ov-legend-item ov-legend-now"><span class="ov-legend-swatch"></span>Now</span>
+                    <span class="ov-legend-item ov-legend-prev"><span class="ov-legend-swatch"></span>Last month</span>
+                </div>
+            </div>
+            <div class="ov-identity-panel">
+                <p class="ov-identity-eyebrow">Your athlete identity</p>
+                <div class="ov-identity-typerow">
+                    <div class="ov-identity-emblem" id="ov-emblem" aria-hidden="true"></div>
+                    <h2 class="ov-identity-type" id="ov-type">&mdash;</h2>
+                </div>
+                <p class="ov-identity-title" id="ov-title">&mdash;</p>
+                <div class="ov-identity-rank">
+                    <span class="ov-rank-number" id="ov-rank">&mdash;</span>
+                    <span class="ov-rank-sub" id="ov-rank-sub"></span>
+                    <span class="ov-rank-delta" id="ov-rank-delta"></span>
+                </div>
+                <p class="ov-identity-blurb ns-muted" id="ov-blurb"></p>
+                <button class="btn btn-ghost ov-compare-btn" type="button" id="ov-compare-btn" aria-pressed="false">Compare last month</button>
+            </div>
+        </section>
+
         <div class="overview-mini-nav" id="overview-mini-nav" aria-label="Overview sections">
             <button class="overview-mini-btn active" type="button" data-filter="all">All</button>
             <button class="overview-mini-btn" type="button" data-filter="meals">Meals</button>
@@ -410,8 +439,13 @@
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
+    <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
     <script src="js/overview.js?v=2026-03-25-training-trial-1"></script>
+    <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
+    <script src="js/identity-engine.js?v=2026-07-12-engine-2"></script>
+    <script src="js/daily-recap.js?v=2026-07-12-recap-3"></script>
+    <script src="js/cutscenes.js?v=2026-07-12-cutscenes-36"></script>
+    <script src="js/overview-identity.js?v=2026-07-11-showcase-7"></script>
 </body>
 </html>
 

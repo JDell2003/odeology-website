@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>One moment...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at 30% 20%, #1d2330, #0d1017 70%);
+      color: #f2f4f8;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .vf-shell { width: min(560px, 94vw); text-align: center; }
+    .vf-coach {
+      font-size: 11px; letter-spacing: .28em; text-transform: uppercase;
+      color: rgba(242, 244, 248, .45); font-weight: 700; margin-bottom: 26px;
+    }
+    .vf-step { opacity: 0; transform: translateY(14px); transition: opacity .45s ease, transform .45s ease; }
+    .vf-step.is-in { opacity: 1; transform: none; }
+    .vf-count { font-size: 12px; color: rgba(242, 244, 248, .35); font-weight: 700; margin-bottom: 14px; letter-spacing: .12em; }
+    .vf-q { font-size: clamp(1.4rem, 4.6vw, 2.1rem); font-weight: 800; line-height: 1.25; letter-spacing: -0.02em; margin-bottom: 26px; }
+    .vf-input {
+      width: 100%; padding: 15px 18px; font: 600 16px/1.4 inherit; color: #f2f4f8;
+      background: rgba(255, 255, 255, .06); border: 1.5px solid rgba(255, 255, 255, .18);
+      border-radius: 14px; outline: none; text-align: center;
+    }
+    .vf-input:focus { border-color: rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .09); }
+    .vf-next {
+      margin-top: 16px; width: 100%; padding: 15px; border: 0; border-radius: 14px;
+      font: 800 15px/1 inherit; letter-spacing: .04em; cursor: pointer;
+      background: #f2f4f8; color: #10131a;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+    .vf-next:hover { transform: translateY(-1px); }
+    .vf-next:disabled { opacity: .35; cursor: default; transform: none; }
+    .vf-done-title { font-size: clamp(1.5rem, 5vw, 2.2rem); font-weight: 800; margin-bottom: 10px; }
+    .vf-done-sub { color: rgba(242, 244, 248, .55); font-weight: 600; margin-bottom: 26px; }
+    .vf-progress { position: fixed; top: 0; left: 0; height: 3px; background: #f2f4f8; width: 0; transition: width .45s ease; }
+    .vf-fallback { color: rgba(242, 244, 248, .55); font-weight: 600; }
+    .vf-fallback a { color: #f2f4f8; }
+  </style>
+</head>
+<body>
+  <div class="vf-progress" id="vf-progress"></div>
+  <div class="vf-shell">
+    <div class="vf-coach" id="vf-coach"></div>
+    <div id="vf-stage"><div class="vf-fallback" id="vf-loading">One moment...</div></div>
+  </div>
+  <script>
+    (function () {
+      'use strict';
+      var params = new URLSearchParams(location.search);
+      var handle = String(params.get('t') || '').trim().toLowerCase();
+      var stage = document.getElementById('vf-stage');
+      var progressBar = document.getElementById('vf-progress');
+      var coachEl = document.getElementById('vf-coach');
+
+      function esc(v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      }
+
+      // Anonymous visitor id — no account, just a random tag so the trainer's
+      // analytics can count visitors and see how far each one got.
+      var visitorId;
+      try {
+        visitorId = localStorage.getItem('rf_visit_id');
+        if (!visitorId) {
+          visitorId = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          localStorage.setItem('rf_visit_id', visitorId);
+        }
+      } catch (e) {
+        visitorId = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      }
+
+      var siteUrl = '';
+      var variant = null;
+      var questions = [];
+      var answers = [];
+      var stepStart = 0;
+      var funnelStart = 0;
+      var finished = false;
+
+      function track(type, extra) {
+        var body = Object.assign({
+          handle: handle,
+          visitorId: visitorId,
+          variantId: variant ? variant.id : '',
+          type: type
+        }, extra || {});
+        try {
+          var blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
+          if (!(navigator.sendBeacon && navigator.sendBeacon('/api/training/funnel-event', blob))) {
+            fetch('/api/training/funnel-event', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+              keepalive: true
+            }).catch(function () {});
+          }
+        } catch (e) {}
+      }
+
+      function pickVariant(variants) {
+        var total = variants.reduce(function (s, v) { return s + (v.weight || 0); }, 0);
+        if (total <= 0) return variants[0];
+        var roll = Math.random() * total;
+        for (var i = 0; i < variants.length; i++) {
+          roll -= variants[i].weight || 0;
+          if (roll <= 0) return variants[i];
+        }
+        return variants[variants.length - 1];
+      }
+
+      function goToSite() {
+        if (siteUrl) location.replace(siteUrl);
+        else stage.innerHTML = '<div class="vf-fallback">You\'re all set.</div>';
+      }
+
+      function showStep(i) {
+        if (i >= questions.length) { finish(); return; }
+        progressBar.style.width = Math.round(i / questions.length * 100) + '%';
+        stage.innerHTML =
+          '<div class="vf-step" id="vf-step">' +
+            '<div class="vf-count">' + (i + 1) + ' / ' + questions.length + '</div>' +
+            '<div class="vf-q">' + esc(questions[i]) + '</div>' +
+            '<input class="vf-input" id="vf-answer" type="text" autocomplete="off" placeholder="Type your answer">' +
+            '<button class="vf-next" id="vf-submit" type="button" disabled>Continue</button>' +
+          '</div>';
+        var step = document.getElementById('vf-step');
+        var input = document.getElementById('vf-answer');
+        var btn = document.getElementById('vf-submit');
+        requestAnimationFrame(function () { requestAnimationFrame(function () { step.classList.add('is-in'); }); });
+        setTimeout(function () { try { input.focus(); } catch (e) {} }, 480);
+        stepStart = Date.now();
+        input.addEventListener('input', function () { btn.disabled = !input.value.trim(); });
+        function submit() {
+          var val = input.value.trim();
+          if (!val) return;
+          btn.disabled = true;
+          answers.push({ question: questions[i], answer: val });
+          track('answer', { stepIndex: i, question: questions[i], answer: val, ms: Date.now() - stepStart });
+          step.classList.remove('is-in'); // fade out, then next fades in
+          setTimeout(function () { showStep(i + 1); }, 420);
+        }
+        btn.addEventListener('click', submit);
+        input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') submit(); });
+      }
+
+      function finish() {
+        finished = true;
+        progressBar.style.width = '100%';
+        track('complete', { stepIndex: questions.length, answers: answers, ms: Date.now() - funnelStart });
+        stage.innerHTML =
+          '<div class="vf-step" id="vf-step">' +
+            '<div class="vf-done-title">Perfect - thanks.</div>' +
+            '<div class="vf-done-sub">Taking you through now...</div>' +
+          '</div>';
+        requestAnimationFrame(function () { requestAnimationFrame(function () { document.getElementById('vf-step').classList.add('is-in'); }); });
+        setTimeout(goToSite, 1400);
+      }
+
+      // If they bail mid-form, record where they fell off.
+      window.addEventListener('pagehide', function () {
+        if (!finished && questions.length && funnelStart) {
+          track('exit', { stepIndex: answers.length, ms: Date.now() - funnelStart });
+        }
+      });
+
+      if (!handle) {
+        stage.innerHTML = '<div class="vf-fallback">This link is missing its destination.</div>';
+        return;
+      }
+
+      fetch('/api/training/website-funnel?t=' + encodeURIComponent(handle))
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('nf')); })
+        .then(function (json) {
+          siteUrl = String(json.siteUrl || '');
+          coachEl.textContent = json.displayName || '';
+          var variants = (json.variants || []).filter(function (v) { return (v.questions || []).length; });
+          if (!variants.length) {
+            // Nothing to ask — straight through to the trainer's site.
+            if (siteUrl) { location.replace(siteUrl); return; }
+            stage.innerHTML = '<div class="vf-fallback">This page is not set up yet.</div>';
+            return;
+          }
+          variant = pickVariant(variants);
+          questions = variant.questions.slice();
+          funnelStart = Date.now();
+          track('start', { stepIndex: 0 });
+          showStep(0);
+        })
+        .catch(function () {
+          stage.innerHTML = '<div class="vf-fallback">This link is not active.</div>';
+        });
+    })();
+  </script>
+</body>
+</html>

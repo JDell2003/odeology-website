@@ -1,0 +1,602 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rise Alarm · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
+  <style>
+    body.alarm-page,
+    :root[data-theme="light"] body.alarm-page,
+    :root[data-theme="dark"] body.alarm-page {
+      padding: 0 !important;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(59, 74, 102, 0.3), transparent 50%),
+        linear-gradient(180deg, #07090f 0%, #04060b 60%, #020408 100%) !important;
+      color: #fff;
+      font-family: "Space Grotesk", sans-serif;
+      overflow: auto !important;
+    }
+    body.alarm-page .navbar,
+    body.alarm-page .control-panel,
+    body.alarm-page #control-mobile-fab-dock { display: none !important; }
+    .al-shell {
+      max-width: 460px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 20px 40px;
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      box-sizing: border-box;
+    }
+    .al-top { display: flex; justify-content: space-between; align-items: center; }
+    .al-back { color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; font-weight: 800; text-decoration: none; }
+    .al-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .al-badge.is-armed { color: #e5b070; }
+    .al-clock {
+      text-align: center;
+      padding: 26px 0 4px;
+    }
+    .al-now {
+      font-size: 4.8rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .al-now small { font-size: 1.4rem; color: rgba(255, 255, 255, 0.5); }
+    .al-sub {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.5);
+      min-height: 1.2em;
+    }
+    .al-card {
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .al-card h2 { margin: 0; font-size: 0.95rem; }
+    .al-card p { margin: 0; font-size: 0.79rem; line-height: 1.5; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+    .al-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .al-row label { font-size: 0.84rem; font-weight: 800; color: rgba(255, 255, 255, 0.75); }
+    input[type="time"] {
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: #10161f;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      padding: 0 12px;
+      color-scheme: dark;
+    }
+    .al-btn {
+      min-height: 52px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: linear-gradient(180deg, #1e2938, #161f2d);
+      color: #fff;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .al-btn.is-primary {
+      border-color: rgba(217, 161, 92, 0.55);
+      background: linear-gradient(180deg, #d9a15c, #b9782d);
+      color: #0c1119;
+    }
+    .al-btn.is-ghost { background: transparent; }
+    .al-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .al-toggle {
+      position: relative;
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #10161f;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      flex: none;
+    }
+    .al-toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #7a8699;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .al-toggle.is-on { background: rgba(217, 161, 92, 0.3); border-color: rgba(217, 161, 92, 0.6); }
+    .al-toggle.is-on::after { transform: translateX(22px); background: #e5b070; }
+    .al-lock-note { font-size: 0.74rem; color: rgba(255, 255, 255, 0.4); font-weight: 600; }
+    .al-status { min-height: 1.2em; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.6); text-align: center; }
+    .al-status.is-good { color: #65c786; }
+    .al-status.is-bad { color: #ff9d7d; }
+
+    /* Ringing overlay */
+    .al-ring {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(217, 161, 92, 0.22), transparent 55%),
+        linear-gradient(180deg, #12080a, #07090f 70%);
+      padding: 24px;
+      text-align: center;
+    }
+    .al-ring.is-active { display: grid; }
+    .al-ring-inner { display: grid; gap: 18px; justify-items: center; max-width: 420px; }
+    .al-ring-time { font-size: 4rem; font-weight: 800; animation: alPulse 1s ease-in-out infinite alternate; }
+    @keyframes alPulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+    .al-ring-label { font-size: 1rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #e5b070; }
+    .al-ring-actions { display: grid; gap: 10px; width: 100%; }
+    .al-mission {
+      display: none;
+      border: 1px solid rgba(217, 161, 92, 0.4);
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 16px;
+      gap: 12px;
+      width: 100%;
+    }
+    .al-mission.is-active { display: grid; }
+    .al-mission-target { font-size: 1.05rem; font-weight: 800; line-height: 1.45; }
+    .al-mission-target .said { color: #65c786; }
+    .al-mission-timer { font-size: 1.6rem; font-weight: 800; color: #e5b070; font-variant-numeric: tabular-nums; }
+    .al-mission-heard { min-height: 1.2em; font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+    .al-mission input {
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #10161f;
+      color: #fff;
+      font: inherit;
+      padding: 0 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body class="alarm-page" data-require-auth="1">
+  <main class="al-shell">
+    <div class="al-top">
+      <a class="al-back" href="account.html">&larr; Account</a>
+      <span class="al-badge" id="al-badge">Alarm off</span>
+    </div>
+
+    <div class="al-clock">
+      <div class="al-now" id="al-now">--:--</div>
+      <div class="al-sub" id="al-sub">Set your wake-up time. Keep this page open and plugged in overnight.</div>
+    </div>
+
+    <div class="al-card">
+      <div class="al-row">
+        <label for="al-time">Wake me at</label>
+        <input type="time" id="al-time" value="05:00">
+      </div>
+      <button type="button" class="al-btn is-primary" id="al-arm">Arm alarm &amp; start sleep</button>
+      <div class="al-status" id="al-status"></div>
+    </div>
+
+    <div class="al-card">
+      <div class="al-row">
+        <div>
+          <h2>Hard mode</h2>
+          <p>No stop button. To kill the alarm you must read the wake mission out loud (or type it if your browser has no mic support).</p>
+        </div>
+        <button type="button" class="al-toggle" id="al-hard" aria-label="Toggle hard mode"></button>
+      </div>
+      <div class="al-row">
+        <label for="al-window">Hard mode can only be turned OFF during the 30 minutes starting at</label>
+        <input type="time" id="al-window" value="20:00">
+      </div>
+      <div class="al-lock-note" id="al-lock-note">Turning hard mode on works any time. Turning it off only works inside your chosen window — no 2 AM negotiating with yourself.</div>
+    </div>
+
+    <div class="al-card">
+      <h2>How sleep gets logged</h2>
+      <p>Arming the alarm marks lights-out. Killing it marks wake-up — that window is saved as your sleep for the night. Wake clean (no snooze) for +5 consistency points. Snooze and you get nothing.</p>
+    </div>
+  </main>
+
+  <div class="al-ring" id="al-ring">
+    <div class="al-ring-inner">
+      <div class="al-ring-label">Rise for it</div>
+      <div class="al-ring-time" id="al-ring-time">5:00</div>
+      <div class="al-mission" id="al-mission">
+        <div class="al-mission-timer" id="al-mission-timer">20</div>
+        <div class="al-mission-target" id="al-mission-target"></div>
+        <div class="al-mission-heard" id="al-mission-heard">Listening…</div>
+        <input type="text" id="al-mission-typed" class="hidden" placeholder="Type the sentence exactly" autocomplete="off">
+      </div>
+      <div class="al-ring-actions">
+        <button type="button" class="al-btn is-primary" id="al-ring-main">Stop</button>
+        <button type="button" class="al-btn is-ghost" id="al-ring-snooze">Snooze 5 min (no points)</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script>
+  (() => {
+    const $ = (sel) => document.querySelector(sel);
+    const STORE_KEY = 'ode_rise_alarm_v1';
+
+    const MISSIONS = [
+      'I do not negotiate with the snooze button. I get up and I go to work.',
+      'Discipline is choosing what I want most over what I want now. Today I choose it again.',
+      'Nobody is coming to save me. I rise, I train, I earn this day.',
+      'The body gets stronger when the mind stops making excuses. I am already up.',
+      'Every rep I refuse to skip is a promise I keep to myself. Starting with this one.',
+      'Comfort is a slow thief. I am taking today back before it wakes up.',
+      'I said five o clock. My word means something, so my feet are on the floor.'
+    ];
+
+    const state = {
+      armed: false,
+      armedAt: 0,
+      triggerAt: 0,
+      snoozed: 0,
+      ringing: false,
+      hardMode: false,
+      windowStart: '20:00',
+      audio: null,
+      beepTimer: null,
+      missionTimer: null,
+      recognition: null,
+      wakeLock: null
+    };
+
+    function save() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          armed: state.armed,
+          armedAt: state.armedAt,
+          triggerAt: state.triggerAt,
+          snoozed: state.snoozed,
+          hardMode: state.hardMode,
+          windowStart: state.windowStart,
+          time: $('#al-time').value
+        }));
+      } catch { /* ignore */ }
+    }
+
+    function load() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+        state.hardMode = Boolean(raw.hardMode);
+        state.windowStart = raw.windowStart || '20:00';
+        if (raw.time) $('#al-time').value = raw.time;
+        $('#al-window').value = state.windowStart;
+        if (raw.armed && raw.triggerAt > Date.now() - 12 * 3600000) {
+          state.armed = true;
+          state.armedAt = raw.armedAt;
+          state.triggerAt = raw.triggerAt;
+          state.snoozed = raw.snoozed || 0;
+        }
+      } catch { /* ignore */ }
+    }
+
+    function fmtClock(date) {
+      let h = date.getHours();
+      const m = String(date.getMinutes()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return { text: `${h}:${m}`, ampm };
+    }
+
+    function setStatus(message, tone = '') {
+      const el = $('#al-status');
+      el.textContent = message;
+      el.className = `al-status${tone ? ` is-${tone}` : ''}`;
+    }
+
+    function syncUi() {
+      const badge = $('#al-badge');
+      badge.textContent = state.armed
+        ? `Armed · ${new Date(state.triggerAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+        : 'Alarm off';
+      badge.classList.toggle('is-armed', state.armed);
+      $('#al-arm').textContent = state.armed ? 'Disarm (cancel tonight)' : 'Arm alarm & start sleep';
+      $('#al-hard').classList.toggle('is-on', state.hardMode);
+      $('#al-sub').textContent = state.armed
+        ? 'Sleep mode. Leave this page open, screen can dim. See you at wake-up.'
+        : 'Set your wake-up time. Keep this page open and plugged in overnight.';
+    }
+
+    function inHardOffWindow() {
+      const [h, m] = String(state.windowStart || '20:00').split(':').map(Number);
+      const now = new Date();
+      const start = new Date(now); start.setHours(h, m, 0, 0);
+      const end = new Date(start.getTime() + 30 * 60000);
+      return now >= start && now <= end;
+    }
+
+    /* ---- Sound ---- */
+    function beep() {
+      try {
+        if (!state.audio) state.audio = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = state.audio;
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } catch { /* ignore */ }
+      try { navigator.vibrate?.([300, 100, 300]); } catch { /* ignore */ }
+    }
+
+    function startRingingSound() {
+      stopRingingSound();
+      beep();
+      state.beepTimer = setInterval(beep, 900);
+    }
+
+    function stopRingingSound() {
+      if (state.beepTimer) clearInterval(state.beepTimer);
+      state.beepTimer = null;
+    }
+
+    async function keepAwake() {
+      try { state.wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* ignore */ }
+    }
+
+    /* ---- Ring / dismiss flow ---- */
+    function startRinging() {
+      state.ringing = true;
+      $('#al-ring').classList.add('is-active');
+      $('#al-ring-time').textContent = fmtClock(new Date()).text;
+      $('#al-ring-main').textContent = state.hardMode ? 'Start wake mission' : 'Stop';
+      $('#al-mission').classList.remove('is-active');
+      startRingingSound();
+      keepAwake();
+    }
+
+    async function dismiss(result) {
+      state.ringing = false;
+      stopRingingSound();
+      stopMission();
+      $('#al-ring').classList.remove('is-active');
+      const sleepMinutes = state.armedAt ? Math.round((Date.now() - state.armedAt) / 60000) : null;
+      state.armed = false;
+      state.armedAt = 0;
+      state.triggerAt = 0;
+      const finalResult = state.snoozed > 0 ? 'snoozed' : result;
+      state.snoozed = 0;
+      save();
+      syncUi();
+      try {
+        const resp = await fetch('/api/health/wake', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ result: finalResult, sleepMinutes })
+        });
+        const json = await resp.json().catch(() => ({}));
+        if (resp.ok && json.ok) {
+          setStatus(finalResult === 'clean'
+            ? `Clean wake — +5 points. Sleep logged${sleepMinutes ? `: ${Math.floor(sleepMinutes / 60)}h ${sleepMinutes % 60}m` : ''}.`
+            : 'Snoozed — sleep logged, no points today.', finalResult === 'clean' ? 'good' : 'bad');
+        } else {
+          setStatus('Woke up, but could not save the result.', 'bad');
+        }
+      } catch {
+        setStatus('Woke up, but could not reach the server.', 'bad');
+      }
+    }
+
+    function snooze() {
+      state.snoozed += 1;
+      state.triggerAt = Date.now() + 5 * 60000;
+      state.ringing = false;
+      stopRingingSound();
+      stopMission();
+      $('#al-ring').classList.remove('is-active');
+      save();
+      syncUi();
+      setStatus(`Snoozed (${state.snoozed}) — no points now. Alarm returns in 5 minutes.`, 'bad');
+    }
+
+    /* ---- Wake mission (hard mode) ---- */
+    const mission = { target: [], said: new Set(), deadline: 0, typedMode: false };
+
+    function normalizeWords(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s']/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    function renderMissionTarget() {
+      const el = $('#al-mission-target');
+      el.innerHTML = '';
+      mission.target.forEach((word, i) => {
+        const span = document.createElement('span');
+        span.textContent = word + ' ';
+        if (mission.said.has(i)) span.className = 'said';
+        el.appendChild(span);
+      });
+    }
+
+    function missionProgress() {
+      return mission.target.length ? mission.said.size / mission.target.length : 0;
+    }
+
+    function absorbSpeech(text) {
+      const heard = normalizeWords(text);
+      mission.target.forEach((word, i) => {
+        if (mission.said.has(i)) return;
+        if (heard.includes(word)) mission.said.add(i);
+      });
+      renderMissionTarget();
+      if (missionProgress() >= 0.8) {
+        $('#al-mission-heard').textContent = 'Mission complete. Get after it.';
+        dismiss('clean');
+      }
+    }
+
+    function startMission() {
+      const sentence = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
+      mission.target = normalizeWords(sentence);
+      mission.said = new Set();
+      mission.deadline = Date.now() + 20000;
+      renderMissionTarget();
+      $('#al-mission').classList.add('is-active');
+      $('#al-ring-main').textContent = 'Restart mission';
+      stopRingingSound(); // quiet while they speak
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      mission.typedMode = !SR;
+      const typed = $('#al-mission-typed');
+      typed.classList.toggle('hidden', !mission.typedMode);
+      if (mission.typedMode) {
+        $('#al-mission-heard').textContent = 'No mic support in this browser — type the sentence instead.';
+        typed.value = '';
+        typed.focus();
+        typed.oninput = () => absorbSpeech(typed.value);
+      } else {
+        $('#al-mission-heard').textContent = 'Listening… speak the sentence out loud.';
+        try {
+          state.recognition = new SR();
+          state.recognition.continuous = true;
+          state.recognition.interimResults = true;
+          state.recognition.lang = 'en-US';
+          state.recognition.onresult = (event) => {
+            let text = '';
+            for (let i = 0; i < event.results.length; i++) text += ` ${event.results[i][0].transcript}`;
+            $('#al-mission-heard').textContent = `Heard: ${text.trim().slice(-90)}`;
+            absorbSpeech(text);
+          };
+          state.recognition.onerror = (event) => {
+            if (event.error === 'not-allowed') {
+              mission.typedMode = true;
+              typed.classList.remove('hidden');
+              typed.focus();
+              typed.oninput = () => absorbSpeech(typed.value);
+              $('#al-mission-heard').textContent = 'Mic blocked — type the sentence instead.';
+            }
+          };
+          state.recognition.start();
+        } catch { /* ignore */ }
+      }
+
+      if (mission.missionTick) clearInterval(mission.missionTick);
+      mission.missionTick = setInterval(() => {
+        const left = Math.ceil((mission.deadline - Date.now()) / 1000);
+        $('#al-mission-timer').textContent = Math.max(0, left);
+        if (left <= 0 && missionProgress() < 0.8) {
+          // Failed the window: alarm comes back, try again.
+          stopMission();
+          $('#al-mission').classList.remove('is-active');
+          $('#al-mission-heard').textContent = '';
+          startRingingSound();
+          $('#al-ring-main').textContent = 'Start wake mission';
+        }
+      }, 250);
+    }
+
+    function stopMission() {
+      try { state.recognition?.stop(); } catch { /* ignore */ }
+      state.recognition = null;
+      if (mission.missionTick) clearInterval(mission.missionTick);
+      mission.missionTick = null;
+    }
+
+    /* ---- Wiring ---- */
+    $('#al-arm').addEventListener('click', () => {
+      if (state.armed) {
+        state.armed = false;
+        state.armedAt = 0;
+        state.triggerAt = 0;
+        state.snoozed = 0;
+        save();
+        syncUi();
+        setStatus('Alarm disarmed — nothing logged tonight.');
+        return;
+      }
+      const [h, m] = $('#al-time').value.split(':').map(Number);
+      if (!Number.isFinite(h)) return setStatus('Pick a wake-up time first.', 'bad');
+      const trigger = new Date();
+      trigger.setHours(h, m, 0, 0);
+      if (trigger.getTime() <= Date.now()) trigger.setDate(trigger.getDate() + 1);
+      state.armed = true;
+      state.armedAt = Date.now();
+      state.triggerAt = trigger.getTime();
+      state.snoozed = 0;
+      // Unlock audio while we still have a user gesture.
+      beep();
+      save();
+      syncUi();
+      keepAwake();
+      setStatus(`Armed. Sleep well — alarm at ${trigger.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`, 'good');
+    });
+
+    $('#al-hard').addEventListener('click', () => {
+      if (!state.hardMode) {
+        state.hardMode = true;
+        setStatus('Hard mode ON. Respect.', 'good');
+      } else if (inHardOffWindow()) {
+        state.hardMode = false;
+        setStatus('Hard mode off (you were inside your window).');
+      } else {
+        setStatus(`Hard mode only unlocks during the 30 minutes after ${state.windowStart}. Nice try.`, 'bad');
+        return;
+      }
+      save();
+      syncUi();
+    });
+
+    $('#al-window').addEventListener('change', () => {
+      state.windowStart = $('#al-window').value || '20:00';
+      save();
+    });
+    $('#al-time').addEventListener('change', save);
+
+    $('#al-ring-main').addEventListener('click', () => {
+      if (state.hardMode) startMission();
+      else dismiss('clean');
+    });
+    $('#al-ring-snooze').addEventListener('click', snooze);
+
+    setInterval(() => {
+      const now = new Date();
+      const clock = fmtClock(now);
+      $('#al-now').innerHTML = `${clock.text} <small>${clock.ampm}</small>`;
+      if (state.armed && !state.ringing && Date.now() >= state.triggerAt) {
+        startRinging();
+      }
+      if (state.ringing) $('#al-ring-time').textContent = clock.text;
+    }, 1000);
+
+    load();
+    syncUi();
+  })();
+  </script>
+</body>
+</html>

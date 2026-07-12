@@ -2045,3 +2045,384 @@ html[data-theme="light"] .overview-page .overview-empty {
         display: none !important;
     }
 }
+
+/* ================================================================
+   Athlete identity hero: radar chart + character type / title / rank
+   ================================================================ */
+.overview-page .ov-identity {
+    display: grid;
+    grid-template-columns: minmax(300px, 460px) 1fr;
+    gap: 28px;
+    align-items: center;
+    max-width: var(--overview-max);
+    margin: 0 auto 16px;
+    padding: 26px 30px;
+    border-radius: var(--radius-md, 18px);
+    border: 1px solid var(--line);
+    background:
+        radial-gradient(ellipse 90% 130% at 18% 0%, var(--accent-soft), transparent 55%),
+        var(--card);
+    overflow: hidden;
+    position: relative;
+}
+
+.overview-page .ov-identity-chart {
+    position: relative;
+    min-width: 0;
+}
+
+.overview-page .ov-radar {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+.overview-page .ov-radar-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.overview-page .ov-radar-ring {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.overview-page .ov-radar-spoke {
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.overview-page .ov-radar-shape {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.overview-page .ov-radar-prev {
+    fill: rgba(138, 129, 120, 0.10);
+    stroke: #8a8178;
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+    stroke-linejoin: round;
+}
+
+.overview-page .ov-radar-dot {
+    fill: var(--accent);
+    stroke: var(--card);
+    stroke-width: 2;
+}
+
+.overview-page .ov-radar-dot.is-bright {
+    filter: drop-shadow(0 0 6px var(--accent));
+}
+
+.overview-page .ov-radar-hit {
+    fill: transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+.overview-page .ov-radar-label {
+    fill: var(--muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.overview-page .ov-radar-value {
+    fill: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 800;
+    opacity: 0.85;
+}
+
+.overview-page .ov-radar-value.is-high {
+    fill: var(--accent);
+    opacity: 1;
+}
+
+.overview-page .ov-radar-value.is-low {
+    opacity: 0.55;
+}
+
+.overview-page .ov-radar-tip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: var(--panel-glass, rgba(21, 16, 12, 0.9));
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--ink);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.overview-page .ov-radar-tip .ov-tip-prev {
+    color: var(--muted);
+}
+
+.overview-page .ov-radar-legend {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.overview-page .ov-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.overview-page .ov-legend-swatch {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.overview-page .ov-legend-now .ov-legend-swatch {
+    background: var(--accent);
+}
+
+.overview-page .ov-legend-prev .ov-legend-swatch {
+    background: repeating-linear-gradient(90deg, #8a8178 0 4px, transparent 4px 7px);
+}
+
+/* Identity panel */
+.overview-page .ov-identity-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.overview-page .ov-identity-eyebrow {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.overview-page .ov-identity-typerow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.overview-page .ov-identity-emblem {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+}
+
+.overview-page .ov-identity-type {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1.05;
+    color: var(--ink);
+}
+
+.overview-page .ov-identity-title {
+    margin: 2px 0 0;
+    font-size: 1.02rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--accent);
+}
+
+.overview-page .ov-identity-rank {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--accent-soft);
+    width: fit-content;
+}
+
+.overview-page .ov-rank-number {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.overview-page .ov-rank-sub {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.overview-page .ov-rank-delta {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.overview-page .ov-rank-delta.is-up {
+    color: #3fae5a;
+}
+
+.overview-page .ov-rank-delta.is-down {
+    color: #d05252;
+}
+
+.overview-page .ov-identity-blurb {
+    margin: 8px 0 0;
+    font-size: 13px;
+    max-width: 46ch;
+}
+
+.overview-page .ov-compare-btn {
+    margin-top: 14px;
+    width: fit-content;
+}
+
+@media (max-width: 900px) {
+    .overview-page .ov-identity {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 18px 14px;
+    }
+
+    .overview-page .ov-identity-panel {
+        align-items: center;
+        text-align: center;
+    }
+
+    .overview-page .ov-identity-typerow {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .overview-page .ov-identity-rank {
+        justify-content: center;
+    }
+
+    .overview-page .ov-identity-blurb {
+        max-width: 100%;
+    }
+}
+
+/* ================================================================
+   Showcase mode: ambient rank video behind the page. The hero card
+   drops below the first viewport so the character art owns the top;
+   the docked mini radar (built by overview-identity.js) morphs into
+   the card's radar slot as you scroll.
+   ================================================================ */
+body.rf-showcase .overview-page .ov-identity,
+body.rf-showcase.overview-page .ov-identity {
+    margin-top: 78vh;
+}
+.ov-radar-dock {
+    position: fixed;
+    left: 14px;
+    bottom: 148px;
+    width: min(64vw, 250px);
+    z-index: 5;
+    pointer-events: none;
+    padding: 7px 7px 5px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--panel-glass, rgba(255, 255, 255, 0.72));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+    will-change: transform, opacity;
+}
+.ov-radar-dock svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.ov-radar-dock-label {
+    margin-top: 2px;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ov-radar-dock-label span {
+    color: var(--accent);
+}
+/* The whole graph shows at dock size — axis names and numbers included —
+   so the SVG text is bumped up (viewBox units) to stay readable small;
+   it eases back to normal as the radar morphs up to full size. */
+.ov-radar-dock .ov-radar-label,
+.ov-radar-dock .ov-radar-value {
+    transition: font-size 0.25s ease;
+}
+.ov-radar-dock:not(.is-morphing) .ov-radar-label {
+    font-size: 19px;
+    font-weight: 800;
+    fill: var(--ink);
+}
+.ov-radar-dock:not(.is-morphing) .ov-radar-value {
+    font-size: 21px;
+    font-weight: 800;
+}
+/* Small card, loud shape: heavier stroke + brighter dots at dock size. */
+.ov-radar-dock:not(.is-morphing) .ov-radar-shape {
+    stroke-width: 4.5;
+    fill-opacity: 0.55;
+    filter: drop-shadow(0 0 6px rgba(255, 178, 68, 0.55));
+}
+.ov-radar-dock:not(.is-morphing) .ov-radar-dot {
+    stroke-width: 2;
+    r: 5;
+}
+.ov-radar-dock:not(.is-morphing) .ov-radar-ring,
+.ov-radar-dock:not(.is-morphing) .ov-radar-spoke {
+    stroke: rgba(120, 95, 60, 0.28);
+}
+.ov-radar-dock-label {
+    font-size: 11.5px;
+}
+@media (min-width: 900px) {
+    .ov-radar-dock {
+        /* Clear the pinned control panel instead of floating on top of it. */
+        left: calc(var(--control-width, 300px) + 18px);
+        bottom: 26px;
+        width: 300px;
+    }
+    body:not(.control-open):not(.control-collapsed) .ov-radar-dock {
+        left: 18px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.rf-showcase .overview-page .ov-identity,
+    body.rf-showcase.overview-page .ov-identity {
+        margin-top: 0;
+    }
+    .ov-radar-dock { display: none; }
+}

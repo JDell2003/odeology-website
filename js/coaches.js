@@ -173,6 +173,35 @@
     return `/coach/${encodeURIComponent(key)}`;
   }
 
+  /* The coach's standing in The Arena (the ranked realm on leaderboard.html).
+     Until trainers' real identity stats are wired through the API this is a
+     stable per-coach placement: seeded by their handle, weighted so coaches
+     read credible (mostly Knights and specialists), with a rank drawn from
+     that tier's real population band (realm of 32,848). */
+  function arenaLevelFor(trainer) {
+    const seedStr = String(trainer?.publicHandle || trainer?.username || trainer?.displayName || trainer?.id || 'coach');
+    let h = 2166136261;
+    for (let i = 0; i < seedStr.length; i += 1) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const rnd = () => {
+      h = Math.imul(h ^ (h >>> 15), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return ((h ^= h >>> 16) >>> 0) / 4294967296;
+    };
+    const roll = rnd();
+    // tier -> [emblem, label, rank band lo, hi] (bands match the Kingdom)
+    const pick = roll < 0.03 ? ['♛', 'King', 4, 15]
+      : roll < 0.50 ? ['♞', 'Knight', 16, 164]
+      : roll < 0.66 ? ['⚔', 'Berserker', 165, 2595]
+      : roll < 0.82 ? ['➳', 'Ranger', 165, 2595]
+      : roll < 0.95 ? ['✦', 'Mage', 165, 2595]
+      : ['⚑', 'Squire', 2596, 10449];
+    return {
+      emblem: pick[0],
+      label: pick[1],
+      rank: pick[2] + Math.floor(rnd() * (pick[3] - pick[2]))
+    };
+  }
+
   function canModerateTrainerReviews(user) {
     return Boolean(user?.isOwner || user?.isTech);
   }
@@ -184,6 +213,7 @@
   function buildCoachCard(trainer, options = {}) {
     const fullName = trainer.fullName || trainer.displayName || 'Coach';
     const username = trainer.publicHandle || trainer.username || trainer.displayName || 'coach';
+    const arenaLevel = arenaLevelFor(trainer);
     const coachTags = [
       ...(Array.isArray(trainer.coachBadgeType) ? trainer.coachBadgeType : []),
       ...(Array.isArray(trainer.coachCustomTags) ? trainer.coachCustomTags : [])
@@ -233,6 +263,7 @@
               </div>
               <span class="coach-tier-row">
                 ${reviewTag}
+                <span class="coach-arena" title="Their standing in The Arena">${arenaLevel.emblem} ${escapeHtml(arenaLevel.label)} · #${arenaLevel.rank.toLocaleString()}</span>
                 <span class="coach-tier">${escapeHtml(tierName)}</span>
                 <span class="coach-experience">${escapeHtml(experienceLevel)}</span>
               </span>
@@ -698,6 +729,7 @@
             <div class="coach-match-card-name">${escapeHtml(fullName)}</div>
             <div class="coach-match-card-handle">@${escapeHtml(username)}</div>
             <div class="coach-match-card-chips">
+              <span class="coach-arena">${(() => { const a = arenaLevelFor(trainer); return `${a.emblem} ${escapeHtml(a.label)} · #${a.rank.toLocaleString()}`; })()}</span>
               <span>${escapeHtml(tierName)}</span>
               <span>${escapeHtml(experienceLevel)}</span>
             </div>

@@ -391,13 +391,58 @@
        (cover the ring) and spike (pierce it) paths are spelled out.
        Ring numbers mirror js/leaderboard.js TIER_RINGS.
        ================================================================ */
+    /* Every slider stop. Specialist is split into its three real subclasses
+       (Ranger / Berserker / Mage — same gate, different spike identity).
+       `shape` + `base` describe the SPIKED example build for that rank: the
+       radar alternates between the balanced ring and this lopsided-but-legal
+       shape so people see both roads. Knight/King shapes still clear the
+       floor — spiking is allowed, skipping the fundamentals is not. */
     const NEXT_TIERS = [
         { id: 'peasant', name: 'Peasant', emblem: '⚒' },
-        { id: 'squire', name: 'Squire', emblem: '⚑', avg: 35, floor: 12, spike: 60, pierce: true },
-        { id: 'specialist', name: 'Specialist', emblem: '➳', avg: 50, floor: 20, spike: 78, pierce: true },
-        { id: 'knight', name: 'Knight', emblem: '♞', avg: 68, floor: 45, pierce: false },
-        { id: 'king', name: 'King', emblem: '♛', avg: 82, floor: 60, pierce: false }
+        {
+            id: 'squire', name: 'Squire', emblem: '⚑', avg: 35, floor: 12, spike: 60, pierce: true,
+            shape: null, base: 18 // squire's spike follows the user's strongest stat (dynamic)
+        },
+        {
+            id: 'ranger', name: 'Ranger', emblem: '➳', avg: 50, floor: 20, spike: 78, pierce: true,
+            spikeAxis: 'cardio', shape: { cardio: 85, recovery: 68, consistency: 48 }, base: 24,
+            spikeNote: 'Ranger is the engine build — cardio carries you, recovery keeps the engine running.'
+        },
+        {
+            id: 'berserker', name: 'Berserker', emblem: '⚔', avg: 50, floor: 20, spike: 78, pierce: true,
+            spikeAxis: 'strength', shape: { strength: 85, progress: 65, nutrition: 45 }, base: 24,
+            spikeNote: 'Berserker is the raw-strength build — big lifts and logged overload, everything else lags.'
+        },
+        {
+            id: 'mage', name: 'Mage', emblem: '✦', avg: 50, floor: 20, spike: 78, pierce: true,
+            spikeAxis: 'consistency', shape: { consistency: 78, nutrition: 74, recovery: 60 }, base: 35,
+            spikeNote: 'Mage is the discipline build — consistency and nutrition steer it. Usually the strongest road to Knight.'
+        },
+        {
+            id: 'knight', name: 'Knight', emblem: '♞', avg: 68, floor: 45, pierce: false,
+            shape: { strength: 88, cardio: 80 }, base: 60,
+            spikeNote: 'You can still spike — but every axis must clear the floor first.'
+        },
+        {
+            id: 'king', name: 'King', emblem: '♛', avg: 82, floor: 60, pierce: false,
+            shape: { strength: 95, cardio: 92 }, base: 76,
+            spikeNote: 'Kings spike strength AND cardio on top of a web that never dips below 60.'
+        }
     ];
+
+    // Spiked example build for a tier: explicit shape values, everything else
+    // at the base. Squire has no fixed identity — spike the user's best stat.
+    const tierSpikeShape = (tier, curStats) => {
+        if (!tier.avg) return null;
+        const out = {};
+        if (tier.shape) {
+            AXES.forEach((a) => { out[a.key] = tier.shape[a.key] || tier.base || tier.floor || 20; });
+            return out;
+        }
+        const best = AXES.slice().sort((x, y) => curStats[y.key] - curStats[x.key])[0].key;
+        AXES.forEach((a) => { out[a.key] = a.key === best ? Math.max(tier.spike || 60, 60) : (tier.base || 18); });
+        return out;
+    };
 
     const interp = (anchors, x) => {
         if (x <= anchors[0][0]) return anchors[0][1];
@@ -456,7 +501,7 @@
         return '';
     };
 
-    const tierRadarSvg = (targetVal, curStats, pierceAxis) => {
+    const tierRadarSvg = (targetVal, curStats, spikeShape) => {
         const size = 168; const c = size / 2; const rr = size / 2 - 22;
         const pt = (i, v) => {
             const ang = (Math.PI * 2 * i) / AXES.length - Math.PI / 2;
@@ -465,11 +510,13 @@
         };
         const rings = [25, 50, 75, 100].map((g) => `<polygon points="${AXES.map((a, i) => pt(i, g)).join(' ')}" class="nl-ring"/>`).join('');
         const spokes = AXES.map((a, i) => { const [x, y] = pt(i, 100).split(','); return `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" class="nl-spoke"/>`; }).join('');
-        const targetPoly = AXES.map((a, i) => pt(i, pierceAxis ? (a.key === pierceAxis ? Math.max(targetVal, 78) : Math.max(curStats[a.key], 20)) : targetVal)).join(' ');
+        const balancedPoly = AXES.map((a, i) => pt(i, targetVal)).join(' ');
+        const spikePoly = spikeShape ? AXES.map((a, i) => pt(i, spikeShape[a.key])).join(' ') : '';
         const curPoly = AXES.map((a, i) => pt(i, curStats[a.key])).join(' ');
         const labels = AXES.map((a, i) => { const [x, y] = pt(i, 122).split(','); return `<text x="${x}" y="${y}" class="nl-axis-label">${a.label.slice(0, 4)}</text>`; }).join('');
         return `<svg viewBox="0 0 ${size} ${size}" class="nl-radar" aria-hidden="true">${rings}${spokes}
-            <polygon points="${targetPoly}" class="nl-target"/>
+            <polygon points="${balancedPoly}" class="nl-target nl-shape-balanced"/>
+            ${spikePoly ? `<polygon points="${spikePoly}" class="nl-target nl-shape-spike"/>` : ''}
             <polygon points="${curPoly}" class="nl-current"/>${labels}</svg>`;
     };
 
@@ -480,41 +527,69 @@
         s.textContent = `
             .ov-nl-btn{margin-left:8px}
             #ov-nl-modal{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;padding:18px;
-                background:rgba(30,22,8,.5);backdrop-filter:blur(6px)}
+                background:rgba(10,16,26,.55);backdrop-filter:blur(6px)}
             #ov-nl-modal[hidden]{display:none}
-            .ov-nl-card{width:min(760px,96vw);max-height:92vh;overflow:auto;border-radius:20px;background:#fffdf7;
-                border:1px solid rgba(185,138,43,.4);box-shadow:0 40px 90px rgba(60,45,15,.35);color:#241b0e}
-            .ov-nl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(185,138,43,.2)}
-            .ov-nl-head h3{margin:0;font:800 18px/1.2 'Space Grotesk',system-ui,sans-serif}
-            .ov-nl-head p{margin:2px 0 0;font:500 12px/1.4 system-ui,sans-serif;color:rgba(60,48,28,.6)}
-            .ov-nl-close{border:0;background:rgba(120,90,20,.1);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:16px;color:#6b4a12}
+            .ov-nl-card{width:min(760px,96vw);max-height:92vh;overflow:auto;border-radius:20px;background:#ffffff;
+                border:1px solid rgba(13,34,50,.1);box-shadow:0 40px 90px rgba(10,20,32,.4);color:#102334}
+            .ov-nl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(13,34,50,.08)}
+            .ov-nl-head h3{margin:0;font:800 18px/1.2 'Space Grotesk',system-ui,sans-serif;color:#102334}
+            .ov-nl-head p{margin:2px 0 0;font:500 12px/1.4 system-ui,sans-serif;color:rgba(13,34,50,.55)}
+            .ov-nl-close{border:0;background:rgba(13,34,50,.06);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:16px;color:#102334}
+            .ov-nl-close:hover{background:rgba(13,34,50,.12)}
             .ov-nl-slider{padding:14px 20px 4px}
-            .ov-nl-ticks{display:flex;justify-content:space-between;margin-top:6px}
-            .ov-nl-ticks button{border:0;background:none;cursor:pointer;font:700 11px/1.2 system-ui,sans-serif;color:rgba(60,48,28,.5);padding:2px 4px}
-            .ov-nl-ticks button.is-on{color:#a1751f}
-            .ov-nl-slider input[type=range]{width:100%;accent-color:#b98a2b}
+            .ov-nl-ticks{display:flex;justify-content:space-between;margin-top:6px;gap:2px}
+            .ov-nl-ticks button{border:0;background:none;cursor:pointer;font:700 10.5px/1.2 system-ui,sans-serif;color:rgba(13,34,50,.45);padding:2px 3px;white-space:nowrap}
+            .ov-nl-ticks button.is-on{color:#b9782d}
+            .ov-nl-slider input[type=range]{width:100%;accent-color:#b9782d}
             .ov-nl-body{display:grid;grid-template-columns:190px 1fr;gap:16px;padding:8px 20px 20px}
             .nl-radar{width:100%;height:auto}
-            .nl-ring{fill:none;stroke:rgba(150,110,35,.16)}
-            .nl-spoke{stroke:rgba(150,110,35,.12)}
-            .nl-target{fill:rgba(185,138,43,.16);stroke:#b98a2b;stroke-width:2;stroke-dasharray:4 3}
-            .nl-current{fill:rgba(120,90,20,.14);stroke:#6b4a12;stroke-width:1.6}
-            .nl-axis-label{fill:rgba(60,48,28,.6);font:700 8px/1 system-ui,sans-serif;text-anchor:middle;dominant-baseline:middle}
-            .ov-nl-target-title{font:800 16px/1.2 'Space Grotesk',system-ui,sans-serif;margin:0 0 2px}
-            .ov-nl-legend{display:flex;gap:14px;margin:6px 0 12px;font:600 10.5px/1 system-ui,sans-serif;color:rgba(60,48,28,.6)}
+            .nl-ring{fill:none;stroke:rgba(13,34,50,.1)}
+            .nl-spoke{stroke:rgba(13,34,50,.07)}
+            .nl-target{fill:rgba(217,161,92,.16);stroke:#b9782d;stroke-width:2;stroke-dasharray:4 3;transition:opacity .55s ease}
+            .nl-shape-spike{opacity:0}
+            .nl-radar.is-spike .nl-shape-balanced{opacity:0}
+            .nl-radar.is-spike .nl-shape-spike{opacity:1}
+            .nl-current{fill:rgba(16,35,52,.12);stroke:#243a52;stroke-width:1.6}
+            .nl-axis-label{fill:rgba(13,34,50,.55);font:700 8px/1 system-ui,sans-serif;text-anchor:middle;dominant-baseline:middle}
+            .ov-nl-shape-note{margin-top:4px;font:700 10.5px/1.3 system-ui,sans-serif;color:#b9782d;min-height:2.6em;transition:opacity .3s ease}
+            .ov-nl-target-title{font:800 16px/1.2 'Space Grotesk',system-ui,sans-serif;margin:0 0 2px;color:#102334}
+            .ov-nl-legend{display:flex;gap:14px;margin:6px 0 6px;font:600 10.5px/1 system-ui,sans-serif;color:rgba(13,34,50,.55)}
             .ov-nl-legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
-            .ov-nl-legend .t{border-color:#b98a2b;border-top-style:dashed}
-            .ov-nl-legend .c{border-color:#6b4a12}
-            .ov-nl-path{border:1px solid rgba(185,138,43,.3);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:rgba(212,175,55,.06)}
-            .ov-nl-path h5{margin:0 0 6px;font:800 12px/1.2 system-ui,sans-serif;color:#a1751f}
-            .ov-nl-path.locked{opacity:.72}
-            .ov-nl-req{display:flex;gap:8px;padding:5px 0;border-top:1px dashed rgba(150,110,35,.18);font:500 12px/1.45 system-ui,sans-serif}
+            .ov-nl-legend .t{border-color:#b9782d;border-top-style:dashed}
+            .ov-nl-legend .c{border-color:#243a52}
+            .ov-nl-path{border:1px solid rgba(13,34,50,.1);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:rgba(247,250,253,.7)}
+            .ov-nl-path h5{margin:0 0 6px;font:800 12px/1.2 system-ui,sans-serif;color:#b9782d}
+            .ov-nl-path.locked{opacity:.78}
+            .ov-nl-req{display:flex;gap:8px;padding:5px 0;border-top:1px dashed rgba(13,34,50,.1);font:500 12px/1.45 system-ui,sans-serif}
             .ov-nl-req:first-of-type{border-top:0}
-            .ov-nl-req .k{flex:0 0 78px;font-weight:800;color:#241b0e}
+            .ov-nl-req .k{flex:0 0 78px;font-weight:800;color:#102334}
             .ov-nl-req .k.done{color:#15803d}
-            .ov-nl-req .v{color:rgba(60,48,28,.82)}
-            .ov-nl-req .n{color:#a1751f;font-weight:700;white-space:nowrap}
-            @media (max-width:640px){.ov-nl-body{grid-template-columns:1fr}.nl-radar{max-width:200px;margin:0 auto;display:block}}
+            .ov-nl-req .v{color:rgba(16,35,52,.8)}
+            .ov-nl-req .n{color:#b9782d;font-weight:800;white-space:nowrap}
+            @media (max-width:640px){
+                #ov-nl-modal{padding:0;align-items:flex-end}
+                .ov-nl-card{width:100%;max-width:100%;max-height:94vh;border-radius:22px 22px 0 0;border-bottom:0;
+                    padding-bottom:env(safe-area-inset-bottom,0)}
+                .ov-nl-card::before{content:"";display:block;width:44px;height:4px;border-radius:999px;
+                    background:rgba(13,34,50,.18);margin:10px auto 0}
+                .ov-nl-head{padding:10px 18px 14px}
+                .ov-nl-head h3{font-size:20px}
+                .ov-nl-head p{font-size:12.5px}
+                .ov-nl-slider{padding:12px 18px 4px}
+                .ov-nl-ticks{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+                .ov-nl-ticks button{padding:8px 4px;border-radius:11px;background:rgba(13,34,50,.05);
+                    font-size:12px;color:rgba(13,34,50,.6)}
+                .ov-nl-ticks button.is-on{background:rgba(217,161,92,.16);color:#b9782d}
+                .ov-nl-body{grid-template-columns:1fr;gap:8px;padding:8px 18px 28px}
+                .nl-radar{max-width:256px;margin:0 auto;display:block}
+                .ov-nl-legend{justify-content:center;margin-bottom:2px}
+                .ov-nl-shape-note{text-align:center;min-height:1.5em;font-size:11.5px}
+                .ov-nl-target-title{font-size:18px;margin:6px 0 8px;text-align:center}
+                .ov-nl-req{font-size:13px;padding:7px 0}
+                .ov-nl-req .k{flex:0 0 88px}
+                .ov-nl-path{padding:11px 13px}
+                .ov-nl-path h5{font-size:12.5px}
+            }
         `;
         document.head.appendChild(s);
     };
@@ -562,19 +637,23 @@
                 return `<div class="ov-nl-req"><span class="k ${done ? 'done' : ''}">${a.label}${done ? ' ✓' : ''}</span>
                     <span class="v">${done ? 'already there' : `<span class="n">${curStats[a.key]} → ${A}</span> — ${axisTargetText(a.key, A, ctx)}`}</span></div>`;
             }).join('');
+            const spikeShape = tierSpikeShape(tier, curStats);
+            const spikeReqAxis = tier.spikeAxis || pierceAxis;
             const spikeBlock = tier.pierce
-                ? `<div class="ov-nl-path"><h5>Spike path — go elite at one thing</h5>
-                       <div class="ov-nl-req"><span class="k">${AXES.find((a) => a.key === pierceAxis).label}</span>
-                       <span class="v">Push your strongest stat to <span class="n">${tier.spike}</span> — ${axisTargetText(pierceAxis, tier.spike, ctx)}. One world-class stat pierces this rank even if the rest lag.</span></div></div>`
-                : `<div class="ov-nl-path locked"><h5>No shortcut here</h5><div class="ov-nl-req"><span class="v">${tier.name} is a breadth rank — a single big stat won't cut it. Every axis has to clear ${tier.floor}, and your whole web has to average ${A}. This is the wall that makes the top mean something.</span></div></div>`;
+                ? `<div class="ov-nl-path"><h5>Spike path — ${tier.spikeNote ? tier.name + "'s identity" : 'go elite at one thing'}</h5>
+                       ${tier.spikeNote ? `<div class="ov-nl-req"><span class="v">${tier.spikeNote}</span></div>` : ''}
+                       <div class="ov-nl-req"><span class="k">${AXES.find((a) => a.key === spikeReqAxis).label}</span>
+                       <span class="v">Push it to <span class="n">${tier.spike}</span> — ${axisTargetText(spikeReqAxis, tier.spike, ctx)}. One world-class stat pierces this rank even if the rest lag.</span></div></div>`
+                : `<div class="ov-nl-path locked"><h5>No shortcut here</h5><div class="ov-nl-req"><span class="v">${tier.name} is a breadth rank — a single big stat won't cut it. Every axis has to clear ${tier.floor}, and your whole web has to average ${A}. ${tier.spikeNote || ''}</span></div></div>`;
             const floorNote = (tier.floor && belowFloor.length)
                 ? `<div class="ov-nl-req"><span class="k">Floor</span><span class="v">No axis below <span class="n">${tier.floor}</span>. Lagging: ${belowFloor.map((a) => a.label).join(', ')}.</span></div>`
                 : '';
             const body = modal.querySelector('[data-nl-body]');
             body.innerHTML = `
                 <div>
-                    ${tierRadarSvg(A, curStats, null)}
+                    ${tierRadarSvg(A, curStats, spikeShape)}
                     <div class="ov-nl-legend"><span><i class="t"></i>target</span><span><i class="c"></i>you now</span></div>
+                    <div class="ov-nl-shape-note" data-nl-shape-note>Balanced build — cover the whole ring</div>
                 </div>
                 <div>
                     <div class="ov-nl-target-title">${tier.emblem} Reach ${tier.name}</div>
@@ -582,14 +661,147 @@
                     ${spikeBlock}
                 </div>`;
             modal.querySelectorAll('[data-nl-tick]').forEach((b) => b.classList.toggle('is-on', Number(b.getAttribute('data-nl-tick')) === idx));
+
+            // Alternate the target shape: balanced ring for 3s, then the
+            // spiked example build for that rank, back and forth.
+            if (modal.__shapeTimer) clearInterval(modal.__shapeTimer);
+            const radarEl = body.querySelector('.nl-radar');
+            const noteEl = body.querySelector('[data-nl-shape-note]');
+            if (spikeShape && radarEl) {
+                let spiked = false;
+                modal.__shapeTimer = setInterval(() => {
+                    spiked = !spiked;
+                    radarEl.classList.toggle('is-spike', spiked);
+                    if (noteEl) {
+                        noteEl.textContent = spiked
+                            ? (tier.pierce
+                                ? `Spiked build — ${AXES.find((a) => a.key === spikeReqAxis).label.toLowerCase()} carries you through`
+                                : 'Spiked-but-legal build — peaks on top of a floor that never breaks')
+                            : 'Balanced build — cover the whole ring';
+                    }
+                }, 3000);
+            }
         };
 
+        const closeModal = () => {
+            if (modal.__shapeTimer) clearInterval(modal.__shapeTimer);
+            modal.remove();
+        };
         const range = modal.querySelector('[data-nl-range]');
         range.addEventListener('input', () => renderTarget(Number(range.value)));
         modal.querySelectorAll('[data-nl-tick]').forEach((b) => b.addEventListener('click', () => { range.value = b.getAttribute('data-nl-tick'); renderTarget(Number(range.value)); }));
-        modal.querySelector('[data-nl-close]').addEventListener('click', () => modal.remove());
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        modal.querySelector('[data-nl-close]').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         renderTarget(firstTarget);
+    };
+
+    /* ================================================================
+       SHOWCASE MODE — when the ambient rank video plays behind the page
+       (body.rf-has-bg-video from js/cutscenes.js), the top of the
+       overview belongs to the character art: the hero card is pushed
+       down a viewport, the radar rides small in the bottom-left, and as
+       you scroll it flies/morphs into its usual slot in the card while
+       the veil dims the art back down for readability.
+       ================================================================ */
+    const setupShowcase = (card, host, type, rank) => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        let tries = 0;
+        const arm = () => {
+            // cutscenes.js decides (~400ms in) whether a background video runs.
+            if (!document.body.classList.contains('rf-has-bg-video')) {
+                tries += 1;
+                if (tries < 8) window.setTimeout(arm, 250);
+                return;
+            }
+            if (document.querySelector('.ov-radar-dock')) return;
+            document.body.classList.add('rf-showcase');
+
+            const dock = document.createElement('div');
+            dock.className = 'ov-radar-dock';
+            const svg = host.querySelector('svg');
+            // Full graph, labels and numbers included — the dock CSS bumps
+            // the SVG text sizes so they stay readable this small, and the
+            // widened viewBox keeps the enlarged edge labels from clipping.
+            const crop = { x: -40, y: -14, w: 580, h: 410 };
+            if (svg) {
+                const svgClone = svg.cloneNode(true);
+                svgClone.setAttribute('viewBox', `${crop.x} ${crop.y} ${crop.w} ${crop.h}`);
+                svgClone.setAttribute('data-dock-crop', '1');
+                dock.appendChild(svgClone);
+            }
+            const label = document.createElement('div');
+            label.className = 'ov-radar-dock-label';
+            label.innerHTML = `<span>${type.emblem}</span> ${type.name} · #${rank.toLocaleString()}`;
+            dock.appendChild(label);
+            document.body.appendChild(dock);
+
+            const themeDefaultVeil = () =>
+                (document.documentElement.getAttribute('data-theme') === 'light' ? 0.86 : 0.78);
+            const ease = (x) => 1 - Math.pow(1 - x, 2);
+            // The overview lays out with main.overview-main as its own
+            // overflow-y:auto scroller, so window.scrollY stays 0 forever —
+            // drive the morph from whichever element actually scrolls.
+            const scroller = (() => {
+                const m = document.querySelector('main.overview-main') || card.closest('main');
+                if (m) {
+                    const ov = getComputedStyle(m).overflowY;
+                    if ((ov === 'auto' || ov === 'scroll') && m.scrollHeight > m.clientHeight) return m;
+                }
+                return null;
+            })();
+            const scrollTop = () => (scroller ? scroller.scrollTop : window.scrollY);
+            const headerEl = document.querySelector('.overview-header');
+            const miniNavEl = document.querySelector('#overview-mini-nav');
+            let base = null;
+            let raf = 0;
+            const measureBase = () => {
+                dock.style.transform = 'none';
+                base = dock.getBoundingClientRect();
+            };
+            const update = () => {
+                raf = 0;
+                if (!base) measureBase();
+                const morphDist = Math.max(220, window.innerHeight * 0.55);
+                const p = Math.max(0, Math.min(1, scrollTop() / morphDist));
+                const e = ease(p);
+                const target = host.getBoundingClientRect();
+                const scale = 1 + ((target.width / Math.max(1, base.width)) - 1) * e;
+                dock.style.transformOrigin = 'top left';
+                dock.style.transform = `translate(${(target.left - base.left) * e}px, ${(target.top - base.top) * e}px) scale(${scale})`;
+                // Hand off to the card's own radar early — with labels
+                // visible on both, a long overlap reads as doubled text.
+                dock.style.opacity = p < 0.5 ? '1' : String(Math.max(0, 1 - (p - 0.5) / 0.3));
+                dock.style.visibility = p >= 0.82 ? 'hidden' : 'visible';
+                dock.classList.toggle('is-morphing', p > 0.35);
+                // Ease the widened dock viewBox back to the host's exact
+                // 0 0 500 380 so the clone lands matching the card radar.
+                const dockSvg = dock.querySelector('svg[data-dock-crop]');
+                if (dockSvg) {
+                    dockSvg.setAttribute('viewBox',
+                        `${(crop.x * (1 - e)).toFixed(1)} ${(crop.y * (1 - e)).toFixed(1)} ${(crop.w + (500 - crop.w) * e).toFixed(1)} ${(crop.h + (380 - crop.h) * e).toFixed(1)}`);
+                }
+                label.style.opacity = String(Math.max(0, 1 - p * 2.2));
+                // Crossfade: the card's own radar takes over as the clone lands.
+                host.style.opacity = p < 0.55 ? '0' : String(Math.min(1, (p - 0.55) / 0.4));
+                // At the very top the page belongs to the art: page header,
+                // mini-nav and the hero card itself only fade in on scroll.
+                [headerEl, miniNavEl].forEach((el) => {
+                    if (!el) return;
+                    el.style.opacity = String(Math.min(1, p / 0.3));
+                    el.style.pointerEvents = p < 0.15 ? 'none' : '';
+                });
+                card.style.opacity = p < 0.12 ? '0' : String(Math.min(1, (p - 0.12) / 0.4));
+                card.style.pointerEvents = p < 0.3 ? 'none' : '';
+                // Veil: fully clear art at the top, dim back as content arrives.
+                const def = themeDefaultVeil();
+                document.documentElement.style.setProperty('--rf-veil-alpha', String((0.04 + (def - 0.04) * e).toFixed(3)));
+            };
+            const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+            (scroller || window).addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', () => { base = null; onScroll(); });
+            update();
+        };
+        window.setTimeout(arm, 500);
     };
 
     /* ================================================================
@@ -665,6 +877,8 @@
                 }
             });
         }
+
+        setupShowcase(card, host, type, rank);
     };
 
     // Shared identity engine: the onboarding finale on index.html reuses the

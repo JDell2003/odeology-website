@@ -1,11 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="vRcaMhl7lrb1k1IWJHFo2IcW_z8qxfdFVHdSz1oPRoY" />
     <title>RiseForIt - Systems. Strength. Proof.</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+    <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
+    <link rel="stylesheet" href="css/client-quiz.css?v=2026-07-11-import-2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -375,6 +376,443 @@
       }
       .path-card.is-placeholder .path-visual {
         cursor: default;
+      }
+      /* Signed-in but onboarding not finished: no app chrome until the flow
+         is complete (main.js sets this class from the onboarding gate). */
+      body.ode-needs-onboarding #control-mobile-fab-dock,
+      body.ode-needs-onboarding #control-panel,
+      body.ode-needs-onboarding .nav-menu,
+      body.ode-needs-onboarding #hamburger {
+        display: none !important;
+      }
+      body.ode-needs-onboarding.control-open,
+      body.ode-needs-onboarding.control-collapsed,
+      body.ode-needs-onboarding.has-control-panel.control-open,
+      body.ode-needs-onboarding.has-control-panel.control-collapsed {
+        padding-left: 0 !important;
+      }
+
+      /* ---- Onboarding visual polish ---- */
+      @keyframes pathCardIn {
+        from { opacity: 0; transform: translateY(22px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes pathIconFloat {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(-5px); }
+      }
+      @keyframes entryStepIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      #entry-role-stage.is-active .path-card {
+        animation: pathCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      #entry-role-stage.is-active .path-card:nth-child(2) { animation-delay: 0.09s; }
+      #entry-role-stage.is-active .path-card:nth-child(3) { animation-delay: 0.18s; }
+      .path-icon {
+        background: linear-gradient(145deg, #f7ecd9, #eed7b4);
+        border: 1px solid rgba(184, 126, 62, 0.5);
+        box-shadow: 0 14px 30px rgba(184, 126, 62, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      .path-card:hover .path-icon {
+        animation: pathIconFloat 1.6s ease-in-out infinite;
+        box-shadow: 0 20px 40px rgba(184, 126, 62, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+      .path-card .path-arrow {
+        transition: transform 0.22s ease, color 0.22s ease;
+      }
+      .path-card:hover .path-arrow {
+        transform: translateX(6px);
+        color: #b87e3e;
+      }
+      #entry-step-body.step-anim > * {
+        animation: entryStepIn 0.32s ease both;
+      }
+
+      /* ---- Stat quiz ---- */
+      .stat-quiz {
+        display: grid;
+        gap: 18px;
+        justify-items: center;
+        text-align: center;
+      }
+      .stat-quiz-progress {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+      .stat-quiz-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(6, 21, 32, 0.14);
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .stat-quiz-dot.is-done { background: #b87e3e; }
+      .stat-quiz-dot.is-current {
+        background: #b87e3e;
+        transform: scale(1.45);
+        box-shadow: 0 0 0 4px rgba(184, 126, 62, 0.18);
+      }
+      .stat-quiz-card {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+        width: min(460px, 100%);
+        padding: 26px 22px;
+        border-radius: 22px;
+        border: 1px solid rgba(184, 126, 62, 0.28);
+        background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 238, 224, 0.9));
+        box-shadow: 0 18px 44px rgba(6, 21, 32, 0.08);
+        animation: entryStepIn 0.3s ease both;
+      }
+      .stat-quiz-icon {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 999px;
+        background: linear-gradient(145deg, #f7ecd9, #eed7b4);
+        border: 1px solid rgba(184, 126, 62, 0.5);
+        box-shadow: 0 12px 26px rgba(184, 126, 62, 0.22);
+        color: #061520;
+      }
+      .stat-quiz-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .stat-quiz-question {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+        color: #061520;
+      }
+      .stat-quiz-options {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+      }
+      .stat-quiz-option {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(6, 21, 32, 0.14);
+        background: #ffffff;
+        color: #0d2232;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+      }
+      .stat-quiz-option:hover,
+      .stat-quiz-option:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(184, 126, 62, 0.85);
+        background: #fdf6ec;
+        box-shadow: 0 12px 26px rgba(184, 126, 62, 0.18);
+        outline: none;
+      }
+      .stat-quiz-skip {
+        border: 0;
+        background: transparent;
+        color: rgba(13, 34, 50, 0.5);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      .stat-quiz-skip:hover { color: rgba(13, 34, 50, 0.8); }
+      .stat-quiz-summary {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(6, 21, 32, 0.1);
+        background: rgba(255, 255, 255, 0.85);
+      }
+      .stat-quiz-summary-row {
+        display: grid;
+        grid-template-columns: 26px 92px 1fr 34px;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+      }
+      .stat-quiz-summary-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: #8a6330;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .stat-quiz-summary-name {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0d2232;
+      }
+      .stat-quiz-summary-bar {
+        display: block;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(6, 21, 32, 0.08);
+        overflow: hidden;
+      }
+      .stat-quiz-summary-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #d9a866, #b87e3e);
+        animation: statBarGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      @keyframes statBarGrow {
+        from { width: 0 !important; }
+      }
+      .stat-quiz-summary-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #8a6330;
+        text-align: right;
+      }
+      .stat-quiz-summary-type {
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(6, 21, 32, 0.08);
+        font-size: 14px;
+        color: #0d2232;
+        text-align: center;
+      }
+      .stat-quiz-summary-type span { color: #b87e3e; }
+
+      /* ---- Rank finale overlay ---- */
+      @keyframes finaleShake {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(-7px, 3px); }
+        40% { transform: translate(6px, -4px); }
+        60% { transform: translate(-5px, -3px); }
+        80% { transform: translate(5px, 4px); }
+      }
+      @keyframes finaleFlash {
+        0% { background: rgba(255, 244, 224, 0.9); }
+        100% { background: rgba(6, 12, 18, 0.96); }
+      }
+      @keyframes finaleRevealPop {
+        0% { opacity: 0; transform: scale(0.6); }
+        60% { transform: scale(1.06); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes finaleYouPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(217, 168, 102, 0.55); }
+        50% { box-shadow: 0 0 0 12px rgba(217, 168, 102, 0); }
+      }
+      .rank-finale {
+        position: fixed;
+        inset: 0;
+        z-index: 4000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(6, 12, 18, 0.96);
+        color: #f7f2ea;
+      }
+      .rank-finale.is-shaking .rank-finale-inner {
+        animation: finaleShake 0.32s linear infinite;
+      }
+      .rank-finale.is-flash {
+        animation: finaleFlash 0.55s ease both;
+      }
+      .rank-finale-inner {
+        width: min(560px, 100%);
+        text-align: center;
+      }
+      .rank-finale-stage { display: none; }
+      .rank-finale-stage.is-active { display: grid; gap: 10px; justify-items: center; }
+      .rank-finale-roll-emblem {
+        font-size: 84px;
+        line-height: 1;
+        color: #d9a866;
+        filter: drop-shadow(0 0 18px rgba(217, 168, 102, 0.55));
+      }
+      .rank-finale-roll-name {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .rank-finale-roll-sub {
+        margin: 6px 0 0;
+        font-size: 14px;
+        color: rgba(247, 242, 234, 0.6);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .rank-finale-reveal.is-active {
+        animation: finaleRevealPop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .rank-finale-emblem {
+        display: grid;
+        place-items: center;
+        width: 96px;
+        height: 96px;
+        font-size: 52px;
+        line-height: 1;
+        color: #d9a866;
+        background: rgba(217, 168, 102, 0.12);
+        border: 1px solid rgba(217, 168, 102, 0.6);
+        clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+        filter: drop-shadow(0 0 22px rgba(217, 168, 102, 0.35));
+      }
+      .rank-finale-kicker {
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(247, 242, 234, 0.55);
+      }
+      .rank-finale-type {
+        margin: 0;
+        font-size: clamp(44px, 8vw, 64px);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        color: #f7f2ea;
+      }
+      .rank-finale-title {
+        margin: 0;
+        font-size: 17px;
+        font-style: italic;
+        color: #d9a866;
+      }
+      .rank-finale-rank {
+        margin-top: 10px;
+        padding: 10px 22px;
+        border-radius: 999px;
+        border: 1px solid rgba(217, 168, 102, 0.5);
+        background: rgba(217, 168, 102, 0.12);
+        font-size: 19px;
+        font-weight: 800;
+      }
+      .rank-finale-rank span {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(247, 242, 234, 0.6);
+      }
+      .rank-finale-pyramid-heading {
+        margin: 0 0 14px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(247, 242, 234, 0.55);
+      }
+      .rank-pyramid {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        width: 100%;
+        transition: transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .rank-pyramid.is-zoomed {
+        transform: scale(2.3);
+      }
+      .rank-pyramid-tier {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 16px 20px;
+        border-radius: 16px;
+        border: 1px solid rgba(247, 242, 234, 0.14);
+        background: rgba(247, 242, 234, 0.05);
+      }
+      .rank-pyramid-tier:nth-child(1) { width: 38%; }
+      .rank-pyramid-tier:nth-child(2) { width: 62%; }
+      .rank-pyramid-tier:nth-child(3) { width: 74%; }
+      .rank-pyramid-tier:nth-child(4) { width: 86%; }
+      .rank-pyramid-tier:nth-child(5) { width: 100%; }
+      .rank-pyramid-tier.is-you-tier {
+        border-color: rgba(217, 168, 102, 0.75);
+        background: rgba(217, 168, 102, 0.10);
+      }
+      .rank-pyramid-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(247, 242, 234, 0.16);
+        background: rgba(6, 12, 18, 0.5);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .rank-pyramid-chip-emblem { color: #d9a866; }
+      .rank-pyramid-chip.is-you {
+        position: relative;
+        border-color: #d9a866;
+        background: rgba(217, 168, 102, 0.2);
+        animation: finaleYouPulse 1.6s ease-in-out infinite;
+      }
+      .rank-pyramid-you {
+        margin-left: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #d9a866;
+        color: #16100a;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+      .rank-pyramid-tier-label {
+        position: absolute;
+        bottom: 4px;
+        left: 0;
+        right: 0;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(247, 242, 234, 0.35);
+      }
+      .rank-finale-continue {
+        margin-top: 18px;
+        opacity: 0;
+        transform: translateY(8px);
+        pointer-events: none;
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+      .rank-finale-continue.is-visible {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      @media (max-width: 700px) {
+        .rank-pyramid.is-zoomed { transform: scale(1.8); }
+        .rank-pyramid-chip { font-size: 11px; padding: 4px 9px; }
+        .rank-pyramid-tier:nth-child(1) { width: 56%; }
+        .rank-pyramid-tier:nth-child(2) { width: 78%; }
+        .rank-pyramid-tier:nth-child(3) { width: 88%; }
+        .rank-pyramid-tier:nth-child(4) { width: 94%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rank-finale.is-shaking .rank-finale-inner,
+        .rank-finale-reveal.is-active,
+        .rank-pyramid-chip.is-you,
+        .path-card:hover .path-icon,
+        #entry-role-stage.is-active .path-card,
+        #entry-step-body.step-anim > * {
+          animation: none !important;
+        }
+        .rank-pyramid { transition: none; }
       }
       .entry-panel {
         display: none;
@@ -1109,6 +1547,515 @@
       }
       .entry-auth-helper.is-error {
         color: #a33b23;
+      }
+      /* Inline login password reveal (no popup) */
+      .entry-auth-fields {
+        display: grid;
+        gap: 0;
+      }
+      .entry-auth-passwrap {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition: grid-template-rows 0.32s ease, opacity 0.26s ease;
+      }
+      .entry-auth-passwrap-inner {
+        min-height: 0;
+        overflow: hidden;
+        display: grid;
+      }
+      .entry-auth-passwrap-inner .entry-auth-email {
+        margin-top: 12px;
+      }
+      .entry-auth-form.show-password .entry-auth-passwrap {
+        grid-template-rows: 1fr;
+        opacity: 1;
+      }
+      .entry-auth-forgot {
+        border: 0;
+        background: none;
+        padding: 0;
+        justify-self: center;
+        color: rgba(13, 34, 50, 0.55);
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .entry-auth-forgot.hidden {
+        display: none;
+      }
+      /* Inline signup step 2 (password + details), replaces the popup */
+      .entry-auth-step {
+        display: grid;
+        gap: 14px;
+        text-align: center;
+        animation: entryAuthStepIn 0.32s ease;
+      }
+      .entry-auth-step[hidden] {
+        display: none;
+      }
+      .entry-auth-panel.is-step-signup > :not(.entry-auth-step) {
+        display: none;
+      }
+      @keyframes entryAuthStepIn {
+        from {
+          opacity: 0;
+          transform: translateX(28px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      .entry-auth-step-back {
+        border: 0;
+        background: none;
+        padding: 0;
+        justify-self: start;
+        color: rgba(13, 34, 50, 0.6);
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .entry-auth-step-title {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+      }
+      /* Signed-out visitors get no navbar on the entry page: the auth screen
+         owns the full viewport. It returns once they are authenticated. */
+      body.ode-signed-out {
+        padding-top: 0;
+      }
+      body.ode-signed-out .navbar {
+        display: none;
+      }
+      body.ode-signed-out .entry-wrap,
+      body.ode-signed-out .entry-hero {
+        min-height: 0;
+        padding: 0;
+      }
+      /* Mobile-only sign-up hero (logo + rotating app previews), hidden on desktop */
+      .entry-auth-mobile-hero {
+        display: none;
+      }
+      .entry-auth-hero-brand {
+        display: flex;
+        justify-content: center;
+        font-size: 1.45rem;
+        font-weight: 900;
+      }
+      .entry-auth-hero-brand .brand-char {
+        background: linear-gradient(180deg, #ffffff 0%, #e8edf4 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      .entry-auth-hero-brand .brand-char:nth-child(5),
+      .entry-auth-hero-brand .brand-char:nth-child(6),
+      .entry-auth-hero-brand .brand-char:nth-child(7) {
+        background: linear-gradient(180deg, #d9a15c 0%, #b9782d 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      .entry-auth-hero-carousel {
+        position: relative;
+        /* Crop height flexes with the viewport so the whole screen fits without scrolling */
+        --hero-crop: clamp(140px, calc(100vh - 650px), 235px);
+        min-height: calc(var(--hero-crop) + 64px);
+      }
+      @supports (height: 100dvh) {
+        .entry-auth-hero-carousel {
+          --hero-crop: clamp(140px, calc(100dvh - 650px), 235px);
+        }
+      }
+      .entry-auth-hero-slide {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        justify-items: center;
+        align-content: start;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(6px) scale(0.985);
+        transition: opacity 0.45s ease, transform 0.45s ease;
+        pointer-events: none;
+      }
+      .entry-auth-hero-slide.is-active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      /* Bottom-cropped phone, fading out like the reference art */
+      .entry-auth-hero-crop {
+        height: var(--hero-crop, 235px);
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent 98%);
+        mask-image: linear-gradient(180deg, #000 62%, transparent 98%);
+      }
+      .entry-auth-hero-phone {
+        transform: scale(0.82);
+        transform-origin: top center;
+        width: 246px;
+        height: 470px;
+        border-radius: 40px;
+        border: 3px solid #3a4453;
+        background: #0c1119;
+        box-shadow:
+          inset 0 0 0 5px #05070c,
+          0 30px 80px rgba(0, 0, 0, 0.6);
+        padding: 12px 16px 0;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        font-family: 'Space Grotesk', sans-serif;
+      }
+      .hero-phone-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 4px 0;
+      }
+      .hps-time {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .hero-phone-island {
+        width: 64px;
+        height: 18px;
+        border-radius: 999px;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .hps-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .hps-signal {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5px;
+        height: 10px;
+      }
+      .hps-signal b {
+        width: 2.5px;
+        border-radius: 1px;
+        background: #fff;
+      }
+      .hps-signal b:nth-child(1) { height: 4px; }
+      .hps-signal b:nth-child(2) { height: 6px; }
+      .hps-signal b:nth-child(3) { height: 8px; }
+      .hps-signal b:nth-child(4) { height: 10px; opacity: 0.4; }
+      .hps-batt {
+        width: 20px;
+        height: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 3px;
+        padding: 1px;
+        display: block;
+      }
+      .hps-batt b {
+        display: block;
+        width: 68%;
+        height: 100%;
+        border-radius: 1px;
+        background: #fff;
+      }
+      .hero-app {
+        display: grid;
+        gap: 9px;
+        align-content: start;
+      }
+      .hero-app-head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 4px 2px 6px;
+      }
+      .hero-app-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #d9a15c, #8a5a24);
+        color: #0c1119;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .hero-app-head-copy {
+        display: grid;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+      }
+      .hero-app-head-copy b {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .hero-app-head-copy small {
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 10px;
+        font-weight: 600;
+      }
+      .hero-app-chip {
+        flex: none;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .hero-app-chip.is-gold {
+        background: rgba(217, 161, 92, 0.2);
+        color: #e5b070;
+      }
+      .hero-app-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 11px;
+        border-radius: 13px;
+        background: #161f2d;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .hero-app-row.is-now {
+        border-color: rgba(217, 161, 92, 0.55);
+        background: rgba(217, 161, 92, 0.1);
+      }
+      .har-name {
+        flex: 1;
+        min-width: 0;
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .hero-app-row.is-done .har-name {
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .har-meta {
+        flex: none;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 10px;
+        font-weight: 600;
+      }
+      .har-check {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(101, 199, 134, 0.18);
+        color: #65c786;
+        font-size: 10px;
+        line-height: 16px;
+        text-align: center;
+        font-weight: 800;
+      }
+      .har-now {
+        flex: none;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #d9a15c;
+        color: #0c1119;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .hero-macro-ring {
+        width: 108px;
+        height: 108px;
+        margin: 2px auto;
+        border-radius: 50%;
+        background: conic-gradient(#d9a15c 0deg 250deg, rgba(255, 255, 255, 0.1) 250deg 360deg);
+        display: grid;
+        place-items: center;
+      }
+      .hmr-inner {
+        width: 86px;
+        height: 86px;
+        border-radius: 50%;
+        background: #0c1119;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 0;
+      }
+      .hmr-inner b {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .hmr-inner small {
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 10px;
+        font-weight: 600;
+      }
+      .hero-macro-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hmb-label {
+        flex: none;
+        width: 48px;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-align: left;
+      }
+      .hmb-track {
+        flex: 1;
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .hmb-track b {
+        display: block;
+        height: 100%;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.35);
+      }
+      .hmb-track b.is-gold {
+        background: #d9a15c;
+      }
+      .hmb-val {
+        flex: none;
+        width: 34px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 10px;
+        font-weight: 700;
+        text-align: right;
+      }
+      .hero-coach-card {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 10px;
+        border-radius: 14px;
+        background: #161f2d;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .hcc-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        color: #0c1119;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .hcc-copy {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        text-align: left;
+      }
+      .hcc-copy b {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .hcc-copy small {
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 9.5px;
+        font-weight: 600;
+      }
+      .hcc-btn {
+        flex: none;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #d9a15c;
+        color: #0c1119;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .hcc-status {
+        flex: none;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .hcc-status.is-good {
+        background: rgba(101, 199, 134, 0.16);
+        color: #65c786;
+      }
+      .hero-chart {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 7px;
+        height: 110px;
+        padding: 4px 4px 0;
+      }
+      .hero-chart span {
+        flex: 1;
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.1));
+      }
+      .hero-chart span.is-gold {
+        background: linear-gradient(180deg, #e5b070, #b9782d);
+      }
+      .hero-chart-labels {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 4px;
+      }
+      .hero-chart-labels span {
+        flex: 1;
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 8.5px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .entry-auth-hero-caption {
+        margin: 0;
+        max-width: 320px;
+        color: #fff;
+        font-size: 1.12rem;
+        font-weight: 800;
+        line-height: 1.22;
+        text-align: center;
+        letter-spacing: -0.015em;
+      }
+      .entry-auth-hero-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 2px 0;
+      }
+      .entry-auth-hero-dots button {
+        width: 7px;
+        height: 7px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.28);
+        cursor: pointer;
+        transition: background 0.25s ease, transform 0.25s ease;
+      }
+      .entry-auth-hero-dots button.is-active {
+        background: #d9a15c;
+        transform: scale(1.3);
       }
       #onboarding-screen {
         position: absolute;
@@ -2163,6 +3110,184 @@
           transform: translateY(14px) scale(0.985);
         }
       }
+      /* Desktop sign-in: full dark screen, phone art on the left, glass auth card right */
+      @media (min-width: 769px) {
+        /* Flatten the entry shell so the dark stage sits flush under the navbar */
+        body.ode-signed-out .index-entry-shell {
+          padding: 0;
+          min-height: 0;
+        }
+        body.ode-signed-out .entry-wrap,
+        body.ode-signed-out .entry-hero {
+          min-height: 0;
+          padding: 0;
+          overflow: visible;
+        }
+        /* Signed-out visitors only ever see the auth stage; hidden onboarding
+           sections must not stretch the page below it. */
+        body.ode-signed-out .entry-wrap > section.entry-layout,
+        body.ode-signed-out #onboarding-screen {
+          display: none;
+        }
+        #entry-auth-stage.is-active {
+          width: 100vw;
+          margin: 0 calc(50% - 50vw);
+          padding: 40px clamp(32px, 7vw, 110px);
+          min-height: 100vh;
+          box-sizing: border-box;
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+          align-items: center;
+          justify-items: center;
+          gap: clamp(24px, 4vw, 72px);
+          background:
+            radial-gradient(circle at 30% 18%, rgba(59, 74, 102, 0.38), transparent 52%),
+            radial-gradient(circle at 80% 78%, rgba(217, 161, 92, 0.09), transparent 42%),
+            linear-gradient(180deg, #0b0f18 0%, #06080e 55%, #030509 100%);
+        }
+        #entry-auth-stage.is-active .entry-auth-mobile-hero {
+          display: grid;
+          gap: 22px;
+          justify-items: center;
+          align-content: center;
+          width: 100%;
+        }
+        .entry-auth-hero-brand {
+          font-size: 2rem;
+        }
+        .entry-auth-hero-carousel {
+          --hero-crop: min(54vh, 440px);
+          min-height: calc(var(--hero-crop) + 96px);
+          width: 100%;
+        }
+        .entry-auth-hero-phone {
+          transform: scale(1);
+        }
+        .entry-auth-hero-caption {
+          font-size: 1.65rem;
+          max-width: 420px;
+        }
+        .entry-auth-hero-dots button {
+          width: 9px;
+          height: 9px;
+        }
+        #entry-auth-stage.is-active .entry-auth-shell {
+          max-width: 430px;
+          width: 100%;
+          transform: none;
+          align-self: center;
+        }
+        #entry-auth-stage.is-active .entry-auth-panel {
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          border-radius: 26px;
+          background: rgba(15, 21, 32, 0.62);
+          box-shadow: 0 40px 110px rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          padding: 30px 30px 26px;
+          gap: 16px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode {
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: #10161f;
+          padding: 4px;
+          border-radius: 14px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode-btn {
+          color: rgba(255, 255, 255, 0.55);
+          border-radius: 11px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode-btn.is-active {
+          background: linear-gradient(180deg, #2a3650, #1e2839);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          color: #fff;
+          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+        }
+        #entry-auth-stage.is-active .entry-auth-title {
+          color: #fff;
+          font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+        }
+        #entry-auth-stage.is-active .entry-auth-copy {
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 0.92rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-option {
+          min-height: 50px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          background: linear-gradient(180deg, #1e2938, #161f2d);
+          color: #fff;
+          font-size: 0.98rem;
+          font-weight: 700;
+          justify-content: flex-start;
+          padding: 0 16px;
+          gap: 11px;
+        }
+        #entry-auth-stage.is-active .entry-auth-option:hover,
+        #entry-auth-stage.is-active .entry-auth-option:focus-visible {
+          border-color: rgba(255, 255, 255, 0.24);
+          background: linear-gradient(180deg, #253243, #1b2534);
+          box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+        }
+        #entry-auth-stage.is-active .entry-auth-option-icon {
+          width: 26px;
+          height: 26px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
+        }
+        #entry-auth-stage.is-active .entry-auth-divider {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 0.76rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-divider::before,
+        #entry-auth-stage.is-active .entry-auth-divider::after {
+          background: rgba(255, 255, 255, 0.16);
+        }
+        #entry-auth-stage.is-active .entry-auth-email {
+          min-height: 50px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          background: #10161f;
+          padding: 0 16px;
+          color: #fff;
+          font-size: 0.98rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-email::placeholder {
+          color: rgba(255, 255, 255, 0.45);
+        }
+        #entry-auth-stage.is-active .entry-auth-email:focus {
+          border-color: #d9a15c;
+          box-shadow: 0 0 0 4px rgba(217, 161, 92, 0.16);
+        }
+        #entry-auth-stage.is-active .entry-auth-submit {
+          min-height: 50px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: linear-gradient(180deg, #d9a15c, #b9782d);
+          color: #0c1119;
+          font-size: 1rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-helper {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 0.76rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-helper.is-error {
+          color: #ffb199;
+        }
+        #entry-auth-stage.is-active .entry-auth-forgot {
+          color: rgba(255, 255, 255, 0.55);
+        }
+        #entry-auth-stage.is-active .entry-auth-step-back {
+          color: rgba(255, 255, 255, 0.65);
+        }
+        #entry-auth-stage.is-active .entry-auth-step-title {
+          color: #fff;
+        }
+        #entry-auth-stage.is-active .entry-auth-step-sub {
+          color: rgba(255, 255, 255, 0.55);
+        }
+      }
       @media (max-width: 850px) {
         .entry-layout,
         .path-grid,
@@ -2233,6 +3358,199 @@
         .entry-auth-shell {
           align-self: start;
           transform: translateY(0);
+        }
+        /* Dark full-screen sign-up look (StrengthLog-style) on mobile */
+        #entry-auth-stage.is-active {
+          display: grid;
+          gap: 12px;
+          align-content: start;
+          width: 100vw;
+          justify-self: center;
+          margin: calc(-1 * (var(--navbar-height, 72px) - 12px)) calc(50% - 50vw) -24px;
+          padding: calc(var(--navbar-height, 72px) + 2px) 22px 18px;
+          min-height: 100vh;
+          align-content: start;
+          box-sizing: border-box;
+          background:
+            radial-gradient(circle at 50% 12%, rgba(59, 74, 102, 0.35), transparent 48%),
+            linear-gradient(180deg, #0b0f18 0%, #06080e 55%, #030509 100%);
+        }
+        @supports (min-height: 100dvh) {
+          #entry-auth-stage.is-active {
+            min-height: 100dvh;
+          }
+        }
+        .entry-auth-mobile-hero {
+          display: grid;
+          gap: 8px;
+        }
+        #entry-auth-stage.is-active .entry-auth-panel {
+          border: 0;
+          background: transparent;
+          box-shadow: none;
+          padding: 0;
+          gap: 10px;
+          /* Match the visual column of the phone art above */
+          width: 100%;
+          max-width: 312px;
+          margin: 0 auto;
+        }
+        #entry-auth-stage.is-active .entry-auth-actions {
+          gap: 10px;
+        }
+        #entry-auth-stage.is-active .entry-auth-form {
+          gap: 10px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode-btn {
+          min-height: 34px;
+          padding: 0 16px;
+          font-size: 0.86rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode {
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: #10161f;
+          padding: 4px;
+          border-radius: 14px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode-btn {
+          color: rgba(255, 255, 255, 0.55);
+          border-radius: 11px;
+        }
+        #entry-auth-stage.is-active .entry-auth-mode-btn.is-active {
+          background: linear-gradient(180deg, #2a3650, #1e2839);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          color: #fff;
+          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+        }
+        #entry-auth-stage.is-active .entry-auth-title {
+          display: none;
+        }
+        #entry-auth-stage.is-active .entry-auth-copy {
+          display: none;
+        }
+        #entry-auth-stage.is-active .entry-auth-option {
+          min-height: 46px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          background: linear-gradient(180deg, #1e2938, #161f2d);
+          color: #fff;
+          font-size: 0.95rem;
+          font-weight: 700;
+          justify-content: flex-start;
+          padding: 0 16px;
+          gap: 11px;
+        }
+        #entry-auth-stage.is-active .entry-auth-option:hover,
+        #entry-auth-stage.is-active .entry-auth-option:focus-visible {
+          border-color: rgba(255, 255, 255, 0.24);
+          background: linear-gradient(180deg, #253243, #1b2534);
+          box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+        }
+        #entry-auth-stage.is-active .entry-auth-option-icon {
+          width: 26px;
+          height: 26px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.08);
+        }
+        #entry-auth-stage.is-active .entry-auth-option-icon {
+          color: #fff;
+        }
+        #entry-auth-stage.is-active .entry-auth-divider {
+          color: rgba(255, 255, 255, 0.5);
+        }
+        #entry-auth-stage.is-active .entry-auth-divider::before,
+        #entry-auth-stage.is-active .entry-auth-divider::after {
+          background: rgba(255, 255, 255, 0.16);
+        }
+        #entry-auth-stage.is-active .entry-auth-divider {
+          font-size: 0.74rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-email {
+          min-height: 46px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          background: #10161f;
+          padding: 0 16px;
+          color: #fff;
+          font-size: 0.95rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-email::placeholder {
+          color: rgba(255, 255, 255, 0.45);
+        }
+        #entry-auth-stage.is-active .entry-auth-email:focus {
+          border-color: #d9a15c;
+          box-shadow: 0 0 0 4px rgba(217, 161, 92, 0.16);
+        }
+        #entry-auth-stage.is-active .entry-auth-submit {
+          min-height: 46px;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: linear-gradient(180deg, #d9a15c, #b9782d);
+          color: #0c1119;
+          font-size: 0.98rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-helper {
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 0.72rem;
+          line-height: 1.35;
+        }
+        #entry-auth-stage.is-active .entry-auth-helper.is-error {
+          color: #ffb199;
+        }
+        #entry-auth-stage.is-active .entry-auth-forgot {
+          color: rgba(255, 255, 255, 0.55);
+        }
+        #entry-auth-stage.is-active .entry-auth-step-back {
+          color: rgba(255, 255, 255, 0.65);
+        }
+        #entry-auth-stage.is-active .entry-auth-step-title {
+          display: block;
+          color: #fff;
+          font-size: 1.35rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-step-sub {
+          display: block;
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 0.86rem;
+        }
+        #entry-auth-stage.is-active .entry-auth-step {
+          gap: 10px;
+        }
+        /* Short phones: squeeze harder so sign-up still fits one screen */
+        @media (max-height: 720px) {
+          #entry-auth-stage.is-active {
+            gap: 8px;
+            padding-bottom: 12px;
+          }
+          .entry-auth-mobile-hero {
+            gap: 6px;
+          }
+          .entry-auth-hero-brand {
+            font-size: 1.2rem;
+          }
+          .entry-auth-hero-carousel {
+            --hero-crop: 118px;
+            min-height: calc(var(--hero-crop) + 54px);
+          }
+          .entry-auth-hero-caption {
+            font-size: 0.98rem;
+          }
+          #entry-auth-stage.is-active .entry-auth-panel {
+            gap: 8px;
+          }
+          #entry-auth-stage.is-active .entry-auth-mode-btn {
+            min-height: 30px;
+            font-size: 0.8rem;
+          }
+          #entry-auth-stage.is-active .entry-auth-option,
+          #entry-auth-stage.is-active .entry-auth-email,
+          #entry-auth-stage.is-active .entry-auth-submit {
+            min-height: 42px;
+            font-size: 0.94rem;
+          }
+          #entry-auth-stage.is-active .entry-auth-helper {
+            display: none;
+          }
         }
         .entry-panel {
           width: 100%;
@@ -2460,6 +3778,286 @@
           font-size: 0.9rem;
         }
       }
+
+      /* ================================================================
+         Entry takeover: while any entry stage (auth / roles / onboarding)
+         is on screen, the page is ONLY that stage — no navbar, no control
+         panel, no mobile dock. The inline script toggles ode-entry-active
+         from renderEntryStage(), so this holds even when the boot-time
+         onboarding gate and the entry state disagree.
+         ================================================================ */
+      body.index-blank-mode.ode-entry-active .navbar,
+      body.index-blank-mode.ode-entry-active #control-mobile-fab-dock,
+      body.index-blank-mode.ode-entry-active .control-mobile-fab-dock,
+      body.index-blank-mode.ode-entry-active #control-panel,
+      body.index-blank-mode.ode-entry-active .control-panel,
+      body.index-blank-mode.ode-entry-active #hamburger {
+        display: none !important;
+      }
+      body.index-blank-mode.ode-entry-active {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+      body.index-blank-mode.ode-entry-active.control-open,
+      body.index-blank-mode.ode-entry-active.control-collapsed,
+      body.index-blank-mode.ode-entry-active.has-control-panel.control-open,
+      body.index-blank-mode.ode-entry-active.has-control-panel.control-collapsed {
+        padding-left: 0 !important;
+      }
+      body.index-blank-mode.ode-entry-active .index-entry-shell {
+        padding-top: 18px;
+      }
+      body.index-blank-mode.ode-entry-active .entry-hero {
+        min-height: 100vh;
+      }
+      @supports (min-height: 100dvh) {
+        body.index-blank-mode.ode-entry-active .entry-hero {
+          min-height: 100dvh;
+        }
+      }
+
+      /* ================================================================
+         Role picker ("What are you setting up?") — modeled on the login
+         screen: same dark backdrop, glass boxes, gold accents.
+         ================================================================ */
+      #entry-home[data-entry-stage="roles"] {
+        background:
+          radial-gradient(circle at 30% 14%, rgba(59, 74, 102, 0.38), transparent 50%),
+          radial-gradient(circle at 82% 82%, rgba(217, 161, 92, 0.10), transparent 44%),
+          linear-gradient(180deg, #0b0f18 0%, #06080e 55%, #030509 100%);
+      }
+      #entry-home[data-entry-stage="roles"] .entry-hero {
+        background: transparent;
+      }
+      #entry-role-stage .path-heading {
+        margin-bottom: clamp(24px, 5vh, 52px);
+        gap: 10px;
+      }
+      #entry-role-stage .path-heading::before {
+        content: "RiseForIt";
+        justify-self: center;
+        font-family: var(--font-body, 'Space Grotesk', sans-serif);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #d9a15c;
+      }
+      #entry-role-stage .path-title {
+        margin-bottom: 4px;
+        color: #ffffff;
+      }
+      #entry-role-stage .path-subtitle {
+        color: rgba(255, 255, 255, 0.55);
+      }
+      #entry-role-stage .path-grid {
+        width: min(1020px, 100%);
+        margin: 0 auto;
+      }
+      #entry-role-stage .path-card {
+        min-height: 250px;
+        border-radius: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(15, 21, 32, 0.62);
+        box-shadow: 0 40px 110px rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        overflow: hidden;
+      }
+      #entry-role-stage .path-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 46%;
+        background: linear-gradient(180deg, rgba(217, 161, 92, 0.08), transparent);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        pointer-events: none;
+      }
+      #entry-role-stage .path-card:hover {
+        transform: translateY(-7px);
+        border-color: rgba(217, 161, 92, 0.65);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 44px rgba(217, 161, 92, 0.10);
+      }
+      #entry-role-stage .path-card:hover::before {
+        opacity: 1;
+      }
+      #entry-role-stage .path-card.is-selected {
+        border-color: rgba(217, 161, 92, 0.9);
+      }
+      #entry-role-stage .path-icon {
+        top: 30px;
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(180deg, #d9a15c, #b9782d);
+        color: #0c1119;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 26px rgba(217, 161, 92, 0.22);
+      }
+      #entry-role-stage .path-icon svg {
+        width: 30px;
+        height: 30px;
+        stroke-width: 2;
+      }
+      #entry-role-stage .path-card:hover .path-icon {
+        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55), 0 0 34px rgba(217, 161, 92, 0.38);
+      }
+      #entry-role-stage .path-card-content {
+        padding: 122px 26px 24px;
+        gap: 8px;
+      }
+      #entry-role-stage .path-card-content h3 {
+        color: #ffffff;
+        font-size: 20px;
+        line-height: 1.18;
+      }
+      #entry-role-stage .path-card-content p {
+        color: rgba(255, 255, 255, 0.52);
+        font-size: 13.5px;
+        line-height: 1.55;
+        max-width: 200px;
+      }
+      #entry-role-stage .path-arrow {
+        margin-top: auto;
+        align-self: center;
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(217, 161, 92, 0.55);
+        background: rgba(217, 161, 92, 0.10);
+        color: #d9a15c;
+        font-size: 0.95rem;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      #entry-role-stage .path-card:hover .path-arrow {
+        background: linear-gradient(180deg, #d9a15c, #b9782d);
+        border-color: transparent;
+        color: #0c1119;
+      }
+
+      /* Owner-only skip (bottom right) */
+      .owner-skip-btn {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 3000;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border: 1px solid rgba(217, 161, 92, 0.6);
+        border-radius: 999px;
+        background: rgba(20, 14, 8, 0.85);
+        color: #d9a15c;
+        font-family: var(--font-body, 'Space Grotesk', sans-serif);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+      }
+      .owner-skip-btn:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(180deg, #d9a15c, #b9782d);
+        color: #0c1119;
+      }
+
+      @media (max-width: 900px) {
+        body.index-blank-mode.ode-entry-active .index-entry-shell {
+          min-height: 100vh;
+          padding: 14px 16px 20px;
+          display: grid;
+          align-content: center;
+          box-sizing: border-box;
+        }
+        @supports (min-height: 100dvh) {
+          body.index-blank-mode.ode-entry-active .index-entry-shell {
+            min-height: 100dvh;
+          }
+        }
+        body.index-blank-mode.ode-entry-active .entry-hero {
+          min-height: 0;
+          padding: 0;
+        }
+        #entry-role-stage .path-heading::before {
+          font-size: 12px;
+        }
+        #entry-role-stage .path-title {
+          font-size: clamp(30px, 8.6vw, 38px);
+        }
+        #entry-role-stage .path-subtitle {
+          font-size: 13px;
+        }
+        #entry-role-stage .path-heading {
+          margin-bottom: 20px;
+        }
+        #entry-role-stage .path-grid {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+        /* Compact box: gold tile left, copy beside it, arrow right. */
+        #entry-role-stage .path-card {
+          min-height: 0;
+          border-radius: 22px;
+        }
+        #entry-role-stage .path-card::before {
+          height: 100%;
+          background: linear-gradient(90deg, rgba(217, 161, 92, 0.07), transparent 55%);
+        }
+        #entry-role-stage .path-icon {
+          top: 50%;
+          left: 18px;
+          transform: translateY(-50%);
+          width: 54px;
+          height: 54px;
+          border-radius: 17px;
+        }
+        #entry-role-stage .path-icon svg {
+          width: 26px;
+          height: 26px;
+        }
+        #entry-role-stage .path-card:hover .path-icon {
+          animation: none;
+        }
+        #entry-role-stage .path-card-content {
+          padding: 20px 46px 20px 92px;
+          min-height: 104px;
+          align-items: flex-start;
+          justify-content: center;
+          text-align: left;
+          gap: 4px;
+        }
+        #entry-role-stage .path-card-content h3 {
+          font-size: 16.5px;
+        }
+        #entry-role-stage .path-card-content p {
+          font-size: 12.5px;
+          line-height: 1.45;
+          max-width: none;
+        }
+        #entry-role-stage .path-arrow {
+          display: grid;
+          position: absolute;
+          top: 50%;
+          right: 16px;
+          transform: translateY(-50%);
+          margin: 0;
+          width: 32px;
+          height: 32px;
+          z-index: 2;
+          pointer-events: none;
+        }
+        #entry-role-stage .path-card:hover .path-arrow {
+          transform: translateY(-50%) translateX(3px);
+        }
+      }
     </style>
     <script type="text/javascript">
       !function(){if(!window.klaviyo){window._klOnsite=window._klOnsite||[];try{window.klaviyo=new Proxy({},{get:function(n,i){return"push"===i?function(){var n;(n=window._klOnsite).push.apply(n,arguments)}:function(){for(var n=arguments.length,o=new Array(n),w=0;w<n;w++)o[w]=arguments[w];var t="function"==typeof o[o.length-1]?o.pop():void 0,e=new Promise((function(n){window._klOnsite.push([i].concat(o,[function(i){t&&t(i),n(i)}]))}));return e}}})}catch(n){window.klaviyo=window.klaviyo||[],window.klaviyo.push=function(){var n;(n=window._klOnsite).push.apply(n,arguments)}}}}();
@@ -2535,6 +4133,9 @@
         <symbol id="icon-phone" viewBox="0 0 24 24">
             <path d="M7.5 5.5h3l1 3-1.75 1.75a14.5 14.5 0 0 0 4 4L15.5 12l3 1v3a1.5 1.5 0 0 1-1.5 1.5c-6.08 0-11-4.92-11-11A1.5 1.5 0 0 1 7.5 5.5Z"></path>
         </symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24">
+            <path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5Z"></path>
+        </symbol>
     </svg>
 
     <!-- NAVBAR -->
@@ -2561,6 +4162,91 @@
             <section class="entry-hero reveal">
                 <div class="entry-layout" id="entry-path-screen" aria-label="Homepage entry paths">
                     <div class="entry-stage-screen is-active" id="entry-auth-stage">
+                        <div class="entry-auth-mobile-hero" aria-hidden="true">
+                            <div class="entry-auth-hero-brand"><span class="brand-wordmark"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+                            <div class="entry-auth-hero-carousel" id="entry-auth-hero-carousel">
+                                <div class="entry-auth-hero-slide is-active" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><span class="hero-app-avatar">JO</span><div class="hero-app-head-copy"><b>Push Day A</b><small>Week 3 &middot; 6 exercises</small></div><span class="hero-app-chip">42:18</span></div>
+                                                <div class="hero-app-row is-done"><span class="har-name">Bench Press</span><span class="har-meta">4 &times; 8 &middot; 185 lb</span><span class="har-check">&#10003;</span></div>
+                                                <div class="hero-app-row is-done"><span class="har-name">Incline DB Press</span><span class="har-meta">3 &times; 10 &middot; 60 lb</span><span class="har-check">&#10003;</span></div>
+                                                <div class="hero-app-row is-now"><span class="har-name">Cable Fly</span><span class="har-meta">3 &times; 12 &middot; 45 lb</span><span class="har-now">Now</span></div>
+                                                <div class="hero-app-row"><span class="har-name">Lateral Raise</span><span class="har-meta">4 &times; 15 &middot; 20 lb</span></div>
+                                                <div class="hero-app-row"><span class="har-name">Triceps Pushdown</span><span class="har-meta">3 &times; 12 &middot; 55 lb</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Build Your Plan and Log Every Session</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><span class="hero-app-avatar">JO</span><div class="hero-app-head-copy"><b>Daily Macros</b><small>Cutting &middot; Day 24</small></div></div>
+                                                <div class="hero-macro-ring"><span class="hmr-inner"><b>2,450</b><small>kcal</small></span></div>
+                                                <div class="hero-macro-bar"><span class="hmb-label">Protein</span><span class="hmb-track"><b style="width:82%" class="is-gold"></b></span><span class="hmb-val">190g</span></div>
+                                                <div class="hero-macro-bar"><span class="hmb-label">Carbs</span><span class="hmb-track"><b style="width:64%"></b></span><span class="hmb-val">240g</span></div>
+                                                <div class="hero-macro-bar"><span class="hmb-label">Fat</span><span class="hmb-track"><b style="width:48%"></b></span><span class="hmb-val">70g</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Dial In Your Macros With the Calculator</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Find Your Coach</b><small>127 coaches available</small></div></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#d9a15c,#8a5a24)">AS</span><div class="hcc-copy"><b>Avery Stone</b><small>Strength &middot; &#9733; 4.9</small></div><span class="hcc-btn">Book</span></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#5c86d9,#24468a)">MC</span><div class="hcc-copy"><b>Maya Cruz</b><small>Nutrition &middot; &#9733; 4.8</small></div><span class="hcc-btn">Book</span></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#6bd95c,#2c8a24)">DK</span><div class="hcc-copy"><b>Dre King</b><small>Powerbuilding &middot; &#9733; 5.0</small></div><span class="hcc-btn">Book</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Train With Real Coaches</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Bench Press</b><small>Last 12 weeks</small></div><span class="hero-app-chip is-gold">+25 lb</span></div>
+                                                <div class="hero-chart"><span style="height:34%"></span><span style="height:42%"></span><span style="height:40%"></span><span style="height:52%"></span><span style="height:58%"></span><span style="height:66%"></span><span style="height:74%" class="is-gold"></span></div>
+                                                <div class="hero-chart-labels"><span>W1</span><span>W3</span><span>W5</span><span>W7</span><span>W9</span><span>W11</span><span>Now</span></div>
+                                                <div class="hero-app-row is-done"><span class="har-name">New PR logged</span><span class="har-meta">225 lb &times; 1</span><span class="har-check">&#10003;</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Watch Your Strength Trend Up</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Client Roster</b><small>14 active clients</small></div></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#d95c8a,#8a2446)">TB</span><div class="hcc-copy"><b>Tara Brooks</b><small>Week 6 &middot; Cutting</small></div><span class="hcc-status is-good">On track</span></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#5cd9c8,#248a7d)">RM</span><div class="hcc-copy"><b>Rio Marsh</b><small>Week 2 &middot; Strength</small></div><span class="hcc-status">Check-in</span></div>
+                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#c8d95c,#7d8a24)">LP</span><div class="hcc-copy"><b>Lena Park</b><small>Week 9 &middot; Hypertrophy</small></div><span class="hcc-status is-good">On track</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Manage Clients, Teams, and Gyms</p>
+                                </div>
+                            </div>
+                            <div class="entry-auth-hero-dots" id="entry-auth-hero-dots">
+                                <button type="button" class="is-active" data-hero-dot="0" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="1" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="2" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="3" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="4" tabindex="-1"></button>
+                            </div>
+                        </div>
                         <div class="entry-auth-shell">
                             <div class="entry-auth-panel">
                                 <div class="entry-auth-mode" role="tablist" aria-label="Account access mode">
@@ -2591,11 +4277,32 @@
                                     </button>
                                 </div>
                                 <div class="entry-auth-divider">or</div>
-                                <div class="entry-auth-form">
-                                    <input class="entry-auth-email" id="entry-auth-email" type="text" autocomplete="email" placeholder="Email address">
+                                <div class="entry-auth-form" id="entry-auth-form">
+                                    <div class="entry-auth-fields">
+                                        <input class="entry-auth-email" id="entry-auth-email" type="text" autocomplete="email" placeholder="Email address">
+                                        <div class="entry-auth-passwrap" id="entry-auth-passwrap">
+                                            <div class="entry-auth-passwrap-inner">
+                                                <input class="entry-auth-email" id="entry-auth-password" type="password" autocomplete="current-password" placeholder="Password">
+                                            </div>
+                                        </div>
+                                    </div>
                                     <button class="entry-auth-submit" type="button" id="entry-auth-continue">Create account</button>
+                                    <button class="entry-auth-forgot hidden" type="button" id="entry-auth-forgot">Forgot password?</button>
                                 </div>
                                 <p class="entry-auth-helper" id="entry-auth-helper">Phone is required when creating an account. Apple auth is not wired in this codebase yet, so it is not shown here.</p>
+                                <div class="entry-auth-step" id="entry-auth-signup-step" hidden>
+                                    <button class="entry-auth-step-back" type="button" id="entry-auth-step-back" aria-label="Back to sign up">&larr; Back</button>
+                                    <div class="entry-auth-head">
+                                        <h2 class="entry-auth-title entry-auth-step-title">Secure your account</h2>
+                                        <p class="entry-auth-copy entry-auth-step-sub" id="entry-auth-step-email"></p>
+                                    </div>
+                                    <input class="entry-auth-email" id="entry-auth-su-username" type="text" autocomplete="username" placeholder="Username">
+                                    <input class="entry-auth-email" id="entry-auth-su-phone" type="tel" autocomplete="tel" placeholder="Phone number">
+                                    <input class="entry-auth-email" id="entry-auth-su-password" type="password" autocomplete="new-password" placeholder="Password (8+ characters)">
+                                    <input class="entry-auth-email" id="entry-auth-su-confirm" type="password" autocomplete="new-password" placeholder="Repeat password">
+                                    <button class="entry-auth-submit" type="button" id="entry-auth-su-submit">Create account</button>
+                                    <p class="entry-auth-helper hidden" id="entry-auth-step-error"></p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2632,18 +4339,9 @@
                             </div>
                         </article>
 
-                        <article class="path-card" data-path-card="manager">
-                            <button class="path-visual" type="button" data-open-path="manager" aria-label="Open training manager onboarding">
-                                <span class="path-icon" aria-hidden="true">
-                                    <svg><use href="#icon-calendar-check"></use></svg>
-                                </span>
-                            </button>
-                            <div class="path-card-content">
-                                <h3>I’m a Training Manager</h3>
-                                <p>Run the workspace, team, and locations.</p>
-                                <span class="path-arrow" aria-hidden="true">→</span>
-                            </div>
-                        </article>
+                        <!-- Manager onboarding retired: RiseForIt onboards
+                             clients and trainers only. The manager flow code
+                             remains below but is unreachable from here. -->
                         </div>
                     </div>
                 </div>
@@ -3007,7 +4705,7 @@
                     <!-- Loader -->
                     <div class="ns-loader hidden" id="ns-loader">
                         <div class="ns-loader-dot"></div>
-                        <p id="ns-loader-text">Calculating calories�</p>
+                        <p id="ns-loader-text">Calculating caloriesï¿½</p>
                     </div>
 
                     <!-- Steps -->
@@ -3142,17 +4840,17 @@
                                 <div class="ns-results">
                                     <div class="ns-result-card primary">
                                         <p class="eyebrow">Daily calories</p>
-                                        <h3 id="ns-calories">�</h3>
+                                        <h3 id="ns-calories">ï¿½</h3>
                                         <p class="ns-muted">Aligned to your goal and training style.</p>
                                     </div>
                                     <div class="ns-result-card" id="ns-target-card">
                                         <p class="eyebrow">Your Target</p>
                                         <p class="ns-info strong" id="ns-target-intro">Good starting point. Run it for 7 days.</p>
                                         <ul class="ns-list" style="margin: 8px 0; font-size: 0.9em;">
-                                            <li>Current: <strong><span id="ns-current-weight">�</span> lb</strong></li>
-                                            <li>Goal: <strong><span id="ns-goal-weight-display">�</span> lb</strong></li>
-                                            <li>Gap: <strong><span id="ns-weight-gap">�</span> lb</strong></li>
-                                            <li id="ns-time-to-goal-row"><span id="ns-time-to-goal-prefix">If you lose</span> <strong><span id="ns-target-rate">1.5</span> lb/week</strong>: ~<strong><span id="ns-weeks-to-goal">�</span> weeks</strong> to goal</li>
+                                            <li>Current: <strong><span id="ns-current-weight">ï¿½</span> lb</strong></li>
+                                            <li>Goal: <strong><span id="ns-goal-weight-display">ï¿½</span> lb</strong></li>
+                                            <li>Gap: <strong><span id="ns-weight-gap">ï¿½</span> lb</strong></li>
+                                            <li id="ns-time-to-goal-row"><span id="ns-time-to-goal-prefix">If you lose</span> <strong><span id="ns-target-rate">1.5</span> lb/week</strong>: ~<strong><span id="ns-weeks-to-goal">ï¿½</span> weeks</strong> to goal</li>
                                         </ul>
                                         <p class="ns-info small" id="ns-target-outro" style="margin-top: 8px;">Make an account to track your weight. If the scale doesn't move after 7 days, macros auto-adjust to better match your goal.</p>
                                     </div>
@@ -3162,18 +4860,18 @@
                                 <div class="ns-macros locked" id="ns-macros">
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Protein</p>
-                                        <h4 id="ns-protein">�</h4>
-                                        <p class="ns-muted" id="ns-protein-pct">�</p>
+                                        <h4 id="ns-protein">ï¿½</h4>
+                                        <p class="ns-muted" id="ns-protein-pct">ï¿½</p>
                                     </div>
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Carbs</p>
-                                        <h4 id="ns-carbs">�</h4>
-                                        <p class="ns-muted" id="ns-carbs-pct">�</p>
+                                        <h4 id="ns-carbs">ï¿½</h4>
+                                        <p class="ns-muted" id="ns-carbs-pct">ï¿½</p>
                                     </div>
                                     <div class="ns-macro-card">
                                         <p class="eyebrow">Fats</p>
-                                        <h4 id="ns-fats">�</h4>
-                                        <p class="ns-muted" id="ns-fats-pct">�</p>
+                                        <h4 id="ns-fats">ï¿½</h4>
+                                        <p class="ns-muted" id="ns-fats-pct">ï¿½</p>
                                     </div>
                                     <div class="ns-lock-overlay">
                                         <p>Macros locked</p>
@@ -3245,19 +4943,19 @@
                 <div class="grocery-req" id="grocery-req">
                     <div class="req-line">
                         <span class="label">Select at least</span>
-                        <span class="value">3 proteins � 2 carbs � 1 fat</span>
+                        <span class="value">3 proteins ï¿½ 2 carbs ï¿½ 1 fat</span>
                     </div>
                     <div class="req-line">
                         <span class="label">Remaining</span>
-                        <span class="value" id="g-req-remaining">3 proteins � 2 carbs � 1 fat</span>
+                        <span class="value" id="g-req-remaining">3 proteins ï¿½ 2 carbs ï¿½ 1 fat</span>
                     </div>
                 </div>
 
                 <div class="grocery-macros" id="grocery-macros">
-                    <div><span class="label">Calories</span><span id="g-mac-cal">�</span></div>
-                    <div><span class="label">Protein</span><span id="g-mac-pro">�</span></div>
-                    <div><span class="label">Carbs</span><span id="g-mac-car">�</span></div>
-                    <div><span class="label">Fats</span><span id="g-mac-fat">�</span></div>
+                    <div><span class="label">Calories</span><span id="g-mac-cal">ï¿½</span></div>
+                    <div><span class="label">Protein</span><span id="g-mac-pro">ï¿½</span></div>
+                    <div><span class="label">Carbs</span><span id="g-mac-car">ï¿½</span></div>
+                    <div><span class="label">Fats</span><span id="g-mac-fat">ï¿½</span></div>
                 </div>
             </div>
 
@@ -3388,7 +5086,13 @@
 
     <script type="module" src="js/usda.js"></script>
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
+    <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+    <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
+    <script src="js/identity-engine.js?v=2026-07-12-engine-2"></script>
+    <script src="js/daily-recap.js?v=2026-07-12-recap-3"></script>
+    <script src="js/cutscenes.js?v=2026-07-12-cutscenes-36"></script>
+    <script src="js/overview-identity.js?v=2026-07-11-showcase-7"></script>
+    <script src="js/client-quiz.js?v=2026-07-12-intake-1"></script>
     <script>
       (function () {
         const body = document.body;
@@ -3432,6 +5136,31 @@
 
         const entryHome = document.getElementById('entry-home');
         const authStage = document.getElementById('entry-auth-stage');
+
+        // Mobile sign-up hero carousel (visible under 768px only via CSS)
+        (function initAuthHeroCarousel() {
+          const slides = Array.from(document.querySelectorAll('[data-hero-slide]'));
+          const dots = Array.from(document.querySelectorAll('[data-hero-dot]'));
+          if (!slides.length || !dots.length) return;
+          let heroIndex = 0;
+          let heroTimer = null;
+          const showSlide = (next) => {
+            heroIndex = (next + slides.length) % slides.length;
+            slides.forEach((slide, i) => slide.classList.toggle('is-active', i === heroIndex));
+            dots.forEach((dot, i) => dot.classList.toggle('is-active', i === heroIndex));
+          };
+          const startAuto = () => {
+            if (heroTimer) clearInterval(heroTimer);
+            heroTimer = setInterval(() => showSlide(heroIndex + 1), 3600);
+          };
+          dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => {
+              showSlide(i);
+              startAuto();
+            });
+          });
+          startAuto();
+        })();
         const roleStage = document.getElementById('entry-role-stage');
         const authChoiceButtons = Array.from(document.querySelectorAll('[data-auth-choice]'));
         const authModeButtons = Array.from(document.querySelectorAll('[data-auth-mode]'));
@@ -3633,7 +5362,11 @@
               clientNextAction: '',
               clientInviteToken: '',
               clientWorkoutMode: 'invite',
-              clientAccessPassword: ''
+              clientAccessPassword: '',
+              linkClientAccount: '',
+              intakeSource: '',
+              intakeFeature: '',
+              intakeGoals: []
             },
             user: {
               connectionType: '',
@@ -3687,7 +5420,24 @@
               injuries: [],
               injurySeverity: '',
               injuryNotes: '',
-              priorityMuscles: []
+              priorityMuscles: [],
+              statQuizIndex: 0,
+              statAnswers: {},
+              statQuizDone: false,
+              statQuizSkipped: false,
+              bmQuiz: {},
+              bmQuizIndex: 0,
+              clientQuizComplete: false,
+              noTrainerAtGym: false,
+              ownPlanTiming: '',
+              planImportStatus: '',
+              planImportStatusKind: '',
+              planImportSummary: '',
+              planImportSingleDay: false,
+              planImportTemplate: null,
+              unknownExercises: [],
+              unknownExercisesShare: true,
+              unknownExercisesStatus: ''
             },
             manager: {
               selectedWorkspaceId: '',
@@ -3718,7 +5468,8 @@
               firstAction: '',
               managerCode: '',
               requestStatusKind: '',
-              requestStatusText: ''
+              requestStatusText: '',
+              linkClientAccount: ''
             }
           },
           trainerManagerReviewEntries: [],
@@ -3772,6 +5523,264 @@
           return JSON.parse(JSON.stringify(INITIAL_PATH_ANSWERS[path] || {}));
         }
 
+        /* ---- Stat quiz: seeds the six identity stats (0-100) shown on the
+           overview radar. One question per stat, one at a time, tap to
+           advance. Skipping writes floor-level stats, which lands the user
+           at the bottom of the pyramid (Peasant/Ghost) — answering is
+           always the better deal. ---- */
+        const STAT_QUIZ_QUESTIONS = [
+          { id: 'consistency', name: 'Consistency', icon: 'icon-calendar-check', title: 'How many workouts in the last 2 weeks?', options: [
+            { label: 'None, or one', value: 12 },
+            { label: '2–4 sessions', value: 38 },
+            { label: '5–8 sessions', value: 66 },
+            { label: '9 or more', value: 90 }
+          ]},
+          { id: 'strength', name: 'Strength', icon: 'icon-dumbbell', title: 'Where are your lifts right now?', options: [
+            { label: 'Brand new to lifting', value: 15 },
+            { label: 'Learning the basics', value: 40 },
+            { label: 'Solid — I lift regularly', value: 65 },
+            { label: 'Strong for my size', value: 88 }
+          ]},
+          { id: 'cardio', name: 'Cardio', icon: 'icon-trend', title: 'How far can you run without stopping?', options: [
+            { label: 'A couple of blocks', value: 15 },
+            { label: 'About a mile', value: 42 },
+            { label: '3+ miles', value: 68 },
+            { label: '10k and beyond', value: 90 }
+          ]},
+          { id: 'nutrition', name: 'Nutrition', icon: 'icon-chef', title: 'How do you usually eat?', options: [
+            { label: 'Whatever is around', value: 15 },
+            { label: 'Decent most days', value: 42 },
+            { label: 'I loosely track meals', value: 68 },
+            { label: 'Macros are dialed in', value: 90 }
+          ]},
+          { id: 'recovery', name: 'Recovery', icon: 'icon-moon', title: 'How much sleep do you get most nights?', options: [
+            { label: 'Under 6 hours', value: 18 },
+            { label: '6–7 hours', value: 45 },
+            { label: '7–8 hours', value: 70 },
+            { label: '8+ hours', value: 90 }
+          ]},
+          { id: 'progress', name: 'Progress', icon: 'icon-bars', title: 'Compared to 3 months ago, you are…', options: [
+            { label: 'Backsliding', value: 15 },
+            { label: 'About the same', value: 40 },
+            { label: 'A bit better', value: 65 },
+            { label: 'Way better', value: 88 }
+          ]}
+        ];
+        const STAT_QUIZ_SKIP_STATS = { strength: 20, cardio: 20, consistency: 15, nutrition: 20, recovery: 20, progress: 20 };
+        const IDENTITY_STATS_KEY = 'ovIdentityStats';
+        const IDENTITY_STATS_PREV_KEY = 'ovIdentityStatsPrev';
+
+        function statQuizStats(quizUser = state.answers.user || {}) {
+          if (quizUser.statQuizSkipped) return { ...STAT_QUIZ_SKIP_STATS };
+          const stats = {};
+          for (const q of STAT_QUIZ_QUESTIONS) {
+            const v = Number(quizUser.statAnswers?.[q.id]);
+            stats[q.id] = Number.isFinite(v) ? v : STAT_QUIZ_SKIP_STATS[q.id];
+          }
+          return stats;
+        }
+
+        function persistIdentityStats(stats) {
+          try {
+            localStorage.setItem(IDENTITY_STATS_KEY, JSON.stringify(stats));
+            // First snapshot: "last month" starts equal to today, so rank
+            // deltas begin at zero instead of inventing movement. Real
+            // tracked history replaces this later.
+            if (!localStorage.getItem(IDENTITY_STATS_PREV_KEY)) {
+              localStorage.setItem(IDENTITY_STATS_PREV_KEY, JSON.stringify(stats));
+            }
+          } catch {}
+        }
+
+        /* ---- Rank finale: drum-roll through the archetypes, reveal the
+           user's character, then zoom out on the rank pyramid so they see
+           the whole ladder and where they start. Uses window.OdeIdentity
+           (js/overview-identity.js) so the reveal always matches the
+           overview page. ---- */
+        const RANK_PYRAMID_TIERS = [
+          { ids: ['king'], label: 'The summit' },
+          { ids: ['knight', 'berserker', 'ranger'], label: 'The warriors' },
+          { ids: ['monk', 'mage'], label: 'The disciplined' },
+          { ids: ['squire'], label: 'On the path' },
+          { ids: ['peasant', 'ghost'], label: 'Where everyone starts' }
+        ];
+
+        function runRankFinale(stats, onDone) {
+          const engine = window.OdeIdentity;
+          if (!engine) {
+            if (typeof onDone === 'function') onDone();
+            return;
+          }
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          const type = engine.pickType(stats);
+          const title = engine.pickTitle(stats);
+          const score = engine.computeScore(stats, type, null);
+          const { rank, total } = engine.simulateRank(score, type, score);
+          const typesById = {};
+          engine.CHARACTER_TYPES.forEach((t) => { typesById[t.id] = t; });
+          const tierIndex = RANK_PYRAMID_TIERS.findIndex((tier) => tier.ids.includes(type.id));
+
+          const overlay = document.createElement('div');
+          overlay.className = 'rank-finale';
+          overlay.innerHTML = `
+            <div class="rank-finale-inner">
+              <div class="rank-finale-stage rank-finale-roll is-active" data-finale-roll>
+                <div class="rank-finale-roll-emblem" data-finale-roll-emblem>♛</div>
+                <div class="rank-finale-roll-name" data-finale-roll-name>King</div>
+                <p class="rank-finale-roll-sub">Reading your stats…</p>
+              </div>
+              <div class="rank-finale-stage rank-finale-reveal" data-finale-reveal>
+                <div class="rank-finale-emblem">${escapeHtml(type.emblem)}</div>
+                <div class="rank-finale-kicker">Your starting archetype</div>
+                <h2 class="rank-finale-type">${escapeHtml(type.name)}</h2>
+                <p class="rank-finale-title">“${escapeHtml(title)}”</p>
+                <div class="rank-finale-rank">#${rank.toLocaleString()} ${escapeHtml(type.name)} <span>of ${total.toLocaleString()}</span></div>
+              </div>
+              <div class="rank-finale-stage rank-finale-pyramid-stage" data-finale-pyramid>
+                <p class="rank-finale-pyramid-heading">The ladder you are climbing</p>
+                <div class="rank-pyramid" data-rank-pyramid>
+                  ${RANK_PYRAMID_TIERS.map((tier, i) => `
+                    <div class="rank-pyramid-tier ${tier.ids.includes(type.id) ? 'is-you-tier' : ''}" data-tier-index="${i}">
+                      ${tier.ids.map((id) => {
+                        const t = typesById[id];
+                        if (!t) return '';
+                        const isYou = id === type.id;
+                        return `
+                          <span class="rank-pyramid-chip ${isYou ? 'is-you' : ''}">
+                            <span class="rank-pyramid-chip-emblem">${escapeHtml(t.emblem)}</span>
+                            <span class="rank-pyramid-chip-name">${escapeHtml(t.name)}</span>
+                            ${isYou ? `<span class="rank-pyramid-you">YOU · #${rank.toLocaleString()}</span>` : ''}
+                          </span>
+                        `;
+                      }).join('')}
+                      <span class="rank-pyramid-tier-label">${escapeHtml(tier.label)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <button class="btn btn-primary rank-finale-continue" type="button" data-finale-continue>Continue</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+          document.body.classList.add('rank-finale-open');
+
+          const rollStage = overlay.querySelector('[data-finale-roll]');
+          const revealStage = overlay.querySelector('[data-finale-reveal]');
+          const pyramidStage = overlay.querySelector('[data-finale-pyramid]');
+          const pyramid = overlay.querySelector('[data-rank-pyramid]');
+          const rollEmblem = overlay.querySelector('[data-finale-roll-emblem]');
+          const rollName = overlay.querySelector('[data-finale-roll-name]');
+          const continueBtn = overlay.querySelector('[data-finale-continue]');
+
+          const timers = [];
+          const after = (ms, fn) => timers.push(window.setTimeout(fn, ms));
+          let rollTimer = 0;
+
+          const cleanup = () => {
+            timers.forEach((t) => window.clearTimeout(t));
+            if (rollTimer) window.clearInterval(rollTimer);
+            overlay.remove();
+            document.body.classList.remove('rank-finale-open');
+            if (typeof onDone === 'function') onDone();
+          };
+          continueBtn?.addEventListener('click', cleanup);
+
+          const showPyramid = () => {
+            rollStage?.classList.remove('is-active');
+            revealStage?.classList.remove('is-active');
+            pyramidStage?.classList.add('is-active');
+            if (pyramid && tierIndex >= 0 && !reduceMotion) {
+              // Start zoomed in on the user's tier, then pull back to show
+              // the whole ladder.
+              const focusY = ((tierIndex + 0.5) / RANK_PYRAMID_TIERS.length) * 100;
+              pyramid.style.transformOrigin = `50% ${focusY}%`;
+              pyramid.classList.add('is-zoomed');
+              after(900, () => pyramid.classList.remove('is-zoomed'));
+            }
+            after(reduceMotion ? 200 : 2200, () => continueBtn?.classList.add('is-visible'));
+          };
+
+          const showReveal = () => {
+            if (rollTimer) window.clearInterval(rollTimer);
+            rollStage?.classList.remove('is-active');
+            revealStage?.classList.add('is-active');
+            overlay.classList.add('is-flash');
+            after(reduceMotion ? 1200 : 2600, showPyramid);
+          };
+
+          if (reduceMotion) {
+            showReveal();
+            return;
+          }
+          overlay.classList.add('is-shaking');
+          let rollIdx = 0;
+          rollTimer = window.setInterval(() => {
+            const t = engine.CHARACTER_TYPES[rollIdx % engine.CHARACTER_TYPES.length];
+            if (rollEmblem) rollEmblem.textContent = t.emblem;
+            if (rollName) rollName.textContent = t.name;
+            rollIdx += 1;
+          }, 95);
+          after(1900, () => {
+            overlay.classList.remove('is-shaking');
+            showReveal();
+          });
+        }
+
+        /* ---- BetterMe-style client quiz (js/client-quiz.js) ---- */
+        let clientQuizApi = null;
+
+        function mountClientQuiz(hostEl) {
+          if (!hostEl || !window.OdeClientQuiz) return;
+          const quizUser = state.answers.user;
+          if (!quizUser.bmQuiz || typeof quizUser.bmQuiz !== 'object') quizUser.bmQuiz = {};
+          clientQuizApi = window.OdeClientQuiz.mount(hostEl, {
+            answers: quizUser.bmQuiz,
+            startIndex: Number(quizUser.bmQuizIndex || 0),
+            onProgress(answers, screenIndex) {
+              quizUser.bmQuizIndex = screenIndex;
+              persistOnboardingDraft();
+            },
+            onQuizComplete(payload) {
+              // Map quiz answers onto the same intake fields the plan
+              // generator has always used.
+              Object.assign(quizUser, payload.fields);
+              quizUser.statAnswers = payload.stats;
+              quizUser.statQuizDone = true;
+              quizUser.statQuizSkipped = false;
+              quizUser.clientQuizComplete = true;
+              // The identity engine owns stat derivation: seed from the
+              // profile the quiz just wrote (everyone starts a peasant).
+              // Quiz-computed stats are only the no-engine fallback.
+              if (window.RiseIdentityEngine) {
+                window.RiseIdentityEngine.refresh({ reset: true });
+              } else {
+                persistIdentityStats(payload.stats);
+              }
+              // BACKEND HOOKUP: tracking permissions + wake-up time for the
+              // consistency system (step counting, sleep sync, alarm points).
+              try {
+                localStorage.setItem('ode_tracking_prefs_v1', JSON.stringify({
+                  steps: String(payload.raw?.permSteps || '').startsWith('Yes'),
+                  sleep: String(payload.raw?.permSleep || '').startsWith('Yes'),
+                  wakeTime: String(payload.raw?.wakeTime || '')
+                }));
+              } catch {}
+              persistOnboardingDraft();
+            },
+            onLoadingDone(stats, showPlan) {
+              // Reveal the ENGINE's honest peasant seed, not the quiz's
+              // optimistic self-report (quiz stats are the fallback only).
+              let finaleStats = stats;
+              if (window.RiseIdentityEngine) {
+                finaleStats = window.RiseIdentityEngine.refresh({ reset: true }) || stats;
+              } else {
+                persistIdentityStats(stats);
+              }
+              runRankFinale(finaleStats, showPlan);
+            }
+          });
+        }
+
         const FLOW_CONFIG = {
           trainer: {
             kicker: 'Trainer path',
@@ -3782,6 +5791,11 @@
               { id: 'manager', label: 'Manager' },
               { id: 'profile', label: 'Profile' },
               { id: 'coaching', label: 'Coaching' },
+              { id: 'link', label: 'Accounts' },
+              { id: 'intake-source', label: 'About you' },
+              { id: 'intake-feature', label: 'Features' },
+              { id: 'intake-goals', label: 'Goals' },
+              { id: 'break-launch', label: 'Almost there' },
               { id: 'finish', label: 'Finish' }
             ]
           },
@@ -3794,10 +5808,7 @@
               { id: 'trainer', label: 'Trainer' },
               { id: 'access', label: 'Access' },
               { id: 'workout-source', label: 'Workout' },
-              { id: 'goal', label: 'Goal' },
-              { id: 'profile', label: 'Schedule' },
-              { id: 'equipment', label: 'Access' },
-              { id: 'priority', label: 'Priority' },
+              { id: 'quiz', label: 'Profile' },
               { id: 'finish', label: 'Finish' }
             ]
           },
@@ -3808,6 +5819,8 @@
               { id: 'location', label: 'Location' },
               { id: 'trainers', label: 'Trainers' },
               { id: 'permissions', label: 'Permissions' },
+              { id: 'link', label: 'Accounts' },
+              { id: 'break-team', label: 'Almost there' },
               { id: 'setup', label: 'Invites' },
               { id: 'finish', label: 'Finish' }
             ]
@@ -3900,62 +5913,113 @@
           const selected = new Set(Object.keys(days).filter((key) => Array.isArray(days[key])));
           const selectedDays = CLIENT_PLAN_WEEKDAYS.filter((day) => selected.has(String(day.i)));
           const statusKind = String(user.customWorkoutStatusKind || '').trim();
+          const importKind = String(user.planImportStatusKind || '').trim();
+          const exerciseCount = selectedDays.reduce((sum, day) => sum + (Array.isArray(days[String(day.i)]) ? days[String(day.i)].filter((r) => String(r?.name || '').trim()).length : 0), 0);
           return `
-            <div class="entry-summary-card">
-              <strong>Build your weekly workout.</strong>
-              <p>Select the days you train, add exercises under each day, then save the full plan before continuing.</p>
-            </div>
-            <div class="entry-option-grid is-three" aria-label="Select workout days">
-              ${CLIENT_PLAN_WEEKDAYS.map((day) => `
-                <button class="entry-chip ${selected.has(String(day.i)) ? 'is-selected' : ''}" type="button" data-client-plan-day="${day.i}" aria-pressed="${selected.has(String(day.i)) ? 'true' : 'false'}">
-                  ${escapeHtml(day.short)}
-                </button>
-              `).join('')}
-            </div>
-            <div class="entry-stack">
+            <div class="cpb" data-cpb>
+              <div class="cpb-import" data-cpb-import>
+                <div class="cpb-import-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 16V5"></path><path d="m7.5 9 4.5-4.5L16.5 9"></path><rect x="4" y="16" width="16" height="4" rx="1.6"></rect></svg>
+                </div>
+                <div class="cpb-import-copy">
+                  <strong>Have it on paper, notes, or a screenshot?</strong>
+                  <span>Import a photo, screenshot, or PDF — we'll read it and fill the builder for you to check.</span>
+                </div>
+                <label class="cpb-import-btn">
+                  Import file
+                  <input type="file" name="planImportFile" accept="image/*,application/pdf,.txt,.csv" hidden>
+                </label>
+              </div>
+              ${user.planImportStatus ? `
+                <div class="bm-banner ${importKind === 'error' ? 'is-warn' : 'is-ok'}" aria-live="polite">
+                  <strong>${escapeHtml(user.planImportStatus)}</strong>
+                  ${user.planImportSummary ? `<p>${escapeHtml(user.planImportSummary)}</p>` : ''}
+                </div>
+              ` : ''}
+
+              ${user.planImportSingleDay && Array.isArray(user.planImportTemplate) && user.planImportTemplate.length ? `
+                <div class="cpb-multiday">
+                  <button type="button" class="cpb-multiday-close" data-cpb-multiday-dismiss aria-label="Dismiss">&times;</button>
+                  <strong>Looks like one workout — which days do you do it?</strong>
+                  <p>Tap the days and we'll copy it to each one.</p>
+                  <div class="cpb-multiday-days">
+                    ${CLIENT_PLAN_WEEKDAYS.map((day) => `
+                      <button type="button" class="cpb-day ${selected.has(String(day.i)) ? 'is-selected' : ''}" data-cpb-apply-day="${day.i}" aria-pressed="${selected.has(String(day.i)) ? 'true' : 'false'}">${escapeHtml(day.short)}</button>
+                    `).join('')}
+                  </div>
+                  <button type="button" class="cpb-add" data-cpb-apply-all>Same workout every day</button>
+                </div>
+              ` : ''}
+
+              ${(Array.isArray(user.unknownExercises) && user.unknownExercises.length) || user.unknownExercisesStatus ? `
+                <div class="cpb-teach">
+                  ${user.unknownExercises.length ? `
+                  <strong>${user.unknownExercises.length} exercise${user.unknownExercises.length === 1 ? ' is not' : 's are not'} in our database yet</strong>
+                  <p>Answer two quick questions each so your plan tracks them properly.</p>` : ''}
+                  ${user.unknownExercises.map((ex, idx) => `
+                    <div class="cpb-teach-row">
+                      <span class="cpb-teach-name">${escapeHtml(ex.name)}</span>
+                      <select class="cpb-in" data-cpb-teach="${idx}:primaryMuscle" aria-label="Primary muscle for ${escapeHtml(ex.name)}">
+                        <option value="">Muscle…</option>
+                        ${['chest', 'lats', 'middle back', 'lower back', 'shoulders', 'biceps', 'triceps', 'forearms', 'quadriceps', 'hamstrings', 'glutes', 'calves', 'abdominals', 'obliques', 'full body'].map((m) => `<option value="${m}" ${ex.primaryMuscle === m ? 'selected' : ''}>${m.replace(/\b\w/g, (c) => c.toUpperCase())}</option>`).join('')}
+                      </select>
+                      <select class="cpb-in" data-cpb-teach="${idx}:equipment" aria-label="Equipment for ${escapeHtml(ex.name)}">
+                        <option value="">Equipment…</option>
+                        ${['barbell', 'dumbbell', 'machine', 'cable', 'body only', 'kettlebell', 'bands', 'other'].map((e) => `<option value="${e}" ${ex.equipment === e ? 'selected' : ''}>${e.replace(/\b\w/g, (c) => c.toUpperCase())}</option>`).join('')}
+                      </select>
+                    </div>
+                  `).join('')}
+                  ${user.unknownExercises.length ? `
+                  <label class="cpb-teach-share">
+                    <input type="checkbox" data-cpb-teach-share ${user.unknownExercisesShare !== false ? 'checked' : ''}>
+                    <span>Also share these with RiseForIt so they can join the public database (the owner reviews first).</span>
+                  </label>` : ''}
+                  <div class="cpb-teach-actions">
+                    ${user.unknownExercises.length ? '<button type="button" class="cpb-import-btn" data-cpb-teach-submit>Add to database</button>' : ''}
+                    <span class="cpb-status ${user.unknownExercisesStatus && !user.unknownExercises.length ? 'is-success' : ''}">${escapeHtml(user.unknownExercisesStatus || '')}</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <div class="cpb-days" role="group" aria-label="Select workout days">
+                ${CLIENT_PLAN_WEEKDAYS.map((day) => `
+                  <button class="cpb-day ${selected.has(String(day.i)) ? 'is-selected' : ''}" type="button" data-client-plan-day="${day.i}" aria-pressed="${selected.has(String(day.i)) ? 'true' : 'false'}">
+                    <span class="cpb-day-short">${escapeHtml(day.short)}</span>
+                  </button>
+                `).join('')}
+              </div>
+
               ${selectedDays.length ? selectedDays.map((day) => {
                 const rows = Array.isArray(days[String(day.i)]) ? days[String(day.i)] : [];
                 return `
-                  <div class="entry-summary-card">
-                    <strong>${escapeHtml(day.label)}</strong>
-                    <div class="entry-stack" style="margin-top:10px;">
-                      ${rows.length ? rows.map((rowRaw, idx) => {
-                        const row = normalizeClientPlanRow(rowRaw);
-                        return `
-                          <div class="entry-grid" data-client-plan-row="${day.i}:${idx}">
-                            <div class="entry-field full">
-                              <label>Exercise</label>
-                              <input type="text" value="${escapeHtml(row.name)}" placeholder="Bench Press, Squat, Lat Pulldown..." data-client-plan-field="name" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
-                            </div>
-                            <div class="entry-field">
-                              <label>Sets</label>
-                              <input type="number" min="1" max="8" value="${escapeHtml(row.sets)}" data-client-plan-field="sets" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
-                            </div>
-                            <div class="entry-field">
-                              <label>Reps</label>
-                              <input type="text" value="${escapeHtml(row.reps)}" placeholder="8-12" data-client-plan-field="reps" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
-                            </div>
-                            <div class="entry-field">
-                              <label>Rest sec</label>
-                              <input type="number" min="30" max="300" step="5" value="${escapeHtml(row.restSec)}" data-client-plan-field="restSec" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
-                            </div>
-                            <div class="entry-field">
-                              <label>&nbsp;</label>
-                              <button class="btn btn-secondary" type="button" data-client-plan-remove="${day.i}:${idx}">Remove</button>
-                            </div>
-                          </div>
-                        `;
-                      }).join('') : '<p class="entry-inline-note">No exercises on this day yet.</p>'}
-                      <button class="btn btn-secondary" type="button" data-client-plan-add="${day.i}">Add exercise</button>
+                  <div class="cpb-daycard">
+                    <div class="cpb-daycard-head">
+                      <strong>${escapeHtml(day.label)}</strong>
+                      <span>${rows.filter((r) => String(r?.name || '').trim()).length} exercise${rows.filter((r) => String(r?.name || '').trim()).length === 1 ? '' : 's'}</span>
                     </div>
+                    <div class="cpb-collabels" aria-hidden="true"><span>Exercise</span><span>Sets</span><span>Reps</span><span>Rest</span><span></span></div>
+                    ${rows.length ? rows.map((rowRaw, idx) => {
+                      const row = normalizeClientPlanRow(rowRaw);
+                      return `
+                        <div class="cpb-row" data-client-plan-row="${day.i}:${idx}">
+                          <input class="cpb-in cpb-in-name" type="text" value="${escapeHtml(row.name)}" placeholder="Bench Press" aria-label="Exercise name" data-client-plan-field="name" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                          <input class="cpb-in" type="number" min="1" max="8" value="${escapeHtml(row.sets)}" aria-label="Sets" data-client-plan-field="sets" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                          <input class="cpb-in" type="text" value="${escapeHtml(row.reps)}" placeholder="8-12" aria-label="Reps" data-client-plan-field="reps" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                          <input class="cpb-in" type="number" min="30" max="300" step="5" value="${escapeHtml(row.restSec)}" aria-label="Rest seconds" data-client-plan-field="restSec" data-client-plan-day="${day.i}" data-client-plan-idx="${idx}">
+                          <button class="cpb-remove" type="button" data-client-plan-remove="${day.i}:${idx}" aria-label="Remove exercise">&times;</button>
+                        </div>
+                      `;
+                    }).join('') : '<p class="cpb-empty">No exercises on this day yet.</p>'}
+                    <button class="cpb-add" type="button" data-client-plan-add="${day.i}">+ Add exercise</button>
                   </div>
                 `;
-              }).join('') : '<p class="entry-inline-note">Pick at least one weekday to start building.</p>'}
-            </div>
-            <div class="entry-managed-trainer-actions">
-              <button class="btn btn-primary" type="button" data-save-client-custom-plan="1">${user.customPlanSavedId ? 'Update workout plan' : 'Save workout plan'}</button>
-              <div class="entry-managed-trainer-note ${statusKind === 'error' ? 'is-error' : statusKind === 'success' ? 'is-success' : ''}">
-                ${escapeHtml(user.customWorkoutStatus || (user.customPlanSavedId ? 'Workout plan saved. You can continue.' : 'Save this workout plan before continuing.'))}
+              }).join('') : '<p class="cpb-empty cpb-empty-days">Pick the days you train above, or import a file and we&rsquo;ll pick them for you.</p>'}
+
+              <div class="cpb-savebar">
+                <button class="bm-cta" type="button" data-save-client-custom-plan="1">${user.customPlanSavedId ? 'UPDATE WORKOUT PLAN' : 'SAVE WORKOUT PLAN'}</button>
+                <div class="cpb-status ${statusKind === 'error' ? 'is-error' : statusKind === 'success' ? 'is-success' : ''}">
+                  ${escapeHtml(user.customWorkoutStatus || (user.customPlanSavedId ? 'Workout plan saved. You can continue.' : exerciseCount ? 'Check every line, then save — the plan is added to your account.' : 'Save this workout plan before continuing.'))}
+                </div>
               </div>
             </div>
           `;
@@ -5001,6 +7065,39 @@ function formatWorkspaceLabel(workspace) {
             localStorage.removeItem(ONBOARDING_FORCE_KEY);
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
           } catch {}
+          // Anyone who finishes onboarding without answering the stat quiz
+          // (trainers, managers, clients who applied via the request form)
+          // starts at the floor: a Peasant. The quiz path overwrites this
+          // with real numbers before it gets here.
+          seedDefaultIdentityStats();
+          // Onboarding is finished: bring the app chrome (dock, control
+          // panel, nav) back without waiting for the next page load.
+          document.body.classList.remove('ode-needs-onboarding');
+        }
+
+        function seedDefaultIdentityStats() {
+          try {
+            // Engine present: it seeds from whatever profile exists (none ->
+            // regular peasant) and owns the stats from then on.
+            if (window.RiseIdentityEngine) {
+              window.RiseIdentityEngine.refresh();
+              return;
+            }
+            if (!localStorage.getItem(IDENTITY_STATS_KEY)) {
+              localStorage.setItem(IDENTITY_STATS_KEY, JSON.stringify(STAT_QUIZ_SKIP_STATS));
+              localStorage.setItem(IDENTITY_STATS_PREV_KEY, JSON.stringify(STAT_QUIZ_SKIP_STATS));
+            }
+          } catch {}
+        }
+
+        // BACKEND HOOKUP: mirror this flag onto the user record so the
+        // trainer/manager <-> client toggle works across devices.
+        function persistAccountLinkChoice(rolePath) {
+          try {
+            const choice = String(state.answers[rolePath]?.linkClientAccount || '').trim();
+            if (!choice) return;
+            localStorage.setItem('ode_link_client_account_v1', choice === 'yes' ? '1' : '0');
+          } catch {}
         }
 
         function syncOnboardingStateFromAuthenticatedUser() {
@@ -5054,6 +7151,10 @@ function formatWorkspaceLabel(workspace) {
             window.location.href = 'overview.html#control-panel';
             return;
           }
+          // Entry takeover: while auth/roles/onboarding is on screen, the
+          // page shows ONLY that stage (CSS hides navbar/dock/control panel).
+          document.body.classList.add('ode-entry-active');
+          syncOwnerSkipButton(stage);
           if (entryHome) entryHome.setAttribute('data-entry-stage', stage);
           authStage?.classList.toggle('is-active', stage === 'auth');
           roleStage?.classList.toggle('is-active', stage === 'roles');
@@ -5232,6 +7333,12 @@ function formatWorkspaceLabel(workspace) {
             }
             state.selectedPath = path;
             state.currentStep = Math.min(Math.max(Number(parsed.currentStep || 1), 1), flow.steps.length);
+            // Drafts saved under the old 12-step client flow can point past
+            // the quiz; never resume beyond it until the quiz is complete.
+            if (path === 'user' && !state.answers.user?.clientQuizComplete) {
+              const quizStepIndex = flow.steps.findIndex((s) => s.id === 'quiz') + 1;
+              if (quizStepIndex > 0 && state.currentStep > quizStepIndex) state.currentStep = quizStepIndex;
+            }
             state.progressSteps = flow.steps;
             state.authMode = String(parsed.authMode || state.authMode || 'signup');
             if (path === 'trainer') hydrateTrainerAnswersFromAccount();
@@ -6309,6 +8416,346 @@ function formatWorkspaceLabel(workspace) {
           return json;
         }
 
+        /* ---- Workout import: photo / screenshot / PDF -> builder rows ----
+           OCR + PDF readers load lazily from CDN only when a file is picked.
+           The parsed plan lands in the builder (the validation pass): the
+           user checks/edits every line, then Save posts it to the account
+           via the existing /api/training/custom-plan endpoint. */
+        function loadExternalScript(src) {
+          return new Promise((resolve, reject) => {
+            const existing = document.querySelector(`script[src="${src}"]`);
+            if (existing) {
+              if (existing.dataset.loaded === '1') return resolve();
+              existing.addEventListener('load', () => resolve());
+              existing.addEventListener('error', () => reject(new Error('load failed')));
+              return;
+            }
+            const el = document.createElement('script');
+            el.src = src;
+            el.addEventListener('load', () => { el.dataset.loaded = '1'; resolve(); });
+            el.addEventListener('error', () => reject(new Error('load failed')));
+            document.head.appendChild(el);
+          });
+        }
+
+        async function extractTextFromImage(fileOrCanvas) {
+          await loadExternalScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+          const result = await window.Tesseract.recognize(fileOrCanvas, 'eng');
+          return String(result?.data?.text || '');
+        }
+
+        async function extractTextFromPdf(file) {
+          await loadExternalScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+          const pdfjs = window.pdfjsLib;
+          pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+          const buf = await file.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: buf }).promise;
+          let text = '';
+          const pageCount = Math.min(doc.numPages, 6);
+          for (let p = 1; p <= pageCount; p++) {
+            const page = await doc.getPage(p);
+            const content = await page.getTextContent();
+            let lastY = null;
+            for (const item of content.items) {
+              const y = Array.isArray(item.transform) ? Math.round(item.transform[5]) : null;
+              if (lastY !== null && y !== null && Math.abs(y - lastY) > 4) text += '\n';
+              text += item.str + ' ';
+              if (y !== null) lastY = y;
+            }
+            text += '\n';
+          }
+          if (text.replace(/\s+/g, '').length >= 20) return text;
+          // Scanned PDF (no text layer): rasterize page 1 and OCR it.
+          const page = await doc.getPage(1);
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+          return extractTextFromImage(canvas);
+        }
+
+        const PLAN_DAY_HEADER_RE = /^\s*(?:(mon(day)?|tue(s(day)?)?|wed(nesday)?|thu(r(s(day)?)?)?|fri(day)?|sat(urday)?|sun(day)?)|day\s*[1-7]|push(\s*day)?|pull(\s*day)?|leg(s)?(\s*day)?|upper(\s*body)?|lower(\s*body)?|chest|back|shoulders?|arms?|full\s*body|cardio|core)\b\s*[:\-–—]?\s*[a-z ]{0,24}$/i;
+        const PLAN_DAY_TO_WEEKDAY = [
+          [/mon/i, 1], [/tue/i, 2], [/wed/i, 3], [/thu/i, 4], [/fri/i, 5], [/sat/i, 6], [/sun/i, 0],
+          [/day\s*1/i, 1], [/day\s*2/i, 2], [/day\s*3/i, 3], [/day\s*4/i, 4], [/day\s*5/i, 5], [/day\s*6/i, 6], [/day\s*7/i, 0]
+        ];
+
+        const PLAN_SKIP_SECTION_RE = /^(warm[\s-]?up|cool[\s-]?down|stretch(ing|es)?|mobility|foam roll(ing)?|activation)\b/i;
+        const PLAN_META_LINE_RE = /^(duration|level|equipment|note|notes|tips?|frequency|goal|focus|intensity|adjust)\b\s*[:\-–—]?/i;
+        const PLAN_EXERCISE_WORD_RE = /(press|squat|curl|row|raise|pull[\s-]?(up|down|over)?|push[\s-]?(up|down)?|dip|lunge|deadlift|fly|flye|extension|crunch|plank|bridge|thrust|shrug|kickback|swing|snatch|clean|jerk|carry|twist|situp|sit-up|burpee|step[\s-]?up|calf|hamstring|leg press|leg curl|rdl)/i;
+
+        function parseWorkoutText(rawText) {
+          const lines = String(rawText || '')
+            .split(/\r?\n/)
+            .map((l) => l.replace(/^[\s•●◦▪·*•-]+/, '').replace(/\s+/g, ' ').trim())
+            .filter(Boolean);
+          const sections = [];
+          let current = null;
+          let pending = null;   // exercise-name line waiting for Sets:/Reps:/Rest: lines
+          let skipping = false; // inside a warm-up / cool-down / stretch block
+
+          const inlineSetsReps = [
+            /(\d{1,2})\s*[x×*]\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?)(?:\s*reps?)?(?:\s*(?:per|each)\s*\w+)?/i,
+            /(\d{1,2})\s*sets?\s*(?:of|x|×)?\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?)(?:\s*reps?)?/i
+          ];
+          const cleanReps = (raw) => String(raw || '')
+            .replace(/\s*[–]\s*/g, '-')
+            .replace(/\s*(per|each)\s*(leg|arm|side)\b.*/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          const commitPending = () => {
+            if (!pending) return;
+            if (!current) { current = { label: '', exercises: [] }; sections.push(current); }
+            current.exercises.push({
+              name: pending.name,
+              sets: pending.sets || '3',
+              reps: cleanReps(pending.reps) || '8-12',
+              restSec: pending.restSec || '90',
+              assumed: !pending.sets && !pending.reps
+            });
+            pending = null;
+          };
+
+          const cleanName = (raw) => String(raw || '')
+            .replace(/@\s*\d+(\.\d+)?\s*(lb|lbs|kg)?/ig, '')
+            .replace(/\b\d+(\.\d+)?\s*(lb|lbs|kg)\b/ig, '')
+            .replace(/rest\s*[:=]?\s*\d+\s*(s|sec|secs|seconds|min|minutes)?/ig, '')
+            .replace(/^\s*\d{1,2}\s*[.)\-:]\s*/, '')
+            .replace(/^[\s.\-–—)]+/, '')
+            .replace(/[|:;,.\-–—]+$/, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          for (const line of lines) {
+            // Detail lines ("Sets: 4", "Reps: 12 per leg", "Rest: 90 sec") feed
+            // the pending exercise — the layout most workout PDFs use.
+            const detail = line.match(/^(sets?|reps?|rest)\s*[:\-–—]?\s*(.+)$/i);
+            if (detail && pending) {
+              const key = detail[1].toLowerCase();
+              const val = detail[2].trim();
+              if (key.startsWith('set')) pending.sets = (val.match(/\d{1,2}/) || [''])[0];
+              else if (key.startsWith('rep')) pending.reps = val.replace(/\breps?\b/ig, '').trim();
+              else if (key.startsWith('rest')) pending.restSec = (val.match(/\d{1,3}/) || [''])[0];
+              continue;
+            }
+
+            // Section headers: warm-up/cool-down blocks are skipped; "Workout"
+            // resumes; day/split names start a new section.
+            const headerish = line.length <= 44;
+            if (headerish && PLAN_SKIP_SECTION_RE.test(line)) {
+              commitPending();
+              skipping = true;
+              continue;
+            }
+            if (headerish && /^(the\s+)?workout\b/i.test(line)) {
+              commitPending();
+              skipping = false;
+              continue;
+            }
+            if (headerish && PLAN_DAY_HEADER_RE.test(line)) {
+              commitPending();
+              skipping = false;
+              current = { label: line.replace(/[:\-–—]\s*$/, ''), exercises: [] };
+              sections.push(current);
+              continue;
+            }
+            if (skipping) continue;
+            if (PLAN_META_LINE_RE.test(line)) continue;
+
+            // Inline "Name 4x8" style.
+            let sets = '';
+            let reps = '';
+            let name = line;
+            for (const re of inlineSetsReps) {
+              const m = line.match(re);
+              if (m) {
+                sets = m[1];
+                reps = m[2];
+                name = line.slice(0, m.index) + ' ' + line.slice(m.index + m[0].length);
+                break;
+              }
+            }
+            name = cleanName(name);
+            const letters = (name.match(/[a-z]/gi) || []).length;
+            const digits = (name.match(/\d/g) || []).length;
+            if (!name || name.length < 3 || letters < 3 || name.length > 60 || digits > letters) { commitPending(); continue; }
+            const looksLikeExercise = Boolean(sets) || PLAN_EXERCISE_WORD_RE.test(name);
+            if (!looksLikeExercise) { commitPending(); continue; }
+
+            commitPending();
+            pending = {
+              name: name.replace(/\b\w/g, (c) => c.toUpperCase()),
+              sets, reps: reps ? cleanReps(reps) : '', restSec: ''
+            };
+            // Inline lines are complete; only bare names stay pending for
+            // Sets:/Reps: detail lines that may follow.
+            if (sets) commitPending();
+          }
+          commitPending();
+          return sections.filter((s) => s.exercises.length);
+        }
+
+        function applyParsedWorkout(sections, sourceName) {
+          const user = state.answers.user || {};
+          const days = clientPlanDays(user);
+          Object.keys(days).forEach((k) => { delete days[k]; });
+          const usedWeekdays = new Set();
+          const fallbackOrder = [1, 3, 5, 2, 4, 6, 0];
+          let totalExercises = 0;
+          let assumedCount = 0;
+          sections.slice(0, 7).forEach((section) => {
+            let weekday = null;
+            for (const [re, wd] of PLAN_DAY_TO_WEEKDAY) {
+              if (re.test(section.label) && !usedWeekdays.has(wd)) { weekday = wd; break; }
+            }
+            if (weekday === null) weekday = fallbackOrder.find((wd) => !usedWeekdays.has(wd));
+            if (weekday === undefined || weekday === null) return;
+            usedWeekdays.add(weekday);
+            days[String(weekday)] = section.exercises.slice(0, 12).map((ex) => {
+              totalExercises += 1;
+              if (ex.assumed) assumedCount += 1;
+              return { name: ex.name, sets: ex.sets, reps: ex.reps, restSec: ex.restSec };
+            });
+          });
+          user.customPlanSavedId = '';
+          user.customWorkoutStatus = 'Imported — check every line below, then save.';
+          user.customWorkoutStatusKind = '';
+          user.planImportStatus = `Read ${totalExercises} exercise${totalExercises === 1 ? '' : 's'} across ${usedWeekdays.size} day${usedWeekdays.size === 1 ? '' : 's'} from ${sourceName}.`;
+          user.planImportSummary = assumedCount
+            ? `${assumedCount} line${assumedCount === 1 ? ' was' : 's were'} missing sets/reps, so we assumed 3 x 8-12 — double-check those before saving.`
+            : 'Check the names, sets and reps below — fix anything we misread, then save.';
+          user.planImportStatusKind = 'success';
+          // One workout section = probably a repeating routine: offer to copy
+          // it to more days, and stash the template the copies come from.
+          user.planImportSingleDay = sections.length === 1 && usedWeekdays.size === 1;
+          user.planImportTemplate = user.planImportSingleDay
+            ? JSON.parse(JSON.stringify(days[String([...usedWeekdays][0])] || []))
+            : null;
+          void checkUnknownExercisesAgainstDb();
+          return totalExercises;
+        }
+
+        /* ---- Unknown exercises -> database suggestions -------------------
+           Compares imported names against /api/training/workout-database.
+           Unknowns get the same classification questions the database uses
+           (muscle / equipment / level); on submit they are saved to the
+           user's personal exercise list (localStorage) AND sent as pending
+           suggestions to the shared database with an explicit permission
+           flag the owner reviews. */
+        let knownExerciseNames = null;
+        const normalizeExerciseName = (name) => String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        async function checkUnknownExercisesAgainstDb() {
+          const user = state.answers.user || {};
+          try {
+            if (!knownExerciseNames) {
+              const resp = await fetch('/api/training/workout-database?limit=2000', { credentials: 'include' });
+              const json = await resp.json().catch(() => ({}));
+              const items = Array.isArray(json?.items) ? json.items : Array.isArray(json) ? json : [];
+              if (!resp.ok || !items.length) return; // no DB reachable: skip quietly
+              knownExerciseNames = items.map((item) => normalizeExerciseName(item?.name || item?.id));
+            }
+            const days = clientPlanDays(user);
+            const seen = new Set();
+            const unknown = [];
+            Object.keys(days).forEach((key) => {
+              (Array.isArray(days[key]) ? days[key] : []).forEach((row) => {
+                const name = String(row?.name || '').trim();
+                const norm = normalizeExerciseName(name);
+                if (!name || norm.length < 3 || seen.has(norm)) return;
+                seen.add(norm);
+                const match = knownExerciseNames.some((k) => k === norm || k.includes(norm) || norm.includes(k));
+                if (!match) unknown.push({ name, primaryMuscle: '', equipment: '', level: 'intermediate' });
+              });
+            });
+            user.unknownExercises = unknown;
+            user.unknownExercisesStatus = '';
+            renderPanel();
+          } catch {
+            // Database unreachable: nothing to suggest against.
+          }
+        }
+
+        async function submitUnknownExercises() {
+          const user = state.answers.user || {};
+          const list = Array.isArray(user.unknownExercises) ? user.unknownExercises : [];
+          const ready = list.filter((x) => x.primaryMuscle && x.equipment);
+          if (!ready.length) {
+            user.unknownExercisesStatus = 'Pick a muscle and equipment for each exercise first.';
+            renderPanel();
+            return;
+          }
+          const share = Boolean(user.unknownExercisesShare !== false);
+          // Personal copy always saves — their plan uses it either way.
+          try {
+            const mineRaw = JSON.parse(localStorage.getItem('ode_custom_exercises_v1') || '[]');
+            const mine = Array.isArray(mineRaw) ? mineRaw : [];
+            ready.forEach((x) => {
+              if (!mine.some((m) => normalizeExerciseName(m.name) === normalizeExerciseName(x.name))) {
+                mine.push({ ...x, savedAt: Date.now() });
+              }
+            });
+            localStorage.setItem('ode_custom_exercises_v1', JSON.stringify(mine));
+          } catch {}
+          user.unknownExercisesStatus = 'Saving…';
+          renderPanel();
+          try {
+            const resp = await fetch('/api/training/workout-database/suggestions', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: ready.map((x) => ({ ...x, shareToGlobal: share, category: 'strength' })) })
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok || !json?.ok) throw new Error(json?.error || 'failed');
+            user.unknownExercises = list.filter((x) => !ready.includes(x));
+            user.unknownExercisesStatus = share
+              ? `Saved to your exercises — and ${ready.length} sent for review to join the shared database.`
+              : `Saved ${ready.length} to your exercises (kept private).`;
+          } catch {
+            user.unknownExercisesStatus = 'Saved to your exercises. Could not reach the shared database — we’ll retry later.';
+          }
+          renderPanel();
+        }
+
+        async function handleWorkoutImportFile(file) {
+          const user = state.answers.user || {};
+          if (!file) return;
+          const name = String(file.name || 'your file');
+          const type = String(file.type || '').toLowerCase();
+          user.planImportStatus = `Reading ${name}… this can take a few seconds.`;
+          user.planImportSummary = type.startsWith('image/') ? 'Running text recognition on the image.' : '';
+          user.planImportStatusKind = '';
+          renderPanel();
+          try {
+            let text = '';
+            if (type.startsWith('image/')) {
+              text = await extractTextFromImage(file);
+            } else if (type === 'application/pdf' || /\.pdf$/i.test(name)) {
+              text = await extractTextFromPdf(file);
+            } else {
+              text = await file.text();
+            }
+            const sections = parseWorkoutText(text);
+            if (!sections.length) {
+              user.planImportStatus = `We couldn't find a workout in ${name}.`;
+              user.planImportSummary = 'Try a clearer photo (good lighting, straight-on), or type the plan in below.';
+              user.planImportStatusKind = 'error';
+              renderPanel();
+              return;
+            }
+            applyParsedWorkout(sections, name);
+            renderPanel();
+          } catch (err) {
+            user.planImportStatus = `Could not read ${name}.`;
+            user.planImportSummary = 'The reader failed to load or the file is unreadable. You can still type the plan in below.';
+            user.planImportStatusKind = 'error';
+            renderPanel();
+          }
+        }
+
         async function saveClientCustomPlan() {
           const user = state.answers.user || {};
           if (!hasAuthenticatedUser()) {
@@ -6355,6 +8802,7 @@ function formatWorkspaceLabel(workspace) {
         }
 
         function goToTrainerPath(nextAction) {
+          persistAccountLinkChoice('trainer');
           markOnboardingDone();
           try {
             sessionStorage.setItem(TRAINER_ENTRY_KEY, JSON.stringify({
@@ -6375,6 +8823,7 @@ function formatWorkspaceLabel(workspace) {
         }
 
         async function goToManagerPath(nextAction) {
+          persistAccountLinkChoice('manager');
           markScopedOnboardingCompletion('manager');
           markOnboardingDone();
           registerManagerDirectoryEntry();
@@ -7003,13 +9452,26 @@ function formatWorkspaceLabel(workspace) {
               title: 'Choose your trainer.',
               subtitle: workspace ? `Pick the trainer you work with at ${workspace.name}.` : 'Choose a gym/company first.',
               body: workspace
-                ? renderTrainerCards(user.selectedWorkspaceId, user.selectedLocationId, user.selectedTrainerId)
+                ? `
+                  ${renderTrainerCards(user.selectedWorkspaceId, user.selectedLocationId, user.selectedTrainerId)}
+                  <button type="button" class="bm-option ${user.noTrainerAtGym && !user.selectedTrainerId ? 'is-selected' : ''}" data-no-trainer="1" style="margin-top:12px;">
+                    <span class="bm-option-label">I don't have a trainer here — continue without one</span>
+                    <span class="bm-radio" aria-hidden="true"></span>
+                  </button>`
                 : `<div class="entry-summary-card">Choose a gym/company first.</div>`,
               continueLabel: 'Continue'
             };
           }
 
           if (path === 'user' && step.id === 'access') {
+            if (user.connectionType === 'workspace' && !user.selectedTrainerId && user.noTrainerAtGym) {
+              return {
+                title: 'No trainer — no problem.',
+                subtitle: 'You keep the gym connection and train on your own plan.',
+                body: `<div class="entry-summary-card">You can connect with a trainer any time later from the Coaches page. Nothing else is needed on this step.</div>`,
+                continueLabel: 'Continue'
+              };
+            }
             const trainerProfile = findTrainerById(user.selectedTrainerId);
             const hasSelectedTrainer = Boolean(trainerProfile);
             const hasPasswordConfigured = Boolean(trainerProfile && getTrainerAccessPassword(trainerProfile));
@@ -7225,10 +9687,10 @@ function formatWorkspaceLabel(workspace) {
           }
 
           if (path === 'user' && step.id === 'workout-source') {
-            const statusKind = String(user.customWorkoutStatusKind || '').trim();
+            const ownTiming = String(user.ownPlanTiming || '').trim();
             return {
               title: 'How do you want to start?',
-              subtitle: 'Choose whether you already have a workout or want STRYVE to generate one for you.',
+              subtitle: 'Choose whether you already have a workout or want one generated for you.',
               body: `
                 <div class="entry-stack">
                   <div class="entry-field full">
@@ -7238,7 +9700,25 @@ function formatWorkspaceLabel(workspace) {
                       { value: 'generate', label: 'Generate a workout for me' }
                     ], user.workoutSource)}
                   </div>
-                  ${user.workoutSource === 'own' ? renderClientCustomPlanBuilder(user) : ''}
+                  ${user.workoutSource === 'own' ? `
+                    <div class="entry-field full">
+                      <span class="entry-group-title">When do you want to log it?</span>
+                      <div class="cpb-timing-row">
+                        <button type="button" class="bm-option ${ownTiming === 'now' ? 'is-selected' : ''}" data-own-plan-timing="now">
+                          <span class="bm-option-label"><strong>Log it now</strong><small>Type it in or import a photo / PDF</small></span>
+                          <span class="bm-radio" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="bm-option ${ownTiming === 'later' ? 'is-selected' : ''}" data-own-plan-timing="later">
+                          <span class="bm-option-label"><strong>Log it later</strong><small>Keep going — build it on your Training page</small></span>
+                          <span class="bm-radio" aria-hidden="true"></span>
+                        </button>
+                      </div>
+                    </div>
+                    ${ownTiming === 'later' ? `
+                      <div class="bm-banner is-ok"><strong>No problem.</strong><p>We'll keep a reminder on your Training page — you can type it in or import a screenshot any time.</p></div>
+                    ` : ''}
+                    ${ownTiming === 'now' ? renderClientCustomPlanBuilder(user) : ''}
+                  ` : ''}
                 </div>
               `,
               continueLabel: 'Continue'
@@ -7408,6 +9888,74 @@ function formatWorkspaceLabel(workspace) {
             };
           }
 
+          if (path === 'user' && step.id === 'quiz') {
+            return {
+              title: 'Your profile',
+              subtitle: 'A few quick questions to build your plan.',
+              body: '<div class="bm-quiz-host"></div>',
+              hideContinue: true,
+              quizMount: true
+            };
+          }
+
+          if (path === 'user' && step.id === 'stats') {
+            const quizDone = Boolean(user.statQuizDone || user.statQuizSkipped);
+            if (quizDone) {
+              const stats = statQuizStats(user);
+              const engine = window.OdeIdentity;
+              const revealType = engine ? engine.pickType(stats) : null;
+              return {
+                title: 'Your stats are locked in.',
+                subtitle: user.statQuizSkipped
+                  ? 'You skipped the questions, so you start at the bottom of the pyramid. You can always climb.'
+                  : 'These answers seed your six stats. Everything updates as you train.',
+                body: `
+                  <div class="entry-stack">
+                    <div class="stat-quiz-summary">
+                      ${STAT_QUIZ_QUESTIONS.map((question) => `
+                        <div class="stat-quiz-summary-row">
+                          <span class="stat-quiz-summary-icon"><svg><use href="#${question.icon}"></use></svg></span>
+                          <span class="stat-quiz-summary-name">${escapeHtml(question.name)}</span>
+                          <span class="stat-quiz-summary-bar"><span style="width:${Math.max(4, stats[question.id])}%"></span></span>
+                          <span class="stat-quiz-summary-value">${stats[question.id]}</span>
+                        </div>
+                      `).join('')}
+                      ${revealType ? `<div class="stat-quiz-summary-type"><span>${escapeHtml(revealType.emblem)}</span> You match the <strong>${escapeHtml(revealType.name)}</strong> archetype</div>` : ''}
+                    </div>
+                    <button class="btn btn-secondary" type="button" data-stat-retake>Retake the questions</button>
+                  </div>
+                `,
+                continueLabel: 'Continue'
+              };
+            }
+            const quizIdx = Math.min(Math.max(Number(user.statQuizIndex || 0), 0), STAT_QUIZ_QUESTIONS.length - 1);
+            const quizQ = STAT_QUIZ_QUESTIONS[quizIdx];
+            return {
+              title: 'Quick check: where are you starting?',
+              subtitle: 'Six taps. This builds your stat chart, your rank, and your starting archetype.',
+              body: `
+                <div class="stat-quiz" data-stat-quiz>
+                  <div class="stat-quiz-progress" role="progressbar" aria-valuemin="1" aria-valuemax="${STAT_QUIZ_QUESTIONS.length}" aria-valuenow="${quizIdx + 1}" aria-label="Question ${quizIdx + 1} of ${STAT_QUIZ_QUESTIONS.length}">
+                    ${STAT_QUIZ_QUESTIONS.map((question, i) => `<span class="stat-quiz-dot ${i < quizIdx ? 'is-done' : ''} ${i === quizIdx ? 'is-current' : ''}"></span>`).join('')}
+                  </div>
+                  <div class="stat-quiz-card">
+                    <span class="stat-quiz-icon"><svg><use href="#${quizQ.icon}"></use></svg></span>
+                    <h4 class="stat-quiz-question">${escapeHtml(quizQ.title)}</h4>
+                    <div class="stat-quiz-options">
+                      ${quizQ.options.map((option) => `
+                        <button class="stat-quiz-option" type="button" data-stat-answer="${escapeHtml(quizQ.id)}" data-stat-value="${option.value}">
+                          ${escapeHtml(option.label)}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                  <button class="stat-quiz-skip" type="button" data-stat-skip>Skip for now — start me at the bottom</button>
+                </div>
+              `,
+              hideContinue: true
+            };
+          }
+
           if (path === 'user' && step.id === 'finish') {
             const isSoloClient = user.connectionType === 'solo';
             return {
@@ -7426,6 +9974,118 @@ function formatWorkspaceLabel(workspace) {
                 </div>
               `,
               hideContinue: true
+            };
+          }
+
+          if ((path === 'trainer' || path === 'manager') && step.id === 'link') {
+            const roleAnswers = path === 'trainer' ? trainer : manager;
+            const roleLabel = path === 'trainer' ? 'trainer' : 'manager';
+            return {
+              title: 'Do you also train yourself?',
+              subtitle: `Link a client account to your ${roleLabel} account and you can switch between your coaching tools and your own training, stats and rank — one login, both sides.`,
+              body: `
+                <div class="entry-stack">
+                  ${renderRadioGroup('linkClientAccount', [
+                    { value: 'yes', label: 'Yes — link my client account (see both sides)' },
+                    { value: 'no', label: `No — keep this account ${roleLabel}-only` }
+                  ], roleAnswers.linkClientAccount)}
+                  <div class="entry-summary-card">You can change this later in Account settings. Linking never shows your personal training data to clients.</div>
+                </div>
+              `,
+              continueLabel: 'Continue'
+            };
+          }
+
+          if (path === 'trainer' && step.id === 'intake-source') {
+            return {
+              title: 'Where did you hear about us?',
+              subtitle: 'Helps us find more coaches like you.',
+              body: `
+                <div class="entry-stack">
+                  ${renderRadioGroup('intakeSource', [
+                    { value: 'TikTok', label: 'TikTok' },
+                    { value: 'Instagram', label: 'Instagram' },
+                    { value: 'YouTube', label: 'YouTube' },
+                    { value: 'Google search', label: 'Google search' },
+                    { value: 'Friend or family', label: 'Friend or family' },
+                    { value: 'My gym', label: 'My gym' },
+                    { value: 'A client of mine', label: 'A client of mine' },
+                    { value: 'Other', label: 'Other' }
+                  ], trainer.intakeSource)}
+                </div>
+              `,
+              continueLabel: 'Continue'
+            };
+          }
+
+          if (path === 'trainer' && step.id === 'intake-feature') {
+            return {
+              title: 'Which feature are you most excited for?',
+              subtitle: 'We’ll point your setup at it first.',
+              body: `
+                <div class="entry-stack">
+                  ${renderRadioGroup('intakeFeature', [
+                    { value: 'Client management', label: 'Client management' },
+                    { value: 'Program builder', label: 'Program builder — plans in minutes' },
+                    { value: 'Finding new clients', label: 'Finding new clients' },
+                    { value: 'Client progress tracking', label: 'Client progress tracking' },
+                    { value: 'Business + payments', label: 'Business + payments' },
+                    { value: 'My public coach page', label: 'My public coach page' }
+                  ], trainer.intakeFeature)}
+                </div>
+              `,
+              continueLabel: 'Continue'
+            };
+          }
+
+          if (path === 'trainer' && step.id === 'intake-goals') {
+            return {
+              title: 'What results did you come for?',
+              subtitle: 'Pick everything that applies.',
+              body: `
+                <div class="entry-stack">
+                  ${renderCheckboxGroup('intakeGoals', [
+                    { value: 'More clients', label: 'More clients' },
+                    { value: 'More income', label: 'More income' },
+                    { value: 'Save time managing', label: 'Save time managing' },
+                    { value: 'Better client results', label: 'Better client results' },
+                    { value: 'Grow my brand', label: 'Grow my brand' }
+                  ], trainer.intakeGoals)}
+                </div>
+              `,
+              continueLabel: 'Continue'
+            };
+          }
+
+          if (path === 'trainer' && step.id === 'break-launch') {
+            return {
+              title: 'Your coaching hub is almost live',
+              subtitle: 'Everything you set up runs from one dashboard.',
+              body: `
+                <div class="bm-art">
+                  <div class="bm-art-cards">
+                    <div class="bm-mini-card is-checked"><strong>Client roster</strong><span>Invite clients and track every plan in one place</span></div>
+                    <div class="bm-mini-card is-checked"><strong>Plan generator</strong><span>Build custom programs in minutes, not evenings</span></div>
+                    <div class="bm-mini-card"><strong>Public coach page</strong><span>Your storefront goes live when you finish</span></div>
+                  </div>
+                </div>`,
+              continueLabel: 'Continue'
+            };
+          }
+
+          if (path === 'manager' && step.id === 'break-team') {
+            return {
+              title: 'Run the whole floor from one screen',
+              subtitle: 'Your rules are set. Next: invite the team.',
+              body: `
+                <div class="bm-art">
+                  <div class="bm-art-cards">
+                    <div class="bm-mini-card is-checked"><strong>Trainer approvals</strong><span>Every trainer joins under the rules you just set</span></div>
+                    <div class="bm-mini-card is-checked"><strong>Location controls</strong><span>Doors, rosters and plans stay in sync per location</span></div>
+                    <div class="bm-mini-card"><strong>Team invites</strong><span>Invite links are generated in the next step</span></div>
+                  </div>
+                </div>`,
+              continueLabel: 'Continue'
             };
           }
 
@@ -7602,7 +10262,28 @@ function formatWorkspaceLabel(workspace) {
           panelTitle.textContent = view.title;
           panelSubtitle.textContent = view.subtitle;
           renderProgress();
-          stepBody.innerHTML = view.body;
+          // The client quiz manages its own DOM: don't wipe it on incidental
+          // re-renders, and tear it down when the step changes.
+          const quizAlreadyMounted = Boolean(view.quizMount && stepBody.querySelector('.bm-quiz'));
+          if (!quizAlreadyMounted) {
+            if (clientQuizApi) {
+              clientQuizApi.destroy();
+              clientQuizApi = null;
+            }
+            stepBody.classList.remove('step-anim');
+            stepBody.innerHTML = view.body;
+            // BetterMe-style bottom CTA: proxies the (hidden) top next arrow,
+            // so validation and step advancement stay on the existing path.
+            if (!view.quizMount && !view.hideContinue) {
+              stepBody.insertAdjacentHTML('beforeend', `
+                <div class="bm-panel-footer">
+                  <button type="button" class="bm-cta" data-entry-continue>${escapeHtml(String(view.continueLabel || 'Continue').toUpperCase())}</button>
+                </div>`);
+            }
+            void stepBody.offsetWidth;
+            stepBody.classList.add('step-anim');
+            if (view.quizMount) mountClientQuiz(stepBody.querySelector('.bm-quiz-host'));
+          }
           backBtn?.classList.toggle('entry-hidden', !hasPath);
           nextBtn?.classList.toggle('entry-hidden', Boolean(view.hideContinue));
           updateChipState(onboardingPanel);
@@ -7626,13 +10307,46 @@ function formatWorkspaceLabel(workspace) {
           state.currentStep = 0;
           state.progressSteps = [];
           state.transitionState = 'idle';
-          state.authMode = 'signup';
+          state.authMode = (() => {
+            // Honor an explicit mode request (e.g. redirects from gated pages).
+            try {
+              const requested = new URL(window.location.href).searchParams.get('authMode');
+              if (requested === 'login' || requested === 'signup') return requested;
+            } catch {
+              // ignore
+            }
+            return 'signup';
+          })();
           setPathCardState('');
           clearOnboardingDraft();
           renderPanel();
           window.requestAnimationFrame(() => {
             window.scrollTo({ top: 0, behavior: 'auto' });
           });
+        }
+
+        // Owner-only escape hatch: skip onboarding entirely and land on the
+        // overview page. Rendered bottom-right, only for owner accounts.
+        function syncOwnerSkipButton(stage) {
+          const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+          const show = Boolean(liveUser?.isOwner) && (stage === 'roles' || stage === 'onboarding');
+          let btn = document.getElementById('owner-skip-onboarding');
+          if (!show) {
+            btn?.remove();
+            return;
+          }
+          if (btn) return;
+          btn = document.createElement('button');
+          btn.id = 'owner-skip-onboarding';
+          btn.type = 'button';
+          btn.className = 'owner-skip-btn';
+          btn.innerHTML = 'Skip <span aria-hidden="true">→</span>';
+          btn.setAttribute('aria-label', 'Skip onboarding (owner only)');
+          btn.addEventListener('click', () => {
+            markOnboardingDone();
+            window.location.href = 'overview.html#control-panel';
+          });
+          document.body.appendChild(btn);
         }
 
         function runTransition(nextStep) {
@@ -7665,6 +10379,11 @@ function formatWorkspaceLabel(workspace) {
         function shouldAutoOpenManagerOnboarding() {
           if (TEST_ONBOARDING_MODE) return false;
           if (state.selectedPath) return false;
+          // A user who has never finished base onboarding must pick their own
+          // path on the "What are you setting up?" screen — never hijack them
+          // into the manager flow just because the account carries a manager
+          // role tag (owner/new accounts can carry every tag).
+          if (!isOnboardingDone()) return false;
           const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
           const isManagerUser = Boolean(liveUser?.isManager || liveUser?.manager?.active);
           return isManagerUser && !hasScopedOnboardingCompletion('manager', liveUser);
@@ -8467,6 +11186,12 @@ function formatWorkspaceLabel(workspace) {
               void applyTrainerPhotoFile(target.files?.[0] || null);
               return;
             }
+            if (name === 'planImportFile') {
+              const importFile = target.files?.[0] || null;
+              target.value = '';
+              void handleWorkoutImportFile(importFile);
+              return;
+            }
             const fileName = target.files?.[0]?.name ? String(target.files[0].name) : '';
             if (name === 'clientWorkoutPdf') {
               answers.clientWorkoutMode = fileName ? 'Upload workout PDF' : 'Build in system';
@@ -8683,6 +11408,13 @@ function formatWorkspaceLabel(workspace) {
           const fields = Array.from(stepBody.querySelectorAll('input, select, textarea'));
           for (const field of fields) {
             if (field.disabled) continue;
+            // Choice-group errors are managed by validateChoiceGroup, which
+            // runs after this. Clear its stale custom validity here so an old
+            // "choose an option" message can't wedge the step shut after the
+            // user has made a selection.
+            if (field.validity?.customError && typeof field.setCustomValidity === 'function') {
+              field.setCustomValidity('');
+            }
             if (typeof field.reportValidity === 'function' && !field.reportValidity()) return false;
           }
           return true;
@@ -8697,7 +11429,9 @@ function formatWorkspaceLabel(workspace) {
           first.setCustomValidity(checked.length >= min ? '' : message);
           if (checked.length < min) {
             first.reportValidity();
-          return false;
+            return false;
+          }
+          return true;
         }
 
         function submitCodeAction(action) {
@@ -8732,8 +11466,6 @@ function formatWorkspaceLabel(workspace) {
             return true;
           }
           return false;
-        }
-          return true;
         }
 
         function validateCurrentStep() {
@@ -8789,6 +11521,21 @@ function formatWorkspaceLabel(workspace) {
             trainer.publicState = trainer.publicState || trainer.state;
           }
 
+          if (path === 'user' && step.id === 'stats') {
+            const quizUser = state.answers.user || {};
+            if (!quizUser.statQuizDone && !quizUser.statQuizSkipped) {
+              window.alert('Answer the quick questions (or skip them) first.');
+              return false;
+            }
+          }
+
+          if (path === 'user' && step.id === 'quiz') {
+            if (!(state.answers.user || {}).clientQuizComplete) {
+              window.alert('Finish the quick profile questions first.');
+              return false;
+            }
+          }
+
           if (path === 'user' && step.id === 'connection') {
             if (!validateChoiceGroup('connectionType', 'Choose how you are training.')) return false;
             const user = state.answers.user || {};
@@ -8812,7 +11559,8 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'user' && step.id === 'location') {
             const user = state.answers.user || {};
-            if (user.connectionType === 'workspace' && !String(user.selectedLocationId || '').trim()) {
+            const userWorkspaceLocations = getWorkspaceById(user.selectedWorkspaceId)?.locations || [];
+            if (user.connectionType === 'workspace' && userWorkspaceLocations.length && !String(user.selectedLocationId || '').trim()) {
               window.alert('Choose the location you train at.');
               return false;
             }
@@ -8820,14 +11568,17 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'user' && step.id === 'trainer') {
             const user = state.answers.user || {};
-            if (user.connectionType === 'workspace' && !String(user.selectedTrainerId || '').trim()) {
-              window.alert('Choose the trainer you work with.');
+            if (user.connectionType === 'workspace' && !String(user.selectedTrainerId || '').trim() && !user.noTrainerAtGym) {
+              window.alert('Choose the trainer you work with, or pick "continue without one".');
               return false;
             }
           }
 
           if (path === 'user' && step.id === 'access') {
             const user = state.answers.user || {};
+            if (user.connectionType === 'workspace' && !user.selectedTrainerId && user.noTrainerAtGym) {
+              return true;
+            }
             if (user.connectionType === 'workspace') {
               const trainerProfile = findTrainerById(user.selectedTrainerId);
               const requiredPassword = trainerProfile ? getTrainerAccessPassword(trainerProfile) : '';
@@ -8856,9 +11607,16 @@ function formatWorkspaceLabel(workspace) {
           if (path === 'user' && step.id === 'workout-source') {
             if (!validateChoiceGroup('workoutSource', 'Choose whether you have your own workout or want one generated.')) return false;
             const user = state.answers.user || {};
-            if (String(user.workoutSource || '') === 'own' && !String(user.customPlanSavedId || '').trim()) {
-              window.alert('Save your workout plan before continuing.');
-              return false;
+            if (String(user.workoutSource || '') === 'own') {
+              const timing = String(user.ownPlanTiming || '').trim();
+              if (!timing) {
+                window.alert('Choose whether to log your workout now or later.');
+                return false;
+              }
+              if (timing === 'now' && !String(user.customPlanSavedId || '').trim()) {
+                window.alert('Save your workout plan before continuing (or pick "Log it later").');
+                return false;
+              }
             }
           }
 
@@ -8884,8 +11642,26 @@ function formatWorkspaceLabel(workspace) {
           }
 
           if (path === 'manager' && step.id === 'location') {
-            if (!String((state.answers.manager || {}).selectedLocationId || '').trim()) {
+            const managerWorkspaceLocations = getWorkspaceById((state.answers.manager || {}).selectedWorkspaceId)?.locations || [];
+            if (managerWorkspaceLocations.length && !String((state.answers.manager || {}).selectedLocationId || '').trim()) {
               window.alert('Choose the location you manage.');
+              return false;
+            }
+          }
+
+          if ((path === 'trainer' || path === 'manager') && step.id === 'link') {
+            if (!validateChoiceGroup('linkClientAccount', 'Choose whether to link a client account.')) return false;
+          }
+
+          if (path === 'trainer' && step.id === 'intake-source') {
+            if (!validateChoiceGroup('intakeSource', 'Tell us where you heard about us.')) return false;
+          }
+          if (path === 'trainer' && step.id === 'intake-feature') {
+            if (!validateChoiceGroup('intakeFeature', 'Pick the feature you’re most excited for.')) return false;
+          }
+          if (path === 'trainer' && step.id === 'intake-goals') {
+            if (!(Array.isArray(state.answers.trainer?.intakeGoals) && state.answers.trainer.intakeGoals.length)) {
+              window.alert('Pick at least one result you came for.');
               return false;
             }
           }
@@ -9060,9 +11836,77 @@ function formatWorkspaceLabel(workspace) {
             openPath(path);
           });
         });
+        // Inline auth flow: login reveals a password field in place; signup slides
+        // to an in-panel details step. No popup modal on this page.
+        const inlineAuthForm = document.getElementById('entry-auth-form');
+        const inlineAuthPassword = document.getElementById('entry-auth-password');
+        const inlineAuthForgot = document.getElementById('entry-auth-forgot');
+        const inlineAuthPanel = document.querySelector('#entry-auth-stage .entry-auth-panel');
+        const signupStep = document.getElementById('entry-auth-signup-step');
+        const signupStepBack = document.getElementById('entry-auth-step-back');
+        const signupStepEmail = document.getElementById('entry-auth-step-email');
+        const signupStepError = document.getElementById('entry-auth-step-error');
+        const signupUsername = document.getElementById('entry-auth-su-username');
+        const signupPhone = document.getElementById('entry-auth-su-phone');
+        const signupPassword = document.getElementById('entry-auth-su-password');
+        const signupConfirm = document.getElementById('entry-auth-su-confirm');
+        const signupSubmit = document.getElementById('entry-auth-su-submit');
+
+        const setInlineAuthHelper = (message, isError = false) => {
+          if (!authHelperEl) return;
+          authHelperEl.textContent = String(message || '');
+          authHelperEl.classList.toggle('is-error', Boolean(isError));
+        };
+        const setSignupStepError = (message) => {
+          if (!signupStepError) return;
+          signupStepError.textContent = String(message || '');
+          signupStepError.classList.toggle('hidden', !message);
+          signupStepError.classList.toggle('is-error', Boolean(message));
+        };
+        const showLoginPassword = () => {
+          inlineAuthForm?.classList.add('show-password');
+          inlineAuthForgot?.classList.remove('hidden');
+        };
+        const closeSignupStep = () => {
+          if (signupStep) signupStep.hidden = true;
+          inlineAuthPanel?.classList.remove('is-step-signup');
+        };
+        const resetInlineAuthFlow = () => {
+          inlineAuthForm?.classList.remove('show-password');
+          inlineAuthForgot?.classList.add('hidden');
+          if (inlineAuthPassword) inlineAuthPassword.value = '';
+          closeSignupStep();
+          setSignupStepError('');
+        };
+        const openSignupStep = (identifier) => {
+          if (!signupStep || !inlineAuthPanel) return;
+          if (signupStepEmail) signupStepEmail.textContent = identifier;
+          if (signupUsername && !String(signupUsername.value || '').trim()) {
+            signupUsername.value = identifier.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
+          }
+          setSignupStepError('');
+          signupStep.hidden = false;
+          inlineAuthPanel.classList.add('is-step-signup');
+          window.setTimeout(() => {
+            (String(signupUsername?.value || '').trim() ? signupPhone : signupUsername)?.focus();
+          }, 80);
+        };
+        const finishInlineAuth = (user) => {
+          if (typeof window.odeApplySignedInUser === 'function') {
+            window.odeApplySignedInUser(user);
+            return;
+          }
+          try {
+            window.dispatchEvent(new CustomEvent('odeauth', { detail: { user } }));
+          } catch {
+            // ignore
+          }
+        };
+
         authModeButtons.forEach((button) => {
           button.addEventListener('click', () => {
             state.authMode = String(button.getAttribute('data-auth-mode') || 'signup');
+            resetInlineAuthFlow();
             renderEntryStage();
           });
         });
@@ -9075,48 +11919,134 @@ function formatWorkspaceLabel(workspace) {
               window.location.href = `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
               return;
             }
-            if (typeof window.odeOpenAuthModal === 'function') {
-              window.odeOpenAuthModal(state.authMode === 'signup' ? 'signup' : 'login');
-              window.setTimeout(() => {
-                const loginField = document.getElementById('auth-login-username');
-                const signupPhone = document.getElementById('auth-signup-phone');
-                if (choice === 'login' && loginField) {
-                  loginField.focus();
-                  return;
-                }
-                if (loginField) {
-                  loginField.focus();
-                }
-              }, 60);
+            // Username/password entry happens inline now, in login mode.
+            if (state.authMode !== 'login') {
+              state.authMode = 'login';
+              renderEntryStage();
             }
+            closeSignupStep();
+            showLoginPassword();
+            window.setTimeout(() => {
+              (String(authEmailInput?.value || '').trim() ? inlineAuthPassword : authEmailInput)?.focus();
+            }, 120);
           });
         });
-        authContinueBtn?.addEventListener('click', () => {
+        authContinueBtn?.addEventListener('click', async () => {
           const identifier = String(authEmailInput?.value || '').trim();
           if (!identifier) {
             authEmailInput?.focus();
-            if (authHelperEl) {
-              authHelperEl.textContent = state.authMode === 'login'
+            setInlineAuthHelper(
+              state.authMode === 'login'
                 ? 'Enter your email, username, or phone first.'
-                : 'Enter your email address first.';
-              authHelperEl.classList.add('is-error');
+                : 'Enter your email address first.',
+              true
+            );
+            return;
+          }
+          if (state.authMode === 'login') {
+            if (!inlineAuthForm?.classList.contains('show-password')) {
+              showLoginPassword();
+              setInlineAuthHelper('Now enter your password to sign in.');
+              window.setTimeout(() => inlineAuthPassword?.focus(), 200);
+              return;
+            }
+            const password = String(inlineAuthPassword?.value || '');
+            if (!password) {
+              setInlineAuthHelper('Enter your password.', true);
+              inlineAuthPassword?.focus();
+              return;
+            }
+            setInlineAuthHelper('');
+            authContinueBtn.disabled = true;
+            const originalLabel = authContinueBtn.textContent;
+            authContinueBtn.textContent = 'Signing in…';
+            try {
+              const result = typeof window.odeAuthLogin === 'function'
+                ? await window.odeAuthLogin({ username: identifier, password })
+                : { ok: false, error: 'Sign in is unavailable right now.' };
+              if (result?.ok && result.user) {
+                finishInlineAuth(result.user);
+              } else {
+                setInlineAuthHelper(result?.error || 'Sign in failed. Check your password and try again.', true);
+                inlineAuthPassword?.focus();
+              }
+            } finally {
+              authContinueBtn.disabled = false;
+              authContinueBtn.textContent = originalLabel;
             }
             return;
           }
-          if (authHelperEl) authHelperEl.classList.remove('is-error');
-          if (typeof window.odeOpenAuthModal !== 'function') return;
-          window.odeOpenAuthModal(state.authMode === 'signup' ? 'signup' : 'login');
-          window.setTimeout(() => {
-            const signupEmail = document.getElementById('auth-signup-email');
-            const loginIdentifier = document.getElementById('auth-login-username');
-            if (state.authMode === 'signup' && signupEmail) {
-              signupEmail.value = identifier;
-              signupEmail.focus();
-            } else if (loginIdentifier) {
-              loginIdentifier.value = identifier;
-              loginIdentifier.focus();
+          setInlineAuthHelper('');
+          openSignupStep(identifier);
+        });
+        signupStepBack?.addEventListener('click', () => {
+          closeSignupStep();
+          window.setTimeout(() => authEmailInput?.focus(), 80);
+        });
+        signupSubmit?.addEventListener('click', async () => {
+          const identifier = String(authEmailInput?.value || '').trim();
+          const username = String(signupUsername?.value || '').trim().toLowerCase();
+          const phone = String(signupPhone?.value || '').trim();
+          const password = String(signupPassword?.value || '');
+          const confirm = String(signupConfirm?.value || '');
+          if (!username || username.length < 3 || !/^[a-z0-9_]+$/.test(username)) {
+            setSignupStepError('Pick a username with 3+ characters (letters, numbers, underscores).');
+            signupUsername?.focus();
+            return;
+          }
+          if (phone.replace(/\D/g, '').length < 10) {
+            setSignupStepError('Enter a valid phone number.');
+            signupPhone?.focus();
+            return;
+          }
+          if (password.length < 8) {
+            setSignupStepError('Password must be at least 8 characters.');
+            signupPassword?.focus();
+            return;
+          }
+          if (password !== confirm) {
+            setSignupStepError('Passwords do not match.');
+            signupConfirm?.focus();
+            return;
+          }
+          setSignupStepError('');
+          signupSubmit.disabled = true;
+          const originalLabel = signupSubmit.textContent;
+          signupSubmit.textContent = 'Creating account…';
+          try {
+            const result = typeof window.odeAuthSignup === 'function'
+              ? await window.odeAuthSignup({ username, email: identifier, phone, displayName: username, password, referralCode: '' })
+              : { ok: false, error: 'Sign up is unavailable right now.' };
+            if (result?.ok && result.user) {
+              finishInlineAuth(result.user);
+            } else {
+              setSignupStepError(result?.error || 'Sign up failed. Please try again.');
             }
-          }, 60);
+          } finally {
+            signupSubmit.disabled = false;
+            signupSubmit.textContent = originalLabel;
+          }
+        });
+        inlineAuthForgot?.addEventListener('click', async () => {
+          const identifier = String(authEmailInput?.value || '').trim();
+          if (!identifier) {
+            setInlineAuthHelper('Enter your email, username, or phone first.', true);
+            authEmailInput?.focus();
+            return;
+          }
+          inlineAuthForgot.disabled = true;
+          try {
+            const result = typeof window.odeAuthRequestPasswordReset === 'function'
+              ? await window.odeAuthRequestPasswordReset({ identifier })
+              : { ok: false, error: 'Reset is unavailable right now.' };
+            if (result?.ok) {
+              setInlineAuthHelper('If your account exists, we sent a reset link to your email.');
+            } else {
+              setInlineAuthHelper(result?.error || 'Could not request a reset link.', true);
+            }
+          } finally {
+            inlineAuthForgot.disabled = false;
+          }
         });
         authEmailInput?.addEventListener('keydown', (event) => {
           if (event.key === 'Enter') {
@@ -9124,6 +12054,37 @@ function formatWorkspaceLabel(workspace) {
             authContinueBtn?.click();
           }
         });
+        inlineAuthPassword?.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            authContinueBtn?.click();
+          }
+        });
+        [signupUsername, signupPhone, signupPassword, signupConfirm].forEach((field) => {
+          field?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              signupSubmit?.click();
+            }
+          });
+        });
+        // Let global chrome (navbar buttons, redirects from gated pages) drive the
+        // inline auth mode instead of opening a popup.
+        window.odeSetEntryAuthMode = (mode) => {
+          state.authMode = mode === 'login' ? 'login' : 'signup';
+          resetInlineAuthFlow();
+          renderEntryStage();
+          window.setTimeout(() => authEmailInput?.focus(), 120);
+        };
+        try {
+          const requestedMode = new URL(window.location.href).searchParams.get('authMode');
+          if (requestedMode === 'login' || requestedMode === 'signup') {
+            state.authMode = requestedMode;
+            renderEntryStage();
+          }
+        } catch {
+          // ignore
+        }
         window.addEventListener('odeauth', (event) => {
           const nextUser = event?.detail?.user && typeof event.detail.user === 'object'
             ? event.detail.user
@@ -9142,6 +12103,20 @@ function formatWorkspaceLabel(workspace) {
           renderPanel();
         });
 
+        stateForm?.addEventListener('change', (event) => {
+          const el = event.target;
+          if (el instanceof HTMLSelectElement && el.hasAttribute('data-cpb-teach')) {
+            const [idxRaw, field] = String(el.getAttribute('data-cpb-teach') || '').split(':');
+            const list = state.answers.user?.unknownExercises;
+            const entry = Array.isArray(list) ? list[Number(idxRaw)] : null;
+            if (entry && field) entry[field] = el.value;
+            return;
+          }
+          if (el instanceof HTMLInputElement && el.hasAttribute('data-cpb-teach-share')) {
+            state.answers.user.unknownExercisesShare = el.checked;
+            return;
+          }
+        });
         stateForm?.addEventListener('change', handleInputChange);
         stateForm?.addEventListener('input', handleInputChange);
         stateForm?.addEventListener('keydown', (event) => {
@@ -9157,6 +12132,99 @@ function formatWorkspaceLabel(workspace) {
         stateForm?.addEventListener('click', async (event) => {
           const target = event.target;
           if (!(target instanceof HTMLElement)) return;
+          if (target.closest('[data-entry-continue]')) {
+            nextBtn?.click();
+            return;
+          }
+          if (target.closest('[data-no-trainer]')) {
+            state.answers.user.noTrainerAtGym = true;
+            state.answers.user.selectedTrainerId = '';
+            state.answers.user.trainerConnectionIntent = '';
+            renderPanel();
+            return;
+          }
+          const applyDayBtn = target.closest('[data-cpb-apply-day]');
+          if (applyDayBtn) {
+            const user = state.answers.user || {};
+            const dayKeyStr = String(applyDayBtn.getAttribute('data-cpb-apply-day') || '');
+            const days = clientPlanDays(user);
+            if (Array.isArray(days[dayKeyStr])) delete days[dayKeyStr];
+            else days[dayKeyStr] = JSON.parse(JSON.stringify(user.planImportTemplate || []));
+            user.customPlanSavedId = '';
+            renderPanel();
+            return;
+          }
+          if (target.closest('[data-cpb-apply-all]')) {
+            const user = state.answers.user || {};
+            const days = clientPlanDays(user);
+            CLIENT_PLAN_WEEKDAYS.forEach((day) => {
+              days[String(day.i)] = JSON.parse(JSON.stringify(user.planImportTemplate || []));
+            });
+            user.customPlanSavedId = '';
+            renderPanel();
+            return;
+          }
+          if (target.closest('[data-cpb-multiday-dismiss]')) {
+            state.answers.user.planImportSingleDay = false;
+            renderPanel();
+            return;
+          }
+          if (target.closest('[data-cpb-teach-submit]')) {
+            void submitUnknownExercises();
+            return;
+          }
+          const planTimingBtn = target.closest('[data-own-plan-timing]');
+          if (planTimingBtn) {
+            const timing = String(planTimingBtn.getAttribute('data-own-plan-timing') || '');
+            state.answers.user.ownPlanTiming = timing;
+            if (timing === 'later') {
+              // Training page reminder: the plan is deferred, not forgotten.
+              try { localStorage.setItem('ode_own_plan_deferred_v1', '1'); } catch {}
+            } else {
+              try { localStorage.removeItem('ode_own_plan_deferred_v1'); } catch {}
+            }
+            renderPanel();
+            return;
+          }
+          const statAnswerBtn = target.closest('[data-stat-answer]');
+          if (statAnswerBtn instanceof HTMLElement) {
+            const quizUser = state.answers.user || {};
+            const qid = String(statAnswerBtn.getAttribute('data-stat-answer') || '');
+            quizUser.statAnswers = quizUser.statAnswers && typeof quizUser.statAnswers === 'object' ? quizUser.statAnswers : {};
+            quizUser.statAnswers[qid] = Number(statAnswerBtn.getAttribute('data-stat-value')) || 0;
+            const nextQuizIdx = Number(quizUser.statQuizIndex || 0) + 1;
+            if (nextQuizIdx >= STAT_QUIZ_QUESTIONS.length) {
+              quizUser.statQuizDone = true;
+              quizUser.statQuizSkipped = false;
+              const stats = statQuizStats(quizUser);
+              persistIdentityStats(stats);
+              persistOnboardingDraft();
+              runRankFinale(stats, () => renderPanel());
+            } else {
+              quizUser.statQuizIndex = nextQuizIdx;
+              renderPanel();
+            }
+            return;
+          }
+          if (target.closest('[data-stat-skip]')) {
+            const quizUser = state.answers.user || {};
+            quizUser.statQuizSkipped = true;
+            quizUser.statQuizDone = false;
+            const stats = statQuizStats(quizUser);
+            persistIdentityStats(stats);
+            persistOnboardingDraft();
+            runRankFinale(stats, () => renderPanel());
+            return;
+          }
+          if (target.closest('[data-stat-retake]')) {
+            const quizUser = state.answers.user || {};
+            quizUser.statQuizIndex = 0;
+            quizUser.statAnswers = {};
+            quizUser.statQuizDone = false;
+            quizUser.statQuizSkipped = false;
+            renderPanel();
+            return;
+          }
           const codeSubmitAction = target.getAttribute('data-code-submit');
           if (codeSubmitAction) {
             submitCodeAction(codeSubmitAction);
@@ -9472,6 +12540,21 @@ function formatWorkspaceLabel(workspace) {
               showEntryToast(err?.message || 'Could not save trainer onboarding.');
               return;
             }
+            // Owner analytics: why this trainer joined (fire-and-forget).
+            try {
+              const t = state.answers.trainer || {};
+              fetch('/api/training/onboarding-insights', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  role: 'trainer',
+                  source: t.intakeSource || '',
+                  expectedFeature: t.intakeFeature || '',
+                  results: Array.isArray(t.intakeGoals) ? t.intakeGoals : []
+                })
+              }).catch(() => {});
+            } catch {}
             goToTrainerPath('Explore dashboard');
             return;
           }
@@ -9506,6 +12589,27 @@ function formatWorkspaceLabel(workspace) {
             goToTrainerPath('Complete profile');
             return;
           }
+          if (action === 'client-overview') {
+            if (!validateCurrentStep()) return;
+            if (TEST_ONBOARDING_MODE) {
+              finalizeTestOnboarding(action);
+              return;
+            }
+            markOnboardingDone();
+            try {
+              localStorage.setItem(TRAINING_INTAKE_KEY, JSON.stringify(buildUserIntake()));
+            } catch {}
+            // The workout is owed either way: leaving to the overview must
+            // not skip the build — the training engine picks this flag up on
+            // the first visit and generates from the onboarding answers.
+            try {
+              if (String(state.answers.user.workoutSource || '') !== 'own') {
+                localStorage.setItem('ode_training_autobuild_v1', '1');
+              }
+            } catch {}
+            window.location.href = 'overview.html#control-panel';
+            return;
+          }
           if (action === 'client-build' || action === 'client-dashboard') {
             if (!validateCurrentStep()) return;
             if (TEST_ONBOARDING_MODE) {
@@ -9515,6 +12619,11 @@ function formatWorkspaceLabel(workspace) {
             markOnboardingDone();
             try {
               localStorage.setItem(TRAINING_INTAKE_KEY, JSON.stringify(buildUserIntake()));
+            } catch {}
+            try {
+              if (String(state.answers.user.workoutSource || '') !== 'own') {
+                localStorage.setItem('ode_training_autobuild_v1', '1');
+              }
             } catch {}
             if (action === 'client-build') {
               try {

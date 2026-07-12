@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trainer Websites — RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-12-websites-1">
+  <style>
+    body.owner-websites-page {
+      overflow: auto !important;
+    }
+
+    .owner-websites-wrap {
+      max-width: 1200px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .owner-websites-head h1 { margin: 0; }
+
+    .owner-websites-muted {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .owner-websites-card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .owner-websites-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .owner-website-card {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .owner-website-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .owner-website-ava {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff;
+      font-weight: 900;
+      font-size: 14px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .owner-website-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+    .owner-website-name {
+      font-weight: 800;
+      font-size: 15px;
+      color: #0f2435;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .owner-website-meta {
+      display: grid;
+      gap: 3px;
+      font-size: 12.5px;
+      color: #4a5560;
+      min-width: 0;
+    }
+    .owner-website-meta span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .owner-website-meta b { color: #0f2435; font-weight: 700; }
+
+    .owner-website-foot {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      padding-top: 10px;
+    }
+
+    .owner-website-open {
+      min-height: 38px;
+      padding: 0.55rem 1.3rem;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff;
+      font-weight: 900;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .owner-website-open:hover { filter: brightness(1.12); }
+
+    .owner-websites-status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body class="owner-websites-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a><a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="owner-websites-wrap">
+    <header class="owner-websites-head">
+      <h1>Trainer Websites</h1>
+      <div class="owner-websites-muted">Every trainer landing page on the platform. Owner access only.</div>
+    </header>
+
+    <section class="owner-websites-card">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <input id="owner-websites-search" class="auth-input" placeholder="Search username, phone, first or last name" style="max-width:380px;">
+        <div class="owner-websites-muted" id="owner-websites-count"></div>
+      </div>
+      <div class="owner-websites-status" id="owner-websites-status">Loading trainer websites…</div>
+      <div class="owner-websites-grid" id="owner-websites-grid"></div>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script>
+    (function () {
+      'use strict';
+      var grid = document.getElementById('owner-websites-grid');
+      var statusEl = document.getElementById('owner-websites-status');
+      var countEl = document.getElementById('owner-websites-count');
+      var searchEl = document.getElementById('owner-websites-search');
+      var searchTimer = 0;
+      var reqSeq = 0;
+
+      function esc(v) {
+        return String(v == null ? '' : v)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function initialsOf(name) {
+        var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return '?';
+        return ((parts[0][0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] || '' : '')).toUpperCase();
+      }
+      function fmtDate(v) {
+        if (!v) return '';
+        try { return new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return ''; }
+      }
+
+      function renderCards(sites) {
+        if (!sites.length) {
+          grid.innerHTML = '';
+          statusEl.textContent = 'No trainer websites match that search.';
+          countEl.textContent = '';
+          return;
+        }
+        statusEl.textContent = '';
+        countEl.textContent = sites.length + ' website' + (sites.length === 1 ? '' : 's');
+        grid.innerHTML = sites.map(function (s) {
+          var ava = s.photo
+            ? '<span class="owner-website-ava"><img src="' + esc(s.photo) + '" alt=""></span>'
+            : '<span class="owner-website-ava">' + esc(initialsOf(s.fullName || s.displayName || s.username)) + '</span>';
+          return '<article class="owner-website-card">' +
+            '<div class="owner-website-top">' + ava +
+            '  <div style="min-width:0;">' +
+            '    <div class="owner-website-name">' + esc(s.fullName || s.displayName || s.username || 'Trainer') + '</div>' +
+            '    <div class="owner-websites-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@' + esc(s.username || '—') + '</div>' +
+            '  </div>' +
+            '</div>' +
+            '<div class="owner-website-meta">' +
+            (s.phone ? '<span><b>Phone:</b> ' + esc(s.phone) + '</span>' : '') +
+            (s.email ? '<span><b>Email:</b> ' + esc(s.email) + '</span>' : '') +
+            '<span><b>Site:</b> ' + esc(s.publicPath || ('/coach/' + s.siteSlug)) + '</span>' +
+            '<span><b>Pages:</b> ' + Number(s.pageCount || 0) + ' (' + Number(s.publishedCount || 0) + ' live)' +
+            (s.updatedAt ? ' · updated ' + esc(fmtDate(s.updatedAt)) : '') + '</span>' +
+            '</div>' +
+            '<div class="owner-website-foot">' +
+            '  <span class="owner-websites-muted">' + (Number(s.publishedCount || 0) > 0 ? 'Published' : 'Draft only') + '</span>' +
+            '  <a class="owner-website-open" href="' + esc(s.publicPath || '#') + '" target="_blank" rel="noopener">Open</a>' +
+            '</div>' +
+            '</article>';
+        }).join('');
+      }
+
+      async function load(q) {
+        var seq = ++reqSeq;
+        statusEl.textContent = 'Loading trainer websites…';
+        try {
+          var resp = await fetch('/api/auth/owner/trainer-websites' + (q ? '?q=' + encodeURIComponent(q) : ''), { credentials: 'include' });
+          if (seq !== reqSeq) return;
+          if (resp.status === 401 || resp.status === 403) {
+            grid.innerHTML = '';
+            countEl.textContent = '';
+            statusEl.textContent = 'Owner access only — this list is not available on your account.';
+            return;
+          }
+          var json = await resp.json();
+          if (seq !== reqSeq) return;
+          if (!json || json.ok !== true) {
+            statusEl.textContent = 'Could not load trainer websites. Try again in a moment.';
+            return;
+          }
+          renderCards(Array.isArray(json.sites) ? json.sites : []);
+        } catch (e) {
+          if (seq !== reqSeq) return;
+          statusEl.textContent = 'Could not load trainer websites. Try again in a moment.';
+        }
+      }
+
+      searchEl.addEventListener('input', function () {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(function () { load(searchEl.value.trim()); }, 280);
+      });
+
+      load('');
+    })();
+  </script>
+</body>
+</html>

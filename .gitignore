@@ -2,3 +2,6 @@ node_modules
 free-exercise-db/
 data/trainer-media/
 .env
+
+# GitHub 100MB limit: HQ kingdom master stays local (kingdom-crane.mp4 ships instead)
+videos/world/kingdom-crane-hq.mp4

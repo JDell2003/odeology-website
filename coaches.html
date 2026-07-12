@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coaches · RiseForIt</title>
-  <link rel="stylesheet" href="css/main.css?v=2026-06-13-mobile-control-panel-global-1">
+  <link rel="stylesheet" href="css/main.css?v=2026-07-10-usermenu-1">
   <script src="js/external-keydown-shield.js?v=2026-03-25-keydown-shield-1"></script>
   <style>
     body.coaches-page {
@@ -382,6 +382,21 @@
       font-size: 0.6rem;
       font-weight: 800;
       line-height: 1.22;
+      white-space: nowrap;
+    }
+    .coach-arena {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.24rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: linear-gradient(160deg, rgba(224, 179, 74, 0.18), rgba(185, 138, 43, 0.12));
+      border: 1px solid rgba(185, 138, 43, 0.45);
+      color: #7a5312;
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       white-space: nowrap;
     }
     .coach-tier {
@@ -1108,7 +1123,7 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-06-13-mobile-control-panel-global-1"></script>
-  <script src="js/coaches.js?v=2026-03-29-coaches-23"></script>
+  <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
+  <script src="js/coaches.js?v=2026-07-12-arena-level-1"></script>
 </body>
 </html>

@@ -1581,6 +1581,266 @@
     refreshRequests();
   }
 
+  /* ===== Hero identity + Health & Devices ===== */
+
+  function renderHeroIdentity(user) {
+    const metaEl = $('#account-hero-meta');
+    if (metaEl) {
+      const bits = [];
+      if (user.username) bits.push(`@${user.username}`);
+      if (user.email) bits.push(user.email);
+      if (user.phone) bits.push(user.phone);
+      metaEl.innerHTML = '';
+      bits.forEach((bit) => {
+        const span = document.createElement('span');
+        span.textContent = bit;
+        metaEl.appendChild(span);
+      });
+    }
+    const chipsEl = $('#account-hero-chips');
+    if (chipsEl) {
+      chipsEl.innerHTML = '';
+      const roles = [];
+      if (user.isOwner) roles.push('Owner');
+      if (user.isManager || user?.manager?.active) roles.push('Manager');
+      if (user.isTrainer || user?.trainer?.active) roles.push('Trainer');
+      if (user.isClient || user?.client?.active || !roles.length) roles.push('Member');
+      roles.forEach((role) => {
+        const chip = document.createElement('span');
+        chip.className = 'account-hero-chip';
+        chip.textContent = role;
+        chipsEl.appendChild(chip);
+      });
+    }
+  }
+
+  function formatSteps(value) {
+    if (!Number.isFinite(value)) return '—';
+    return value.toLocaleString('en-US');
+  }
+
+  function formatSleep(minutes) {
+    if (!Number.isFinite(minutes) || minutes <= 0) return '—';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hours}h ${String(mins).padStart(2, '0')}m`;
+  }
+
+  function timeAgoLabel(iso) {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(diff) || diff < 0) return '';
+    const minutes = Math.round(diff / 60000);
+    if (minutes < 2) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.round(hours / 24)}d ago`;
+  }
+
+  function renderStatBars(el, days, key, max) {
+    if (!el) return;
+    el.innerHTML = '';
+    const peak = Math.max(max, ...days.map((d) => Number(d[key]) || 0));
+    days.forEach((d) => {
+      const bar = document.createElement('span');
+      const value = Number(d[key]) || 0;
+      if (value > 0 && peak > 0) {
+        bar.style.height = `${Math.max(10, Math.round((value / peak) * 100))}%`;
+      } else {
+        bar.className = 'is-empty';
+        bar.style.height = '10%';
+      }
+      bar.title = `${d.day}: ${value || 'no data'}`;
+      el.appendChild(bar);
+    });
+  }
+
+  function renderHealthOverview(data) {
+    const days = Array.isArray(data?.days) ? data.days : [];
+    const today = days[days.length - 1] || {};
+    const yesterday = days[days.length - 2] || {};
+
+    const stepsEl = $('#health-steps-today');
+    if (stepsEl) stepsEl.textContent = formatSteps(Number(today.steps));
+
+    const activeEl = $('#health-active-today');
+    if (activeEl) {
+      activeEl.textContent = Number.isFinite(Number(today.activeMinutes)) && today.activeMinutes !== null
+        ? `${today.activeMinutes} min`
+        : '—';
+    }
+    const weekActive = days.reduce((sum, d) => sum + (Number(d.activeMinutes) || 0), 0);
+    const activeWeekEl = $('#health-active-week');
+    if (activeWeekEl) {
+      const weekMiles = (Number(data?.distanceWeekMeters) || 0) / 1609.344;
+      const parts = [`this week: ${weekActive ? `${weekActive} min` : '—'}`];
+      if (weekMiles >= 0.05) parts.push(`${weekMiles.toFixed(1)} mi`);
+      activeWeekEl.textContent = parts.join(' · ');
+    }
+
+    // Sleep "last night" lives on today's row (Fitbit) but fall back to yesterday.
+    const sleepMinutes = Number(today.sleepMinutes) || Number(yesterday.sleepMinutes) || NaN;
+    const sleepEl = $('#health-sleep-today');
+    if (sleepEl) sleepEl.textContent = formatSleep(sleepMinutes);
+
+    const stepDays = days.filter((d) => Number(d.steps) > 0);
+    const avg = stepDays.length
+      ? Math.round(stepDays.reduce((sum, d) => sum + Number(d.steps), 0) / stepDays.length)
+      : NaN;
+    const avgEl = $('#health-steps-avg');
+    if (avgEl) avgEl.textContent = formatSteps(avg);
+
+    renderStatBars($('#health-steps-bars'), days, 'steps', 8000);
+    renderStatBars($('#health-sleep-bars'), days, 'sleepMinutes', 480);
+
+    const providers = Array.isArray(data?.providers) ? data.providers : [];
+    const noteEl = $('#health-sync-note');
+    if (noteEl) {
+      const weekPoints = Number(data?.weekPoints) || 0;
+      const gymVisits = Number(data?.gymVisitsWeek) || 0;
+      if (weekPoints > 0 || gymVisits > 0) {
+        noteEl.textContent = `${weekPoints} consistency pts · ${gymVisits} gym visit${gymVisits === 1 ? '' : 's'} this week`;
+      } else {
+        const connected = providers.filter((p) => p.connected);
+        noteEl.textContent = connected.length
+          ? `synced from ${connected.map((p) => p.label).join(' + ')}`
+          : 'connect a device to auto-track';
+      }
+    }
+
+    providers.forEach((provider) => {
+      const row = document.querySelector(`.account-provider-row[data-provider="${provider.id}"]`);
+      if (!row) return;
+      const statusEl = row.querySelector('[data-provider-status]');
+      const btn = row.querySelector('[data-provider-action]');
+      row.classList.toggle('is-connected', provider.connected);
+      if (statusEl) {
+        statusEl.classList.remove('is-error');
+        if (provider.connected) {
+          const who = provider.externalName ? ` as ${provider.externalName}` : '';
+          const sync = provider.lastSyncAt ? ` · synced ${timeAgoLabel(provider.lastSyncAt)}` : '';
+          statusEl.textContent = `Connected${who}${sync}`;
+          if (provider.lastSyncError) {
+            statusEl.textContent = `Connected — last sync failed: ${provider.lastSyncError}`;
+            statusEl.classList.add('is-error');
+          }
+        } else if (!provider.configured) {
+          statusEl.textContent = provider.id === 'strava'
+            ? 'Runs, rides, and cardio sessions · setup pending (needs API keys)'
+            : 'Steps, active minutes, and sleep · setup pending (needs API keys)';
+        } else {
+          statusEl.textContent = provider.id === 'strava'
+            ? 'Runs, rides, and cardio sessions'
+            : 'Steps, active minutes, and sleep';
+        }
+      }
+      if (btn) {
+        btn.disabled = !provider.configured && !provider.connected;
+        btn.textContent = provider.connected ? 'Disconnect' : 'Connect';
+        btn.classList.toggle('is-connect', !provider.connected && provider.configured);
+        btn.classList.toggle('is-disconnect', provider.connected);
+        btn.onclick = async () => {
+          if (provider.connected) {
+            if (!window.confirm(`Disconnect ${provider.label}? Synced history stays; new data stops syncing.`)) return;
+            btn.disabled = true;
+            await api('/api/health/disconnect', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ provider: provider.id })
+            });
+            await loadHealthOverview();
+          } else {
+            window.location.href = `/api/health/connect/${provider.id}/start`;
+          }
+        };
+      }
+    });
+  }
+
+  function setHealthStatus(message, isError = false) {
+    const el = $('#health-status');
+    if (!el) return;
+    el.textContent = String(message || '');
+    el.classList.toggle('is-error', Boolean(isError));
+  }
+
+  async function loadHealthOverview() {
+    const resp = await api('/api/health/overview');
+    if (resp.ok && resp.json?.ok) {
+      renderHealthOverview(resp.json);
+    } else {
+      setHealthStatus('Could not load health data right now.', true);
+    }
+  }
+
+  function initHealthUi() {
+    // Toast for OAuth round-trips (?healthConnected= / ?healthError=).
+    try {
+      const params = new URL(window.location.href).searchParams;
+      const connected = params.get('healthConnected');
+      const errorCode = params.get('healthError');
+      if (connected) {
+        setHealthStatus(`${connected === 'fitbit' ? 'Fitbit' : 'Strava'} connected — syncing your data.`);
+      } else if (errorCode === 'not_configured') {
+        setHealthStatus('That integration is not switched on yet — API keys still need to be added.', true);
+      } else if (errorCode === 'denied') {
+        setHealthStatus('Connection cancelled.', true);
+      } else if (errorCode) {
+        setHealthStatus('Could not finish connecting. Try again.', true);
+      }
+      if (connected || errorCode) {
+        params.delete('healthConnected');
+        params.delete('healthError');
+        params.delete('provider');
+        const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
+        window.history.replaceState(null, '', next);
+      }
+    } catch { /* ignore */ }
+
+    const toggle = $('#health-manual-toggle');
+    const form = $('#health-manual-form');
+    const dayInput = $('#health-manual-day');
+    if (dayInput) {
+      const now = new Date();
+      dayInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      dayInput.max = dayInput.value;
+    }
+    toggle?.addEventListener('click', () => {
+      form?.classList.toggle('hidden');
+    });
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const saveBtn = $('#health-manual-save');
+      if (saveBtn) saveBtn.disabled = true;
+      setHealthStatus('');
+      const resp = await api('/api/health/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          day: dayInput?.value || '',
+          steps: $('#health-manual-steps')?.value ?? '',
+          activeMinutes: $('#health-manual-active')?.value ?? '',
+          sleepHours: $('#health-manual-sleep')?.value ?? ''
+        })
+      });
+      if (saveBtn) saveBtn.disabled = false;
+      if (resp.ok && resp.json?.ok) {
+        setHealthStatus('Saved. Nice work showing up today.');
+        form.classList.add('hidden');
+        ['#health-manual-steps', '#health-manual-active', '#health-manual-sleep'].forEach((sel) => {
+          const input = $(sel);
+          if (input) input.value = '';
+        });
+        await loadHealthOverview();
+      } else {
+        setHealthStatus(resp.json?.error || 'Could not save that entry.', true);
+      }
+    });
+
+    loadHealthOverview();
+  }
+
   async function init() {
     const statusEl = $('#account-status');
     const nameEl = $('#account-name');
@@ -1596,6 +1856,7 @@
     const user = me.json.user || {};
     const name = String(user.displayName || user.username || 'Account');
     if (nameEl) nameEl.textContent = name;
+    renderHeroIdentity(user);
 
     const [profileResp, friendsResp, warningsResp] = await Promise.all([
       api('/api/profile'),
@@ -1627,6 +1888,7 @@
     initRequestsUi();
     initPrUi();
     initSetupUi(profileResp);
+    initHealthUi();
 
     if (statusEl) statusEl.textContent = '';
   }

@@ -116,13 +116,10 @@ function eventTemplateSpec({
       return {
         key: 'password_reset_requested',
         subject: 'Reset your RiseForIt password',
-        preheader: 'Use the secure reset link to set a new password.',
+        preheader: `One-tap reset link — expires in ${Math.max(10, resetMins)} minutes.`,
         greeting: hey,
-        intro: `Use the button below to reset your password. This link expires in ${Math.max(10, resetMins)} minutes.`,
-        bullets: [
-          'If you did not request this, you can ignore this email',
-          'For security, the link can only be used one time'
-        ],
+        intro: `Tap the button to set a new password. The link works once and expires in ${Math.max(10, resetMins)} minutes. Didn't request this? Ignore this email — your account is safe.`,
+        bullets: [],
         ctaLabel: 'Reset Password',
         ctaUrl: resetUrl
       };
@@ -130,13 +127,10 @@ function eventTemplateSpec({
       return {
         key: 'password_reset_completed',
         subject: 'Your RiseForIt password was updated',
-        preheader: 'Your account password has been changed successfully.',
+        preheader: 'Your password just changed. Not you? Act now.',
         greeting: hey,
-        intro: 'Your password is now updated and your account is secure.',
-        bullets: [
-          'If this was not you, reset your password again immediately',
-          'Review your account details and active sessions'
-        ],
+        intro: 'Your password was just changed. If that was you, you\'re all set — nothing else to do. If it wasn\'t you, reset your password again right now from the sign-in page.',
+        bullets: [],
         ctaLabel: 'Open Account',
         ctaUrl: accountPage
       };
@@ -446,9 +440,46 @@ function eventTemplateSpec({
   }
 }
 
+/* Per-email art direction: badge glyph, accent color, and a category kicker.
+   No remote images — everything is inline-styled tables and text, so it
+   renders identically in Gmail, Outlook, and Apple Mail with nothing blocked. */
+const EVENT_STYLE = {
+  account_created: { badge: '🏆', accent: '#d18d2f', ctaText: '#131a26', kicker: 'Welcome to the climb' },
+  lead_nurture_enrolled: { badge: '📬', accent: '#d18d2f', ctaText: '#131a26', kicker: 'You are on the list' },
+  password_reset_requested: { badge: '🔐', accent: '#2563eb', ctaText: '#ffffff', kicker: 'Security' },
+  password_reset_completed: { badge: '✅', accent: '#2563eb', ctaText: '#ffffff', kicker: 'Security' },
+  friend_request_received: { badge: '🤝', accent: '#7c3aed', ctaText: '#ffffff', kicker: 'Community' },
+  friend_request_accepted: { badge: '🎉', accent: '#7c3aed', ctaText: '#ffffff', kicker: 'Community' },
+  message_received: { badge: '💬', accent: '#7c3aed', ctaText: '#ffffff', kicker: 'New message' },
+  owner_message_received: { badge: '💬', accent: '#7c3aed', ctaText: '#ffffff', kicker: 'From RiseForIt' },
+  owner_broadcast_received: { badge: '📣', accent: '#7c3aed', ctaText: '#ffffff', kicker: 'Announcement' },
+  workout_share_invite_received: { badge: '🏋️', accent: '#059669', ctaText: '#ffffff', kicker: 'Train together' },
+  workout_share_invite_accepted: { badge: '🎉', accent: '#059669', ctaText: '#ffffff', kicker: 'Train together' },
+  workout_share_invite_declined: { badge: '🏋️', accent: '#059669', ctaText: '#ffffff', kicker: 'Train together' },
+  shared_workout_removed: { badge: '🏋️', accent: '#059669', ctaText: '#ffffff', kicker: 'Shared workout' },
+  shared_workout_left: { badge: '🏋️', accent: '#059669', ctaText: '#ffffff', kicker: 'Shared workout' },
+  daily_checkin_saved: { badge: '✅', accent: '#059669', ctaText: '#ffffff', kicker: 'Daily check-in' },
+  weekly_weighin_logged: { badge: '⚖️', accent: '#059669', ctaText: '#ffffff', kicker: 'Weekly weigh-in' },
+  workout_logged: { badge: '💪', accent: '#059669', ctaText: '#ffffff', kicker: 'Workout logged' },
+  pain_report_submitted: { badge: '🩹', accent: '#dc2626', ctaText: '#ffffff', kicker: 'Recovery check' },
+  high_pain_report_submitted: { badge: '⚠️', accent: '#dc2626', ctaText: '#ffffff', kicker: 'Important' },
+  pain_followup_submitted: { badge: '🩹', accent: '#dc2626', ctaText: '#ffffff', kicker: 'Recovery check' },
+  compliance_warnings_updated: { badge: '📉', accent: '#dc2626', ctaText: '#ffffff', kicker: 'Accountability' },
+  grocery_forecast_updated: { badge: '🛒', accent: '#d97706', ctaText: '#131a26', kicker: 'Meals & groceries' },
+  lead_submitted: { badge: '⭐', accent: '#d18d2f', ctaText: '#131a26', kicker: 'New lead' },
+  support_request_received: { badge: '🛟', accent: '#0891b2', ctaText: '#ffffff', kicker: 'Support' },
+  generic_update: { badge: '🔔', accent: '#d18d2f', ctaText: '#131a26', kicker: 'Account update' }
+};
+
 function renderEmailHtml(spec) {
+  const style = EVENT_STYLE[spec.key] || EVENT_STYLE.generic_update;
+  const accent = style.accent;
   const bulletsHtml = (spec.bullets || [])
-    .map((line) => `<li style="margin:0 0 8px;">${escapeHtml(line)}</li>`)
+    .map((line) => `
+              <tr>
+                <td valign="top" style="width:24px;padding:0 10px 10px 0;font-size:14px;font-weight:700;color:${accent};">✓</td>
+                <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#3c4654;">${escapeHtml(line)}</td>
+              </tr>`)
     .join('');
   return `<!doctype html>
 <html>
@@ -457,24 +488,47 @@ function renderEmailHtml(spec) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(spec.subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f4f6;color:#1f2937;font-family:Arial,Helvetica,sans-serif;">
+<body style="margin:0;padding:0;background:#eef1f5;color:#1f2937;font-family:Arial,Helvetica,sans-serif;">
   <div style="display:none;opacity:0;max-height:0;overflow:hidden;">${escapeHtml(spec.preheader)}</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f6;padding:20px 12px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef1f5;padding:28px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #e3e7ee;border-radius:16px;overflow:hidden;">
           <tr>
-            <td style="background:#111827;color:#f9fafb;padding:18px 24px;font-size:18px;font-weight:700;letter-spacing:1px;">RiseForIt</td>
+            <td style="background:#101623;padding:18px 28px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="font-size:20px;font-weight:900;color:#f7fbff;letter-spacing:0.5px;">Rise<span style="color:#d18d2f;">For</span>It<span style="color:#d18d2f;">.</span></td>
+                  <td align="right" style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9aa7b8;">${escapeHtml(style.kicker)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr><td style="height:4px;background:${accent};font-size:0;line-height:0;">&nbsp;</td></tr>
+          <tr>
+            <td style="padding:32px 34px 28px;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="width:56px;height:56px;border-radius:28px;background:${accent}1f;border:2px solid ${accent};font-size:26px;line-height:56px;">${style.badge}</td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 10px;font-size:21px;font-weight:800;color:#101623;">${escapeHtml(spec.greeting)}</p>
+              <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#3c4654;">${escapeHtml(spec.intro)}</p>
+              ${(spec.bullets || []).length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 22px;">${bulletsHtml}</table>` : ''}
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 18px;">
+                <tr>
+                  <td style="border-radius:12px;background:${accent};">
+                    <a href="${escapeHtml(spec.ctaUrl)}" style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:800;color:${style.ctaText};text-decoration:none;border-radius:12px;">${escapeHtml(spec.ctaLabel)}</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:11.5px;line-height:1.6;color:#98a1ad;">Button not working? Paste this link into your browser:<br><a href="${escapeHtml(spec.ctaUrl)}" style="color:${accent};word-break:break-all;">${escapeHtml(spec.ctaUrl)}</a></p>
+            </td>
           </tr>
           <tr>
-            <td style="padding:24px;">
-              <p style="margin:0 0 14px;font-size:18px;font-weight:700;color:#111827;">${escapeHtml(spec.greeting)}</p>
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(spec.intro)}</p>
-              ${(spec.bullets || []).length ? `<ul style="margin:0 0 20px 18px;padding:0;font-size:14px;line-height:1.5;color:#374151;">${bulletsHtml}</ul>` : ''}
-              <p style="margin:0 0 20px;">
-                <a href="${escapeHtml(spec.ctaUrl)}" style="display:inline-block;background:#d18d2f;color:#111827;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;">${escapeHtml(spec.ctaLabel)}</a>
-              </p>
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because of activity on your RiseForIt account.</p>
+            <td style="background:#f7f9fc;border-top:1px solid #eceff4;padding:18px 28px;">
+              <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:#3c4654;">RiseForIt — every King was once a Peasant.</p>
+              <p style="margin:0;font-size:11px;line-height:1.6;color:#98a1ad;">You're receiving this because of activity on your RiseForIt account.</p>
             </td>
           </tr>
         </table>
@@ -523,6 +577,37 @@ function buildKlaviyoEmailTemplate({
   };
 }
 
+const EMAIL_EVENT_NAMES = [
+  'Account Created',
+  'Lead Nurture Channel Enrolled',
+  'Password Reset Requested',
+  'Password Reset Completed',
+  'Friend Request Received',
+  'Friend Request Accepted',
+  'Message Received',
+  'Owner Message Received',
+  'Owner Broadcast Received',
+  'Workout Share Invite Received',
+  'Workout Share Invite Accepted',
+  'Workout Share Invite Declined',
+  'Shared Workout Removed',
+  'Shared Workout Left',
+  'Daily Check-In Saved',
+  'Weekly Weigh-In Logged',
+  'Workout Logged',
+  'Pain Report Submitted',
+  'High Pain Report Submitted',
+  'Pain Follow-Up Submitted',
+  'Compliance Warnings Updated',
+  'Grocery Forecast Updated',
+  'Lead Submitted',
+  'Support Request Received'
+];
+
 module.exports = {
-  buildKlaviyoEmailTemplate
+  buildKlaviyoEmailTemplate,
+  eventTemplateSpec,
+  renderEmailHtml,
+  renderEmailText,
+  EMAIL_EVENT_NAMES
 };

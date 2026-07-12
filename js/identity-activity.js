@@ -116,14 +116,26 @@
         var circ = payload.circumferences || {};
         bucket.measurements = (Number(payload.weightLb) > 0 || Number(payload.bodyfatPct) > 0
             || Number(circ.waistIn) > 0 || Number(circ.chestIn) > 0 || Number(circ.hipsIn) > 0) ? 1 : 0;
-        // Cardio: no dedicated capture exists in the app yet, so this is
-        // forward-wired — the moment a check-in carries steps, distance, or
-        // cardio minutes (or a step-goal sync fires), the cardio axis grows.
+        // Cardio: the Dash "Any cardio today?" question carries
+        // cardioMinutes/steps; step-goal syncs land here too.
         var stepGoal = 8000;
-        bucket.cardioSessions = (Number(payload.cardioSessions) > 0
+        var didCardio = (Number(payload.cardioSessions) > 0
             || Number(payload.cardioMinutes) >= 15
             || Number(payload.distanceMiles) > 0
             || Number(payload.steps) >= stepGoal) ? 1 : 0;
+        // Never let an edited check-in erase a cardio session logged some
+        // other way (e.g. a synced walk) — only upgrade.
+        bucket.cardioSessions = Math.max(Number(bucket.cardioSessions) || 0, didCardio);
+        // Strength: the Dash "Did you train today?" question. Same rule —
+        // training.js logs real workout finishes, the dash can only add,
+        // never wipe one.
+        var trained = String(payload.trainedToday || '').toLowerCase();
+        if (trained === 'full' || trained === 'light') {
+            bucket.workouts = Math.max(Number(bucket.workouts) || 0, 1);
+            if (trained === 'full') {
+                bucket.strengthWorkouts = Math.max(Number(bucket.strengthWorkouts) || 0, 1);
+            }
+        }
         write(rebuild(store));
     });
 

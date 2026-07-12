@@ -165,6 +165,21 @@ body.control-open {
     padding-left: var(--control-width);
 }
 
+/* Signed-out visitors get no app chrome: the control panel (and its layout
+   shift) only exists for authenticated users. Specificity intentionally beats
+   the "re-enable panel" rules further down (body.has-control-panel #control-panel). */
+body.ode-signed-out .control-panel,
+body.ode-signed-out.has-control-panel #control-panel {
+    display: none !important;
+}
+
+body.ode-signed-out.control-open,
+body.ode-signed-out.control-collapsed,
+body.ode-signed-out.has-control-panel.control-open,
+body.ode-signed-out.has-control-panel.control-collapsed {
+    padding-left: 0 !important;
+}
+
 body.training-page {
     overflow: auto;
     height: auto;
@@ -5006,21 +5021,29 @@ a {
 }
 
 /* Preloader */
+/* Preloader: dark barbell-lift animation (plates load on, bar settles, then
+   the lift). Intentionally dark in both themes to match the entry aesthetic. */
 .preloader {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at 35% 30%, rgba(197, 141, 79, 0.2), transparent 45%), var(--bg);
+    background:
+        radial-gradient(circle at 50% 26%, rgba(59, 74, 102, 0.35), transparent 55%),
+        radial-gradient(circle at 50% 80%, rgba(217, 161, 92, 0.1), transparent 48%),
+        linear-gradient(180deg, #0b0f18 0%, #06080e 55%, #030509 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.6rem;
+    gap: 1.9rem;
     z-index: 1000;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
 }
 
 :root[data-theme="light"] .preloader {
-    background: radial-gradient(circle at 35% 30%, rgba(231, 163, 77, 0.2), transparent 45%), var(--bg);
+    background:
+        radial-gradient(circle at 50% 26%, rgba(59, 74, 102, 0.35), transparent 55%),
+        radial-gradient(circle at 50% 80%, rgba(217, 161, 92, 0.1), transparent 48%),
+        linear-gradient(180deg, #0b0f18 0%, #06080e 55%, #030509 100%);
 }
 
 .preloader.hidden {
@@ -5029,26 +5052,663 @@ a {
     pointer-events: none;
 }
 
+.preloader-lift {
+    position: relative;
+    width: min(560px, 92vw);
+    display: grid;
+    place-items: center;
+}
+
+.preloader-lift svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Whole barbell: settle dips while plates land, then the lift. The lift fills
+   forwards only so its delay does not cancel the settle animation. */
+.plsvg-bbroot {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation:
+        plBarSettle 1.75s ease both,
+        plLift 0.9s cubic-bezier(0.3, 1.45, 0.45, 1) 1.95s forwards;
+}
+
+/* Plates drop in symmetrically, heaviest first */
+.plsvg-drop {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plPlateDrop 0.5s cubic-bezier(0.25, 1.4, 0.5, 1) both;
+}
+
+.plsvg-d1 { animation-delay: 0.35s; }
+.plsvg-d2 { animation-delay: 0.74s; }
+.plsvg-d3 { animation-delay: 1.13s; }
+
+/* Bar whip: plates lag the bar for a beat during the lift */
+.plsvg-whip {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plWhip 0.9s cubic-bezier(0.34, 1.3, 0.5, 1) 1.98s both;
+}
+
+/* Metal glint sweeping across the loaded bar */
+.plsvg-glint {
+    transform: translateX(-160px) skewX(-18deg);
+    animation: plGlint 0.8s ease-in-out 1.58s forwards;
+}
+
+/* Chalk dust puff on the lift */
+.plsvg-dust circle {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plDust 0.8s ease-out 2.12s forwards;
+}
+
+.plsvg-floorshadow {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plShadow 0.9s ease 1.95s both;
+}
+
+@keyframes plPlateDrop {
+    0% { opacity: 0; transform: translateY(-66px) rotate(-3deg); }
+    62% { opacity: 1; transform: translateY(6px) rotate(0deg); }
+    82% { transform: translateY(-3px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes plBarSettle {
+    0%, 18% { transform: translateY(0); }
+    22% { transform: translateY(4px); }
+    30% { transform: translateY(0); }
+    43% { transform: translateY(4px); }
+    51% { transform: translateY(0); }
+    66% { transform: translateY(4px); }
+    74%, 100% { transform: translateY(0); }
+}
+
+@keyframes plLift {
+    0% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(217, 161, 92, 0)); }
+    28% { transform: translateY(11px); }
+    100% { transform: translateY(-40px); filter: drop-shadow(0 18px 30px rgba(217, 161, 92, 0.3)); }
+}
+
+@keyframes plWhip {
+    0% { transform: translateY(0); }
+    30% { transform: translateY(9px); }
+    64% { transform: translateY(-4px); }
+    100% { transform: translateY(0); }
+}
+
+@keyframes plGlint {
+    0% { transform: translateX(-160px) skewX(-18deg); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateX(760px) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes plDust {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.35); }
+    22% { opacity: 0.65; }
+    100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -24px)) scale(1.5); }
+}
+
+@keyframes plShadow {
+    0% { opacity: 0.85; transform: scaleX(1); }
+    28% { opacity: 1; transform: scaleX(1.07); }
+    100% { opacity: 0.2; transform: scaleX(0.55); }
+}
+
+/* Live plate-weight counter */
+.preloader-weight {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    margin-top: -1.1rem;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 800;
+    animation: plWordIn 0.6s ease 0.3s both;
+}
+
+.preloader-weight .pl-weight-num {
+    display: inline-block;
+    color: #fff;
+    font-size: 1.3rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.preloader-weight .pl-weight-num.bump {
+    animation: plBump 0.32s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.preloader-weight b {
+    color: #e5b070;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+}
+
+@keyframes plBump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.22); color: #e5b070; }
+    100% { transform: scale(1); }
+}
+
+/* ---- Shared bits for loader scenes ---- */
+@keyframes plStarPop {
+    0% { opacity: 0; transform: scale(0.2) rotate(-40deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* ---- Scene: kettlebell swings ---- */
+.kb-swing {
+    transform-origin: 280px 26px;
+    animation: kbSwing 2.55s cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+}
+
+@keyframes kbSwing {
+    0%, 6% { transform: rotate(0deg); }
+    20% { transform: rotate(-26deg); }
+    34% { transform: rotate(24deg); }
+    48% { transform: rotate(-42deg); }
+    62% { transform: rotate(40deg); }
+    78% { transform: rotate(-58deg); }
+    92%, 100% { transform: rotate(56deg); filter: drop-shadow(0 10px 18px rgba(217, 161, 92, 0.3)); }
+}
+
+.kb-shadow {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: kbShadow 2.55s cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+}
+
+@keyframes kbShadow {
+    0%, 6% { transform: none; }
+    20% { transform: translateX(-30px) scaleX(0.8); }
+    34% { transform: translateX(28px) scaleX(0.82); }
+    48% { transform: translateX(-44px) scaleX(0.7); }
+    62% { transform: translateX(42px) scaleX(0.72); }
+    78% { transform: translateX(-58px) scaleX(0.6); }
+    92%, 100% { transform: translateX(54px) scaleX(0.62); }
+}
+
+.kb-t1 { stroke-dasharray: 360; stroke-dashoffset: 360; animation: kbTrail 0.5s ease-out 2.05s forwards; }
+.kb-t2 { stroke-dasharray: 280; stroke-dashoffset: 280; animation: kbTrail 0.5s ease-out 2.2s forwards; }
+
+@keyframes kbTrail {
+    0% { opacity: 0; }
+    25% { opacity: 0.85; }
+    100% { stroke-dashoffset: 0; opacity: 0.3; }
+}
+
+/* ---- Scene: dumbbell curls ---- */
+.db-arm {
+    transform-origin: 355px 150px;
+    animation: dbCurl 2.75s ease-in-out both;
+}
+
+@keyframes dbCurl {
+    0%, 8% { transform: rotate(0deg); }
+    20% { transform: rotate(68deg); }
+    32% { transform: rotate(4deg); }
+    44% { transform: rotate(68deg); }
+    56% { transform: rotate(4deg); }
+    66% { transform: rotate(26deg); }
+    72% { transform: rotate(38deg); }
+    76% { transform: rotate(34deg); }
+    82% { transform: rotate(52deg); }
+    87% { transform: rotate(49deg); }
+    94%, 100% { transform: rotate(70deg); filter: drop-shadow(0 10px 18px rgba(217, 161, 92, 0.3)); }
+}
+
+.db-a1 { stroke-dasharray: 260; stroke-dashoffset: 260; animation: kbTrail 0.45s ease-out 2.4s forwards; }
+.db-a2 { stroke-dasharray: 220; stroke-dashoffset: 220; animation: kbTrail 0.45s ease-out 2.55s forwards; }
+
+/* ---- Scene: PR chart ---- */
+.ch-line {
+    stroke-dasharray: 620;
+    stroke-dashoffset: 620;
+    animation: chLine 1.9s cubic-bezier(0.4, 0, 0.4, 1) 0.3s forwards;
+}
+
+@keyframes chLine {
+    to { stroke-dashoffset: 0; }
+}
+
+.ch-dot {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: chDot 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) forwards;
+}
+
+.ch-k1 { animation-delay: 0.62s; }
+.ch-k2 { animation-delay: 0.85s; }
+.ch-k3 { animation-delay: 1.15s; }
+.ch-k4 { animation-delay: 1.4s; }
+.ch-k5 { animation-delay: 1.8s; }
+
+@keyframes chDot {
+    0% { opacity: 0; transform: scale(0.3); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.ch-star {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plStarPop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 2.15s forwards;
+}
+
+.ch-rays { animation: chRays 0.5s ease-out 2.4s forwards; }
+
+@keyframes chRays {
+    0% { opacity: 0; }
+    60% { opacity: 1; }
+    100% { opacity: 0.75; }
+}
+
+/* ---- Scene: rest timer ---- */
+.tm-arc { animation: tmArc 2.4s linear 0.2s forwards; }
+
+@keyframes tmArc {
+    to { stroke-dashoffset: 0; }
+}
+
+.tm-num { opacity: 0; }
+.tm-n3 { animation: tmNum 0.8s 0.2s both; }
+.tm-n2 { animation: tmNum 0.8s 1s both; }
+.tm-n1 { animation: tmNum 0.8s 1.8s both; }
+
+@keyframes tmNum {
+    0% { opacity: 0; }
+    12%, 82% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.tm-go {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tmGo 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) 2.6s forwards;
+}
+
+@keyframes tmGo {
+    0% { opacity: 0; transform: scale(0.4); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.tm-pulse {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tmPulse 0.8s ease-out 0.2s 3;
+}
+
+@keyframes tmPulse {
+    0% { opacity: 0.55; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.18); }
+}
+
+/* ---- Scene: protein shaker ---- */
+.bt-shake {
+    transform-origin: 280px 150px;
+    animation: btShake 2.3s ease-in-out both;
+}
+
+@keyframes btShake {
+    0%, 10% { transform: none; }
+    14% { transform: translateY(-7px) rotate(-9deg); }
+    18% { transform: translateY(5px) rotate(8deg); }
+    22% { transform: translateY(-6px) rotate(-8deg); }
+    26% { transform: translateY(5px) rotate(9deg); }
+    30% { transform: translateY(-7px) rotate(-9deg); }
+    34% { transform: translateY(4px) rotate(8deg); }
+    38% { transform: translateY(-6px) rotate(-9deg); }
+    42% { transform: translateY(5px) rotate(9deg); }
+    46% { transform: translateY(-7px) rotate(-8deg); }
+    50% { transform: translateY(4px) rotate(8deg); }
+    54% { transform: translateY(-6px) rotate(-9deg); }
+    58% { transform: translateY(5px) rotate(9deg); }
+    62% { transform: translateY(-7px) rotate(-8deg); }
+    66% { transform: translateY(4px) rotate(7deg); }
+    70% { transform: translateY(-5px) rotate(-6deg); }
+    74% { transform: translateY(3px) rotate(4deg); }
+    80% { transform: translateY(-2px) rotate(2deg); }
+    86%, 100% { transform: none; }
+}
+
+.bt-liquid { animation: btSlosh 0.4s linear 0.35s 5; }
+
+@keyframes btSlosh {
+    from { transform: translateX(0); }
+    to { transform: translateX(-60px); }
+}
+
+.bt-b1, .bt-b2, .bt-b3 { opacity: 0; }
+.bt-b1 { animation: btBub 1s ease-out 1.1s forwards; }
+.bt-b2 { animation: btBub 1s ease-out 1.35s forwards; }
+.bt-b3 { animation: btBub 1s ease-out 1.55s forwards; }
+
+@keyframes btBub {
+    0% { opacity: 0; transform: translateY(0); }
+    25% { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-55px); }
+}
+
+.bt-cap {
+    transform-box: fill-box;
+    transform-origin: left bottom;
+    animation: btCap 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) 2.35s both;
+}
+
+@keyframes btCap {
+    0% { transform: none; }
+    45% { transform: rotate(-16deg) translateY(-5px); }
+    100% { transform: rotate(-6deg); }
+}
+
+.bt-spark {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plStarPop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 2.5s forwards;
+}
+
+/* ---- Scene: treadmill ---- */
+.td-belt { animation: tdBelt 2.7s cubic-bezier(0.55, 0, 0.85, 0.35) both; }
+
+@keyframes tdBelt {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -860; }
+}
+
+.td-s { opacity: 0; }
+.td-s1 { animation: tmNum 1s 0.25s both; }
+.td-s2 { animation: tmNum 0.95s 1.25s both; }
+.td-s3 { animation: tdS3 1s 2.2s both; }
+
+@keyframes tdS3 {
+    0% { opacity: 0; }
+    15%, 100% { opacity: 1; }
+}
+
+.td-deck {
+    transform-origin: 430px 190px;
+    animation: tdIncline 0.5s ease 2.05s both;
+}
+
+@keyframes tdIncline {
+    to { transform: rotate(-6deg); }
+}
+
+.td-wind { animation: tdWind 1s ease-out 1.9s both; }
+
+@keyframes tdWind {
+    0% { opacity: 0; transform: translateX(30px); }
+    30% { opacity: 0.7; }
+    100% { opacity: 0; transform: translateX(-45px); }
+}
+
+/* ---- Scene: plate stack ---- */
+.ps-p {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: psDrop 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+}
+
+.ps-p1 { animation-delay: 0.3s; }
+.ps-p2 { animation-delay: 0.65s; }
+.ps-p3 { animation-delay: 1s; }
+.ps-p4 { animation-delay: 1.35s; }
+.ps-p5 { animation-delay: 1.7s; }
+
+@keyframes psDrop {
+    0% { opacity: 0; transform: translateY(-140px); }
+    55% { opacity: 1; transform: translateY(0) scaleY(1); }
+    68% { transform: scaleY(0.82); }
+    84% { transform: scaleY(1.07); }
+    100% { opacity: 1; transform: none; }
+}
+
+.ps-stack {
+    transform-origin: 280px 212px;
+    animation: psWobble 0.9s ease 2.15s both;
+}
+
+@keyframes psWobble {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(1.6deg); }
+    55% { transform: rotate(-1.2deg); }
+    80% { transform: rotate(0.5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* ---- Scene: streak calendar ---- */
+.cal-check {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: calPop 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+.cal-c0 { animation-delay: 0.45s; }
+.cal-c1 { animation-delay: 0.75s; }
+.cal-c2 { animation-delay: 1.05s; }
+.cal-c3 { animation-delay: 1.35s; }
+.cal-c5 { animation-delay: 1.95s; }
+.cal-c6 { animation-delay: 2.2s; }
+
+@keyframes calPop {
+    0% { opacity: 0; transform: scale(1.9) rotate(-12deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.cal-moon {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: calMoon 0.4s ease 1.65s both;
+}
+
+@keyframes calMoon {
+    0% { opacity: 0; transform: translateY(-8px); }
+    100% { opacity: 0.9; transform: translateY(0); }
+}
+
+.cal-flame {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation:
+        calFlameIn 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) 2.35s both,
+        calFlick 0.3s ease-in-out 2.8s 2 alternate;
+}
+
+@keyframes calFlameIn {
+    0% { opacity: 0; transform: scale(0.3); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes calFlick {
+    to { transform: scale(1.07) rotate(2deg); }
+}
+
+/* ---- Scene: donut vs dumbbell balance ---- */
+.bl-beam {
+    transform-origin: 280px 116px;
+    animation: blBeam 2.5s ease-in-out both;
+}
+
+@keyframes blBeam {
+    0%, 14% { transform: rotate(0deg); }
+    28% { transform: rotate(9deg); }
+    40% { transform: rotate(6deg); }
+    52% { transform: rotate(9deg); }
+    66% { transform: rotate(-13deg); }
+    76% { transform: rotate(-9deg); }
+    86% { transform: rotate(-12deg); }
+    100% { transform: rotate(-11deg); }
+}
+
+.bl-pan { animation: blPan 2.5s ease-in-out both; }
+.bl-pan-l { transform-origin: 165px 118px; }
+.bl-pan-r { transform-origin: 395px 118px; }
+
+@keyframes blPan {
+    0%, 14% { transform: rotate(0deg); }
+    28% { transform: rotate(-9deg); }
+    40% { transform: rotate(-6deg); }
+    52% { transform: rotate(-9deg); }
+    66% { transform: rotate(13deg); }
+    76% { transform: rotate(9deg); }
+    86% { transform: rotate(12deg); }
+    100% { transform: rotate(11deg); }
+}
+
+.bl-donut {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: blDonut 0.8s ease-in 1.75s forwards;
+}
+
+@keyframes blDonut {
+    0% { transform: none; opacity: 1; }
+    100% { transform: translate(-60px, -110px) rotate(-80deg); opacity: 0; }
+}
+
+/* ---- Scene: 5AM alarm ---- */
+.al-min {
+    transform-origin: 280px 132px;
+    animation: alTick 0.3s ease 0.85s both;
+}
+
+@keyframes alTick {
+    from { transform: rotate(-6deg); }
+    to { transform: rotate(0deg); }
+}
+
+.al-clock {
+    animation:
+        alShake 1.15s linear 1.05s both,
+        alHop 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 2.3s forwards;
+}
+
+@keyframes alShake {
+    0%, 100% { transform: none; }
+    8% { transform: translate(-3px, -1px) rotate(-2.5deg); }
+    16% { transform: translate(3px, 1px) rotate(2.5deg); }
+    24% { transform: translate(-3px, 1px) rotate(-2deg); }
+    32% { transform: translate(3px, -1px) rotate(2.5deg); }
+    40% { transform: translate(-3px, -1px) rotate(-2.5deg); }
+    48% { transform: translate(3px, 1px) rotate(2deg); }
+    56% { transform: translate(-3px, 1px) rotate(-2.5deg); }
+    64% { transform: translate(3px, -1px) rotate(2.5deg); }
+    72% { transform: translate(-2px, 1px) rotate(-1.5deg); }
+    80% { transform: translate(2px, -1px) rotate(1.5deg); }
+    90% { transform: translate(-1px, 0) rotate(-0.5deg); }
+}
+
+@keyframes alHop {
+    0% { transform: none; }
+    40% { transform: translateY(-16px); }
+    70% { transform: translateY(2px); }
+    100% { transform: translateY(0); filter: drop-shadow(0 12px 20px rgba(217, 161, 92, 0.25)); }
+}
+
+.al-rings { animation: alRing 1.25s ease-out 1.05s both; }
+
+@keyframes alRing {
+    0% { opacity: 0; }
+    15% { opacity: 0.9; }
+    45% { opacity: 0.15; }
+    60% { opacity: 0.9; }
+    90%, 100% { opacity: 0; }
+}
+
+/* ---- Scene: PR bell ---- */
+.pb-bell {
+    transform-origin: 280px 78px;
+    animation: pbSwing 2.6s ease-in-out both;
+}
+
+@keyframes pbSwing {
+    0%, 16% { transform: rotate(0deg); }
+    26% { transform: rotate(-14deg); }
+    36% { transform: rotate(12deg); }
+    46% { transform: rotate(-15deg); }
+    56% { transform: rotate(13deg); }
+    66% { transform: rotate(-10deg); }
+    76% { transform: rotate(7deg); }
+    86% { transform: rotate(-3deg); }
+    100% { transform: rotate(0deg); filter: drop-shadow(0 10px 20px rgba(217, 161, 92, 0.35)); }
+}
+
+.pb-clapper {
+    transform-origin: 280px 130px;
+    animation: pbClap 2.6s ease-in-out both;
+}
+
+@keyframes pbClap {
+    0%, 14% { transform: rotate(0deg); }
+    24% { transform: rotate(18deg); }
+    34% { transform: rotate(-16deg); }
+    44% { transform: rotate(19deg); }
+    54% { transform: rotate(-17deg); }
+    64% { transform: rotate(13deg); }
+    74% { transform: rotate(-9deg); }
+    86% { transform: rotate(4deg); }
+    100% { transform: rotate(0deg); }
+}
+
+.pb-rings { animation: alRing 1.6s ease-out 0.75s both; }
+
+.pb-spark {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plStarPop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 2.3s forwards;
+}
+
 .preloader-word {
     font-family: var(--font-display);
-    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-size: clamp(2rem, 4.4vw, 3rem);
     font-weight: 700;
-    color: var(--ink);
-    position: absolute;
-    top: 50%;
-    left: 50%;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    transform: translate(-50%, -50%) scale(0.9);
-    animation: popIn 1s ease forwards;
-    transition: transform 1.2s ease, filter 1.2s ease, top 1.2s ease, left 1.2s ease;
+    animation: plWordIn 0.7s ease 0.15s both;
+}
+
+.preloader-word .brand-char {
+    background: linear-gradient(180deg, #ffffff 0%, #e8edf4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.preloader-word .brand-char:nth-child(5),
+.preloader-word .brand-char:nth-child(6),
+.preloader-word .brand-char:nth-child(7) {
+    background: linear-gradient(180deg, #d9a15c 0%, #b9782d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 
 .preloader-word .brand-dot {
     transform: translateY(2px);
 }
 
+@keyframes plWordIn {
+    0% { opacity: 0; transform: translateY(14px) scale(0.94); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* popIn kept for any legacy callers */
 @keyframes popIn {
     0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7) rotate(-6deg); filter: blur(4px); }
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(4deg); filter: blur(0); }
@@ -5056,41 +5716,40 @@ a {
 }
 
 .preloader-bar {
-    position: absolute;
-    top: calc(50% + 70px);
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(320px, 70vw);
-    height: 10px;
+    width: min(280px, 62vw);
+    height: 5px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.09);
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-:root[data-theme="light"] .preloader-bar {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.06);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: opacity 0.5s ease;
 }
 
 .preloader-bar .fill {
     height: 100%;
     width: 0;
-    background: linear-gradient(120deg, var(--accent), var(--accent-strong));
-    animation: loadFill 2.4s ease forwards;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #d9a15c, #e5b070);
+    box-shadow: 0 0 12px rgba(217, 161, 92, 0.5);
+    animation: loadFill 2.3s cubic-bezier(0.2, 0.65, 0.3, 1) forwards;
 }
 
 .preloader-bar.fade {
     opacity: 0;
-    transform: translate(-50%, -50%) scaleX(0.9);
 }
 
 @keyframes loadFill {
     0% { width: 0; }
     100% { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preloader-lift *,
+    .preloader-weight,
+    .preloader-word {
+        animation-duration: 0.01s !important;
+        animation-delay: 0s !important;
+    }
 }
 
 
@@ -11401,6 +12060,15 @@ body.friends-page main.friends-main {
         display: none !important;
     }
 
+    /* Signed-out visitors get no bottom dock; it only serves logged-in navigation. */
+    body.ode-signed-out .control-mobile-fab-dock {
+        display: none !important;
+    }
+
+    body.ode-signed-out.has-control-panel {
+        padding-bottom: 0;
+    }
+
     .control-mobile-fab-dock.nav-only {
         gap: 0;
         padding-top: 0;
@@ -11446,13 +12114,13 @@ body.friends-page main.friends-main {
 
     .control-mobile-fab-nav {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         align-items: stretch;
         min-height: 42px;
-        gap: 0.35rem;
+        gap: 0.3rem;
         width: 100%;
         margin: 0 auto;
-        padding: 0.28rem 12px 0.2rem;
+        padding: 0.28rem 10px 0.2rem;
         border-radius: 0;
         border: 0;
         background: transparent;
