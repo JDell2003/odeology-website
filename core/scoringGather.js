@@ -16,6 +16,25 @@ function scoringV2Enabled() {
   return String(process.env.SCORING_ENGINE_V2 || '').trim().toLowerCase() === 'true';
 }
 
+// Task 11 — Railway parity: log (never throw) any scoring-relevant env var that
+// is missing or notable, so the owner can spot config drift in the Railway
+// deploy logs. All values are read from process.env (never hardcoded).
+function logScoringEnvStatus(log = console) {
+  const flagOn = scoringV2Enabled();
+  log.log(`[scoring] SCORING_ENGINE_V2 = ${flagOn ? 'ON' : 'off (default)'}`);
+  if (!process.env.DEFAULT_TZ) {
+    log.log('[scoring] DEFAULT_TZ not set - health day-boundary falls back to America/New_York. Set DEFAULT_TZ on Railway to control it.');
+  }
+  const fitbitScopes = String(process.env.FITBIT_SCOPES || '');
+  if (process.env.FITBIT_CLIENT_ID && !/(^|\s)heart(\s|$)/.test(fitbitScopes) && fitbitScopes) {
+    log.log("[scoring] FITBIT_SCOPES is set but has no 'heart' scope - VO2max/resting-HR cardio inputs will be unavailable until 'heart' is added (and the Fitbit app registration requests it).");
+  }
+  if (flagOn && !process.env.PUBLIC_BASE_URL) {
+    log.log('[scoring] SCORING_ENGINE_V2 is ON but PUBLIC_BASE_URL is not set - OAuth callbacks use the request host. Set the Railway public domain for stable Strava/Fitbit redirects.');
+  }
+  // Never throws: config problems must not crash boot.
+}
+
 let schemaEnsured = false;
 let schemaEnsurePromise = null;
 
@@ -654,5 +673,5 @@ module.exports = {
   scoringV2Enabled, ensureScoringSchema, gatherUserScoringInputs, mapMainLift,
   computeAndPersistUserScore, listActiveScoringUserIds, runScoringRecomputePass,
   enqueueUserRecompute, NIGHTLY_ADVISORY_LOCK_KEY,
-  scoringWriteAllowed, recordScoringFlag
+  scoringWriteAllowed, recordScoringFlag, logScoringEnvStatus
 };

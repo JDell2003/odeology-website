@@ -384,3 +384,56 @@ identical output). This green run also resolves the "pending" test notes recorde
 Tasks 1-8 while the sandbox was unavailable.
 
 **Acceptance criteria**: all tests pass ✓; determinism preserved ✓.
+
+---
+
+## Task 11 — Railway deployment + environment parity (`chore(scoring): railway env`)
+
+**What changed**
+
+- `core/scoringGather.js` — `logScoringEnvStatus()` logs (never throws) any missing
+  scoring-relevant env var (SCORING_ENGINE_V2 state, DEFAULT_TZ, FITBIT_SCOPES `heart`,
+  PUBLIC_BASE_URL when the flag is on). Everything is read from `process.env`.
+- `server.js` — calls `logScoringEnvStatus()` at boot and the schema-ensure log line
+  now tells the owner to verify the CREATE/ALTER ran against prod Neon in the Railway
+  deploy logs. The nightly recompute's `pg_try_advisory_lock` guard (Task 4) is what
+  keeps multiple Railway replicas from double-running; the lock releases in `finally`.
+- `.env.example` — documented the scoring vars (SCORING_ENGINE_V2, DEFAULT_TZ, Strava/
+  Fitbit creds, `FITBIT_SCOPES` with heart, PUBLIC_BASE_URL, HEALTH_OAUTH_SECRET).
+- `DEPLOYMENT.md` — **new**: env-var parity table (local vs Railway, where each is set),
+  schema-on-deploy verification, advisory-lock single-runner note, and the two
+  owner-action items (Fitbit `heart` scope in the Fitbit dashboard; Strava + Fitbit
+  Railway callback URLs), plus the go-live checklist.
+
+**Deviations (live code wins)**
+
+- The doc's table used `OAUTH_REDIRECT_BASE`; the live callback base is
+  `PUBLIC_BASE_URL` (`baseUrlFromRequest` in `core/healthRoutes.js`). DEPLOYMENT.md and
+  `.env.example` use the real name.
+
+**Acceptance criteria**
+
+- Boots with all vars present; missing ones are logged, not thrown: `logScoringEnvStatus`.
+- Deploy logs show schema applied to prod Neon: boot log line calls it out (owner
+  verifies in the live Railway logs — see OWNER ACTIONS).
+- OAuth still works in prod: unchanged flow; callback base from `PUBLIC_BASE_URL`.
+- Nightly job single-runs under the advisory lock: Task 4 guard, documented.
+- `DEPLOYMENT.md` written; flag stays `false` until the owner flips it.
+
+---
+
+## OWNER ACTIONS (before going live)
+
+1. **Fitbit `heart` scope** — add `heart` to the Fitbit developer app registration
+   (Fitbit dashboard) so the VO2max / resting-HR pull doesn't 403 in prod.
+2. **OAuth callback URLs** — add the Railway production callback URLs to BOTH the
+   Strava and Fitbit OAuth apps:
+   `https://<railway-domain>/api/health/connect/strava/callback` and
+   `.../fitbit/callback`.
+3. **Railway env vars** — set `SCORING_ENGINE_V2=false` (for now), `DEFAULT_TZ`,
+   `FITBIT_SCOPES=activity sleep profile heart`, and confirm `DATABASE_URL`,
+   `PUBLIC_BASE_URL`, Strava/Fitbit creds are set (see DEPLOYMENT.md §A).
+4. **Verify the migrations** applied against prod Neon in the Railway deploy logs.
+5. **Flip `SCORING_ENGINE_V2=true`** on Railway once the above check out.
+6. (Optional) Remove the untracked scratch `run-scoring-tests.bat` if it wasn't
+   already cleaned up.

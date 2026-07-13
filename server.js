@@ -2467,11 +2467,13 @@ server.listen(listenPort, listenHost, () => {
             console.log('[scoring] Database not configured - skipping schema ensure at boot');
             return;
         }
+        // Task 11 — Railway parity: surface scoring env config in the deploy logs.
+        scoringGather.logScoringEnvStatus(console);
         try {
             await trainingRoutes.ensureSchema();
             await healthRoutes.ensureSchema();
             await scoringGather.ensureScoringSchema();
-            console.log('[scoring] v2 schema ensured (training + health + scoring tables)');
+            console.log('[scoring] v2 schema ensured (training + health + scoring tables) - verify these CREATE/ALTER statements applied against prod Neon in the Railway deploy logs');
         } catch (err) {
             console.error('[scoring] Schema ensure at boot failed (routes will retry lazily):', err?.message || err);
         }
