@@ -9,6 +9,7 @@
 
     const SECTIONS = [
         { id: 'profile', label: 'My Profile' },
+        { id: 'history', label: 'History' },
         { id: 'activity', label: 'Activity' },
         { id: 'nutrition', label: 'Nutrition' },
         { id: 'mind', label: 'Emotions & Behavior' },
@@ -104,6 +105,30 @@
             'Work pressure', 'Busy family life', 'Divorce or breakup', 'Slower metabolism due to aging', 'Financial challenges', 'An injury or illness', 'Other stressful events', 'None of the above'
         ] },
         { id: 'promise1', type: 'info', kicker: 'RiseForIt', title: "We know how to make that happen!", body: "RiseForIt doesn't believe in one-size-fits-all solutions.\nWe'll create a personalized plan to help you reach your goal at your own pace — and enjoy it.", art: 'check' },
+
+        /* HISTORY: where you're starting from. Everyone begins a Peasant — these
+           six answers set HOW STRONG a peasant (the seed of each spider axis).
+           Option strings are matched verbatim by js/identity-engine.js
+           (HISTORY_READINESS) — keep them in sync. */
+        { id: 'historyIntro', type: 'info', kicker: 'Your history', title: 'Where are you starting from?', body: "Six quick reads on your current level. Everyone starts as a Peasant — your honest answers set how strong a Peasant, and shape your very first spider graph.", art: 'chapters' },
+        { id: 'histStrength', section: 'history', type: 'choice', title: 'How strong are you right now?', options: [
+            "I'm just getting started", 'I can handle the basics', "I'm pretty strong", "I'm advanced / very strong"
+        ] },
+        { id: 'histCardio', section: 'history', type: 'choice', title: "How's your cardio and endurance?", options: [
+            'I get winded fast', 'I can do light cardio', "I'm fairly conditioned", 'I have great endurance'
+        ] },
+        { id: 'histConsistency', section: 'history', type: 'choice', title: 'How consistent have you been lately?', options: [
+            'I keep falling off', 'On and off', 'Mostly consistent', 'Locked in every week'
+        ] },
+        { id: 'histNutrition', section: 'history', type: 'choice', title: 'How dialed-in is your nutrition?', options: [
+            'I eat whatever', 'I try but slip', 'Mostly clean', 'Very dialed in'
+        ] },
+        { id: 'histSleep', section: 'history', type: 'choice', title: "How's your sleep and recovery?", options: [
+            'Poor and restless', 'Hit or miss', 'Usually solid', 'Great — I wake up refreshed'
+        ] },
+        { id: 'histProgress', section: 'history', type: 'choice', title: 'How much progress have you made so far?', options: [
+            'Starting from scratch', 'A little progress', 'Solid progress', "I'm already in great shape"
+        ] },
 
         { id: 'alsoAchieve', section: 'activity', type: 'multi', title: 'What else do you hope to achieve with this plan?', options: [
             'Build muscle strength', 'Add muscle definition', 'Improve posture', 'Develop flexibility', 'Improve overall fitness', 'None of the above'
@@ -942,6 +967,36 @@
                 }));
             } catch {}
             sendOnboardingInsights();
+            sendScoringProfile();
+        }
+
+        let scoringProfileSent = false;
+        function sendScoringProfile() {
+            // The "Make your scores fair" data (sex + age) is asked right here
+            // in onboarding, so save it now and suppress the post-onboarding
+            // popup that used to interrupt the intro cutscene.
+            if (scoringProfileSent) return;
+            scoringProfileSent = true;
+            try {
+                const sex = answers.gender === 'Female' ? 'female'
+                    : answers.gender === 'Male' ? 'male' : null;
+                const age = Number(answers.ageYears);
+                let dob = null;
+                if (Number.isFinite(age) && age >= 13 && age <= 120) {
+                    dob = `${new Date().getFullYear() - age}-01-01`;
+                }
+                if (!sex && !dob) return;
+                // Kill the modal locally too, so it can't flash before the POST lands.
+                try { localStorage.setItem('ode_scoring_profile_prompt_v1', 'done'); } catch {}
+                let tz = null;
+                try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch {}
+                fetch('/api/training/scoring-profile', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sex, dob, timezone: tz })
+                }).catch(() => {});
+            } catch {}
         }
 
         let insightsSent = false;

@@ -113,6 +113,30 @@
     // 'breath' and 'discomfort' are problems: more of them = LOWER readiness.
     var INVERSE_KEYS = { breath: true, discomfort: true, badHabits: true };
 
+    /* ---- direct "history" seed (js/client-quiz.js `history` section) -----
+       Six questions, one per axis, where the user states their current level
+       outright. When answered, these OWN the seed for that axis — they beat
+       the keyword-inferred readiness because the user told us plainly. Option
+       strings MUST match client-quiz.js verbatim. */
+    var HISTORY_KEY = {
+        strength: 'histStrength', cardio: 'histCardio', consistency: 'histConsistency',
+        nutrition: 'histNutrition', recovery: 'histSleep', progress: 'histProgress'
+    };
+    var HISTORY_READINESS = {
+        "I'm just getting started": 0.08, 'I can handle the basics': 0.35, "I'm pretty strong": 0.62, "I'm advanced / very strong": 0.9,
+        'I get winded fast': 0.08, 'I can do light cardio': 0.35, "I'm fairly conditioned": 0.62, 'I have great endurance': 0.9,
+        'I keep falling off': 0.08, 'On and off': 0.35, 'Mostly consistent': 0.62, 'Locked in every week': 0.9,
+        'I eat whatever': 0.08, 'I try but slip': 0.35, 'Mostly clean': 0.62, 'Very dialed in': 0.9,
+        'Poor and restless': 0.08, 'Hit or miss': 0.35, 'Usually solid': 0.62, 'Great — I wake up refreshed': 0.9,
+        'Starting from scratch': 0.08, 'A little progress': 0.35, 'Solid progress': 0.62, "I'm already in great shape": 0.9
+    };
+    var historyReadiness = function (answers, axis) {
+        var k = HISTORY_KEY[axis];
+        if (!k || !answers || !(k in answers)) return null;
+        var v = answers[k];
+        return (v in HISTORY_READINESS) ? HISTORY_READINESS[v] : null;
+    };
+
     var axisReadiness = function (answers, axis) {
         var keys = AXIS_INPUTS[axis] || [];
         var sum = 0, n = 0;
@@ -134,9 +158,15 @@
         var readinessSum = 0;
         for (var i = 0; i < AXES.length; i++) {
             var axis = AXES[i];
-            var r = axisReadiness(answers, axis);
+            // A direct history answer owns the seed; otherwise infer from the
+            // broader quiz answers by keyword.
+            var hist = historyReadiness(answers, axis);
+            var hasHistory = hist != null;
+            var r = hasHistory ? hist : axisReadiness(answers, axis);
             readinessSum += r;
-            var span = axis === 'progress' ? CONFIG.progressSeedSpan : CONFIG.seedSpan;
+            // Progress normally seeds lower (nobody has "progressed" yet), but
+            // when the user explicitly rates their progress, honor it fully.
+            var span = (axis === 'progress' && !hasHistory) ? CONFIG.progressSeedSpan : CONFIG.seedSpan;
             seed[axis] = clamp(CONFIG.seedMin + r * span, 0, 34); // always still a peasant
         }
         var overall = readinessSum / AXES.length;
@@ -251,7 +281,15 @@
                 if (!data.ready || !data.axes) return null;
                 var prev = readJSON('ovIdentityStats');
                 var stats = {};
-                AXES.forEach(function (a) { stats[a] = round(Number(data.axes[a]) || 0); });
+                var serverSum = 0;
+                AXES.forEach(function (a) { stats[a] = round(Number(data.axes[a]) || 0); serverSum += stats[a]; });
+                // GLITCH GUARD: a fresh user with no logged lifts gets a snapshot
+                // whose axes are all 0 the moment one is created (e.g. after a
+                // check-in). Writing that collapses the radar to nothing and buries
+                // the user's honest onboarding-seeded peasant graph. An all-zero
+                // snapshot carries no real signal, so keep the local graph until
+                // the server actually has something to say.
+                if (serverSum <= 0) return null;
                 stats.__server = true;                       // authoritative marker
                 stats.__serverRank = data.rank || null;
                 stats.__serverCaste = data.caste || null;

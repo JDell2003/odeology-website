@@ -2508,6 +2508,7 @@ function ensureSharedControlPanel() {
             <p class="section-label">TRAINING PORTAL</p>
             <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
             <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link" href="nutrition.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Nutrition</span></a>
             <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
             <a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a>
         </div>
@@ -13300,6 +13301,7 @@ const ODE_PROTECTED_PAGES = new Set([
     'account.html',
     'friends.html',
     'leaderboard.html',
+    'nutrition.html',
     'grocery-calendar.html',
     'grocery-final.html',
     'grocery-plan.html',
@@ -21883,9 +21885,25 @@ function calculateAdjustedBaselineFoods(baselineArray, macroResults, mealsPerDay
 /* ============================================
    CONTROL PANEL (LEFT)
    ============================================ */
+/* Nutrition lives right above Grocery Calendar in every panel. Pages carry
+   their own static control-panel markup, so inject at runtime wherever the
+   link isn't already present. */
+function injectNutritionLink(panel) {
+    if (!panel || panel.querySelector('a[href="nutrition.html"]')) return;
+    const groceryLink = Array.from(panel.querySelectorAll('.control-link'))
+        .find((a) => String(a.getAttribute('href') || '').trim() === 'grocery-calendar.html');
+    if (!groceryLink) return;
+    const link = document.createElement('a');
+    link.className = 'control-link';
+    link.href = 'nutrition.html';
+    link.innerHTML = '<span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Nutrition</span>';
+    groceryLink.insertAdjacentElement('beforebegin', link);
+}
+
 function setupControlPanel() {
     controlPanel = ensureSharedControlPanel();
     if (!controlPanel) return;
+    injectNutritionLink(controlPanel);
     const isStandaloneCoachRoute = /^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(String(window.location.pathname || '').trim());
     if (isStandaloneCoachRoute) {
         controlPanel.setAttribute('hidden', '');

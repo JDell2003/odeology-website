@@ -14339,9 +14339,13 @@ html[data-theme="light"] .avatar-cropper-viewport {
     }
 }
 
-/* Encoding-safe override for the "no image" cart icon. */
+/* Encoding-safe override for the "no image" cart icon.
+   Padded to 6 hex digits so the CSS parser can't swallow a following
+   glyph; a double backslash here renders the literal text "\1F6D2". */
 .grocery-card-image.no-image::after {
-    content: "\\1F6D2";
+    content: "\01F6D2";
+    font-size: 2.4rem;
+    opacity: 0.75;
 }
 
 .essential-body {

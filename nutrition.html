@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#140f0b">
     <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
-    <title>Progress · RiseForIt</title>
+    <title>Nutrition · RiseForIt</title>
     <link rel="stylesheet" href="css/main.css?v=2026-07-13-nutri-1">
-    <link rel="stylesheet" href="css/training-status.css">
+    <link rel="stylesheet" href="css/meal-program.css?v=2026-07-13-mp-3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
-<body class="training-status-page" data-require-auth="1">
+<body class="grocery-calendar-page nutrition-page">
     <div class="grain"></div>
 
     <!-- SVG Icon Sprite -->
@@ -41,11 +41,6 @@
             <circle cx="16.5" cy="10.5" r="2"></circle>
             <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
         </symbol>
-        <symbol id="icon-dumbbell" viewBox="0 0 24 24">
-            <path d="M7 9v6M17 9v6"></path>
-            <path d="M9.5 10h5M9.5 14h5"></path>
-            <path d="M5.5 10v4M18.5 10v4"></path>
-        </symbol>
         <symbol id="icon-bag" viewBox="0 0 24 24">
             <path d="M7 9h10l-1 12H8L7 9Z"></path>
             <path d="M9 9V7.5a3 3 0 0 1 6 0V9"></path>
@@ -68,10 +63,6 @@
             <path d="M8.5 10.5h7a3.5 3.5 0 0 0 0-7 4 4 0 0 0-3.5 2 3 3 0 0 0-5.5 2 3 3 0 0 0 2 3Z"></path>
             <path d="M8 10.5h8v3.5a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3.5Z"></path>
             <path d="M10 16v3.5M14 16v3.5"></path>
-        </symbol>
-        <symbol id="icon-pencil" viewBox="0 0 24 24">
-            <path d="M12 20h9"></path>
-            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
         </symbol>
     </svg>
 
@@ -99,132 +90,127 @@
             </ul>
 
             <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-                <span class="theme-icon">🌙</span>
+                <span class="theme-icon">&#x1F319;</span>
             </button>
         </div>
     </nav>
 
     <!-- Control Panel -->
     <aside class="control-panel" id="control-panel">
-        <div class="control-panel-header"></div>
+        <div class="control-panel-header">
+            <button class="control-close" id="control-close" aria-label="Collapse panel">×</button>
+        </div>
         <div class="control-section">
             <p class="section-label section-label-help">HELP</p>
             <button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button>
         </div>
+
         <div class="control-section">
             <p class="section-label">DASH</p>
-            <button class="control-link" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button>
+            <div class="control-pill-row">
+                <button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button>
+            </div>
         </div>
+
         <div class="control-section">
             <p class="section-label">TRAINING PORTAL</p>
             <a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a>
             <a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a>
+            <a class="control-link active" href="nutrition.html" aria-current="true"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Nutrition</span></a>
             <a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a>
             <a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a>
         </div>
+
         <div class="control-section">
             <p class="section-label">COMMUNITY</p>
             <a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a>
             <a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a>
+            <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a>
             <a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Avaliable Chefs</span></a>
         </div>
+
     </aside>
 
-    <main class="ts-main">
-        <header class="ts-header">
+    <main class="gc-main nutrition-main">
+        <header class="gc-header">
             <div>
-                <p class="eyebrow">Training Portal</p>
-                <h1>Progress</h1>
-                <p class="ns-muted">Projected trends + your current snapshot. Keep logging to stay on track.</p>
+                <p class="eyebrow">Nutrition</p>
+                <h1>Your Nutrition</h1>
+                <p class="ns-muted">Your 7-day meals, priced grocery plan, ingredients, and restock calendar — built to your budget.</p>
             </div>
-            <div class="ts-header-actions">
-                <a class="btn btn-ghost" href="leaderboard.html">Leaderboard</a>
-                <a class="btn btn-primary" href="training.html">Open Training</a>
+            <div class="gc-actions">
+                <a class="btn btn-ghost" href="meal-program.html">Rebuild plan</a>
+                <a class="btn btn-primary" href="overview.html">Overview</a>
             </div>
         </header>
 
-        <section class="ts-grid">
-            <section class="plan-card ts-profile">
-                <div class="ts-profile-top">
-                    <div class="ts-avatar">
-                        <img id="ts-avatar-img" alt="Profile photo" class="hidden">
-                        <div class="ts-avatar-fallback" id="ts-avatar-fallback">?</div>
-                        <button class="ts-avatar-edit" id="ts-avatar-edit" type="button" aria-label="Edit profile photo" title="Edit photo">
-                            <svg class="ts-icon"><use href="#icon-pencil"></use></svg>
-                        </button>
-                        <input class="hidden" id="ts-avatar-file" type="file" accept="image/*">
-                    </div>
-                    <div class="ts-profile-meta">
-                        <div class="ts-name" id="ts-name">—</div>
-                        <div class="ts-sub" id="ts-sub">—</div>
-                        <div class="ts-chip-row">
-                            <span class="pill" id="ts-discipline">Discipline: —</span>
-                            <span class="pill" id="ts-days">Days/wk: —</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="ts-profile-note ns-muted" id="ts-auth-note">
-                    Loading…
-                </div>
-                <div class="ts-plan-cta hidden" id="ts-plan-cta" aria-label="Training plan call to action">
-                    <div>
-                        <div class="ts-plan-cta-title">Generate a personalized training plan</div>
-                        <div class="ts-plan-cta-sub ns-muted">Answer a few questions and get your plan.</div>
-                    </div>
-                    <a class="btn btn-primary" href="training.html?start=1">Generate plan</a>
-                </div>
-                <div class="ts-bio" aria-label="Bio">
-                    <label class="ns-field">
-                        <span>Bio</span>
-                        <textarea id="ts-bio" rows="3" placeholder="Write a short bio for the leaderboard (optional)."></textarea>
-                    </label>
-                    <div class="ts-bio-actions">
-                        <div class="ts-bio-hint ns-muted" id="ts-bio-hint">Visible on the community leaderboard.</div>
-                        <button class="btn btn-ghost" id="ts-bio-save" type="button">Save bio</button>
-                    </div>
-                </div>
-            </section>
+        <!-- No plan yet -->
+        <section class="plan-card nutrition-empty" id="nutrition-empty" hidden>
+            <div class="card-head"><h3>No meal plan yet</h3></div>
+            <p class="ns-muted">Pick the meals you actually want to eat and set your budget — we'll build a 7-day plan with a priced grocery list and restock calendar.</p>
+            <p><a class="btn btn-primary" href="meal-program.html">Build my meal plan</a></p>
+        </section>
 
-            <section class="plan-card ts-stats" id="ts-stats">
-                <div class="card-head">
-                    <h3>Stats</h3>
-                    <div class="pill-group">
-                        <span class="pill" id="ts-last-workout">Last workout: —</span>
-                        <span class="pill" id="ts-completion">Completion: —</span>
-                    </div>
-                </div>
-                <div class="ts-alert hidden" id="ts-alert" role="status" aria-live="polite"></div>
-                <div class="ts-stat-grid">
-                    <div class="ts-stat">
-                        <div class="ts-stat-label">Leaderboard placement</div>
-                        <div class="ts-stat-value" id="ts-leaderboard">—</div>
-                        <div class="ts-stat-sub ns-muted">From community leaderboard</div>
-                    </div>
-                    <div class="ts-stat">
-                        <div class="ts-stat-label">Workout compliance</div>
-                        <div class="ts-stat-value" id="ts-workout-compliance">—</div>
-                        <div class="ts-stat-sub ns-muted" id="ts-workouts-7d">Done: —</div>
-                    </div>
-                    <div class="ts-stat">
-                        <div class="ts-stat-label">Weight lost</div>
-                        <div class="ts-stat-value" id="ts-weight-lost">—</div>
-                        <div class="ts-stat-sub ns-muted">Start vs current</div>
-                    </div>
-                    <div class="ts-stat">
-                        <div class="ts-stat-label">Days till goal</div>
-                        <div class="ts-stat-value" id="ts-days-to-goal">—</div>
-                        <div class="ts-stat-sub ns-muted">Based on your weekly pace</div>
-                    </div>
+        <!-- Saved plan output (meal-program renderer, mp-* classes) -->
+        <section class="mp-step nutrition-plan" id="mp-step-plan" hidden>
+            <div class="mp-print-row">
+                <button class="btn btn-ghost" id="mp-print" type="button">Print plan</button>
+                <button class="btn btn-ghost" id="mp-start-over" type="button" style="display:none">Rebuild</button>
+            </div>
+            <div class="mp-plan-summary" id="mp-plan-summary"></div>
+            <div class="mp-budget-bar"><div class="mp-budget-fill" id="mp-budget-fill"></div></div>
+            <div class="mp-msgs" id="mp-plan-msgs"></div>
+            <div class="mp-stores" id="mp-store-compare"></div>
+            <div class="mp-plan-grid">
+                <section class="mp-panel" id="mp-grocery-panel">
+                    <h3>Grocery list — <span id="mp-grocery-store"></span> <span class="pill" id="mp-grocery-monthly"></span></h3>
+                    <div id="mp-grocery-items"></div>
+                    <p class="mp-free-items" id="mp-free-items"></p>
+                </section>
+                <section class="mp-panel">
+                    <h3>Your 7-day meal plan</h3>
+                    <div id="mp-days"></div>
+                </section>
+            </div>
+        </section>
+
+        <!-- Restock calendar (js/grocery-calendar.js, seeded by js/nutrition.js) -->
+        <section class="plan-card food-calendar" id="food-calendar" aria-label="Grocery calendar">
+            <div class="card-head">
+                <h3>Restock calendar</h3>
+                <span class="pill" id="calendar-range">Projection</span>
+            </div>
+            <p class="ns-muted calendar-subtext">Built from your current grocery plan — click any day for what to buy.</p>
+
+            <div class="calendar-wrap">
+                <div class="calendar-nav">
+                    <button class="calendar-arrow" id="calendar-prev" type="button" aria-label="Previous month">&lsaquo;</button>
+                    <div class="calendar-month" id="calendar-month-1"></div>
+                    <button class="calendar-arrow" id="calendar-next" type="button" aria-label="Next month">&rsaquo;</button>
                 </div>
 
-            </section>
+                <div class="calendar-detail" id="calendar-detail">
+                    <div class="calendar-detail-head">
+                        <div class="calendar-detail-title">Buy details</div>
+                        <div class="calendar-detail-date" id="calendar-detail-date">Select a day</div>
+                    </div>
+                    <div class="calendar-detail-body" id="calendar-detail-body">
+                        <div class="calendar-detail-empty">Click a day to see predicted restocks.</div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
     <script src="js/main.js?v=2026-07-12-dashflow-2"></script>
-    <script src="js/avatar-cropper.js"></script>
-    <script src="js/training-status.js"></script>
+    <script src="core/mealProgramConstants.js?v=2026-07-13-mp-3"></script>
+    <script src="core/mealProgramEngine.js?v=2026-07-13-mp-3"></script>
+    <script src="js/meal-program-data.js?v=2026-07-13-mp-3"></script>
+    <script src="js/meal-program-plan.js?v=2026-07-13-mp-3"></script>
+    <script src="js/meal-program-onboarding.js?v=2026-07-13-mp-3"></script>
+    <script src="js/nutrition.js?v=2026-07-13-nutrition-1"></script>
+    <script src="js/grocery-calendar.js?v=2026-02-16-1"></script>
 </body>
 </html>
 
