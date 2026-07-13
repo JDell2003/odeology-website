@@ -1,22 +1,20 @@
 /* ====================================================================
-   RiseForIt — BROWSER CHROME THEME SYNC (v2)
+   RiseForIt — BROWSER CHROME THEME SYNC (v3)
    --------------------------------------------------------------------
-   Keeps iOS Safari's status bar / toolbar (and Android's address bar)
-   matched to what's actually on screen instead of rendering white.
+   Keeps iOS Safari's status bar AND bottom toolbar (and Android's
+   address bar) matched to what's actually on screen instead of white.
 
-   v2: don't trust <body> alone — pages like the login screen paint a
-   full-viewport dark section/overlay over a light body. We sample the
-   element stack at the top-center of the viewport (elementsFromPoint)
-   and use the first element with a usable background: an opaque or
-   mostly-opaque background-color, or the first stop of its base (last)
-   background gradient layer. Falls back to body/html, then the site's
-   dark base tone.
+   v2 fixed the TOP bar by sampling the element stack at the top of the
+   viewport (full-screen dark stages paint over a light-locked body, so
+   body alone lies). v3 fixes the BOTTOM bar: iOS derives the toolbar /
+   home-indicator tint from the document's own background (body/html),
+   not the theme-color meta and not the pixels an overlay paints. So
+   when a full-viewport surface (login stage, recap veil, cutscene)
+   supplies the bottom-of-viewport color, we temporarily override the
+   body + html backgrounds to that color — invisible, since the overlay
+   covers everything — and restore the originals as soon as no overlay
+   qualifies.
 
-   Writes the color to <meta name="theme-color"> (created if missing)
-   and to <html>'s background-color so overscroll rubber-banding
-   matches. Re-syncs on load/pageshow, when <html>/<body> attributes
-   flip (data-theme, classes), and throttled on DOM changes so overlay
-   screens (login stage, recap veil, cutscenes) are picked up.
    Self-contained; safe to include on any page.
    ==================================================================== */
 (function () {
@@ -37,7 +35,6 @@
         return { rgb: 'rgb(' + p[0].trim() + ',' + p[1].trim() + ',' + p[2].trim() + ')', a: a };
     };
 
-    /* Background-color usable for the bars? Opaque-ish only. */
     var solidColor = function (c, minAlpha) {
         var p = parse(c);
         if (!p || p.a < (minAlpha == null ? 0.99 : minAlpha)) return null;
@@ -45,8 +42,7 @@
     };
 
     /* First color stop of the LAST gradient layer (painted underneath;
-       with the site's 180deg gradients the first stop is the TOP color,
-       i.e. what sits beneath the status bar). */
+       with this site's 180deg gradients that's the surface's top tone). */
     var gradientBase = function (image) {
         if (!image || image === 'none') return null;
         var layers = image.split(/gradient\(/);
@@ -64,25 +60,33 @@
         return solidColor(cs.backgroundColor, minAlpha) || gradientBase(cs.backgroundImage);
     };
 
-    /* What's really visible at the top of the viewport — walks the
-       stacked elements top-most first, so full-screen overlays (login
-       stage, recap veil, cutscenes) win over the body behind them. */
-    var colorAtTop = function () {
+    /* Topmost element with a usable background at a viewport point.
+       Skips our own body/html overrides via the `ignore` list. */
+    var surfaceAt = function (x, y, ignore) {
         if (!document.elementsFromPoint || !document.body) return null;
-        var x = Math.max(1, Math.floor((window.innerWidth || 2) / 2));
         var stack;
-        try { stack = document.elementsFromPoint(x, 1); } catch (e) { return null; }
+        try { stack = document.elementsFromPoint(x, y); } catch (e) { return null; }
         if (!stack || !stack.length) return null;
         for (var i = 0; i < stack.length; i++) {
-            var c = usableBackground(stack[i], 0.6);
-            if (c) return c;
+            var el = stack[i];
+            if (ignore && ignore.indexOf(el) !== -1) continue;
+            var c = usableBackground(el, 0.6);
+            if (c) return { el: el, color: c };
         }
         return null;
     };
 
-    var resolve = function () {
-        var top = colorAtTop();
-        if (top) return top;
+    /* Does this element's box cover (essentially) the whole viewport? */
+    var coversViewport = function (el) {
+        if (!el || el === document.body || el === document.documentElement) return false;
+        var r;
+        try { r = el.getBoundingClientRect(); } catch (e) { return false; }
+        var w = window.innerWidth || 0;
+        var h = window.innerHeight || 0;
+        return r.top <= 2 && r.left <= 2 && r.right >= w - 2 && r.bottom >= h - 2;
+    };
+
+    var bodyFallback = function () {
         var els = [document.body, document.documentElement];
         for (var i = 0; i < els.length; i++) {
             if (!els[i]) continue;
@@ -92,20 +96,66 @@
         return FALLBACK;
     };
 
-    var lastApplied = null;
-    var apply = function () {
-        var color = FALLBACK;
-        try { color = resolve(); } catch (e) { /* keep fallback */ }
-        if (color === lastApplied) return;
-        lastApplied = color;
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) {
-            meta = document.createElement('meta');
-            meta.setAttribute('name', 'theme-color');
-            if (document.head) document.head.appendChild(meta);
+    /* --- body/html override bookkeeping ---------------------------- */
+    var savedBody = null;      // original inline body background shorthand
+    var bodyOverridden = false;
+
+    var overrideBody = function (color) {
+        if (!document.body) return;
+        if (!bodyOverridden) {
+            savedBody = document.body.style.background;
+            bodyOverridden = true;
         }
-        meta.setAttribute('content', color);
-        try { document.documentElement.style.backgroundColor = color; } catch (e) { /* ignore */ }
+        document.body.style.background = color;
+    };
+
+    var restoreBody = function () {
+        if (!bodyOverridden || !document.body) return;
+        document.body.style.background = savedBody || '';
+        bodyOverridden = false;
+        savedBody = null;
+    };
+
+    var lastKey = null;
+    var apply = function () {
+        try {
+            var w = Math.max(2, window.innerWidth || 2);
+            var h = Math.max(2, window.innerHeight || 2);
+            var x = Math.floor(w / 2);
+
+            var top = surfaceAt(x, 1, null);
+            var bottom = surfaceAt(x, h - 2, null);
+
+            var metaColor = (top && top.color) || bodyFallback();
+
+            /* Full-viewport overlay owning the bottom edge? Then the
+               document background must match it or iOS paints the
+               bottom toolbar from the (light) body underneath. */
+            var overlayColor = null;
+            if (bottom && bottom.color && coversViewport(bottom.el)) {
+                overlayColor = bottom.color;
+            }
+
+            var key = metaColor + '|' + (overlayColor || '');
+            if (key === lastKey) return;
+            lastKey = key;
+
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.setAttribute('name', 'theme-color');
+                if (document.head) document.head.appendChild(meta);
+            }
+            meta.setAttribute('content', metaColor);
+
+            if (overlayColor) {
+                overrideBody(overlayColor);
+                document.documentElement.style.backgroundColor = overlayColor;
+            } else {
+                restoreBody();
+                document.documentElement.style.backgroundColor = metaColor;
+            }
+        } catch (e) { /* never break the host page */ }
     };
 
     /* Throttled re-check so overlay stages flipping classes/DOM are
@@ -124,6 +174,7 @@
         window.addEventListener('load', apply);
         window.addEventListener('pageshow', apply);
         window.addEventListener('resize', schedule);
+        window.addEventListener('scroll', schedule, { passive: true });
         document.addEventListener('visibilitychange', schedule);
         try {
             new MutationObserver(schedule).observe(document.documentElement, {
@@ -133,8 +184,8 @@
                 attributeFilter: ['class', 'data-theme', 'data-entry-stage', 'style']
             });
         } catch (e) { /* ignore */ }
-        /* A few timed re-checks cover post-load stage activation even if
-           the observer misses (e.g. styles applied inside iframes/fonts). */
+        /* Timed re-checks cover post-load stage activation even if the
+           observer misses. */
         [400, 1200, 2500, 5000].forEach(function (ms) {
             window.setTimeout(apply, ms);
         });
