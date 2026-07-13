@@ -900,12 +900,28 @@
     // Fully defensive: if it can't load, init() still runs on the fallback.
     const bootWithEngine = () => {
         const go = () => { try { init(); } catch (e) { /* keep page alive */ } };
+        // v2 scoring (SCORING_ENGINE_V2): when the server score is
+        // authoritative, give the (memoized) /api/score fetch a beat to land
+        // so the first paint shows the server axes, not the local estimate.
+        const goAfterServerScore = () => {
+            try {
+                const eng = window.RiseIdentityEngine;
+                if (eng && typeof eng.fetchServerScore === 'function' && eng.serverMode && eng.serverMode()) {
+                    Promise.race([
+                        eng.fetchServerScore(),
+                        new Promise((resolve) => setTimeout(resolve, 900))
+                    ]).then(go, go);
+                    return;
+                }
+            } catch (e) { /* fall through */ }
+            go();
+        };
         try {
-            if (window.RiseIdentityEngine) { try { window.RiseIdentityEngine.refresh(); } catch (e) {} return go(); }
+            if (window.RiseIdentityEngine) { try { window.RiseIdentityEngine.refresh(); } catch (e) {} return goAfterServerScore(); }
             const s = document.createElement('script');
             s.src = 'js/identity-engine.js';
             s.async = false;
-            s.onload = go;      // engine auto-runs refresh() on load
+            s.onload = goAfterServerScore; // engine auto-runs refresh() on load
             s.onerror = go;     // missing engine -> demo fallback, page still works
             document.head.appendChild(s);
         } catch (e) { go(); }

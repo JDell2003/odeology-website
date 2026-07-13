@@ -567,6 +567,27 @@
         }
     };
 
+    // v2 scoring (SCORING_ENGINE_V2): the signed-in user's axes come from the
+    // server score (identity-engine writes GET /api/score into ovIdentityStats).
+    // In server mode the old points-breakdown approximation below must never
+    // shadow the authoritative axes for SELF — it stays only for other users'
+    // radars, where no server score is available.
+    const scoringServerMode = () => {
+        try { return localStorage.getItem('ode_scoring_v2_mode') === 'server'; } catch { return false; }
+    };
+    const statsForSelf = (row) => {
+        const own = readIdentityStats();
+        if (own) return own;
+        if (scoringServerMode()) {
+            // No cached score yet in this browser: render an honest empty web
+            // rather than the legacy approximation the user can't influence.
+            const zeros = {};
+            for (const key of CASTE_AXES) zeros[key] = 0;
+            return zeros;
+        }
+        return casteStatsFromRow(row);
+    };
+
     /* ================================================================
        RADAR-TIER CLASSIFICATION - the spider graph IS the rank.
        Each tier is a ring on the radar. You claim a tier by either
@@ -1491,7 +1512,7 @@
         document.getElementById('lb-caste-hero')?.remove();
         const you = data?.you || null;
         if (!you || !listEl) return;
-        const stats = readIdentityStats() || casteStatsFromRow(you);
+        const stats = statsForSelf(you); // v2: server axes for self, never the approximation
         const matched = pickCaste(stats);
         // The tier you hold is sticky (3-day demotion grace, one-tier-per-day
         // climbs); the hero shows the held tier, not the raw stat match.
@@ -1980,7 +2001,7 @@
         const rows = merged.map((slot, i) => {
             const rank = i + 1;
             if (slot.src === 'real') {
-                const stats = slot.row.isFriend ? casteStatsFromRow(slot.row) : (readIdentityStats() || casteStatsFromRow(slot.row));
+                const stats = slot.row.isFriend ? casteStatsFromRow(slot.row) : statsForSelf(slot.row); // v2: server axes for self
                 // Real people's delta: where yesterday's points would have
                 // landed them in yesterday's population.
                 const prevWouldRank = 1 + prevOrder.filter((p) => p.prevPoints > Number(slot.row.points || 0)).length;
@@ -2834,7 +2855,7 @@
     const decorateHeroWithSlots = (youRow, day) => {
         const head = document.querySelector('#lb-caste-hero .lb-caste-next-head');
         if (!head || !youRow) return;
-        const stats = readIdentityStats() || casteStatsFromRow(youRow);
+        const stats = statsForSelf(youRow); // v2: server axes for self
         const next = pickNextCaste(stats, CASTE_MAP[youRow.__caste] || pickCaste(stats));
         if (!next || !CASTE_SLOTS[next.caste.id]) return;
         const counts = gameTierCounts(day);

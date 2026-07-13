@@ -225,7 +225,51 @@
         return Number.isFinite(ms) ? Math.round(ms / 86400000) : 0;
     };
 
+    /* ---- v2 server-authoritative mode (SCORING_ENGINE_V2) ------------
+       When the backend flag is on, GET /api/score is the truth: its axes are
+       rendered into ovIdentityStats and this local growth model becomes an
+       offline fallback only, tagged __estimated so consumers can tell it is
+       non-authoritative. Flag off -> the legacy behavior is untouched. */
+    var SERVER_MODE_KEY = 'ode_scoring_v2_mode';
+    var serverModeCached = function () {
+        try { return localStorage.getItem(SERVER_MODE_KEY) === 'server'; } catch (e) { return false; }
+    };
+    var lastServerStats = null;
+    var serverFetchPromise = null;
+    var fetchServerScore = function () {
+        if (serverFetchPromise) return serverFetchPromise;
+        if (typeof fetch !== 'function') return Promise.resolve(null);
+        serverFetchPromise = fetch('/api/score', { credentials: 'same-origin' })
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (data) {
+                if (!data || data.ok !== true) return null;
+                if (!data.enabled) {
+                    try { localStorage.setItem(SERVER_MODE_KEY, 'local'); } catch (e) { /* ignore */ }
+                    return null;
+                }
+                try { localStorage.setItem(SERVER_MODE_KEY, 'server'); } catch (e) { /* ignore */ }
+                if (!data.ready || !data.axes) return null;
+                var prev = readJSON('ovIdentityStats');
+                var stats = {};
+                AXES.forEach(function (a) { stats[a] = round(Number(data.axes[a]) || 0); });
+                stats.__server = true;                       // authoritative marker
+                stats.__serverRank = data.rank || null;
+                stats.__serverCaste = data.caste || null;
+                stats.__serverDay = data.day || null;
+                lastServerStats = stats;
+                writeStats(stats, prev && prev.__server ? null : prev);
+                try { window.dispatchEvent(new CustomEvent('rise-identity-server-score', { detail: stats })); } catch (e) { /* ignore */ }
+                return stats;
+            })
+            .catch(function () { return null; });
+        return serverFetchPromise;
+    };
+
     var writeStats = function (stats, prev) {
+        // In server mode any locally-computed stats are only an offline
+        // estimate — label them so the UI/browser can never pass a local
+        // guess off as the authoritative score.
+        if (stats && !stats.__server && serverModeCached()) stats.__estimated = true;
         if (prev) writeJSON('ovIdentityStatsPrev', prev);
         writeJSON('ovIdentityStats', stats);
     };
@@ -238,6 +282,16 @@
         // Freeze flag: when a caller has deliberately pinned ovIdentityStats
         // (dev/champ preview, or a test), don't overwrite it.
         if (window.__riseIdentityFrozen) return readJSON('ovIdentityStats');
+        // v2 server mode: the server score is authoritative. A forced refresh
+        // (something was just logged) re-polls the server, which has its own
+        // on-write recompute; the local model below only fills offline gaps.
+        if (serverModeCached()) {
+            if (opts.force) {
+                serverFetchPromise = null;
+                setTimeout(function () { try { fetchServerScore(); } catch (e) { /* ignore */ } }, 1200);
+            }
+            if (lastServerStats) return lastServerStats;
+        }
         var today = dayKey(new Date());
         var profile = readJSON('ode_identity_profile_v1');
         var activity = readJSON('ode_identity_activity_v1');
@@ -308,10 +362,15 @@
         config: CONFIG,
         seedFrom: seedFrom,
         simulate: simulate,
-        refresh: refresh
+        refresh: refresh,
+        fetchServerScore: fetchServerScore,
+        serverMode: serverModeCached
     };
 
     // Auto-run on load so the pages that include this file get real stats
     // before their radar reads localStorage. Never throws into the page.
     try { refresh(); } catch (e) { /* keep the page alive */ }
+    // v2: ask the server for the authoritative score (no-op / cached 'local'
+    // when SCORING_ENGINE_V2 is off server-side).
+    try { fetchServerScore(); } catch (e) { /* keep the page alive */ }
 })();

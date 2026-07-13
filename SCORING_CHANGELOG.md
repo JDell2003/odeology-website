@@ -174,3 +174,35 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - Flag off → zero behavior change: every entry point checks `scoringV2Enabled()`.
 - Advisory lock prevents double-run: single-client lock + unlock in `finally`.
 - Test run: pending (no local Node — see Environment note).
+
+---
+
+## Task 5 — Client becomes display-only (`feat(scoring): client renders server score`)
+
+**What changed**
+
+- `js/identity-engine.js` — new server-authoritative layer: memoized
+  `fetchServerScore()` calls `GET /api/score`; when `enabled` it caches mode
+  `ode_scoring_v2_mode='server'` and writes the server axes into `ovIdentityStats`
+  (with `__server`, `__serverRank`, `__serverCaste`, `__serverDay` markers) and fires a
+  `rise-identity-server-score` event. In server mode `refresh()` returns the server
+  stats; a `force` refresh (user just logged something) re-polls the server, whose
+  own on-write hook recomputed the score. **Locally computed stats in server mode are
+  tagged `__estimated:true`** — a clearly-labeled offline fallback. Flag off →
+  `enabled:false` caches mode 'local' and the legacy engine is byte-identical in
+  behavior.
+- `js/overview-identity.js` — boot now gives the memoized score fetch up to 900 ms to
+  land (only when server mode is already cached) so the first radar paint shows the
+  authoritative axes.
+- `js/leaderboard.js` — new `statsForSelf()`: the signed-in user's radar/caste always
+  comes from the server axes; **the `casteStatsFromRow` points-approximation can no
+  longer shadow self** (it remains only for other users' rows, which have no server
+  score). Swapped at all three self call sites (caste hero, arena row, scarcity chip).
+
+**Acceptance criteria**
+
+- Signed-in radar matches GET /api/score: axes are copied verbatim (rounded to ints,
+  matching the UI's existing 0-100 int convention).
+- Offline shows clearly-labeled estimate: `__estimated:true` tag.
+- Browser cannot change the authoritative score: it lives in Postgres; the client
+  only renders it.
