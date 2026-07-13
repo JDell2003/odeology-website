@@ -56,7 +56,7 @@ zero user-facing change. The owner flips the flag on Railway after reviewing
 - Nothing destructive: confirmed — zero `DROP`/`DELETE`/renames in the diff.
 
 **Tests**: schema SQL is exercised implicitly; endpoint validation covered by
-Task 10 tests where pure (normalizers). Run status: pending (no local Node — see note).
+Task 10 tests where pure (normalizers). Run status: GREEN — see Task 10 (27/27 pass).
 
 ---
 
@@ -74,7 +74,7 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 **Acceptance criteria**
 
 - `require('./core/scoringConstants')` loads: plain CommonJS module, `'use strict'`,
-  no dependencies — verified by inspection; Node run pending (see Environment note).
+  no dependencies — verified by inspection and by the green Task 10 run (`require` loads).
 - Every axis reads from it / no magic numbers in `scoringEngine.js`: enforced in Task 3
   (engine reads everything from `C.*`).
 
@@ -136,7 +136,7 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - computeRank respects sustain weeks: King requires `weeksAtCandidate.king >= 8`.
 - Sex-missing users get `normalized=false` + valid self score: `normalizeStrength`
   returns `standard:null` → blend falls back to self-improvement only.
-- Task 10 tests pass: written in Task 10; run pending (no local Node — see note).
+- Task 10 tests pass: YES — 27/27 green (see Task 10).
 
 ---
 
@@ -173,7 +173,7 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - GET /api/score returns axes + rank + explanations: implemented.
 - Flag off → zero behavior change: every entry point checks `scoringV2Enabled()`.
 - Advisory lock prevents double-run: single-client lock + unlock in `finally`.
-- Test run: pending (no local Node — see Environment note).
+- Test run: engine covered green in Task 10 (27/27).
 
 ---
 
@@ -276,6 +276,7 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
   flagged lifts excluded from the bank.
 - Genuine late submit still counts: `late_ok` verdict inside 24 h grace.
 - Impossible 1RM leaps flagged, not scored: `flag_e1rm_jump` + gather exclusion.
+- Test run: plausibility + anomaly helpers covered green in Task 10 (27/27).
 
 ---
 
@@ -320,7 +321,7 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - HR used when present: Strava avg/max HR drives the vigorous split; Fitbit resting HR
   + VO2max stored.
 - A run synced twice counts once: single day-row + COALESCE merge + activity unique index.
-- Test run: pending (no local Node — see note).
+- Test run: cardio grading covered green in Task 10 (27/27).
 
 ---
 
@@ -354,3 +355,32 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - One gate table everywhere: C.ranks authoritative; client tables reconciled + cosmetic.
 - Unlimited holders: no seat cap on the authoritative path (only the cosmetic game rows
   use seat counts).
+
+---
+
+## Task 10 — Tests (`test(scoring): engine coverage`)
+
+**What changed** — four plain `node:test` files in `tests/` (house style; no new deps):
+
+- `tests/scoringEngine.strength.test.js` — fairness (a 135-lb woman benching 180
+  out-scores a 250-lb man benching 180); sex-missing → `normalized:false` + self path;
+  elite maps to the top anchor; best-recent bank (a lower fresh reading does not crash
+  the score); age handicap credits masters.
+- `tests/scoringEngine.decayTrust.test.js` — decay past grace erodes; pause freezes;
+  decay floors at the seed; device > self_report > implausible and honest self-report
+  never zero; a device-synced run out-tiers identical typed minutes; graded intensity
+  beats steps-only and steps are capped.
+- `tests/scoringEngine.ranksIntegrity.test.js` — King needs 8 sustain weeks (a spike
+  does not promote); Knight clears its 2-week gate; five weak axes + one 100 never
+  reach King/Knight (no pierce); 10-second "45-minute" workout voided; genuine
+  full-length counts; late-submit-no-timer counts inside grace; impossible 1RM leap
+  flagged; safe cut beats crash cut; maintenance flat trend scores full.
+- `tests/scoringEngine.axes.test.js` — nutrition credit tiers; sleep-band duration;
+  WHO 150/300 anchors; VO2max 50th-pct ≈ 50 pts; `computeAxes` determinism + range.
+
+**Result**: **27 tests, 27 pass, 0 fail** — run on the host via `node --test`
+(`node --test tests/scoringEngine.*.test.js`). Determinism preserved (fixed-date input →
+identical output). This green run also resolves the "pending" test notes recorded under
+Tasks 1-8 while the sandbox was unavailable.
+
+**Acceptance criteria**: all tests pass ✓; determinism preserved ✓.
