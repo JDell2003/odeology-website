@@ -8982,13 +8982,14 @@ function formatWorkspaceLabel(workspace) {
           if (path === 'trainer' && step.id === 'type') {
             return {
               title: 'How do you train?',
-              subtitle: 'Choose the trainer path first. Independent trainers can still pick a gym, location, and manager next if they work around a facility.',
+              subtitle: 'Choose the trainer path first. Independent trainers can still pick a gym, location, and manager next if they work around a facility. Remote trainers skip the gym entirely.',
               body: `
                 <div class="entry-stack">
                   <div class="entry-field full">
                     <span class="entry-group-title">Trainer type</span>
                     ${renderRadioGroup('trainerType', [
                       { value: 'independent', label: "I'm independent" },
+                      { value: 'remote', label: "I'm a remote trainer" },
                       { value: 'company', label: 'I work at a gym/company' }
                     ], trainer.trainerType)}
                   </div>
@@ -9008,6 +9009,12 @@ function formatWorkspaceLabel(workspace) {
                     <div class="entry-directory-card">
                       <strong>Workspace directory</strong>
                       <p>After this step, you will pick your gym/company and location from the same directory the client flow uses.</p>
+                    </div>
+                  ` : ''}
+                  ${trainer.trainerType === 'remote' ? `
+                    <div class="entry-directory-card">
+                      <strong>No gym needed</strong>
+                      <p>Remote trainers coach online, so there is no gym, location, or manager to pick — next you will set up your trainer profile.</p>
                     </div>
                   ` : ''}
                 </div>
@@ -9048,7 +9055,7 @@ function formatWorkspaceLabel(workspace) {
                       { value: 'In-person', label: 'In-person' },
                       { value: 'Online', label: 'Online' },
                       { value: 'Hybrid', label: 'Hybrid' }
-                    ], trainer.coachingStyle)}
+                    ], trainer.coachingStyle || (trainer.trainerType === 'remote' ? 'Online' : ''))}
                   </div>
                 </div>
               `,
@@ -11255,6 +11262,11 @@ function formatWorkspaceLabel(workspace) {
 
           if (target.type === 'radio') {
             answers[name] = String(target.value || '');
+            // Remote trainers coach online by definition - seed the coaching
+            // style so the preselected radio on the profile step matches state.
+            if (state.selectedPath === 'trainer' && name === 'trainerType' && answers[name] === 'remote' && !String(answers.coachingStyle || '').trim()) {
+              answers.coachingStyle = 'Online';
+            }
             updateChipState(onboardingPanel);
             if (
               (state.selectedPath === 'trainer' && (name === 'trainerType' || name === 'acceptingClients')) ||
@@ -11493,7 +11505,7 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'trainer' && step.id === 'workspace') {
             const trainer = state.answers.trainer || {};
-            if (trainer.trainerType !== 'invited' && !String(trainer.selectedWorkspaceId || '').trim()) {
+            if (!['invited', 'remote'].includes(trainer.trainerType) && !String(trainer.selectedWorkspaceId || '').trim()) {
               window.alert('Choose or enter the gym/company workspace you want to join.');
               return false;
             }
@@ -11501,7 +11513,7 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'trainer' && step.id === 'location') {
             const trainer = state.answers.trainer || {};
-            if (trainer.trainerType !== 'invited' && !String(trainer.selectedLocationId || '').trim()) {
+            if (!['invited', 'remote'].includes(trainer.trainerType) && !String(trainer.selectedLocationId || '').trim()) {
               window.alert('Choose the gym/company location you coach at.');
               return false;
             }
@@ -11720,6 +11732,11 @@ function formatWorkspaceLabel(workspace) {
             if (currentStepId === 'location' && trainerType === 'invited') {
               nextStep = flow.steps.findIndex((step) => step.id === 'manager') + 1;
             }
+            // Remote trainers have no gym, location, or manager - go straight
+            // to setting up the trainer profile.
+            if (['type', 'workspace', 'location', 'manager'].includes(currentStepId) && trainerType === 'remote') {
+              nextStep = flow.steps.findIndex((step) => step.id === 'profile') + 1;
+            }
             return Math.max(1, nextStep);
           }
           return Math.max(1, state.currentStep + 1);
@@ -11744,6 +11761,9 @@ function formatWorkspaceLabel(workspace) {
             const trainerType = String(trainerAnswers.trainerType || '').trim();
             let previousStep = state.currentStep - 1;
             if (trainerType === 'invited' && currentStepId === 'manager') {
+              previousStep = flow.steps.findIndex((step) => step.id === 'type') + 1;
+            }
+            if (trainerType === 'remote' && currentStepId === 'profile') {
               previousStep = flow.steps.findIndex((step) => step.id === 'type') + 1;
             }
             return Math.max(1, previousStep);
