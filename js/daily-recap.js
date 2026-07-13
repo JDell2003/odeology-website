@@ -169,7 +169,7 @@
             '  transition:background .55s ease,backdrop-filter .55s ease;overflow:hidden}',
             '#ov-recap.is-on{background:rgba(6,10,18,.84);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}',
             '#ov-recap .ovr-stage{display:flex;align-items:center;justify-content:center;gap:34px;flex-wrap:wrap;',
-            '  width:min(1020px,94vw);max-height:94vh;overflow:auto;padding:20px;scrollbar-width:none}',
+            '  width:min(1020px,94vw);max-width:100%;box-sizing:border-box;max-height:94vh;overflow:auto;padding:20px;scrollbar-width:none}',
             '#ov-recap .ovr-stage::-webkit-scrollbar{width:0;height:0}',
             '.ovr-radar-box{flex:0 0 auto;width:min(470px,88vw);will-change:transform;transform-origin:top left}',
             '.ovr-radar-box svg{width:100%;height:auto;display:block}',
@@ -216,10 +216,16 @@
             '  cursor:pointer;opacity:0;transition:opacity .4s ease}',
             '#ov-recap.is-on .ovr-x{opacity:1}',
             '.ovr-x:hover{background:rgba(255,255,255,.14)}',
-            '@media (max-width:720px){',
-            '  #ov-recap .ovr-stage{flex-direction:column;gap:6px;align-content:flex-start;padding:14px 16px 26px}',
+            /* Stack to a single column on narrow viewports AND on any
+               touch-only device (covers phones stuck in desktop-site mode,
+               where the layout viewport is ~980px and a width query alone
+               never fires). justify-content:flex-start keeps the top of a
+               taller-than-screen recap reachable when the stage scrolls. */
+            '@media (max-width:720px), (hover:none) and (pointer:coarse){',
+            '  #ov-recap .ovr-stage{flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;gap:6px;',
+            '    align-content:flex-start;width:100%;padding:14px 16px 26px}',
             '  .ovr-radar-box{width:min(340px,92vw)}',
-            '  .ovr-side{max-width:none;min-width:0;width:100%}',
+            '  .ovr-side{max-width:520px;min-width:0;width:100%}',
             '  .ovr-side h3{font-size:22px}',
             '}'
         ].join('\n');
