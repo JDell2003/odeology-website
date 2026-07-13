@@ -4,6 +4,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { Worker } = require('worker_threads');
 const db = require('./db');
+const jsonStore = require('./jsonStore');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity } = require('./trainingEngine');
 const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
@@ -699,25 +700,15 @@ function writeWorkoutDatabase(list) {
 // stored as pending suggestions for the owner to review. `shareToGlobal`
 // records whether the submitter granted permission to publish it to the
 // shared database; either way they keep a personal copy client-side.
-const WORKOUT_DB_SUGGESTIONS_PATH = path.join(__dirname, '..', 'data', 'workout-database-suggestions.json');
-
-function readWorkoutDbSuggestions() {
-  try {
-    if (!fs.existsSync(WORKOUT_DB_SUGGESTIONS_PATH)) return [];
-    const json = JSON.parse(fs.readFileSync(WORKOUT_DB_SUGGESTIONS_PATH, 'utf8'));
-    return Array.isArray(json) ? json : [];
-  } catch (err) {
-    console.error('[workout-db] Could not parse suggestions:', err?.message || err);
-    return [];
-  }
+// Durable via core/jsonStore.js (Postgres in prod, data/*.json locally).
+async function readWorkoutDbSuggestions() {
+  const json = await jsonStore.getJson('workout-database-suggestions', []);
+  return Array.isArray(json) ? json : [];
 }
 
-function writeWorkoutDbSuggestions(list) {
+async function writeWorkoutDbSuggestions(list) {
   const normalized = Array.isArray(list) ? list.slice(-2000) : [];
-  fs.mkdirSync(path.dirname(WORKOUT_DB_SUGGESTIONS_PATH), { recursive: true });
-  const tmpPath = `${WORKOUT_DB_SUGGESTIONS_PATH}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(normalized, null, 2), 'utf8');
-  fs.renameSync(tmpPath, WORKOUT_DB_SUGGESTIONS_PATH);
+  await jsonStore.setJson('workout-database-suggestions', normalized);
 }
 
 function sanitizeWorkoutImagePath(raw) {
@@ -11218,7 +11209,7 @@ async function trainingRoutes(req, res, url) {
       .filter((item) => item.name.length >= 3);
     if (!cleaned.length) return sendJson(res, 400, { error: 'No valid exercises to suggest' });
     try {
-      const rows = readWorkoutDbSuggestions();
+      const rows = await readWorkoutDbSuggestions();
       const now = new Date().toISOString();
       const added = cleaned.map((item) => ({
         id: `sugg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -11231,7 +11222,7 @@ async function trainingRoutes(req, res, url) {
         },
         createdAt: now
       }));
-      writeWorkoutDbSuggestions([...rows, ...added]);
+      await writeWorkoutDbSuggestions([...rows, ...added]);
       return sendJson(res, 201, { ok: true, added: added.length });
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to save suggestions' });
@@ -11337,23 +11328,19 @@ async function trainingRoutes(req, res, url) {
     const user = sessionState.user;
     if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
     if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
-    return sendJson(res, 200, { ok: true, items: readWorkoutDbSuggestions() });
+    return sendJson(res, 200, { ok: true, items: await readWorkoutDbSuggestions() });
   }
 
   // Onboarding insights: why each client/trainer joined (heard-from source,
   // most-expected feature, results they came for). One record per user,
   // written at onboarding completion; read is owner-only for the Analytics
   // dashboard (owner-analytics.html).
-  const insightsPath = path.join(__dirname, '..', 'data', 'onboarding-insights.json');
-  const readInsights = () => {
-    try { return fs.existsSync(insightsPath) ? JSON.parse(fs.readFileSync(insightsPath, 'utf8')) : []; }
-    catch (err) { return []; }
+  // Durable via core/jsonStore.js (Postgres in prod, data/*.json locally).
+  const readInsights = async () => {
+    const rows = await jsonStore.getJson('onboarding-insights', []);
+    return Array.isArray(rows) ? rows : [];
   };
-  const writeInsights = (rows) => {
-    const tmp = `${insightsPath}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(rows, null, 1));
-    fs.renameSync(tmp, insightsPath);
-  };
+  const writeInsights = (rows) => jsonStore.setJson('onboarding-insights', rows);
 
   if (pathname === '/api/training/onboarding-insights' && req.method === 'POST') {
     const sessionState = await safeResolveUserFromSession(req, {
@@ -11384,9 +11371,9 @@ async function trainingRoutes(req, res, url) {
       joinedAt: new Date().toISOString()
     };
     try {
-      const rows = readInsights().filter((r) => String(r.userId) !== record.userId);
+      const rows = (await readInsights()).filter((r) => String(r.userId) !== record.userId);
       rows.push(record);
-      writeInsights(rows);
+      await writeInsights(rows);
       return sendJson(res, 201, { ok: true });
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to save onboarding insights' });
@@ -11402,24 +11389,21 @@ async function trainingRoutes(req, res, url) {
     const user = sessionState.user;
     if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
     if (!user.isOwner) return sendJson(res, 403, { error: 'Owner access required' });
-    return sendJson(res, 200, { ok: true, entries: readInsights() });
+    return sendJson(res, 200, { ok: true, entries: await readInsights() });
   }
 
   // ---- Trainer website hub: funnel config, public funnel fetch, visitor
   // events, and the trainer-facing insights feed (trainer-website.html /
   // trainer-analytics.html / visit.html). Config is keyed by trainer userId
   // and looked up publicly by username (the handle in the shareable link).
-  const websitesPath = path.join(__dirname, '..', 'data', 'trainer-websites.json');
-  const funnelEventsPath = path.join(__dirname, '..', 'data', 'funnel-events.json');
   const FUNNEL_EVENTS_CAP = 50000;
-  const readJsonFile = (file, fallback) => {
-    try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback; }
-    catch (err) { return fallback; }
+  const readWebsites = async () => {
+    const all = await jsonStore.getJson('trainer-websites', {});
+    return all && typeof all === 'object' && !Array.isArray(all) ? all : {};
   };
-  const writeJsonFile = (file, value) => {
-    const tmp = `${file}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(value, null, 1));
-    fs.renameSync(tmp, file);
+  const readFunnelEvents = async () => {
+    const events = await jsonStore.getJson('funnel-events', []);
+    return Array.isArray(events) ? events : [];
   };
   const sanitizeVariants = (input) => {
     const variants = (Array.isArray(input) ? input : []).slice(0, 6).map((v, i) => ({
@@ -11436,10 +11420,10 @@ async function trainingRoutes(req, res, url) {
     if (total <= 0) variants.forEach((v) => { v.weight = Math.round(100 / variants.length); });
     return variants;
   };
-  const findWebsiteByHandle = (handle) => {
+  const findWebsiteByHandle = async (handle) => {
     const key = String(handle || '').trim().toLowerCase();
     if (!key) return null;
-    const all = readJsonFile(websitesPath, {});
+    const all = await readWebsites();
     const entry = Object.values(all).find((row) => String(row?.username || '').toLowerCase() === key);
     return entry || null;
   };
@@ -11453,7 +11437,7 @@ async function trainingRoutes(req, res, url) {
     const user = sessionState.user;
     if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
     if (!user.isTrainer && !user.isOwner) return sendJson(res, 403, { error: 'Trainer access required' });
-    const all = readJsonFile(websitesPath, {});
+    const all = await readWebsites();
     const key = String(user.id || '');
     if (req.method === 'GET') {
       const cfg = all[key] || null;
@@ -11478,7 +11462,7 @@ async function trainingRoutes(req, res, url) {
     };
     try {
       all[key] = record;
-      writeJsonFile(websitesPath, all);
+      await jsonStore.setJson('trainer-websites', all);
       return sendJson(res, 200, { ok: true, config: record });
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to save website config' });
@@ -11487,7 +11471,7 @@ async function trainingRoutes(req, res, url) {
 
   if (pathname === '/api/training/website-funnel' && req.method === 'GET') {
     // PUBLIC: visitors clicking a trainer link have no account.
-    const entry = findWebsiteByHandle(url.searchParams.get('t'));
+    const entry = await findWebsiteByHandle(url.searchParams.get('t'));
     if (!entry) return sendJson(res, 404, { error: 'Unknown trainer link' });
     return sendJson(res, 200, {
       ok: true,
@@ -11507,7 +11491,7 @@ async function trainingRoutes(req, res, url) {
     if (!handle || !['start', 'answer', 'complete', 'exit'].includes(type)) {
       return sendJson(res, 400, { error: 'Bad funnel event' });
     }
-    if (!findWebsiteByHandle(handle)) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    if (!(await findWebsiteByHandle(handle))) return sendJson(res, 404, { error: 'Unknown trainer link' });
     const event = {
       handle,
       visitorId: String(payload?.visitorId || '').trim().slice(0, 48),
@@ -11530,10 +11514,10 @@ async function trainingRoutes(req, res, url) {
       ts: new Date().toISOString()
     };
     try {
-      let events = readJsonFile(funnelEventsPath, []);
+      let events = await readFunnelEvents();
       events.push(event);
       if (events.length > FUNNEL_EVENTS_CAP) events = events.slice(events.length - FUNNEL_EVENTS_CAP);
-      writeJsonFile(funnelEventsPath, events);
+      await jsonStore.setJson('funnel-events', events);
       return sendJson(res, 201, { ok: true });
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to record event' });
@@ -11550,9 +11534,9 @@ async function trainingRoutes(req, res, url) {
     if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
     if (!user.isTrainer && !user.isOwner) return sendJson(res, 403, { error: 'Trainer access required' });
     const handle = String(user.username || '').toLowerCase();
-    const all = readJsonFile(websitesPath, {});
+    const all = await readWebsites();
     const cfg = all[String(user.id || '')] || null;
-    const events = readJsonFile(funnelEventsPath, []).filter((e) => e.handle === handle);
+    const events = (await readFunnelEvents()).filter((e) => e.handle === handle);
     return sendJson(res, 200, { ok: true, handle, config: cfg, events });
   }
 
