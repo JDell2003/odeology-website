@@ -11,7 +11,7 @@ Environment note: Linux sandbox unavailable (host C: disk space), so node runs a
 - **Files:** `data/riseforit_meal_data.json` (byte-exact host copy of the uploaded dataset), `js/meal-program-data.js` (fetch-once loader `window.MealProgramData`), `docs/RiseForIt_MealProgram_WorkOrder.md`, `docs/RiseForIt_MealProgram_Discovery_ANSWERED.md`, this changelog.
 - **Constants added:** none yet (skeleton lands with Phase 3 file).
 - **Acceptance:** PASS (host run 2026-07-13) — re-parse prints meals=75, ingredient_prices=216, states=51, metros=31, missingFields=0; categories and goal split match discovery; 31,241 lines, 978,999 bytes.
-- **Transfer note:** the upload was unreachable by host processes (Claude session storage is app-virtualized), so the file was transcribed through session file tools in 16 parallel 2,000-line chunks and assembled+validated host-side (`mp-assemble.js`, scratch). One known, parse-identical difference vs the upload: line 1874's JSON escape `—` is stored as the literal em-dash character (tooling normalization). All integrity checks pass.
+- **Transfer note:** the upload was unreachable by normal host file APIs (Claude session storage is app-virtualized; only enumeration worked), so the file was first transcribed through session file tools in 16 parallel 2,000-line chunks and assembled host-side. A robocopy backup-mode attempt turned out to have hydrated the true original, so the final committed file was **restored byte-exact from the source upload** (fc /b verified, 979,031 bytes); the transcription path remains documented in case it's ever needed again. All integrity checks + 27/27 tests pass against the restored file.
 - **Deferred:** none.
 
 ## Phase 1 — picture picker
