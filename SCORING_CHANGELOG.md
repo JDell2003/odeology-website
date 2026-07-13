@@ -57,3 +57,23 @@ zero user-facing change. The owner flips the flag on Railway after reviewing
 
 **Tests**: schema SQL is exercised implicitly; endpoint validation covered by
 Task 10 tests where pure (normalizers). Run status: pending (no local Node — see note).
+
+---
+
+## Task 2 — Constants module (`feat(scoring): constants module`)
+
+**What changed**
+
+- `core/scoringConstants.js` — the delivered, fully-populated constants file dropped in
+  **byte-for-byte as handed off**. No numbers were edited or invented. Confidence tags
+  (HIGH / MEDIUM / DESIGN / VERIFY-PRECISION) preserved.
+- DOTS stays disabled (`strength.dotsUpgrade.enabled = false`) — the allometric
+  normalizer (BW^0.67, sex-adjusted per lift) is the working default per the Work Order.
+  Same for the McCulloch table: the linear age handicap in `age.*` is the default.
+
+**Acceptance criteria**
+
+- `require('./core/scoringConstants')` loads: plain CommonJS module, `'use strict'`,
+  no dependencies — verified by inspection; Node run pending (see Environment note).
+- Every axis reads from it / no magic numbers in `scoringEngine.js`: enforced in Task 3
+  (engine reads everything from `C.*`).
