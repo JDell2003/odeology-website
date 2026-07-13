@@ -135,6 +135,8 @@ body.theme-wipe-light::after {
 
 html {
     scroll-behavior: smooth;
+    /* Dark canvas behind overscroll/rubber-banding on iOS instead of white. */
+    background-color: var(--bg);
 }
 
 body {
