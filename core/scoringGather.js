@@ -174,7 +174,8 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
       [userId]
     ),
     dbc.query(
-      `SELECT day::text AS day, steps, active_minutes, sleep_minutes, distance_meters, gym_visit,
+      `SELECT day::text AS day, steps, active_minutes, sleep_minutes, vigorous_minutes,
+              distance_meters, vo2max, resting_hr, gym_visit,
               wake_result, wake_at, sleep_start_at, sources
        FROM app_health_daily
        WHERE user_id = $1 AND day > ($2::date - INTERVAL '${maxWindow} days');`,
@@ -285,29 +286,43 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
   const strengthProvenance = (lastLiftHealth?.gym_visit === true && workoutTimerDays.has(lastLiftDay))
     ? 'device' : 'self_report';
 
-  // --- cardio (14d) ---
-  let cardioMinutes14 = 0;
-  let cardioDeviceMinutes = 0;
+  // --- cardio (14d) — Task 8: graded minutes-at-intensity + VO2max ---
+  // Dedupe: app_health_daily already holds ONE row per day; upsertDaily
+  // COALESCE-merges providers so the same run reported in-app and via a
+  // wearable does not double-count active_minutes. We split total active
+  // minutes into vigorous (from the vigorous_minutes column) and the moderate
+  // remainder, and take the most recent non-null VO2max in the window.
+  let cardioModerate14 = 0, cardioVigorous14 = 0;
+  let cardioDeviceMinutes = 0, cardioTotalMinutes = 0;
   let lastCardioDay = null;
   let stepsSum = 0, stepsDays = 0;
+  let latestVo2max = null, latestVo2maxDay = null;
   for (let i = 0; i < C.windows.cardioDays; i++) {
     const day = isoDay(new Date(today - i * DAY_MS));
     const h = healthByDay.get(day);
     if (!h) continue;
     const mins = Number(h.active_minutes) || 0;
+    const vig = Math.min(mins, Number(h.vigorous_minutes) || 0);
+    const mod = Math.max(0, mins - vig);
     if (mins > 0) {
-      cardioMinutes14 += mins;
+      cardioModerate14 += mod;
+      cardioVigorous14 += vig;
+      cardioTotalMinutes += mins;
       if (deviceOrSelf((h.sources || {}).activeMinutes) === 'device') cardioDeviceMinutes += mins;
       if (!lastCardioDay || day > lastCardioDay) lastCardioDay = day;
     }
     if (Number(h.steps) > 0) { stepsSum += Number(h.steps); stepsDays += 1; }
+    if (Number(h.vo2max) > 0 && (!latestVo2maxDay || day > latestVo2maxDay)) {
+      latestVo2max = Number(h.vo2max);
+      latestVo2maxDay = day;
+    }
   }
   const cardio = {
-    weeklyModerateMinutes: (cardioMinutes14 / C.windows.cardioDays) * 7,
-    weeklyVigorousMinutes: 0, // Task 8 wires HR/MET-graded vigorous minutes
-    vo2max: null,             // Task 8 stores Fitbit VO2max when the heart scope lands
+    weeklyModerateMinutes: (cardioModerate14 / C.windows.cardioDays) * 7,
+    weeklyVigorousMinutes: (cardioVigorous14 / C.windows.cardioDays) * 7,
+    vo2max: latestVo2max,
     stepsAvgPerDay: stepsDays ? stepsSum / stepsDays : 0,
-    provenance: cardioMinutes14 > 0 && cardioDeviceMinutes >= cardioMinutes14 / 2 ? 'device' : 'self_report',
+    provenance: cardioTotalMinutes > 0 && cardioDeviceMinutes >= cardioTotalMinutes / 2 ? 'device' : 'self_report',
     idleDays: lastCardioDay ? daysAgoOf(lastCardioDay, todayIso) : 999,
     pauseActive: false
   };

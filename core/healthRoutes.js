@@ -136,6 +136,15 @@ async function ensureSchema() {
     // (today only the calendar day is stored).
     await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS wake_at timestamptz;`);
     await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS sleep_start_at timestamptz;`);
+    // Task 8 — cardio v2: graded intensity needs vigorous minutes + VO2max +
+    // resting HR (Fitbit heart scope / Strava HR), and Strava distance/type.
+    await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS vigorous_minutes integer;`);
+    await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS vo2max numeric;`);
+    await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS resting_hr integer;`);
+    await db.query(`ALTER TABLE app_health_activities ADD COLUMN IF NOT EXISTS provider text;`);
+    await db.query(`ALTER TABLE app_health_activities ADD COLUMN IF NOT EXISTS external_id text;`);
+    await db.query(`ALTER TABLE app_health_activities ADD COLUMN IF NOT EXISTS avg_hr integer;`);
+    await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_health_activities_provider_ext ON app_health_activities(user_id, provider, external_id) WHERE external_id IS NOT NULL;`);
     await db.query(`
       CREATE TABLE IF NOT EXISTS app_health_activities (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -195,6 +204,8 @@ const PROVIDERS = {
         state
       });
       return `https://www.strava.com/oauth/authorize?${params.toString()}`;
+      // NOTE: Strava's activity:read already returns per-activity heartrate,
+      // distance, and type; no extra scope needed (unlike Fitbit's heart scope).
     },
     async exchangeCode(req, code) {
       const resp = await fetch('https://www.strava.com/api/v3/oauth/token', {
@@ -249,12 +260,28 @@ const PROVIDERS = {
       if (!resp.ok) throw new Error(`Strava activities fetch failed (${resp.status})`);
       const activities = await resp.json().catch(() => []);
       const byDay = new Map();
+      // Task 8 — cardio v2: keep distance, type and HR (previously discarded)
+      // and split minutes into moderate vs vigorous so the scoring engine can
+      // grade intensity instead of just counting minutes.
       (Array.isArray(activities) ? activities : []).forEach((activity) => {
         const start = String(activity.start_date_local || activity.start_date || '').slice(0, 10);
         if (!start) return;
-        const minutes = Math.round(Number(activity.moving_time || 0) / 60);
-        const entry = byDay.get(start) || { activeMinutes: 0 };
-        entry.activeMinutes += Math.max(0, minutes);
+        const minutes = Math.max(0, Math.round(Number(activity.moving_time || 0) / 60));
+        const distance = Math.max(0, Math.round(Number(activity.distance || 0)));
+        const type = String(activity.type || activity.sport_type || '').toLowerCase();
+        const avgHr = Number(activity.average_heartrate) || null;
+        const maxHr = Number(activity.max_heartrate) || null;
+        // Vigorous when average HR reaches ~77% of an age-agnostic 190 max
+        // (~146 bpm) OR the activity type is inherently high-intensity. This is
+        // a conservative default; a per-user HR-zone upgrade can refine it.
+        const vigorousType = /run|race|virtualrun|swim|rowing|hiit|workout|crossfit/.test(type);
+        const isVigorous = (avgHr && avgHr >= 146) || (maxHr && maxHr >= 165) || vigorousType;
+        const entry = byDay.get(start) || { activeMinutes: 0, vigorousMinutes: 0, distanceMeters: 0, providerActivityIds: [] };
+        entry.activeMinutes += minutes;
+        if (isVigorous) entry.vigorousMinutes += minutes;
+        entry.distanceMeters += distance;
+        if (avgHr) entry.avgHr = avgHr;
+        if (activity.id != null) entry.providerActivityIds.push(String(activity.id));
         byDay.set(start, entry);
       });
       return byDay;
@@ -265,11 +292,16 @@ const PROVIDERS = {
     configured: () => Boolean(process.env.FITBIT_CLIENT_ID && process.env.FITBIT_CLIENT_SECRET),
     authorizeUrl(req, state) {
       const redirectUri = `${baseUrlFromRequest(req)}/api/health/connect/fitbit/callback`;
+      // Task 8 — cardio v2: 'heart' scope unlocks resting HR, HR zones and the
+      // cardio-fitness (VO2max) score. Configurable so the owner can roll it
+      // out only once the Fitbit app registration also requests 'heart'
+      // (otherwise Fitbit returns 403 in prod — see DEPLOYMENT.md OWNER ACTIONS).
+      const scope = String(process.env.FITBIT_SCOPES || 'activity sleep profile heart').trim();
       const params = new URLSearchParams({
         client_id: process.env.FITBIT_CLIENT_ID,
         redirect_uri: redirectUri,
         response_type: 'code',
-        scope: 'activity sleep profile',
+        scope,
         state
       });
       return `https://www.fitbit.com/oauth2/authorize?${params.toString()}`;
@@ -325,12 +357,19 @@ const PROVIDERS = {
     async fetchDaily(conn) {
       const byDay = new Map();
       const headers = { Authorization: `Bearer ${conn.access_token}` };
+      const hasHeartScope = /(^|\s)heart(\s|$)/.test(String(conn.scopes || process.env.FITBIT_SCOPES || ''));
       for (let i = 0; i < SUMMARY_DAYS; i++) {
         const day = dayKey(new Date(Date.now() - i * 86_400_000));
-        const [actResp, sleepResp] = await Promise.all([
+        // Task 8 — cardio v2: also pull HR summary (resting HR) when the heart
+        // scope is present. VO2max (cardioscore) is fetched once per sync below.
+        const requests = [
           fetch(`https://api.fitbit.com/1/user/-/activities/date/${day}.json`, { headers }),
           fetch(`https://api.fitbit.com/1.2/user/-/sleep/date/${day}.json`, { headers })
-        ]);
+        ];
+        if (hasHeartScope) {
+          requests.push(fetch(`https://api.fitbit.com/1/user/-/activities/heart/date/${day}/1d.json`, { headers }));
+        }
+        const [actResp, sleepResp, hrResp] = await Promise.all(requests);
         if (actResp.status === 401 || sleepResp.status === 401) {
           throw Object.assign(new Error('unauthorized'), { needsRefresh: true });
         }
@@ -339,15 +378,47 @@ const PROVIDERS = {
           const act = await actResp.json().catch(() => ({}));
           const summary = act?.summary || {};
           if (Number.isFinite(Number(summary.steps))) entry.steps = Number(summary.steps);
-          const active = Number(summary.fairlyActiveMinutes || 0) + Number(summary.veryActiveMinutes || 0);
+          const fairly = Number(summary.fairlyActiveMinutes || 0);
+          const very = Number(summary.veryActiveMinutes || 0);
+          const active = fairly + very;
           if (active > 0) entry.activeMinutes = active;
+          if (very > 0) entry.vigorousMinutes = very; // "very active" ~= vigorous intensity
         }
         if (sleepResp.ok) {
           const sleep = await sleepResp.json().catch(() => ({}));
           const minutes = Number(sleep?.summary?.totalMinutesAsleep || 0);
           if (minutes > 0) entry.sleepMinutes = minutes;
         }
+        if (hrResp && hrResp.ok) {
+          const hr = await hrResp.json().catch(() => ({}));
+          const rest = Number(hr?.['activities-heart']?.[0]?.value?.restingHeartRate);
+          if (Number.isFinite(rest) && rest > 0) entry.restingHr = rest;
+        }
         if (Object.keys(entry).length) byDay.set(day, entry);
+      }
+      // VO2max / cardio-fitness score (single call; needs the heart scope).
+      if (hasHeartScope) {
+        try {
+          const vo2Resp = await fetch('https://api.fitbit.com/1/user/-/cardioscore/date/today.json', { headers });
+          if (vo2Resp.ok) {
+            const vo2 = await vo2Resp.json().catch(() => ({}));
+            const raw = vo2?.cardioScore?.[0]?.value?.vo2Max ?? vo2?.['cardioscore']?.[0]?.value?.vo2Max;
+            // Fitbit sometimes returns a range like "42-46" — take the midpoint.
+            const parseVo2 = (v) => {
+              if (v == null) return null;
+              const parts = String(v).split('-').map(Number).filter(Number.isFinite);
+              if (!parts.length) return null;
+              return parts.reduce((a, b) => a + b, 0) / parts.length;
+            };
+            const vo2max = parseVo2(raw);
+            if (vo2max) {
+              const today = dayKey(new Date());
+              const entry = byDay.get(today) || {};
+              entry.vo2max = vo2max;
+              byDay.set(today, entry);
+            }
+          }
+        } catch { /* VO2max is optional; never fail the sync over it */ }
       }
       return byDay;
     }
@@ -409,22 +480,33 @@ async function upsertDaily(userId, day, metrics, source) {
   const steps = Number.isFinite(metrics.steps) ? Math.max(0, Math.round(metrics.steps)) : null;
   const activeMinutes = Number.isFinite(metrics.activeMinutes) ? Math.max(0, Math.round(metrics.activeMinutes)) : null;
   const sleepMinutes = Number.isFinite(metrics.sleepMinutes) ? Math.max(0, Math.round(metrics.sleepMinutes)) : null;
+  // Task 8 — cardio v2 metrics.
+  const vigorousMinutes = Number.isFinite(metrics.vigorousMinutes) ? Math.max(0, Math.round(metrics.vigorousMinutes)) : null;
+  const distanceMeters = Number.isFinite(metrics.distanceMeters) ? Math.max(0, Math.round(metrics.distanceMeters)) : null;
+  const vo2max = Number.isFinite(metrics.vo2max) ? Math.round(metrics.vo2max * 10) / 10 : null;
+  const restingHr = Number.isFinite(metrics.restingHr) ? Math.max(0, Math.round(metrics.restingHr)) : null;
   const sourcePatch = {};
   if (steps !== null) sourcePatch.steps = source;
   if (activeMinutes !== null) sourcePatch.activeMinutes = source;
   if (sleepMinutes !== null) sourcePatch.sleepMinutes = source;
+  if (vigorousMinutes !== null) sourcePatch.vigorousMinutes = source;
+  if (vo2max !== null) sourcePatch.vo2max = source;
   await db.query(
     `
-      INSERT INTO app_health_daily (user_id, day, steps, active_minutes, sleep_minutes, sources, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6::jsonb, now())
+      INSERT INTO app_health_daily (user_id, day, steps, active_minutes, sleep_minutes, vigorous_minutes, distance_meters, vo2max, resting_hr, sources, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, now())
       ON CONFLICT (user_id, day) DO UPDATE SET
         steps = COALESCE(EXCLUDED.steps, app_health_daily.steps),
         active_minutes = COALESCE(EXCLUDED.active_minutes, app_health_daily.active_minutes),
         sleep_minutes = COALESCE(EXCLUDED.sleep_minutes, app_health_daily.sleep_minutes),
+        vigorous_minutes = COALESCE(EXCLUDED.vigorous_minutes, app_health_daily.vigorous_minutes),
+        distance_meters = COALESCE(EXCLUDED.distance_meters, app_health_daily.distance_meters),
+        vo2max = COALESCE(EXCLUDED.vo2max, app_health_daily.vo2max),
+        resting_hr = COALESCE(EXCLUDED.resting_hr, app_health_daily.resting_hr),
         sources = app_health_daily.sources || EXCLUDED.sources,
         updated_at = now();
     `,
-    [userId, day, steps, activeMinutes, sleepMinutes, JSON.stringify(sourcePatch)]
+    [userId, day, steps, activeMinutes, sleepMinutes, vigorousMinutes, distanceMeters, vo2max, restingHr, JSON.stringify(sourcePatch)]
   );
 }
 

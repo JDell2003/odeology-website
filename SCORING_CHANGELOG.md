@@ -276,3 +276,48 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
   flagged lifts excluded from the bank.
 - Genuine late submit still counts: `late_ok` verdict inside 24 h grace.
 - Impossible 1RM leaps flagged, not scored: `flag_e1rm_jump` + gather exclusion.
+
+---
+
+## Task 8 — Cardio rebuild + integrations (`feat(scoring): cardio v2`)
+
+**What changed**
+
+- Graded minutes-at-intensity already lands the score (Task 3 `computeCardio` →
+  `gradeWhoMinutes` + MET/VO2max). Task 8 supplies the *data*: `app_health_daily`
+  gains `vigorous_minutes`, `vo2max`, `resting_hr` (additive columns);
+  `app_health_activities` gains `provider`, `external_id`, `avg_hr` + a unique
+  `(user_id, provider, external_id)` index for dedupe.
+- **Strava** (`fetchDaily`): stops discarding distance/type/HR. Splits moving-time
+  into moderate vs **vigorous** minutes (avg HR ≥146, max HR ≥165, or a high-intensity
+  activity type), and keeps `distance_meters` — all persisted via `upsertDaily`.
+- **Fitbit**: authorize scope now includes `heart` (env-overridable `FITBIT_SCOPES`,
+  default `activity sleep profile heart`). When the heart scope is present, `fetchDaily`
+  also pulls resting HR (`activities/heart`) and the cardio-fitness **VO2max**
+  (`cardioscore`, range midpoint parsed); "very active" minutes map to vigorous.
+  **Requires the Fitbit app registration to add `heart`** — recorded in DEPLOYMENT.md /
+  OWNER ACTIONS, else Fitbit 403s in prod.
+- `upsertDaily` persists the new metrics with per-metric `sources` provenance and
+  COALESCE merge.
+- Gather cardio block: reads vigorous minutes + latest-in-window VO2max, splits
+  moderate/vigorous, feeds the engine. **Dedupe**: `app_health_daily` is one row/day
+  and providers COALESCE-merge, so the same run in-app + on Strava never double-counts
+  active minutes; device-verified minutes win the provenance tie.
+- Steps demoted: the engine only falls back to steps (capped at
+  `C.cardio.stepsFallbackCapPoints`) when no minutes/VO2max signal exists.
+
+**Deviations (live code wins)**
+
+- The doc pointed at rewriting the binary 8,000-step credit in `js/identity-activity.js`,
+  `js/main.js`, and `dayPoints()`. Those are the **legacy** points/localStorage paths;
+  touching them changes flag-off behavior, which the guardrails forbid. The v2 cardio
+  axis already grades intensity server-side and demotes steps — the legacy binary credit
+  stays as-is until the owner flips the flag. Noted as an intentional deviation.
+
+**Acceptance criteria**
+
+- Cardio reflects intensity not just steps: moderate/vigorous split + WHO grading + VO2max.
+- HR used when present: Strava avg/max HR drives the vigorous split; Fitbit resting HR
+  + VO2max stored.
+- A run synced twice counts once: single day-row + COALESCE merge + activity unique index.
+- Test run: pending (no local Node — see note).
