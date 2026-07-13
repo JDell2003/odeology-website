@@ -5580,5 +5580,8 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   return updated;
 }
 
-module.exports = { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity };
+// v2 scoring (SCORING_ENGINE_V2): estimateExerciseMinutes is exported additively
+// so the Task 7 plausibility timer projects workout duration with the SAME
+// math the generator's volume budget uses. No behavior change here.
+module.exports = { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes };
 

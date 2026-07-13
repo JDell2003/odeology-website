@@ -185,6 +185,13 @@ module.exports = {
     // DESIGN(agent): sleep-duration falloff outside the recommended band —
     // zero credit at (band floor x floorZeroFraction) and (band ceiling x
     // ceilingZeroFactor); linear in between.
-    sleep: { floorZeroFraction: 0.5, ceilingZeroFactor: 2 }
+    sleep: { floorZeroFraction: 0.5, ceilingZeroFactor: 2 },
+    // Task 7 integrity thresholds.
+    integrity: {
+      kcalPerLbBodyFat: 3500,            // HIGH(agent): canonical energy density of body mass
+      calorieMismatchKcal: 1000,         // DESIGN(agent): reported-vs-implied balance gap that flags junk logging
+      maxTrustedGpsAccuracyMeters: 150,  // DESIGN(agent): worse GPS accuracy than this is treated as spoof-suspect
+      rateLimit: { windowMinutes: 5, maxWrites: 30 } // DESIGN(agent): per-user, per-endpoint write throttle
+    }
   }
 };

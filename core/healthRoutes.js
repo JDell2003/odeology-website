@@ -10,7 +10,8 @@
 
 const crypto = require('crypto');
 const db = require('./db');
-const { enqueueUserRecompute } = require('./scoringGather');
+const { enqueueUserRecompute, scoringV2Enabled, scoringWriteAllowed, recordScoringFlag } = require('./scoringGather');
+const scoringConstants = require('./scoringConstants');
 
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.HEALTH_MAX_BODY_BYTES || 100_000));
 const SYNC_STALE_MS = Math.max(60_000, Number(process.env.HEALTH_SYNC_STALE_MS || 15 * 60_000));
@@ -383,6 +384,27 @@ function dayKey(date) {
   return `${y}-${m}-${dd}`;
 }
 
+// v2 scoring (SCORING_ENGINE_V2) — Task 7 timezone fix: when the flag is on,
+// the day boundary comes from the user's stored IANA timezone (falling back to
+// DEFAULT_TZ, then to the legacy server-local key). Flag off -> legacy dayKey
+// so the two existing conventions are NOT collapsed by guessing.
+async function resolveUserDayKey(userId) {
+  if (!scoringV2Enabled()) return dayKey(new Date());
+  try {
+    const tzRes = await db.query(
+      'SELECT timezone FROM app_training_profiles WHERE user_id = $1 LIMIT 1;',
+      [userId]
+    );
+    const tz = tzRes.rows?.[0]?.timezone || process.env.DEFAULT_TZ || null;
+    if (!tz) return dayKey(new Date()); // TODO(owner): set DEFAULT_TZ on Railway
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })
+      .format(new Date());
+  } catch {
+    return dayKey(new Date());
+  }
+}
+
 async function upsertDaily(userId, day, metrics, source) {
   const steps = Number.isFinite(metrics.steps) ? Math.max(0, Math.round(metrics.steps)) : null;
   const activeMinutes = Number.isFinite(metrics.activeMinutes) ? Math.max(0, Math.round(metrics.activeMinutes)) : null;
@@ -623,8 +645,12 @@ module.exports = async function healthRoutes(req, res, url) {
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
     }
+    // v2 scoring (SCORING_ENGINE_V2) — Task 7 integrity (no-ops flag-off).
+    if (!scoringWriteAllowed(userId, 'health-manual')) {
+      return sendJson(res, 429, { error: 'Too many manual entries - slow down and try again shortly' });
+    }
     const rawDay = String(payload?.day || '').trim();
-    const day = /^\d{4}-\d{2}-\d{2}$/.test(rawDay) ? rawDay : dayKey(new Date());
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(rawDay) ? rawDay : await resolveUserDayKey(userId);
     const dayTime = new Date(`${day}T12:00:00`).getTime();
     if (!Number.isFinite(dayTime) || dayTime > Date.now() + 86_400_000 || Date.now() - dayTime > 366 * 86_400_000) {
       return sendJson(res, 400, { error: 'Pick a day within the last year' });
@@ -646,6 +672,26 @@ module.exports = async function healthRoutes(req, res, url) {
     }
     if (steps === null && sleepHours === null && activeMinutes === null) {
       return sendJson(res, 400, { error: 'Enter at least one value' });
+    }
+    // v2 scoring — Task 7 edit audit: capture the old row before the upsert
+    // overwrites it (flag-gated).
+    if (scoringV2Enabled()) {
+      try {
+        const prevRow = await db.query(
+          'SELECT steps, active_minutes, sleep_minutes FROM app_health_daily WHERE user_id = $1 AND day = $2::date LIMIT 1;',
+          [userId, day]
+        );
+        if (prevRow.rows?.length) {
+          await db.query(
+            `INSERT INTO app_edit_audit (user_id, table_name, row_key, field, old_value, new_value, actor)
+             VALUES ($1, 'app_health_daily', $2, 'manual_metrics', $3::jsonb, $4::jsonb, 'user');`,
+            [userId, day, JSON.stringify(prevRow.rows[0]),
+              JSON.stringify({ steps, active_minutes: activeMinutes, sleep_minutes: sleepHours === null ? null : sleepHours * 60 })]
+          );
+        }
+      } catch (err) {
+        console.error('[scoring] manual edit-audit failed', err?.message || err);
+      }
     }
     await upsertDaily(userId, day, {
       steps: steps === null ? NaN : steps,
@@ -674,11 +720,14 @@ module.exports = async function healthRoutes(req, res, url) {
     if (!Number.isFinite(distanceMeters) || distanceMeters < 0 || distanceMeters > 400_000) {
       return sendJson(res, 400, { error: 'Distance looks wrong' });
     }
+    if (!scoringWriteAllowed(userId, 'health-activity')) {
+      return sendJson(res, 429, { error: 'Too many activity submissions - slow down and try again shortly' });
+    }
     await db.query(
       `INSERT INTO app_health_activities (user_id, kind, duration_seconds, distance_meters) VALUES ($1, $2, $3, $4);`,
       [userId, kind, durationSeconds, distanceMeters]
     );
-    const day = dayKey(new Date());
+    const day = await resolveUserDayKey(userId);
     const minutes = Math.round(durationSeconds / 60);
     await db.query(
       `
@@ -710,6 +759,19 @@ module.exports = async function healthRoutes(req, res, url) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       return sendJson(res, 400, { error: 'Invalid location' });
     }
+    // v2 scoring — Task 7 integrity: throttle + GPS accuracy spoof flag.
+    if (!scoringWriteAllowed(userId, 'gym-checkin')) {
+      return sendJson(res, 429, { error: 'Too many check-in attempts - slow down and try again shortly' });
+    }
+    if (scoringV2Enabled() && accuracy > scoringConstants.engineExtras.integrity.maxTrustedGpsAccuracyMeters) {
+      await recordScoringFlag(userId, {
+        axis: 'consistency',
+        reasonCode: 'flag_gps_accuracy',
+        sourceRef: null,
+        detail: { accuracy, lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 }
+      });
+      return sendJson(res, 200, { ok: true, hasGym: true, within: false, suspicious: true });
+    }
     const profileResult = await db.query(
       'SELECT profile FROM app_user_profiles WHERE user_id = $1 LIMIT 1;',
       [userId]
@@ -724,7 +786,7 @@ module.exports = async function healthRoutes(req, res, url) {
     // Give credit when the GPS accuracy circle overlaps the gym radius.
     const within = distance - Math.min(accuracy, 50) <= GYM_RADIUS_METERS;
     if (within) {
-      const day = dayKey(new Date());
+      const day = await resolveUserDayKey(userId);
       await db.query(
         `
           INSERT INTO app_health_daily (user_id, day, gym_visit, sources, updated_at)
@@ -758,19 +820,28 @@ module.exports = async function healthRoutes(req, res, url) {
     }
     const result = String(payload?.result || '').toLowerCase() === 'clean' ? 'clean' : 'snoozed';
     const sleepMinutes = Number(payload?.sleepMinutes);
-    const day = dayKey(new Date());
+    if (!scoringWriteAllowed(userId, 'wake')) {
+      return sendJson(res, 429, { error: 'Too many wake submissions - slow down and try again shortly' });
+    }
+    const day = await resolveUserDayKey(userId);
     const sleepValid = Number.isFinite(sleepMinutes) && sleepMinutes >= 60 && sleepMinutes <= 16 * 60;
+    // v2 scoring — Task 7 / 1f: persist the wake timestamp (and the implied
+    // sleep start) so sleep-regularity can be scored. Additive columns only.
+    const wakeAt = new Date();
+    const sleepStartAt = sleepValid ? new Date(wakeAt.getTime() - Math.round(sleepMinutes) * 60_000) : null;
     await db.query(
       `
-        INSERT INTO app_health_daily (user_id, day, sleep_minutes, wake_result, sources, updated_at)
-        VALUES ($1, $2, $3, $4, '{"sleepMinutes":"alarm","wake":"alarm"}'::jsonb, now())
+        INSERT INTO app_health_daily (user_id, day, sleep_minutes, wake_result, wake_at, sleep_start_at, sources, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, '{"sleepMinutes":"alarm","wake":"alarm"}'::jsonb, now())
         ON CONFLICT (user_id, day) DO UPDATE SET
           sleep_minutes = COALESCE(EXCLUDED.sleep_minutes, app_health_daily.sleep_minutes),
           wake_result = EXCLUDED.wake_result,
+          wake_at = COALESCE(EXCLUDED.wake_at, app_health_daily.wake_at),
+          sleep_start_at = COALESCE(EXCLUDED.sleep_start_at, app_health_daily.sleep_start_at),
           sources = app_health_daily.sources || EXCLUDED.sources,
           updated_at = now();
       `,
-      [userId, day, sleepValid ? Math.round(sleepMinutes) : null, result]
+      [userId, day, sleepValid ? Math.round(sleepMinutes) : null, result, wakeAt, sleepStartAt]
     );
     enqueueUserRecompute(userId); // v2 scoring: no-op while flag off
     return sendJson(res, 200, { ok: true, result, pointsEarned: result === 'clean' ? 5 : 0 });

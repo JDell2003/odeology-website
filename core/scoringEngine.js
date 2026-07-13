@@ -454,6 +454,56 @@ function computeAxes(inputs, prevScores = {}, today = new Date()) {
   return { axes, rank, caste, normalized: strength.normalized, events };
 }
 
+// ---------------------------------------------------------------------------
+// Task 7 — integrity helpers (pure).
+// ---------------------------------------------------------------------------
+
+// Plausibility timer: compare a workout's actual duration against its
+// projected duration. Finishing under voidBelowFractionOfProjected voids the
+// session's strength credit — but a late submission with no timer (forgot to
+// hit "end workout" until later) still counts inside the grace window.
+function assessWorkoutPlausibility({ durationMs, projectedMinutes, performedAt, submittedAt } = {}) {
+  const p = C.plausibility;
+  if (!Number.isFinite(projectedMinutes) || projectedMinutes <= 0) return { verdict: 'unknown' };
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    if (performedAt && submittedAt) {
+      const lateMs = new Date(submittedAt) - new Date(performedAt);
+      if (Number.isFinite(lateMs) && lateMs >= 0 && lateMs <= p.lateSubmissionGraceHours * 3_600_000) {
+        return { verdict: 'late_ok', projectedMinutes };
+      }
+    }
+    return { verdict: 'unknown', projectedMinutes };
+  }
+  const actualMinutes = durationMs / 60_000;
+  if (actualMinutes < projectedMinutes * p.voidBelowFractionOfProjected) {
+    return { verdict: 'void', actualMinutes: round2(actualMinutes), projectedMinutes: round2(projectedMinutes) };
+  }
+  return { verdict: 'ok', actualMinutes: round2(actualMinutes), projectedMinutes: round2(projectedMinutes) };
+}
+
+// e1RM anomaly: weekly gain above C.strength.implausibleWeeklyGainPct flags the
+// lift (trust x0 on the offending delta).
+function detectE1rmJump(prevBestE1rm, newE1rm, daysSincePrevBest) {
+  const prev = Number(prevBestE1rm);
+  const next = Number(newE1rm);
+  if (!Number.isFinite(prev) || prev <= 0 || !Number.isFinite(next) || next <= prev) return false;
+  const weeks = Math.max(1 / 7, (Number(daysSincePrevBest) || 0) / 7);
+  const weeklyGainPct = ((next / prev - 1) * 100) / weeks;
+  return weeklyGainPct > C.strength.implausibleWeeklyGainPct;
+}
+
+// Junk-logging detector: reported calories vs the balance implied by the
+// actual bodyweight trend. Needs a maintenance estimate to run.
+function detectCalorieMismatch({ avgReportedKcal, maintenanceKcal, weeklyTrendPctBw, bodyweightLb } = {}) {
+  const vals = [avgReportedKcal, maintenanceKcal, weeklyTrendPctBw, bodyweightLb].map(Number);
+  if (!vals.every(Number.isFinite) || vals[1] <= 0 || vals[3] <= 0) return false;
+  const x = C.engineExtras.integrity;
+  const lbPerWeek = (vals[2] / 100) * vals[3];                       // signed; negative = losing
+  const impliedDailyBalance = (lbPerWeek * x.kcalPerLbBodyFat) / 7;  // kcal/day
+  const reportedBalance = vals[0] - vals[1];
+  return Math.abs(reportedBalance - impliedDailyBalance) > x.calorieMismatchKcal;
+}
+
 function round2(v) { return Math.round(Number(v) * 100) / 100; }
 function roundOrNull(v) { return v === null || v === undefined || !Number.isFinite(Number(v)) ? null : round2(v); }
 
@@ -462,6 +512,7 @@ module.exports = {
   selfImprovement, blend, applyDecayOrPause, computeRank,
   gradeWhoMinutes, gradeVo2max, nutritionDayCredit, sleepDurationPts,
   emaWeightSeries, weeklyTrendPctBw, gradeProgressRate,
+  assessWorkoutPlausibility, detectE1rmJump, detectCalorieMismatch,
   computeStrength, computeCardio, computeConsistency, computeNutrition,
   computeRecovery, computeProgress, computeAxes
 };

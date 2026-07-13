@@ -233,3 +233,46 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - Events show the multiplier: `trust_multiplier` set on all six axis events.
 - Honest self-report never scores zero: self_report multiplier is 0.70; only
   `implausible` zeroes credit.
+
+---
+
+## Task 7 — Integrity / anti-gaming (`feat(scoring): integrity`)
+
+**What changed** (every behavior change is flag-gated; flag off = legacy behavior)
+
+- **Edit audit**: `POST /api/training/checkin` and `POST /api/health/manual` read the
+  old row before their upsert overwrites it and append `app_edit_audit` (old→new).
+- **Rate limits**: `scoringWriteAllowed()` in-memory token bucket (30 writes / 5 min /
+  user / endpoint, tagged in `C.engineExtras.integrity.rateLimit`) on checkin, log,
+  health-manual, health-activity, gym-checkin, wake → HTTP 429.
+- **Anomaly flags** → `app_score_events` (`reason_code='flag_*'`, provenance
+  `implausible`, trust ×0):
+  - `flag_e1rm_jump`: on `POST /api/training/log`, incoming best-set e1RM vs stored
+    best BEFORE the upsert; weekly gain > `C.strength.implausibleWeeklyGainPct` flags
+    the lift; gather **excludes flagged exercise keys from the strength bank**.
+  - `flag_workout_voided`: plausibility timer — actual `durationMs` vs projected
+    duration (prescribed sets/restSec through the generator's own
+    `estimateExerciseMinutes`, exported additively from `core/trainingEngine.js`);
+    void below `C.plausibility.voidBelowFractionOfProjected` **unless** submitted with
+    no timer within `lateSubmissionGraceHours` (late_ok).
+  - `flag_gps_accuracy`: gym check-in with GPS accuracy worse than
+    `maxTrustedGpsAccuracyMeters` (150 m, tagged) is flagged and NOT credited.
+  - `detectCalorieMismatch()` (reported calories vs bodyweight-trend-implied balance,
+    3500 kcal/lb) ships pure + tested but stays dormant until a server-side
+    maintenance-calorie target exists (`// TODO(owner)` from Task 3).
+- **Timezone fix**: `resolveUserDayKey()` — flag on → day boundary from the user's
+  stored IANA timezone (fallback `DEFAULT_TZ`, then legacy server-local); applied at
+  every health write (manual/activity/gym-checkin/wake). Flag off → the two legacy
+  day-key conventions are left exactly as they are (per the guardrail).
+- Wake endpoint now also persists `wake_at` + derived `sleep_start_at` (1f columns)
+  so sleep-regularity has real timestamps.
+- `C.engineExtras.integrity` block added (tagged AGENT-ADDED / DESIGN+HIGH).
+
+**Acceptance criteria**
+
+- Editing a past day leaves an audit row: implemented for check-ins and manual health
+  edits.
+- 10-second "45-minute" workout is voided: `assessWorkoutPlausibility` → 'void' flag;
+  flagged lifts excluded from the bank.
+- Genuine late submit still counts: `late_ok` verdict inside 24 h grace.
+- Impossible 1RM leaps flagged, not scored: `flag_e1rm_jump` + gather exclusion.

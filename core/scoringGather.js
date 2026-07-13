@@ -160,7 +160,7 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
   const todayIso = isoDay(today);
   const maxWindow = Math.max(C.windows.strengthDays, C.windows.consistencyDays, C.windows.progressDays);
 
-  const [profileRes, liftsRes, healthRes, checkinsRes, workoutsRes, snapshotsRes] = await Promise.all([
+  const [profileRes, liftsRes, healthRes, checkinsRes, workoutsRes, snapshotsRes, flagsRes] = await Promise.all([
     dbc.query(
       `SELECT sex, dob::text AS dob, timezone, age, experience, days_per_week, goals, strength,
               last_weighin_lb, eval_weight_lb
@@ -198,8 +198,23 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
        WHERE user_id = $1 AND day < $2::date
        ORDER BY day DESC LIMIT 70;`,
       [userId, todayIso]
-    )
+    ),
+    dbc.query(
+      `SELECT reason_code, source_ref
+       FROM app_score_events
+       WHERE user_id = $1 AND reason_code LIKE 'flag_%'
+         AND created_at > now() - INTERVAL '${C.windows.strengthDays} days';`,
+      [userId]
+    ).catch(() => ({ rows: [] }))
   ]);
+
+  // Task 7: lifts flagged implausible (e1RM jump) or from voided workouts earn
+  // zero trust — exclude them from the strength bank entirely.
+  const flaggedLiftKeys = new Set(
+    (flagsRes.rows || [])
+      .filter((r) => r.reason_code === 'flag_e1rm_jump' && r.source_ref)
+      .map((r) => String(r.source_ref))
+  );
 
   const profileRow = profileRes.rows?.[0] || {};
   const strengthBlob = profileRow.strength && typeof profileRow.strength === 'object' ? profileRow.strength : {};
@@ -222,6 +237,7 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
   const allTimeByLift = {};
   let lastLiftDay = null;
   for (const row of liftsRes.rows || []) {
+    if (flaggedLiftKeys.has(String(row.exercise_key || ''))) continue; // trust x0
     const lift = mapMainLift(row.exercise_key);
     if (!lift) continue;
     const lastAt = row.last_performed_at || null;
@@ -581,8 +597,47 @@ function enqueueUserRecompute(userId) {
   }, 250);
 }
 
+// ---------------------------------------------------------------------------
+// Task 7 — integrity utilities shared by the route modules.
+// ---------------------------------------------------------------------------
+
+// Per-user, per-endpoint in-memory token bucket. Only bites when the flag is
+// on; legacy behavior is untouched otherwise.
+const writeBuckets = new Map();
+function scoringWriteAllowed(userId, endpoint) {
+  if (!scoringV2Enabled()) return true;
+  const lim = C.engineExtras.integrity.rateLimit;
+  const key = `${userId}:${endpoint}`;
+  const now = Date.now();
+  let bucket = writeBuckets.get(key);
+  if (!bucket || now - bucket.start > lim.windowMinutes * 60_000) {
+    bucket = { start: now, count: 0 };
+    writeBuckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  if (writeBuckets.size > 10_000) writeBuckets.clear(); // crude memory guard
+  return bucket.count <= lim.maxWrites;
+}
+
+// Append an anomaly flag to the score-event ledger (reason_code 'flag_*',
+// provenance 'implausible', trust x0 on the offending delta).
+async function recordScoringFlag(userId, { axis, reasonCode, sourceRef = null, detail = {} } = {}) {
+  if (!scoringV2Enabled() || !db.isConfigured() || !userId) return;
+  try {
+    await ensureScoringSchema();
+    await db.query(
+      `INSERT INTO app_score_events (user_id, axis, delta, reason_code, provenance, trust_multiplier, source_ref, detail)
+       VALUES ($1, $2, 0, $3, 'implausible', 0, $4, $5::jsonb);`,
+      [userId, axis, reasonCode, sourceRef, JSON.stringify(detail || {})]
+    );
+  } catch (err) {
+    console.error('[scoring] failed to record flag', reasonCode, err?.message || err);
+  }
+}
+
 module.exports = {
   scoringV2Enabled, ensureScoringSchema, gatherUserScoringInputs, mapMainLift,
   computeAndPersistUserScore, listActiveScoringUserIds, runScoringRecomputePass,
-  enqueueUserRecompute, NIGHTLY_ADVISORY_LOCK_KEY
+  enqueueUserRecompute, NIGHTLY_ADVISORY_LOCK_KEY,
+  scoringWriteAllowed, recordScoringFlag
 };

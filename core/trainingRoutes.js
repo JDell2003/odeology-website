@@ -6,13 +6,14 @@ const { Worker } = require('worker_threads');
 const db = require('./db');
 const jsonStore = require('./jsonStore');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
-const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity } = require('./trainingEngine');
+const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
 const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
 const { emitUserEvent } = require('./emailEvents');
-const { scoringV2Enabled, enqueueUserRecompute } = require('./scoringGather');
+const { scoringV2Enabled, enqueueUserRecompute, scoringWriteAllowed, recordScoringFlag } = require('./scoringGather');
+const scoringEngine = require('./scoringEngine');
 const {
   DEBUG_COMBO_LABEL,
   evaluateGlutesLegsCoreDebugCombo,
@@ -12448,6 +12449,30 @@ async function trainingRoutes(req, res, url) {
     const serialized = JSON.stringify(data || {});
     if (serialized.length > 50_000) return sendJson(res, 400, { error: 'Check-in too large' });
 
+    // v2 scoring (SCORING_ENGINE_V2) — Task 7 integrity. Both blocks are
+    // no-ops while the flag is off.
+    if (!scoringWriteAllowed(user.id, 'checkin')) {
+      return sendJson(res, 429, { error: 'Too many check-in updates - slow down and try again shortly' });
+    }
+    if (scoringV2Enabled()) {
+      try {
+        // Edit audit: never silently destroy history on upsert-in-place.
+        const prevRow = await db.query(
+          'SELECT data FROM app_daily_checkins WHERE user_id = $1 AND day = $2::date LIMIT 1;',
+          [user.id, day]
+        );
+        if (prevRow.rows?.length) {
+          await db.query(
+            `INSERT INTO app_edit_audit (user_id, table_name, row_key, field, old_value, new_value, actor)
+             VALUES ($1, 'app_daily_checkins', $2, 'data', $3::jsonb, $4::jsonb, 'user');`,
+            [user.id, day, JSON.stringify(prevRow.rows[0].data || {}), serialized]
+          );
+        }
+      } catch (err) {
+        console.error('[scoring] checkin edit-audit failed', err?.message || err);
+      }
+    }
+
     try {
       // v2 scoring (SCORING_ENGINE_V2 trust ladder): stamp provenance on the
       // check-in. Everything typed in the Daily Dash is self-reported.
@@ -13016,6 +13041,62 @@ async function trainingRoutes(req, res, url) {
     const dayIndex = clampInt(payload?.dayIndex, 1, 7, null);
     const readiness = clampInt(payload?.readiness, 1, 10, null);
     if (!planId || !weekIndex || !dayIndex) return sendJson(res, 400, { error: 'Missing plan/week/day' });
+
+    // v2 scoring (SCORING_ENGINE_V2) — Task 7 integrity (all no-ops flag-off).
+    if (!scoringWriteAllowed(user.id, 'log')) {
+      return sendJson(res, 429, { error: 'Too many workout updates - slow down and try again shortly' });
+    }
+    if (scoringV2Enabled()) {
+      try {
+        const integrityEntries = Array.isArray(payload?.entries) ? payload.entries : [];
+        // (a) implausible e1RM jump vs the stored best BEFORE this upsert.
+        const priorRes = await db.query(
+          'SELECT exercise_key, best_estimated_1rm_lb, best_performed_at::text AS best_performed_at FROM app_training_lift_history WHERE user_id = $1;',
+          [user.id]
+        );
+        const priorByKey = new Map((priorRes.rows || []).map((r) => [String(r.exercise_key || ''), r]));
+        for (const entry of integrityEntries) {
+          const key = buildLiftHistoryKey(entry);
+          if (!key) continue;
+          const best = extractBestLiftPerformance(entry);
+          const prior = priorByKey.get(key);
+          if (!best?.estimated1rm || !prior?.best_estimated_1rm_lb) continue;
+          const daysSince = prior.best_performed_at
+            ? Math.max(0, Math.round((Date.now() - Date.parse(`${prior.best_performed_at}T00:00:00Z`)) / 86_400_000))
+            : 0;
+          if (scoringEngine.detectE1rmJump(Number(prior.best_estimated_1rm_lb), best.estimated1rm, daysSince)) {
+            await recordScoringFlag(user.id, {
+              axis: 'strength',
+              reasonCode: 'flag_e1rm_jump',
+              sourceRef: key,
+              detail: { prevBest: Number(prior.best_estimated_1rm_lb), next: best.estimated1rm, daysSince }
+            });
+          }
+        }
+        // (b) plausibility timer: actual duration vs projected duration
+        // (prescribed restSec + the generator's own estimateExerciseMinutes).
+        const projectedMinutes = integrityEntries.reduce((sum, entry) => {
+          const rx = entry?.prescribed || {};
+          return sum + estimateExerciseMinutes({ sets: rx.sets, restSec: rx.restSec, stimulusType: null });
+        }, 0);
+        const verdictInfo = scoringEngine.assessWorkoutPlausibility({
+          durationMs: Number(payload?.durationMs),
+          projectedMinutes,
+          performedAt: payload?.performedAt || null,
+          submittedAt: new Date().toISOString()
+        });
+        if (verdictInfo.verdict === 'void') {
+          await recordScoringFlag(user.id, {
+            axis: 'strength',
+            reasonCode: 'flag_workout_voided',
+            sourceRef: `workout:${planId}:${weekIndex}:${dayIndex}`,
+            detail: verdictInfo
+          });
+        }
+      } catch (err) {
+        console.error('[scoring] log integrity checks failed', err?.message || err);
+      }
+    }
 
     try {
       await upsertWorkoutLog({
