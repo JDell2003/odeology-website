@@ -3851,6 +3851,10 @@
         color: rgba(255, 255, 255, 0.55);
       }
       #entry-role-stage .path-grid {
+        /* Two role cards since managers retired: center them under the
+           heading instead of leaving the old third column's dead space. */
+        grid-template-columns: repeat(2, minmax(240px, 330px));
+        justify-content: center;
         width: min(1020px, 100%);
         margin: 0 auto;
       }
@@ -3929,8 +3933,13 @@
         border: 1.5px solid rgba(217, 161, 92, 0.55);
         background: rgba(217, 161, 92, 0.10);
         color: #d9a15c;
-        font-size: 0.95rem;
+        line-height: 1;
         transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      #entry-role-stage .path-arrow svg {
+        width: 16px;
+        height: 16px;
+        display: block;
       }
       #entry-role-stage .path-card:hover .path-arrow {
         background: linear-gradient(180deg, #d9a15c, #b9782d);
@@ -4027,7 +4036,7 @@
           animation: none;
         }
         #entry-role-stage .path-card-content {
-          padding: 20px 46px 20px 92px;
+          padding: 20px 60px 20px 92px;
           min-height: 104px;
           align-items: flex-start;
           justify-content: center;
@@ -4049,10 +4058,14 @@
           right: 16px;
           transform: translateY(-50%);
           margin: 0;
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           z-index: 2;
           pointer-events: none;
+        }
+        #entry-role-stage .path-arrow svg {
+          width: 15px;
+          height: 15px;
         }
         #entry-role-stage .path-card:hover .path-arrow {
           transform: translateY(-50%) translateX(3px);
@@ -4347,6 +4360,19 @@
                 </div>
             </section>
 
+            <style id="entry-bm-transitions">
+              /* BetterMe-style question transitions: the old question fades
+                 up and out, the next fades in from below. */
+              #entry-step-body, #entry-panel-title, #entry-panel-subtitle {
+                transition: opacity .22s ease, transform .22s ease;
+              }
+              .entry-q-exit { opacity: 0 !important; transform: translateY(-12px) !important; }
+              .entry-q-enter { opacity: 0; transform: translateY(14px); }
+              .entry-link-btn {
+                background: none; border: 0; padding: 0; font: inherit;
+                color: inherit; text-decoration: underline; cursor: pointer;
+              }
+            </style>
             <section class="entry-layout reveal" id="onboarding-screen">
                 <section class="entry-panel" id="onboarding-panel" aria-live="polite">
                     <div class="entry-panel-head">
@@ -5208,7 +5234,7 @@
           const title = card.querySelector('h3');
           const description = card.querySelector('p');
           const arrow = card.querySelector('.path-arrow');
-          if (arrow) arrow.textContent = '->';
+          if (arrow) arrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
           if (key === 'trainer') {
             if (title) title.textContent = "I'm a Trainer";
             if (description) description.textContent = 'Manage clients and generate plans.';
@@ -7866,6 +7892,9 @@ function formatWorkspaceLabel(workspace) {
           ].filter(Boolean).join(':');
         }
 
+        // Codes the server refused: stop polling them (this account isn't
+        // that manager) — otherwise the 10s poll spams 403s forever.
+        const managerReviewForbiddenCodes = new Set();
         async function fetchManagerReviewEntries() {
           if (!hasAuthenticatedUser()) return [];
           const managerCode = normalizeManagerCode(
@@ -7875,11 +7904,16 @@ function formatWorkspaceLabel(workspace) {
             || ''
           );
           if (!managerCode) return [];
+          if (managerReviewForbiddenCodes.has(managerCode)) return [];
           try {
             const resp = await fetch(`/api/auth/manager/review-requests?managerCode=${encodeURIComponent(managerCode)}`, {
               credentials: 'include',
               cache: 'no-store'
             });
+            if (resp.status === 401 || resp.status === 403) {
+              managerReviewForbiddenCodes.add(managerCode);
+              return [];
+            }
             const json = await resp.json().catch(() => ({}));
             if (!resp.ok || !json?.ok) return [];
             return Array.isArray(json?.requests) ? json.requests : [];
@@ -8962,6 +8996,225 @@ function formatWorkspaceLabel(workspace) {
           document.body.appendChild(wrapper);
         }
 
+        /* ---- BetterMe-style question sequences ----
+           Steps listed here render ONE question at a time (fade between),
+           instead of a wall of fields. Field markup keeps the same `name`
+           attributes, so answers persist through the existing form wiring.
+           Each question carries its own "why" so people know what the
+           answer is used for. */
+        function trainerIdentityComplete() {
+          const t = state.answers.trainer || {};
+          return Boolean(
+            String(t.fullName || '').trim()
+            && String(t.email || '').trim()
+            && String(t.phone || '').trim()
+          );
+        }
+
+        const QUESTION_SEQUENCES = {
+          'trainer:profile': () => {
+            const trainer = state.answers.trainer || {};
+            // Identity question is ALWAYS index 0 (stable length). When we
+            // already know the contact card, it shows a read-only summary and
+            // validates as pass-through; "edit" flips it to input fields.
+            const identityKnown = trainerIdentityComplete() && !state.trainerIdentityEdit;
+            const identityQuestion = identityKnown ? {
+              key: 'identity',
+              title: 'Here’s your contact card.',
+              subtitle: 'We pulled this from your sign-up. Clients and your gym reach you here.',
+              body: `
+                <div class="entry-stack">
+                  <div class="entry-summary-card">
+                    <p style="margin:0 0 4px;"><strong>${escapeHtml(trainer.fullName)}</strong></p>
+                    <p style="margin:0 0 2px;">${escapeHtml(trainer.email)}</p>
+                    <p style="margin:0;">${escapeHtml(trainer.phone)}</p>
+                  </div>
+                  <p class="entry-inline-note">Coaching contact different? <button type="button" class="entry-link-btn" data-edit-identity="1">Edit it</button>.</p>
+                </div>
+              `,
+              validate: () => true
+            } : {
+              key: 'identity',
+              title: 'Confirm your contact card.',
+              subtitle: 'Clients and your gym reach you here — this is the only place your contact info lives.',
+              body: `
+                <div class="entry-grid">
+                  <div class="entry-field">
+                    <label for="trainer-full-name">Full name</label>
+                    <input id="trainer-full-name" name="fullName" type="text" value="${escapeHtml(trainer.fullName)}" autocomplete="name" required>
+                  </div>
+                  <div class="entry-field">
+                    <label for="trainer-email">Email</label>
+                    <input id="trainer-email" name="email" type="email" value="${escapeHtml(trainer.email)}" autocomplete="email" required>
+                  </div>
+                  <div class="entry-field">
+                    <label for="trainer-phone">Phone</label>
+                    <input id="trainer-phone" name="phone" type="tel" value="${escapeHtml(trainer.phone)}" autocomplete="tel" inputmode="numeric" maxlength="14" placeholder="(555) 555-5555" required>
+                  </div>
+                </div>
+              `,
+              validate: () => {
+                const t = state.answers.trainer || {};
+                if (!String(t.fullName || '').trim() || !String(t.email || '').trim() || !String(t.phone || '').trim()) {
+                  window.alert('Fill in your name, email, and phone.');
+                  return false;
+                }
+                return true;
+              }
+            };
+            return [
+              identityQuestion,
+              {
+                key: 'location',
+                title: 'Where do you coach?',
+                subtitle: 'Clients search for coaches by area — this puts you on their local map.',
+                body: `
+                  <div class="entry-grid">
+                    <div class="entry-field">
+                      <label for="trainer-city">City</label>
+                      <input id="trainer-city" name="city" type="text" value="${escapeHtml(trainer.city)}" placeholder="Augusta" required>
+                    </div>
+                    <div class="entry-field">
+                      <label for="trainer-state">State</label>
+                      <input id="trainer-state" name="state" type="text" value="${escapeHtml(trainer.state)}" placeholder="GA" required>
+                    </div>
+                  </div>
+                `,
+                validate: () => {
+                  const t = state.answers.trainer || {};
+                  if (!String(t.city || '').trim() || !String(t.state || '').trim()) {
+                    window.alert('Add your city and state.');
+                    return false;
+                  }
+                  return true;
+                }
+              },
+              {
+                key: 'style',
+                title: 'How do you coach?',
+                subtitle: 'In-person, online, or hybrid — this decides which kinds of clients we send your way.',
+                body: `
+                  <div class="entry-stack">
+                    <div class="entry-field full">
+                      <span class="entry-group-title">Coaching style</span>
+                      ${renderRadioGroup('coachingStyle', [
+                        { value: 'In-person', label: 'In-person' },
+                        { value: 'Online', label: 'Online' },
+                        { value: 'Hybrid', label: 'Hybrid' }
+                      ], trainer.coachingStyle || (trainer.trainerType === 'remote' ? 'Online' : ''))}
+                    </div>
+                  </div>
+                `,
+                validate: () => validateChoiceGroup('coachingStyle', 'Choose your coaching style.')
+              }
+            ];
+          },
+          'trainer:coaching': () => {
+            const trainer = state.answers.trainer || {};
+            return [
+              {
+                key: 'summary',
+                title: 'Sell yourself in two lines.',
+                subtitle: 'This is your pitch. It shows on your public coach page and your gym’s trainer list — it’s the first thing a potential client reads about you.',
+                body: `
+                  <div class="entry-stack">
+                    <div class="entry-field full">
+                      <label for="trainer-summary">Coach summary</label>
+                      <textarea id="trainer-summary" name="summary" placeholder="e.g. 10 years coaching strength and fat loss. I keep busy people consistent.">${escapeHtml(trainer.summary)}</textarea>
+                    </div>
+                  </div>
+                `
+              },
+              {
+                key: 'specialties',
+                title: 'What do you actually coach?',
+                subtitle: 'Clients filter trainers by these. Check what you’re genuinely good at — it decides who gets matched to you.',
+                body: `
+                  <div class="entry-stack">
+                    <div class="entry-field full">
+                      <span class="entry-group-title">Specialties</span>
+                      ${renderCheckboxGroup('specialties', [
+                        { value: 'Muscle building', label: 'Muscle building' },
+                        { value: 'Fat loss', label: 'Fat loss' },
+                        { value: 'Strength', label: 'Strength' },
+                        { value: 'Beginner training', label: 'Beginner training' },
+                        { value: 'Athletic performance', label: 'Athletic performance' },
+                        { value: 'General health', label: 'General health' },
+                        { value: 'Body recomposition', label: 'Body recomposition' }
+                      ], trainer.specialties, 'is-compact')}
+                    </div>
+                  </div>
+                `
+              },
+              {
+                key: 'availability',
+                title: 'Are you taking clients right now?',
+                subtitle: '“No” keeps you listed but unbookable — flip it anytime from your dashboard. The max stops new requests once you’re full, so you never overbook.',
+                body: `
+                  <div class="entry-grid">
+                    <div class="entry-field">
+                      <span class="entry-group-title">Accepting new clients?</span>
+                      ${renderRadioGroup('acceptingClients', [
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' }
+                      ], trainer.acceptingClients)}
+                    </div>
+                    <div class="entry-field">
+                      <label for="trainer-max-clients">Max active clients (optional)</label>
+                      <input id="trainer-max-clients" name="maxClients" type="number" min="1" value="${escapeHtml(trainer.maxClients)}" placeholder="30">
+                    </div>
+                  </div>
+                `,
+                validate: () => validateChoiceGroup('acceptingClients', 'Choose whether you are accepting new clients.')
+              },
+              {
+                key: 'password',
+                title: 'Create your client access password.',
+                subtitle: 'This protects your roster. A client types this after choosing you at your gym — it proves they’re really training with you, so random accounts can’t attach themselves to your name. Share it only with real clients.',
+                body: `
+                  <div class="entry-stack">
+                    <div class="entry-field full">
+                      <label for="trainer-client-access-password">Client access password</label>
+                      <div class="entry-password-input-wrap">
+                        <input id="trainer-client-access-password" name="clientAccessPassword" type="password" value="${escapeHtml(trainer.clientAccessPassword)}" placeholder="Create the password clients use to confirm they are with you" required>
+                        <button class="entry-password-action" type="button" data-toggle-password-visibility="1" aria-label="Show client access password" aria-pressed="false">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                          </svg>
+                        </button>
+                      </div>
+                      <p class="entry-inline-note">Clients enter this once, right after choosing you from your gym/company location.</p>
+                    </div>
+                  </div>
+                `,
+                validate: () => {
+                  if (!String((state.answers.trainer || {}).clientAccessPassword || '').trim()) {
+                    window.alert('Create the client access password you will give to your clients.');
+                    return false;
+                  }
+                  return true;
+                }
+              }
+            ];
+          }
+        };
+
+        function questionSequenceFor(path, stepId) {
+          const build = QUESTION_SEQUENCES[`${path}:${stepId}`];
+          if (!build) return null;
+          try {
+            const questions = build();
+            return Array.isArray(questions) && questions.length ? questions : null;
+          } catch {
+            return null;
+          }
+        }
+
+        function currentQuestionIndex(sequence) {
+          return Math.max(0, Math.min(Number(state.questionIndex) || 0, sequence.length - 1));
+        }
+
         function panelView() {
           const path = state.selectedPath;
           const step = currentStepConfig();
@@ -8978,6 +9231,20 @@ function formatWorkspaceLabel(workspace) {
           const trainer = state.answers.trainer;
           const user = state.answers.user;
           const manager = state.answers.manager;
+
+          // One-question-at-a-time steps (BetterMe style)
+          const questionSequence = questionSequenceFor(path, step.id);
+          if (questionSequence) {
+            const questionIdx = currentQuestionIndex(questionSequence);
+            const question = questionSequence[questionIdx];
+            const counter = questionSequence.length > 1 ? ` (${questionIdx + 1}/${questionSequence.length})` : '';
+            return {
+              title: question.title,
+              subtitle: (question.subtitle || '') + counter,
+              body: question.body,
+              continueLabel: 'Continue'
+            };
+          }
 
           if (path === 'trainer' && step.id === 'type') {
             return {
@@ -9344,8 +9611,9 @@ function formatWorkspaceLabel(workspace) {
                   </div>
                   <div class="entry-grid">
                     <div class="entry-field full">
-                      <label for="trainer-finish-summary">Coach summary</label>
+                      <label for="trainer-finish-summary">Confirm your coach summary</label>
                       <textarea id="trainer-finish-summary" name="brandPositioning" placeholder="Short one-line coaching summary for the coaches page.">${escapeHtml(trainer.brandPositioning || trainer.summary)}</textarea>
+                      <p class="entry-inline-note">Same pitch you wrote earlier — polish it here or leave it as is.</p>
                     </div>
                   </div>
                   ${trainer.managerRequestSubmitted ? `
@@ -10356,12 +10624,33 @@ function formatWorkspaceLabel(workspace) {
           document.body.appendChild(btn);
         }
 
+        let entryFadeTimer = 0;
         function runTransition(nextStep) {
-          if (typeof nextStep === 'function') nextStep();
-          state.transitionState = 'idle';
-          onboardingPanel.classList.remove('is-exiting');
-          onboardingPanel.classList.remove('is-entering');
-          renderPanel();
+          // BetterMe-style: fade the current question out, swap, fade the
+          // next one in. Title + subtitle ride along with the body.
+          const fadeEls = [stepBody, panelTitle, panelSubtitle].filter(Boolean);
+          if (!fadeEls.length) {
+            if (typeof nextStep === 'function') nextStep();
+            state.transitionState = 'idle';
+            renderPanel();
+            return;
+          }
+          window.clearTimeout(entryFadeTimer);
+          fadeEls.forEach((el) => el.classList.add('entry-q-exit'));
+          entryFadeTimer = window.setTimeout(() => {
+            if (typeof nextStep === 'function') nextStep();
+            state.transitionState = 'idle';
+            onboardingPanel.classList.remove('is-exiting');
+            onboardingPanel.classList.remove('is-entering');
+            fadeEls.forEach((el) => {
+              el.classList.remove('entry-q-exit');
+              el.classList.add('entry-q-enter');
+            });
+            renderPanel();
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              fadeEls.forEach((el) => el.classList.remove('entry-q-enter'));
+            }));
+          }, 220);
         }
 
         function openPath(path) {
@@ -11772,7 +12061,21 @@ function formatWorkspaceLabel(workspace) {
         }
 
         async function handleContinue() {
-          if (!state.selectedPath || !validateCurrentStep()) return;
+          if (!state.selectedPath) return;
+          // Inside a question sequence: validate + advance one question.
+          const sequence = questionSequenceFor(state.selectedPath, currentStepConfig()?.id);
+          if (sequence) {
+            const questionIdx = currentQuestionIndex(sequence);
+            const question = sequence[questionIdx];
+            if (question?.validate && !question.validate()) return;
+            if (questionIdx < sequence.length - 1) {
+              runTransition(() => {
+                state.questionIndex = questionIdx + 1;
+              });
+              return;
+            }
+          }
+          if (!validateCurrentStep()) return;
           const flow = currentFlow();
           if (!flow) return;
           if (state.currentStep >= flow.steps.length) return;
@@ -11787,11 +12090,22 @@ function formatWorkspaceLabel(workspace) {
           const nextStep = resolveNextStepNumber();
           runTransition(() => {
             state.currentStep = nextStep;
+            state.questionIndex = 0;
+            state.trainerIdentityEdit = false;
           });
         }
 
         function handleBack() {
           if (!state.selectedPath) return;
+          // Inside a question sequence: step back one question first.
+          const sequence = questionSequenceFor(state.selectedPath, currentStepConfig()?.id);
+          const questionIdx = Number(state.questionIndex) || 0;
+          if (sequence && questionIdx > 0) {
+            runTransition(() => {
+              state.questionIndex = questionIdx - 1;
+            });
+            return;
+          }
           if (state.currentStep === 1) {
             closePanel();
             return;
@@ -11799,6 +12113,8 @@ function formatWorkspaceLabel(workspace) {
           const previousStep = resolvePreviousStepNumber();
           runTransition(() => {
             state.currentStep = previousStep;
+            const previousSequence = questionSequenceFor(state.selectedPath, currentStepConfig()?.id);
+            state.questionIndex = previousSequence ? previousSequence.length - 1 : 0;
           });
         }
 
@@ -11815,6 +12131,7 @@ function formatWorkspaceLabel(workspace) {
           if (targetStep === state.currentStep) return;
           runTransition(() => {
             state.currentStep = targetStep;
+            state.questionIndex = 0;
           });
         }
 
@@ -12544,6 +12861,14 @@ function formatWorkspaceLabel(workspace) {
               void copyTextValue(buildTrainerInviteLink());
               return;
             }
+            return;
+          }
+          if (target.closest('[data-edit-identity]')) {
+            event.preventDefault();
+            state.trainerIdentityEdit = true;
+            runTransition(() => {
+              state.questionIndex = 0;
+            });
             return;
           }
           const action = target.getAttribute('data-finish-action');

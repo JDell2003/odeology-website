@@ -5508,6 +5508,7 @@ function buildAuthUserFromRow(row) {
     id: row.id,
     username: row.username || null,
     email: row.email || null,
+    phone: row.phone || null,
     displayName: row.display_name || row.username || 'User',
     isOwner: owner,
     isTech,
