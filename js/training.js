@@ -107,14 +107,23 @@
     } catch {
       // ignore
     }
-    // Onboarding finished but they exited to the overview instead of the
-    // builder: the workout is still owed. This durable flag survives until
-    // their first training visit, then the plan builds itself.
+    return false;
+  }
+
+  // Onboarding finished but they exited to the overview instead of the
+  // builder: the workout is still owed. This durable flag builds the plan
+  // ONCE on the first training visit that has no plan yet — it is NOT part
+  // of shouldForceAutostart(), so it can never force a rebuild on later
+  // logins (that would silently replace the saved workout).
+  function hasOwedAutoBuild() {
     try {
       return localStorage.getItem('ode_training_autobuild_v1') === '1';
     } catch {
       return false;
     }
+  }
+  function clearOwedAutoBuild() {
+    try { localStorage.removeItem('ode_training_autobuild_v1'); } catch {}
   }
 
   function shouldOpenWizardOnly() {
@@ -1071,14 +1080,16 @@
     if (autoOnboardInFlight) return false;
     if (hasRenderablePlanRow(state.planRow)) {
       // A plan already exists — any owed-build flag from onboarding is stale.
-      try { localStorage.removeItem('ode_training_autobuild_v1'); } catch {}
+      clearOwedAutoBuild();
       return false;
     }
     if (!force && isAutoRetryPaused()) return false;
     if (!force && shouldOpenWizardOnly()) return false;
     const intake = await loadSavedIntake();
     if (!intake) return false;
-    const forceStart = force || shouldForceAutostart();
+    // The owed-build flag counts as a build trigger ONLY here, where we've
+    // already confirmed there is no renderable plan to preserve.
+    const forceStart = force || shouldForceAutostart() || hasOwedAutoBuild();
     if (!forceStart) return false;
     if (!isIntakeComplete(intake)) return false;
     const payload = mapIntakeToOblueprintPayload(intake);
@@ -1097,7 +1108,7 @@
       return false;
     }
     autoOnboardInFlight = true;
-    try { localStorage.removeItem('ode_training_autobuild_v1'); } catch {}
+    clearOwedAutoBuild();
     try {
       await submitOnboarding(payload);
     } finally {
@@ -9811,7 +9822,7 @@ function toggleSharePopover(force) {
     if (next !== 'generating') clearConstructingBootFlag();
     const wizardOnlyRequested = next === 'wizard' && shouldOpenWizardOnly();
     if (DISABLE_WIZARD_FLOW && next === 'wizard' && !wizardOnlyRequested) {
-      const shouldAutoResumeBuild = shouldForceAutostart() || shouldBootIntoConstructing();
+      const shouldAutoResumeBuild = shouldForceAutostart() || shouldBootIntoConstructing() || hasOwedAutoBuild();
       if (shouldAutoResumeBuild) {
         keepOnEngineAndRetry({ forceAutostart: shouldForceAutostart() });
       } else {
@@ -10079,17 +10090,21 @@ function toggleSharePopover(force) {
       clearConstructingBootFlag();
       clearAutoRetryPause();
       if (forceAutostart) clearForceAutostart();
+      // Plan exists — the onboarding owed-build is satisfied. Clearing it
+      // here is what stops a fresh plan being generated on every later login.
+      clearOwedAutoBuild();
     }
     const shouldAutoBuildDemoPlan = shouldBootDemoPlan(state.auth.user, state.planRow);
     if (hasRenderablePlanRow(state.planRow) && hasRecentlyCompletedTrainingBuild(mapIntakeToOblueprintPayload(await loadSavedIntake()), { withinMs: 30000 })) {
       return;
     }
-    if (!hasFetchedRenderablePlan && (forceAutostart || shouldAutoBuildDemoPlan)) {
+    if (!hasFetchedRenderablePlan && (forceAutostart || shouldAutoBuildDemoPlan || hasOwedAutoBuild())) {
       if (shouldAutoBuildDemoPlan) setView('generating');
       const autoOnboarded = await tryAutoOnboardFromIntake(true);
       if (autoOnboarded) return;
     }
     if (state.planRow?.id) {
+      clearOwedAutoBuild();
       maybeArmTrainingQuickTourForFirstPlan();
       restoreWorkoutDraftState({ userId: state.auth.user?.id, planId: state.planRow.id });
       restorePersistedWorkoutTimerState({ userId: state.auth.user?.id, planId: state.planRow.id });
