@@ -3545,9 +3545,9 @@ function progressionRuleForExercise(ex, user) {
     if (override) return override;
   }
   if (user.discipline === 'powerbuilding' && ex.style === 'Compound') {
-    return 'Rep-first progression: hit top reps at target RIR, then increase load 2.5-5% next exposure; reset to bottom reps.';
+    return 'Rep ladder: same weight all cycle, add 1 rep each week for 4 weeks; then add 5 lb and drop back to the starting reps.';
   }
-  return 'If all sets hit top reps with target RIR, add load next session; if missed twice, reduce load 5% and rebuild reps.';
+  return 'Rep ladder: keep the weight the same and add 1 rep each week; after week 4, add 5 lb and reset to the starting reps.';
 }
 
 function priorityBudgetTargetForExercise(ex, user) {
@@ -5546,9 +5546,13 @@ function buildCleanupChainHeartbeatMeta(user, weeks, callBoundary, functionName)
   };
 }
 
+/* Rep-ladder progression (owner spec, 2026-07-12): every week in the
+   block uses the SAME structure - same exercises, same sets, same
+   weight. Reps climb by 1 each week; after the 4-week cycle the load
+   goes up 5 lb and reps drop back to the starting count. Week types no
+   longer vary (no volume/intensification/deload restructuring). */
 function weekPattern(blockLength) {
-  if (blockLength === 4) return ['base', 'volume', 'intensification', 'deload'];
-  return ['base', 'volume', 'volume', 'deload', 'intensification', 'intensification', 'intensification', 'deload'];
+  return Array.from({ length: blockLength }, () => 'base');
 }
 
 function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) {
@@ -5645,6 +5649,25 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
         ...d,
         exercises: organizeDayExerciseOrder(d.dayType, d.exercises || [], user)
       }));
+      // Rep ladder: week 1 prescribes the bottom of each exercise's rep
+      // range, and every later week adds 1 rep at the same weight. Only
+      // plain numeric prescriptions ladder - timed holds and text-based
+      // targets keep their original wording.
+      const ladderOffset = i % 4;
+      prescribed = prescribed.map((d) => ({
+        ...d,
+        exercises: (d.exercises || []).map((ex) => {
+          const repsText = String(ex.reps || '').trim();
+          if (!/^\d+(\s*-\s*\d+)?$/.test(repsText)) return ex;
+          const range = parseRepRangeText(repsText);
+          const target = range.min + ladderOffset;
+          return {
+            ...ex,
+            reps: String(target),
+            repLadder: { start: range.min, rangeTop: range.max, weekTarget: target, cycleWeeks: 4, loadStepLb: 5 }
+          };
+        })
+      }));
       weeks.push({ weekIndex: i + 1, weekType, days: prescribed });
     }
     return { weeks };
@@ -5685,9 +5708,9 @@ function buildProgressionModel(user, targets, frequencyTargets) {
       isolations: user?.profile?.complexity === 'low' ? '1-3 RIR' : '0-2 RIR on stable exercises'
     },
     overloadPriority: [
-      'Add reps within the prescribed range first.',
-      'Add load once all sets reach the top of the rep range with the target effort.',
-      'Add sets only when recovery is solid and a priority muscle still under-responds.'
+      'Keep the weight the same and add 1 rep to every set each week.',
+      'After the 4th week, add 5 lb and drop the reps back to where the cycle started.',
+      'Sets stay the same all cycle - do not add sets to force progress.'
     ],
     volumeLandmarks: {
       weeklyTargets: targets,
@@ -6433,121 +6456,87 @@ function conservativeFamilyEstimate(exercise, user, anchors, strengthStatus) {
 }
 
 function projectionDeloadWeeks(user, exerciseLibrary = []) {
-  const demands = Array.isArray(exerciseLibrary) ? exerciseLibrary : [];
-  const heavyDemandCount = demands.filter((exercise) => {
-    const truth = exercise?.canonicalTruth || buildExerciseTruth(exercise, user);
-    return truth.hingeLoadingHigh || truth.axialLoadHigh || truth.shoulderOverhead;
-  }).length;
-  const frequent = Number(user?.daysPerWeek || 0) >= 5;
-  const experienced = ['2-5y', '5y+'].includes(String(user?.experience || ''));
-  if (String(user?.experience || '') === '<6m') return [8, 16];
-  if (String(user?.experience || '') === '6-24m') return frequent ? [7, 14] : [8, 16];
-  if (experienced && (frequent || heavyDemandCount >= 8)) return [5, 10, 15];
-  if (experienced) return [6, 12, 16];
-  return [8, 16];
+  // Rep-ladder progression has no scheduled deload weeks: reps resetting
+  // to the cycle's starting count every 4 weeks is the built-in relief.
+  return [];
 }
+
+/* Rep-ladder projection (owner spec): fixed 4-week cycles. Weeks 1-4 keep
+   the SAME load while the rep target climbs by 1 each week from the
+   bottom of the exercise's rep range; at each new cycle the load goes up
+   a flat 5 lb and reps reset to the starting count. Sets never change.
+   No hold or deload rows - the rep reset at each cycle is the built-in
+   relief. Non-load movements ladder reps the same way and reset against
+   a harder variation each cycle. */
+const REP_LADDER_CYCLE_WEEKS = 4;
+const REP_LADDER_LOAD_STEP_LB = 5;
 
 function buildProjectionWeekRowsForExercise(exercise, user, estimate, deloadWeeks, anchorStatus) {
   const repRange = parseRepRangeText(exercise?.reps);
   const setsBase = Math.max(1, Number(exercise?.sets || 0) || 3);
   const minRep = repRange.min;
-  const maxRep = repRange.max;
   const increment = Number(estimate?.increment || 2.5);
   const progressionMode = progressionModeForExercise(exercise);
-  let currentLoad = Number(estimate?.value || 0);
-  let currentRep = minRep;
+  const baseLoad = Number(estimate?.value || 0);
   const rows = [];
-  const isCut = String(user?.phase || '') === 'deficit';
-  const isBelow = anchorStatus?.status === 'below_standard';
-  const acceleration = anchorStatus?.status === 'above_standard' ? 1.08 : 1;
   for (let week = 1; week <= 16; week += 1) {
+    const cycle = Math.floor((week - 1) / REP_LADDER_CYCLE_WEEKS);
+    const pos = (week - 1) % REP_LADDER_CYCLE_WEEKS;
+    const repTarget = minRep + pos;
+    const lastWeekOfCycle = pos === REP_LADDER_CYCLE_WEEKS - 1;
     if (progressionMode !== 'external_load' && progressionMode !== 'loaded_bodyweight') {
-      const isDeload = deloadWeeks.includes(week);
-      const repLow = isDeload ? Math.max(1, minRep - 2) : currentRep;
-      const repHigh = isDeload ? Math.max(repLow, maxRep - 1) : maxRep;
-      rows.push({
-        week,
-        exercise: exercise.displayName || exercise.name,
-        canonicalExerciseId: exercise.canonicalExerciseId,
-        targetLoad: progressionMode === 'loaded_bodyweight' ? currentLoad : null,
-        repRange: `${repLow}-${repHigh}`,
-        sets: isDeload ? Math.max(1, Math.round(setsBase * 0.6)) : setsBase,
-        tag: isDeload ? 'deload' : 'normal',
-        deloadLabel: isDeload ? 'Reduced Fatigue Week' : null,
-        progressionMode,
-        note: progressionMode === 'bodyweight_tempo_progression'
-          ? (isDeload ? 'Reduced Fatigue Week. Keep the shape and shorten holds slightly.' : 'Progress through slower tempo, stronger positions, and cleaner control.')
-          : progressionMode === 'assisted_bodyweight'
-            ? (isDeload ? 'Recovery Week. Add a little assistance and keep reps smooth.' : 'Progress by reducing assistance before adding external load.')
-            : (isDeload ? 'Deload Week. Keep the pattern, trim effort, and recover.' : 'Progress by reps, control, ROM, or assistance changes before adding load.'),
-        displayTarget: nextBodyweightTarget({ repRange: `${repLow}-${repHigh}` }, progressionMode, isDeload ? 'continue_deload' : 'hold'),
-        postDeloadReturnTarget: isDeload ? nextBodyweightTarget({ repRange: `${minRep}-${maxRep}` }, progressionMode, 'hold') : null
-      });
-      if (!isDeload && currentRep < maxRep) currentRep += 1;
-      continue;
-    }
-    if (!Number.isFinite(currentLoad) || currentLoad <= 0) {
       rows.push({
         week,
         exercise: exercise.displayName || exercise.name,
         canonicalExerciseId: exercise.canonicalExerciseId,
         targetLoad: null,
-        repRange: `${minRep}-${maxRep}`,
+        repRange: `${repTarget}`,
         sets: setsBase,
-        tag: deloadWeeks.includes(week) ? 'deload' : 'normal',
-        deloadLabel: deloadWeeks.includes(week) ? 'Reduced Fatigue Week' : null,
+        tag: 'normal',
+        deloadLabel: null,
         progressionMode,
-        note: deloadWeeks.includes(week) ? 'Technique deload. Keep movement quality high with easy effort.' : 'Non-load exercise or bodyweight-focused slot.',
+        note: progressionMode === 'bodyweight_tempo_progression'
+          ? (lastWeekOfCycle ? 'Cycle ends this week. Next week reps reset and the tempo/position gets harder.' : 'Same difficulty as last week - add 1 rep.')
+          : progressionMode === 'assisted_bodyweight'
+            ? (lastWeekOfCycle ? 'Cycle ends this week. Next week reps reset with less assistance.' : 'Same assistance as last week - add 1 rep.')
+            : (lastWeekOfCycle ? 'Cycle ends this week. Next week reps reset against a harder version.' : 'Same difficulty as last week - add 1 rep.'),
+        displayTarget: `${repTarget} reps`,
+        postDeloadReturnTarget: null
+      });
+      continue;
+    }
+    if (!Number.isFinite(baseLoad) || baseLoad <= 0) {
+      rows.push({
+        week,
+        exercise: exercise.displayName || exercise.name,
+        canonicalExerciseId: exercise.canonicalExerciseId,
+        targetLoad: null,
+        repRange: `${repTarget}`,
+        sets: setsBase,
+        tag: 'normal',
+        deloadLabel: null,
+        progressionMode,
+        note: 'Non-load exercise or bodyweight-focused slot.',
         displayTarget: 'N/A',
         postDeloadReturnTarget: null
       });
       continue;
     }
-    if (deloadWeeks.includes(week)) {
-      const deloadTarget = clampProjectedLoad(currentLoad * 0.88, increment, currentLoad, increment);
-      rows.push({
-        week,
-        exercise: exercise.displayName || exercise.name,
-        canonicalExerciseId: exercise.canonicalExerciseId,
-        targetLoad: deloadTarget,
-        repRange: `${Math.max(minRep, maxRep - 2)}-${maxRep}`,
-        sets: Math.max(1, Math.round(setsBase * 0.6)),
-        tag: 'deload',
-        deloadLabel: 'Recovery Week',
-        progressionMode,
-        note: 'Active deload. Reduce volume and effort, keep the pattern in place. This is intentional fatigue management, not lost progress.',
-        displayTarget: `${deloadTarget} lb`,
-        postDeloadReturnTarget: `${currentLoad} lb`
-      });
-      continue;
-    }
-    let tag = 'normal';
-    let note = currentRep < maxRep
-      ? 'Add reps before load. Stay crisp and leave clean reps in reserve.'
-      : 'Top of range reached. Increase load and restart near the lower end.';
-    if ((isCut || isBelow) && week > 1 && week % 5 === 0) {
-      tag = 'hold';
-      note = isCut
-        ? 'Hold load this week and consolidate performance while recovery is tighter.'
-        : 'Hold load and own the reps before pushing the next jump.';
-    } else if (currentRep >= maxRep) {
-      currentLoad = roundProjectedLoad(currentLoad + (increment * acceleration), increment);
-      currentRep = minRep;
-    } else {
-      currentRep += 1;
-    }
+    const load = roundProjectedLoad(baseLoad + (REP_LADDER_LOAD_STEP_LB * cycle), increment);
     rows.push({
       week,
       exercise: exercise.displayName || exercise.name,
       canonicalExerciseId: exercise.canonicalExerciseId,
-      targetLoad: currentLoad,
-      repRange: `${currentRep}-${maxRep}`,
+      targetLoad: load,
+      repRange: `${repTarget}`,
       sets: setsBase,
-      tag,
+      tag: 'normal',
       deloadLabel: null,
       progressionMode,
-      note,
-      displayTarget: `${currentLoad} lb`,
+      note: lastWeekOfCycle
+        ? `Last week of this cycle at ${load} lb. Next week: +${REP_LADDER_LOAD_STEP_LB} lb and reps reset to ${minRep}.`
+        : `Same weight as last week - add 1 rep (${repTarget} this week).`,
+      displayTarget: `${load} lb`,
       postDeloadReturnTarget: null
     });
   }
@@ -8084,11 +8073,48 @@ function applyWeeklyShoulderPriorityRepairGuard(weeks, user) {
   return weeks;
 }
 
+/* Rep-ladder normalization: the block is 4 identical weeks - week 1's
+   days, exercises, order, and sets are cloned into every later week,
+   with only the rep target climbing by 1 per week from the bottom of
+   each exercise's range. Runs at final assembly so no repair or quality
+   pass can reintroduce week-to-week drift (different exercises, set
+   counts, or deload trims between weeks). Non-numeric prescriptions
+   (timed holds etc.) keep their wording on every week. */
+function normalizeRepLadderWeeks(weeks) {
+  const list = Array.isArray(weeks) ? weeks : [];
+  if (!list.length) return list;
+  const ladderEx = (ex, offset) => {
+    const repsText = String(ex?.reps || '').trim();
+    if (!/^\d+(\s*-\s*\d+)?$/.test(repsText)) return { ...ex };
+    const start = Number(ex?.repLadder?.start) || parseRepRangeText(repsText).min;
+    return {
+      ...ex,
+      reps: String(start + offset),
+      repLadder: {
+        start,
+        weekTarget: start + offset,
+        cycleWeeks: REP_LADDER_CYCLE_WEEKS,
+        loadStepLb: REP_LADDER_LOAD_STEP_LB
+      }
+    };
+  };
+  const baseWeek = list[0];
+  return list.map((week, index) => ({
+    ...week,
+    weekType: 'base',
+    days: (baseWeek?.days || []).map((day) => ({
+      ...day,
+      exercises: (day?.exercises || []).map((ex) => ladderEx(ex, index % REP_LADDER_CYCLE_WEEKS))
+    }))
+  }));
+}
+
 function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, frequencyTargets, stressMultiplier, notes = []) {
   return withPlannerTiming(user, 'finalRenderingOutputMs', () => {
-    const progressionProjection = buildBodybuildingProgressionProjection(user, safeWeeks);
+    const ladderWeeks = normalizeRepLadderWeeks(safeWeeks);
+    const progressionProjection = buildBodybuildingProgressionProjection(user, ladderWeeks);
     const adaptiveProjectionState = createAdaptiveProjectionState(user, progressionProjection);
-    const weeksWithProjection = applyProjectionToWeeks(safeWeeks, progressionProjection);
+    const weeksWithProjection = applyProjectionToWeeks(ladderWeeks, progressionProjection);
     const projectionMeta = {
       ...progressionProjection,
       adaptiveProjectionState

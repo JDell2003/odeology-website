@@ -2591,7 +2591,7 @@
       coaching: null,
       tags: ['custom'],
       substitutions: [],
-      progression: { type: 'load', increment: isIsolation ? 5 : 10, repsTarget: isIsolation ? 12 : 10, technique: 'none', setsCap: isIsolation ? 4 : 5 }
+      progression: { type: 'load', increment: 5, repsTarget: isIsolation ? 12 : 10, technique: 'none', setsCap: isIsolation ? 4 : 5 }
     };
   }
 
@@ -5231,7 +5231,7 @@
       el('div', { class: 'training-projection-head' },
         el('div', null,
           el('div', { class: 'training-projection-eyebrow' }, '16-Week Load Projection'),
-          el('div', { class: 'training-projection-title' }, previewIsDeload ? 'Recovery week with a planned return target' : 'Anchor-lift baseline + double progression'),
+          el('div', { class: 'training-projection-title' }, previewIsDeload ? 'Recovery week with a planned return target' : 'Rep ladder: +1 rep/week, +5 lb every 4 weeks'),
           el('div', { class: 'training-muted' }, `Bench ${anchors.inputBench || anchors.bench1rm || 'N/A'} • Squat ${anchors.inputSquat || anchors.squat1rm || 'N/A'} • Deadlift ${anchors.inputDeadlift || anchors.deadlift1rm || 'N/A'}`),
           el('div', { class: 'training-projection-submeta' },
             el('span', { class: 'projected-pill' }, `Anchor source ${formatProjectionModeLabel(anchors.anchorSource || 'unknown')}`),

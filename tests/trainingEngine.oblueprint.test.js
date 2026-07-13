@@ -1184,11 +1184,19 @@ test('stage 3 adaptive layer attaches guidance without changing exercises', () =
   const stage2 = engine.upgradePlanQualityPass(stage1, normalized, PREPROCESSED_EXERCISES);
   const before = JSON.stringify(stage2.weeks);
   const stage3Plan = engine.attachAdaptiveCoachingLayer(stage2, normalized, targets, frequencyTargets, stressMultiplier);
-  const after = JSON.stringify((stage3Plan.weeks || []).map((week) => ({ days: (week.days || []).map((day) => ({ exercises: (day.exercises || []).map((ex) => ex.name) })) })));
   assert.ok(stage3Plan.meta?.progressionModel, 'expected progression model');
   assert.ok(stage3Plan.meta?.recoveryModel, 'expected recovery model');
   assert.ok(stage3Plan.meta?.adaptiveCheckInModel, 'expected adaptive check-in model');
-  assert.equal(after, JSON.stringify((JSON.parse(before) || []).map((week) => ({ days: (week.days || []).map((day) => ({ exercises: (day.exercises || []).map((ex) => ex.name) })) }))), 'stage 3 should not alter exercise selection');
+  // Rep-ladder contract: stage 3 clones week 1 into every week (same
+  // exercises, sets, order), so compare week 1 against the stage 2 input
+  // and require every later week to mirror it.
+  const namesOf = (week) => (week?.days || []).map((day) => (day.exercises || []).map((ex) => ex.name));
+  const stage2Week1 = namesOf((JSON.parse(before) || [])[0]);
+  const stage3Weeks = stage3Plan.weeks || [];
+  assert.equal(JSON.stringify(namesOf(stage3Weeks[0])), JSON.stringify(stage2Week1), 'stage 3 should not alter week 1 exercise selection');
+  for (const week of stage3Weeks.slice(1)) {
+    assert.equal(JSON.stringify(namesOf(week)), JSON.stringify(namesOf(stage3Weeks[0])), 'every week mirrors week 1 under the rep ladder');
+  }
 });
 
 test('stage 4 grading layer grades without changing exercises', () => {
@@ -1486,7 +1494,7 @@ test('double progression uses rep-first behavior before load jumps', () => {
   assert.equal(laterIncrease, true, 'expected later load increase');
 });
 
-test('projection deload insertion is clearly marked across the 16-week horizon', () => {
+test('rep-ladder projection has no deload weeks and steps +5 lb every 4 weeks', () => {
   const plan = engine.buildOblueprintPlan(baseInput({
     experience: '5y+',
     daysPerWeek: 6,
@@ -1496,10 +1504,30 @@ test('projection deload insertion is clearly marked across the 16-week horizon',
   }));
   assert.equal(plan.error, undefined, plan?.reason || plan?.error);
   const deloadWeeks = plan.meta?.progressionProjection?.deloadWeeks || [];
-  assert.deepEqual(deloadWeeks, [5, 10, 15]);
-  const deloadRows = (plan.meta?.progressionProjection?.weeklyTable || []).filter((row) => deloadWeeks.includes(Number(row?.week)));
-  assert.ok(deloadRows.length > 0, 'expected deload rows');
-  assert.ok(deloadRows.every((row) => String(row?.tag || '') === 'deload'), 'expected deload row tags');
+  assert.deepEqual(deloadWeeks, [], 'rep ladder has no scheduled deloads');
+  const table = plan.meta?.progressionProjection?.weeklyTable || [];
+  assert.ok(table.length > 0, 'expected projection rows');
+  assert.ok(table.every((row) => String(row?.tag || '') === 'normal'), 'no deload/hold rows in the rep ladder');
+  const loaded = table.filter((row) => Number.isFinite(Number(row?.targetLoad)) && Number(row.targetLoad) > 0);
+  assert.ok(loaded.length > 0, 'expected loaded rows');
+  const byExercise = new Map();
+  loaded.forEach((row) => {
+    const key = String(row.canonicalExerciseId || row.exercise);
+    if (!byExercise.has(key)) byExercise.set(key, []);
+    byExercise.get(key).push(row);
+  });
+  for (const rows of byExercise.values()) {
+    rows.sort((a, b) => Number(a.week) - Number(b.week));
+    const w1 = rows.find((r) => Number(r.week) === 1);
+    const w4 = rows.find((r) => Number(r.week) === 4);
+    const w5 = rows.find((r) => Number(r.week) === 5);
+    if (!w1 || !w4 || !w5) continue;
+    assert.equal(Number(w4.targetLoad), Number(w1.targetLoad), 'load holds through the 4-week cycle');
+    assert.ok(Number(w5.targetLoad) > Number(w1.targetLoad), 'load steps up at the new cycle');
+    assert.equal(Number(w5.repRange), Number(w1.repRange), 'reps reset at the new cycle');
+    assert.equal(Number(w4.repRange), Number(w1.repRange) + 3, 'reps climb +1 per week inside the cycle');
+    assert.equal(Number(w4.sets), Number(w1.sets), 'sets never change');
+  }
 });
 
 test('adaptive projection state adjusts upward and downward after repeated performance signals', () => {
@@ -1787,7 +1815,7 @@ test('bodyweight progression mode avoids fake load targets', () => {
   assert.doesNotMatch(result.nextTarget, /lb/i);
 });
 
-test('projection metadata exposes deload labeling, return targets, and classification confidence', () => {
+test('projection metadata exposes classification confidence and rep-ladder cycle notes', () => {
   const plan = engine.buildOblueprintPlan(baseInput({
     experience: '5y+',
     daysPerWeek: 6,
@@ -1800,9 +1828,9 @@ test('projection metadata exposes deload labeling, return targets, and classific
   assert.ok(projection?.classificationConfidence, 'expected classification confidence');
   assert.ok(projection?.classificationReason, 'expected classification reason');
   const deloadRows = (projection?.weeklyTable || []).filter((row) => String(row?.tag || '') === 'deload');
-  assert.ok(deloadRows.length > 0, 'expected deload rows');
-  assert.ok(deloadRows.every((row) => String(row?.deloadLabel || '').length > 0), 'expected deload labels');
-  assert.ok(deloadRows.some((row) => String(row?.postDeloadReturnTarget || '').length > 0), 'expected post-deload return targets');
+  assert.equal(deloadRows.length, 0, 'rep ladder has no deload rows');
+  const cycleEndNotes = (projection?.weeklyTable || []).filter((row) => Number(row?.week) % 4 === 0 && Number.isFinite(Number(row?.targetLoad)) && Number(row.targetLoad) > 0);
+  assert.ok(cycleEndNotes.every((row) => String(row?.note || '').includes('reset')), 'cycle-end rows explain the +5 lb / rep reset');
 });
 
 test('progression mode classification distinguishes loaded and bodyweight movements', () => {
