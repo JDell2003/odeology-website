@@ -182,9 +182,9 @@
             `).join('')}
             <div class="lb-rule-section">The castes</div>
             <div class="lb-rule"><div><div class="lb-rule-title">Your spider graph is your rank</div><div class="lb-rule-note">Each tier is a ring on your radar. Claim it by covering the ring — your whole web reaching past it — or by piercing it with one world-class stat. Balanced or specialist, both roads climb.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — 15 thrones, no more</div><div class="lb-rule-note">Web average 85+, or a single stat at 98. Thrones only open when a King slips.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight — 150 seats</div><div class="lb-rule-note">Web average 70+, or one stat pierced to 92. Hard - as it should be.</div></div></div>
-            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">Web average 50+ or one stat at 78. One level, three shapes: Ranger runs on cardio and recovery, Mage is the balanced discipline build, Berserker is all strength and progress — your graph's shape decides which claims you, and switching between them is a sidestep, not a climb.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♛ King — the summit</div><div class="lb-rule-note">Web average 85+ with every stat above 80, held for 8 straight weeks. No single-stat shortcut — the whole web has to earn it. Unlimited holders, but almost nobody gets here.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">♞ Knight</div><div class="lb-rule-note">Web average 70+ with every stat above 62, sustained for 2 weeks. A breadth gate — no pierce path. Hard, as it should be.</div></div></div>
+            <div class="lb-rule"><div><div class="lb-rule-title">➳ Ranger · ✦ Mage · ⚔ Berserker</div><div class="lb-rule-note">Web average 50+ or one stat at 80. One level, three shapes: Ranger runs on cardio and recovery, Mage is the balanced discipline build, Berserker is all strength and progress — your graph's shape decides which claims you, and switching between them is a sidestep, not a climb.</div></div></div>
             <div class="lb-rule"><div><div class="lb-rule-title">⚑ Squire &nbsp;·&nbsp; ⚒ Peasant</div><div class="lb-rule-note">Everyone starts as a Peasant. Web average 35 or one stat at 60 makes you a Squire. Consistency is the fastest way out.</div></div></div>
             <div class="lb-rule-section">Daily shifts</div>
             <div class="lb-rule"><div><div class="lb-rule-title">The ranks move every day</div><div class="lb-rule-note">Miss a day and someone passes you. Your ▲/▼ arrow shows what happened overnight. Slots up top are limited - climbing means someone else falls.</div></div></div>
@@ -447,12 +447,16 @@
         strength: 'Strength', cardio: 'Cardio', consistency: 'Consistency',
         nutrition: 'Nutrition', recovery: 'Recovery', progress: 'Progress'
     };
+    // v2 scoring — Task 9: this predicate table is COSMETIC (styling, blurbs,
+    // next-level copy). Rank/caste for the signed-in user come from the server
+    // (C.ranks). King's `check` floor is aligned to C.ranks.king.floor (80) so
+    // the cosmetic fallback can't contradict the authoritative gate.
     const CASTES = [
         {
             id: 'king', name: 'King', emblem: '♛', prestige: 4, tone: 'amber',
             blurb: 'Everything high and balanced - or one stat the realm has never seen. You have mastered it.',
-            check: (s, avg, min, max, spread) => min >= 75 && spread <= 22,
-            requirements: (s) => CASTE_AXES.filter(k => s[k] < 75).map(k => ({ key: k, target: 75 }))
+            check: (s, avg, min, max, spread) => min >= 80 && spread <= 22,
+            requirements: (s) => CASTE_AXES.filter(k => s[k] < 80).map(k => ({ key: k, target: 80 }))
         },
         {
             id: 'berserker', name: 'Berserker', emblem: '⚔', prestige: 2, tone: 'rose',
@@ -463,8 +467,8 @@
         {
             id: 'knight', name: 'Knight', emblem: '♞', prestige: 3, tone: 'indigo',
             blurb: 'Strong everywhere and it shows. You show up and you deliver.',
-            check: (s) => s.strength >= 62 && s.consistency >= 70,
-            requirements: () => [{ key: 'strength', target: 62 }, { key: 'consistency', target: 70 }]
+            check: (s) => s.strength >= 70 && s.consistency >= 62, // aligned to C.ranks.knight (avg 70 / floor 62)
+            requirements: () => [{ key: 'strength', target: 70 }, { key: 'consistency', target: 62 }]
         },
         {
             id: 'ranger', name: 'Ranger', emblem: '➳', prestige: 2, tone: 'emerald',
@@ -604,11 +608,15 @@
        there is NO single-spike path. So five trash stats and one 100 can
        never be King - the top is earned across the whole web. Each ring is
        also meaningfully higher than the last, so climbing gets steeper. */
+    // v2 scoring — Task 9: numbers reconciled to core/scoringConstants.js
+    // `ranks` (the ONE authoritative gate table). These client rings are now a
+    // COSMETIC fallback for non-self rows / offline; the server gate decides the
+    // signed-in user's rank. Kept in sync so the fallback never contradicts it.
     const TIER_RINGS = [
         { id: 'squire', avg: 35, spike: 60, floor: 0 },
-        { id: 'specialist', avg: 50, spike: 78, floor: 0 },
-        { id: 'knight', avg: 68, floor: 45, noPierce: true },
-        { id: 'king', avg: 82, floor: 60, noPierce: true }
+        { id: 'specialist', avg: 50, spike: 80, floor: 0 },
+        { id: 'knight', avg: 70, floor: 62, noPierce: true },
+        { id: 'king', avg: 85, floor: 80, noPierce: true }
     ];
     const TIER_ORDER = ['peasant', 'squire', 'specialist', 'knight', 'king'];
 
@@ -621,7 +629,14 @@
         };
     };
 
+    // v2 scoring (SCORING_ENGINE_V2) — Task 9: ONE authoritative gate table.
+    // When the server score is present it already ran C.ranks WITH the
+    // sustain-week gate (King = 8 weeks), so we honor `__serverRank` /
+    // `__serverCaste` directly. The TIER_RINGS / CASTES tables below are then a
+    // COSMETIC fallback only — used for other users' rows (no server score) and
+    // offline. They intentionally no longer decide the signed-in user's rank.
     const radarTierId = (stats) => {
+        if (stats && typeof stats.__serverRank === 'string') return stats.__serverRank;
         const { avg, spike, min } = radarReach(stats);
         let tier = 'peasant';
         for (const ring of TIER_RINGS) {
@@ -633,6 +648,8 @@
     };
 
     const pickCaste = (stats) => {
+        // Authoritative server caste wins when the server assigned one.
+        if (stats && stats.__serverCaste && CASTE_MAP[stats.__serverCaste]) return CASTE_MAP[stats.__serverCaste];
         const tier = radarTierId(stats);
         if (tier === 'specialist') return champSpecialistFor(stats);
         return CASTE_MAP[tier];
@@ -1936,6 +1953,9 @@
         }
     };
 
+    // v2 scoring — Task 9: this fabricated leaderboard population is COSMETIC
+    // ambience only. It never feeds a real user's score or authoritative rank —
+    // those come from app_score_snapshots / GET /api/score.
     const gameFakeRow = (personIndex, rank, pts, delta, day) => {
         const identity = gamePersonIdentity(personIndex, day);
         const rowRnd = syncSeed(`lb_fake_row_${day}_${personIndex}`);

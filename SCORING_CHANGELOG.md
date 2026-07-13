@@ -321,3 +321,36 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
   + VO2max stored.
 - A run synced twice counts once: single day-row + COALESCE merge + activity unique index.
 - Test run: pending (no local Node — see note).
+
+---
+
+## Task 9 — Ranks consolidation (`feat(scoring): ranks unified`)
+
+**What changed** (all in `js/leaderboard.js`; C.ranks on the server stays the one gate)
+
+- **One authoritative gate**: when the signed-in user has a server score,
+  `radarTierId()` returns `stats.__serverRank` and `pickCaste()` returns
+  `stats.__serverCaste` directly — the server's C.ranks result (already sustain-gated)
+  decides the rank. The client `TIER_RINGS` / `CASTES` tables are now explicitly a
+  **cosmetic fallback** for other users' rows and offline.
+- **Reconciled the divergent numbers** so the fallback can never contradict the gate:
+  `TIER_RINGS` specialist 78→80, knight 68/45→70/62, king 82/60→85/80; the `CASTES`
+  King `check` floor 75→80 and Knight `check` 62/70→70/62 — matching
+  `C.ranks`. The `CASTES` predicate table is annotated cosmetic (styling/blurbs/next-level).
+- **Sustain weeks**: rank is driven off `app_score_snapshots` with the sustain gate
+  (King = 8 weeks) server-side (Task 3 `computeRank` + Task 4 `weeks_at_rank`); a
+  momentary King-level spike does not promote. The 3-day demotion stickiness stays as
+  UX polish.
+- **UI copy** (the rules panel) rewritten to state the real gates: King = avg 85+, every
+  stat > 80, held 8 weeks, no single-stat path; Knight = avg 70+, floor 62, 2 weeks,
+  no pierce. Removed the contradictory "single stat at 98 / pierced to 92" King/Knight
+  claims.
+- **Fabricated population** annotated cosmetic-only — it never feeds a real score or rank.
+
+**Acceptance criteria**
+
+- A momentary King-level spike does NOT promote until sustained 8 weeks: enforced by
+  the server sustain gate; the client honors the server rank.
+- One gate table everywhere: C.ranks authoritative; client tables reconciled + cosmetic.
+- Unlimited holders: no seat cap on the authoritative path (only the cosmetic game rows
+  use seat counts).
