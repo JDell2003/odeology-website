@@ -1,0 +1,162 @@
+/* css/meal-program.css — Meal Program Work Order Phases 1/2/4.
+   Additive-only: namespaced .mp-*; relies on css/main.css :root variables
+   (--bg, --card, --accent, --radius-md, --font-body) and .btn styles.
+   Mobile-first at 360–430px (discovery Q25 ⚠️), fluid via auto-fit grids. */
+
+.mp-shell {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 1rem 1rem 5rem;
+    font-family: var(--font-body, 'Space Grotesk', sans-serif);
+}
+
+.mp-header { text-align: center; padding: 0.75rem 0 0.25rem; }
+.mp-header h1 { margin: 0 0 0.25rem; font-size: clamp(1.4rem, 4.5vw, 2.2rem); }
+.mp-sub { opacity: 0.75; margin: 0 0 1rem; font-size: 0.95rem; }
+
+.mp-progress { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12); overflow: hidden; margin: 0.5rem 0 1.25rem; }
+.mp-progress-fill { height: 100%; width: 0; background: var(--accent, #c58d4f); transition: width 0.25s ease; }
+
+.mp-step { display: none; }
+.mp-step.active { display: block; }
+
+/* ---------------- Step 1: picture picker ---------------- */
+.mp-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.mp-tab {
+    flex: 1; padding: 0.6rem 0.25rem; border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(255,255,255,0.18); background: transparent; color: inherit;
+    font: inherit; cursor: pointer; text-align: center;
+}
+.mp-tab.active { border-color: var(--accent, #c58d4f); background: rgba(197,141,79,0.15); }
+.mp-tab .mp-tab-count { display: block; font-size: 0.75rem; opacity: 0.7; }
+.mp-tab.met .mp-tab-count { color: #7fd18a; opacity: 1; }
+
+.mp-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.mp-hint { font-size: 0.85rem; opacity: 0.75; margin: 0; }
+
+.mp-grid {
+    display: grid; gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.mp-card {
+    position: relative; border-radius: var(--radius-md, 12px); overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.12); background: var(--card, #1d1610);
+    cursor: pointer; padding: 0; text-align: left; color: inherit; font: inherit;
+}
+.mp-card:focus-visible { outline: 2px solid var(--accent, #c58d4f); outline-offset: 2px; }
+.mp-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #2a211a; }
+.mp-card-body { padding: 0.5rem 0.6rem 0.65rem; }
+.mp-card-name { font-size: 0.85rem; font-weight: 600; line-height: 1.25; display: block; }
+.mp-card-meta { font-size: 0.72rem; opacity: 0.7; display: block; margin-top: 0.2rem; }
+.mp-card .mp-goal-pill {
+    position: absolute; top: 0.4rem; left: 0.4rem; font-size: 0.65rem; text-transform: uppercase;
+    padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(0,0,0,0.55); letter-spacing: 0.04em;
+}
+.mp-card.selected { border-color: var(--accent, #c58d4f); }
+.mp-card.selected::after {
+    content: '✓'; position: absolute; top: 0.4rem; right: 0.4rem; width: 1.5rem; height: 1.5rem;
+    border-radius: 50%; background: var(--accent, #c58d4f); color: #14100b; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.mp-card.already { opacity: 0.85; }
+.mp-card.already .mp-card-meta::after { content: ' · picked in another tab'; color: #7fd18a; }
+
+/* ---------------- Steps 2–3: questions ---------------- */
+.mp-form { display: grid; gap: 1rem; max-width: 560px; margin: 0 auto; }
+.mp-field > span { display: block; font-size: 0.85rem; margin-bottom: 0.35rem; opacity: 0.85; }
+.mp-field input[type="number"], .mp-field input[type="text"], .mp-field input[type="email"], .mp-field select {
+    width: 100%; padding: 0.65rem 0.75rem; border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: inherit; font: inherit;
+    box-sizing: border-box;
+}
+.mp-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.mp-pill-btn {
+    padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2);
+    background: transparent; color: inherit; font: inherit; cursor: pointer; font-size: 0.85rem;
+}
+.mp-pill-btn.active { border-color: var(--accent, #c58d4f); background: rgba(197,141,79,0.18); }
+
+.mp-tier-note { font-size: 0.8rem; opacity: 0.7; margin: 0.25rem 0 0; }
+.mp-allergies { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.mp-actions { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.5rem; }
+.mp-actions .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------------- Email gate ---------------- */
+.mp-gate { max-width: 480px; margin: 2rem auto; text-align: center; }
+.mp-gate h2 { margin-bottom: 0.5rem; }
+
+/* ---------------- Step 5: plan output ---------------- */
+.mp-plan-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 0.5rem;
+    background: var(--card, #1d1610); border-radius: var(--radius-md, 12px); padding: 0.75rem; margin-bottom: 0.75rem;
+}
+.mp-sum-item .label { display: block; font-size: 0.68rem; text-transform: uppercase; opacity: 0.65; letter-spacing: 0.05em; }
+.mp-sum-item .value { display: block; font-weight: 700; font-size: 0.95rem; margin-top: 0.15rem; }
+
+.mp-msgs { display: grid; gap: 0.4rem; margin: 0.5rem 0 1rem; }
+.mp-msg { font-size: 0.85rem; padding: 0.55rem 0.75rem; border-radius: var(--radius-md, 12px);
+    background: rgba(197,141,79,0.12); border: 1px solid rgba(197,141,79,0.35); }
+.mp-msg.warn { background: rgba(220,120,90,0.12); border-color: rgba(220,120,90,0.4); }
+.mp-msg.ok { background: rgba(127,209,138,0.1); border-color: rgba(127,209,138,0.35); }
+
+.mp-budget-bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.12); overflow: hidden; margin: 0.35rem 0 1rem; }
+.mp-budget-fill { height: 100%; background: #7fd18a; }
+.mp-budget-fill.over { background: #dc785a; }
+
+.mp-stores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.mp-store-card {
+    border: 2px solid rgba(255,255,255,0.15); border-radius: var(--radius-md, 12px);
+    padding: 0.6rem 0.5rem; text-align: center; background: transparent; color: inherit; font: inherit; cursor: pointer;
+}
+.mp-store-card.active { border-color: var(--accent, #c58d4f); background: rgba(197,141,79,0.12); }
+.mp-store-card .name { display: block; font-size: 0.8rem; font-weight: 600; }
+.mp-store-card .price { display: block; font-size: 0.95rem; font-weight: 700; margin-top: 0.2rem; }
+.mp-store-card .badge { display: block; font-size: 0.62rem; opacity: 0.7; margin-top: 0.2rem; }
+.mp-store-card .cheapest { color: #7fd18a; }
+
+.mp-plan-grid { display: grid; gap: 1rem; }
+@media (min-width: 900px) { .mp-plan-grid { grid-template-columns: 340px 1fr; align-items: start; } }
+
+.mp-panel { background: var(--card, #1d1610); border-radius: var(--radius-md, 12px); padding: 0.9rem; }
+.mp-panel h3 { margin: 0 0 0.6rem; font-size: 1rem; }
+
+.mp-grocery-item { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; }
+.mp-grocery-item:last-child { border-bottom: none; }
+.mp-grocery-item .qty { opacity: 0.7; font-size: 0.75rem; display: block; }
+.mp-grocery-item .cost { font-weight: 600; white-space: nowrap; }
+.mp-grocery-item .est { font-size: 0.65rem; color: #dcb45a; display: block; text-align: right; }
+.mp-free-items { font-size: 0.8rem; opacity: 0.75; margin-top: 0.6rem; }
+
+.mp-day { margin-bottom: 0.9rem; }
+.mp-day-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+.mp-day-head h4 { margin: 0; font-size: 0.95rem; }
+.mp-day-head .totals { font-size: 0.72rem; opacity: 0.7; }
+.mp-meal-row {
+    display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md, 12px); margin-bottom: 0.4rem;
+    background: rgba(255,255,255,0.03); cursor: pointer;
+}
+.mp-meal-row img { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #2a211a; }
+.mp-meal-row .info { flex: 1; min-width: 0; }
+.mp-meal-row .name { font-size: 0.85rem; font-weight: 600; display: block; }
+.mp-meal-row .meta { font-size: 0.72rem; opacity: 0.7; display: block; margin-top: 0.15rem; }
+.mp-meal-row .slot-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; }
+
+.mp-recipe { display: none; padding: 0.65rem 0.75rem; border-radius: var(--radius-md, 12px);
+    background: rgba(255,255,255,0.04); margin: -0.15rem 0 0.5rem; font-size: 0.85rem; }
+.mp-recipe.open { display: block; }
+.mp-recipe h5 { margin: 0.4rem 0 0.25rem; font-size: 0.8rem; text-transform: uppercase; opacity: 0.7; }
+.mp-recipe ul, .mp-recipe ol { margin: 0.25rem 0 0.5rem; padding-left: 1.2rem; }
+.mp-recipe li { margin-bottom: 0.2rem; }
+.mp-recipe .attribution { font-size: 0.72rem; opacity: 0.7; }
+.mp-recipe .attribution a { color: var(--accent, #c58d4f); }
+
+.mp-print-row { text-align: right; margin-bottom: 0.5rem; }
+
+@media print {
+    body * { visibility: hidden; }
+    #mp-step-plan, #mp-step-plan * { visibility: visible; }
+    #mp-step-plan { position: absolute; top: 0; left: 0; width: 100%; }
+    .mp-print-row, .mp-stores, .mp-actions { display: none !important; }
+}

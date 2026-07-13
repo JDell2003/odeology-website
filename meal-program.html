@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#140f0b">
+    <title>Pick Your Meals — RiseForIt Meal Program</title>
+    <meta name="description" content="Pick the meals you actually want to eat, set your budget, and get a 7-day bodybuilding meal plan with a priced grocery list from Walmart, Sam's Club, or Target.">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/meal-program.css?v=2026-07-13-mp-1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="final-page">
+    <div class="grain"></div>
+
+    <main class="mp-shell" id="mp-shell">
+        <header class="mp-header">
+            <h1 id="mp-title">Pick the meals you actually want to eat</h1>
+            <p class="mp-sub" id="mp-subtitle">Tap the photos. We'll turn your picks into a 7-day plan that fits your budget.</p>
+            <div class="mp-progress"><div class="mp-progress-fill" id="mp-progress-fill"></div></div>
+        </header>
+
+        <div class="mp-msg warn" id="mp-load-error" style="display:none;">
+            Couldn't load the meal catalog. Check your connection and
+            <button class="btn btn-ghost" id="mp-retry" type="button">retry</button>.
+        </div>
+
+        <!-- STEP 1: picture picker (Phase 1) -->
+        <section class="mp-step" id="mp-step-picker" aria-label="Pick your meals">
+            <div class="mp-tabs" id="mp-tabs" role="tablist"></div>
+            <div class="mp-toolbar">
+                <p class="mp-hint" id="mp-pick-hint"></p>
+                <button class="btn btn-ghost" id="mp-surprise" type="button">Surprise me</button>
+            </div>
+            <div class="mp-grid" id="mp-grid"></div>
+            <div class="mp-actions">
+                <a class="btn btn-ghost" href="/">Back home</a>
+                <button class="btn btn-primary" id="mp-picker-next" type="button" disabled>Continue</button>
+            </div>
+        </section>
+
+        <!-- STEP 2: budget / store / state (Phase 2) -->
+        <section class="mp-step" id="mp-step-budget" aria-label="Budget and store">
+            <form class="mp-form" id="mp-budget-form">
+                <label class="mp-field">
+                    <span>Monthly grocery budget ($)</span>
+                    <input type="number" id="mp-budget" min="50" max="2000" step="10" value="300" inputmode="numeric">
+                </label>
+                <div class="mp-field">
+                    <span>Plan tier (optional — we pick the best your budget allows)</span>
+                    <div class="mp-pills" id="mp-tier-pills">
+                        <button type="button" class="mp-pill-btn active" data-tier="">Auto (recommended)</button>
+                        <button type="button" class="mp-pill-btn" data-tier="MINIMUM">Minimum Effective</button>
+                        <button type="button" class="mp-pill-btn" data-tier="BALANCED">Balanced</button>
+                        <button type="button" class="mp-pill-btn" data-tier="BEST">Best Performance</button>
+                    </div>
+                    <p class="mp-tier-note">Your budget drives your protein tier. Auto finds the highest tier your budget covers.</p>
+                </div>
+                <label class="mp-field">
+                    <span>Where will you shop?</span>
+                    <select id="mp-store">
+                        <option value="cheapest" selected>Compare all three — pick the cheapest for me</option>
+                        <option value="walmart">Walmart</option>
+                        <option value="sams">Sam's Club (membership required)</option>
+                        <option value="target">Target</option>
+                    </select>
+                </label>
+                <label class="mp-field">
+                    <span>Your state (adjusts prices to your area)</span>
+                    <select id="mp-state"></select>
+                </label>
+            </form>
+            <div class="mp-actions">
+                <button class="btn btn-ghost" id="mp-budget-back" type="button">Back</button>
+                <button class="btn btn-primary" id="mp-budget-next" type="button">Continue</button>
+            </div>
+        </section>
+
+        <!-- STEP 3: dietary + body stats (Phase 2) -->
+        <section class="mp-step" id="mp-step-profile" aria-label="Dietary and body stats">
+            <form class="mp-form" id="mp-profile-form">
+                <label class="mp-field">
+                    <span>Dietary preference</span>
+                    <select id="mp-dietary">
+                        <option value="no-restrictions" selected>No restrictions</option>
+                        <option value="vegetarian">Vegetarian</option>
+                        <option value="vegan">Vegan</option>
+                        <option value="pescatarian">Pescatarian</option>
+                        <option value="no-red-meat">No red meat</option>
+                    </select>
+                </label>
+                <div class="mp-field">
+                    <span>Allergies</span>
+                    <div class="mp-pills mp-allergies" id="mp-allergies">
+                        <button type="button" class="mp-pill-btn active" data-allergy="none">None</button>
+                        <button type="button" class="mp-pill-btn" data-allergy="fish">Fish</button>
+                        <button type="button" class="mp-pill-btn" data-allergy="eggs">Eggs</button>
+                        <button type="button" class="mp-pill-btn" data-allergy="dairy">Dairy</button>
+                        <button type="button" class="mp-pill-btn" data-allergy="gluten">Gluten</button>
+                    </div>
+                </div>
+                <div class="mp-field">
+                    <span>Primary goal</span>
+                    <div class="mp-pills" id="mp-goal-pills">
+                        <button type="button" class="mp-pill-btn" data-goal="cut">Cut</button>
+                        <button type="button" class="mp-pill-btn active" data-goal="bulk">Bulk</button>
+                        <button type="button" class="mp-pill-btn" data-goal="maintain">Maintain</button>
+                    </div>
+                </div>
+                <div class="mp-field">
+                    <span>Sex</span>
+                    <div class="mp-pills" id="mp-sex-pills">
+                        <button type="button" class="mp-pill-btn active" data-sex="male">Male</button>
+                        <button type="button" class="mp-pill-btn" data-sex="female">Female</button>
+                    </div>
+                </div>
+                <label class="mp-field"><span>Age (years)</span>
+                    <input type="number" id="mp-age" min="14" max="80" value="25" inputmode="numeric"></label>
+                <label class="mp-field"><span>Height (inches)</span>
+                    <input type="number" id="mp-height" min="48" max="90" value="70" inputmode="numeric"></label>
+                <label class="mp-field"><span>Current bodyweight (lbs)</span>
+                    <input type="number" id="mp-weight" min="80" max="400" value="180" inputmode="numeric"></label>
+                <label class="mp-field"><span>Goal bodyweight (lbs)</span>
+                    <input type="number" id="mp-goal-weight" min="80" max="400" value="190" inputmode="numeric"></label>
+                <div class="mp-field">
+                    <span>Day activity (outside the gym)</span>
+                    <div class="mp-pills" id="mp-activity-pills">
+                        <button type="button" class="mp-pill-btn" data-activity="SEDENTARY">Sedentary</button>
+                        <button type="button" class="mp-pill-btn active" data-activity="MODERATE">Moderate</button>
+                        <button type="button" class="mp-pill-btn" data-activity="ACTIVE">Active</button>
+                    </div>
+                </div>
+                <div class="mp-field">
+                    <span>Session intensity</span>
+                    <div class="mp-pills" id="mp-intensity-pills">
+                        <button type="button" class="mp-pill-btn" data-intensity="LIGHT">Light</button>
+                        <button type="button" class="mp-pill-btn active" data-intensity="AVERAGE">Average</button>
+                        <button type="button" class="mp-pill-btn" data-intensity="INTENSE">Intense</button>
+                    </div>
+                </div>
+                <div class="mp-field">
+                    <span>Training days per week</span>
+                    <div class="mp-pills" id="mp-frequency-pills">
+                        <button type="button" class="mp-pill-btn" data-frequency="1-2">1–2</button>
+                        <button type="button" class="mp-pill-btn active" data-frequency="3-4">3–4</button>
+                        <button type="button" class="mp-pill-btn" data-frequency="5-6">5–6</button>
+                    </div>
+                </div>
+            </form>
+            <div class="mp-actions">
+                <button class="btn btn-ghost" id="mp-profile-back" type="button">Back</button>
+                <button class="btn btn-primary" id="mp-profile-next" type="button">Continue</button>
+            </div>
+        </section>
+
+        <!-- Email gate (Phase 2, discovery Q22 ⚠️: gate right before the payoff) -->
+        <section class="mp-step" id="mp-step-email" aria-label="Unlock your plan">
+            <div class="mp-gate">
+                <h2>Your 7-day plan is ready</h2>
+                <p class="mp-sub">Enter your email to unlock your meal plan, priced grocery list, and store comparison.</p>
+                <form class="mp-form" id="mp-email-form">
+                    <label class="mp-field">
+                        <span>Email</span>
+                        <input type="email" id="mp-email" placeholder="you@example.com" autocomplete="email" required>
+                    </label>
+                    <button class="btn btn-primary" id="mp-email-unlock" type="submit">Unlock my plan</button>
+                </form>
+            </div>
+            <div class="mp-actions">
+                <button class="btn btn-ghost" id="mp-email-back" type="button">Back</button>
+            </div>
+        </section>
+
+        <!-- STEP 5: plan output (Phase 4) -->
+        <section class="mp-step" id="mp-step-plan" aria-label="Your 7-day plan">
+            <div class="mp-print-row">
+                <button class="btn btn-ghost" id="mp-print" type="button">Print plan</button>
+                <button class="btn btn-ghost" id="mp-start-over" type="button">Start over</button>
+            </div>
+            <div class="mp-plan-summary" id="mp-plan-summary"></div>
+            <div class="mp-budget-bar"><div class="mp-budget-fill" id="mp-budget-fill"></div></div>
+            <div class="mp-msgs" id="mp-plan-msgs"></div>
+            <div class="mp-stores" id="mp-store-compare"></div>
+            <div class="mp-plan-grid">
+                <section class="mp-panel" id="mp-grocery-panel">
+                    <h3>Grocery list — <span id="mp-grocery-store"></span> <span class="pill" id="mp-grocery-monthly"></span></h3>
+                    <div id="mp-grocery-items"></div>
+                    <p class="mp-free-items" id="mp-free-items"></p>
+                </section>
+                <section class="mp-panel">
+                    <h3>Your 7-day meal plan</h3>
+                    <div id="mp-days"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script src="core/mealProgramConstants.js?v=2026-07-13-mp-1"></script>
+    <script src="core/mealProgramEngine.js?v=2026-07-13-mp-1"></script>
+    <script src="js/meal-program-data.js?v=2026-07-13-mp-1"></script>
+    <script src="js/meal-program-questions.js?v=2026-07-13-mp-1"></script>
+    <script src="js/meal-program-plan.js?v=2026-07-13-mp-1"></script>
+    <script src="js/meal-program.js?v=2026-07-13-mp-1"></script>
+</body>
+</html>
