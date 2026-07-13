@@ -77,3 +77,63 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
   no dependencies — verified by inspection; Node run pending (see Environment note).
 - Every axis reads from it / no magic numbers in `scoringEngine.js`: enforced in Task 3
   (engine reads everything from `C.*`).
+
+---
+
+## Task 3 — Engine core (`feat(scoring): engine core`)
+
+**What changed**
+
+- `core/scoringEngine.js` — **new, pure, zero DB imports.** Implements the Work Order
+  skeleton verbatim where given (`ageFrom`, `trustMultiplier`, `normalizeStrength`
+  piecewise-linear band map + age handicap, `selfImprovement`, `blend`,
+  `applyDecayOrPause`, `computeRank` with sustain-weeks + caste dispatch) plus the six
+  `compute*` axis functions the doc asked to be implemented:
+  - Strength: allometric bands → 60/40 blend with self-improvement → trust multiplier →
+    best-recent bank (fresh dips inside the window can only glide down at the decay
+    rate, never crash) → decay past 12 idle days.
+  - Cardio: WHO minutes-at-intensity grading (150→50 pts, 300→75 pts, slope continues
+    to 100), VO2max path anchored at the 50th percentile = 50 pts (sex × age-decade),
+    steps as a hard-capped (40 pt) fallback.
+  - Consistency: recency-weighted active-day fraction over 28 d.
+  - Nutrition: per-day credit (calorie band + protein floor = 1.0, one criterion or
+    meals-on-plan = 0.5) against `logDaysForFullCredit`/7.
+  - Recovery: duration (sleep bands) 0.5 / wake-regularity 0.3 / restedness 0.2,
+    grind penalty after 7 straight training days.
+  - Progress: 7-day-half-life EMA weight trend vs goal-appropriate safe rate;
+    **matching beats exceeding** (crash-cut protection); insufficient data → pause,
+    not decay.
+  All numbers come from `C.*`. Every axis pushes an explanatory event object.
+- `core/scoringConstants.js` — appended an `engineExtras` block (AGENT-ADDED, DESIGN
+  tags) for three values the axes needed that the file didn't carry: grind penalty
+  fraction, wake-regularity band, sleep falloff bounds. **No existing value touched** —
+  this follows the doc's rule "if the engine needs a value not present, add it to this
+  file with a confidence tag rather than inlining it".
+- `core/scoringGather.js` — `gatherUserScoringInputs(db, userId, sinceDate)` reads
+  `app_training_profiles`, `app_training_lift_history`, `app_health_daily`,
+  `app_daily_checkins`, `app_training_workouts`, `app_score_snapshots` and returns the
+  one plain object the engine consumes. Includes `mapMainLift()` exercise_key
+  heuristics (`// TODO(owner)`: curate explicit map), goal-mode normalization,
+  provenance classification (strava/fitbit/gps/alarm → device; manual → self_report),
+  and sustain-week computation from consecutive snapshot days.
+
+**Deviations / notes (live code wins)**
+
+- The doc's context said Postgres is used "via `core/db.js getPool()`" — the live
+  `db.js` exports `query()` (no `getPool` export). Gather uses `db.query()`.
+- `app_training_lift_history` stores per-exercise aggregates (`last_*`/`best_*`), not
+  a full time series — "best e1RM within 42 days" is approximated from those two
+  aggregates and their dates. Noted as an accepted approximation.
+- Server-side Mifflin calorie target isn't computed anywhere today, so
+  `calorieTargetKcal` is `null` for now (protein floor + meals-on-plan still grade);
+  `// TODO(owner)` marks where to wire it.
+
+**Acceptance criteria**
+
+- Engine has zero DB imports: it requires only `./scoringConstants` — verified.
+- Every number from constants: verified by inspection (only structural interpolation
+  arithmetic inline).
+- computeRank respects sustain weeks: King requires `weeksAtCandidate.king >= 8`.
+- Sex-missing users get `normalized=false` + valid self score: `normalizeStrength`
+  returns `standard:null` → blend falls back to self-improvement only.
+- Task 10 tests pass: written in Task 10; run pending (no local Node — see note).

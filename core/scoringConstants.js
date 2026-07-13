@@ -167,5 +167,24 @@ module.exports = {
   plausibility: {
     voidBelowFractionOfProjected: 0.40,   // finished < 40% of projected duration -> void
     lateSubmissionGraceHours: 24          // forgot-to-submit still counts within this window
+  },
+
+  // ---------------------------------------------------------------------------
+  // AGENT-ADDED (Task 3, per the Work Order rule: "if the engine needs a value
+  // not present, add it to this file with a confidence tag rather than inlining
+  // it"). None of the values above were modified.
+  // ---------------------------------------------------------------------------
+  engineExtras: {
+    // DESIGN(agent): score dock applied when consecutiveTrainingDays >=
+    // recovery.punishGrindAfterDaysStraight (no rest day in a week).
+    grindPenaltyFraction: 0.20,
+    // DESIGN(agent): wake-time regularity mapping — standard deviation of wake
+    // times <= fullCreditStdMinutes earns 100, fading to 0 at zeroCreditStdMinutes.
+    // Inspired by Sleep Regularity Index banding; tune freely.
+    regularity: { fullCreditStdMinutes: 60, zeroCreditStdMinutes: 180 },
+    // DESIGN(agent): sleep-duration falloff outside the recommended band —
+    // zero credit at (band floor x floorZeroFraction) and (band ceiling x
+    // ceilingZeroFactor); linear in between.
+    sleep: { floorZeroFraction: 0.5, ceilingZeroFactor: 2 }
   }
 };

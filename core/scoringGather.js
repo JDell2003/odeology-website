@@ -88,4 +88,365 @@ async function ensureScoringSchema() {
   return await schemaEnsurePromise;
 }
 
-module.exports = { scoringV2Enabled, ensureScoringSchema };
+// ---------------------------------------------------------------------------
+// gatherUserScoringInputs(dbi, userId, sinceDate?) -> plain inputs object for
+// core/scoringEngine.js computeAxes(). All SQL for the engine lives HERE.
+// ---------------------------------------------------------------------------
+const C = require('./scoringConstants');
+const engine = require('./scoringEngine');
+
+const DAY_MS = 86_400_000;
+
+function isoDay(d) {
+  return new Date(d).toISOString().slice(0, 10);
+}
+
+function daysAgoOf(dayIso, todayIso) {
+  return Math.round((new Date(`${todayIso}T00:00:00Z`) - new Date(`${dayIso}T00:00:00Z`)) / DAY_MS);
+}
+
+// Map a lift-history exercise_key onto the four main lifts. Best-effort name
+// match; anything ambiguous (romanian deadlift, split squat...) is excluded.
+// TODO(owner): curate an explicit exercise_key -> main-lift map if these
+// heuristics miss house exercise names.
+function mapMainLift(keyRaw) {
+  const key = String(keyRaw || '').toLowerCase();
+  if (!key) return null;
+  if (/(romanian|rdl|stiff|single|split|bulgarian|pistol|goblet|sissy|hack)/.test(key)) return null;
+  if (/deadlift/.test(key)) return 'deadlift';
+  if (/(overhead[\s_-]?press|military[\s_-]?press|\bohp\b|shoulder[\s_-]?press)/.test(key)) return 'ohp';
+  if (/bench/.test(key) && !/close[\s_-]?grip|decline/.test(key)) return 'bench';
+  if (/squat/.test(key) && !/front/.test(key)) return 'squat';
+  return null;
+}
+
+function normalizeGoalModeFromProfile(profileRow) {
+  const phase = String(profileRow?.strength?.phase || '').toLowerCase();
+  if (phase === 'cut') return 'cut';
+  if (phase === 'bulk') return 'bulk';
+  if (phase === 'maintain') return 'maintain';
+  const goals = String(profileRow?.goals || '').toLowerCase();
+  if (/\bcut|lose|lean\b/.test(goals)) return 'cut';
+  if (/\bbulk|gain|build|swole\b/.test(goals)) return 'bulk';
+  return 'maintain';
+}
+
+function minutesOfDayInTz(ts, timezone) {
+  if (!ts) return null;
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || process.env.DEFAULT_TZ || 'America/New_York',
+      hour: 'numeric', minute: 'numeric', hour12: false
+    });
+    const parts = fmt.formatToParts(new Date(ts));
+    const h = Number(parts.find((p) => p.type === 'hour')?.value);
+    const m = Number(parts.find((p) => p.type === 'minute')?.value);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    return h * 60 + m;
+  } catch {
+    return null;
+  }
+}
+
+function deviceOrSelf(source) {
+  const s = String(source || '').toLowerCase();
+  if (!s || s === 'manual') return 'self_report';
+  return 'device'; // strava | fitbit | gps | alarm
+}
+
+async function gatherUserScoringInputs(dbi, userId, sinceDate) {
+  const dbc = dbi || db;
+  const today = sinceDate ? new Date(sinceDate) : new Date();
+  const todayIso = isoDay(today);
+  const maxWindow = Math.max(C.windows.strengthDays, C.windows.consistencyDays, C.windows.progressDays);
+
+  const [profileRes, liftsRes, healthRes, checkinsRes, workoutsRes, snapshotsRes] = await Promise.all([
+    dbc.query(
+      `SELECT sex, dob::text AS dob, timezone, age, experience, days_per_week, goals, strength,
+              last_weighin_lb, eval_weight_lb
+       FROM app_training_profiles WHERE user_id = $1 LIMIT 1;`,
+      [userId]
+    ),
+    dbc.query(
+      `SELECT exercise_key, last_weight_lb, last_reps, last_estimated_1rm_lb, last_performed_at::text AS last_performed_at,
+              best_weight_lb, best_reps, best_estimated_1rm_lb, best_performed_at::text AS best_performed_at, last_source
+       FROM app_training_lift_history WHERE user_id = $1;`,
+      [userId]
+    ),
+    dbc.query(
+      `SELECT day::text AS day, steps, active_minutes, sleep_minutes, distance_meters, gym_visit,
+              wake_result, wake_at, sleep_start_at, sources
+       FROM app_health_daily
+       WHERE user_id = $1 AND day > ($2::date - INTERVAL '${maxWindow} days');`,
+      [userId, todayIso]
+    ),
+    dbc.query(
+      `SELECT day::text AS day, data, sources
+       FROM app_daily_checkins
+       WHERE user_id = $1 AND day > ($2::date - INTERVAL '${maxWindow} days');`,
+      [userId, todayIso]
+    ),
+    dbc.query(
+      `SELECT COALESCE(performed_at, created_at::date)::text AS day, duration_ms, timer_started_at, timer_ended_at, entries
+       FROM app_training_workouts
+       WHERE user_id = $1 AND COALESCE(performed_at, created_at::date) > ($2::date - INTERVAL '${maxWindow} days');`,
+      [userId, todayIso]
+    ),
+    dbc.query(
+      `SELECT day::text AS day, strength, cardio, consistency, nutrition, recovery, progress, rank, weeks_at_rank
+       FROM app_score_snapshots
+       WHERE user_id = $1 AND day < $2::date
+       ORDER BY day DESC LIMIT 70;`,
+      [userId, todayIso]
+    )
+  ]);
+
+  const profileRow = profileRes.rows?.[0] || {};
+  const strengthBlob = profileRow.strength && typeof profileRow.strength === 'object' ? profileRow.strength : {};
+  const bodyweightLb = Number(profileRow.last_weighin_lb) || Number(profileRow.eval_weight_lb) || Number(strengthBlob.bodyweight) || null;
+  const experienceRaw = String(profileRow.experience || '').toLowerCase();
+  const experience = experienceRaw === 'advanced' ? 'advanced' : experienceRaw === 'intermediate' ? 'intermediate' : 'beginner';
+  const timezone = profileRow.timezone || process.env.DEFAULT_TZ || null;
+  const profile = {
+    sex: profileRow.sex || null,
+    dob: profileRow.dob || null,
+    age: Number(profileRow.age) || null,
+    timezone,
+    bodyweightLb,
+    experience
+  };
+  const goalMode = normalizeGoalModeFromProfile(profileRow);
+
+  // --- strength ---
+  const bestE1rmByLift = {};
+  const allTimeByLift = {};
+  let lastLiftDay = null;
+  for (const row of liftsRes.rows || []) {
+    const lift = mapMainLift(row.exercise_key);
+    if (!lift) continue;
+    const lastAt = row.last_performed_at || null;
+    const bestAt = row.best_performed_at || null;
+    if (lastAt && (!lastLiftDay || lastAt > lastLiftDay)) lastLiftDay = lastAt;
+    const windowCut = isoDay(new Date(today - C.windows.strengthDays * DAY_MS));
+    // best within the rolling window: consider both stored aggregates
+    const candidates = [];
+    if (lastAt && lastAt >= windowCut && Number(row.last_estimated_1rm_lb) > 0) candidates.push(Number(row.last_estimated_1rm_lb));
+    if (bestAt && bestAt >= windowCut && Number(row.best_estimated_1rm_lb) > 0) candidates.push(Number(row.best_estimated_1rm_lb));
+    if (candidates.length) {
+      bestE1rmByLift[lift] = Math.max(bestE1rmByLift[lift] || 0, ...candidates);
+    }
+    if (Number(row.best_estimated_1rm_lb) > 0) {
+      allTimeByLift[lift] = Math.max(allTimeByLift[lift] || 0, Number(row.best_estimated_1rm_lb));
+    }
+  }
+  const windowVals = Object.values(bestE1rmByLift).filter((v) => v > 0);
+  const baselineVals = Object.values(allTimeByLift).filter((v) => v > 0);
+  const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const currentAvgRelStrength = bodyweightLb && mean(windowVals) ? mean(windowVals) / bodyweightLb : null;
+  const baselineAvgRelStrength = bodyweightLb && mean(baselineVals) ? mean(baselineVals) / bodyweightLb : null;
+
+  // --- day maps ---
+  const healthByDay = new Map((healthRes.rows || []).map((r) => [r.day, r]));
+  const checkinByDay = new Map((checkinsRes.rows || []).map((r) => [r.day, r]));
+  const workoutDays = new Set((workoutsRes.rows || []).map((r) => r.day).filter(Boolean));
+
+  let lastWorkoutDay = null;
+  for (const d of workoutDays) if (!lastWorkoutDay || d > lastWorkoutDay) lastWorkoutDay = d;
+  const strengthIdleDays = lastLiftDay || lastWorkoutDay
+    ? daysAgoOf((lastLiftDay && lastWorkoutDay) ? (lastLiftDay > lastWorkoutDay ? lastLiftDay : lastWorkoutDay) : (lastLiftDay || lastWorkoutDay), todayIso)
+    : 999;
+
+  // strength provenance: device when the most recent lift day has a GPS-verified
+  // gym visit; refined further by Task 6.
+  const lastLiftHealth = lastLiftDay ? healthByDay.get(lastLiftDay) : null;
+  const strengthProvenance = lastLiftHealth?.gym_visit === true ? 'device' : 'self_report';
+
+  // --- cardio (14d) ---
+  let cardioMinutes14 = 0;
+  let cardioDeviceMinutes = 0;
+  let lastCardioDay = null;
+  let stepsSum = 0, stepsDays = 0;
+  for (let i = 0; i < C.windows.cardioDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    const h = healthByDay.get(day);
+    if (!h) continue;
+    const mins = Number(h.active_minutes) || 0;
+    if (mins > 0) {
+      cardioMinutes14 += mins;
+      if (deviceOrSelf((h.sources || {}).activeMinutes) === 'device') cardioDeviceMinutes += mins;
+      if (!lastCardioDay || day > lastCardioDay) lastCardioDay = day;
+    }
+    if (Number(h.steps) > 0) { stepsSum += Number(h.steps); stepsDays += 1; }
+  }
+  const cardio = {
+    weeklyModerateMinutes: (cardioMinutes14 / C.windows.cardioDays) * 7,
+    weeklyVigorousMinutes: 0, // Task 8 wires HR/MET-graded vigorous minutes
+    vo2max: null,             // Task 8 stores Fitbit VO2max when the heart scope lands
+    stepsAvgPerDay: stepsDays ? stepsSum / stepsDays : 0,
+    provenance: cardioMinutes14 > 0 && cardioDeviceMinutes >= cardioMinutes14 / 2 ? 'device' : 'self_report',
+    idleDays: lastCardioDay ? daysAgoOf(lastCardioDay, todayIso) : 999,
+    pauseActive: false
+  };
+
+  // --- consistency (28d) ---
+  const consistencyDays = [];
+  let lastActiveDay = null;
+  for (let i = 0; i < C.windows.consistencyDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    const h = healthByDay.get(day);
+    const ck = checkinByDay.get(day);
+    const worked = workoutDays.has(day);
+    const active = Boolean(worked || ck || (h && ((Number(h.active_minutes) || 0) >= 20 || (Number(h.steps) || 0) >= C.cardio.stepGoal || h.gym_visit === true)));
+    const provenance = worked || ck ? 'self_report' : h ? deviceOrSelf((h.sources || {}).activeMinutes || (h.sources || {}).steps) : 'self_report';
+    // device-verified activity counts fully; a bare check-in is self-report
+    const prov = (h && (h.gym_visit === true || deviceOrSelf((h.sources || {}).activeMinutes) === 'device')) ? 'device' : provenance;
+    consistencyDays.push({ daysAgo: i, active, provenance: prov });
+    if (active && (!lastActiveDay || day > lastActiveDay)) lastActiveDay = day;
+  }
+  const consistency = {
+    days: consistencyDays,
+    idleDays: lastActiveDay ? daysAgoOf(lastActiveDay, todayIso) : 999,
+    pauseActive: false
+  };
+
+  // --- nutrition (14d) ---
+  const nutritionDays = [];
+  let lastNutritionDay = null;
+  for (let i = 0; i < C.windows.nutritionDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    const ck = checkinByDay.get(day);
+    if (!ck) continue;
+    const data = ck.data && typeof ck.data === 'object' ? ck.data : {};
+    const macros = data.macros && typeof data.macros === 'object' ? data.macros : {};
+    nutritionDays.push({
+      daysAgo: i,
+      calories: Number(macros.calories) || null,
+      proteinG: Number(macros.proteinG) || null,
+      mealsOnPlan: data.mealsOnPlan || null,
+      provenance: 'self_report'
+    });
+    if (!lastNutritionDay || day > lastNutritionDay) lastNutritionDay = day;
+  }
+  const nutrition = {
+    days: nutritionDays,
+    calorieTargetKcal: null, // TODO(owner): surface the client Mifflin target server-side
+    weightKg: bodyweightLb ? bodyweightLb / 2.2046226218 : null,
+    goalMode,
+    idleDays: lastNutritionDay ? daysAgoOf(lastNutritionDay, todayIso) : 999,
+    pauseActive: false
+  };
+
+  // --- recovery (14d) ---
+  const recoveryDays = [];
+  let lastRecoveryDay = null;
+  for (let i = 0; i < C.windows.recoveryDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    const h = healthByDay.get(day);
+    const ck = checkinByDay.get(day);
+    const data = ck?.data && typeof ck.data === 'object' ? ck.data : {};
+    let sleepMinutes = Number(h?.sleep_minutes) || null;
+    let provenance = h?.sleep_minutes ? deviceOrSelf((h.sources || {}).sleepMinutes) : null;
+    if (!sleepMinutes && Number(data.sleepHours) > 0) {
+      sleepMinutes = Number(data.sleepHours) * 60;
+      provenance = 'self_report';
+    }
+    const mood = Number(data.mood);
+    if (!sleepMinutes && !Number.isFinite(mood)) continue;
+    recoveryDays.push({
+      daysAgo: i,
+      sleepMinutes: sleepMinutes || null,
+      wakeAtMinutesOfDay: minutesOfDayInTz(h?.wake_at, timezone),
+      restedness1to5: Number.isFinite(mood) ? mood : null,
+      provenance: provenance || 'self_report'
+    });
+    if (!lastRecoveryDay || day > lastRecoveryDay) lastRecoveryDay = day;
+  }
+  // consecutive training days ending today/yesterday (grind detector)
+  let consecutiveTrainingDays = 0;
+  for (let i = 0; i < C.windows.consistencyDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    if (workoutDays.has(day)) consecutiveTrainingDays += 1;
+    else if (i > 0) break;
+  }
+  const age = engine.ageFrom(profile, today);
+  const recovery = {
+    days: recoveryDays,
+    consecutiveTrainingDays,
+    isSenior: Boolean(age && age >= 65),
+    idleDays: lastRecoveryDay ? daysAgoOf(lastRecoveryDay, todayIso) : 999,
+    pauseActive: false
+  };
+
+  // --- progress (28d) ---
+  const weighins = [];
+  let lastWeighinDay = null;
+  for (let i = 0; i < C.windows.progressDays; i++) {
+    const day = isoDay(new Date(today - i * DAY_MS));
+    const ck = checkinByDay.get(day);
+    const w = Number(ck?.data?.weightLb);
+    if (Number.isFinite(w) && w > 0) {
+      weighins.push({ daysAgo: i, weightLb: w });
+      if (!lastWeighinDay || day > lastWeighinDay) lastWeighinDay = day;
+    }
+  }
+  const liftImprovementRatio = currentAvgRelStrength && baselineAvgRelStrength
+    ? currentAvgRelStrength / baselineAvgRelStrength : null;
+  const progress = {
+    weighins,
+    goalMode,
+    experience,
+    liftImprovementRatio,
+    idleDays: lastWeighinDay ? daysAgoOf(lastWeighinDay, todayIso) : 999,
+    pauseActive: false
+  };
+
+  // --- previous snapshot + sustain weeks ---
+  const snapshots = snapshotsRes.rows || [];
+  const prevScores = snapshots.length ? {
+    strength: Number(snapshots[0].strength), cardio: Number(snapshots[0].cardio),
+    consistency: Number(snapshots[0].consistency), nutrition: Number(snapshots[0].nutrition),
+    recovery: Number(snapshots[0].recovery), progress: Number(snapshots[0].progress)
+  } : {};
+  // For each rank, count consecutive days (walking back from the latest
+  // snapshot) where that rank's avg/floor/pierce gates were met.
+  const weeksAtCandidate = {};
+  for (const [id, gate] of Object.entries(C.ranks)) {
+    let run = 0;
+    for (let i = 0; i < snapshots.length; i++) {
+      const s = snapshots[i];
+      const v = engine.AXES.map((a) => Number(s[a]) || 0);
+      const avg = v.reduce((x, y) => x + y, 0) / v.length;
+      const min = Math.min(...v);
+      const spike = Math.max(...v);
+      const byAvg = avg >= gate.avg && min >= (gate.floor || 0);
+      const byPierce = !gate.noPierce && spike >= (gate.spike || 999);
+      // require an unbroken daily run
+      if ((byAvg || byPierce) && daysAgoOf(s.day, todayIso) === i + 1) run += 1;
+      else break;
+    }
+    weeksAtCandidate[id] = Math.floor(run / 7);
+  }
+
+  return {
+    profile,
+    strength: {
+      bestE1rmByLift,
+      currentAvgRelStrength,
+      baselineAvgRelStrength,
+      idleDays: strengthIdleDays,
+      provenance: strengthProvenance,
+      pauseActive: false
+    },
+    cardio,
+    consistency,
+    nutrition,
+    recovery,
+    progress,
+    weeksAtCandidate,
+    prevScores,
+    prevSnapshot: snapshots[0] || null,
+    todayIso
+  };
+}
+
+module.exports = { scoringV2Enabled, ensureScoringSchema, gatherUserScoringInputs, mapMainLift };
