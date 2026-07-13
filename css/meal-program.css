@@ -154,6 +154,18 @@
 
 .mp-print-row { text-align: right; margin-bottom: 0.5rem; }
 
+/* ---------------- Onboarding quiz embeds (Part 2) ---------------- */
+.bm-quiz .bm-mealgrid { margin: 0.5rem 0 1rem; }
+.bm-quiz .mp-card { font-family: inherit; }
+.bm-quiz .mp-card-body { display: block; padding: 0.5rem 0.6rem 0.65rem; }
+.bm-quiz .mp-card-name, .bm-quiz .mp-card-meta { display: block; }
+.bm-quiz .bm-footer-split { display: flex; gap: 0.6rem; }
+.bm-quiz .bm-cta.is-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.35); color: inherit; }
+.bm-quiz .bm-state-select {
+    width: 100%; background: transparent; border: none; color: inherit; font: inherit; outline: none;
+}
+.bm-quiz .bm-state-select option { color: #14100b; }
+
 @media print {
     body * { visibility: hidden; }
     #mp-step-plan, #mp-step-plan * { visibility: visible; }

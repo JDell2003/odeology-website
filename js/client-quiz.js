@@ -163,6 +163,17 @@
             'I eat without any planning', "I have a general idea of what I'll eat", 'I decide my meals a day ahead', 'I plan all my meals in advance'
         ] },
         { id: 'mealsPromo', type: 'info', kicker: 'RiseForIt', title: 'Optimize nutrition with a personalized meal plan', body: 'Quick, simple and balanced recipes will make you enjoy every bite — with the grocery list built for you.', art: 'meals' },
+        /* Meal Program (Part 2): the picture-picker + budget + dietary live INSIDE onboarding.
+           Photo grids reuse the meal-program engine/dataset (window.MealProgramEngine /
+           window.MealProgramData, loaded by index.html); screens auto-skip when unavailable
+           so the quiz never breaks offline. */
+        { id: 'mealPicksBreakfast', section: 'nutrition', type: 'mealGrid', slot: 'breakfast', minSelect: 2, title: 'Pick breakfasts you’d actually eat', subtitle: 'Tap the photos — your 7-day plan is built from these.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealPicksLunch', section: 'nutrition', type: 'mealGrid', slot: 'lunch', minSelect: 3, title: 'Now pick your lunches', subtitle: 'At least 3 — repeats are meal-prep friendly.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealPicksDinner', section: 'nutrition', type: 'mealGrid', slot: 'dinner', minSelect: 3, title: 'And your dinners', subtitle: 'Snacks get added automatically to hit your calorie and protein targets.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealBudget', section: 'nutrition', type: 'choice', title: 'What’s your monthly grocery budget?', subtitle: 'Your budget drives your protein tier — we squeeze the most muscle out of every dollar.', options: ['Under $200', 'Around $300', 'Around $400', '$500 or more'] },
+        { id: 'mealState', section: 'nutrition', type: 'stateSelect', title: 'Which state do you shop in?', subtitle: 'Grocery prices adjust to your area.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'] },
+        { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'] },
         { id: 'mealPrep', section: 'nutrition', type: 'choice', title: 'How do you usually prepare your meals?', options: [
             'I cook them myself', 'Someone else cooks for me', 'I order from restaurants', 'I eat premade meals'
         ] },
@@ -392,6 +403,14 @@
 
         document.body.classList.add('client-quiz-active');
 
+        // Meal Program (Part 2): prefetch the meal catalog so the picker screens
+        // render instantly and finish-time plan generation is fast. Best-effort.
+        try {
+            if (window.MealProgramData && !window.__mpQuizData) {
+                window.MealProgramData.load().then((d) => { window.__mpQuizData = d; }).catch(() => {});
+            }
+        } catch {}
+
         const root = document.createElement('div');
         root.className = 'bm-quiz';
         host.innerHTML = '';
@@ -594,6 +613,74 @@
                         </div>
                         <p class="bm-copy" style="text-align:center">Wake up when you said you would → points. Steps counted → points. Sleep synced → points. Say yes on the next screens to switch it on.</p>
                         <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
+                }
+                case 'mealGrid': {
+                    const picksArr = Array.isArray(answers[screen.id]) ? answers[screen.id] : [];
+                    const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                    const data = window.__mpQuizData || null;
+                    if (!data) {
+                        // Fail open: a dead dataset fetch must never trap the quiz —
+                        // the engine auto-picks great meals when picks stay empty.
+                        if (window.__mpQuizDataFailed) {
+                            return `${head}
+                                <p class="bm-hint" style="text-align:center">Couldn’t load the meal photos — we’ll pick great ones for you.</p>
+                                <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
+                        }
+                        try {
+                            window.MealProgramData.load().then((d) => {
+                                window.__mpQuizData = d;
+                                if (SCREENS[idx] === screen) render(0);
+                            }).catch(() => {
+                                window.__mpQuizDataFailed = true;
+                                if (SCREENS[idx] === screen) render(0);
+                            });
+                        } catch { window.__mpQuizDataFailed = true; }
+                        return `${head}<p class="bm-hint">Loading meals…</p>`;
+                    }
+                    const goal = ({ 'A few sizes smaller': 'cut', 'Athletic': 'maintain', 'Ripped': 'cut', 'Swole': 'bulk' })[answers.bodyGoal] || 'maintain';
+                    const pool = window.MealProgramEngine.slotPool(data.meals, screen.slot, goal, 'no-restrictions', []);
+                    const cards = pool.map((meal) => `
+                        <button type="button" class="mp-card ${picksArr.includes(meal.id) ? 'selected' : ''}" data-bm-mealpick="${meal.id}" aria-pressed="${picksArr.includes(meal.id)}">
+                            <img loading="lazy" alt="${esc(meal.name)}" src="${esc(meal.image_url || '')}" onerror="this.style.visibility='hidden'">
+                            <span class="mp-goal-pill">${esc(meal.goal)}</span>
+                            <span class="mp-card-body"><span class="mp-card-name">${esc(meal.name)}</span>
+                            <span class="mp-card-meta">${Number(meal.calories)} kcal · ${Number(meal.protein_g)}g protein</span></span>
+                        </button>`).join('');
+                    return `${head}
+                        <p class="bm-hint" data-bm-pickhint>Pick at least ${minSelect} · ${picksArr.length} picked</p>
+                        <div class="mp-grid bm-mealgrid">${cards}</div>
+                        <div class="bm-footer bm-footer-split">
+                            <button type="button" class="bm-cta is-ghost" data-bm-surprise>SURPRISE ME</button>
+                            <button type="button" class="bm-cta ${picksArr.length >= minSelect ? '' : 'is-disabled'}" data-bm-next>NEXT STEP</button>
+                        </div>`;
+                }
+                case 'stateSelect': {
+                    const data = window.__mpQuizData || null;
+                    if (!data) {
+                        if (window.__mpQuizDataFailed) {
+                            return `${head}
+                                <p class="bm-hint" style="text-align:center">We’ll price your groceries with national averages.</p>
+                                <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
+                        }
+                        try {
+                            window.MealProgramData.load().then((d) => {
+                                window.__mpQuizData = d;
+                                if (SCREENS[idx] === screen) render(0);
+                            }).catch(() => {
+                                window.__mpQuizDataFailed = true;
+                                if (SCREENS[idx] === screen) render(0);
+                            });
+                        } catch { window.__mpQuizDataFailed = true; }
+                        return `${head}<p class="bm-hint">Loading…</p>`;
+                    }
+                    const states = data.location_multipliers.states;
+                    if (!answers.mealState) answers.mealState = 'GA';
+                    return `${head}
+                        <div class="bm-bigfields"><label class="bm-bigfield is-wide">
+                            <select data-bm-state class="bm-state-select">
+                                ${Object.keys(states).sort().map((code) => `<option value="${code}" ${answers.mealState === code ? 'selected' : ''}>${esc(states[code].name)} (${code})</option>`).join('')}
+                            </select></label></div>
+                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
                 }
                 case 'time':
                     if (!answers.wakeTime) answers.wakeTime = '07:00';
@@ -907,7 +994,10 @@
         }
 
         root.addEventListener('click', (event) => {
-            const target = event.target instanceof HTMLElement ? event.target : null;
+            // Element, not HTMLElement: taps often land on the SVG art inside
+            // a card, and SVGElement is not an HTMLElement — those taps were
+            // silently dropped (real phone bug, caught by the E2E walker).
+            const target = event.target instanceof Element ? event.target : null;
             if (!target) return;
             const screen = SCREENS[idx];
 
@@ -960,6 +1050,45 @@
                 return;
             }
 
+            const mealBtn = target.closest('[data-bm-mealpick]');
+            if (mealBtn && screen.type === 'mealGrid') {
+                const mealId = Number(mealBtn.getAttribute('data-bm-mealpick'));
+                let arr = Array.isArray(answers[screen.id]) ? answers[screen.id].slice() : [];
+                if (arr.includes(mealId)) arr = arr.filter((v) => v !== mealId);
+                else if (arr.length < 8) arr = [...arr, mealId];
+                answers[screen.id] = arr;
+                persist();
+                mealBtn.classList.toggle('selected', arr.includes(mealId));
+                mealBtn.setAttribute('aria-pressed', String(arr.includes(mealId)));
+                const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                const hint = root.querySelector('[data-bm-pickhint]');
+                if (hint) hint.textContent = `Pick at least ${minSelect} · ${arr.length} picked`;
+                const cta = root.querySelector('[data-bm-next]');
+                if (cta) cta.classList.toggle('is-disabled', arr.length < minSelect);
+                return;
+            }
+
+            const surpriseBtn = target.closest('[data-bm-surprise]');
+            if (surpriseBtn && screen.type === 'mealGrid' && window.MealProgramEngine && window.__mpQuizData) {
+                const goal = ({ 'A few sizes smaller': 'cut', 'Athletic': 'maintain', 'Ripped': 'cut', 'Swole': 'bulk' })[answers.bodyGoal] || 'maintain';
+                const ids = window.MealProgramEngine.surprisePicks(window.__mpQuizData.meals, screen.slot, goal, 'no-restrictions', []);
+                let arr = Array.isArray(answers[screen.id]) ? answers[screen.id].slice() : [];
+                ids.forEach((mealId) => { if (!arr.includes(mealId) && arr.length < 8) arr.push(mealId); });
+                answers[screen.id] = arr;
+                persist();
+                root.querySelectorAll('[data-bm-mealpick]').forEach((el) => {
+                    const on = arr.includes(Number(el.getAttribute('data-bm-mealpick')));
+                    el.classList.toggle('selected', on);
+                    el.setAttribute('aria-pressed', String(on));
+                });
+                const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                const hint = root.querySelector('[data-bm-pickhint]');
+                if (hint) hint.textContent = `Pick at least ${minSelect} · ${arr.length} picked`;
+                const cta = root.querySelector('[data-bm-next]');
+                if (cta) cta.classList.toggle('is-disabled', arr.length < minSelect);
+                return;
+            }
+
             const nextBtn = target.closest('[data-bm-next]');
             if (nextBtn && !nextBtn.classList.contains('is-disabled')) {
                 answers[`${screen.id}Seen`] = true;
@@ -971,6 +1100,15 @@
                     go(idx + 1);
                 }
                 return;
+            }
+        });
+
+        // Meal Program (Part 2): state dropdown on the stateSelect screen.
+        root.addEventListener('change', (event) => {
+            const sel = event.target;
+            if (sel instanceof HTMLSelectElement && sel.hasAttribute('data-bm-state')) {
+                answers.mealState = sel.value;
+                persist();
             }
         });
 

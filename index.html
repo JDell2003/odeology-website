@@ -5120,7 +5120,13 @@
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>
     <script src="js/cutscenes.js?v=2026-07-12-cutscenes-36"></script>
     <script src="js/overview-identity.js?v=2026-07-11-showcase-7"></script>
-    <script src="js/client-quiz.js?v=2026-07-12-intake-1"></script>
+    <script src="js/client-quiz.js?v=2026-07-13-mealprogram-1"></script>
+    <!-- Meal Program (Part 2): picture-picker inside onboarding + finish-time plan generation -->
+    <link rel="stylesheet" href="css/meal-program.css?v=2026-07-13-mp-2">
+    <script src="core/mealProgramConstants.js?v=2026-07-13-mp-2"></script>
+    <script src="core/mealProgramEngine.js?v=2026-07-13-mp-2"></script>
+    <script src="js/meal-program-data.js?v=2026-07-13-mp-2"></script>
+    <script src="js/meal-program-onboarding.js?v=2026-07-13-mp-2"></script>
     <script>
       (function () {
         const body = document.body;
@@ -12877,6 +12883,13 @@ function formatWorkspaceLabel(workspace) {
           if (!action) return;
           if (action === 'trainer-dashboard') {
             if (!validateCurrentStep()) return;
+            // Meal Program (Part 2): trainers get a deterministic starter meal plan too,
+            // so their account is complete the moment onboarding finishes (no extra questions).
+            try {
+              if (window.MealProgramOnboarding) {
+                await window.MealProgramOnboarding.generateDefaultForTrainer({ timeoutMs: 6000 });
+              }
+            } catch {}
             if (TEST_ONBOARDING_MODE) {
               finalizeTestOnboarding('trainer-dashboard');
               return;
@@ -12923,6 +12936,12 @@ function formatWorkspaceLabel(workspace) {
           }
           if (action === 'trainer-complete-profile') {
             if (!validateCurrentStep()) return;
+            // Meal Program (Part 2): same starter-plan contract as trainer-dashboard.
+            try {
+              if (window.MealProgramOnboarding) {
+                await window.MealProgramOnboarding.generateDefaultForTrainer({ timeoutMs: 6000 });
+              }
+            } catch {}
             if (TEST_ONBOARDING_MODE) {
               finalizeTestOnboarding('trainer-complete-profile');
               return;
@@ -12938,6 +12957,14 @@ function formatWorkspaceLabel(workspace) {
           }
           if (action === 'client-overview') {
             if (!validateCurrentStep()) return;
+            // Meal Program (Part 2): the plan is owed the moment onboarding ends —
+            // generate + persist (localStorage + account) before leaving the page.
+            // Time-boxed and fail-open so the finish can never hang on it.
+            try {
+              if (window.MealProgramOnboarding) {
+                await window.MealProgramOnboarding.generateFromEntryFlow(state.answers.user, { timeoutMs: 6000 });
+              }
+            } catch {}
             if (TEST_ONBOARDING_MODE) {
               finalizeTestOnboarding(action);
               return;
@@ -12959,6 +12986,12 @@ function formatWorkspaceLabel(workspace) {
           }
           if (action === 'client-build' || action === 'client-dashboard') {
             if (!validateCurrentStep()) return;
+            // Meal Program (Part 2): see client-overview — same generation contract.
+            try {
+              if (window.MealProgramOnboarding) {
+                await window.MealProgramOnboarding.generateFromEntryFlow(state.answers.user, { timeoutMs: 6000 });
+              }
+            } catch {}
             if (TEST_ONBOARDING_MODE) {
               finalizeTestOnboarding(action);
               return;
