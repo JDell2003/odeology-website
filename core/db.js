@@ -152,4 +152,17 @@ const getDiagnostics = () => {
   };
 };
 
-module.exports = { isConfigured, query, close, getDiagnostics };
+// v2 scoring (SCORING_ENGINE_V2): run a function while holding ONE pooled
+// client — required for session-scoped Postgres advisory locks, where the
+// lock and unlock must happen on the same connection. Additive export.
+async function withClient(fn) {
+  const activePool = getPool();
+  const client = await activePool.connect();
+  try {
+    return await fn(client);
+  } finally {
+    try { client.release(); } catch { /* ignore */ }
+  }
+}
+
+module.exports = { isConfigured, query, close, getDiagnostics, withClient };

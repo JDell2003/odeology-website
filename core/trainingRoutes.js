@@ -12,7 +12,7 @@ const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
 const { emitUserEvent } = require('./emailEvents');
-const { scoringV2Enabled } = require('./scoringGather');
+const { scoringV2Enabled, enqueueUserRecompute } = require('./scoringGather');
 const {
   DEBUG_COMBO_LABEL,
   evaluateGlutesLegsCoreDebugCombo,
@@ -12469,6 +12469,9 @@ async function trainingRoutes(req, res, url) {
           updatedAt: row?.updated_at || null
         }
       }).catch(() => {});
+      // v2 scoring (SCORING_ENGINE_V2): refresh this user's score after the
+      // write. No-op while the flag is off.
+      enqueueUserRecompute(user.id);
       return sendJson(res, 200, { ok: true, checkin: row });
     } catch (err) {
       return handleTrainingDbFailure(res, err, 'training-checkin-post', 'Failed to save check-in');
@@ -13051,6 +13054,9 @@ async function trainingRoutes(req, res, url) {
           dayIndex
         }
       }).catch(() => {});
+      // v2 scoring (SCORING_ENGINE_V2): refresh this user's score after the
+      // write. No-op while the flag is off.
+      enqueueUserRecompute(user.id);
       return sendJson(res, 200, {
         ok: true,
         plan: updatedPlan,

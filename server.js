@@ -40,6 +40,7 @@ const profileRoutes = require('./core/profileRoutes');
 const healthRoutes = require('./core/healthRoutes');
 const studiesRoutes = require('./core/studiesRoutes');
 const scoringGather = require('./core/scoringGather');
+const scoringRoutes = require('./core/scoringRoutes');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
@@ -1785,6 +1786,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (await scoringRoutes(req, res, url)) {
+      return;
+    }
+
     if (await adminRoutes(req, res, url)) {
       return;
     }
@@ -2470,6 +2475,19 @@ server.listen(listenPort, listenHost, () => {
         } catch (err) {
             console.error('[scoring] Schema ensure at boot failed (routes will retry lazily):', err?.message || err);
         }
+
+        // v2 scoring recompute pass: at boot and every 6 hours. No-ops entirely
+        // while SCORING_ENGINE_V2 is off; a Postgres advisory lock inside
+        // runScoringRecomputePass() guarantees a single runner even when
+        // Railway scales to multiple replicas. (Deliberately separate from the
+        // grocery-scraper interval below.)
+        const runScoringPass = () => {
+            scoringGather.runScoringRecomputePass().catch((err) => {
+                console.error('[scoring] recompute pass crashed', err?.message || err);
+            });
+        };
+        runScoringPass();
+        setInterval(runScoringPass, 6 * 60 * 60 * 1000);
     })();
 });
 

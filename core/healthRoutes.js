@@ -10,6 +10,7 @@
 
 const crypto = require('crypto');
 const db = require('./db');
+const { enqueueUserRecompute } = require('./scoringGather');
 
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.HEALTH_MAX_BODY_BYTES || 100_000));
 const SYNC_STALE_MS = Math.max(60_000, Number(process.env.HEALTH_SYNC_STALE_MS || 15 * 60_000));
@@ -447,6 +448,9 @@ async function syncProvider(userId, conn) {
       `UPDATE app_health_connections SET last_sync_at = now(), last_sync_error = NULL, updated_at = now() WHERE user_id = $1 AND provider = $2;`,
       [userId, conn.provider]
     );
+    // v2 scoring (SCORING_ENGINE_V2): synced device data should refresh the
+    // user's score. No-op while the flag is off.
+    enqueueUserRecompute(userId);
   } catch (err) {
     await db.query(
       `UPDATE app_health_connections SET last_sync_error = $3, updated_at = now() WHERE user_id = $1 AND provider = $2;`,
@@ -648,6 +652,7 @@ module.exports = async function healthRoutes(req, res, url) {
       activeMinutes: activeMinutes === null ? NaN : activeMinutes,
       sleepMinutes: sleepHours === null ? NaN : sleepHours * 60
     }, 'manual');
+    enqueueUserRecompute(userId); // v2 scoring: no-op while flag off
     return sendJson(res, 200, { ok: true });
   }
 
@@ -687,6 +692,7 @@ module.exports = async function healthRoutes(req, res, url) {
       `,
       [userId, day, minutes, distanceMeters]
     );
+    enqueueUserRecompute(userId); // v2 scoring: no-op while flag off
     return sendJson(res, 200, { ok: true, day, minutes, distanceMeters });
   }
 
@@ -730,6 +736,7 @@ module.exports = async function healthRoutes(req, res, url) {
         `,
         [userId, day]
       );
+      enqueueUserRecompute(userId); // v2 scoring: no-op while flag off
     }
     return sendJson(res, 200, {
       ok: true,
@@ -765,6 +772,7 @@ module.exports = async function healthRoutes(req, res, url) {
       `,
       [userId, day, sleepValid ? Math.round(sleepMinutes) : null, result]
     );
+    enqueueUserRecompute(userId); // v2 scoring: no-op while flag off
     return sendJson(res, 200, { ok: true, result, pointsEarned: result === 'clean' ? 5 : 0 });
   }
 

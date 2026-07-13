@@ -445,8 +445,136 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
     weeksAtCandidate,
     prevScores,
     prevSnapshot: snapshots[0] || null,
+    recentSnapshots: snapshots,
     todayIso
   };
 }
 
-module.exports = { scoringV2Enabled, ensureScoringSchema, gatherUserScoringInputs, mapMainLift };
+// ---------------------------------------------------------------------------
+// Task 4 — persistence + recompute triggers.
+// ---------------------------------------------------------------------------
+
+// Single-instance guard key for the nightly job (arbitrary constant; must be
+// stable across replicas so only one Railway instance computes per tick).
+const NIGHTLY_ADVISORY_LOCK_KEY = 727274637;
+
+async function computeAndPersistUserScore(userId, { now = new Date() } = {}) {
+  const inputs = await gatherUserScoringInputs(db, userId, now);
+  const result = engine.computeAxes(inputs, inputs.prevScores, now);
+
+  // weeks_at_rank: unbroken run of consecutive snapshot days holding this rank
+  // (walking back from yesterday), plus today, floored to weeks.
+  let run = 0;
+  for (let i = 0; i < (inputs.recentSnapshots || []).length; i++) {
+    const s = inputs.recentSnapshots[i];
+    const daysAgo = Math.round((new Date(`${inputs.todayIso}T00:00:00Z`) - new Date(`${s.day}T00:00:00Z`)) / DAY_MS);
+    if (s.rank === result.rank && daysAgo === i + 1) run += 1;
+    else break;
+  }
+  const weeksAtRank = Math.floor((run + 1) / 7);
+
+  await db.query(
+    `
+      INSERT INTO app_score_snapshots
+        (user_id, day, strength, cardio, consistency, nutrition, recovery, progress,
+         rank, caste, weeks_at_rank, normalized, computed_at)
+      VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+      ON CONFLICT (user_id, day) DO UPDATE SET
+        strength = EXCLUDED.strength, cardio = EXCLUDED.cardio,
+        consistency = EXCLUDED.consistency, nutrition = EXCLUDED.nutrition,
+        recovery = EXCLUDED.recovery, progress = EXCLUDED.progress,
+        rank = EXCLUDED.rank, caste = EXCLUDED.caste,
+        weeks_at_rank = EXCLUDED.weeks_at_rank, normalized = EXCLUDED.normalized,
+        computed_at = now();
+    `,
+    [
+      userId, inputs.todayIso,
+      result.axes.strength, result.axes.cardio, result.axes.consistency,
+      result.axes.nutrition, result.axes.recovery, result.axes.progress,
+      result.rank, result.caste, weeksAtRank, result.normalized
+    ]
+  );
+
+  for (const ev of result.events) {
+    await db.query(
+      `INSERT INTO app_score_events (user_id, axis, delta, reason_code, provenance, trust_multiplier, source_ref, detail)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb);`,
+      [userId, ev.axis, ev.delta ?? null, ev.reason_code, ev.provenance ?? null,
+        ev.trust_multiplier ?? null, ev.source_ref ?? null, JSON.stringify(ev.detail || {})]
+    ).catch(() => null); // events are explanatory — never fail the snapshot
+  }
+
+  return { ...result, weeksAtRank };
+}
+
+// Users worth recomputing: anyone with scoring-relevant activity or an
+// existing snapshot in the last 30 days.
+async function listActiveScoringUserIds(limit = 2000) {
+  const res = await db.query(
+    `
+      SELECT DISTINCT user_id FROM (
+        SELECT user_id FROM app_training_workouts WHERE created_at > now() - INTERVAL '30 days'
+        UNION SELECT user_id FROM app_daily_checkins WHERE updated_at > now() - INTERVAL '30 days'
+        UNION SELECT user_id FROM app_health_daily WHERE updated_at > now() - INTERVAL '30 days'
+        UNION SELECT user_id FROM app_score_snapshots WHERE day > CURRENT_DATE - 30
+      ) u LIMIT $1;
+    `,
+    [limit]
+  );
+  return (res.rows || []).map((r) => r.user_id);
+}
+
+// Nightly/periodic full pass. Wrapped in a session-scoped advisory lock held on
+// ONE pooled client so multiple Railway replicas never double-run (Task 11 C).
+async function runScoringRecomputePass({ log = console } = {}) {
+  if (!scoringV2Enabled() || !db.isConfigured()) return { ran: false, reason: 'disabled' };
+  await ensureScoringSchema();
+  return await db.withClient(async (client) => {
+    const lockRes = await client.query('SELECT pg_try_advisory_lock($1) AS locked;', [NIGHTLY_ADVISORY_LOCK_KEY]);
+    if (!lockRes.rows?.[0]?.locked) {
+      log.log('[scoring] recompute pass skipped - another instance holds the advisory lock');
+      return { ran: false, reason: 'locked' };
+    }
+    try {
+      const userIds = await listActiveScoringUserIds();
+      let ok = 0, failed = 0;
+      for (const userId of userIds) {
+        try {
+          await computeAndPersistUserScore(userId);
+          ok += 1;
+        } catch (err) {
+          failed += 1;
+          log.error('[scoring] recompute failed for user', userId, err?.message || err);
+        }
+      }
+      log.log(`[scoring] recompute pass done: ${ok} ok, ${failed} failed`);
+      return { ran: true, ok, failed };
+    } finally {
+      await client.query('SELECT pg_advisory_unlock($1);', [NIGHTLY_ADVISORY_LOCK_KEY]).catch(() => null);
+    }
+  });
+}
+
+// Lightweight per-user recompute after a write (log/check-in/sync) so the
+// user's own score feels responsive. Debounced in-memory; fire-and-forget.
+const pendingUserRecomputes = new Set();
+function enqueueUserRecompute(userId) {
+  if (!scoringV2Enabled() || !db.isConfigured() || !userId) return;
+  if (pendingUserRecomputes.has(userId)) return;
+  pendingUserRecomputes.add(userId);
+  setTimeout(async () => {
+    pendingUserRecomputes.delete(userId);
+    try {
+      await ensureScoringSchema();
+      await computeAndPersistUserScore(userId);
+    } catch (err) {
+      console.error('[scoring] on-write recompute failed', err?.message || err);
+    }
+  }, 250);
+}
+
+module.exports = {
+  scoringV2Enabled, ensureScoringSchema, gatherUserScoringInputs, mapMainLift,
+  computeAndPersistUserScore, listActiveScoringUserIds, runScoringRecomputePass,
+  enqueueUserRecompute, NIGHTLY_ADVISORY_LOCK_KEY
+};

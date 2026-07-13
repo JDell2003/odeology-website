@@ -137,3 +137,40 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - Sex-missing users get `normalized=false` + valid self score: `normalizeStrength`
   returns `standard:null` → blend falls back to self-improvement only.
 - Task 10 tests pass: written in Task 10; run pending (no local Node — see note).
+
+---
+
+## Task 4 — Persistence + recompute triggers (`feat(scoring): recompute + persist`)
+
+**What changed**
+
+- `core/scoringGather.js` — `computeAndPersistUserScore()` (gather → engine → upsert
+  today's `app_score_snapshots` row → append `app_score_events`; `weeks_at_rank`
+  derived from the unbroken run of same-rank snapshot days), `listActiveScoringUserIds()`
+  (activity or snapshot in last 30 days), `runScoringRecomputePass()` — the periodic
+  job, **wrapped in `pg_try_advisory_lock` (key 727274637) held on a single pooled
+  client** so Railway replicas never double-run; lock released in `finally`.
+  `enqueueUserRecompute()` — debounced per-user on-write recompute.
+- `core/db.js` — additive `withClient(fn)` export (session-scoped advisory locks need
+  lock+unlock on the SAME connection; `db.query()` uses the pool and can't guarantee that).
+- `core/scoringRoutes.js` — **new**: `GET /api/score` (session auth mirroring
+  `healthRoutes`): latest snapshot + last 20 explanatory events; computes inline once
+  for first-time users; returns `{ enabled:false }` when the flag is off.
+- `server.js` — `scoringRoutes` registered in the dispatch chain (after healthRoutes);
+  recompute pass runs at boot + every 6 h via `setInterval` — **separate from the
+  grocery-scraper interval at the bottom of server.js** as the Work Order requires.
+- On-write hooks (all no-ops while flag off): `POST /api/training/log`,
+  `POST /api/training/checkin` (trainingRoutes), provider sync success, `/api/health/manual`,
+  `/api/health/activity`, `/api/health/gym-checkin` (on verified visit), `/api/health/wake`
+  (healthRoutes) → `enqueueUserRecompute(userId)`.
+
+**Acceptance criteria**
+
+- Flag on → logging a workout updates the snapshot within one request cycle:
+  enqueue fires 250 ms after the write (debounced); GET /api/score also computes
+  inline when no snapshot exists.
+- Nightly writes one row/user/day: `ON CONFLICT (user_id, day) DO UPDATE`.
+- GET /api/score returns axes + rank + explanations: implemented.
+- Flag off → zero behavior change: every entry point checks `scoringV2Enabled()`.
+- Advisory lock prevents double-run: single-client lock + unlock in `finally`.
+- Test run: pending (no local Node — see Environment note).
