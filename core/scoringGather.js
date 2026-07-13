@@ -256,10 +256,18 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
     ? daysAgoOf((lastLiftDay && lastWorkoutDay) ? (lastLiftDay > lastWorkoutDay ? lastLiftDay : lastWorkoutDay) : (lastLiftDay || lastWorkoutDay), todayIso)
     : 999;
 
-  // strength provenance: device when the most recent lift day has a GPS-verified
-  // gym visit; refined further by Task 6.
+  // Trust ladder (Task 6): a lift session is device-verified when the
+  // workout's timer window falls on a day with a GPS-verified gym visit
+  // (gym_visit=true from the geofence check-in); otherwise self_report.
+  const workoutTimerDays = new Set(
+    (workoutsRes.rows || [])
+      .filter((r) => r.timer_started_at && r.timer_ended_at)
+      .map((r) => r.day)
+      .filter(Boolean)
+  );
   const lastLiftHealth = lastLiftDay ? healthByDay.get(lastLiftDay) : null;
-  const strengthProvenance = lastLiftHealth?.gym_visit === true ? 'device' : 'self_report';
+  const strengthProvenance = (lastLiftHealth?.gym_visit === true && workoutTimerDays.has(lastLiftDay))
+    ? 'device' : 'self_report';
 
   // --- cardio (14d) ---
   let cardioMinutes14 = 0;

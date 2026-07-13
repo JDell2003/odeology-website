@@ -205,11 +205,15 @@ function computeCardio(inputs, prev, events, today) {
 function computeConsistency(inputs, prev, events) {
   const k = inputs.consistency || {};
   const days = Array.isArray(k.days) ? k.days : [];
-  let got = 0, possible = 0;
+  let got = 0, possible = 0, deviceGot = 0;
   for (const d of days) {
     const w = recencyWeight(d.daysAgo);
     possible += w;
-    if (d.active) got += w * trustMultiplier(d.provenance || 'self_report');
+    if (d.active) {
+      const credit = w * trustMultiplier(d.provenance || 'self_report');
+      got += credit;
+      if ((d.provenance || 'self_report') === 'device') deviceGot += credit;
+    }
   }
   const raw = possible > 0 ? (got / possible) * 100 : 0;
   let score = clamp(raw, 0, 100);
@@ -217,9 +221,10 @@ function computeConsistency(inputs, prev, events) {
   if (idleDays > C.decay.consistency.graceDays) {
     score = applyDecayOrPause(prev, 'consistency', idleDays, !!k.pauseActive, 0);
   }
+  const domProv = got > 0 && deviceGot >= got / 2 ? 'device' : 'self_report';
   events.push({
     axis: 'consistency', delta: round2(score - prev), reason_code: 'consistency_recompute',
-    provenance: 'self_report', trust_multiplier: null,
+    provenance: domProv, trust_multiplier: trustMultiplier(domProv),
     detail: { activeWeighted: round2(got), possibleWeighted: round2(possible), idleDays }
   });
   return { score };
@@ -264,7 +269,7 @@ function computeNutrition(inputs, prev, events) {
   }
   events.push({
     axis: 'nutrition', delta: round2(score - prev), reason_code: 'nutrition_recompute',
-    provenance: 'self_report', trust_multiplier: null,
+    provenance: 'self_report', trust_multiplier: trustMultiplier('self_report'),
     detail: { onPlanWeighted: round2(got), possibleWeighted: round2(possible), idleDays }
   });
   return { score };
@@ -292,7 +297,7 @@ function sleepDurationPts(hours, isSenior) {
 function computeRecovery(inputs, prev, events) {
   const r = inputs.recovery || {};
   const days = Array.isArray(r.days) ? r.days : [];
-  let durGot = 0, durW = 0, restGot = 0, restW = 0;
+  let durGot = 0, durW = 0, restGot = 0, restW = 0, deviceDurW = 0;
   const wakes = [];
   for (const d of days) {
     const w = recencyWeight(d.daysAgo);
@@ -300,6 +305,7 @@ function computeRecovery(inputs, prev, events) {
     if (pts !== null) {
       durGot += w * trustedCredit(pts, d.provenance);
       durW += w;
+      if ((d.provenance || 'self_report') === 'device') deviceDurW += w;
     }
     if (Number.isFinite(d.restedness1to5)) {
       restGot += w * clamp((d.restedness1to5 - 1) / 4, 0, 1) * 100;
@@ -329,9 +335,10 @@ function computeRecovery(inputs, prev, events) {
   if (idleDays > C.decay.recovery.graceDays) {
     score = applyDecayOrPause(prev, 'recovery', idleDays, !!r.pauseActive, 0);
   }
+  const domProv = durW > 0 && deviceDurW >= durW / 2 ? 'device' : 'self_report';
   events.push({
     axis: 'recovery', delta: round2(score - prev), reason_code: 'recovery_recompute',
-    provenance: 'self_report', trust_multiplier: null,
+    provenance: domProv, trust_multiplier: trustMultiplier(domProv),
     detail: { duration: round2(duration), regularity: round2(regularity), restedness: round2(restedness), grindDays: Number(r.consecutiveTrainingDays) || 0, idleDays }
   });
   return { score };
@@ -415,7 +422,7 @@ function computeProgress(inputs, prev, events) {
   }
   events.push({
     axis: 'progress', delta: round2(score - prev), reason_code: pauseForData ? 'progress_paused_insufficient_data' : 'progress_recompute',
-    provenance: 'self_report', trust_multiplier: null,
+    provenance: 'self_report', trust_multiplier: trustMultiplier('self_report'),
     detail: { weeklyTrendPctBw: roundOrNull(rate), goalMode: p.goalMode || null, idleDays }
   });
   return { score };

@@ -12449,12 +12449,15 @@ async function trainingRoutes(req, res, url) {
     if (serialized.length > 50_000) return sendJson(res, 400, { error: 'Check-in too large' });
 
     try {
+      // v2 scoring (SCORING_ENGINE_V2 trust ladder): stamp provenance on the
+      // check-in. Everything typed in the Daily Dash is self-reported.
       const result = await db.query(
         `
-          INSERT INTO app_daily_checkins (user_id, day, data)
-          VALUES ($1, $2::date, $3::jsonb)
+          INSERT INTO app_daily_checkins (user_id, day, data, sources)
+          VALUES ($1, $2::date, $3::jsonb, '{"checkin":"manual"}'::jsonb)
           ON CONFLICT (user_id, day) DO UPDATE
           SET data = EXCLUDED.data,
+              sources = app_daily_checkins.sources || EXCLUDED.sources,
               updated_at = now()
           RETURNING id, day, data, updated_at;
         `,

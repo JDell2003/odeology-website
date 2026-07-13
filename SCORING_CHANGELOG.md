@@ -206,3 +206,30 @@ Task 10 tests where pure (normalizers). Run status: pending (no local Node — s
 - Offline shows clearly-labeled estimate: `__estimated:true` tag.
 - Browser cannot change the authoritative score: it lives in Postgres; the client
   only renders it.
+
+---
+
+## Task 6 — Trust ladder wiring (`feat(scoring): trust ladder`)
+
+**What changed**
+
+- Provenance mapping (`core/scoringGather.js` `deviceOrSelf()`): strava | fitbit |
+  gps | alarm → `device` (×1.00); manual / in-app → `self_report` (×0.70);
+  `implausible` → ×0 (multipliers straight from `C.trust`).
+- Lift sessions: tagged `device` only when the workout has a real timer window
+  (timer_started_at + timer_ended_at) on a day whose `gym_visit=true` came from the
+  GPS geofence check-in; otherwise `self_report`.
+- `POST /api/training/checkin` now stamps `sources = {"checkin":"manual"}` on
+  `app_daily_checkins` (merged with `||` on update) — provenance recorded going forward.
+- `core/scoringEngine.js`: every axis event now records `provenance` + the applied
+  `trust_multiplier` (dominant provenance for windowed axes). Multipliers were already
+  applied inside each `compute*` (Task 3); consistency now also tracks the device
+  share of credit.
+
+**Acceptance criteria**
+
+- Strava-synced run out-tiers same minutes typed in: device ×1.0 vs manual ×0.7 on
+  cardio credit.
+- Events show the multiplier: `trust_multiplier` set on all six axis events.
+- Honest self-report never scores zero: self_report multiplier is 0.70; only
+  `implausible` zeroes credit.
