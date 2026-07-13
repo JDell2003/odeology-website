@@ -12,6 +12,7 @@ const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
 const { emitUserEvent } = require('./emailEvents');
+const { scoringV2Enabled } = require('./scoringGather');
 const {
   DEBUG_COMBO_LABEL,
   evaluateGlutesLegsCoreDebugCombo,
@@ -8956,6 +8957,10 @@ async function ensureSchema() {
     await safeQuery("ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS equipment_access jsonb NOT NULL DEFAULT '{}'::jsonb;");
     await safeQuery('ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS bio text;');
     await safeQuery('ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS injuries text;');
+    // v2 scoring (SCORING_ENGINE_V2) — 1a. Normalization identity inputs. Additive only.
+    await safeQuery('ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS sex text;');      // 'male' | 'female' | 'unspecified'
+    await safeQuery('ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS dob date;');       // preferred over age int
+    await safeQuery('ALTER TABLE app_training_profiles ADD COLUMN IF NOT EXISTS timezone text;');  // IANA, e.g. 'America/New_York'
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_training_plans (
@@ -9119,6 +9124,8 @@ async function ensureSchema() {
     await safeQuery('CREATE UNIQUE INDEX IF NOT EXISTS uq_app_daily_checkins_user_day ON app_daily_checkins(user_id, day);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_daily_checkins_user_id ON app_daily_checkins(user_id);');
     await safeQuery('CREATE INDEX IF NOT EXISTS idx_app_daily_checkins_updated_at ON app_daily_checkins(updated_at);');
+    // v2 scoring (SCORING_ENGINE_V2) — 1e. Provenance on check-ins (currently none).
+    await safeQuery("ALTER TABLE app_daily_checkins ADD COLUMN IF NOT EXISTS sources jsonb NOT NULL DEFAULT '{}'::jsonb;");
 
     await safeQuery(`
       CREATE TABLE IF NOT EXISTS app_progress_photos (
@@ -9535,6 +9542,53 @@ async function upsertProfile(userId, data) {
       profileImage
     ]
   );
+}
+
+// v2 scoring (SCORING_ENGINE_V2) — normalization identity (sex/dob/timezone).
+// Stored on app_training_profiles; every field is optional and merged with
+// COALESCE so partial submissions never erase earlier answers.
+function normalizeScoringSex(raw) {
+  const v = String(raw || '').trim().toLowerCase();
+  if (v === 'male' || v === 'female' || v === 'unspecified') return v;
+  return null;
+}
+
+function normalizeScoringDob(raw) {
+  const v = String(raw || '').trim();
+  if (!isDateIso(v)) return null;
+  const t = new Date(`${v}T12:00:00Z`).getTime();
+  if (!Number.isFinite(t)) return null;
+  const years = (Date.now() - t) / (365.25 * 86_400_000);
+  if (years < 13 || years > 120) return null; // mirror the existing age 13-120 clamp
+  return v;
+}
+
+function normalizeScoringTimezone(raw) {
+  const v = String(raw || '').trim();
+  if (!v || v.length > 64) return null;
+  if (v === 'UTC') return v;
+  if (!/^[A-Za-z][A-Za-z0-9_+\-]*(\/[A-Za-z0-9_+\-]+){1,2}$/.test(v)) return null;
+  return v;
+}
+
+async function upsertScoringIdentity(userId, payload) {
+  const sex = normalizeScoringSex(payload?.sex);
+  const dob = normalizeScoringDob(payload?.dob);
+  const timezone = normalizeScoringTimezone(payload?.timezone);
+  if (!sex && !dob && !timezone) return { sex: null, dob: null, timezone: null };
+  await db.query(
+    `
+      INSERT INTO app_training_profiles (user_id, updated_at, sex, dob, timezone)
+      VALUES ($1, now(), $2, $3, $4)
+      ON CONFLICT (user_id) DO UPDATE SET
+        updated_at = now(),
+        sex = COALESCE(EXCLUDED.sex, app_training_profiles.sex),
+        dob = COALESCE(EXCLUDED.dob, app_training_profiles.dob),
+        timezone = COALESCE(EXCLUDED.timezone, app_training_profiles.timezone);
+    `,
+    [userId, sex, dob, timezone]
+  );
+  return { sex, dob, timezone };
 }
 
 function countExercisesWithoutGif(plan) {
@@ -11634,6 +11688,57 @@ async function trainingRoutes(req, res, url) {
   const user = sessionState.user;
   if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
 
+  // v2 scoring (SCORING_ENGINE_V2): read/write the normalization identity
+  // (sex/dob/timezone). GET also reports the feature flag so the client can
+  // decide whether to show the one-time fill-in modal — user-facing behavior
+  // stays off until the owner flips the flag.
+  if (pathname === '/api/training/scoring-profile' && req.method === 'GET') {
+    try {
+      const result = await db.query(
+        'SELECT sex, dob::text AS dob, timezone, age FROM app_training_profiles WHERE user_id = $1 LIMIT 1;',
+        [user.id]
+      );
+      const row = result.rows?.[0] || {};
+      return sendJson(res, 200, {
+        ok: true,
+        enabled: scoringV2Enabled(),
+        sex: row.sex || null,
+        dob: row.dob || null,
+        timezone: row.timezone || null,
+        age: Number.isFinite(Number(row.age)) ? Number(row.age) : null
+      });
+    } catch (err) {
+      return handleTrainingDbFailure(res, err, 'training-scoring-profile-get', 'Failed to load scoring profile');
+    }
+  }
+
+  if (pathname === '/api/training/scoring-profile' && req.method === 'POST') {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    const sex = normalizeScoringSex(payload?.sex);
+    const dob = normalizeScoringDob(payload?.dob);
+    const timezone = normalizeScoringTimezone(payload?.timezone);
+    if (payload?.sex !== undefined && payload?.sex !== null && payload?.sex !== '' && !sex) {
+      return sendJson(res, 400, { error: 'Sex must be male, female, or unspecified' });
+    }
+    if (payload?.dob !== undefined && payload?.dob !== null && payload?.dob !== '' && !dob) {
+      return sendJson(res, 400, { error: 'Enter a valid date of birth (age 13-120)' });
+    }
+    if (!sex && !dob && !timezone) {
+      return sendJson(res, 400, { error: 'Nothing to save' });
+    }
+    try {
+      await upsertScoringIdentity(user.id, { sex, dob, timezone });
+      return sendJson(res, 200, { ok: true, sex, dob, timezone });
+    } catch (err) {
+      return handleTrainingDbFailure(res, err, 'training-scoring-profile-post', 'Failed to save scoring profile');
+    }
+  }
+
     if (pathname === '/api/training/demo/ensure-workout' && (req.method === 'GET' || req.method === 'POST')) {
       const returnTo = safeLocalReturnTo(url.searchParams.get('returnTo') || '/training.html?demoPlan=1');
       try {
@@ -12506,6 +12611,14 @@ async function trainingRoutes(req, res, url) {
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
     }
+    // v2 scoring (SCORING_ENGINE_V2): capture normalization identity when the
+    // onboarding payload carries it. Best-effort and non-blocking — a scoring
+    // field must never fail onboarding itself.
+    try {
+      await upsertScoringIdentity(user.id, payload);
+    } catch (err) {
+      console.error('[scoring] onboarding identity capture failed', err?.message || err);
+    }
     const onboardingRouteStartedAt = Date.now();
     const onboardingRequestId = getTrainingRequestId(req);
     const onboardingPayloadSummary = summarizePlanBuildPayload(payload);
@@ -13069,3 +13182,6 @@ trainingRoutes._private = {
 };
 
 module.exports = trainingRoutes;
+// v2 scoring (SCORING_ENGINE_V2): let server.js run the additive migrations at
+// boot (they otherwise only run lazily on the first training request).
+module.exports.ensureSchema = ensureSchema;

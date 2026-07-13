@@ -39,6 +39,7 @@ const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
 const healthRoutes = require('./core/healthRoutes');
 const studiesRoutes = require('./core/studiesRoutes');
+const scoringGather = require('./core/scoringGather');
 const MAX_RESULTS_DEFAULT = 6;
 const PUBLIC_DIR = path.resolve(__dirname);
 const TRAINING_QUOTE_BANK_PATH = path.join(__dirname, 'core', 'quoteBank.json');
@@ -2451,6 +2452,25 @@ server.on('error', (err) => {
 server.listen(listenPort, listenHost, () => {
     console.log(`Server running on http://${listenHost}:${listenPort} (pid ${process.pid})`);
     console.log('[asset] main.js resolved path:', path.resolve(PUBLIC_DIR, 'js', 'main.js'));
+
+    // v2 scoring (SCORING_ENGINE_V2): run the additive schema migrations at boot
+    // so Railway deploys apply them without waiting for the first request. The
+    // route modules keep their lazy ensureSchema() guards as a fallback; these
+    // calls are idempotent (CREATE/ALTER ... IF NOT EXISTS only).
+    (async () => {
+        if (!db.isConfigured()) {
+            console.log('[scoring] Database not configured - skipping schema ensure at boot');
+            return;
+        }
+        try {
+            await trainingRoutes.ensureSchema();
+            await healthRoutes.ensureSchema();
+            await scoringGather.ensureScoringSchema();
+            console.log('[scoring] v2 schema ensured (training + health + scoring tables)');
+        } catch (err) {
+            console.error('[scoring] Schema ensure at boot failed (routes will retry lazily):', err?.message || err);
+        }
+    })();
 });
 
 const shutdown = async () => {

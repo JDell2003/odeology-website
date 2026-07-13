@@ -130,6 +130,10 @@ async function ensureSchema() {
     await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS distance_meters integer;`);
     await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS gym_visit boolean;`);
     await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS wake_result text;`);
+    // v2 scoring (SCORING_ENGINE_V2) — 1f. Wake timestamps for sleep-regularity
+    // (today only the calendar day is stored).
+    await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS wake_at timestamptz;`);
+    await db.query(`ALTER TABLE app_health_daily ADD COLUMN IF NOT EXISTS sleep_start_at timestamptz;`);
     await db.query(`
       CREATE TABLE IF NOT EXISTS app_health_activities (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -766,3 +770,7 @@ module.exports = async function healthRoutes(req, res, url) {
 
   return sendJson(res, 404, { error: 'Not found' });
 };
+
+// v2 scoring (SCORING_ENGINE_V2): let server.js run the additive migrations at
+// boot (they otherwise only run lazily on the first /api/health request).
+module.exports.ensureSchema = ensureSchema;
