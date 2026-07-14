@@ -266,6 +266,52 @@
         });
     }
 
+    /* --------------- coach's nutrition PDF (from trainer) ---------------
+       Trainers send a nutrition PDF from their dashboard ("Send nutrition
+       PDF"); it lands in client-docs on the server. Here the client sees a
+       card to view or download whatever their coach most recently sent.
+       Runs independently of whether the client has built a meal plan. */
+    function dataUrlToBlobUrl(dataUrl) {
+        try {
+            var comma = dataUrl.indexOf(',');
+            var b64 = dataUrl.slice(comma + 1);
+            var bin = atob(b64);
+            var len = bin.length, bytes = new Uint8Array(len);
+            for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+            return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        } catch (e) { return ''; }
+    }
+    function loadCoachDoc() {
+        var sec = $('nut-coach-doc');
+        if (!sec) return;
+        fetch('/api/training/client-doc', { credentials: 'include' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) {
+                var docs = (j && Array.isArray(j.docs)) ? j.docs : [];
+                var doc = docs.filter(function (d) { return d && d.kind === 'nutrition' && d.dataUrl; })[0];
+                if (!doc) return;                       // no PDF from coach — stay hidden
+                var titleEl = $('nut-coach-doc-title'), metaEl = $('nut-coach-doc-meta');
+                if (titleEl) titleEl.textContent = doc.filename || 'Your nutrition PDF';
+                if (metaEl) {
+                    var who = doc.fromTrainerName ? ('From ' + doc.fromTrainerName) : 'From your coach';
+                    var when = '';
+                    try { when = doc.at ? new Date(doc.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''; } catch (e) {}
+                    metaEl.textContent = who + (when ? ' · ' + when : '');
+                }
+                var url = dataUrlToBlobUrl(doc.dataUrl) || doc.dataUrl;
+                var viewBtn = $('nut-coach-doc-view'), dlBtn = $('nut-coach-doc-download');
+                if (viewBtn) viewBtn.addEventListener('click', function () { window.open(url, '_blank', 'noopener'); });
+                if (dlBtn) dlBtn.addEventListener('click', function () {
+                    var a = document.createElement('a');
+                    a.href = url; a.download = doc.filename || 'nutrition-plan.pdf';
+                    document.body.appendChild(a); a.click(); a.remove();
+                });
+                sec.hidden = false;
+            })
+            .catch(function () {});
+    }
+    loadCoachDoc();
+
     /* ----------------------------- boot ----------------------------- */
     plan = readJSON(K.plan, null);
     answers = readJSON(K.answers, {});

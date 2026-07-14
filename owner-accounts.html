@@ -362,10 +362,16 @@
     <section class="owner-accounts-card owner-accounts-section" data-owner-section="accounts">
       <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
         <input id="owner-accounts-search" class="auth-input" placeholder="Search by username, display name, email" style="max-width:360px;">
-        <div class="owner-accounts-muted" id="owner-accounts-count"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div class="owner-accounts-muted" id="owner-accounts-count"></div>
+          <button class="btn btn-primary" type="button" id="owner-add-account-btn">+ Add account</button>
+        </div>
       </div>
       <div class="owner-accounts-filterbar" role="tablist" aria-label="Account filters">
         <button type="button" class="owner-accounts-toggle active" data-account-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="new" aria-pressed="false">New Accounts</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="onboarded" aria-pressed="false">Finished Onboarding</button>
+        <button type="button" class="owner-accounts-toggle" data-account-filter="not-onboarded" aria-pressed="false">Incomplete Onboarding</button>
         <button type="button" class="owner-accounts-toggle" data-account-filter="trainer" aria-pressed="false">Trainers</button>
         <button type="button" class="owner-accounts-toggle" data-account-filter="regular" aria-pressed="false">Regular Clients</button>
         <button type="button" class="owner-accounts-toggle" data-account-filter="with-trainer" aria-pressed="false">Clients With Trainers</button>
@@ -414,8 +420,80 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=2026-07-14-launchgate-2"></script>
-  <script src="js/ownerAccounts.js?v=2026-03-23-owner-demo-1"></script>
+  <div class="owner-accounts-modal" id="owner-add-account-modal" hidden>
+    <div class="owner-accounts-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:800;font-size:18px;">Add account</div>
+          <div class="owner-accounts-muted">Creates a username and temporary password. The person logs in and completes onboarding themselves.</div>
+        </div>
+        <button class="btn btn-ghost" type="button" id="owner-add-account-close">Close</button>
+      </div>
+
+      <div id="owner-add-account-form" style="display:grid;gap:12px;">
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Role</span>
+          <select id="owner-add-role" class="auth-input">
+            <option value="trainer" selected>Trainer</option>
+            <option value="manager">Manager</option>
+            <option value="client">Client</option>
+          </select>
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Display name <span class="owner-accounts-muted">(optional)</span></span>
+          <input id="owner-add-displayname" class="auth-input" placeholder="e.g. Avery Stone" autocomplete="off">
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Username</span>
+          <input id="owner-add-username" class="auth-input" placeholder="letters, numbers, underscores" autocomplete="off">
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Email</span>
+          <input id="owner-add-email" class="auth-input" type="email" placeholder="trainer@email.com" autocomplete="off">
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Temporary password</span>
+          <div style="display:flex;gap:8px;">
+            <input id="owner-add-password" class="auth-input" placeholder="Leave blank to auto-generate" autocomplete="off" style="flex:1;">
+            <button class="btn btn-ghost" type="button" id="owner-add-genpass">Generate</button>
+          </div>
+        </label>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;">
+          <input id="owner-add-sendemail" type="checkbox" checked style="margin-top:3px;">
+          <span>Email the user their login (a pre-written "your account is ready" message with the temp password).</span>
+        </label>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;">
+          <input id="owner-add-ccowner" type="checkbox" style="margin-top:3px;">
+          <span>CC me a copy of that email.</span>
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-weight:700;font-size:13px;">Custom note <span class="owner-accounts-muted">(optional, replaces default message)</span></span>
+          <textarea id="owner-add-message" class="auth-input" rows="3" placeholder="Hey - made your account, still working on the website..."></textarea>
+        </label>
+        <div class="owner-accounts-status" id="owner-add-status"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="button" id="owner-add-cancel">Cancel</button>
+          <button class="btn btn-primary" type="button" id="owner-add-submit">Create account</button>
+        </div>
+      </div>
+
+      <div id="owner-add-account-result" hidden style="display:grid;gap:10px;">
+        <div class="owner-accounts-status ok" style="font-weight:700;">Account created.</div>
+        <div class="owner-accounts-modal-item">
+          <div><strong>Username:</strong> <span id="owner-add-result-username"></span></div>
+          <div><strong>Temporary password:</strong> <span id="owner-add-result-password"></span></div>
+          <div id="owner-add-result-email" class="owner-accounts-muted"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="button" id="owner-add-copy">Copy login</button>
+          <button class="btn btn-primary" type="button" id="owner-add-done">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
+  <script src="js/ownerAccounts.js?v=2026-07-14-owner-createacct-1"></script>
 </body>
 </html>
 

@@ -21911,7 +21911,16 @@ function injectNutritionLink(panel) {
    LAUNCH_LIVE_TRAINER_IDS). The owner still sees everything, with a
    "Hidden" badge on each tab that's hidden from other users, so they can
    keep building. The client onboarding path is hidden the same way. */
-var LAUNCH_LIVE_HREFS = ['trainer-website.html'];
+var LAUNCH_LIVE_HREFS = [
+    'trainer-website.html',
+    // Client-facing training portal — now live for every account:
+    'overview.html',        // Overview
+    'training.html',        // Training Program
+    'nutrition.html',       // Nutrition
+    'grocery-calendar.html',// Grocery Calendar
+    'coaches.html',         // Coaches page
+    'leaderboard.html'      // The Arena
+];
 // Trainer tabs that go live in the soft launch. These links only ever
 // render inside the trainer section (hidden from non-trainers), so
 // whitelisting them here exposes them to trainers only.

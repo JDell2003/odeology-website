@@ -11,6 +11,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Coach's nutrition PDF card */
+        .nut-coach-doc{display:flex;align-items:center;gap:16px;margin:0 0 22px;padding:18px 20px;
+            border-radius:16px;border:1px solid rgba(185,138,43,.32);
+            background:linear-gradient(135deg,rgba(212,175,55,.13),rgba(212,175,55,.05));
+            box-shadow:0 8px 24px rgba(90,60,10,.08);}
+        .nut-coach-doc-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+            width:48px;height:48px;border-radius:12px;color:#8a6414;
+            background:rgba(212,175,55,.2);border:1px solid rgba(185,138,43,.4);}
+        .nut-coach-doc-body{flex:1 1 auto;min-width:0;}
+        .nut-coach-doc-body .eyebrow{margin:0 0 2px;font:800 10px/1.4 "Space Grotesk",system-ui,sans-serif;
+            letter-spacing:.12em;text-transform:uppercase;color:#a1751f;}
+        .nut-coach-doc-body h3{margin:0 0 3px;font-size:18px;line-height:1.25;}
+        .nut-coach-doc-body .tiny{margin:0;}
+        .nut-coach-doc-actions{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;}
+        @media (max-width:640px){
+            .nut-coach-doc{flex-wrap:wrap;}
+            .nut-coach-doc-actions{width:100%;}
+            .nut-coach-doc-actions .btn{flex:1 1 auto;}
+        }
+    </style>
 </head>
 <body class="grocery-calendar-page nutrition-page">
     <div class="grain"></div>
@@ -145,6 +166,22 @@
             </div>
         </header>
 
+        <!-- Coach's nutrition PDF — shown only when a trainer has sent one -->
+        <section class="nut-coach-doc" id="nut-coach-doc" hidden>
+            <div class="nut-coach-doc-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
+            </div>
+            <div class="nut-coach-doc-body">
+                <p class="eyebrow">From your coach</p>
+                <h3 id="nut-coach-doc-title">Your coach sent you a nutrition PDF</h3>
+                <p class="ns-muted tiny" id="nut-coach-doc-meta"></p>
+            </div>
+            <div class="nut-coach-doc-actions">
+                <button class="btn btn-primary" type="button" id="nut-coach-doc-view">View PDF</button>
+                <button class="btn btn-ghost" type="button" id="nut-coach-doc-download">Download</button>
+            </div>
+        </section>
+
         <!-- No plan yet -->
         <section class="plan-card nutrition-empty" id="nutrition-empty" hidden>
             <div class="card-head"><h3>No meal plan yet</h3></div>
@@ -202,11 +239,11 @@
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-07-14-launchgate-2"></script>
+    <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
     <script src="core/mealProgramConstants.js?v=2026-07-14-mp-4"></script>
     <script src="core/mealProgramEngine.js?v=2026-07-14-mp-4"></script>
     <script src="js/meal-program-data.js?v=2026-07-14-mp-4"></script>
-    <script src="js/nutrition.js?v=2026-07-14-nutrition-3"></script>
+    <script src="js/nutrition.js?v=2026-07-14-nutrition-4-coachpdf"></script>
 </body>
 </html>
 
