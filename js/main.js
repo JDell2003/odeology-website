@@ -15048,6 +15048,10 @@ function initAuthUi() {
         reconcileManagerReviewNotifications({ user, allowToast: false });
         reconcileTrainerManagerReviewNotifications({ user, allowToast: false });
         syncOwnerWorkoutDbLink(user, meta);
+        applyLaunchGating(user, meta);
+        // Some panel links (trainer/owner sections, injected Nutrition) can be
+        // built a tick late on slower pages — re-apply so nothing slips through.
+        setTimeout(function () { try { applyLaunchGating(user, meta); } catch (e) { /* ignore */ } }, 700);
         syncNavbarDashboardLink(user);
         if (mobileAuth?.dashboardLink) mobileAuth.dashboardLink.href = getDashboardNavHref(user);
         const controlMobileFabDashboardLink = document.getElementById('control-mobile-fab-dashboard');
@@ -21898,6 +21902,92 @@ function injectNutritionLink(panel) {
     link.href = 'nutrition.html';
     link.innerHTML = '<span class="icon"><svg><use href="#icon-chef"></use></svg></span><span class="text">Nutrition</span>';
     groceryLink.insertAdjacentElement('beforebegin', link);
+}
+
+/* ---- Launch gating -------------------------------------------------
+   Soft launch: trainers/clients only get the Website tab; every other
+   control-panel tab is hidden. The owner still sees everything, with a
+   "Hidden" badge on each tab that's hidden from other users, so they can
+   keep building. The client onboarding path is hidden the same way. */
+var LAUNCH_LIVE_HREFS = ['trainer-website.html'];
+function isLaunchOwner(user, meta) {
+    // An owner impersonating a trainer should see the gated trainer view.
+    if (meta && meta.impersonation && meta.impersonation.active) return false;
+    if (user && user.isOwner) return true;
+    var uname = String(user && user.username || '').trim().toLowerCase();
+    var dname = String(user && user.displayName || '').trim().toLowerCase();
+    return ['riseforit', 'jason', 'odeology', 'odeology_'].indexOf(uname) >= 0
+        || ['riseforit', 'odeology', 'odeology_'].indexOf(dname) >= 0;
+}
+function ensureLaunchGateStyles() {
+    if (document.getElementById('launch-gate-styles')) return;
+    var s = document.createElement('style');
+    s.id = 'launch-gate-styles';
+    s.textContent = [
+        '.control-link.launch-hidden{display:none !important;}',
+        '.control-section.launch-hidden{display:none !important;}',
+        '.launch-hidden-badge{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;',
+        '  font:800 9px/1.6 "Space Grotesk",system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;',
+        '  background:rgba(212,175,55,.22);color:#a1751f;border:1px solid rgba(185,138,43,.5);vertical-align:middle;}',
+        'body.ode-launch-gated [data-path-card="user"]{display:none !important;}',
+        'body.ode-launch-owner [data-path-card="user"]{position:relative;}',
+        'body.ode-launch-owner [data-path-card="user"]::after{content:"Hidden";position:absolute;top:12px;right:12px;z-index:3;',
+        '  padding:2px 9px;border-radius:999px;font:800 10px/1.6 "Space Grotesk",system-ui,sans-serif;letter-spacing:.08em;',
+        '  text-transform:uppercase;background:rgba(212,175,55,.9);color:#1a1206;}'
+    ].join('\n');
+    document.head.appendChild(s);
+}
+function setLaunchHiddenBadge(link, on) {
+    var existing = link.querySelector('.launch-hidden-badge');
+    if (on && !existing) {
+        var b = document.createElement('span');
+        b.className = 'launch-hidden-badge';
+        b.textContent = 'Hidden';
+        (link.querySelector('.text') || link).appendChild(b);
+    } else if (!on && existing) {
+        existing.remove();
+    }
+}
+function applyLaunchGating(user, meta) {
+    var panel = document.getElementById('control-panel');
+    if (!panel) return;
+    ensureLaunchGateStyles();
+    var owner = isLaunchOwner(user, meta);
+    document.body.classList.toggle('ode-launch-gated', !owner);
+    document.body.classList.toggle('ode-launch-owner', owner);
+
+    Array.prototype.forEach.call(panel.querySelectorAll('.control-link'), function (link) {
+        var href = String(link.getAttribute('href') || '').trim();
+        var inAccount = !!link.closest('[data-auth-section]');
+        var inOwnerSection = !!link.closest('#control-owner-section');
+        var isWebsite = link.id === 'control-trainer-website-hub-link' || LAUNCH_LIVE_HREFS.indexOf(href) >= 0;
+        // Account controls (sign in/out) and the live Website tab are never gated.
+        if (inAccount || isWebsite) {
+            link.classList.remove('launch-hidden');
+            setLaunchHiddenBadge(link, false);
+            return;
+        }
+        if (owner) {
+            link.classList.remove('launch-hidden');
+            // Badge user-facing tabs that are hidden from others; leave the
+            // owner-only tooling section unbadged (it's clearly owner-scoped).
+            setLaunchHiddenBadge(link, !inOwnerSection);
+        } else {
+            link.classList.add('launch-hidden');
+            setLaunchHiddenBadge(link, false);
+        }
+    });
+
+    // For non-owners, collapse any section whose links are now all hidden
+    // (keeps stray "TRAINING PORTAL"/"COMMUNITY" headers from lingering).
+    Array.prototype.forEach.call(panel.querySelectorAll('.control-section'), function (section) {
+        if (section.querySelector('[data-auth-section]') || section.hasAttribute('data-auth-section')) return;
+        if (owner) { section.classList.remove('launch-hidden'); return; }
+        var anyVisible = Array.prototype.some.call(section.querySelectorAll('.control-link'), function (l) {
+            return !l.classList.contains('launch-hidden');
+        });
+        section.classList.toggle('launch-hidden', !anyVisible);
+    });
 }
 
 function setupControlPanel() {
