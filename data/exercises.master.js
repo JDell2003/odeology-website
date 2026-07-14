@@ -26,30 +26,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "90/90 Hamstring",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/90_90_Hamstring/0.jpg",
-      "free-exercise-db/exercises/90_90_Hamstring/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Ab Crunch Machine",
     "primary": "Core",
     "sub": "UpperAbs",
@@ -106,60 +82,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Adductor",
-    "primary": "Legs",
-    "sub": "Adductors",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Adductor/0.jpg",
-      "free-exercise-db/exercises/Adductor/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Advanced Kettlebell Windmill",
-    "primary": "Core",
-    "sub": "Obliques",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 1,
-    "hip": 2,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Advanced_Kettlebell_Windmill/0.jpg",
-      "free-exercise-db/exercises/Advanced_Kettlebell_Windmill/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 4,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "TVA"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Air Bike",
     "primary": "Cardio",
     "sub": "Conditioning",
@@ -178,30 +100,6 @@ export const exercises = [
     ],
     "difficulty": 2,
     "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "All Fours Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/All_Fours_Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/All_Fours_Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
     "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
@@ -288,35 +186,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Alternate Leg Diagonal Bound",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Alternate_Leg_Diagonal_Bound/0.jpg",
-      "free-exercise-db/exercises/Alternate_Leg_Diagonal_Bound/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Alternating Cable Shoulder Press",
     "primary": "Shoulders",
     "sub": "Front",
@@ -394,38 +263,6 @@ export const exercises = [
       "Delts",
       "Triceps",
       "FrontDelts"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Alternating Hang Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Alternating_Hang_Clean/0.jpg",
-      "free-exercise-db/exercises/Alternating_Hang_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "UpperBack",
-      "Quads"
     ],
     "movementTags": [
       "unilateral",
@@ -522,78 +359,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Ankle Circles",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Ankle_Circles/0.jpg",
-      "free-exercise-db/exercises/Ankle_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Ankle On The Knee",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Ankle_On_The_Knee/0.jpg",
-      "free-exercise-db/exercises/Ankle_On_The_Knee/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Anterior Tibialis-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Anterior_Tibialis-SMR/0.jpg",
-      "free-exercise-db/exercises/Anterior_Tibialis-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Anti-Gravity Press",
     "primary": "Shoulders",
     "sub": "Front",
@@ -620,58 +385,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Archer Push-up / Pseudo Planche Push-up",
-    "primary": "Chest",
-    "sub": "Mid",
-    "pattern": "HorizontalPush",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Pushups/0.jpg",
-      "free-exercise-db/exercises/Pushups/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Delts",
-      "Triceps",
-      "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Arm Circles",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Arm_Circles/0.jpg",
-      "free-exercise-db/exercises/Arm_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -755,70 +468,6 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
-  },
-  {
-    "name": "Atlas Stone Trainer",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Atlas_Stone_Trainer/0.jpg",
-      "free-exercise-db/exercises/Atlas_Stone_Trainer/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Atlas Stones",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Atlas_Stones/0.jpg",
-      "free-exercise-db/exercises/Atlas_Stones/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Adductors",
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
     ]
   },
   {
@@ -2060,61 +1709,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Bear Crawl Sled Drags",
-    "primary": "FullBody",
-    "sub": "Carry",
-    "pattern": "Carry",
-    "spine": 2,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Bear_Crawl_Sled_Drags/0.jpg",
-      "free-exercise-db/exercises/Bear_Crawl_Sled_Drags/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 2,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Quads",
-      "UpperBack",
-      "Forearms",
-      "Core"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Behind Head Chest Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Behind_Head_Chest_Stretch/0.jpg",
-      "free-exercise-db/exercises/Behind_Head_Chest_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Bench Dips",
     "primary": "Arms",
     "sub": "Triceps",
@@ -2137,33 +1731,6 @@ export const exercises = [
       "Chest",
       "Delts",
       "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Bench Jump",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Bench_Jump/0.jpg",
-      "free-exercise-db/exercises/Bench_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral"
@@ -2403,33 +1970,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Bench Sprint",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Bench_Sprint/0.jpg",
-      "free-exercise-db/exercises/Bench_Sprint/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -3095,96 +2635,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Bottoms-Up Clean From The Hang Position",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Bottoms-Up_Clean_From_The_Hang_Position/0.jpg",
-      "free-exercise-db/exercises/Bottoms-Up_Clean_From_The_Hang_Position/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Biceps",
-      "Delts",
-      "Quads",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Box Jump (Multiple Response)",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Box_Jump_Multiple_Response/0.jpg",
-      "free-exercise-db/exercises/Box_Jump_Multiple_Response/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Box Skip",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Box_Skip/0.jpg",
-      "free-exercise-db/exercises/Box_Skip/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Box Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -3278,30 +2728,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Brachialis-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Brachialis-SMR/0.jpg",
-      "free-exercise-db/exercises/Brachialis-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -3657,63 +3083,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Cable Iron Cross",
-    "primary": "Shoulders",
-    "sub": "Front",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Cable_Iron_Cross/0.jpg",
-      "free-exercise-db/exercises/Cable_Iron_Cross/1.jpg"
-    ],
-    "equipment": [
-      "Cable"
-    ],
-    "difficulty": 2,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Cable Judo Flip",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Cable_Judo_Flip/0.jpg",
-      "free-exercise-db/exercises/Cable_Judo_Flip/1.jpg"
-    ],
-    "equipment": [
-      "Cable"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Cable Lying Triceps Extension",
     "primary": "Arms",
     "sub": "Triceps-Long",
@@ -3938,11 +3307,11 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-      ],
-      "pullRole": "back_builder",
-      "supportType": "cable_supported",
-      "overloadFriendliness": "high",
-      "fatigueClass": "low"
+    ],
+    "pullRole": "back_builder",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low"
   },
   {
     "name": "Cable Russian Twists",
@@ -4236,56 +3605,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Calf Stretch Elbows Against Wall",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Calf_Stretch_Elbows_Against_Wall/0.jpg",
-      "free-exercise-db/exercises/Calf_Stretch_Elbows_Against_Wall/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Calf Stretch Hands Against Wall",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Calf_Stretch_Hands_Against_Wall/0.jpg",
-      "free-exercise-db/exercises/Calf_Stretch_Hands_Against_Wall/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Calf-Machine Shoulder Shrug",
     "primary": "Back",
     "sub": "UpperBack",
@@ -4309,30 +3628,6 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
-  },
-  {
-    "name": "Calves-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Calves-SMR/0.jpg",
-      "free-exercise-db/exercises/Calves-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -4391,60 +3686,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Carioca Quick Step",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Carioca_Quick_Step/0.jpg",
-      "free-exercise-db/exercises/Carioca_Quick_Step/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Abductors",
-      "Glutes",
-      "Hamstrings",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Cat Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Cat_Stretch/0.jpg",
-      "free-exercise-db/exercises/Cat_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -4534,54 +3775,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Chair Leg Extended Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chair_Leg_Extended_Stretch/0.jpg",
-      "free-exercise-db/exercises/Chair_Leg_Extended_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Chair Lower Back Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chair_Lower_Back_Stretch/0.jpg",
-      "free-exercise-db/exercises/Chair_Lower_Back_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Chair Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -4609,54 +3802,6 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
-  },
-  {
-    "name": "Chair Upper Body Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chair_Upper_Body_Stretch/0.jpg",
-      "free-exercise-db/exercises/Chair_Upper_Body_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Chest And Front Of Shoulder Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chest_And_Front_Of_Shoulder_Stretch/0.jpg",
-      "free-exercise-db/exercises/Chest_And_Front_Of_Shoulder_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -4780,31 +3925,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Chest Stretch on Stability Ball",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chest_Stretch_on_Stability_Ball/0.jpg",
-      "free-exercise-db/exercises/Chest_Stretch_on_Stability_Ball/1.jpg"
-    ],
-    "equipment": [
-      "StabilityBall"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Chest-Supported Row",
     "primary": "Back",
     "sub": "Lats-Thickness",
@@ -4871,54 +3991,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Child's Pose",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Childs_Pose/0.jpg",
-      "free-exercise-db/exercises/Childs_Pose/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Chin To Chest Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Chin_To_Chest_Stretch/0.jpg",
-      "free-exercise-db/exercises/Chin_To_Chest_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Chin-Up",
     "primary": "Back",
     "sub": "Lats-Width",
@@ -4943,283 +4015,6 @@ export const exercises = [
       "MidBack",
       "RearDelts",
       "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Circus Bell",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Circus_Bell/0.jpg",
-      "free-exercise-db/exercises/Circus_Bell/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "UpperBack",
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean/0.jpg",
-      "free-exercise-db/exercises/Clean/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean and Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_and_Jerk/0.jpg",
-      "free-exercise-db/exercises/Clean_and_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean and Press",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_and_Press/0.jpg",
-      "free-exercise-db/exercises/Clean_and_Press/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "MidBack",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean Deadlift",
-    "primary": "Legs",
-    "sub": "Hamstrings-Hinge",
-    "pattern": "Hinge",
-    "spine": 3,
-    "knee": 1,
-    "hip": 3,
-    "shoulder": 0,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_Deadlift/0.jpg",
-      "free-exercise-db/exercises/Clean_Deadlift/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "MidBack",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean from Blocks",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_from_Blocks/0.jpg",
-      "free-exercise-db/exercises/Clean_from_Blocks/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "UpperBack",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean Pull",
-    "primary": "Legs",
-    "sub": "Hamstrings-Hinge",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 1,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_Pull/0.jpg",
-      "free-exercise-db/exercises/Clean_Pull/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clean Shrug",
-    "primary": "Back",
-    "sub": "UpperBack",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 1,
-    "hip": 2,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Clean_Shrug/0.jpg",
-      "free-exercise-db/exercises/Clean_Shrug/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Clock Push-Up",
-    "primary": "Chest",
-    "sub": "Mid",
-    "pattern": "HorizontalPush",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Clock_Push-Up/0.jpg",
-      "free-exercise-db/exercises/Clock_Push-Up/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Delts",
-      "Triceps",
-      "FrontDelts"
     ],
     "movementTags": [
       "bilateral"
@@ -5657,30 +4452,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Crossover Reverse Lunge",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Lunge",
-    "spine": 2,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Crossover_Reverse_Lunge/0.jpg",
-      "free-exercise-db/exercises/Crossover_Reverse_Lunge/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
     "name": "Crucifix",
     "primary": "Shoulders",
     "sub": "Lateral",
@@ -5812,30 +4583,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Dancer's Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Dancers_Stretch/0.jpg",
-      "free-exercise-db/exercises/Dancers_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -6362,35 +5109,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Depth Jump Leap",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Depth_Jump_Leap/0.jpg",
-      "free-exercise-db/exercises/Depth_Jump_Leap/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Dip Machine",
     "primary": "Chest",
     "sub": "Lower",
@@ -6504,69 +5222,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Double Kettlebell Alternating Hang Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Double_Kettlebell_Alternating_Hang_Clean/0.jpg",
-      "free-exercise-db/exercises/Double_Kettlebell_Alternating_Hang_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Double Kettlebell Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Double_Kettlebell_Jerk/0.jpg",
-      "free-exercise-db/exercises/Double_Kettlebell_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Triceps",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Double Kettlebell Push Press",
     "primary": "FullBody",
     "sub": "Power",
@@ -6595,96 +5250,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Double Kettlebell Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Double_Kettlebell_Snatch/0.jpg",
-      "free-exercise-db/exercises/Double_Kettlebell_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Double Kettlebell Windmill",
-    "primary": "Core",
-    "sub": "Obliques",
-    "pattern": "CoreStability",
-    "spine": 2,
-    "knee": 1,
-    "hip": 2,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Double_Kettlebell_Windmill/0.jpg",
-      "free-exercise-db/exercises/Double_Kettlebell_Windmill/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "TVA"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Double Leg Butt Kick",
-    "primary": "Legs",
-    "sub": "Hamstrings",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Double_Leg_Butt_Kick/0.jpg",
-      "free-exercise-db/exercises/Double_Leg_Butt_Kick/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -6875,38 +5440,6 @@ export const exercises = [
     "style": "Isolation",
     "secondaryMuscles": [
       "Forearms"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Dumbbell Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Dumbbell_Clean/0.jpg",
-      "free-exercise-db/exercises/Dumbbell_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Dumbbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "UpperBack"
     ],
     "movementTags": [
       "bilateral",
@@ -7365,35 +5898,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Dumbbell Seated Box Jump",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Dumbbell_Seated_Box_Jump/0.jpg",
-      "free-exercise-db/exercises/Dumbbell_Seated_Box_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Dumbbell"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral",
-      "supported",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Dumbbell Seated One-Leg Calf Raise",
     "primary": "Legs",
     "sub": "Calves-Soleus",
@@ -7615,78 +6119,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Dynamic Back Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Dynamic_Back_Stretch/0.jpg",
-      "free-exercise-db/exercises/Dynamic_Back_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Dynamic Chest Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Dynamic_Chest_Stretch/0.jpg",
-      "free-exercise-db/exercises/Dynamic_Chest_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Elbow Circles",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Elbow_Circles/0.jpg",
-      "free-exercise-db/exercises/Elbow_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Elbow to Knee",
     "primary": "Core",
     "sub": "Obliques",
@@ -7708,30 +6140,6 @@ export const exercises = [
     "secondaryMuscles": [
       "TVA"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Elbows Back",
-    "primary": "Shoulders",
-    "sub": "Rear",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Elbows_Back/0.jpg",
-      "free-exercise-db/exercises/Elbows_Back/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -8095,30 +6503,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Fast Skipping",
-    "primary": "Cardio",
-    "sub": "General",
-    "pattern": "Cardio",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Fast_Skipping/0.jpg",
-      "free-exercise-db/exercises/Fast_Skipping/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Finger Curls",
     "primary": "Forearms",
     "sub": "Flexors",
@@ -8364,30 +6748,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Foot-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Foot-SMR/0.jpg",
-      "free-exercise-db/exercises/Foot-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Forward Drag with Press",
     "primary": "FullBody",
     "sub": "Carry",
@@ -8446,57 +6806,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Freehand Jump Squat",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Freehand_Jump_Squat/0.jpg",
-      "free-exercise-db/exercises/Freehand_Jump_Squat/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Frog Hops",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Frog_Hops/0.jpg",
-      "free-exercise-db/exercises/Frog_Hops/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -8584,35 +6893,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Front Box Jump",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Front_Box_Jump/0.jpg",
-      "free-exercise-db/exercises/Front_Box_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Front Cable Raise",
     "primary": "Shoulders",
     "sub": "Front",
@@ -8637,35 +6917,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Front Cone Hops (or hurdle hops)",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Front_Cone_Hops_or_hurdle_hops/0.jpg",
-      "free-exercise-db/exercises/Front_Cone_Hops_or_hurdle_hops/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -8720,30 +6971,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Front Leg Raises",
-    "primary": "Core",
-    "sub": "LowerAbs",
-    "pattern": "CoreFlexion",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Front_Leg_Raises/0.jpg",
-      "free-exercise-db/exercises/Front_Leg_Raises/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -8820,36 +7047,6 @@ export const exercises = [
     ],
     "difficulty": 4,
     "style": "Compound",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "Core"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Front Squat (Clean Grip)",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Squat",
-    "spine": 3,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Front_Squat_Clean_Grip/0.jpg",
-      "free-exercise-db/exercises/Front_Squat_Clean_Grip/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
     "secondaryMuscles": [
       "Abs",
       "Glutes",
@@ -9128,82 +7325,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Gorilla Chin/Crunch",
-    "primary": "Core",
-    "sub": "UpperAbs",
-    "pattern": "CoreFlexion",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Gorilla_Chin_Crunch/0.jpg",
-      "free-exercise-db/exercises/Gorilla_Chin_Crunch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Biceps",
-      "Lats",
-      "HipFlexors"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Groin and Back Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Groin_and_Back_Stretch/0.jpg",
-      "free-exercise-db/exercises/Groin_and_Back_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Groiners",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Groiners/0.jpg",
-      "free-exercise-db/exercises/Groiners/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Hack Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -9318,54 +7439,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Hamstring Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hamstring_Stretch/0.jpg",
-      "free-exercise-db/exercises/Hamstring_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Hamstring-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hamstring-SMR/0.jpg",
-      "free-exercise-db/exercises/Hamstring-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Handstand Push-Ups",
     "primary": "Shoulders",
     "sub": "Front",
@@ -9389,134 +7462,6 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
-  },
-  {
-    "name": "Hang Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Hang_Clean/0.jpg",
-      "free-exercise-db/exercises/Hang_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Hang Clean - Below the Knees",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Hang_Clean_-_Below_the_Knees/0.jpg",
-      "free-exercise-db/exercises/Hang_Clean_-_Below_the_Knees/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Hang Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Hang_Snatch/0.jpg",
-      "free-exercise-db/exercises/Hang_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Hang Snatch - Below Knees",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Hang_Snatch_-_Below_Knees/0.jpg",
-      "free-exercise-db/exercises/Hang_Snatch_-_Below_Knees/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
     ]
   },
   {
@@ -9627,38 +7572,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Heaving Snatch Balance",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Heaving_Snatch_Balance/0.jpg",
-      "free-exercise-db/exercises/Heaving_Snatch_Balance/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Heavy Bag Thrust",
     "primary": "FullBody",
     "sub": "Power",
@@ -9714,30 +7627,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Hip Circles (prone)",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hip_Circles_prone/0.jpg",
-      "free-exercise-db/exercises/Hip_Circles_prone/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -9848,83 +7737,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Hug A Ball",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hug_A_Ball/0.jpg",
-      "free-exercise-db/exercises/Hug_A_Ball/1.jpg"
-    ],
-    "equipment": [
-      "StabilityBall"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Hug Knees To Chest",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hug_Knees_To_Chest/0.jpg",
-      "free-exercise-db/exercises/Hug_Knees_To_Chest/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Hurdle Hops",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Hurdle_Hops/0.jpg",
-      "free-exercise-db/exercises/Hurdle_Hops/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Hyperextensions (Back Extensions)",
     "primary": "Back",
     "sub": "SpinalErectors",
@@ -9979,54 +7791,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Iliotibial Tract-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Iliotibial_Tract-SMR/0.jpg",
-      "free-exercise-db/exercises/Iliotibial_Tract-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Inchworm",
-    "primary": "FullBody",
-    "sub": "Carry",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Inchworm/0.jpg",
-      "free-exercise-db/exercises/Inchworm/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -10426,34 +8190,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Incline Push-Up Depth Jump",
-    "primary": "Chest",
-    "sub": "Upper",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 2,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Incline_Push-Up_Depth_Jump/0.jpg",
-      "free-exercise-db/exercises/Incline_Push-Up_Depth_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Delts",
-      "Triceps",
-      "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Incline Push-Up Medium",
     "primary": "Chest",
     "sub": "Upper",
@@ -10541,54 +8277,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Intermediate Groin Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Intermediate_Groin_Stretch/0.jpg",
-      "free-exercise-db/exercises/Intermediate_Groin_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Intermediate Hip Flexor and Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Intermediate_Hip_Flexor_and_Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/Intermediate_Hip_Flexor_and_Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Internal Rotation with Band",
     "primary": "Shoulders",
     "sub": "RotatorCuff",
@@ -10666,62 +8354,6 @@ export const exercises = [
       "RearDelts",
       "MidBack"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Iron Cross",
-    "primary": "Shoulders",
-    "sub": "Front",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Iron_Cross/0.jpg",
-      "free-exercise-db/exercises/Iron_Cross/1.jpg"
-    ],
-    "equipment": [
-      "Dumbbell"
-    ],
-    "difficulty": 3,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "Chest",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Iron Crosses (stretch)",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Iron_Crosses_stretch/0.jpg",
-      "free-exercise-db/exercises/Iron_Crosses_stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -10832,30 +8464,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "IT Band and Glute Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/IT_Band_and_Glute_Stretch/0.jpg",
-      "free-exercise-db/exercises/IT_Band_and_Glute_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bands"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Jackknife Sit-Up",
     "primary": "Core",
     "sub": "UpperAbs",
@@ -10939,68 +8547,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Jerk Balance",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Jerk_Balance/0.jpg",
-      "free-exercise-db/exercises/Jerk_Balance/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Quads",
-      "Triceps",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Jerk Dip Squat",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Squat",
-    "spine": 2,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Jerk_Dip_Squat/0.jpg",
-      "free-exercise-db/exercises/Jerk_Dip_Squat/1.jpg"
-    ],
-    "equipment": [
-      "Barbell",
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "Core"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "JM Press",
     "primary": "Arms",
     "sub": "Triceps-Long",
@@ -11056,38 +8602,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Keg Load",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Keg_Load/0.jpg",
-      "free-exercise-db/exercises/Keg_Load/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "MidBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Kettlebell Arnold Press",
     "primary": "Shoulders",
     "sub": "Front",
@@ -11108,37 +8622,6 @@ export const exercises = [
     "style": "Compound",
     "secondaryMuscles": [
       "Triceps"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Kettlebell Dead Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Kettlebell_Dead_Clean/0.jpg",
-      "free-exercise-db/exercises/Kettlebell_Dead_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral",
@@ -11168,38 +8651,6 @@ export const exercises = [
       "Hamstrings",
       "Delts",
       "TVA"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Kettlebell Hang Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Kettlebell_Hang_Clean/0.jpg",
-      "free-exercise-db/exercises/Kettlebell_Hang_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack",
-      "Quads",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral",
@@ -11505,145 +8956,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Kettlebell Windmill",
-    "primary": "Core",
-    "sub": "Obliques",
-    "pattern": "CoreStability",
-    "spine": 2,
-    "knee": 1,
-    "hip": 2,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Kettlebell_Windmill/0.jpg",
-      "free-exercise-db/exercises/Kettlebell_Windmill/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "TVA"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Kipping Muscle Up",
-    "primary": "Back",
-    "sub": "Lats-Width",
-    "pattern": "VerticalPull",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Kipping_Muscle_Up/0.jpg",
-      "free-exercise-db/exercises/Kipping_Muscle_Up/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Biceps",
-      "Forearms",
-      "MidBack",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Knee Across The Body",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Knee_Across_The_Body/0.jpg",
-      "free-exercise-db/exercises/Knee_Across_The_Body/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Knee Circles",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Knee_Circles/0.jpg",
-      "free-exercise-db/exercises/Knee_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Knee Tuck Jump",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Knee_Tuck_Jump/0.jpg",
-      "free-exercise-db/exercises/Knee_Tuck_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Knee/Hip Raise On Parallel Bars",
     "primary": "Core",
     "sub": "LowerAbs",
@@ -11665,30 +8977,6 @@ export const exercises = [
     "secondaryMuscles": [
       "HipFlexors"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Kneeling Arm Drill",
-    "primary": "Mobility",
-    "sub": "Drill",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Kneeling_Arm_Drill/0.jpg",
-      "free-exercise-db/exercises/Kneeling_Arm_Drill/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -11749,30 +9037,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Kneeling Forearm Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Kneeling_Forearm_Stretch/0.jpg",
-      "free-exercise-db/exercises/Kneeling_Forearm_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Kneeling High Pulley Row",
     "primary": "Back",
     "sub": "Lats-Thickness",
@@ -11799,59 +9063,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Kneeling Hip Flexor",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Kneeling_Hip_Flexor/0.jpg",
-      "free-exercise-db/exercises/Kneeling_Hip_Flexor/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Kneeling Jump Squat",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Kneeling_Jump_Squat/0.jpg",
-      "free-exercise-db/exercises/Kneeling_Jump_Squat/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Hamstrings",
-      "Quads",
-      "Glutes"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
     ]
   },
   {
@@ -12040,93 +9251,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Lateral Bound",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lateral_Bound/0.jpg",
-      "free-exercise-db/exercises/Lateral_Bound/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Glutes",
-      "Hamstrings",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Lateral Box Jump",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lateral_Box_Jump/0.jpg",
-      "free-exercise-db/exercises/Lateral_Box_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Glutes",
-      "Hamstrings",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Lateral Cone Hops",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lateral_Cone_Hops/0.jpg",
-      "free-exercise-db/exercises/Lateral_Cone_Hops/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Glutes",
-      "Hamstrings",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Lateral Raise",
     "primary": "Shoulders",
     "sub": "Lateral",
@@ -12175,30 +9299,6 @@ export const exercises = [
     "secondaryMuscles": [
       "UpperBack"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Latissimus Dorsi-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Latissimus_Dorsi-SMR/0.jpg",
-      "free-exercise-db/exercises/Latissimus_Dorsi-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -12373,30 +9473,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Leg-Up Hamstring Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Leg-Up_Hamstring_Stretch/0.jpg",
-      "free-exercise-db/exercises/Leg-Up_Hamstring_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -12637,116 +9713,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Linear 3-Part Start Technique",
-    "primary": "Mobility",
-    "sub": "Drill",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Linear_3-Part_Start_Technique/0.jpg",
-      "free-exercise-db/exercises/Linear_3-Part_Start_Technique/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Linear Acceleration Wall Drill",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Linear_Acceleration_Wall_Drill/0.jpg",
-      "free-exercise-db/exercises/Linear_Acceleration_Wall_Drill/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Linear Depth Jump",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Linear_Depth_Jump/0.jpg",
-      "free-exercise-db/exercises/Linear_Depth_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Log Lift",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Log_Lift/0.jpg",
-      "free-exercise-db/exercises/Log_Lift/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Chest",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "MidBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "London Bridges",
     "primary": "Core",
     "sub": "TVA",
@@ -12770,30 +9736,6 @@ export const exercises = [
       "Forearms",
       "MidBack"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Looking At Ceiling",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Looking_At_Ceiling/0.jpg",
-      "free-exercise-db/exercises/Looking_At_Ceiling/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -12888,54 +9830,6 @@ export const exercises = [
     "fatigueClass": "medium"
   },
   {
-    "name": "Lower Back Curl",
-    "primary": "Back",
-    "sub": "SpinalErectors",
-    "pattern": "Isolation",
-    "spine": 1,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lower_Back_Curl/0.jpg",
-      "free-exercise-db/exercises/Lower_Back_Curl/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Lower Back-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lower_Back-SMR/0.jpg",
-      "free-exercise-db/exercises/Lower_Back-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Lunge Pass Through",
     "primary": "Legs",
     "sub": "Glutes",
@@ -12963,60 +9857,6 @@ export const exercises = [
     "movementTags": [
       "unilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Lunge Sprint",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lunge_Sprint/0.jpg",
-      "free-exercise-db/exercises/Lunge_Sprint/1.jpg"
-    ],
-    "equipment": [
-      "Machine"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "unilateral",
-      "supported",
-      "machineStable"
-    ]
-  },
-  {
-    "name": "Lying Bent Leg Groin",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lying_Bent_Leg_Groin/0.jpg",
-      "free-exercise-db/exercises/Lying_Bent_Leg_Groin/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -13162,31 +10002,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Lying Crossover",
-    "primary": "Chest",
-    "sub": "Mid",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Lying_Crossover/0.jpg",
-      "free-exercise-db/exercises/Lying_Crossover/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Lying Dumbbell Tricep Extension",
     "primary": "Arms",
     "sub": "Triceps-Long",
@@ -13260,56 +10075,6 @@ export const exercises = [
     ],
     "difficulty": 2,
     "style": "Isolation",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Lying Glute",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lying_Glute/0.jpg",
-      "free-exercise-db/exercises/Lying_Glute/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Lying Hamstring",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lying_Hamstring/0.jpg",
-      "free-exercise-db/exercises/Lying_Hamstring/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
     "secondaryMuscles": [],
     "movementTags": [
       "bilateral",
@@ -13428,31 +10193,6 @@ export const exercises = [
       "unilateral",
       "supported",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Lying Prone Quadriceps",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Lying_Prone_Quadriceps/0.jpg",
-      "free-exercise-db/exercises/Lying_Prone_Quadriceps/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -13825,30 +10565,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Middle Back Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Middle_Back_Stretch/0.jpg",
-      "free-exercise-db/exercises/Middle_Back_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Mixed Grip Chin",
     "primary": "Back",
     "sub": "Lats-Width",
@@ -13924,93 +10640,6 @@ export const exercises = [
       "Chest",
       "Hamstrings",
       "Delts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Moving Claw Series",
-    "primary": "Shoulders",
-    "sub": "Rehab",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Moving_Claw_Series/0.jpg",
-      "free-exercise-db/exercises/Moving_Claw_Series/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Muscle Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Muscle_Snatch/0.jpg",
-      "free-exercise-db/exercises/Muscle_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "Triceps",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Muscle Up",
-    "primary": "Back",
-    "sub": "Lats-Width",
-    "pattern": "VerticalPull",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 3,
-    "elbow": 3,
-    "images": [
-      "free-exercise-db/exercises/Muscle_Up/0.jpg",
-      "free-exercise-db/exercises/Muscle_Up/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Biceps",
-      "Forearms",
-      "MidBack",
-      "Delts",
-      "UpperBack"
     ],
     "movementTags": [
       "bilateral"
@@ -14163,30 +10792,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Neck-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Neck-SMR/0.jpg",
-      "free-exercise-db/exercises/Neck-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Oblique Crunches",
     "primary": "Core",
     "sub": "Obliques",
@@ -14265,79 +10870,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "On Your Side Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/On_Your_Side_Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/On_Your_Side_Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "On-Your-Back Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/On-Your-Back_Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/On-Your-Back_Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "One Arm Against Wall",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/One_Arm_Against_Wall/0.jpg",
-      "free-exercise-db/exercises/One_Arm_Against_Wall/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "unilateral",
-      "supported"
     ]
   },
   {
@@ -14542,78 +11074,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "One Half Locust",
-    "primary": "Core",
-    "sub": "SpinalErectors",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/One_Half_Locust/0.jpg",
-      "free-exercise-db/exercises/One_Half_Locust/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "One Handed Hang",
-    "primary": "Back",
-    "sub": "Lats-Width",
-    "pattern": "VerticalPull",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One_Handed_Hang/0.jpg",
-      "free-exercise-db/exercises/One_Handed_Hang/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "One Knee To Chest",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/One_Knee_To_Chest/0.jpg",
-      "free-exercise-db/exercises/One_Knee_To_Chest/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "One Leg Barbell Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -14759,68 +11219,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "One-Arm Kettlebell Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Clean/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack",
-      "Quads",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "One-Arm Kettlebell Clean and Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Clean_and_Jerk/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Clean_and_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "One-Arm Kettlebell Floor Press",
     "primary": "Chest",
     "sub": "Mid",
@@ -14842,37 +11240,6 @@ export const exercises = [
     "secondaryMuscles": [
       "Triceps",
       "FrontDelts"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "One-Arm Kettlebell Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Jerk/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Triceps",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
     ],
     "movementTags": [
       "unilateral",
@@ -14995,99 +11362,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "One-Arm Kettlebell Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Snatch/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "UpperBack",
-      "Triceps",
-      "Quads"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "One-Arm Kettlebell Split Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Jerk/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Quads",
-      "Triceps",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "One-Arm Kettlebell Split Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Snatch/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Kettlebell_Split_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Hamstrings",
-      "Quads",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "One-Arm Kettlebell Swings",
     "primary": "Legs",
     "sub": "Glutes",
@@ -15172,38 +11446,6 @@ export const exercises = [
       "Hamstrings",
       "Glutes",
       "UpperBack"
-    ],
-    "movementTags": [
-      "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "One-Arm Open Palm Kettlebell Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/One-Arm_Open_Palm_Kettlebell_Clean/0.jpg",
-      "free-exercise-db/exercises/One-Arm_Open_Palm_Kettlebell_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "Hamstrings"
     ],
     "movementTags": [
       "unilateral",
@@ -15331,38 +11573,6 @@ export const exercises = [
     "fatigueClass": "low"
   },
   {
-    "name": "Open Palm Kettlebell Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Open_Palm_Kettlebell_Clean/0.jpg",
-      "free-exercise-db/exercises/Open_Palm_Kettlebell_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "Hamstrings",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Optional Endurance: EMOM / Density (8-12 min)",
     "primary": "Cardio",
     "sub": "Conditioning",
@@ -15443,30 +11653,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Overhead Lat",
-    "primary": "Back",
-    "sub": "Lats-Width",
-    "pattern": "VerticalPull",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Overhead_Lat/0.jpg",
-      "free-exercise-db/exercises/Overhead_Lat/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Overhead Press",
     "primary": "Shoulders",
     "sub": "Front",
@@ -15522,86 +11708,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Overhead Squat",
-    "primary": "FullBody",
-    "sub": "Stability",
-    "pattern": "Squat",
-    "spine": 3,
-    "knee": 3,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Overhead_Squat/0.jpg",
-      "free-exercise-db/exercises/Overhead_Squat/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Overhead Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Overhead_Stretch/0.jpg",
-      "free-exercise-db/exercises/Overhead_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Overhead Triceps",
-    "primary": "Arms",
-    "sub": "Triceps-Long",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 1,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Overhead_Triceps/0.jpg",
-      "free-exercise-db/exercises/Overhead_Triceps/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -15943,78 +12049,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Pelvic Tilt Into Bridge",
-    "primary": "Core",
-    "sub": "TVA",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Pelvic_Tilt_Into_Bridge/0.jpg",
-      "free-exercise-db/exercises/Pelvic_Tilt_Into_Bridge/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Peroneals Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Peroneals_Stretch/0.jpg",
-      "free-exercise-db/exercises/Peroneals_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Peroneals-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Peroneals-SMR/0.jpg",
-      "free-exercise-db/exercises/Peroneals-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Physioball Hip Bridge",
     "primary": "Legs",
     "sub": "Glutes",
@@ -16072,30 +12106,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Piriformis-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Piriformis-SMR/0.jpg",
-      "free-exercise-db/exercises/Piriformis-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -16233,181 +12243,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Plyo Kettlebell Pushups",
-    "primary": "Chest",
-    "sub": "Mid",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Plyo_Kettlebell_Pushups/0.jpg",
-      "free-exercise-db/exercises/Plyo_Kettlebell_Pushups/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Delts",
-      "Triceps",
-      "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Plyo Push-up",
-    "primary": "Chest",
-    "sub": "Mid",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Plyo_Push-up/0.jpg",
-      "free-exercise-db/exercises/Plyo_Push-up/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Delts",
-      "Triceps",
-      "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Posterior Tibialis Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Posterior_Tibialis_Stretch/0.jpg",
-      "free-exercise-db/exercises/Posterior_Tibialis_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Power Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Power_Clean/0.jpg",
-      "free-exercise-db/exercises/Power_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "SpinalErectors",
-      "MidBack",
-      "Quads",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Power Clean from Blocks",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Power_Clean_from_Blocks/0.jpg",
-      "free-exercise-db/exercises/Power_Clean_from_Blocks/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Power Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Power_Jerk/0.jpg",
-      "free-exercise-db/exercises/Power_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Power Partials",
     "primary": "Chest",
     "sub": "Mid",
@@ -16433,94 +12268,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Power Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Power_Snatch/0.jpg",
-      "free-exercise-db/exercises/Power_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "UpperBack",
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Power Snatch from Blocks",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Power_Snatch_from_Blocks/0.jpg",
-      "free-exercise-db/exercises/Power_Snatch_from_Blocks/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Power Stairs",
-    "primary": "Cardio",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Power_Stairs/0.jpg",
-      "free-exercise-db/exercises/Power_Stairs/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -16608,54 +12355,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Prone Manual Hamstring",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Prone_Manual_Hamstring/0.jpg",
-      "free-exercise-db/exercises/Prone_Manual_Hamstring/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Prowler Sprint",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 1,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Prowler_Sprint/0.jpg",
-      "free-exercise-db/exercises/Prowler_Sprint/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -17038,104 +12737,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Pyramid",
-    "primary": "Cardio",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Pyramid/0.jpg",
-      "free-exercise-db/exercises/Pyramid/1.jpg"
-    ],
-    "equipment": [
-      "StabilityBall"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Quadriceps-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Quadriceps-SMR/0.jpg",
-      "free-exercise-db/exercises/Quadriceps-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Quick Leap",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Quick_Leap/0.jpg",
-      "free-exercise-db/exercises/Quick_Leap/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Rack Delivery",
     "primary": "FullBody",
     "sub": "Power",
@@ -17255,30 +12856,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Rear Leg Raises",
-    "primary": "Core",
-    "sub": "LowerAbs",
-    "pattern": "CoreFlexion",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Rear_Leg_Raises/0.jpg",
-      "free-exercise-db/exercises/Rear_Leg_Raises/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -17836,30 +13413,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Rhomboids-SMR",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Rhomboids-SMR/0.jpg",
-      "free-exercise-db/exercises/Rhomboids-SMR/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Rickshaw Carry",
     "primary": "FullBody",
     "sub": "Grip",
@@ -17945,32 +13498,6 @@ export const exercises = [
       "Delts",
       "Triceps",
       "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Rocket Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Rocket_Jump/0.jpg",
-      "free-exercise-db/exercises/Rocket_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral"
@@ -18206,30 +13733,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Round The World Shoulder Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Round_The_World_Shoulder_Stretch/0.jpg",
-      "free-exercise-db/exercises/Round_The_World_Shoulder_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Row",
     "primary": "Back",
     "sub": "Lats-Thickness",
@@ -18287,30 +13790,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Runner's Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Runners_Stretch/0.jpg",
-      "free-exercise-db/exercises/Runners_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Running, Treadmill",
     "primary": "Cardio",
     "sub": "Conditioning",
@@ -18364,38 +13843,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Sandbag Load",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Sandbag_Load/0.jpg",
-      "free-exercise-db/exercises/Sandbag_Load/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abs",
-      "Biceps",
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Scapular Pull-Up",
     "primary": "Back",
     "sub": "Scapular",
@@ -18419,57 +13866,6 @@ export const exercises = [
       "MidBack",
       "Biceps",
       "RearDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Scissor Kick",
-    "primary": "Core",
-    "sub": "LowerAbs",
-    "pattern": "CoreFlexion",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Scissor_Kick/0.jpg",
-      "free-exercise-db/exercises/Scissor_Kick/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Scissors Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Scissors_Jump/0.jpg",
-      "free-exercise-db/exercises/Scissors_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral"
@@ -18643,31 +14039,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Seated Biceps",
-    "primary": "Arms",
-    "sub": "Biceps-Long",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Seated_Biceps/0.jpg",
-      "free-exercise-db/exercises/Seated_Biceps/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Seated Cable Rows",
     "primary": "Back",
     "sub": "Lats-Thickness",
@@ -18749,31 +14120,6 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
-  },
-  {
-    "name": "Seated Calf Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Calf_Stretch/0.jpg",
-      "free-exercise-db/exercises/Seated_Calf_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -18968,81 +14314,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Seated Floor Hamstring Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Floor_Hamstring_Stretch/0.jpg",
-      "free-exercise-db/exercises/Seated_Floor_Hamstring_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Seated Front Deltoid",
-    "primary": "Shoulders",
-    "sub": "Front",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Front_Deltoid/0.jpg",
-      "free-exercise-db/exercises/Seated_Front_Deltoid/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Seated Glute",
-    "primary": "Legs",
-    "sub": "Glutes",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Glute/0.jpg",
-      "free-exercise-db/exercises/Seated_Glute/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
     "name": "Seated Good Mornings",
     "primary": "Legs",
     "sub": "Hamstrings-Hinge",
@@ -19069,80 +14340,6 @@ export const exercises = [
       "bilateral",
       "supported",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Seated Hamstring",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Hamstring/0.jpg",
-      "free-exercise-db/exercises/Seated_Hamstring/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Adductor/Groin",
-    "primary": "Legs",
-    "sub": "Adductors",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Adductor_Groin/0.jpg",
-      "free-exercise-db/exercises/Adductor_Groin/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Seated Hamstring and Calf Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Hamstring_and_Calf_Stretch/0.jpg",
-      "free-exercise-db/exercises/Seated_Hamstring_and_Calf_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -19310,31 +14507,6 @@ export const exercises = [
       "unilateral",
       "supported",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Seated Overhead Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Seated_Overhead_Stretch/0.jpg",
-      "free-exercise-db/exercises/Seated_Overhead_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -19528,30 +14700,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Shoulder Circles",
-    "primary": "Mobility",
-    "sub": "Warmup",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Shoulder_Circles/0.jpg",
-      "free-exercise-db/exercises/Shoulder_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Shoulder Press - With Bands",
     "primary": "Shoulders",
     "sub": "Front",
@@ -19578,54 +14726,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Shoulder Raise",
-    "primary": "Shoulders",
-    "sub": "Front",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Shoulder_Raise/0.jpg",
-      "free-exercise-db/exercises/Shoulder_Raise/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Shoulder Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Shoulder_Stretch/0.jpg",
-      "free-exercise-db/exercises/Shoulder_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Side Bridge",
     "primary": "Core",
     "sub": "Obliques",
@@ -19647,34 +14747,6 @@ export const exercises = [
     "secondaryMuscles": [
       "Delts",
       "TVA"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Side Hop-Sprint",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Hop-Sprint/0.jpg",
-      "free-exercise-db/exercises/Side_Hop-Sprint/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral"
@@ -19761,134 +14833,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Side Leg Raises",
-    "primary": "Legs",
-    "sub": "Abductors",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Leg_Raises/0.jpg",
-      "free-exercise-db/exercises/Side_Leg_Raises/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Side Lying Groin Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Lying_Groin_Stretch/0.jpg",
-      "free-exercise-db/exercises/Side_Lying_Groin_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
-    ]
-  },
-  {
-    "name": "Side Neck Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Neck_Stretch/0.jpg",
-      "free-exercise-db/exercises/Side_Neck_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Side Standing Long Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Standing_Long_Jump/0.jpg",
-      "free-exercise-db/exercises/Side_Standing_Long_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Side to Side Box Shuffle",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_to_Side_Box_Shuffle/0.jpg",
-      "free-exercise-db/exercises/Side_to_Side_Box_Shuffle/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Side To Side Chins",
     "primary": "Back",
     "sub": "Lats-Width",
@@ -19917,55 +14861,6 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
-  },
-  {
-    "name": "Side Wrist Pull",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side_Wrist_Pull/0.jpg",
-      "free-exercise-db/exercises/Side_Wrist_Pull/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Side-Lying Floor Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Side-Lying_Floor_Stretch/0.jpg",
-      "free-exercise-db/exercises/Side-Lying_Floor_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral",
-      "supported"
     ]
   },
   {
@@ -19998,30 +14893,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Single Leg Butt Kick",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 0,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single_Leg_Butt_Kick/0.jpg",
-      "free-exercise-db/exercises/Single_Leg_Butt_Kick/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
     "name": "Single Leg Glute Bridge",
     "primary": "Legs",
     "sub": "Glutes",
@@ -20044,32 +14915,6 @@ export const exercises = [
       "Hamstrings",
       "Glutes",
       "SpinalErectors"
-    ],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "Single Leg Push-off",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single_Leg_Push-off/0.jpg",
-      "free-exercise-db/exercises/Single_Leg_Push-off/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Hamstrings"
     ],
     "movementTags": [
       "unilateral"
@@ -20159,30 +15004,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Single-Cone Sprint Drill",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 1,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single-Cone_Sprint_Drill/0.jpg",
-      "free-exercise-db/exercises/Single-Cone_Sprint_Drill/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Single-Leg High Box Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -20205,62 +15026,6 @@ export const exercises = [
       "Glutes",
       "Hamstrings",
       "Core"
-    ],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "Single-Leg Hop Progression",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single-Leg_Hop_Progression/0.jpg",
-      "free-exercise-db/exercises/Single-Leg_Hop_Progression/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "Single-Leg Lateral Hop",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single-Leg_Lateral_Hop/0.jpg",
-      "free-exercise-db/exercises/Single-Leg_Lateral_Hop/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
     ],
     "movementTags": [
       "unilateral"
@@ -20292,58 +15057,6 @@ export const exercises = [
       "unilateral",
       "supported",
       "machineStable"
-    ]
-  },
-  {
-    "name": "Single-Leg Stride Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Single-Leg_Stride_Jump/0.jpg",
-      "free-exercise-db/exercises/Single-Leg_Stride_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "Sit Squats",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Squat",
-    "spine": 1,
-    "knee": 2,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Sit_Squats/0.jpg",
-      "free-exercise-db/exercises/Sit_Squats/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -20397,93 +15110,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Sled Drag - Harness",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Carry",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Sled_Drag_-_Harness/0.jpg",
-      "free-exercise-db/exercises/Sled_Drag_-_Harness/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 3,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Forearms",
-      "UpperBack",
-      "Core"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Sled Overhead Backward Walk",
-    "primary": "FullBody",
-    "sub": "Stability",
-    "pattern": "Carry",
-    "spine": 2,
-    "knee": 2,
-    "hip": 2,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Sled_Overhead_Backward_Walk/0.jpg",
-      "free-exercise-db/exercises/Sled_Overhead_Backward_Walk/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 2,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "MidBack",
-      "Quads",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack",
-      "Forearms"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Sled Overhead Triceps Extension",
-    "primary": "Arms",
-    "sub": "Triceps-Long",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 1,
-    "elbow": 2,
-    "images": [
-      "free-exercise-db/exercises/Sled_Overhead_Triceps_Extension/0.jpg",
-      "free-exercise-db/exercises/Sled_Overhead_Triceps_Extension/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 2,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Sled Push",
     "primary": "Legs",
     "sub": "Conditioning",
@@ -20509,92 +15135,6 @@ export const exercises = [
       "Triceps",
       "Forearms",
       "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Sled Reverse Flye",
-    "primary": "Shoulders",
-    "sub": "Rear",
-    "pattern": "Isolation",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Sled_Reverse_Flye/0.jpg",
-      "free-exercise-db/exercises/Sled_Reverse_Flye/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 2,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Sled Row",
-    "primary": "Back",
-    "sub": "Lats-Thickness",
-    "pattern": "HorizontalPull",
-    "spine": 2,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Sled_Row/0.jpg",
-      "free-exercise-db/exercises/Sled_Row/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 2,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Biceps",
-      "Lats",
-      "RearDelts",
-      "MidBack"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Sledgehammer Swings",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 1,
-    "hip": 2,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Sledgehammer_Swings/0.jpg",
-      "free-exercise-db/exercises/Sledgehammer_Swings/1.jpg"
-    ],
-    "equipment": [
-      "Sled"
-    ],
-    "difficulty": 3,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Lats",
-      "MidBack",
-      "Delts",
-      "Quads",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral"
@@ -20806,40 +15346,6 @@ export const exercises = [
       "Delts",
       "Triceps",
       "FrontDelts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "supported",
-      "machineStable"
-    ]
-  },
-  {
-    "name": "Smith Machine Hang Power Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Smith_Machine_Hang_Power_Clean/0.jpg",
-      "free-exercise-db/exercises/Smith_Machine_Hang_Power_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Smith",
-      "Machine"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "Delts",
-      "UpperBack",
-      "Hamstrings"
     ],
     "movementTags": [
       "bilateral",
@@ -21182,192 +15688,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch/0.jpg",
-      "free-exercise-db/exercises/Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Biceps",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Snatch Balance",
-    "primary": "FullBody",
-    "sub": "Stability",
-    "pattern": "Squat",
-    "spine": 3,
-    "knee": 3,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch_Balance/0.jpg",
-      "free-exercise-db/exercises/Snatch_Balance/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Snatch Deadlift",
-    "primary": "Legs",
-    "sub": "Hamstrings-Hinge",
-    "pattern": "Hinge",
-    "spine": 3,
-    "knee": 1,
-    "hip": 3,
-    "shoulder": 0,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch_Deadlift/0.jpg",
-      "free-exercise-db/exercises/Snatch_Deadlift/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Snatch from Blocks",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch_from_Blocks/0.jpg",
-      "free-exercise-db/exercises/Snatch_from_Blocks/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Snatch Pull",
-    "primary": "Legs",
-    "sub": "Hamstrings-Hinge",
-    "pattern": "Hinge",
-    "spine": 3,
-    "knee": 1,
-    "hip": 3,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch_Pull/0.jpg",
-      "free-exercise-db/exercises/Snatch_Pull/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "SpinalErectors",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Snatch Shrug",
-    "primary": "Back",
-    "sub": "UpperBack",
-    "pattern": "Isolation",
-    "spine": 2,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Snatch_Shrug/0.jpg",
-      "free-exercise-db/exercises/Snatch_Shrug/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 4,
-    "style": "Isolation",
-    "secondaryMuscles": [
-      "Forearms",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
     "name": "Speed Band Overhead Triceps",
     "primary": "Arms",
     "sub": "Triceps-Long",
@@ -21482,34 +15802,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Spider Crawl",
-    "primary": "Core",
-    "sub": "Stability",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 1,
-    "hip": 1,
-    "shoulder": 1,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Spider_Crawl/0.jpg",
-      "free-exercise-db/exercises/Spider_Crawl/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Chest",
-      "Delts",
-      "Triceps"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Spider Curl",
     "primary": "Arms",
     "sub": "Biceps-Short",
@@ -21533,153 +15825,6 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
-  },
-  {
-    "name": "Spinal Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Spinal_Stretch/0.jpg",
-      "free-exercise-db/exercises/Spinal_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Split Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Split_Clean/0.jpg",
-      "free-exercise-db/exercises/Split_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Split Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Split_Jerk/0.jpg",
-      "free-exercise-db/exercises/Split_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Split Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Split_Jump/0.jpg",
-      "free-exercise-db/exercises/Split_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Split Snatch",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Split_Snatch/0.jpg",
-      "free-exercise-db/exercises/Split_Snatch/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Quads",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
     ]
   },
   {
@@ -21708,62 +15853,6 @@ export const exercises = [
     ],
     "movementTags": [
       "unilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Split Squats",
-    "primary": "Legs",
-    "sub": "Quads",
-    "pattern": "Squat",
-    "spine": 2,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Split_Squats/0.jpg",
-      "free-exercise-db/exercises/Split_Squats/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "unilateral"
-    ]
-  },
-  {
-    "name": "Squat Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 3,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Squat_Jerk/0.jpg",
-      "free-exercise-db/exercises/Squat_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts",
-      "Triceps",
-      "Quads",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
       "freeWeight"
     ]
   },
@@ -22076,30 +16165,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Standing Biceps Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Biceps_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Biceps_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -22430,30 +16495,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Standing Elevated Quad Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Elevated_Quad_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Elevated_Quad_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Standing Front Barbell Raise Over Head",
     "primary": "Shoulders",
     "sub": "Front",
@@ -22478,102 +16519,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Standing Gastrocnemius Calf Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Gastrocnemius_Calf_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Gastrocnemius_Calf_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Standing Hamstring and Calf Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Hamstring_and_Calf_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Hamstring_and_Calf_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Standing Hip Circles",
-    "primary": "Mobility",
-    "sub": "Warmup",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Hip_Circles/0.jpg",
-      "free-exercise-db/exercises/Standing_Hip_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Standing Hip Flexors",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Hip_Flexors/0.jpg",
-      "free-exercise-db/exercises/Standing_Hip_Flexors/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -22604,30 +16549,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Standing Lateral Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Lateral_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Lateral_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Standing Leg Curl",
     "primary": "Legs",
     "sub": "Hamstrings-Curl",
@@ -22653,33 +16574,6 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
-    ]
-  },
-  {
-    "name": "Standing Long Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Long_Jump/0.jpg",
-      "free-exercise-db/exercises/Standing_Long_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -22983,30 +16877,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Standing Pelvic Tilt",
-    "primary": "Core",
-    "sub": "LowerAbs",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Pelvic_Tilt/0.jpg",
-      "free-exercise-db/exercises/Standing_Pelvic_Tilt/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Standing Rope Crunch",
     "primary": "Core",
     "sub": "UpperAbs",
@@ -23032,54 +16902,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
-  },
-  {
-    "name": "Standing Soleus And Achilles Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Soleus_And_Achilles_Stretch/0.jpg",
-      "free-exercise-db/exercises/Standing_Soleus_And_Achilles_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Standing Toe Touches",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Standing_Toe_Touches/0.jpg",
-      "free-exercise-db/exercises/Standing_Toe_Touches/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -23138,34 +16960,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Star Jump",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Star_Jump/0.jpg",
-      "free-exercise-db/exercises/Star_Jump/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -23306,30 +17100,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Stomach Vacuum",
-    "primary": "Core",
-    "sub": "TVA",
-    "pattern": "CoreStability",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Stomach_Vacuum/0.jpg",
-      "free-exercise-db/exercises/Stomach_Vacuum/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -23505,34 +17275,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Stride Jump Crossover",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Stride_Jump_Crossover/0.jpg",
-      "free-exercise-db/exercises/Stride_Jump_Crossover/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Abductors",
-      "Adductors",
-      "Hamstrings"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Sumo Deadlift",
     "primary": "Legs",
     "sub": "Hamstrings-Hinge",
@@ -23627,30 +17369,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Superman",
-    "primary": "Back",
-    "sub": "LowerBack",
-    "pattern": "CoreStability",
-    "spine": 1,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Superman/0.jpg",
-      "free-exercise-db/exercises/Superman/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -23974,30 +17692,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "The Straddle",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/The_Straddle/0.jpg",
-      "free-exercise-db/exercises/The_Straddle/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Thigh Abductor",
     "primary": "Legs",
     "sub": "Abductors",
@@ -24061,85 +17755,6 @@ export const exercises = [
     "supportType": "machine_supported",
     "overloadFriendliness": "medium",
     "fatigueClass": "low"
-  },
-  {
-    "name": "Tire Flip",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Tire_Flip/0.jpg",
-      "free-exercise-db/exercises/Tire_Flip/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Chest",
-      "Forearms",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "Delts"
-    ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Toe Touchers",
-    "primary": "Core",
-    "sub": "UpperAbs",
-    "pattern": "CoreFlexion",
-    "spine": 1,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Toe_Touchers/0.jpg",
-      "free-exercise-db/exercises/Toe_Touchers/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Torso Rotation",
-    "primary": "Core",
-    "sub": "Obliques",
-    "pattern": "CoreRotation",
-    "spine": 1,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Torso_Rotation/0.jpg",
-      "free-exercise-db/exercises/Torso_Rotation/1.jpg"
-    ],
-    "equipment": [
-      "StabilityBall"
-    ],
-    "difficulty": 2,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
   },
   {
     "name": "Trail Running/Walking",
@@ -24219,30 +17834,6 @@ export const exercises = [
     "movementTags": [
       "unilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Tricep Side Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Tricep_Side_Stretch/0.jpg",
-      "free-exercise-db/exercises/Tricep_Side_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -24410,30 +18001,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Triceps Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Triceps_Stretch/0.jpg",
-      "free-exercise-db/exercises/Triceps_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Tuck Crunch",
     "primary": "Core",
     "sub": "LowerAbs",
@@ -24484,68 +18051,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Two-Arm Kettlebell Clean",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Two-Arm_Kettlebell_Clean/0.jpg",
-      "free-exercise-db/exercises/Two-Arm_Kettlebell_Clean/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors",
-      "UpperBack",
-      "Quads"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
-    ]
-  },
-  {
-    "name": "Two-Arm Kettlebell Jerk",
-    "primary": "FullBody",
-    "sub": "Power",
-    "pattern": "Power",
-    "spine": 2,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 3,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Two-Arm_Kettlebell_Jerk/0.jpg",
-      "free-exercise-db/exercises/Two-Arm_Kettlebell_Jerk/1.jpg"
-    ],
-    "equipment": [
-      "Kettlebell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Quads",
-      "Triceps",
-      "Hamstrings",
-      "Glutes",
-      "UpperBack"
-    ],
-    "movementTags": [
-      "bilateral",
       "freeWeight"
     ]
   },
@@ -24638,54 +18143,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Upper Back Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Upper_Back_Stretch/0.jpg",
-      "free-exercise-db/exercises/Upper_Back_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Upper Back-Leg Grab",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Upper_Back-Leg_Grab/0.jpg",
-      "free-exercise-db/exercises/Upper_Back-Leg_Grab/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Upright Barbell Row",
     "primary": "Shoulders",
     "sub": "Lateral",
@@ -24763,30 +18220,6 @@ export const exercises = [
       "Delts",
       "UpperBack"
     ],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Upward Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Upward_Stretch/0.jpg",
-      "free-exercise-db/exercises/Upward_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
     ]
@@ -25046,35 +18479,6 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
-  },
-  {
-    "name": "Weighted Jump Squat",
-    "primary": "Legs",
-    "sub": "Power",
-    "pattern": "Plyo",
-    "spine": 2,
-    "knee": 3,
-    "hip": 3,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Weighted_Jump_Squat/0.jpg",
-      "free-exercise-db/exercises/Weighted_Jump_Squat/1.jpg"
-    ],
-    "equipment": [
-      "Barbell"
-    ],
-    "difficulty": 5,
-    "style": "Skill",
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors"
-    ],
-    "movementTags": [
-      "bilateral",
-      "freeWeight"
     ]
   },
   {
@@ -25539,102 +18943,6 @@ export const exercises = [
     ]
   },
   {
-    "name": "Wind Sprints",
-    "primary": "Legs",
-    "sub": "Conditioning",
-    "pattern": "Cardio",
-    "spine": 1,
-    "knee": 3,
-    "hip": 2,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Wind_Sprints/0.jpg",
-      "free-exercise-db/exercises/Wind_Sprints/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Cardio",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Windmills",
-    "primary": "Core",
-    "sub": "Obliques",
-    "pattern": "CoreRotation",
-    "spine": 2,
-    "knee": 0,
-    "hip": 1,
-    "shoulder": 2,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Windmills/0.jpg",
-      "free-exercise-db/exercises/Windmills/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 3,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "World's Greatest Stretch",
-    "primary": "Mobility",
-    "sub": "Stretch",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Worlds_Greatest_Stretch/0.jpg",
-      "free-exercise-db/exercises/Worlds_Greatest_Stretch/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
-    "name": "Wrist Circles",
-    "primary": "Mobility",
-    "sub": "Warmup",
-    "pattern": "Mobility",
-    "spine": 0,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 0,
-    "elbow": 0,
-    "images": [
-      "free-exercise-db/exercises/Wrist_Circles/0.jpg",
-      "free-exercise-db/exercises/Wrist_Circles/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 1,
-    "style": "Mobility",
-    "secondaryMuscles": [],
-    "movementTags": [
-      "bilateral"
-    ]
-  },
-  {
     "name": "Wrist Roller",
     "primary": "Forearms",
     "sub": "Grip",
@@ -25683,37 +18991,6 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
-  },
-  {
-    "name": "Yoke Walk",
-    "primary": "FullBody",
-    "sub": "Carry",
-    "pattern": "Carry",
-    "spine": 3,
-    "knee": 2,
-    "hip": 3,
-    "shoulder": 2,
-    "elbow": 1,
-    "images": [
-      "free-exercise-db/exercises/Yoke_Walk/0.jpg",
-      "free-exercise-db/exercises/Yoke_Walk/1.jpg"
-    ],
-    "equipment": [
-      "Bodyweight"
-    ],
-    "difficulty": 4,
-    "style": "Compound",
-    "secondaryMuscles": [
-      "Abs",
-      "Abductors",
-      "Adductors",
-      "Glutes",
-      "Hamstrings",
-      "SpinalErectors"
-    ],
-    "movementTags": [
-      "bilateral"
     ]
   },
   {
@@ -26109,18 +19386,18 @@ export const exercises = [
     "secondaryMuscles": [
       "HipFlexors"
     ],
-      "movementTags": [
-        "bilateral",
-        "supported",
-        "machineStable"
-      ],
-      "coreFamily": "flexion",
-      "supportType": "cable_supported",
-      "overloadFriendliness": "high",
-      "fatigueClass": "low",
-      "contraindications": [
-        "acute hip flexor irritation"
-      ],
+    "movementTags": [
+      "bilateral",
+      "supported",
+      "machineStable"
+    ],
+    "coreFamily": "flexion",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "high",
+    "fatigueClass": "low",
+    "contraindications": [
+      "acute hip flexor irritation"
+    ],
     "suitsLevels": [
       "beginner",
       "intermediate",
@@ -26153,17 +19430,17 @@ export const exercises = [
     "fatigueCost": 1,
     "style": "Isolation",
     "secondaryMuscles": [],
-      "movementTags": [
-        "unilateral",
-        "supported"
-      ],
-      "coreFamily": "stability",
-      "supportType": "cable_supported",
-      "overloadFriendliness": "medium",
-      "fatigueClass": "low",
-      "contraindications": [
-        "acute lumbar rotation pain"
-      ],
+    "movementTags": [
+      "unilateral",
+      "supported"
+    ],
+    "coreFamily": "stability",
+    "supportType": "cable_supported",
+    "overloadFriendliness": "medium",
+    "fatigueClass": "low",
+    "contraindications": [
+      "acute lumbar rotation pain"
+    ],
     "suitsLevels": [
       "beginner",
       "intermediate",
